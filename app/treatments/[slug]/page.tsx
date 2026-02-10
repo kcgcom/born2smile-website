@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { CLINIC, TREATMENTS } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
+import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 
 export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
@@ -32,8 +33,33 @@ export default async function TreatmentDetailPage({
   const detail = TREATMENT_DETAILS[slug];
   if (!detail) notFound();
 
+  const treatmentJsonLd = getTreatmentJsonLd(slug);
+  const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
+  const breadcrumbJsonLd = getBreadcrumbJsonLd([
+    { name: "홈", href: "/" },
+    { name: "진료 안내", href: "/treatments" },
+    { name: detail.name, href: `/treatments/${slug}` },
+  ]);
+
   return (
     <>
+      {treatmentJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(treatmentJsonLd) }}
+        />
+      )}
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       {/* 헤더 */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <Link
