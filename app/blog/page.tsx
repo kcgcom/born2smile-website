@@ -4,7 +4,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "블로그",
-  description: `${CLINIC.name} 블로그 - 김포 치과 건강 정보, 구강 관리 팁, 공지사항. 임플란트, 교정, 충치 예방 등 유용한 치과 정보를 전해드립니다.`,
+  description: `${CLINIC.name} 블로그 - 김포한강신도시 장기동 치과 건강 정보, 구강 관리 팁, 공지사항. 임플란트, 교정, 충치 예방 등 유용한 치과 정보를 전해드립니다.`,
 };
 
 const PLACEHOLDER_POSTS = [
