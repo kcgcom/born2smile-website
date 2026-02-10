@@ -32,7 +32,6 @@
 
 - **프리미엄 미니멀 레이아웃**: 넓은 여백, 깔끔한 타이포그래피
 - **풀스크린 히어로 섹션**: 대형 비주얼 이미지 + 핵심 슬로건
-- **Before/After 갤러리**: 시술 전후 비교 인터랙티브 슬라이더
 - **의료진 소개 섹션**: 학력/경력 중심의 신뢰감 있는 프로필
 - **스크롤 기반 애니메이션**: 섹션별 페이드인/슬라이드 효과
 - **다국어 지원 구조**: 한국어 기본, 확장 가능한 i18n 구조
@@ -81,8 +80,6 @@ Born2Smile 치과의원
 │   ├── /treatments/general (일반진료 - 충치, 신경치료 등)
 │   ├── /treatments/pediatric (소아치과)
 │   └── /treatments/preventive (예방치료 - 스케일링, 검진)
-├── /gallery (치료 사례)
-│   └── Before/After 갤러리
 ├── /guide (진료 안내)
 │   ├── 진료시간 안내
 │   ├── 비급여 수가표
@@ -108,11 +105,10 @@ Born2Smile 치과의원
 | 2 | **병원 소개** | 간단한 인사말 + 핵심 가치 3가지 (신뢰, 정성, 미소) |
 | 3 | **진료 분야** | 아이콘 카드 그리드 (임플란트, 교정, 심미, 일반, 소아, 예방) |
 | 4 | **의료진** | 대표원장 프로필 + 학력/경력 하이라이트 |
-| 5 | **Before/After** | 시술 전후 비교 슬라이더 (블랑쉬 스타일) |
-| 6 | **시설 안내** | 내부 사진 가로 스크롤 갤러리 |
-| 7 | **환자 후기** | 카드 캐러셀로 실제 후기 노출 |
-| 8 | **오시는 길** | 카카오맵 임베드 + 주소/전화번호/진료시간 |
-| 9 | **CTA 배너** | "지금 바로 상담 예약하세요" + 전화/카카오톡 버튼 |
+| 5 | **시설 안내** | 내부 사진 가로 스크롤 갤러리 |
+| 6 | **환자 후기** | 카드 캐러셀로 실제 후기 노출 |
+| 7 | **오시는 길** | 카카오맵 임베드 + 주소/전화번호/진료시간 |
+| 8 | **CTA 배너** | "지금 바로 상담 예약하세요" + 전화/카카오톡 버튼 |
 
 ### 4.2 병원 소개 (`/about`)
 - 인사말: 원장님 사진 + 철학 메시지 (블랑쉬의 "치료가 아닌 디자인" 컨셉 참고)
@@ -125,17 +121,12 @@ Born2Smile 치과의원
 - 구성: 시술 설명 → 과정 안내(스텝) → 장점 → FAQ 아코디언
 - 블랑쉬의 "솔루션" 페이지 레이아웃 참고
 
-### 4.4 치료 사례 (`/gallery`)
-- Before/After 인터랙티브 슬라이더 (블랑쉬 핵심 참고 요소)
-- 카테고리별 필터링 (임플란트, 교정, 심미 등)
-- 라이트박스 확대 보기
-
-### 4.5 진료 안내 (`/guide`)
+### 4.4 진료 안내 (`/guide`)
 - 진료시간 테이블 (요일별)
 - 비급여 수가표 (블랑쉬의 `/price.php` 참고)
 - 초진 환자 안내 플로우
 
-### 4.6 예약/상담 (`/contact`)
+### 4.5 예약/상담 (`/contact`)
 - 온라인 예약 폼 (이름, 연락처, 희망일시, 진료과목, 메시지)
 - 카카오톡 채널 연결 버튼
 - 전화 바로걸기 (모바일)
@@ -199,7 +190,6 @@ Born2Smile 치과의원
 │   ├── Section (공통 섹션 래퍼)
 │   ├── SectionTitle
 │   ├── Accordion (FAQ용)
-│   ├── ImageSlider (Before/After)
 │   └── LightboxGallery
 └── SEO 컴포넌트 (메타태그, 구조화 데이터)
 ```
@@ -210,7 +200,6 @@ Born2Smile 치과의원
 ├── 병원 소개 요약 섹션
 ├── 진료 분야 카드 그리드
 ├── 의료진 소개 섹션
-├── Before/After 슬라이더 섹션
 ├── 시설 안내 가로 스크롤
 ├── 환자 후기 캐러셀
 ├── 오시는 길 (카카오맵)
@@ -228,8 +217,6 @@ Born2Smile 치과의원
 ├── /treatments (진료 안내)
 │   ├── 진료 분야 목록 페이지
 │   └── 개별 진료 상세 페이지 (6개)
-├── /gallery (치료 사례)
-│   └── Before/After 갤러리 페이지
 ├── /guide (진료 안내)
 │   ├── 진료시간 안내
 │   ├── 비급여 수가표
@@ -285,8 +272,6 @@ born2smile-website/
 │   │   ├── page.tsx               # 진료 분야 목록
 │   │   └── [slug]/
 │   │       └── page.tsx           # 개별 진료 상세
-│   ├── gallery/
-│   │   └── page.tsx               # 치료 사례
 │   ├── guide/
 │   │   └── page.tsx               # 진료 안내
 │   ├── community/
@@ -307,14 +292,12 @@ born2smile-website/
 │   │   ├── Section.tsx
 │   │   ├── SectionTitle.tsx
 │   │   ├── Accordion.tsx
-│   │   ├── BeforeAfterSlider.tsx
 │   │   └── LightboxGallery.tsx
 │   └── sections/
 │       ├── HeroSection.tsx
 │       ├── IntroSection.tsx
 │       ├── TreatmentsGrid.tsx
 │       ├── DoctorSection.tsx
-│       ├── BeforeAfterSection.tsx
 │       ├── FacilitySection.tsx
 │       ├── TestimonialsSection.tsx
 │       ├── MapSection.tsx
@@ -328,8 +311,7 @@ born2smile-website/
 │   │   ├── hero/
 │   │   ├── doctors/
 │   │   ├── facility/
-│   │   ├── treatments/
-│   │   └── gallery/
+│   │   └── treatments/
 │   ├── fonts/
 │   └── favicon.ico
 ├── styles/
@@ -345,22 +327,14 @@ born2smile-website/
 
 ## 8. 핵심 기능 구현 가이드
 
-### 8.1 Before/After 슬라이더 (블랑쉬 핵심 참고)
-```
-- 드래그/터치로 좌우 비교 가능한 인터랙티브 슬라이더
-- 모바일 터치 제스처 지원
-- next/image로 이미지 최적화
-- Framer Motion으로 초기 애니메이션
-```
-
-### 8.2 카카오맵 연동
+### 8.1 카카오맵 연동
 ```
 - 카카오맵 JavaScript SDK 사용
 - 병원 위치 마커 + 커스텀 인포윈도우
 - 길찾기 버튼 연동
 ```
 
-### 8.3 예약 폼
+### 8.2 예약 폼
 ```
 - React Hook Form + Zod 유효성 검증
 - 필드: 이름, 연락처, 희망일시(date picker), 진료과목(select), 메시지
@@ -368,7 +342,7 @@ born2smile-website/
 - 초기에는 카카오톡 채널로 리다이렉트 방식도 고려
 ```
 
-### 8.4 스크롤 애니메이션
+### 8.3 스크롤 애니메이션
 ```
 - Framer Motion의 useInView 활용
 - 섹션 진입 시: fade-up, slide-in 효과
@@ -387,7 +361,6 @@ born2smile-website/
 - [ ] 의료진 프로필 사진 및 약력
 - [ ] 병원 내부/외부 사진 (고해상도)
 - [ ] 진료 분야별 설명 텍스트
-- [ ] Before/After 사진 (환자 동의 필요)
 - [ ] 환자 후기 (동의하에 수집)
 - [ ] 진료시간 정보
 - [ ] 비급여 수가표
