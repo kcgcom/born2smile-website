@@ -19,7 +19,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl px-4 text-center">
           <FadeIn delay={0.2}>
             <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              경기도 김포시 장기동
+              김포한강신도시 장기동
             </p>
           </FadeIn>
           <FadeIn delay={0.4}>

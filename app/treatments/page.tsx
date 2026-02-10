@@ -6,7 +6,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "진료 안내",
-  description: `${CLINIC.name} 진료 안내 - 김포 장기동 치과 임플란트, 치아교정, 틀니 및 심미보철, 소아치료, 보존치료, 스케일링`,
+  description: `${CLINIC.name} 진료 안내 - 김포한강신도시 장기동 치과 임플란트, 치아교정, 틀니 및 심미보철, 소아치료, 보존치료, 스케일링`,
 };
 
 export default function TreatmentsPage() {

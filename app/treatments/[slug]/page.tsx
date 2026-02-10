@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!detail) return {};
   return {
     title: detail.name,
-    description: `김포 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`,
+    description: `김포한강신도시 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`,
   };
 }
 

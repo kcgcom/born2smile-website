@@ -15,7 +15,7 @@ export function getClinicJsonLd() {
     "@type": ["Dentist", "MedicalBusiness"],
     name: CLINIC.name,
     alternateName: CLINIC.nameEn,
-    description: `경기도 김포시 장기동 ${CLINIC.name}. 김포 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
+    description: `김포한강신도시 장기동 ${CLINIC.name}. 김포한강신도시 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
     url: BASE_URL,
     telephone: CLINIC.phone,
     address: {
