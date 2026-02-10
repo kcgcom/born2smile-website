@@ -10,6 +10,7 @@ import {
   Phone,
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS } from "@/lib/constants";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "병원 소개",
@@ -34,7 +35,7 @@ export default function AboutPage() {
       {/* ───────────── 인사말 ───────────── */}
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="mx-auto max-w-3xl text-center">
+          <FadeIn className="mx-auto max-w-3xl text-center">
             <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900">
               안녕하세요, {CLINIC.name}입니다
             </h2>
@@ -47,7 +48,7 @@ export default function AboutPage() {
               자연치아를 최대한 보존하는 것을 원칙으로, 환자분께서 건강한 미소를
               되찾으실 때까지 함께하겠습니다.
             </p>
-          </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -83,9 +84,9 @@ export default function AboutPage() {
             </div>
 
             {/* 경력 그리드 */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <StaggerContainer className="grid gap-6 md:grid-cols-2">
               {/* 학력 */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-6">
+              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <GraduationCap
                     size={20}
@@ -101,10 +102,10 @@ export default function AboutPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </StaggerItem>
 
               {/* 자격 및 수료 */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-6">
+              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Award
                     size={20}
@@ -120,10 +121,10 @@ export default function AboutPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </StaggerItem>
 
               {/* 학회 활동 */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-6">
+              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Users
                     size={20}
@@ -139,10 +140,10 @@ export default function AboutPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </StaggerItem>
 
               {/* 현직 */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-6">
+              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Briefcase
                     size={20}
@@ -158,8 +159,8 @@ export default function AboutPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
+              </StaggerItem>
+            </StaggerContainer>
           </div>
         </div>
       </section>
