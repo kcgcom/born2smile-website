@@ -130,11 +130,21 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
   }
 
   return (
-    <div
-      ref={mapRef}
-      role="img"
-      aria-label={`${CLINIC.name} 위치 지도 - ${CLINIC.address}`}
-      className={`rounded-2xl border border-gray-200 ${className}`}
-    />
+    <div className={`relative rounded-2xl border border-gray-200 ${className}`}>
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-gray-100">
+          <div className="text-center">
+            <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[var(--color-primary)]" />
+            <p className="text-sm text-gray-400">지도를 불러오는 중...</p>
+          </div>
+        </div>
+      )}
+      <div
+        ref={mapRef}
+        role="img"
+        aria-label={`${CLINIC.name} 위치 지도 - ${CLINIC.address}`}
+        className="h-full w-full rounded-2xl"
+      />
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Phone, MessageCircle, MapPin, Clock, Send } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
@@ -8,6 +8,7 @@ import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -86,6 +87,8 @@ export default function ContactPage() {
                       name="phone"
                       required
                       aria-required="true"
+                      pattern="[0-9]{2,3}-?[0-9]{3,4}-?[0-9]{4}"
+                      title="올바른 전화번호를 입력해 주세요 (예: 010-1234-5678)"
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
                       placeholder="010-0000-0000"
                     />
@@ -124,6 +127,7 @@ export default function ContactPage() {
                       type="date"
                       id="date"
                       name="date"
+                      min={today}
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
                     />
                   </div>

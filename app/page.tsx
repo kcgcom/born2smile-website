@@ -163,12 +163,16 @@ export default function Home() {
               <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
                 <div className="grid md:grid-cols-2">
                   {/* 사진 영역 (플레이스홀더) */}
-                  <div className="flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 p-12 md:min-h-[400px]">
+                  <div
+                    className="flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 p-12 md:min-h-[400px]"
+                    role="img"
+                    aria-label={`${doctor.name} ${doctor.title} 프로필 사진`}
+                  >
                     <div className="text-center">
-                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-blue-200 text-4xl font-bold text-[var(--color-primary)]">
+                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-blue-200 text-4xl font-bold text-[var(--color-primary)]" aria-hidden="true">
                         {doctor.name.charAt(0)}
                       </div>
-                      <p className="text-sm text-gray-500">프로필 사진 영역</p>
+                      <p className="text-sm text-gray-500" aria-hidden="true">프로필 사진 영역</p>
                     </div>
                   </div>
 

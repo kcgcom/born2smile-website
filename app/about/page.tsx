@@ -68,8 +68,8 @@ export default function AboutPage() {
           <div className="mx-auto max-w-5xl">
             {/* 프로필 상단 */}
             <div className="mb-10 grid items-center gap-8 md:grid-cols-3">
-              <div className="flex items-center justify-center">
-                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-50 text-6xl font-bold text-[var(--color-primary)]">
+              <div className="flex items-center justify-center" role="img" aria-label={`${doctor.name} ${doctor.title} 프로필 사진`}>
+                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-50 text-6xl font-bold text-[var(--color-primary)]" aria-hidden="true">
                   {doctor.name.charAt(0)}
                 </div>
               </div>
@@ -183,9 +183,11 @@ export default function AboutPage() {
               (name) => (
                 <div
                   key={name}
+                  role="img"
+                  aria-label={`${CLINIC.name} ${name} 사진`}
                   className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100"
                 >
-                  <p className="text-sm text-gray-400">{name} 사진</p>
+                  <p className="text-sm text-gray-400" aria-hidden="true">{name} 사진</p>
                 </div>
               )
             )}
