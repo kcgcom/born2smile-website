@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "next build && firebase deploy",
+    "deploy:preview": "next build && firebase hosting:channel:deploy preview"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.9",
