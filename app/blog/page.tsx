@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CLINIC } from "@/lib/constants";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "블로그",
@@ -50,27 +51,26 @@ export default function BlogPage() {
 
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="space-y-6">
+          <StaggerContainer className="space-y-6">
             {PLACEHOLDER_POSTS.map((post) => (
-              <article
-                key={post.id}
-                className="rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md md:p-8"
-              >
-                <div className="mb-3 flex items-center gap-3">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
-                    {post.category}
-                  </span>
-                  <span className="text-xs text-gray-400">{post.date}</span>
-                </div>
-                <h2 className="mb-2 text-xl font-bold text-gray-900">
-                  {post.title}
-                </h2>
-                <p className="text-sm leading-relaxed text-gray-600">
-                  {post.excerpt}
-                </p>
-              </article>
+              <StaggerItem key={post.id}>
+                <article className="rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md md:p-8">
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+                      {post.category}
+                    </span>
+                    <span className="text-xs text-gray-400">{post.date}</span>
+                  </div>
+                  <h2 className="mb-2 text-xl font-bold text-gray-900">
+                    {post.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    {post.excerpt}
+                  </p>
+                </article>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 

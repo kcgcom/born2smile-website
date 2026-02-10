@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { CLINIC, TREATMENTS } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
@@ -77,22 +78,24 @@ export default async function TreatmentDetailPage({
 
       {/* 설명 */}
       <section className="section-padding bg-white">
-        <div className="mx-auto max-w-3xl">
+        <FadeIn className="mx-auto max-w-3xl">
           <p className="text-lg leading-relaxed text-gray-700">
             {detail.description}
           </p>
-        </div>
+        </FadeIn>
       </section>
 
       {/* 치료 과정 */}
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
-          <h2 className="font-headline mb-10 text-center text-3xl font-bold text-gray-900">
-            치료 과정
-          </h2>
-          <div className="grid gap-6 md:grid-cols-4">
+          <FadeIn>
+            <h2 className="font-headline mb-10 text-center text-3xl font-bold text-gray-900">
+              치료 과정
+            </h2>
+          </FadeIn>
+          <StaggerContainer className="grid gap-6 md:grid-cols-4">
             {detail.steps.map((step, i) => (
-              <div key={step.title} className="text-center">
+              <StaggerItem key={step.title} className="text-center">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg font-bold text-white">
                   {i + 1}
                 </div>
@@ -102,21 +105,23 @@ export default async function TreatmentDetailPage({
                 <p className="text-sm leading-relaxed text-gray-600">
                   {step.desc}
                 </p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       {/* 장점 */}
       <section className="section-padding bg-white">
         <div className="mx-auto max-w-3xl">
-          <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
-            장점
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <FadeIn>
+            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
+              장점
+            </h2>
+          </FadeIn>
+          <StaggerContainer className="grid gap-4 sm:grid-cols-2">
             {detail.advantages.map((adv) => (
-              <div
+              <StaggerItem
                 key={adv}
                 className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
               >
@@ -126,9 +131,9 @@ export default async function TreatmentDetailPage({
                 <span className="text-sm font-medium text-gray-800">
                   {adv}
                 </span>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -136,9 +141,11 @@ export default async function TreatmentDetailPage({
       {detail.faq.length > 0 && (
         <section className="section-padding bg-gray-50">
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
-              자주 묻는 질문
-            </h2>
+            <FadeIn>
+              <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
+                자주 묻는 질문
+              </h2>
+            </FadeIn>
             <div className="space-y-4">
               {detail.faq.map((item) => (
                 <details
@@ -163,6 +170,7 @@ export default async function TreatmentDetailPage({
       )}
 
       {/* CTA */}
+
       <section className="bg-[var(--color-primary)] px-4 py-16 text-center text-white">
         <h2 className="font-headline mb-4 text-2xl font-bold md:text-3xl">
           {detail.name} 상담이 필요하신가요?

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Phone, MessageCircle, MapPin, Clock, Send } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS } from "@/lib/constants";
+import { FadeIn } from "@/components/ui/Motion";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -31,7 +32,7 @@ export default function ContactPage() {
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-5">
             {/* 예약 폼 */}
-            <div className="md:col-span-3">
+            <FadeIn direction="left" className="md:col-span-3">
               <h2 className="mb-6 text-2xl font-bold text-gray-900">
                 온라인 예약
               </h2>
@@ -145,10 +146,10 @@ export default function ContactPage() {
                   </button>
                 </form>
               )}
-            </div>
+            </FadeIn>
 
             {/* 사이드 정보 */}
-            <div className="space-y-6 md:col-span-2">
+            <FadeIn direction="right" delay={0.2} className="space-y-6 md:col-span-2">
               {/* 빠른 연락 */}
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
                 <h3 className="mb-4 text-lg font-bold text-gray-900">
@@ -221,7 +222,7 @@ export default function ContactPage() {
                 </h3>
                 <p className="text-sm text-gray-600">{CLINIC.address}</p>
               </div>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS } from "@/lib/constants";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "진료 안내",
@@ -25,29 +26,30 @@ export default function TreatmentsPage() {
 
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {TREATMENTS.map((treatment) => (
-              <Link
-                key={treatment.id}
-                href={treatment.href}
-                className="group rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-all hover:border-[var(--color-primary)] hover:bg-white hover:shadow-lg"
-              >
-                <h2 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
-                  {treatment.name}
-                </h2>
-                <p className="mb-6 text-sm leading-relaxed text-gray-600">
-                  {treatment.shortDesc}
-                </p>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
-                  자세히 보기
-                  <ArrowRight
-                    size={14}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </span>
-              </Link>
+              <StaggerItem key={treatment.id}>
+                <Link
+                  href={treatment.href}
+                  className="group block rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-all hover:border-[var(--color-primary)] hover:bg-white hover:shadow-lg"
+                >
+                  <h2 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                    {treatment.name}
+                  </h2>
+                  <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                    {treatment.shortDesc}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
+                    자세히 보기
+                    <ArrowRight
+                      size={14}
+                      className="transition-transform group-hover:translate-x-1"
+                    />
+                  </span>
+                </Link>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
