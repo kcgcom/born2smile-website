@@ -27,13 +27,34 @@ export const DOCTORS = [
     id: "kim-changgyun",
     name: "김창균",
     title: "대표원장",
-    // TODO: 경력 정보 추가 예정
-    credentials: [
-      // 예시 - 실제 경력으로 교체
-      // "서울대학교 치의학대학원 졸업",
-      // "대한치과보철학회 정회원",
+    position: "치과의사, 통합치의학전문의",
+    education: [
+      "서울대학교 치의학대학원 박사 수료",
+      "서울대학교 치의학대학원 석사 졸업",
+      "서울대학교 공과대학 학사 졸업",
+      "서울과학고등학교 졸업",
     ],
-    specialties: ["임플란트", "심미보철"],
+    credentials: [
+      "미국 치과의사 자격시험(National Board of Dental Examination) 통과",
+      "미국치과임플란트학회(AAID) 인정의(Affiliate Associate Fellow)",
+      "미국치과임플란트학회(AAID) 공인 임플란트과정 수료",
+      "Dr. Kitzis Memorial Institute 보철 및 통합치과과정 수료",
+      "Dr. Kitzis Memorial Institute 교정과정 수료",
+      "보스톤 임상치과 연구회(BAO) 교정과정 수료",
+    ],
+    memberships: [
+      "국제교정협회(IAO) 정회원",
+      "국제구강임플란트학회(ICOI) 국제회원",
+      "대한치과이식임플란트학회(KAID) 정회원",
+      "한국심는치아연구회(KDI) 정회원",
+      "미국심미치과학회(AACD) 정회원",
+      "대한심미치과학회(KAED) 정회원",
+    ],
+    currentPositions: [
+      "일본 아이치가쿠인(愛和學院)치과대학병원 임플란트과 협진의사",
+      "서울대학교 치의학색채공학 연구실 임상자문위원",
+    ],
+    specialties: ["임플란트", "심미보철", "치아교정"],
     image: "/images/doctors/kim-changgyun.jpg",
   },
 ] as const;
