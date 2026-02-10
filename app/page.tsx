@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function Home() {
   return (
@@ -230,11 +231,9 @@ export default function Home() {
           </FadeIn>
 
           <div className="grid gap-8 md:grid-cols-2">
-            {/* 지도 플레이스홀더 */}
+            {/* 카카오맵 */}
             <FadeIn direction="left">
-              <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100">
-                <p className="text-gray-400">카카오맵 영역</p>
-              </div>
+              <KakaoMap className="min-h-[300px]" />
             </FadeIn>
 
             {/* 병원 정보 */}

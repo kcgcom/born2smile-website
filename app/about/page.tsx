@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export const metadata: Metadata = {
   title: "병원 소개",
@@ -242,10 +243,8 @@ export default function AboutPage() {
                 오시는 길
               </h2>
 
-              {/* 지도 플레이스홀더 */}
-              <div className="mb-6 flex aspect-[4/3] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100">
-                <p className="text-sm text-gray-400">카카오맵 영역</p>
-              </div>
+              {/* 카카오맵 */}
+              <KakaoMap className="mb-6 aspect-[4/3]" />
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">

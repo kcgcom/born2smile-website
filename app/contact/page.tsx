@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, MessageCircle, MapPin, Clock, Send } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
+import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -211,7 +212,7 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              {/* 주소 */}
+              {/* 오시는 길 + 지도 */}
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <MapPin
@@ -220,6 +221,7 @@ export default function ContactPage() {
                   />
                   오시는 길
                 </h3>
+                <KakaoMap className="mb-3 aspect-video" />
                 <p className="text-sm text-gray-600">{CLINIC.address}</p>
               </div>
             </FadeIn>
