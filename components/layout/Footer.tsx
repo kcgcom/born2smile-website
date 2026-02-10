@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 병원 정보 */}
           <div>
             <h3 className="mb-4 text-lg font-bold text-white">

@@ -46,7 +46,7 @@ export default function RootLayout({
           }}
         />
         <Header />
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
         <Footer />
         <FloatingCTA />
       </body>

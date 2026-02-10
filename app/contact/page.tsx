@@ -39,9 +39,12 @@ export default function ContactPage() {
               </h2>
 
               {submitted ? (
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
+                <div
+                  role="alert"
+                  className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center"
+                >
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                    <Send size={28} />
+                    <Send size={28} aria-hidden="true" />
                   </div>
                   <h3 className="mb-2 text-xl font-bold text-gray-900">
                     예약 접수가 완료되었습니다
@@ -57,13 +60,14 @@ export default function ContactPage() {
                       htmlFor="name"
                       className="mb-1.5 block text-sm font-medium text-gray-700"
                     >
-                      이름 <span className="text-red-500">*</span>
+                      이름 <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       id="name"
                       name="name"
                       required
+                      aria-required="true"
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
                       placeholder="홍길동"
                     />
@@ -74,13 +78,14 @@ export default function ContactPage() {
                       htmlFor="phone"
                       className="mb-1.5 block text-sm font-medium text-gray-700"
                     >
-                      연락처 <span className="text-red-500">*</span>
+                      연락처 <span aria-hidden="true" className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
                       id="phone"
                       name="phone"
                       required
+                      aria-required="true"
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
                       placeholder="010-0000-0000"
                     />
@@ -159,9 +164,10 @@ export default function ContactPage() {
                 <div className="space-y-4">
                   <a
                     href={CLINIC.phoneHref}
+                    aria-label={`대표전화 ${CLINIC.phone}`}
                     className="flex items-center gap-3 rounded-xl bg-[var(--color-primary)] p-4 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
                   >
-                    <Phone size={20} />
+                    <Phone size={20} aria-hidden="true" />
                     <div>
                       <div className="text-xs text-blue-200">대표전화</div>
                       <div className="text-lg font-bold">{CLINIC.phone}</div>
@@ -173,6 +179,7 @@ export default function ContactPage() {
                   >
                     <MessageCircle
                       size={20}
+                      aria-hidden="true"
                       className="text-[var(--color-primary)]"
                     />
                     <div>
@@ -188,6 +195,7 @@ export default function ContactPage() {
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Clock
                     size={18}
+                    aria-hidden="true"
                     className="text-[var(--color-primary)]"
                   />
                   진료시간
@@ -217,6 +225,7 @@ export default function ContactPage() {
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <MapPin
                     size={18}
+                    aria-hidden="true"
                     className="text-[var(--color-primary)]"
                   />
                   오시는 길

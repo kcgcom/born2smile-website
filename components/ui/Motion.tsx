@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
 interface FadeInProps {
@@ -20,6 +20,7 @@ const directionOffset = {
 
 /**
  * 스크롤 시 페이드인 애니메이션
+ * prefers-reduced-motion 설정 시 애니메이션 비활성화
  */
 export function FadeIn({
   children,
@@ -28,6 +29,12 @@ export function FadeIn({
   direction = "up",
   duration = 0.6,
 }: FadeInProps) {
+  const shouldReduce = useReducedMotion();
+
+  if (shouldReduce) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}
@@ -49,12 +56,19 @@ interface StaggerContainerProps {
 
 /**
  * 자식 요소를 순차적으로 애니메이션
+ * prefers-reduced-motion 설정 시 애니메이션 비활성화
  */
 export function StaggerContainer({
   children,
   className,
   staggerDelay = 0.1,
 }: StaggerContainerProps) {
+  const shouldReduce = useReducedMotion();
+
+  if (shouldReduce) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}
@@ -74,6 +88,7 @@ export function StaggerContainer({
 
 /**
  * StaggerContainer 안에서 사용하는 아이템
+ * prefers-reduced-motion 설정 시 애니메이션 비활성화
  */
 export function StaggerItem({
   children,
@@ -82,6 +97,12 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
+  const shouldReduce = useReducedMotion();
+
+  if (shouldReduce) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}

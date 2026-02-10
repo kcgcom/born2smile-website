@@ -25,73 +25,92 @@ export function Header() {
   }, []);
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/95 shadow-sm backdrop-blur-sm"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
-        {/* 로고 */}
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          <span className="text-[var(--color-primary)]">{CLINIC.name}</span>
-        </Link>
+    <>
+      {/* 본문 바로가기 링크 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-white"
+      >
+        본문 바로가기
+      </a>
 
-        {/* 데스크톱 네비게이션 */}
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm font-medium text-gray-700 transition-colors hover:text-[var(--color-primary)]"
-            >
-              {item.label}
-            </Link>
-          ))}
-          <a
-            href={CLINIC.phoneHref}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-          >
-            <Phone size={16} />
-            {CLINIC.phone}
-          </a>
-        </nav>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-white/95 shadow-sm backdrop-blur-sm"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
+          {/* 로고 */}
+          <Link href="/" className="text-xl font-bold tracking-tight">
+            <span className="text-[var(--color-primary)]">{CLINIC.name}</span>
+          </Link>
 
-        {/* 모바일 햄버거 버튼 */}
-        <button
-          className="md:hidden"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="메뉴 열기"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* 모바일 메뉴 */}
-      {isMobileMenuOpen && (
-        <div className="border-t border-gray-100 bg-white md:hidden">
-          <nav className="flex flex-col px-4 py-4">
+          {/* 데스크톱 네비게이션 */}
+          <nav className="hidden items-center gap-8 md:flex" aria-label="메인 메뉴">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="border-b border-gray-50 py-3 text-base font-medium text-gray-700"
-                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-sm font-medium text-gray-700 transition-colors hover:text-[var(--color-primary)]"
               >
                 {item.label}
               </Link>
             ))}
             <a
               href={CLINIC.phoneHref}
-              className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              <Phone size={18} />
-              전화 상담 {CLINIC.phone}
+              <Phone size={16} aria-hidden="true" />
+              {CLINIC.phone}
             </a>
           </nav>
+
+          {/* 모바일 햄버거 버튼 */}
+          <button
+            className="flex h-11 w-11 items-center justify-center rounded-lg md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-      )}
-    </header>
+
+        {/* 모바일 메뉴 */}
+        {isMobileMenuOpen && (
+          <div
+            id="mobile-menu"
+            className="border-t border-gray-100 bg-white md:hidden"
+            role="navigation"
+            aria-label="모바일 메뉴"
+          >
+            <nav className="flex flex-col px-4 py-4">
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium text-gray-700"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <a
+                href={CLINIC.phoneHref}
+                className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+                aria-label={`전화 상담 ${CLINIC.phone}`}
+              >
+                <Phone size={18} aria-hidden="true" />
+                전화 상담 {CLINIC.phone}
+              </a>
+            </nav>
+          </div>
+        )}
+      </header>
+    </>
   );
 }

@@ -132,6 +132,8 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
   return (
     <div
       ref={mapRef}
+      role="img"
+      aria-label={`${CLINIC.name} 위치 지도 - ${CLINIC.address}`}
       className={`rounded-2xl border border-gray-200 ${className}`}
     />
   );

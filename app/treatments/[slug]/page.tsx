@@ -93,7 +93,7 @@ export default async function TreatmentDetailPage({
               치료 과정
             </h2>
           </FadeIn>
-          <StaggerContainer className="grid gap-6 md:grid-cols-4">
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {detail.steps.map((step, i) => (
               <StaggerItem key={step.title} className="text-center">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg font-bold text-white">
