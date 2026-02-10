@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CLINIC, HOURS } from "@/lib/constants";
+import { CLINIC, HOURS, LINKS } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -23,9 +23,7 @@ export function Footer() {
                 </a>
               </li>
               <li>대표자: {CLINIC.representative}</li>
-              {CLINIC.businessNumber !== "000-00-00000" && (
-                <li>사업자등록번호: {CLINIC.businessNumber}</li>
-              )}
+              <li>사업자등록번호: {CLINIC.businessNumber}</li>
             </ul>
           </div>
 
@@ -76,6 +74,27 @@ export function Footer() {
                   블로그
                 </Link>
               </li>
+              {LINKS.instagram && (
+                <li>
+                  <a href={LINKS.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+                    Instagram
+                  </a>
+                </li>
+              )}
+              {LINKS.naverBlog && (
+                <li>
+                  <a href={LINKS.naverBlog} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+                    네이버 블로그
+                  </a>
+                </li>
+              )}
+              {LINKS.kakaoChannel && (
+                <li>
+                  <a href={LINKS.kakaoChannel} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+                    카카오톡 채널
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { pretendard, notoSerifKR } from "@/lib/fonts";
-import { SEO, CLINIC } from "@/lib/constants";
+import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd } from "@/lib/jsonld";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -20,6 +20,15 @@ export const metadata: Metadata = {
     siteName: CLINIC.name,
     locale: "ko_KR",
     type: "website",
+    url: BASE_URL,
+    images: [
+      {
+        url: `${BASE_URL}${SEO.ogImage}`,
+        width: 1200,
+        height: 630,
+        alt: `${CLINIC.name} - ${CLINIC.slogan}`,
+      },
+    ],
   },
   verification: {
     // TODO: 실제 인증 코드로 교체

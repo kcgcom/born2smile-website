@@ -146,7 +146,7 @@ export default async function TreatmentDetailPage({
                 자주 묻는 질문
               </h2>
             </FadeIn>
-            <div className="space-y-4">
+            <div className="space-y-4" role="region" aria-label="자주 묻는 질문 목록">
               {detail.faq.map((item) => (
                 <details
                   key={item.q}

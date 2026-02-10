@@ -8,12 +8,19 @@ import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: 실제 폼 제출 로직 (API Route 또는 외부 서비스)
-    setSubmitted(true);
+    setIsLoading(true);
+    try {
+      // TODO: 실제 폼 제출 로직 (API Route 또는 외부 서비스)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setSubmitted(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -150,9 +157,10 @@ export default function ContactPage() {
 
                   <button
                     type="submit"
-                    className="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                    disabled={isLoading}
+                    className="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    예약 접수하기
+                    {isLoading ? "접수 중..." : "예약 접수하기"}
                   </button>
                 </form>
               )}

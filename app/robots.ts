@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
-
-// TODO: 실제 도메인으로 교체
-const BASE_URL = "https://www.born2smile.co.kr";
+import { BASE_URL } from "@/lib/constants";
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -59,7 +59,13 @@ export default function BlogPage() {
                     <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
                       {post.category}
                     </span>
-                    <span className="text-xs text-gray-400">{post.date}</span>
+                    <time dateTime={post.date} className="text-xs text-gray-400">
+                      {new Date(post.date).toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </time>
                   </div>
                   <h2 className="mb-2 text-xl font-bold text-gray-900">
                     {post.title}

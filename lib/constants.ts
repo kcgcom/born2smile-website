@@ -14,8 +14,7 @@ export const CLINIC = {
   phoneHref: "tel:1833-7552",
   address: "경기도 김포시 태장로 820, 엠프라자 2층",
   addressShort: "김포시 태장로 820, 엠프라자 2층",
-  // TODO: 확정 후 입력
-  businessNumber: "000-00-00000", // 사업자등록번호
+  businessNumber: "647-18-00478", // 사업자등록번호
   representative: "김창균", // 대표자
 } as const;
 
@@ -164,3 +163,9 @@ export const SEO = {
   ],
   ogImage: "/images/og-image.jpg",
 } as const;
+
+// -------------------------------------------------------------
+// 사이트 URL
+// -------------------------------------------------------------
+export const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://www.born2smile.co.kr";
