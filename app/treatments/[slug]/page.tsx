@@ -22,6 +22,9 @@ export async function generateMetadata({
   return {
     title: detail.name,
     description: `${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`,
+    alternates: {
+      canonical: `/treatments/${slug}`,
+    },
   };
 }
 

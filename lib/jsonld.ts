@@ -20,6 +20,7 @@ export function getClinicJsonLd() {
       streetAddress: "태장로 820, 엠프라자 2층",
       addressLocality: "김포시",
       addressRegion: "경기도",
+      postalCode: "10089",
       addressCountry: "KR",
     },
     geo: {

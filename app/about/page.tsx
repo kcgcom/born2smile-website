@@ -16,6 +16,9 @@ import { KakaoMap } from "@/components/ui/KakaoMap";
 export const metadata: Metadata = {
   title: "병원 소개",
   description: `${CLINIC.name} - 경기도 김포시 치과의원. 서울대 출신 통합치의학전문의 김창균 원장이 정성을 다해 진료합니다.`,
+  alternates: {
+    canonical: "/about",
+  },
 };
 
 export default function AboutPage() {

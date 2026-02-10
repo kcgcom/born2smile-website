@@ -8,12 +8,16 @@ import { FloatingCTA } from "@/components/layout/FloatingCTA";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: SEO.defaultTitle,
     template: SEO.titleTemplate,
   },
   description: SEO.defaultDescription,
   keywords: [...SEO.keywords],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: SEO.defaultTitle,
     description: SEO.defaultDescription,
@@ -23,12 +27,18 @@ export const metadata: Metadata = {
     url: BASE_URL,
     images: [
       {
-        url: `${BASE_URL}${SEO.ogImage}`,
+        url: SEO.ogImage,
         width: 1200,
         height: 630,
         alt: `${CLINIC.name} - ${CLINIC.slogan}`,
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO.defaultTitle,
+    description: SEO.defaultDescription,
+    images: [SEO.ogImage],
   },
   verification: {
     // TODO: 실제 인증 코드로 교체

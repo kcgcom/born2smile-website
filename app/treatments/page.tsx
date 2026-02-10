@@ -7,6 +7,9 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 export const metadata: Metadata = {
   title: "진료 안내",
   description: `${CLINIC.name} 진료 안내 - 임플란트, 치아교정, 틀니 및 심미보철, 소아치료, 보존치료, 스케일링`,
+  alternates: {
+    canonical: "/treatments",
+  },
 };
 
 export default function TreatmentsPage() {
