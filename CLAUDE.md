@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo, South Korea. Static site built with Next.js App Router and deployed to Firebase Hosting.
+Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo, South Korea. Full-stack Next.js app deployed to Firebase App Hosting (Cloud Build + Cloud Run + Cloud CDN).
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
 - **Package Manager**: pnpm
-- **Deployment**: Firebase Hosting (static export via `output: "export"` in `next.config.ts`)
+- **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
 ## Getting Started
 
@@ -25,10 +25,9 @@ pnpm dev                      # http://localhost:3000
 ## Commands
 
 - `pnpm dev` — Start dev server
-- `pnpm build` — Production build (static export to `/out`)
+- `pnpm build` — Production build (standalone output to `.next/`)
 - `pnpm lint` — Run ESLint
-- `pnpm deploy` — Build + deploy to Firebase Hosting
-- `pnpm deploy:preview` — Build + deploy to Firebase preview channel
+- `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
 
 ## Project Structure
 
@@ -54,26 +53,16 @@ lib/
   fonts.ts              # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts             # JSON-LD structured data generators
 public/fonts/           # Local font files
+apphosting.yaml         # Firebase App Hosting runtime config
 ```
 
 ## Architecture
 
-- **Static generation**: All pages are statically exported at build time. Treatment detail pages use `generateStaticParams()`.
+- **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
+- **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
-
-### Static Export Constraints
-
-`next.config.ts`의 `output: "export"` 설정으로 인해 다음 기능을 사용할 수 없음:
-
-- API Routes (`app/api/`)
-- Server-side rendering (동적 `getServerSideProps`)
-- Middleware (`middleware.ts`)
-- Image Optimization (`next/image`의 기본 로더 — `unoptimized: true` 필요)
-- `revalidate` / ISR
-
-모든 페이지는 빌드 시점에 정적 HTML로 생성됨.
 
 ### Font System
 
@@ -158,14 +147,18 @@ ESLint 9 flat config (`eslint.config.mjs`):
 
 ## Deployment
 
-Firebase Hosting으로 정적 사이트 배포. `firebase.json`에서 캐싱 전략 설정:
+Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
-- JS/CSS/이미지/폰트: `Cache-Control: public, max-age=31536000, immutable` (1년)
-- SPA fallback: 모든 미매칭 경로 → `/404.html`
+- `apphosting.yaml` — Cloud Run 런타임 설정 (인스턴스 수, CPU, 메모리, 환경변수)
+- 빌드는 Cloud Build에서 원격 실행 → 로컬 `next build` 불필요
+- 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
+- SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
+- GitHub 연동 시 push → 자동 배포 가능
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local`:
+로컬 개발: `.env.example` → `.env.local`로 복사하여 사용.
+프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
 
 - `NEXT_PUBLIC_KAKAO_MAP_KEY` — Kakao Maps JavaScript API key (required for map component)
 
