@@ -41,7 +41,7 @@ export default function AboutPage() {
               안녕하세요, {CLINIC.name}입니다
             </h2>
             <p className="text-lg leading-relaxed text-gray-600">
-              {CLINIC.name}은 환자분 한 분 한 분의 구강 건강을 최우선으로
+              {CLINIC.name}는 환자분 한 분 한 분의 구강 건강을 최우선으로
               생각합니다. 꼭 필요한 진료만, 충분한 설명과 함께 정직하게
               진료하겠습니다.
             </p>
