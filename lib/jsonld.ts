@@ -1,7 +1,4 @@
-import { CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
-
-// TODO: 실제 도메인으로 교체
-const BASE_URL = "https://www.born2smile.co.kr";
+import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
 
 /**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
