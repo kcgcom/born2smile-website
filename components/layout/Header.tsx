@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Phone } from "lucide-react";
+import { CLINIC } from "@/lib/constants";
 
 const NAV_ITEMS = [
+  { label: "병원 소개", href: "/about" },
   { label: "진료 안내", href: "/treatments" },
-  { label: "의료진 소개", href: "/about" },
   { label: "블로그", href: "/blog" },
-  { label: "오시는 길", href: "/contact" },
+  { label: "예약/상담", href: "/contact" },
 ];
 
 export function Header() {
@@ -37,18 +38,13 @@ export function Header() {
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
             ? "bg-white/95 shadow-sm backdrop-blur-sm"
-            : "bg-white"
+            : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
-          <Link href="/" className="flex flex-col leading-tight">
-            <span className="text-lg font-bold tracking-tight text-gray-900">
-              Seoul Born2smile
-            </span>
-            <span className="text-xs tracking-wide text-gray-500">
-              Dental Clinic
-            </span>
+          <Link href="/" className="text-xl font-bold tracking-tight">
+            <span className="text-[var(--color-primary)]">{CLINIC.name}</span>
           </Link>
 
           {/* 데스크톱 네비게이션 */}
@@ -62,12 +58,14 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/contact"
-              className="inline-flex items-center rounded-full border border-[var(--color-primary)] px-6 py-2 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+            <a
+              href={CLINIC.phoneHref}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              예약하기
-            </Link>
+              <Phone size={16} aria-hidden="true" />
+              {CLINIC.phone}
+            </a>
           </nav>
 
           {/* 모바일 햄버거 버튼 */}
@@ -101,13 +99,14 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/contact"
-                className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-primary)] px-5 py-3 text-base font-medium text-[var(--color-primary)]"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <a
+                href={CLINIC.phoneHref}
+                className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+                aria-label={`전화 상담 ${CLINIC.phone}`}
               >
-                예약하기
-              </Link>
+                <Phone size={18} aria-hidden="true" />
+                전화 상담 {CLINIC.phone}
+              </a>
             </nav>
           </div>
         )}
