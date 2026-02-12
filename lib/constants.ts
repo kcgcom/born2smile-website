@@ -151,7 +151,7 @@ export const MAP = {
 // 사이트 URL
 // -------------------------------------------------------------
 // TODO: 실제 도메인으로 교체
-export const BASE_URL = "https://born2smile.co.kr";
+export const BASE_URL = "https://www.born2smile.co.kr";
 
 // -------------------------------------------------------------
 // SEO 메타데이터
