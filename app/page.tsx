@@ -1,156 +1,162 @@
 import Link from "next/link";
 import {
-  Phone,
   ArrowRight,
   Clock,
   Shield,
-  Heart,
-  Stethoscope,
 } from "lucide-react";
-import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
+import { CLINIC, HOURS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
+
+const FEATURED_TREATMENTS = [
+  {
+    icon: "implant",
+    title: "임플란트",
+    desc: "자연치아와 가장 유사한 인공치아로, 저작력과 심미성을 동시에 회복합니다.",
+    href: "/treatments/implant",
+  },
+  {
+    icon: "orthodontics",
+    title: "교정치료",
+    desc: "가지런한 치아와 건강한 교합을 위한 맞춤형 교정 치료를 제공합니다.",
+    href: "/treatments/orthodontics",
+  },
+  {
+    icon: "preventive",
+    title: "예방치료",
+    desc: "에어플로우 스케일링과 정기검진으로 치아 건강을 미리 지켜드립니다.",
+    href: "/treatments/scaling",
+  },
+];
+
+function TreatmentIcon({ type }: { type: string }) {
+  if (type === "implant") {
+    return (
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="8" fill="#EFF6FF" />
+        <path d="M20 10c-2.5 0-4.5 1.8-4.5 4v2c0 1.2.5 2.3 1.3 3.1L18 20.5v1.5h4v-1.5l1.2-1.4c.8-.8 1.3-1.9 1.3-3.1v-2c0-2.2-2-4-4.5-4z" fill="#2563EB" />
+        <path d="M18 22h4v2h-4zm.5 4h3l.5 4h-4l.5-4z" fill="#93C5FD" />
+      </svg>
+    );
+  }
+  if (type === "orthodontics") {
+    return (
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="8" fill="#EFF6FF" />
+        <rect x="12" y="16" width="5" height="7" rx="1.5" fill="#2563EB" />
+        <rect x="17.5" y="16" width="5" height="7" rx="1.5" fill="#2563EB" />
+        <rect x="23" y="16" width="5" height="7" rx="1.5" fill="#2563EB" />
+        <line x1="12" y1="19.5" x2="28" y2="19.5" stroke="#93C5FD" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="40" height="40" rx="8" fill="#EFF6FF" />
+      <path d="M20 12l7 4v6c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10v-6l7-4z" fill="#2563EB" />
+      <path d="M17.5 20l2 2 3.5-3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
     <>
       {/* ───────────── 히어로 섹션 ───────────── */}
-      <section className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <FadeIn delay={0.2}>
-            <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              김포한강신도시 장기동
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.4}>
-            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-              당신의 미소를
-              <br />
-              디자인합니다
-            </h1>
-          </FadeIn>
-          <FadeIn delay={0.6}>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
-              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
-              <br className="hidden md:block" />
-              자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.8}>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+      <section className="relative bg-white pt-24 md:pt-0">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 md:min-h-screen md:grid-cols-2 md:px-8">
+          {/* 텍스트 영역 */}
+          <div className="py-12 md:py-0">
+            <FadeIn delay={0.2}>
+              <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+                건강한 미소,
+                <br />
+                {CLINIC.name}
+              </h1>
+            </FadeIn>
+            <FadeIn delay={0.4}>
+              <p className="mb-8 max-w-md text-base leading-relaxed text-gray-600 md:text-lg">
+                서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
+                자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.6}>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-8 py-3.5 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
               >
-                예약하기
+                온라인 예약 바로가기
                 <ArrowRight size={18} />
               </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                <Phone size={18} />
-                {CLINIC.phone}
-              </a>
+            </FadeIn>
+          </div>
+
+          {/* 이미지 영역 */}
+          <FadeIn delay={0.4} direction="right">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100">
+              <div className="flex aspect-[4/3] items-center justify-center p-12 md:aspect-auto md:min-h-[480px]">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-blue-200/60">
+                    <Shield size={36} className="text-[var(--color-primary)]" />
+                  </div>
+                  <p className="text-sm text-gray-500">진료실 이미지 영역</p>
+                </div>
+              </div>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ───────────── 병원 소개 ───────────── */}
-      <section className="section-padding bg-white">
-        <div className="container-narrow text-center">
-          <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              About Us
-            </p>
-            <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              {CLINIC.name}를 소개합니다
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
-              환자 한 분 한 분의 구강 건강을 최우선으로 생각합니다.
-              <br />
-              꼭 필요한 진료만, 충분한 설명과 함께 정직하게 진료합니다.
-            </p>
-          </FadeIn>
-
-          <StaggerContainer className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                icon: Shield,
-                title: "신뢰",
-                desc: "서울대 출신 전문의의 정확한 진단과 치료 계획을 제공합니다.",
-              },
-              {
-                icon: Heart,
-                title: "정성",
-                desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
-              },
-              {
-                icon: Stethoscope,
-                title: "전문성",
-                desc: "국내외 학회 활동과 지속적인 연구로 최선의 치료를 제공합니다.",
-              },
-            ].map((item) => (
-              <StaggerItem key={item.title}>
-                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[var(--color-primary)]">
-                    <item.icon size={24} />
-                  </div>
-                  <h3 className="mb-2 text-xl font-bold text-gray-900">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-gray-600">
-                    {item.desc}
-                  </p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </div>
-      </section>
-
-      {/* ───────────── 진료 분야 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      {/* ───────────── 진료 안내 ───────────── */}
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              Treatments
+          <FadeIn className="mb-12">
+            <p className="mb-2 text-sm font-medium text-[var(--color-primary)]">
+              Treatment
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              진료 분야
+              진료 안내
             </h2>
           </FadeIn>
 
           <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {TREATMENTS.map((treatment) => (
-              <StaggerItem key={treatment.id}>
+            {FEATURED_TREATMENTS.map((treatment) => (
+              <StaggerItem key={treatment.title}>
                 <Link
                   href={treatment.href}
-                  className="group block rounded-2xl border border-gray-100 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
+                  className="group block rounded-2xl border border-gray-200 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
                 >
-                  <h3 className="mb-2 text-xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
-                    {treatment.name}
+                  <div className="mb-5">
+                    <TreatmentIcon type={treatment.icon} />
+                  </div>
+                  <h3 className="mb-2 text-lg font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                    {treatment.title}
                   </h3>
-                  <p className="mb-4 text-sm text-gray-600">
-                    {treatment.shortDesc}
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    {treatment.desc}
                   </p>
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
-                    자세히 보기
-                    <ArrowRight size={14} />
-                  </span>
                 </Link>
               </StaggerItem>
             ))}
           </StaggerContainer>
+
+          <FadeIn className="mt-8 text-center">
+            <Link
+              href="/treatments"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+            >
+              전체 진료 안내 보기
+              <ArrowRight size={14} />
+            </Link>
+          </FadeIn>
         </div>
       </section>
 
       {/* ───────────── 의료진 ───────────── */}
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+          <FadeIn className="mb-12">
+            <p className="mb-2 text-sm font-medium text-[var(--color-primary)]">
               Doctor
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -160,12 +166,12 @@ export default function Home() {
 
           {DOCTORS.map((doctor) => (
             <FadeIn key={doctor.id}>
-              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
                 <div className="grid md:grid-cols-2">
-                  {/* 사진 영역 (플레이스홀더) */}
-                  <div className="flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 p-12 md:min-h-[400px]">
+                  {/* 사진 영역 */}
+                  <div className="flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-12 md:min-h-[400px]">
                     <div className="text-center">
-                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-blue-200 text-4xl font-bold text-[var(--color-primary)]">
+                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-blue-200/60 text-4xl font-bold text-[var(--color-primary)]">
                         {doctor.name.charAt(0)}
                       </div>
                       <p className="text-sm text-gray-500">프로필 사진 영역</p>
@@ -219,10 +225,10 @@ export default function Home() {
       </section>
 
       {/* ───────────── 오시는 길 + 진료시간 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+          <FadeIn className="mb-12">
+            <p className="mb-2 text-sm font-medium text-[var(--color-primary)]">
               Location
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -313,7 +319,6 @@ export default function Home() {
                 href={CLINIC.phoneHref}
                 className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
               >
-                <Phone size={18} />
                 전화 상담
               </a>
             </div>
