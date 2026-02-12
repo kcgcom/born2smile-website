@@ -3,12 +3,12 @@ import { CLINIC, HOURS } from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-200 bg-gray-900 text-gray-300">
+    <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 병원 정보 */}
           <div>
-            <h3 className="mb-4 text-lg font-bold text-white">
+            <h3 className="mb-4 text-lg font-bold text-[var(--color-gold-light)]">
               {CLINIC.name}
             </h3>
             <ul className="space-y-2 text-sm">
@@ -39,7 +39,7 @@ export function Footer() {
                   <span className={item.open ? "text-white" : "text-gray-500"}>
                     {item.time}
                     {"note" in item && item.note && (
-                      <span className="ml-1 text-[var(--color-accent)]">
+                      <span className="ml-1 text-[var(--color-gold-light)]">
                         ({item.note})
                       </span>
                     )}

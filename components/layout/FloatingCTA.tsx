@@ -41,7 +41,7 @@ export function FloatingCTA() {
           <a
             href="/contact"
             aria-label="온라인 예약"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-primary)]"
+            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
             <CalendarCheck size={20} aria-hidden="true" />
             예약

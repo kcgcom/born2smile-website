@@ -79,13 +79,17 @@ apphosting.yaml         # Firebase App Hosting runtime config
 
 `app/globals.css`에 정의된 컬러 시스템:
 
+블루(전문성/신뢰) + 골드(따뜻함/프리미엄) 듀얼 컬러 시스템:
+
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-primary` | `#2563EB` | 주요 강조색 (버튼, 링크, 포커스) |
-| `--color-primary-dark` | `#1D4ED8` | hover 상태 |
-| `--color-primary-light` | `#3B82F6` | 밝은 강조 |
-| `--color-secondary` | `#0EA5E9` | 보조 강조색 |
-| `--color-accent` | `#F59E0B` | 액센트 (CTA, 배지) |
+| `--color-primary` | `#2563EB` | 블루 - 주요 강조색 (CTA 버튼, 링크, 폼 포커스) |
+| `--color-primary-dark` | `#1D4ED8` | 블루 hover 상태 |
+| `--color-primary-light` | `#3B82F6` | 밝은 블루 강조 |
+| `--color-secondary` | `#0EA5E9` | 보조 블루 |
+| `--color-gold` | `#C9962B` | 골드 - 따뜻한 액센트 (섹션 라벨, 의료진 타이틀, 배지) |
+| `--color-gold-dark` | `#A67B1E` | 골드 hover/진한 상태 |
+| `--color-gold-light` | `#D4B869` | 밝은 골드 |
 | `--background` | `#FAFBFC` | 페이지 배경 |
 | `--foreground` | `#111827` | 본문 텍스트 |
 | `--surface` | `#FFFFFF` | 카드/패널 배경 |

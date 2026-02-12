@@ -13,7 +13,7 @@ export default function TreatmentsPage() {
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
           Treatments
         </p>
         <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
