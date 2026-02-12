@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "seoul-born2smile",
     "public": "hosting-redirect",
     "redirects": [
       {
