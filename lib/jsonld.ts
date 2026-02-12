@@ -115,7 +115,7 @@ export function getFaqJsonLd(faq: { q: string; a: string }[]) {
 }
 
 /**
- * 빵부스러기(BreadcrumbList) JSON-LD
+ * 빵 부스러기(BreadcrumbList) JSON-LD
  */
 export function getBreadcrumbJsonLd(
   items: { name: string; href: string }[]
