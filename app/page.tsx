@@ -299,7 +299,7 @@ export default function Home() {
               지금 바로 상담 예약하세요
             </h2>
             <p className="mb-8 text-lg text-blue-100">
-              건강한 미소를 위한 첫 걸음, {CLINIC.name}가 함께합니다.
+              건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
