@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { KakaoMap } from "@/components/ui/KakaoMap";
+import { NaverMap } from "@/components/ui/NaverMap";
+import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export default function Home() {
   return (
@@ -65,7 +66,7 @@ export default function Home() {
               About Us
             </p>
             <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              {CLINIC.name}를 소개합니다
+              {CLINIC.name}를 소개합니다.
             </h2>
             <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
               환자 한 분 한 분의 구강 건강을 최우선으로 생각합니다.
@@ -232,9 +233,9 @@ export default function Home() {
           </FadeIn>
 
           <div className="grid gap-8 md:grid-cols-2">
-            {/* 카카오맵 */}
+            {/* 네이버 지도 */}
             <FadeIn direction="left">
-              <KakaoMap className="min-h-[300px]" />
+              <NaverMap className="min-h-[300px]" />
             </FadeIn>
 
             {/* 병원 정보 */}
@@ -301,7 +302,7 @@ export default function Home() {
               지금 바로 상담 예약하세요
             </h2>
             <p className="mb-8 text-lg text-blue-100">
-              건강한 미소를 위한 첫 걸음, {CLINIC.name}가 함께합니다.
+              건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link

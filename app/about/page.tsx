@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { KakaoMap } from "@/components/ui/KakaoMap";
+import { NaverMap } from "@/components/ui/NaverMap";
+import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export const metadata: Metadata = {
   title: "병원 소개",
@@ -36,20 +37,25 @@ export default function AboutPage() {
       {/* ───────────── 인사말 ───────────── */}
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <FadeIn className="mx-auto max-w-3xl text-center">
-            <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900">
-              안녕하세요, {CLINIC.name}입니다
-            </h2>
-            <p className="text-lg leading-relaxed text-gray-600">
-              {CLINIC.name}는 환자분 한 분 한 분의 구강 건강을 최우선으로
-              생각합니다. 꼭 필요한 진료만, 충분한 설명과 함께 정직하게
-              진료하겠습니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              자연치아를 최대한 보존하는 것을 원칙으로, 환자분께서 건강한 미소를
-              되찾으실 때까지 함께하겠습니다.
-            </p>
-          </FadeIn>
+          <div className="grid items-center gap-10 md:grid-cols-2">
+            <FadeIn direction="left">
+              <ClinicIllustration className="mx-auto w-full max-w-md drop-shadow-md" />
+            </FadeIn>
+            <FadeIn direction="right">
+              <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900">
+                안녕하세요, {CLINIC.name}입니다
+              </h2>
+              <p className="text-lg leading-relaxed text-gray-600">
+                {CLINIC.name}는 환자분 한 분 한 분의 구강 건강을 최우선으로
+                생각합니다. 꼭 필요한 진료만, 충분한 설명과 함께 정직하게
+                진료하겠습니다.
+              </p>
+              <p className="mt-4 text-lg leading-relaxed text-gray-600">
+                자연치아를 최대한 보존하는 것을 원칙으로, 환자분께서 건강한 미소를
+                되찾으실 때까지 함께하겠습니다.
+              </p>
+            </FadeIn>
+          </div>
         </div>
       </section>
 
@@ -243,8 +249,8 @@ export default function AboutPage() {
                 오시는 길
               </h2>
 
-              {/* 카카오맵 */}
-              <KakaoMap className="mb-6 aspect-[4/3]" />
+              {/* 네이버 지도 */}
+              <NaverMap className="mb-6 aspect-[4/3]" />
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">

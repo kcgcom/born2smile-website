@@ -43,8 +43,13 @@ export function Header() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            <span className="text-[var(--color-primary)]">{CLINIC.name}</span>
+          <Link href="/" className="flex flex-col">
+            <span className="text-xl font-bold tracking-tight text-[var(--color-primary)]">
+              {CLINIC.name}
+            </span>
+            <span className="text-[11px] font-medium tracking-wider text-gray-400">
+              Seoul Born2smile Dental Clinic
+            </span>
           </Link>
 
           {/* 데스크톱 네비게이션 */}
