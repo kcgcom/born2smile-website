@@ -5,13 +5,16 @@
    ============================================================= */
 
 :root {
-  /* 컬러 시스템 */
+  /* 컬러 시스템 - 블루 (전문성/신뢰) */
   --color-primary: #2563EB;
   --color-primary-dark: #1D4ED8;
   --color-primary-light: #3B82F6;
   --color-secondary: #0EA5E9;
-  --color-accent: #F59E0B;
-  --color-accent-dark: #D97706;
+
+  /* 컬러 시스템 - 골드 (따뜻함/프리미엄) */
+  --color-gold: #C9962B;
+  --color-gold-dark: #A67B1E;
+  --color-gold-light: #D4B869;
 
   --background: #FAFBFC;
   --foreground: #111827;
@@ -32,8 +35,9 @@
   --color-primary-dark: var(--color-primary-dark);
   --color-primary-light: var(--color-primary-light);
   --color-secondary: var(--color-secondary);
-  --color-accent: var(--color-accent);
-  --color-accent-dark: var(--color-accent-dark);
+  --color-gold: var(--color-gold);
+  --color-gold-dark: var(--color-gold-dark);
+  --color-gold-light: var(--color-gold-light);
   --font-sans: var(--font-pretendard);
   --font-serif: var(--font-noto-serif);
 }

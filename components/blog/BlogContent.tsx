@@ -60,7 +60,7 @@ export default function BlogContent() {
     구강관리: "bg-blue-100 text-blue-700",
     예방치료: "bg-green-100 text-green-700",
     치아상식: "bg-purple-100 text-purple-700",
-    생활습관: "bg-amber-100 text-amber-700",
+    생활습관: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
   };
 
   return (

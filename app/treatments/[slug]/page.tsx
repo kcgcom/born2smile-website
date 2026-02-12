@@ -136,7 +136,7 @@ export default async function TreatmentDetailPage({
                 key={adv}
                 className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm text-[var(--color-primary)]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0] text-sm text-[var(--color-gold)]">
                   ✓
                 </span>
                 <span className="text-sm font-medium text-gray-800">
@@ -182,14 +182,15 @@ export default async function TreatmentDetailPage({
 
       {/* CTA */}
 
-      <section className="bg-[var(--color-primary)] px-4 py-16 text-center text-white">
-        <h2 className="font-headline mb-4 text-2xl font-bold md:text-3xl">
+      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
+        <h2 className="font-headline relative mb-4 text-2xl font-bold md:text-3xl">
           {detail.name} 상담이 필요하신가요?
         </h2>
-        <p className="mb-8 text-blue-100">
+        <p className="relative mb-8 text-blue-100">
           {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
         </p>
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="relative flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
             href="/contact"
             className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"

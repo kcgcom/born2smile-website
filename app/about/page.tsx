@@ -26,7 +26,7 @@ export default function AboutPage() {
     <>
       {/* ───────────── 페이지 헤더 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
           About Us
         </p>
         <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -75,12 +75,12 @@ export default function AboutPage() {
             {/* 프로필 상단 */}
             <div className="mb-10 grid items-center gap-8 md:grid-cols-3">
               <div className="flex items-center justify-center">
-                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-50 text-6xl font-bold text-[var(--color-primary)]">
+                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] text-6xl font-bold text-[var(--color-gold-dark)]">
                   {doctor.name.charAt(0)}
                 </div>
               </div>
               <div className="text-center md:col-span-2 md:text-left">
-                <p className="text-sm font-medium text-[var(--color-primary)]">
+                <p className="text-sm font-medium text-[var(--color-gold)]">
                   {doctor.title}
                 </p>
                 <h3 className="mt-1 text-3xl font-bold text-gray-900">
@@ -116,7 +116,7 @@ export default function AboutPage() {
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Award
                     size={20}
-                    className="text-[var(--color-primary)]"
+                    className="text-[var(--color-gold)]"
                   />
                   자격 및 수료
                 </h4>
@@ -176,7 +176,7 @@ export default function AboutPage() {
       <section className="section-padding bg-white">
         <div className="container-narrow">
           <div className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Facility
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -206,7 +206,7 @@ export default function AboutPage() {
             {/* 진료시간 */}
             <div>
               <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
-                <Clock size={24} className="text-[var(--color-primary)]" />
+                <Clock size={24} className="text-[var(--color-gold)]" />
                 진료시간
               </h2>
               <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
@@ -225,7 +225,7 @@ export default function AboutPage() {
                         >
                           {item.time}
                           {"note" in item && item.note && (
-                            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-xs text-[var(--color-gold-dark)]">
                               {item.note}
                             </span>
                           )}

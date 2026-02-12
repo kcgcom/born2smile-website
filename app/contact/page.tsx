@@ -18,7 +18,7 @@ export default function ContactPage() {
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
           Contact
         </p>
         <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -180,7 +180,7 @@ export default function ContactPage() {
                     <MessageCircle
                       size={20}
                       aria-hidden="true"
-                      className="text-[var(--color-primary)]"
+                      className="text-[var(--color-gold)]"
                     />
                     <div>
                       <div className="text-xs text-gray-400">카카오톡 상담</div>
@@ -196,7 +196,7 @@ export default function ContactPage() {
                   <Clock
                     size={18}
                     aria-hidden="true"
-                    className="text-[var(--color-primary)]"
+                    className="text-[var(--color-gold)]"
                   />
                   진료시간
                 </h3>

@@ -17,46 +17,43 @@ export default function Home() {
     <>
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-2 lg:gap-12">
-          {/* 텍스트 영역 */}
-          <div className="text-center lg:text-left">
-            <FadeIn delay={0.4}>
-              <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-                당신의 미소를
-                <br />
-                디자인합니다
-              </h1>
-            </FadeIn>
-            <FadeIn delay={0.6}>
-              <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl lg:mx-0">
-                서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
-                <br className="hidden md:block" />
-                자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.8}>
-              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-                >
-                  예약하기
-                  <ArrowRight size={18} />
-                </Link>
-                <a
-                  href={CLINIC.phoneHref}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                >
-                  <Phone size={18} />
-                  {CLINIC.phone}
-                </a>
-              </div>
-            </FadeIn>
-          </div>
-
-          {/* 일러스트 영역 */}
-          <FadeIn delay={0.6} direction="right" className="hidden lg:block">
-            <ClinicIllustration className="mx-auto w-full max-w-lg drop-shadow-lg" />
+        <div className="mx-auto max-w-4xl px-4 text-center">
+          <FadeIn delay={0.2}>
+            <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              김포한강신도시 장기동
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.4}>
+            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+              당신의 미소를
+              <br />
+              디자인합니다
+            </h1>
+          </FadeIn>
+          <FadeIn delay={0.6}>
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
+              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
+              <br className="hidden md:block" />
+              자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.8}>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              >
+                예약하기
+                <ArrowRight size={18} />
+              </Link>
+              <a
+                href={CLINIC.phoneHref}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                <Phone size={18} />
+                {CLINIC.phone}
+              </a>
+            </div>
           </FadeIn>
         </div>
       </section>
@@ -89,6 +86,7 @@ export default function Home() {
                 icon: Heart,
                 title: "정성",
                 desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
+                gold: true,
               },
               {
                 icon: Stethoscope,
@@ -98,7 +96,7 @@ export default function Home() {
             ].map((item) => (
               <StaggerItem key={item.title}>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-[var(--color-primary)]">
+                  <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full ${"gold" in item && item.gold ? "bg-[#FDF3E0] text-[var(--color-gold)]" : "bg-blue-100 text-[var(--color-primary)]"}`}>
                     <item.icon size={24} />
                   </div>
                   <h3 className="mb-2 text-xl font-bold text-gray-900">
@@ -118,7 +116,7 @@ export default function Home() {
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Treatments
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -167,9 +165,9 @@ export default function Home() {
               <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
                 <div className="grid md:grid-cols-2">
                   {/* 사진 영역 (플레이스홀더) */}
-                  <div className="flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 p-12 md:min-h-[400px]">
+                  <div className="flex items-center justify-center bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] p-12 md:min-h-[400px]">
                     <div className="text-center">
-                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-blue-200 text-4xl font-bold text-[var(--color-primary)]">
+                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-[#F5E6C8] text-4xl font-bold text-[var(--color-gold-dark)]">
                         {doctor.name.charAt(0)}
                       </div>
                       <p className="text-sm text-gray-500">프로필 사진 영역</p>
@@ -178,7 +176,7 @@ export default function Home() {
 
                   {/* 정보 영역 */}
                   <div className="p-8 md:p-10">
-                    <div className="mb-1 text-sm font-medium text-[var(--color-primary)]">
+                    <div className="mb-1 text-sm font-medium text-[var(--color-gold)]">
                       {doctor.title}
                     </div>
                     <h3 className="mb-1 text-2xl font-bold text-gray-900">
@@ -226,7 +224,7 @@ export default function Home() {
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Location
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -277,7 +275,7 @@ export default function Home() {
                         >
                           {item.time}
                           {"note" in item && item.note && (
-                            <span className="ml-1 text-xs text-[var(--color-accent)]">
+                            <span className="ml-1 text-xs text-[var(--color-gold)]">
                               {item.note}
                             </span>
                           )}
@@ -296,9 +294,10 @@ export default function Home() {
       </section>
 
       {/* ───────────── CTA 배너 ───────────── */}
-      <section className="bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
+      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
         <FadeIn>
-          <div className="mx-auto max-w-2xl">
+          <div className="relative mx-auto max-w-2xl">
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
               지금 바로 상담 예약하세요
             </h2>
@@ -324,6 +323,9 @@ export default function Home() {
           </div>
         </FadeIn>
       </section>
+
+      {/* ───────────── 골드 구분선 ───────────── */}
+      <div className="h-1 bg-gradient-to-r from-[var(--color-gold-light)] via-[var(--color-gold)] to-[var(--color-gold-light)]" />
 
       {/* 모바일 하단 바 공간 확보 */}
       <div className="h-16 md:hidden" />
