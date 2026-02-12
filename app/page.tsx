@@ -10,49 +10,58 @@ import {
 import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
+import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export default function Home() {
   return (
     <>
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <FadeIn delay={0.2}>
-            <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              김포한강신도시 장기동
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.4}>
-            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-              당신의 미소를
-              <br />
-              디자인합니다
-            </h1>
-          </FadeIn>
-          <FadeIn delay={0.6}>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
-              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
-              <br className="hidden md:block" />
-              자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.8}>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                예약하기
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                <Phone size={18} />
-                {CLINIC.phone}
-              </a>
-            </div>
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-2 lg:gap-12">
+          {/* 텍스트 영역 */}
+          <div className="text-center lg:text-left">
+            <FadeIn delay={0.2}>
+              <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+                김포한강신도시 장기동
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.4}>
+              <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+                당신의 미소를
+                <br />
+                디자인합니다
+              </h1>
+            </FadeIn>
+            <FadeIn delay={0.6}>
+              <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl lg:mx-0">
+                서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
+                <br className="hidden md:block" />
+                자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.8}>
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                >
+                  예약하기
+                  <ArrowRight size={18} />
+                </Link>
+                <a
+                  href={CLINIC.phoneHref}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                >
+                  <Phone size={18} />
+                  {CLINIC.phone}
+                </a>
+              </div>
+            </FadeIn>
+          </div>
+
+          {/* 일러스트 영역 */}
+          <FadeIn delay={0.6} direction="right" className="hidden lg:block">
+            <ClinicIllustration className="mx-auto w-full max-w-lg drop-shadow-lg" />
           </FadeIn>
         </div>
       </section>
