@@ -78,61 +78,83 @@ export function NaverMap({ className = "" }: NaverMapProps) {
     };
   }, [loaded]);
 
-  // 지도 초기화
+  // 지도 초기화 + 인증 실패 감지
   useEffect(() => {
-    if (!loaded || !mapRef.current) return;
+    if (!loaded || error || !mapRef.current) return;
 
-    const { naver } = window;
-    const fallbackCoords = new naver.maps.LatLng(MAP.lat, MAP.lng);
+    const container = mapRef.current;
 
-    const map = new naver.maps.Map(mapRef.current!, {
-      center: fallbackCoords,
-      zoom: MAP.zoomLevel,
-      zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT },
+    // Naver Maps SDK 인증 실패 시 에러 오버레이를 감지하여 fallback UI 표시
+    const observer = new MutationObserver(() => {
+      if (container.textContent?.includes("인증이 실패")) {
+        setError(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
     });
 
-    const infoContent = `<div style="padding:8px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
+    try {
+      const { naver } = window;
+      const fallbackCoords = new naver.maps.LatLng(MAP.lat, MAP.lng);
 
-    const createMarker = (position: unknown) => {
-      const marker = new naver.maps.Marker({ map, position });
-      const infoWindow = new naver.maps.InfoWindow({
-        content: infoContent,
-        borderWidth: 1,
-        borderColor: "#e5e7eb",
-        backgroundColor: "#fff",
-        anchorSize: new naver.maps.Size(10, 10),
-        anchorSkew: true,
+      const map = new naver.maps.Map(container, {
+        center: fallbackCoords,
+        zoom: MAP.zoomLevel,
+        zoomControl: true,
+        zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT },
       });
-      infoWindow.open(map, marker);
-    };
 
-    // Geocoder submodule 로드 완료 후 주소 검색
-    if (naver.maps.Service) {
-      naver.maps.Service.geocode(
-        { query: CLINIC.address },
-        (status, response) => {
-          if (
-            status === naver.maps.Service.Status.OK &&
-            response.v2.addresses.length > 0
-          ) {
-            const addr = response.v2.addresses[0];
-            const position = new naver.maps.LatLng(
-              parseFloat(addr.y),
-              parseFloat(addr.x)
-            );
-            map.setCenter(position);
-            createMarker(position);
-          } else {
-            createMarker(fallbackCoords);
+      const infoContent = `<div style="padding:8px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
+
+      const createMarker = (position: unknown) => {
+        const marker = new naver.maps.Marker({ map, position });
+        const infoWindow = new naver.maps.InfoWindow({
+          content: infoContent,
+          borderWidth: 1,
+          borderColor: "#e5e7eb",
+          backgroundColor: "#fff",
+          anchorSize: new naver.maps.Size(10, 10),
+          anchorSkew: true,
+        });
+        infoWindow.open(map, marker);
+      };
+
+      // Geocoder submodule 로드 완료 후 주소 검색
+      if (naver.maps.Service) {
+        naver.maps.Service.geocode(
+          { query: CLINIC.address },
+          (status, response) => {
+            if (
+              status === naver.maps.Service.Status.OK &&
+              response.v2.addresses.length > 0
+            ) {
+              const addr = response.v2.addresses[0];
+              const position = new naver.maps.LatLng(
+                parseFloat(addr.y),
+                parseFloat(addr.x)
+              );
+              map.setCenter(position);
+              createMarker(position);
+            } else {
+              createMarker(fallbackCoords);
+            }
           }
-        }
-      );
-    } else {
-      // Service 모듈 미로드 시 fallback 좌표 사용
-      createMarker(fallbackCoords);
+        );
+      } else {
+        // Service 모듈 미로드 시 fallback 좌표 사용
+        createMarker(fallbackCoords);
+      }
+    } catch {
+      queueMicrotask(() => setError(true));
+      observer.disconnect();
     }
-  }, [loaded]);
+
+    return () => observer.disconnect();
+  }, [loaded, error]);
 
   if (error) {
     return (
