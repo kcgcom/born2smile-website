@@ -9,5 +9,5 @@ runConfig:
   memoryMiB: 512
 
 env:
-  - variable: NEXT_PUBLIC_KAKAO_MAP_KEY
-    secret: kakaoMapKey
+  - variable: NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+    secret: naverMapClientId

@@ -29,10 +29,10 @@ export function FloatingCTA() {
             상담
           </a>
           <a
-            href={`https://map.kakao.com/link/to/${CLINIC.name},${CLINIC.address}`}
+            href={`https://map.naver.com/v5/search/${encodeURIComponent(CLINIC.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="오시는 길 - 카카오맵"
+            aria-label="오시는 길 - 네이버 지도"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
             <MapPin size={20} aria-hidden="true" />
