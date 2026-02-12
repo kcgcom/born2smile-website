@@ -20,11 +20,6 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 lg:grid-cols-2 lg:gap-12">
           {/* 텍스트 영역 */}
           <div className="text-center lg:text-left">
-            <FadeIn delay={0.2}>
-              <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-                김포한강신도시 장기동
-              </p>
-            </FadeIn>
             <FadeIn delay={0.4}>
               <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
                 당신의 미소를
