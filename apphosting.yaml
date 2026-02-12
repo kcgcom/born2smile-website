@@ -11,3 +11,6 @@ runConfig:
 env:
   - variable: NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
     secret: naverMapClientId
+    availability:
+      - BUILD
+      - RUNTIME
