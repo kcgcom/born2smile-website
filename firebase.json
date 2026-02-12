@@ -1,3 +1,14 @@
 {
+  "hosting": {
+    "site": "seoul-born2smile",
+    "public": "hosting-redirect",
+    "redirects": [
+      {
+        "regex": "/(.*)",
+        "destination": "https://web-main--seoul-born2smile.asia-east1.hosted.app/:1",
+        "type": 301
+      }
+    ]
+  },
   "apphosting": {}
 }

@@ -47,7 +47,7 @@ export function Header() {
             <span className="text-xl font-bold tracking-tight text-[var(--color-primary)]">
               {CLINIC.name}
             </span>
-            <span className="text-[10px] font-medium tracking-wide text-gray-500">
+            <span className="text-[11px] font-medium tracking-wider text-gray-400">
               Seoul Born2smile Dental Clinic
             </span>
           </Link>
