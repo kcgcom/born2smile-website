@@ -1,87 +1,34 @@
-import Link from "next/link";
-import { CLINIC, HOURS } from "@/lib/constants";
+import { CLINIC } from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-200 bg-gray-900 text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-          {/* 병원 정보 */}
+    <footer className="border-t border-gray-800 bg-gray-900 text-gray-400">
+      <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
+        <div className="flex flex-col items-center gap-4 text-center md:flex-row md:justify-between md:text-left">
+          {/* 병원명 */}
           <div>
-            <h3 className="mb-4 text-lg font-bold text-white">
-              {CLINIC.name}
+            <h3 className="text-base font-bold text-white">
+              Seoul Born2smile Dental Clinic
             </h3>
-            <ul className="space-y-2 text-sm">
-              <li>{CLINIC.address}</li>
-              <li>
-                대표전화:{" "}
-                <a
-                  href={CLINIC.phoneHref}
-                  className="text-white hover:underline"
-                >
-                  {CLINIC.phone}
-                </a>
-              </li>
-              <li>대표자: {CLINIC.representative}</li>
-              {CLINIC.businessNumber !== "000-00-00000" && (
-                <li>사업자등록번호: {CLINIC.businessNumber}</li>
-              )}
-            </ul>
           </div>
 
-          {/* 진료시간 */}
-          <div>
-            <h3 className="mb-4 text-lg font-bold text-white">진료시간</h3>
-            <ul className="space-y-1.5 text-sm">
-              {HOURS.schedule.map((item) => (
-                <li key={item.day} className="flex justify-between">
-                  <span>{item.day}</span>
-                  <span className={item.open ? "text-white" : "text-gray-500"}>
-                    {item.time}
-                    {"note" in item && item.note && (
-                      <span className="ml-1 text-[var(--color-accent)]">
-                        ({item.note})
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-              <li className="mt-2 border-t border-gray-700 pt-2">
-                점심시간: {HOURS.lunchTime}
-              </li>
-            </ul>
-          </div>
-
-          {/* 바로가기 */}
-          <div>
-            <h3 className="mb-4 text-lg font-bold text-white">바로가기</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="hover:text-white">
-                  병원 소개
-                </Link>
-              </li>
-              <li>
-                <Link href="/treatments" className="hover:text-white">
-                  진료 안내
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white">
-                  예약/상담
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-white">
-                  블로그
-                </Link>
-              </li>
-            </ul>
+          {/* 주소 및 연락처 */}
+          <div className="text-sm">
+            <p>{CLINIC.address}</p>
+            <p className="mt-1">
+              대표전화:{" "}
+              <a
+                href={CLINIC.phoneHref}
+                className="text-gray-300 hover:text-white"
+              >
+                {CLINIC.phone}
+              </a>
+            </p>
           </div>
         </div>
 
-        {/* 하단 카피라이트 */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-xs text-gray-500">
+        {/* 카피라이트 */}
+        <div className="mt-8 border-t border-gray-800 pt-6 text-center text-xs text-gray-500">
           <p>
             &copy; {new Date().getFullYear()} {CLINIC.name}. All rights
             reserved.
