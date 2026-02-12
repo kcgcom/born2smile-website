@@ -10,7 +10,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Styling**: Tailwind CSS 4, CSS custom properties in `app/globals.css`
 - **Animation**: Framer Motion (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
-- **Maps**: Kakao Maps SDK (async loaded)
+- **Maps**: Naver Maps SDK (async loaded)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -18,7 +18,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 
 ```bash
 pnpm install
-cp .env.example .env.local   # NEXT_PUBLIC_KAKAO_MAP_KEY 입력
+cp .env.example .env.local   # NEXT_PUBLIC_NAVER_MAP_CLIENT_ID 입력
 pnpm dev                      # http://localhost:3000
 ```
 
@@ -46,7 +46,7 @@ app/                    # Next.js App Router pages
   sitemap.ts            # Sitemap generation
 components/
   layout/               # Header, Footer, FloatingCTA
-  ui/                   # Motion (animations), KakaoMap
+  ui/                   # Motion (animations), NaverMap
 lib/
   constants.ts          # Single source of truth: clinic info, hours, treatments, navigation
   treatments.ts         # Detailed treatment descriptions and FAQ data
@@ -61,7 +61,7 @@ apphosting.yaml         # Firebase App Hosting runtime config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, Contact form, Motion wrappers.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, NaverMap, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Font System
@@ -119,7 +119,7 @@ apphosting.yaml         # Firebase App Hosting runtime config
 ## Code Conventions
 
 - 2-space indentation
-- Components: PascalCase (`Header.tsx`, `KakaoMap.tsx`)
+- Components: PascalCase (`Header.tsx`, `NaverMap.tsx`)
 - Constants: UPPER_SNAKE_CASE (`NAV_ITEMS`, `CLINIC`)
 - Variables/functions: camelCase
 - CSS variables: `--kebab-case`
@@ -160,7 +160,7 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 로컬 개발: `.env.example` → `.env.local`로 복사하여 사용.
 프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
 
-- `NEXT_PUBLIC_KAKAO_MAP_KEY` — Kakao Maps JavaScript API key (required for map component)
+- `NEXT_PUBLIC_NAVER_MAP_CLIENT_ID` — Naver Maps Client ID (required for map component)
 
 ## No Test Suite
 
