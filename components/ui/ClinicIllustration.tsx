@@ -11,7 +11,7 @@ interface ClinicIllustrationProps {
 export function ClinicIllustration({ className }: ClinicIllustrationProps) {
   return (
     <Image
-      src="/images/clinic-illustration.png"
+      src="/images/clinic-illustration.jpg"
       alt="따뜻한 분위기의 치과 진료실 일러스트"
       width={600}
       height={480}
