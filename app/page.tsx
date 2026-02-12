@@ -69,7 +69,7 @@ export default function Home() {
               About Us
             </p>
             <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              {CLINIC.name}를 소개합니다
+              {CLINIC.name}를 소개합니다.
             </h2>
             <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
               환자 한 분 한 분의 구강 건강을 최우선으로 생각합니다.
