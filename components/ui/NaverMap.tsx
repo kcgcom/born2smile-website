@@ -53,7 +53,11 @@ interface NaverMapProps {
   className?: string;
 }
 
-const hasKey = !!process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
+// Cloud Secret Manager에서 주입된 값에 공백/줄바꿈이 포함될 수 있으므로 trim 처리
+const NAVER_CLIENT_ID = (
+  process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID ?? ""
+).trim();
+const hasKey = !!NAVER_CLIENT_ID;
 
 export function NaverMap({ className = "" }: NaverMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -64,10 +68,10 @@ export function NaverMap({ className = "" }: NaverMapProps) {
 
   // SDK 스크립트 로드
   useEffect(() => {
-    if (!hasKey || loaded) return;
+    if (!NAVER_CLIENT_ID || loaded) return;
 
     const script = document.createElement("script");
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}&submodules=geocoder`;
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}&submodules=geocoder`;
     script.async = true;
     script.onload = () => setLoaded(true);
     script.onerror = () => setError(true);
