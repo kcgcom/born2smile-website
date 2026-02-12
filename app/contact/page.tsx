@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Phone, MessageCircle, MapPin, Clock, Send } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
-import { KakaoMap } from "@/components/ui/KakaoMap";
+import { NaverMap } from "@/components/ui/NaverMap";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -230,7 +230,7 @@ export default function ContactPage() {
                   />
                   오시는 길
                 </h3>
-                <KakaoMap className="mb-3 aspect-video" />
+                <NaverMap className="mb-3 aspect-video" />
                 <p className="text-sm text-gray-600">{CLINIC.address}</p>
               </div>
             </FadeIn>
