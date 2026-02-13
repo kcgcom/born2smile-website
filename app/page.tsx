@@ -43,7 +43,7 @@ export default function Home() {
                 href="/contact"
                 className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
               >
-                예약하기
+                상담 문의
                 <ArrowRight size={18} />
               </Link>
               <a
@@ -299,7 +299,7 @@ export default function Home() {
         <FadeIn>
           <div className="relative mx-auto max-w-2xl">
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              지금 바로 상담 예약하세요
+              지금 바로 상담하세요
             </h2>
             <p className="mb-8 text-lg text-blue-100">
               건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
@@ -309,7 +309,7 @@ export default function Home() {
                 href="/contact"
                 className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
               >
-                온라인 예약
+                상담 문의
                 <ArrowRight size={18} />
               </Link>
               <a

@@ -80,7 +80,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
           level: 4, // 카카오맵 level 4 — 주변 도로/건물까지 표시
         });
 
-        const infoContent = `<div style="padding:8px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
+        const infoContent = `<div style="padding:4px 8px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
 
         const createMarker = (position: unknown) => {
           const marker = new kakao.maps.Marker({ map, position });

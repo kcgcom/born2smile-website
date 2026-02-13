@@ -195,7 +195,7 @@ export default async function TreatmentDetailPage({
             href="/contact"
             className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
           >
-            온라인 예약
+            상담 문의
             <ArrowRight size={18} />
           </Link>
           <a
