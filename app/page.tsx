@@ -10,7 +10,6 @@ import {
 import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { NaverMap } from "@/components/ui/NaverMap";
-import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export default function Home() {
   return (
