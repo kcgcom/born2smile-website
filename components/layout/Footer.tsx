@@ -33,14 +33,16 @@ export function Footer() {
             <ul className="space-y-1.5 text-sm">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
-                  <span>{item.day}</span>
-                  <span className={item.open ? "text-white" : "text-gray-500"}>
-                    {item.time}
+                  <span>
+                    {item.day}
                     {"note" in item && item.note && (
                       <span className="ml-1 text-[var(--color-gold-light)]">
                         ({item.note})
                       </span>
                     )}
+                  </span>
+                  <span className={item.open ? "text-white" : "text-gray-500"}>
+                    {item.time}
                   </span>
                 </li>
               ))}
