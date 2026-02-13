@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { NaverMap } from "@/components/ui/NaverMap";
+import { KakaoMap } from "@/components/ui/KakaoMap";
 import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export const metadata: Metadata = {
@@ -248,8 +248,8 @@ export default function AboutPage() {
                 오시는 길
               </h2>
 
-              {/* 네이버 지도 */}
-              <NaverMap className="mb-6 aspect-[4/3]" />
+              {/* 카카오맵 */}
+              <KakaoMap className="mb-6 aspect-[4/3]" />
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">

@@ -29,10 +29,10 @@ export function FloatingCTA() {
             상담
           </a>
           <a
-            href={`https://map.naver.com/v5/search/${encodeURIComponent(CLINIC.address)}`}
+            href={`https://map.kakao.com/link/search/${encodeURIComponent(CLINIC.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="오시는 길 - 네이버 지도"
+            aria-label="오시는 길 - 카카오맵"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
             <MapPin size={20} aria-hidden="true" />
@@ -40,11 +40,11 @@ export function FloatingCTA() {
           </a>
           <a
             href="/contact"
-            aria-label="상담 안내"
+            aria-label="상담 문의"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
-            <Info size={20} aria-hidden="true" />
-            상담 안내
+            <CalendarCheck size={20} aria-hidden="true" />
+            문의
           </a>
         </div>
       </nav>

@@ -191,6 +191,13 @@ export default async function TreatmentDetailPage({
           {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
         </p>
         <div className="relative flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Link
+            href="/contact"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
+          >
+            상담 문의
+            <ArrowRight size={18} />
+          </Link>
           <a
             href={CLINIC.phoneHref}
             className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"

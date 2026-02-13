@@ -3,7 +3,7 @@
 import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
 import { CLINIC, HOURS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
-import { NaverMap } from "@/components/ui/NaverMap";
+import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function ContactPage() {
   return (

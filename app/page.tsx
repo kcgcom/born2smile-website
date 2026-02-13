@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { CLINIC, HOURS, TREATMENTS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { NaverMap } from "@/components/ui/NaverMap";
+import { KakaoMap } from "@/components/ui/KakaoMap";
+import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 
 export default function Home() {
   return (
@@ -19,7 +20,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl px-4 text-center">
           <FadeIn delay={0.2}>
             <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-              김포한강신도시 장기동
+              우리동네 좋은치과
             </p>
           </FadeIn>
           <FadeIn delay={0.4}>
@@ -31,13 +32,20 @@ export default function Home() {
           </FadeIn>
           <FadeIn delay={0.6}>
             <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
-              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다.
+              서울대 출신의 전문의가 정성을 다해 진료합니다.
               <br className="hidden md:block" />
-              자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
+              자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
           </FadeIn>
           <FadeIn delay={0.8}>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              >
+                상담 문의
+                <ArrowRight size={18} />
+              </Link>
               <a
                 href={CLINIC.phoneHref}
                 className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
@@ -231,10 +239,10 @@ export default function Home() {
             </h2>
           </FadeIn>
 
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* 네이버 지도 */}
-            <FadeIn direction="left">
-              <NaverMap className="min-h-[300px]" />
+          <div className="grid items-stretch gap-8 md:grid-cols-2">
+            {/* 카카오맵 */}
+            <FadeIn direction="left" className="flex">
+              <KakaoMap className="min-h-[300px] w-full flex-1" />
             </FadeIn>
 
             {/* 병원 정보 */}
@@ -258,14 +266,19 @@ export default function Home() {
                     <Clock size={18} className="mr-2 inline-block" />
                     진료시간
                   </h3>
-                  <ul className="space-y-2 text-sm">
+                  <ul className="max-w-xs space-y-2 text-sm">
                     {HOURS.schedule.map((item) => (
                       <li
                         key={item.day}
-                        className="flex justify-between border-b border-gray-100 pb-2"
+                        className="flex items-center justify-between border-b border-gray-100 pb-2"
                       >
-                        <span className="font-medium text-gray-700">
+                        <span className="flex items-center gap-1.5 font-medium text-gray-700">
                           {item.day}
+                          {"note" in item && item.note && (
+                            <span className="rounded-full bg-[var(--color-gold)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-gold)]">
+                              {item.note}
+                            </span>
+                          )}
                         </span>
                         <span
                           className={
@@ -273,11 +286,6 @@ export default function Home() {
                           }
                         >
                           {item.time}
-                          {"note" in item && item.note && (
-                            <span className="ml-1 text-xs text-[var(--color-gold)]">
-                              {item.note}
-                            </span>
-                          )}
                         </span>
                       </li>
                     ))}
@@ -298,12 +306,19 @@ export default function Home() {
         <FadeIn>
           <div className="relative mx-auto max-w-2xl">
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              지금 바로 전화 상담하세요
+              지금 바로 상담하세요
             </h2>
             <p className="mb-8 text-lg text-blue-100">
               건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
+              >
+                상담 문의
+                <ArrowRight size={18} />
+              </Link>
               <a
                 href={CLINIC.phoneHref}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
