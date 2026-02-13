@@ -1,5 +1,5 @@
 import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
-import type { BlogPost } from "./blog-posts";
+import type { BlogPost } from "./blog/types";
 
 /**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)

@@ -3,13 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone, Clock } from "lucide-react";
 import { CLINIC, BASE_URL } from "@/lib/constants";
-import { BLOG_POSTS } from "@/lib/blog-posts";
+import {
+  BLOG_POSTS_META,
+  getPostBySlug,
+  categoryColors,
+} from "@/lib/blog";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 
 export function generateStaticParams() {
-  return BLOG_POSTS.map((post) => ({ slug: post.slug }));
+  return BLOG_POSTS_META.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
@@ -18,7 +22,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = BLOG_POSTS.find((p) => p.slug === slug);
+  const post = await getPostBySlug(slug);
   if (!post) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
@@ -36,22 +40,13 @@ export async function generateMetadata({
   };
 }
 
-const categoryColors: Record<string, string> = {
-  "예방·구강관리": "bg-blue-100 text-blue-700",
-  보존치료: "bg-green-100 text-green-700",
-  보철치료: "bg-purple-100 text-purple-700",
-  임플란트: "bg-rose-100 text-rose-700",
-  교정치료: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
-  구강건강상식: "bg-teal-100 text-teal-700",
-};
-
 export default async function BlogPostPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = BLOG_POSTS.find((p) => p.slug === slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
   const formatDate = (dateStr: string) => {
@@ -60,7 +55,7 @@ export default async function BlogPostPage({
   };
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
-  const relatedPosts = BLOG_POSTS.filter(
+  const relatedPosts = BLOG_POSTS_META.filter(
     (p) => p.category === post.category && p.id !== post.id
   ).slice(0, 3);
 
