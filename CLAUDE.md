@@ -44,26 +44,29 @@ app/                          # Next.js App Router pages
   page.tsx                    # Homepage (hero, values, treatments, doctor, map, CTA)
   globals.css                 # Design tokens, @theme inline, utility classes
   robots.ts                   # robots.txt generation (force-static)
-  sitemap.ts                  # Sitemap XML generation (force-static)
+  sitemap.ts                  # Sitemap XML generation (force-static, includes blog posts)
   about/page.tsx              # Clinic info, doctor bio, facility, hours
   treatments/
     page.tsx                  # Treatment listing (6 cards)
     [slug]/page.tsx           # Individual treatment detail (generateStaticParams)
-  blog/page.tsx               # Blog hub (delegates to BlogContent)
+  blog/
+    page.tsx                  # Blog hub (delegates to BlogContent)
+    [slug]/page.tsx           # Individual blog post detail (generateStaticParams)
   contact/
     layout.tsx                # Contact layout wrapper with metadata
     page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
 components/
   blog/
     BlogContent.tsx           # Blog listing/display component ("use client")
+    BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
-  blog-posts.ts              # Blog post data (10 posts) and categories
+  blog-posts.ts              # Blog post data (30 posts) and categories
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
-  jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, breadcrumb
+  jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -81,7 +84,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, Contact form, Motion wrappers.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -93,6 +96,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (blog data in `lib/blog-posts.ts`) |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 30 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -147,7 +151,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 ### 블로그 포스트 추가
 
 1. `lib/blog-posts.ts` → `BLOG_POSTS` 배열에 항목 추가 (`BlogPost` 인터페이스 준수)
-2. 카테고리는 `"구강관리" | "예방치료" | "치아상식" | "생활습관"` 중 선택
+2. 카테고리는 `"구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리"` 중 선택
 3. 새 카테고리 추가 시 `BLOG_CATEGORIES` 배열과 `BlogPost` 타입도 함께 수정
 
 ### 병원 정보 수정
@@ -165,11 +169,12 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### JSON-LD 구조화 데이터
 
-`lib/jsonld.ts`에서 4종의 JSON-LD 스키마 생성:
+`lib/jsonld.ts`에서 5종의 JSON-LD 스키마 생성:
 
 - `getClinicJsonLd()` — Dentist + LocalBusiness (홈, 소개 페이지)
 - `getTreatmentJsonLd(id)` — MedicalWebPage (진료 상세 페이지)
 - `getFaqJsonLd(faq)` — FAQPage (FAQ가 있는 진료 상세 페이지)
+- `getBlogPostJsonLd(post)` — BlogPosting (블로그 상세 페이지)
 - `getBreadcrumbJsonLd(items)` — BreadcrumbList (중첩 페이지)
 
 ## Code Conventions
