@@ -326,13 +326,6 @@ export default function Home() {
                 <Phone size={18} />
                 전화 상담 {CLINIC.phone}
               </a>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
-              >
-                상담 안내
-                <ArrowRight size={18} />
-              </Link>
             </div>
           </div>
         </FadeIn>
