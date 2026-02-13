@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Building2, BookOpen, MapPin } from "lucide-react";
+import { Phone, Building2, BookOpen, Home } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
@@ -13,14 +13,14 @@ export function FloatingCTA() {
         aria-label="빠른 메뉴"
       >
         <div className="grid grid-cols-4">
-          <a
-            href={CLINIC.phoneHref}
-            aria-label="전화 상담"
+          <Link
+            href="/#hero"
+            aria-label="홈"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
-            <Phone size={20} aria-hidden="true" />
-            전화
-          </a>
+            <Home size={20} aria-hidden="true" />
+            홈
+          </Link>
           <Link
             href="/about"
             aria-label="병원소개"
@@ -39,11 +39,11 @@ export function FloatingCTA() {
           </Link>
           <Link
             href="/contact"
-            aria-label="오시는 길"
+            aria-label="상담안내"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
-            <MapPin size={20} aria-hidden="true" />
-            오시는 길
+            <Phone size={20} aria-hidden="true" />
+            상담안내
           </Link>
         </div>
       </nav>
