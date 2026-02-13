@@ -233,7 +233,7 @@ export default function Home() {
           </FadeIn>
 
           <div className="grid gap-8 md:grid-cols-2">
-            {/* 카카오 지도 */}
+            {/* 카카오맵 */}
             <FadeIn direction="left">
               <KakaoMap className="min-h-[300px]" />
             </FadeIn>

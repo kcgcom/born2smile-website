@@ -249,7 +249,7 @@ export default function AboutPage() {
                 오시는 길
               </h2>
 
-              {/* 카카오 지도 */}
+              {/* 카카오맵 */}
               <KakaoMap className="mb-6 aspect-[4/3]" />
 
               <div className="space-y-3 text-sm">
