@@ -3,7 +3,7 @@ import { CLINIC } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "예약/상담",
-  description: `${CLINIC.name} 온라인 예약 및 상담. 대표전화 ${CLINIC.phone}. ${CLINIC.address}`,
+  description: `${CLINIC.name} 상담 문의. 대표전화 ${CLINIC.phone}. ${CLINIC.address}`,
 };
 
 export default function ContactLayout({

@@ -83,7 +83,7 @@ export function Footer() {
         {/* 하단 카피라이트 */}
         <div className="mt-10 border-t border-gray-700 pt-6 text-center text-xs text-gray-500">
           <p>
-            &copy; {new Date().getFullYear()} {CLINIC.name}. All rights
+            &copy; 2017–{new Date().getFullYear()} {CLINIC.name}. All rights
             reserved.
           </p>
         </div>

@@ -40,11 +40,11 @@ export function FloatingCTA() {
           </a>
           <a
             href="/contact"
-            aria-label="온라인 예약"
+            aria-label="상담 문의"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
             <CalendarCheck size={20} aria-hidden="true" />
-            예약
+            문의
           </a>
         </div>
       </nav>

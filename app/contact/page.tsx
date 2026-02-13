@@ -25,7 +25,7 @@ export default function ContactPage() {
           예약 / 상담
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-gray-600">
-          온라인으로 편리하게 예약하시거나 전화로 상담받으세요.
+          궁금하신 점을 남겨주시면 빠르게 연락드리겠습니다.
         </p>
       </section>
 
@@ -35,7 +35,7 @@ export default function ContactPage() {
             {/* 예약 폼 */}
             <FadeIn direction="left" className="md:col-span-3">
               <h2 className="mb-6 text-2xl font-bold text-gray-900">
-                온라인 예약
+                상담 문의
               </h2>
 
               {submitted ? (
@@ -47,7 +47,7 @@ export default function ContactPage() {
                     <Send size={28} aria-hidden="true" />
                   </div>
                   <h3 className="mb-2 text-xl font-bold text-gray-900">
-                    예약 접수가 완료되었습니다
+                    문의가 접수되었습니다
                   </h3>
                   <p className="text-sm text-gray-600">
                     확인 후 빠른 시간 내에 연락드리겠습니다.
@@ -148,7 +148,7 @@ export default function ContactPage() {
                     type="submit"
                     className="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
                   >
-                    예약 접수하기
+                    상담 문의하기
                   </button>
                 </form>
               )}
