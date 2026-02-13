@@ -25,9 +25,9 @@ export default function Home() {
           </FadeIn>
           <FadeIn delay={0.4}>
             <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-              당신의 미소를
+              꼭 필요한 치료만
               <br />
-              디자인합니다
+              편안하고 튼튼하게
             </h1>
           </FadeIn>
           <FadeIn delay={0.6}>
