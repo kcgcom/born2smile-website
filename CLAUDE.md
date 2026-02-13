@@ -64,7 +64,7 @@ components/
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
-  blog-posts.ts              # Blog post data (34 posts), categories, and tags
+  blog-posts.ts              # Blog post data (38 posts), categories, and tags
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
 public/
@@ -83,7 +83,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
-- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
+- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
@@ -96,7 +96,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (blog data in `lib/blog-posts.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 34 blog posts |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 38 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -168,7 +168,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - `DOCTORS` — 의료진 정보 (학력, 자격, 학회, 현직)
 - `HOURS` — 진료시간 (요일별 시간, 점심시간, 휴진일)
 - `TREATMENTS` — 진료 과목 목록 (id, name, shortDesc, icon, href)
-- `SEO` — 메타데이터, 키워드 (24개 로컬 SEO 키워드)
+- `SEO` — 메타데이터, 키워드 (23개 로컬 SEO 키워드)
 - `LINKS` — SNS/외부 링크 (카카오, 인스타, 네이버, 지도)
 - `MAP` — 네이버 지도 좌표 및 줌 레벨
 - `BASE_URL` — 사이트 기본 URL
