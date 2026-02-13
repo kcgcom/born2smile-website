@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight } from "lucide-react";
 import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -12,10 +12,24 @@ export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
+  const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS);
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      const posts = [...BLOG_POSTS];
+      for (let i = posts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [posts[i], posts[j]] = [posts[j], posts[i]];
+      }
+      setShuffledPosts(posts);
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
   const filteredPosts =
     activeCategory === "전체"
-      ? BLOG_POSTS
-      : BLOG_POSTS.filter((post) => post.category === activeCategory);
+      ? shuffledPosts
+      : shuffledPosts.filter((post) => post.category === activeCategory);
 
   const handleShare = useCallback(
     async (
