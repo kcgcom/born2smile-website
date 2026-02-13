@@ -25,9 +25,9 @@ export default function Home() {
           </FadeIn>
           <FadeIn delay={0.4}>
             <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-              당신의 미소를
+              꼭 필요한 치료만
               <br />
-              디자인합니다
+              편안하고 튼튼하게
             </h1>
           </FadeIn>
           <FadeIn delay={0.6}>
@@ -38,29 +38,13 @@ export default function Home() {
             </p>
           </FadeIn>
           <FadeIn delay={0.8}>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                상담 문의
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                <Phone size={18} />
-                전화 상담 {CLINIC.phone}
-              </a>
-              <Link
-                href="/treatments"
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                진료 안내
-                <ArrowRight size={18} />
-              </Link>
-            </div>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+            >
+              상담 안내
+              <ArrowRight size={18} />
+            </Link>
           </FadeIn>
         </div>
       </section>
@@ -73,13 +57,25 @@ export default function Home() {
               About Us
             </p>
             <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              {CLINIC.name}를 소개합니다.
+              안녕하세요. {CLINIC.name}입니다.
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
-              환자 한 분 한 분의 구강 건강을 최우선으로 생각합니다.
-              <br />
-              꼭 필요한 진료만, 충분한 설명과 함께 정직하게 진료합니다.
-            </p>
+            <div className="mx-auto mb-12 max-w-2xl space-y-4 text-lg leading-relaxed text-gray-600">
+              <p>
+                {CLINIC.name}는 환자분 한 분 한 분의 구강건강을 최우선으로 생각합니다.
+                <br />
+                꼭 필요한 진료만 정직하게 진료하겠습니다.
+              </p>
+              <p>
+                충분히 듣고, 충분히 설명하겠습니다.
+                <br />
+                환자분이 불안하지 않도록 불편하지 않도록 주의깊게 진료하겠습니다.
+              </p>
+              <p>
+                자연치아를 최대한 보존하는 것을 원칙으로
+                <br />
+                환자분께서 건강한 미소를 되찾으실때까지 함께하겠습니다.
+              </p>
+            </div>
           </FadeIn>
 
           <StaggerContainer className="grid gap-8 md:grid-cols-3">
@@ -203,11 +199,10 @@ export default function Home() {
                         </ul>
                       </div>
                       <div>
-                        <h4 className="mb-2 font-bold text-gray-900">현직</h4>
+                        <h4 className="mb-2 font-bold text-gray-900">자격</h4>
                         <ul className="space-y-1 text-gray-600">
-                          {doctor.currentPositions.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
+                          <li>미국 치과의사 자격시험(NBDE) 통과</li>
+                          <li>미국치과임플란트학회(AAID) 인정의</li>
                         </ul>
                       </div>
                     </div>
@@ -326,13 +321,6 @@ export default function Home() {
                 <Phone size={18} />
                 전화 상담 {CLINIC.phone}
               </a>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
-              >
-                상담 안내
-                <ArrowRight size={18} />
-              </Link>
             </div>
           </div>
         </FadeIn>
