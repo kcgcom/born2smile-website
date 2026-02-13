@@ -38,29 +38,13 @@ export default function Home() {
             </p>
           </FadeIn>
           <FadeIn delay={0.8}>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                상담 문의
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                <Phone size={18} />
-                전화 상담 {CLINIC.phone}
-              </a>
-              <Link
-                href="/treatments"
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                진료 안내
-                <ArrowRight size={18} />
-              </Link>
-            </div>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+            >
+              상담 안내
+              <ArrowRight size={18} />
+            </Link>
           </FadeIn>
         </div>
       </section>
