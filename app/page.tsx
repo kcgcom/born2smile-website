@@ -57,13 +57,25 @@ export default function Home() {
               About Us
             </p>
             <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              {CLINIC.name}를 소개합니다.
+              안녕하세요. {CLINIC.name}입니다.
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-600">
-              환자 한 분 한 분의 구강 건강을 최우선으로 생각합니다.
-              <br />
-              꼭 필요한 진료만, 충분한 설명과 함께 정직하게 진료합니다.
-            </p>
+            <div className="mx-auto mb-12 max-w-2xl space-y-4 text-lg leading-relaxed text-gray-600">
+              <p>
+                {CLINIC.name}는 환자분 한 분 한 분의 구강건강을 최우선으로 생각합니다.
+                <br />
+                꼭 필요한 진료만 정직하게 진료하겠습니다.
+              </p>
+              <p>
+                충분히 듣고, 충분히 설명하겠습니다.
+                <br />
+                환자분이 불안하지 않도록 불편하지 않도록 주의깊게 진료하겠습니다.
+              </p>
+              <p>
+                자연치아를 최대한 보존하는 것을 원칙으로
+                <br />
+                환자분께서 건강한 미소를 되찾으실때까지 함께하겠습니다.
+              </p>
+            </div>
           </FadeIn>
 
           <StaggerContainer className="grid gap-8 md:grid-cols-3">
