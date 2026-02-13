@@ -263,10 +263,15 @@ export default function Home() {
                     {HOURS.schedule.map((item) => (
                       <li
                         key={item.day}
-                        className="flex justify-between border-b border-gray-100 pb-2"
+                        className="flex items-center gap-4 border-b border-gray-100 pb-2"
                       >
-                        <span className="font-medium text-gray-700">
+                        <span className="flex items-center gap-1.5 font-medium text-gray-700">
                           {item.day}
+                          {"note" in item && item.note && (
+                            <span className="rounded-full bg-[var(--color-gold)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-gold)]">
+                              {item.note}
+                            </span>
+                          )}
                         </span>
                         <span
                           className={
@@ -274,11 +279,6 @@ export default function Home() {
                           }
                         >
                           {item.time}
-                          {"note" in item && item.note && (
-                            <span className="ml-1 text-xs text-[var(--color-gold)]">
-                              {item.note}
-                            </span>
-                          )}
                         </span>
                       </li>
                     ))}
