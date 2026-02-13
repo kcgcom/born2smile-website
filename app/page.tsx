@@ -38,20 +38,20 @@ export default function Home() {
           </FadeIn>
           <FadeIn delay={0.8}>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                예약하기
-                <ArrowRight size={18} />
-              </Link>
               <a
                 href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
               >
                 <Phone size={18} />
-                {CLINIC.phone}
+                전화 상담 {CLINIC.phone}
               </a>
+              <Link
+                href="/treatments"
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                진료 안내
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </FadeIn>
         </div>
@@ -298,26 +298,26 @@ export default function Home() {
         <FadeIn>
           <div className="relative mx-auto max-w-2xl">
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              지금 바로 상담 예약하세요
+              지금 바로 전화 상담하세요
             </h2>
             <p className="mb-8 text-lg text-blue-100">
               건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
-              >
-                온라인 예약
-                <ArrowRight size={18} />
-              </Link>
               <a
                 href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
               >
                 <Phone size={18} />
-                전화 상담
+                전화 상담 {CLINIC.phone}
               </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+              >
+                상담 안내
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </div>
         </FadeIn>

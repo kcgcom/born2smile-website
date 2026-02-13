@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { CLINIC } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "예약/상담",
-  description: `${CLINIC.name} 온라인 예약 및 상담. 대표전화 ${CLINIC.phone}. ${CLINIC.address}`,
+  title: "상담 안내",
+  description: `${CLINIC.name} 전화 상담 안내. 대표전화 ${CLINIC.phone}. ${CLINIC.address}`,
 };
 
 export default function ContactLayout({

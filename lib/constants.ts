@@ -15,8 +15,7 @@ export const CLINIC = {
   address: "경기도 김포시 태장로 820, 엠프라자 2층 (장기동)",
   addressShort: "김포시 태장로 820, 엠프라자 2층 (장기동)",
   neighborhood: "한강신도시 장기동",
-  // TODO: 확정 후 입력
-  businessNumber: "000-00-00000", // 사업자등록번호
+  businessNumber: "647-18-00478", // 사업자등록번호
   representative: "김창균", // 대표자
 } as const;
 
