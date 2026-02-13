@@ -144,7 +144,7 @@ export const LINKS = {
 export const MAP = {
   lat: 37.6319, // TODO: 정확한 좌표 확인
   lng: 126.7150, // TODO: 정확한 좌표 확인
-  zoomLevel: 16,
+  zoomLevel: 3, // 카카오맵 level (1~14, 숫자가 작을수록 확대)
 } as const;
 
 // -------------------------------------------------------------
