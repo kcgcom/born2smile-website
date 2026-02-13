@@ -19,7 +19,7 @@ export default function Home() {
       <section className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <FadeIn delay={0.2}>
-            <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
               우리동네 좋은치과
             </p>
           </FadeIn>
