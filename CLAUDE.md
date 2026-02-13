@@ -10,7 +10,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 ## Tech Stack
 
 - **Framework**: Next.js 16.1.6 with App Router, React 19.2.3, TypeScript 5 (strict mode)
-- **Styling**: Tailwind CSS 4 (inline `@theme` in `globals.css`), CSS custom properties
+- **Styling**: Tailwind CSS 4 (inline `@theme` in `globals.css`, no separate `tailwind.config` file), CSS custom properties
 - **Animation**: Framer Motion 12 (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
@@ -54,8 +54,10 @@ app/                          # Next.js App Router pages
     layout.tsx                # Contact layout wrapper with metadata
     page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
 components/
-  layout/               # Header, Footer, FloatingCTA
-  ui/                   # Motion (animations), KakaoMap
+  blog/
+    BlogContent.tsx           # Blog listing/display component ("use client")
+  layout/                     # Header, Footer, FloatingCTA
+  ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
@@ -65,11 +67,13 @@ lib/
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
-hosting-redirect/
-  index.html                 # Firebase Hosting → App Hosting redirect page
+  BingSiteAuth.xml           # Bing webmaster verification
+  naver*.html                # Naver webmaster verification
+hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
 postcss.config.mjs           # PostCSS with @tailwindcss/postcss
+pnpm-workspace.yaml          # pnpm workspace config
 ```
 
 ## Architecture
@@ -77,7 +81,7 @@ postcss.config.mjs           # PostCSS with @tailwindcss/postcss
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, Contact form, Motion wrappers.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -223,6 +227,7 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
 코드에 남아있는 미완료 항목:
 
-- `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크)
+- `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열
 - `lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요 (카카오맵 주소 기반 geocoding 폴백 있음)
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
+- `hosting-redirect/`: Firebase Hosting redirect용 `index.html` 파일 없음 — `firebase.json`의 regex redirect로 처리 중
