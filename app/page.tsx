@@ -115,44 +115,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───────────── 진료 분야 ───────────── */}
-      <section className="section-padding bg-gray-50">
-        <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-              Treatments
-            </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              진료 분야
-            </h2>
-          </FadeIn>
-
-          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {TREATMENTS.map((treatment) => (
-              <StaggerItem key={treatment.id}>
-                <Link
-                  href={treatment.href}
-                  className="group block rounded-2xl border border-gray-100 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
-                >
-                  <h3 className="mb-2 text-xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
-                    {treatment.name}
-                  </h3>
-                  <p className="mb-4 text-sm text-gray-600">
-                    {treatment.shortDesc}
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
-                    자세히 보기
-                    <ArrowRight size={14} />
-                  </span>
-                </Link>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </div>
-      </section>
-
       {/* ───────────── 의료진 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
@@ -165,7 +129,7 @@ export default function Home() {
 
           {DOCTORS.map((doctor) => (
             <FadeIn key={doctor.id}>
-              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-white">
                 <div className="grid md:grid-cols-2">
                   {/* 사진 영역 (플레이스홀더) */}
                   <div className="flex items-center justify-center bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] p-12 md:min-h-[400px]">
@@ -219,6 +183,42 @@ export default function Home() {
               </div>
             </FadeIn>
           ))}
+        </div>
+      </section>
+
+      {/* ───────────── 진료 분야 ───────────── */}
+      <section className="section-padding bg-white">
+        <div className="container-narrow">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Treatments
+            </p>
+            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              진료 분야
+            </h2>
+          </FadeIn>
+
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {TREATMENTS.map((treatment) => (
+              <StaggerItem key={treatment.id}>
+                <Link
+                  href={treatment.href}
+                  className="group block rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
+                >
+                  <h3 className="mb-2 text-xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                    {treatment.name}
+                  </h3>
+                  <p className="mb-4 text-sm text-gray-600">
+                    {treatment.shortDesc}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
+                    자세히 보기
+                    <ArrowRight size={14} />
+                  </span>
+                </Link>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
       </section>
 

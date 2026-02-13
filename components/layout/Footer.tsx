@@ -30,7 +30,7 @@ export function Footer() {
           {/* 진료시간 */}
           <div>
             <h3 className="mb-4 text-lg font-bold text-white">진료시간</h3>
-            <ul className="space-y-1.5 text-sm">
+            <ul className="max-w-56 space-y-1.5 text-sm">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
                   <span>
