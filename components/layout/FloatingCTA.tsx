@@ -37,14 +37,14 @@ export function FloatingCTA() {
             <BookOpen size={20} aria-hidden="true" />
             블로그
           </Link>
-          <a
-            href={CLINIC.phoneHref}
-            aria-label="전화 상담"
+          <Link
+            href="/contact"
+            aria-label="상담안내"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
             <Phone size={20} aria-hidden="true" />
-            전화
-          </a>
+            상담안내
+          </Link>
         </div>
       </nav>
 
