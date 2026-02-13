@@ -11,7 +11,13 @@ export interface BlogPostSection {
 export interface BlogPost {
   id: number;
   slug: string;
-  category: "구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리";
+  category:
+    | "예방·구강관리"
+    | "보존치료"
+    | "보철치료"
+    | "임플란트"
+    | "교정치료"
+    | "구강건강상식";
   tags: string[];
   title: string;
   subtitle: string;
@@ -22,12 +28,11 @@ export interface BlogPost {
 }
 
 export const BLOG_TAGS = [
-  "예방",
-  "보존",
-  "보철",
-  "임플란트",
-  "교정",
-  "치과상식",
+  "치료후관리",
+  "생활습관",
+  "팩트체크",
+  "증상가이드",
+  "비교가이드",
   "어린이",
   "임산부",
   "시니어",
@@ -35,11 +40,12 @@ export const BLOG_TAGS = [
 
 export const BLOG_CATEGORIES = [
   "전체",
-  "구강관리",
-  "예방치료",
-  "치아상식",
-  "생활습관",
-  "치료후관리",
+  "예방·구강관리",
+  "보존치료",
+  "보철치료",
+  "임플란트",
+  "교정치료",
+  "구강건강상식",
 ] as const;
 
 export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
@@ -48,8 +54,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 1,
     slug: "correct-brushing-method",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "매일 닦는데 왜 충치가 생길까요?",
     subtitle: "올바른 양치질 방법과 치과 전문의의 핵심 팁",
     excerpt:
@@ -87,8 +93,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 2,
     slug: "implant-aftercare-tips",
-    tags: ["임플란트"],
-    category: "예방치료",
+    tags: ["치료후관리"],
+    category: "임플란트",
     title: "임플란트, 심으면 끝일까요?",
     subtitle: "임플란트 수명을 결정하는 관리법 5가지",
     excerpt:
@@ -131,8 +137,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 3,
     slug: "children-dental-care",
-    tags: ["어린이", "보존"],
-    category: "구강관리",
+    tags: ["어린이"],
+    category: "예방·구강관리",
     title: "첫 치과, 타이밍이 중요합니다",
     subtitle: "우리 아이 첫 치과 방문 시기와 준비 가이드",
     excerpt:
@@ -170,8 +176,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 4,
     slug: "gum-disease-prevention",
-    tags: ["예방"],
-    category: "예방치료",
+    tags: ["증상가이드"],
+    category: "예방·구강관리",
     title: "양치할 때 피가 나시나요?",
     subtitle: "잇몸 질환 초기 증상과 예방법",
     excerpt:
@@ -209,8 +215,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 5,
     slug: "food-for-dental-health",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관"],
+    category: "예방·구강관리",
     title: "먹는 것이 치아를 결정합니다",
     subtitle: "치아 건강에 좋은 음식 vs 나쁜 음식",
     excerpt:
@@ -248,8 +254,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 6,
     slug: "dental-floss-guide",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "양치만으로는 40%가 부족합니다",
     subtitle: "치실의 필요성과 올바른 사용법 가이드",
     excerpt:
@@ -287,8 +293,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 7,
     slug: "teeth-sensitivity-causes",
-    tags: ["치과상식"],
-    category: "치아상식",
+    tags: ["증상가이드"],
+    category: "구강건강상식",
     title: "찬물이 무서운 당신에게",
     subtitle: "시린 치아의 원인과 대처법 총정리",
     excerpt:
@@ -326,8 +332,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 8,
     slug: "scaling-myths-and-facts",
-    tags: ["치과상식", "예방"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "예방·구강관리",
     title: "스케일링하면 이가 깎인다?",
     subtitle: "스케일링에 대한 흔한 오해와 진실",
     excerpt:
@@ -365,8 +371,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 9,
     slug: "orthodontics-for-adults",
-    tags: ["교정"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "교정치료",
     title: "교정은 어릴 때만? 아닙니다",
     subtitle: "성인 교정에 대한 궁금증 총정리",
     excerpt:
@@ -404,8 +410,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 10,
     slug: "stress-and-teeth-grinding",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관", "증상가이드"],
+    category: "구강건강상식",
     title: "자는 동안 이를 갈고 있다면",
     subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
     excerpt:
@@ -443,8 +449,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 11,
     slug: "bad-breath-causes-and-solutions",
-    tags: ["치과상식"],
-    category: "구강관리",
+    tags: ["증상가이드"],
+    category: "구강건강상식",
     title: "혹시 나도 입 냄새?",
     subtitle: "구취의 원인부터 해결법까지",
     excerpt:
@@ -482,8 +488,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 12,
     slug: "cavity-stages-and-treatment",
-    tags: ["보존", "보철"],
-    category: "치아상식",
+    tags: [],
+    category: "보존치료",
     title: "충치도 단계가 있습니다",
     subtitle: "단계별로 달라지는 충치 치료법 총정리",
     excerpt:
@@ -521,8 +527,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 13,
     slug: "teeth-whitening-safety",
-    tags: ["치과상식", "예방"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "구강건강상식",
     title: "하얀 치아, 안전하게 가능할까?",
     subtitle: "치아 미백의 종류와 주의사항",
     excerpt:
@@ -560,8 +566,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 14,
     slug: "pregnancy-dental-care",
-    tags: ["임산부", "예방"],
-    category: "구강관리",
+    tags: ["임산부", "증상가이드"],
+    category: "예방·구강관리",
     title: "임신 중 잇몸이 아프다면",
     subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:
@@ -599,8 +605,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 15,
     slug: "wisdom-teeth-extraction",
-    tags: ["치과상식"],
-    category: "치아상식",
+    tags: [],
+    category: "구강건강상식",
     title: "사랑니, 남길까 뺄까?",
     subtitle: "발치가 필요한 기준과 수술 후 관리법",
     excerpt:
@@ -638,8 +644,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 16,
     slug: "denture-vs-implant",
-    tags: ["보철", "임플란트", "시니어"],
-    category: "예방치료",
+    tags: ["시니어", "비교가이드"],
+    category: "보철치료",
     title: "틀니와 임플란트, 뭐가 나을까?",
     subtitle: "나에게 맞는 치아 보철 선택 가이드",
     excerpt:
@@ -677,8 +683,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 17,
     slug: "dry-mouth-syndrome",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관", "증상가이드"],
+    category: "구강건강상식",
     title: "입이 자꾸 마르시나요?",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
@@ -716,8 +722,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 18,
     slug: "toothbrush-hygiene-tips",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "그 칫솔, 정말 깨끗한가요?",
     subtitle: "의외로 모르는 칫솔 세균 관리법",
     excerpt:
@@ -755,8 +761,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 19,
     slug: "diabetes-and-dental-health",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관"],
+    category: "구강건강상식",
     title: "당뇨가 치아를 망칠 수 있다?",
     subtitle: "당뇨와 치아 건강의 상호 관계",
     excerpt:
@@ -794,8 +800,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 20,
     slug: "root-canal-and-crown",
-    tags: ["보존", "보철"],
-    category: "예방치료",
+    tags: ["비교가이드"],
+    category: "보존치료",
     title: "신경치료만 하면 끝일까요?",
     subtitle: "크라운이 반드시 필요한 이유",
     excerpt:
@@ -833,8 +839,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 21,
     slug: "after-tooth-extraction-care",
-    tags: ["보존"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "발치 후 이것만은 피하세요",
     subtitle: "빠른 회복을 위한 발치 후 핵심 주의사항",
     excerpt:
@@ -872,8 +878,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 22,
     slug: "after-implant-surgery-care",
-    tags: ["임플란트"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "임플란트",
     title: "임플란트 성공, 수술 후가 더 중요합니다",
     subtitle: "성공률을 높이는 임플란트 수술 후 관리법",
     excerpt:
@@ -911,8 +917,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 23,
     slug: "after-root-canal-care",
-    tags: ["보존", "보철"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "신경치료 받은 치아, 오래 쓰려면",
     subtitle: "치아를 오래 보존하는 신경치료 후 주의사항",
     excerpt:
@@ -950,8 +956,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 24,
     slug: "after-scaling-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "예방·구강관리",
     title: "스케일링 후 시리다고요? 정상입니다",
     subtitle: "스케일링 후 관리법과 주의사항",
     excerpt:
@@ -989,8 +995,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 25,
     slug: "after-filling-care",
-    tags: ["보존"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "충치 치료 후 바로 밥 먹어도 될까?",
     subtitle: "레진·인레이 치료 후 주의사항 총정리",
     excerpt:
@@ -1028,8 +1034,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 26,
     slug: "after-whitening-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "구강건강상식",
     title: "미백 효과, 카레 한 끼에 사라진다?",
     subtitle: "치아 미백 효과를 오래 유지하는 관리법",
     excerpt:
@@ -1067,8 +1073,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 27,
     slug: "after-orthodontic-device-care",
-    tags: ["교정"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "교정치료",
     title: "교정 장치, 처음이 가장 힘듭니다",
     subtitle: "부착 후 적응 기간 관리법과 주의사항",
     excerpt:
@@ -1106,8 +1112,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 28,
     slug: "after-gum-surgery-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "예방·구강관리",
     title: "잇몸 수술, 회복이 결과를 좌우합니다",
     subtitle: "잇몸 수술 후 회복을 돕는 핵심 관리법",
     excerpt:
@@ -1145,8 +1151,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 29,
     slug: "after-crown-prosthetic-care",
-    tags: ["보철"],
-    category: "치료후관리",
+    tags: ["치료후관리", "증상가이드"],
+    category: "보철치료",
     title: "크라운 씌웠는데 왜 불편할까?",
     subtitle: "크라운·브릿지 장착 후 주의사항 가이드",
     excerpt:
@@ -1184,8 +1190,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 30,
     slug: "after-child-dental-treatment-care",
-    tags: ["어린이"],
-    category: "치료후관리",
+    tags: ["어린이", "치료후관리"],
+    category: "구강건강상식",
     title: "아이가 치과 치료 받고 왔다면",
     subtitle: "보호자가 꼭 알아야 할 치료 후 주의사항",
     excerpt:
@@ -1223,8 +1229,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 31,
     slug: "dental-xray-radiation-safety",
-    tags: ["치과상식", "어린이"],
-    category: "치아상식",
+    tags: ["어린이", "팩트체크"],
+    category: "구강건강상식",
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",
     excerpt:
@@ -1262,8 +1268,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 32,
     slug: "cracked-tooth-syndrome",
-    tags: ["치과상식", "보철"],
-    category: "치아상식",
+    tags: ["증상가이드"],
+    category: "보존치료",
     title: "씹을 때만 아프다면 의심하세요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:
@@ -1306,8 +1312,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 33,
     slug: "denture-care-tips",
-    tags: ["보철", "시니어"],
-    category: "치료후관리",
+    tags: ["시니어", "치료후관리"],
+    category: "보철치료",
     title: "틀니, 올바르게 관리하고 계신가요?",
     subtitle: "틀니 사용 시 꼭 알아야 할 관리법",
     excerpt:
@@ -1350,8 +1356,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 34,
     slug: "clear-aligner-care-guide",
-    tags: ["교정"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "교정치료",
     title: "투명교정, 끼기만 하면 될까?",
     subtitle: "교정 효과를 높이는 투명교정 관리법",
     excerpt:
@@ -1386,6 +1392,162 @@ export const BLOG_POSTS: BlogPost[] = [
         heading: "정기 내원과 장치 교체 스케줄",
         content:
           "투명교정은 보통 1~2주마다 새 장치로 교체하며, 4~8주마다 치과에 방문하여 교정 진행 상황을 확인합니다. 담당 의사가 지시한 교체 스케줄을 반드시 지켜주세요. 스스로 판단하여 다음 단계 장치로 일찍 넘어가거나, 교체를 미루면 안 됩니다. 이전 단계의 장치 1~2개는 버리지 말고 보관해 두세요. 현재 장치를 분실하거나 파손했을 때 이전 장치를 임시로 착용하면 치아가 후퇴하는 것을 방지할 수 있습니다. 서울본치과에서 꾸준히 관리받으며 건강하고 가지런한 치아를 완성하세요.",
+      },
+    ],
+    date: "2026-02-13",
+    readTime: "5분",
+  },
+  {
+    id: 35,
+    slug: "implant-vs-bridge-comparison",
+    tags: ["비교가이드"],
+    category: "임플란트",
+    title: "임플란트 vs 브릿지, 뭐가 나을까?",
+    subtitle: "빈 치아 수복 방법 비교 가이드",
+    excerpt:
+      "치아를 상실했을 때 임플란트와 브릿지 중 어떤 치료가 나에게 맞을까요? 비용, 수명, 시술 기간, 인접 치아 영향까지 두 치료법의 장단점을 비교해 드립니다.",
+    content: [
+      {
+        heading: "치아 상실, 방치하면 안 되는 이유",
+        content:
+          "치아를 하나 잃으면 그 자리만 비는 것이 아닙니다. 양옆 치아가 빈 공간으로 기울어지고, 맞물리는 반대쪽 치아가 솟아오르면서 교합(물림)이 무너집니다. 씹는 힘이 남은 치아에 불균등하게 전달되어 추가 손상 위험이 커지고, 잇몸뼈도 자극이 사라진 부위부터 서서히 흡수됩니다. 빠진 치아를 오래 방치할수록 이후 치료가 복잡해지므로, 가능한 한 빨리 수복 계획을 세우는 것이 좋습니다.",
+      },
+      {
+        heading: "임플란트 — 독립적으로 서는 인공 치아",
+        content:
+          "임플란트는 잇몸뼈에 티타늄 나사(인공 치근)를 심고, 그 위에 보철물(크라운)을 연결하는 방식입니다. 인접 치아를 전혀 건드리지 않고 독립적으로 기능하며, 씹는 힘이 뼈에 직접 전달되어 골흡수를 예방합니다. 자연 치아에 가장 가까운 외형과 저작 능력을 회복할 수 있습니다. 다만 수술이 필요하고, 치료 기간이 3~6개월로 비교적 길며, 전신 건강 상태나 잇몸뼈 양에 따라 시술이 어려울 수 있습니다.",
+      },
+      {
+        heading: "브릿지 — 양옆 치아로 지지하는 보철",
+        content:
+          "브릿지는 빈 자리 양옆의 치아를 깎아 기둥으로 삼고, 그 위에 연결된 보철물을 씌우는 방식입니다. 수술이 필요 없고 치료 기간이 1~2주로 짧으며, 비용도 임플란트보다 낮은 편입니다. 하지만 건강한 양옆 치아를 상당량 삭제해야 하며, 삭제된 치아는 장기적으로 충치나 신경 손상의 위험이 높아집니다. 또한 빈 자리의 잇몸뼈가 계속 흡수되어 시간이 지나면 보철물과 잇몸 사이에 틈이 생길 수 있습니다.",
+      },
+      {
+        heading: "핵심 비교 — 비용, 수명, 관리",
+        content:
+          "비용 면에서 브릿지는 임플란트의 절반 이하인 경우가 많지만, 수명은 브릿지 평균 7~15년, 임플란트 평균 20년 이상으로 차이가 큽니다. 장기적으로 브릿지는 재제작이 필요할 수 있어 총비용이 비슷해지거나 오히려 높아질 수 있습니다. 관리 면에서 임플란트는 일반 치아처럼 양치와 치실을 사용하면 되지만, 브릿지는 연결된 구조 때문에 치간 칫솔이나 슈퍼플로스 같은 특수 도구가 필요합니다. 두 치료 모두 정기적인 치과 검진이 수명을 좌우합니다.",
+      },
+      {
+        heading: "어떤 상황에 어떤 치료가 적합할까",
+        content:
+          "인접 치아가 건강하고 잇몸뼈 상태가 양호하다면 임플란트가 장기적으로 유리합니다. 반면 전신 질환으로 수술이 어렵거나, 빠른 치료가 필요하거나, 양옆 치아에 이미 크라운이 있는 경우에는 브릿지가 합리적인 선택이 될 수 있습니다. 치아 상실 개수, 위치, 잇몸뼈 상태, 전신 건강, 예산 등 여러 요소를 종합적으로 고려해야 합니다. 서울본치과에서 정밀 검사 후 나에게 가장 맞는 수복 방법을 상담받으세요.",
+      },
+    ],
+    date: "2026-02-13",
+    readTime: "5분",
+  },
+  {
+    id: 36,
+    slug: "implant-pain-myths",
+    tags: ["팩트체크"],
+    category: "임플란트",
+    title: "\"임플란트 아프다\"는 말, 진짜일까?",
+    subtitle: "임플란트 통증에 대한 오해와 진실",
+    excerpt:
+      "임플란트 시술을 망설이게 하는 가장 큰 이유, 통증. 실제로 얼마나 아픈지, 마취는 어떻게 하는지, 회복 기간의 불편감은 어떤지 솔직하게 알려드립니다.",
+    content: [
+      {
+        heading: "\"이 빼는 것보다 덜 아팠어요\"",
+        content:
+          "임플란트 시술을 받은 환자분들이 가장 많이 하는 말입니다. 임플란트 수술은 충분한 국소 마취 하에 진행되기 때문에 시술 중에는 통증이 거의 없습니다. 잇몸을 절개하고 뼈에 나사를 심는다는 말이 무섭게 들리지만, 실제로 뼈에는 통증을 느끼는 신경이 없어 진동과 압력만 느껴질 뿐입니다. 많은 분이 생각보다 편안했다고 이야기합니다.",
+      },
+      {
+        heading: "수술 중 통증 — 마취가 핵심입니다",
+        content:
+          "임플란트 수술 시 국소 마취를 시행하며, 마취가 충분히 된 상태에서 시작합니다. 마취 주사를 놓을 때 따끔한 느낌이 있을 수 있지만, 표면 마취제를 먼저 바르면 이마저도 크게 줄일 수 있습니다. 치과 공포증이 심하거나 여러 개를 동시에 심는 경우에는 수면 마취(의식하 진정)를 병행하기도 합니다. 수면 마취를 하면 시술 과정을 거의 기억하지 못할 정도로 편안하게 진행됩니다.",
+      },
+      {
+        heading: "수술 후 통증 — 보통 2~3일이 고비",
+        content:
+          "마취가 풀리는 수술 당일 저녁부터 통증과 붓기가 시작되며, 보통 수술 후 2~3일이 가장 불편한 시기입니다. 이때 처방받은 진통제와 항생제를 시간에 맞춰 복용하면 일상생활에 큰 지장 없이 지낼 수 있습니다. 냉찜질을 20분 간격으로 해주면 붓기와 통증 완화에 효과적입니다. 대부분 일주일 이내에 불편감이 크게 줄고, 2주 정도면 거의 정상으로 돌아옵니다.",
+      },
+      {
+        heading: "무절개·미니 임플란트 — 통증을 더 줄이는 방법",
+        content:
+          "최근에는 잇몸을 절개하지 않고 작은 구멍만 뚫어 임플란트를 심는 무절개(플랩리스) 방식이 많이 사용됩니다. 잇몸 절개가 없으므로 출혈, 붓기, 통증이 기존 방식보다 훨씬 적고 회복도 빠릅니다. 다만 무절개 시술은 잇몸뼈의 양과 질이 충분해야 적용할 수 있어, CT 촬영을 통한 정밀 진단이 필수입니다. 모든 경우에 가능한 것은 아니지만, 적합한 조건이라면 통증 부담을 크게 낮출 수 있습니다.",
+      },
+      {
+        heading: "이런 경우에는 반드시 치과에 연락하세요",
+        content:
+          "수술 후 통증이 일주일 넘게 심해지거나, 고름이 나오거나, 임플란트 주위가 심하게 붓고 열이 나는 경우에는 감염이나 합병증 가능성이 있으므로 즉시 치과에 내원해야 합니다. 수술 부위를 혀나 손가락으로 만지거나, 빨대를 사용하거나, 흡연을 하면 치유가 지연되고 합병증 위험이 높아집니다. 의사의 지시를 잘 따르면 대부분의 임플란트 수술은 생각보다 편안하게 회복됩니다. 통증이 걱정되신다면 서울본치과에서 상담을 통해 나에게 맞는 시술 방법을 알아보세요.",
+      },
+    ],
+    date: "2026-02-13",
+    readTime: "5분",
+  },
+  {
+    id: 37,
+    slug: "diabetes-and-implant",
+    tags: ["생활습관"],
+    category: "임플란트",
+    title: "당뇨가 있어도 임플란트 가능한가요?",
+    subtitle: "전신 질환과 임플란트의 관계",
+    excerpt:
+      "당뇨병이 있으면 임플란트를 못 한다? 혈당 조절이 잘 되면 충분히 가능합니다. 당뇨 환자의 임플란트 시술 조건, 주의사항, 관리법을 정리했습니다.",
+    content: [
+      {
+        heading: "당뇨가 임플란트에 영향을 미치는 이유",
+        content:
+          "당뇨병은 혈당이 높아 상처 치유가 느리고 감염에 취약해지는 질환입니다. 임플란트 수술 후 잇몸뼈와 티타늄 나사가 결합(골유착)되는 과정에서 충분한 혈액 공급과 면역 반응이 필요한데, 혈당이 조절되지 않으면 이 과정이 지연되거나 실패할 수 있습니다. 또한 당뇨 환자는 잇몸 질환(치주염) 발생률이 2~3배 높아, 임플란트 주위 점막염이나 임플란트 주위염의 위험도 커집니다.",
+      },
+      {
+        heading: "임플란트가 가능한 혈당 기준",
+        content:
+          "당뇨가 있다고 임플란트를 절대 할 수 없는 것은 아닙니다. 핵심은 혈당 조절 상태입니다. 일반적으로 당화혈색소(HbA1c)가 7% 이하로 안정적으로 유지되면 임플란트 시술이 가능합니다. 8% 이상이면 골유착 실패와 감염 위험이 높아져 시술을 미루고 혈당 조절을 먼저 하는 것이 권장됩니다. 시술 전 반드시 내과 주치의와 치과 의사가 함께 환자의 전신 상태를 평가합니다.",
+      },
+      {
+        heading: "당뇨 환자의 임플란트 수술 — 달라지는 점",
+        content:
+          "당뇨 환자의 임플란트 수술은 감염 예방에 더 세심한 주의를 기울입니다. 수술 전후 항생제를 일반 환자보다 길게 처방하고, 수술 범위를 최소화하여 회복 부담을 줄이는 방향으로 계획합니다. 골유착 기간도 일반 환자의 3~4개월보다 길게, 4~6개월 정도 여유를 두고 경과를 관찰합니다. 수술 당일에는 평소 먹던 당뇨약이나 인슐린을 정상적으로 복용·투여하되, 공복 시간이 길어지지 않도록 수술 시간을 조절합니다.",
+      },
+      {
+        heading: "수술 후 혈당 관리가 곧 임플란트 관리",
+        content:
+          "임플란트 수술 후에도 혈당 관리는 계속되어야 합니다. 수술 후 스트레스나 식사 변화로 혈당이 일시적으로 오를 수 있으므로, 부드러운 음식을 소량씩 자주 먹어 혈당 변동을 줄이세요. 수술 부위의 통증 때문에 식사를 거르면 오히려 저혈당 위험이 있으니 주의가 필요합니다. 금연은 필수이며, 음주도 회복 기간 동안 삼가야 합니다. 혈당 수첩이나 앱으로 매일 기록하며 변화를 추적하는 것이 좋습니다.",
+      },
+      {
+        heading: "장기 관리 — 정기 검진이 더 중요한 이유",
+        content:
+          "당뇨 환자는 임플란트 성공 후에도 일반인보다 임플란트 주위염 발생 위험이 높습니다. 3~4개월마다 정기적으로 치과를 방문하여 잇몸 상태를 점검하고, 전문 세정을 받는 것이 중요합니다. 칫솔질과 함께 치간 칫솔, 워터픽 등 보조 도구를 적극 활용하세요. 잇몸이 붓거나 출혈이 생기면 조기에 치료받아야 임플란트를 오래 유지할 수 있습니다. 서울본치과에서 당뇨와 구강 건강을 함께 관리하는 맞춤 플랜을 상담받으세요.",
+      },
+    ],
+    date: "2026-02-13",
+    readTime: "5분",
+  },
+  {
+    id: 38,
+    slug: "implant-lifespan-facts",
+    tags: ["팩트체크"],
+    category: "임플란트",
+    title: "임플란트 수명, 10년? 30년?",
+    subtitle: "오래 쓰는 사람들의 공통점 3가지",
+    excerpt:
+      "임플란트는 반영구적이라고 하는데, 실제 수명은 얼마나 될까요? 통계로 보는 임플란트 수명과, 오래 사용하는 사람들의 관리 비결을 알려드립니다.",
+    content: [
+      {
+        heading: "임플란트 수명, 실제 통계는?",
+        content:
+          "임플란트의 10년 생존율은 약 95~97%로 보고됩니다. 잘 관리하면 20년, 30년 이상 사용하는 경우도 드물지 않습니다. 세계 최초의 현대식 임플란트를 받은 환자는 41년간 사용했다는 기록이 있습니다. 하지만 '반영구적'이라는 말이 '관리 없이도 영원히 쓸 수 있다'는 뜻은 아닙니다. 임플란트의 수명은 시술의 질, 환자의 구강 위생, 전신 건강, 생활 습관에 따라 크게 달라집니다.",
+      },
+      {
+        heading: "공통점 1 — 정기 검진을 빠뜨리지 않습니다",
+        content:
+          "임플란트를 오래 쓰는 분들의 가장 큰 공통점은 6개월마다, 혹은 치과에서 권하는 주기에 맞춰 꾸준히 검진을 받는다는 것입니다. 정기 검진에서는 임플란트 주위 잇몸 상태, 뼈 흡수 여부, 보철물의 느슨함이나 마모를 점검합니다. 임플란트 주위염은 자연 치아의 잇몸병과 달리 초기에 통증이 거의 없어, 검진을 하지 않으면 꽤 진행될 때까지 모르고 지나가기 쉽습니다. 조기 발견이 임플란트 수명을 지키는 핵심입니다.",
+      },
+      {
+        heading: "공통점 2 — 임플란트 주위를 꼼꼼히 닦습니다",
+        content:
+          "임플란트는 충치가 생기지 않지만, 주위 잇몸에는 세균이 쌓일 수 있습니다. 임플란트 주위에 플라크가 축적되면 점막염에서 시작해 임플란트 주위염으로 진행되고, 결국 뼈가 녹아 임플란트가 흔들리게 됩니다. 칫솔질만으로는 임플란트와 잇몸 사이를 완벽히 닦기 어렵습니다. 치간 칫솔로 임플란트 보철물 아래를 닦고, 워터픽으로 잇몸 틈새의 음식물을 제거하는 습관이 중요합니다. 하루 한 번은 보조 도구를 꼭 사용하세요.",
+      },
+      {
+        heading: "공통점 3 — 임플란트에 무리한 힘을 주지 않습니다",
+        content:
+          "임플란트는 강한 재료로 만들어지지만, 과도한 힘이 반복되면 보철물이 깨지거나 나사가 풀리고, 심하면 임플란트 자체가 파절될 수 있습니다. 얼음, 딱딱한 사탕, 오징어 등 질기거나 매우 단단한 음식을 임플란트로 직접 깨물지 마세요. 이갈이(브럭시즘)가 있다면 취침 시 나이트가드(교합 안정 장치)를 착용하여 임플란트에 가해지는 비정상적인 힘을 줄여야 합니다. 치과에서 교합 검사를 받아 한쪽으로 힘이 집중되지 않는지 확인하는 것도 중요합니다.",
+      },
+      {
+        heading: "임플란트 실패의 주요 원인",
+        content:
+          "임플란트가 실패하는 가장 흔한 원인은 임플란트 주위염(약 50%)입니다. 그 다음이 과도한 교합력, 전신 질환(당뇨, 골다공증) 관리 부족, 흡연 순입니다. 흡연은 잇몸 혈류를 감소시켜 골유착을 방해하고, 임플란트 실패율을 2배 이상 높이는 것으로 알려져 있습니다. 결국 임플란트의 수명은 '관리'에 달려 있습니다. 올바른 구강 위생과 정기 검진, 건강한 생활 습관이 임플란트를 오래 쓰는 가장 확실한 방법입니다. 서울본치과에서 임플란트 정기 관리 프로그램을 통해 소중한 임플란트를 오래 지키세요.",
       },
     ],
     date: "2026-02-13",
