@@ -77,7 +77,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
 
         const map = new kakao.maps.Map(container, {
           center: fallbackCoords,
-          level: 3, // 카카오맵 level 3 ≈ 네이버맵 zoom 16
+          level: 4, // 카카오맵 level 4 — 주변 도로/건물까지 표시
         });
 
         const infoContent = `<div style="padding:8px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
