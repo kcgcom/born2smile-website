@@ -2,14 +2,15 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Share2, Check, Clock, ArrowRight } from "lucide-react";
+import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
 import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { BLOG_POSTS, BLOG_CATEGORIES } from "@/lib/blog-posts";
+import { BLOG_POSTS, BLOG_CATEGORIES, BLOG_TAGS } from "@/lib/blog-posts";
 import type { BlogCategory } from "@/lib/blog-posts";
 import { BASE_URL } from "@/lib/constants";
 
 export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
@@ -26,10 +27,26 @@ export default function BlogContent() {
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  const filteredPosts =
-    activeCategory === "전체"
-      ? shuffledPosts
-      : shuffledPosts.filter((post) => post.category === activeCategory);
+  const filteredPosts = shuffledPosts.filter((post) => {
+    const categoryMatch =
+      activeCategory === "전체" || post.category === activeCategory;
+    const tagMatch = !activeTag || post.tags.includes(activeTag);
+    return categoryMatch && tagMatch;
+  });
+
+  const handleCategoryClick = (cat: BlogCategory) => {
+    setActiveCategory(cat);
+    setActiveTag(null);
+  };
+
+  const handleTagClick = (tag: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setActiveTag((prev) => (prev === tag ? null : tag));
+    setActiveCategory("전체");
+  };
 
   const handleShare = useCallback(
     async (
@@ -88,13 +105,13 @@ export default function BlogContent() {
     <section className="section-padding bg-white">
       <div className="container-narrow">
         {/* 카테고리 필터 */}
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
+        <div className="mb-4 flex flex-wrap justify-center gap-2">
           {BLOG_CATEGORIES.map((cat) => (
             <button
               key={cat}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => handleCategoryClick(cat)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeCategory === cat
+                activeCategory === cat && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
@@ -104,9 +121,27 @@ export default function BlogContent() {
           ))}
         </div>
 
+        {/* 태그 필터 */}
+        <div className="mb-10 flex flex-wrap justify-center gap-1.5">
+          {BLOG_TAGS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => handleTagClick(tag)}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                activeTag === tag
+                  ? "bg-[var(--color-gold)] text-white"
+                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              <Tag size={10} />
+              {tag}
+            </button>
+          ))}
+        </div>
+
         {/* 포스트 그리드 */}
         <StaggerContainer
-          key={activeCategory}
+          key={`${activeCategory}-${activeTag}`}
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
           {filteredPosts.map((post) => (
@@ -145,9 +180,29 @@ export default function BlogContent() {
                   <h2 className="mb-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
                     {post.title}
                   </h2>
-                  <p className="mb-6 flex-1 text-sm leading-relaxed text-gray-600">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
                     {post.excerpt}
                   </p>
+
+                  {/* 태그 */}
+                  {post.tags.length > 0 && (
+                    <div className="mb-4 flex flex-wrap gap-1.5">
+                      {post.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={(e) => handleTagClick(tag, e)}
+                          className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] transition-colors ${
+                            activeTag === tag
+                              ? "bg-[var(--color-gold)] text-white"
+                              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                          }`}
+                        >
+                          <Tag size={8} />
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-4">
@@ -171,7 +226,7 @@ export default function BlogContent() {
 
         {filteredPosts.length === 0 && (
           <p className="py-20 text-center text-gray-400">
-            해당 카테고리의 글이 아직 없습니다.
+            해당 조건의 글이 아직 없습니다.
           </p>
         )}
       </div>

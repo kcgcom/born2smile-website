@@ -12,12 +12,30 @@ export interface BlogPost {
   id: number;
   slug: string;
   category: "구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리";
+  tags: string[];
   title: string;
   excerpt: string;
   content: BlogPostSection[];
   date: string;
   readTime: string;
 }
+
+export const BLOG_TAGS = [
+  "임플란트",
+  "교정",
+  "충치",
+  "잇몸",
+  "양치",
+  "미백",
+  "틀니",
+  "크라운",
+  "신경치료",
+  "스케일링",
+  "소아치과",
+  "이갈이",
+  "시린이",
+  "발치",
+] as const;
 
 export const BLOG_CATEGORIES = [
   "전체",
@@ -34,6 +52,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 1,
     slug: "correct-brushing-method",
+    tags: ["양치", "충치"],
     category: "구강관리",
     title: "올바른 양치질 방법, 알고 계신가요?",
     excerpt:
@@ -71,6 +90,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 2,
     slug: "implant-aftercare-tips",
+    tags: ["임플란트"],
     category: "예방치료",
     title: "임플란트 후 관리법 5가지",
     excerpt:
@@ -113,6 +133,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 3,
     slug: "children-dental-care",
+    tags: ["소아치과", "충치"],
     category: "구강관리",
     title: "우리 아이 첫 치과, 언제 가는 게 좋을까요?",
     excerpt:
@@ -150,6 +171,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 4,
     slug: "gum-disease-prevention",
+    tags: ["잇몸", "스케일링"],
     category: "예방치료",
     title: "잇몸이 붓고 피가 나요 — 잇몸 질환 초기 증상과 예방법",
     excerpt:
@@ -187,6 +209,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 5,
     slug: "food-for-dental-health",
+    tags: ["충치"],
     category: "생활습관",
     title: "치아 건강에 좋은 음식 vs 나쁜 음식",
     excerpt:
@@ -224,6 +247,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 6,
     slug: "dental-floss-guide",
+    tags: ["양치", "잇몸"],
     category: "구강관리",
     title: "치실, 꼭 써야 하나요? 올바른 사용법 가이드",
     excerpt:
@@ -261,6 +285,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 7,
     slug: "teeth-sensitivity-causes",
+    tags: ["시린이", "잇몸"],
     category: "치아상식",
     title: "찬물만 마셔도 시린 치아, 원인과 대처법",
     excerpt:
@@ -298,6 +323,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 8,
     slug: "scaling-myths-and-facts",
+    tags: ["스케일링"],
     category: "치아상식",
     title: "스케일링하면 이가 깎이나요? 흔한 오해와 진실",
     excerpt:
@@ -335,6 +361,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 9,
     slug: "orthodontics-for-adults",
+    tags: ["교정"],
     category: "치아상식",
     title: "성인 교정, 늦지 않았을까? 궁금증 총정리",
     excerpt:
@@ -372,6 +399,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 10,
     slug: "stress-and-teeth-grinding",
+    tags: ["이갈이"],
     category: "생활습관",
     title: "수면 중 이 갈기(이갈이), 방치하면 안 되는 이유",
     excerpt:
@@ -409,6 +437,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 11,
     slug: "bad-breath-causes-and-solutions",
+    tags: ["양치", "잇몸"],
     category: "구강관리",
     title: "입 냄새, 혹시 나도? 구취의 원인과 해결법",
     excerpt:
@@ -446,6 +475,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 12,
     slug: "cavity-stages-and-treatment",
+    tags: ["충치", "신경치료", "크라운"],
     category: "치아상식",
     title: "충치, 단계별로 달라지는 치료법 총정리",
     excerpt:
@@ -483,6 +513,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 13,
     slug: "teeth-whitening-safety",
+    tags: ["미백"],
     category: "치아상식",
     title: "치아 미백, 안전한가요? 종류와 주의사항",
     excerpt:
@@ -520,6 +551,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 14,
     slug: "pregnancy-dental-care",
+    tags: ["잇몸", "소아치과"],
     category: "구강관리",
     title: "임산부 구강 관리, 이것만은 꼭 알아두세요",
     excerpt:
@@ -557,6 +589,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 15,
     slug: "wisdom-teeth-extraction",
+    tags: ["발치"],
     category: "치아상식",
     title: "사랑니, 꼭 빼야 하나요? 발치 기준과 관리법",
     excerpt:
@@ -594,6 +627,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 16,
     slug: "denture-vs-implant",
+    tags: ["틀니", "임플란트"],
     category: "예방치료",
     title: "틀니 vs 임플란트, 나에게 맞는 선택은?",
     excerpt:
@@ -631,6 +665,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 17,
     slug: "dry-mouth-syndrome",
+    tags: ["충치"],
     category: "생활습관",
     title: "입이 자꾸 마르는 구강 건조증, 원인과 관리법",
     excerpt:
@@ -668,6 +703,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 18,
     slug: "toothbrush-hygiene-tips",
+    tags: ["양치"],
     category: "구강관리",
     title: "칫솔 관리법, 칫솔도 세균 관리가 필요합니다",
     excerpt:
@@ -705,6 +741,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 19,
     slug: "diabetes-and-dental-health",
+    tags: ["잇몸"],
     category: "생활습관",
     title: "당뇨와 치아 건강 — 서로 영향을 주는 관계",
     excerpt:
@@ -742,6 +779,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 20,
     slug: "root-canal-and-crown",
+    tags: ["신경치료", "크라운"],
     category: "예방치료",
     title: "신경치료 후 크라운, 왜 꼭 해야 할까요?",
     excerpt:
@@ -779,6 +817,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 21,
     slug: "after-tooth-extraction-care",
+    tags: ["발치"],
     category: "치료후관리",
     title: "발치 후 주의사항 — 빠른 회복을 위한 핵심 가이드",
     excerpt:
@@ -816,6 +855,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 22,
     slug: "after-implant-surgery-care",
+    tags: ["임플란트"],
     category: "치료후관리",
     title: "임플란트 수술 후 주의사항 — 성공률을 높이는 관리법",
     excerpt:
@@ -853,6 +893,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 23,
     slug: "after-root-canal-care",
+    tags: ["신경치료", "크라운"],
     category: "치료후관리",
     title: "신경치료 후 주의사항 — 치아를 오래 쓰려면",
     excerpt:
@@ -890,6 +931,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 24,
     slug: "after-scaling-care",
+    tags: ["스케일링", "시린이"],
     category: "치료후관리",
     title: "스케일링 후 주의사항 — 시린 증상은 정상입니다",
     excerpt:
@@ -927,6 +969,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 25,
     slug: "after-filling-care",
+    tags: ["충치"],
     category: "치료후관리",
     title: "충치 치료(레진/인레이) 후 주의사항",
     excerpt:
@@ -964,6 +1007,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 26,
     slug: "after-whitening-care",
+    tags: ["미백"],
     category: "치료후관리",
     title: "치아 미백 후 주의사항 — 효과를 오래 유지하려면",
     excerpt:
@@ -1001,6 +1045,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 27,
     slug: "after-orthodontic-device-care",
+    tags: ["교정"],
     category: "치료후관리",
     title: "교정 장치 부착 후 주의사항 — 적응 기간 관리법",
     excerpt:
@@ -1038,6 +1083,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 28,
     slug: "after-gum-surgery-care",
+    tags: ["잇몸"],
     category: "치료후관리",
     title: "잇몸 수술 후 주의사항 — 회복을 돕는 관리법",
     excerpt:
@@ -1075,6 +1121,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 29,
     slug: "after-crown-prosthetic-care",
+    tags: ["크라운"],
     category: "치료후관리",
     title: "크라운·브릿지 장착 후 주의사항",
     excerpt:
@@ -1112,6 +1159,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 30,
     slug: "after-child-dental-treatment-care",
+    tags: ["소아치과"],
     category: "치료후관리",
     title: "어린이 치과 치료 후 주의사항 — 보호자 필독 가이드",
     excerpt:
@@ -1149,6 +1197,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 31,
     slug: "dental-xray-radiation-safety",
+    tags: ["소아치과"],
     category: "치아상식",
     title: "치과 엑스레이(X-ray) 방사선, 정말 괜찮을까?",
     excerpt:
@@ -1186,6 +1235,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 32,
     slug: "cracked-tooth-syndrome",
+    tags: ["크라운", "이갈이"],
     category: "치아상식",
     title: "치아 크랙(균열) — 눈에 안 보이는데 씹으면 아픈 이유",
     excerpt:
@@ -1228,6 +1278,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 33,
     slug: "denture-care-tips",
+    tags: ["틀니", "잇몸"],
     category: "치료후관리",
     title: "틀니 사용 시 꼭 알아야 할 주의사항과 관리법",
     excerpt:
@@ -1270,6 +1321,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 34,
     slug: "clear-aligner-care-guide",
+    tags: ["교정"],
     category: "치료후관리",
     title: "투명교정 장치 사용 시 주의사항 — 교정 효과를 높이는 관리법",
     excerpt:
