@@ -199,11 +199,10 @@ export default function Home() {
                         </ul>
                       </div>
                       <div>
-                        <h4 className="mb-2 font-bold text-gray-900">현직</h4>
+                        <h4 className="mb-2 font-bold text-gray-900">자격</h4>
                         <ul className="space-y-1 text-gray-600">
-                          {doctor.currentPositions.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
+                          <li>미국 치과의사 자격시험(NBDE) 통과</li>
+                          <li>미국치과임플란트학회(AAID) 인정의</li>
                         </ul>
                       </div>
                     </div>
