@@ -27,6 +27,7 @@ export const BLOG_TAGS = [
   "보철치료",
   "임플란트",
   "교정",
+  "치과상식",
   "어린이",
   "임산부",
   "시니어",
@@ -208,7 +209,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 5,
     slug: "food-for-dental-health",
-    tags: ["예방치료"],
+    tags: ["치과상식"],
     category: "생활습관",
     title: "먹는 것이 치아를 결정합니다",
     subtitle: "치아 건강에 좋은 음식 vs 나쁜 음식",
@@ -286,7 +287,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 7,
     slug: "teeth-sensitivity-causes",
-    tags: ["보존치료"],
+    tags: ["치과상식"],
     category: "치아상식",
     title: "찬물이 무서운 당신에게",
     subtitle: "시린 치아의 원인과 대처법 총정리",
@@ -325,7 +326,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 8,
     slug: "scaling-myths-and-facts",
-    tags: ["예방치료"],
+    tags: ["치과상식", "예방치료"],
     category: "치아상식",
     title: "스케일링하면 이가 깎인다?",
     subtitle: "스케일링에 대한 흔한 오해와 진실",
@@ -403,7 +404,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 10,
     slug: "stress-and-teeth-grinding",
-    tags: ["보존치료"],
+    tags: ["치과상식"],
     category: "생활습관",
     title: "자는 동안 이를 갈고 있다면",
     subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
@@ -442,7 +443,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 11,
     slug: "bad-breath-causes-and-solutions",
-    tags: ["예방치료"],
+    tags: ["치과상식"],
     category: "구강관리",
     title: "혹시 나도 입 냄새?",
     subtitle: "구취의 원인부터 해결법까지",
@@ -520,7 +521,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 13,
     slug: "teeth-whitening-safety",
-    tags: ["예방치료"],
+    tags: ["치과상식", "예방치료"],
     category: "치아상식",
     title: "하얀 치아, 안전하게 가능할까?",
     subtitle: "치아 미백의 종류와 주의사항",
@@ -598,7 +599,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 15,
     slug: "wisdom-teeth-extraction",
-    tags: ["보존치료"],
+    tags: ["치과상식"],
     category: "치아상식",
     title: "사랑니, 남길까 뺄까?",
     subtitle: "발치가 필요한 기준과 수술 후 관리법",
@@ -676,7 +677,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 17,
     slug: "dry-mouth-syndrome",
-    tags: ["예방치료"],
+    tags: ["치과상식"],
     category: "생활습관",
     title: "입이 자꾸 마르시나요?",
     subtitle: "구강 건조증의 원인과 관리법",
@@ -754,7 +755,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 19,
     slug: "diabetes-and-dental-health",
-    tags: ["예방치료"],
+    tags: ["치과상식"],
     category: "생활습관",
     title: "당뇨가 치아를 망칠 수 있다?",
     subtitle: "당뇨와 치아 건강의 상호 관계",
@@ -1222,7 +1223,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 31,
     slug: "dental-xray-radiation-safety",
-    tags: ["어린이"],
+    tags: ["치과상식", "어린이"],
     category: "치아상식",
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",
@@ -1261,7 +1262,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 32,
     slug: "cracked-tooth-syndrome",
-    tags: ["보존치료", "보철치료"],
+    tags: ["치과상식", "보철치료"],
     category: "치아상식",
     title: "씹을 때만 아프다면 의심하세요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
