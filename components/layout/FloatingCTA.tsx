@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, MessageCircle, MapPin, Info } from "lucide-react";
+import { Phone, MessageCircle, MapPin, CalendarCheck } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {

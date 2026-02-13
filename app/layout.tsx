@@ -22,9 +22,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   verification: {
-    // TODO: 실제 인증 코드로 교체
-    // google: "구글서치콘솔_인증코드",
-    // other: { "naver-site-verification": "네이버서치어드바이저_인증코드" },
+    other: { "naver-site-verification": "naverab813eb712958782be6b173969ecc817" },
   },
 };
 

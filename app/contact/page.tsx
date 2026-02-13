@@ -111,7 +111,7 @@ export default function ContactPage() {
                 />
                 오시는 길
               </h2>
-              <NaverMap className="aspect-square md:aspect-[4/3]" />
+              <KakaoMap className="aspect-square md:aspect-[4/3]" />
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
                 <p className="font-medium text-gray-900">{CLINIC.name}</p>
                 <p className="mt-1 text-sm text-gray-600">{CLINIC.address}</p>

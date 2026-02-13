@@ -224,5 +224,5 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 코드에 남아있는 미완료 항목:
 
 - `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크)
+- `lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요 (카카오맵 주소 기반 geocoding 폴백 있음)
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
-- `app/layout.tsx`: Google Search Console / Naver Search Advisor 인증 코드
