@@ -14,6 +14,7 @@ export interface BlogPost {
   category: "구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리";
   tags: string[];
   title: string;
+  subtitle: string;
   excerpt: string;
   content: BlogPostSection[];
   date: string;
@@ -54,7 +55,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "correct-brushing-method",
     tags: ["양치", "충치"],
     category: "구강관리",
-    title: "올바른 양치질 방법, 알고 계신가요?",
+    title: "매일 닦는데 왜 충치가 생길까요?",
+    subtitle: "올바른 양치질 방법과 치과 전문의의 핵심 팁",
     excerpt:
       "매일 하는 양치질이지만 올바른 방법을 모르는 경우가 많습니다. 칫솔 각도 45도, 잇몸에서 치아 방향으로 쓸어내기 등 치과 전문의가 알려주는 올바른 양치법을 확인해 보세요.",
     content: [
@@ -92,7 +94,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "implant-aftercare-tips",
     tags: ["임플란트"],
     category: "예방치료",
-    title: "임플란트 후 관리법 5가지",
+    title: "임플란트, 심으면 끝일까요?",
+    subtitle: "임플란트 수명을 결정하는 관리법 5가지",
     excerpt:
       "임플란트 시술 후 올바른 관리가 수명을 결정합니다. 정기 검진, 올바른 양치법, 워터픽 사용법 등 임플란트를 오래 사용하기 위한 핵심 관리 방법을 소개합니다.",
     content: [
@@ -135,7 +138,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "children-dental-care",
     tags: ["소아치과", "충치"],
     category: "구강관리",
-    title: "우리 아이 첫 치과, 언제 가는 게 좋을까요?",
+    title: "첫 치과, 타이밍이 중요합니다",
+    subtitle: "우리 아이 첫 치과 방문 시기와 준비 가이드",
     excerpt:
       "아이의 유치가 나기 시작하면 치과 검진을 시작하는 것이 좋습니다. 첫 치과 방문 시기, 소아 불소 도포의 효과, 아이가 치과를 무서워하지 않게 하는 방법까지 알아봅니다.",
     content: [
@@ -173,7 +177,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "gum-disease-prevention",
     tags: ["잇몸", "스케일링"],
     category: "예방치료",
-    title: "잇몸이 붓고 피가 나요 — 잇몸 질환 초기 증상과 예방법",
+    title: "양치할 때 피가 나시나요?",
+    subtitle: "잇몸 질환 초기 증상과 예방법",
     excerpt:
       "양치할 때 잇몸에서 피가 나거나 붓는 증상은 잇몸 질환의 초기 신호일 수 있습니다. 치은염과 치주염의 차이, 초기에 발견하고 관리하는 방법을 알아봅니다.",
     content: [
@@ -211,7 +216,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "food-for-dental-health",
     tags: ["충치"],
     category: "생활습관",
-    title: "치아 건강에 좋은 음식 vs 나쁜 음식",
+    title: "먹는 것이 치아를 결정합니다",
+    subtitle: "치아 건강에 좋은 음식 vs 나쁜 음식",
     excerpt:
       "우유, 치즈, 녹차 등 치아를 보호하는 음식과 탄산음료, 끈적한 캔디 등 치아에 해로운 음식을 비교해 봅니다. 식습관만 바꿔도 충치 예방에 큰 도움이 됩니다.",
     content: [
@@ -249,7 +255,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "dental-floss-guide",
     tags: ["양치", "잇몸"],
     category: "구강관리",
-    title: "치실, 꼭 써야 하나요? 올바른 사용법 가이드",
+    title: "양치만으로는 40%가 부족합니다",
+    subtitle: "치실의 필요성과 올바른 사용법 가이드",
     excerpt:
       "양치만으로는 치아 사이 음식물과 플라크를 완전히 제거할 수 없습니다. 치실과 치간칫솔의 올바른 사용법, 그리고 자신에게 맞는 제품을 고르는 방법을 안내합니다.",
     content: [
@@ -287,7 +294,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "teeth-sensitivity-causes",
     tags: ["시린이", "잇몸"],
     category: "치아상식",
-    title: "찬물만 마셔도 시린 치아, 원인과 대처법",
+    title: "찬물이 무서운 당신에게",
+    subtitle: "시린 치아의 원인과 대처법 총정리",
     excerpt:
       "시린 이의 원인은 잇몸 퇴축, 법랑질 손상, 충치 등 다양합니다. 시린 이 전용 치약의 효과, 병원에서 받을 수 있는 치료, 일상에서의 관리법을 함께 알아봅니다.",
     content: [
@@ -325,7 +333,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "scaling-myths-and-facts",
     tags: ["스케일링"],
     category: "치아상식",
-    title: "스케일링하면 이가 깎이나요? 흔한 오해와 진실",
+    title: "스케일링하면 이가 깎인다?",
+    subtitle: "스케일링에 대한 흔한 오해와 진실",
     excerpt:
       "스케일링 후 이가 시리거나 벌어진 느낌이 드는 이유, 1년에 한 번 건강보험 적용 스케일링의 중요성 등 스케일링에 대한 흔한 오해와 정확한 정보를 정리했습니다.",
     content: [
@@ -363,7 +372,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "orthodontics-for-adults",
     tags: ["교정"],
     category: "치아상식",
-    title: "성인 교정, 늦지 않았을까? 궁금증 총정리",
+    title: "교정은 어릴 때만? 아닙니다",
+    subtitle: "성인 교정에 대한 궁금증 총정리",
     excerpt:
       "치아 교정은 성인이 되어도 가능합니다. 투명교정, 설측교정 등 다양한 옵션과 교정 기간, 비용, 일상생활에서의 주의사항을 정리했습니다.",
     content: [
@@ -401,7 +411,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "stress-and-teeth-grinding",
     tags: ["이갈이"],
     category: "생활습관",
-    title: "수면 중 이 갈기(이갈이), 방치하면 안 되는 이유",
+    title: "자는 동안 이를 갈고 있다면",
+    subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
     excerpt:
       "스트레스, 수면 자세, 교합 문제 등으로 발생하는 이갈이는 치아 마모, 턱관절 장애로 이어질 수 있습니다. 자가 진단법과 치과에서의 치료법을 소개합니다.",
     content: [
@@ -439,7 +450,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "bad-breath-causes-and-solutions",
     tags: ["양치", "잇몸"],
     category: "구강관리",
-    title: "입 냄새, 혹시 나도? 구취의 원인과 해결법",
+    title: "혹시 나도 입 냄새?",
+    subtitle: "구취의 원인부터 해결법까지",
     excerpt:
       "구취의 약 90%는 구강 내 원인에서 발생합니다. 혀 세균, 잇몸 질환, 구강 건조증 등 입 냄새의 주요 원인과 근본적인 해결 방법을 치과 전문의가 알려드립니다.",
     content: [
@@ -477,7 +489,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "cavity-stages-and-treatment",
     tags: ["충치", "신경치료", "크라운"],
     category: "치아상식",
-    title: "충치, 단계별로 달라지는 치료법 총정리",
+    title: "충치도 단계가 있습니다",
+    subtitle: "단계별로 달라지는 충치 치료법 총정리",
     excerpt:
       "초기 충치는 불소 치료만으로 회복될 수 있지만, 진행되면 신경치료나 발치가 필요합니다. 충치의 진행 단계별 증상과 치료 방법을 알기 쉽게 정리했습니다.",
     content: [
@@ -515,7 +528,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "teeth-whitening-safety",
     tags: ["미백"],
     category: "치아상식",
-    title: "치아 미백, 안전한가요? 종류와 주의사항",
+    title: "하얀 치아, 안전하게 가능할까?",
+    subtitle: "치아 미백의 종류와 주의사항",
     excerpt:
       "누런 치아가 고민이라면 치아 미백을 고려해 보세요. 전문 미백과 자가 미백의 차이, 효과, 부작용, 그리고 미백 후 관리법까지 꼼꼼하게 알려드립니다.",
     content: [
@@ -553,7 +567,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "pregnancy-dental-care",
     tags: ["잇몸", "소아치과"],
     category: "구강관리",
-    title: "임산부 구강 관리, 이것만은 꼭 알아두세요",
+    title: "임신 중 잇몸이 아프다면",
+    subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:
       "임신 중 호르몬 변화로 잇몸 출혈과 부종이 흔하게 나타납니다. 임산부가 알아야 할 구강 관리법, 치과 치료 시기, 입덧 시 양치 요령을 안내합니다.",
     content: [
@@ -591,7 +606,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "wisdom-teeth-extraction",
     tags: ["발치"],
     category: "치아상식",
-    title: "사랑니, 꼭 빼야 하나요? 발치 기준과 관리법",
+    title: "사랑니, 남길까 뺄까?",
+    subtitle: "발치가 필요한 기준과 수술 후 관리법",
     excerpt:
       "사랑니가 아프거나 잇몸이 붓는다면 발치를 고려해야 합니다. 사랑니를 빼야 하는 경우와 안 빼도 되는 경우, 발치 후 관리법을 정리했습니다.",
     content: [
@@ -629,7 +645,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "denture-vs-implant",
     tags: ["틀니", "임플란트"],
     category: "예방치료",
-    title: "틀니 vs 임플란트, 나에게 맞는 선택은?",
+    title: "틀니와 임플란트, 뭐가 나을까?",
+    subtitle: "나에게 맞는 치아 보철 선택 가이드",
     excerpt:
       "치아를 상실했을 때 틀니와 임플란트 중 어떤 것이 좋을까요? 두 방법의 장단점, 적합한 대상, 비용 차이를 비교하여 올바른 선택을 도와드립니다.",
     content: [
@@ -667,7 +684,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "dry-mouth-syndrome",
     tags: ["충치"],
     category: "생활습관",
-    title: "입이 자꾸 마르는 구강 건조증, 원인과 관리법",
+    title: "입이 자꾸 마르시나요?",
+    subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
       "입이 마르고 침이 부족하면 충치, 잇몸 질환, 구취의 위험이 높아집니다. 구강 건조증의 원인, 자가 관리법, 치과에서의 치료를 알아봅니다.",
     content: [
@@ -705,7 +723,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "toothbrush-hygiene-tips",
     tags: ["양치"],
     category: "구강관리",
-    title: "칫솔 관리법, 칫솔도 세균 관리가 필요합니다",
+    title: "그 칫솔, 정말 깨끗한가요?",
+    subtitle: "의외로 모르는 칫솔 세균 관리법",
     excerpt:
       "칫솔에는 양치 후 수백만 개의 세균이 남아 있을 수 있습니다. 올바른 칫솔 보관법, 교체 시기, 전동 칫솔 관리법까지 알아봅니다.",
     content: [
@@ -743,7 +762,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "diabetes-and-dental-health",
     tags: ["잇몸"],
     category: "생활습관",
-    title: "당뇨와 치아 건강 — 서로 영향을 주는 관계",
+    title: "당뇨가 치아를 망칠 수 있다?",
+    subtitle: "당뇨와 치아 건강의 상호 관계",
     excerpt:
       "당뇨병 환자는 잇몸 질환 위험이 2~3배 높고, 반대로 잇몸 질환은 혈당 조절을 어렵게 합니다. 당뇨와 구강 건강의 관계를 알아봅니다.",
     content: [
@@ -781,7 +801,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "root-canal-and-crown",
     tags: ["신경치료", "크라운"],
     category: "예방치료",
-    title: "신경치료 후 크라운, 왜 꼭 해야 할까요?",
+    title: "신경치료만 하면 끝일까요?",
+    subtitle: "크라운이 반드시 필요한 이유",
     excerpt:
       "신경치료를 받은 치아는 내부가 비어 약해지기 때문에 크라운으로 보호해야 합니다. 신경치료의 과정, 크라운의 필요성, 종류별 특징을 알아봅니다.",
     content: [
@@ -819,7 +840,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-tooth-extraction-care",
     tags: ["발치"],
     category: "치료후관리",
-    title: "발치 후 주의사항 — 빠른 회복을 위한 핵심 가이드",
+    title: "발치 후 이것만은 피하세요",
+    subtitle: "빠른 회복을 위한 발치 후 핵심 주의사항",
     excerpt:
       "발치 후 출혈, 통증, 붓기는 자연스러운 과정이지만, 관리를 잘못하면 합병증이 생길 수 있습니다. 발치 당일부터 완전 회복까지 단계별 주의사항을 안내합니다.",
     content: [
@@ -857,7 +879,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-implant-surgery-care",
     tags: ["임플란트"],
     category: "치료후관리",
-    title: "임플란트 수술 후 주의사항 — 성공률을 높이는 관리법",
+    title: "임플란트 성공, 수술 후가 더 중요합니다",
+    subtitle: "성공률을 높이는 임플란트 수술 후 관리법",
     excerpt:
       "임플란트 수술 후 초기 관리가 임플란트의 장기적 성공을 좌우합니다. 수술 직후부터 보철물 장착까지 단계별 주의사항을 자세히 안내합니다.",
     content: [
@@ -895,7 +918,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-root-canal-care",
     tags: ["신경치료", "크라운"],
     category: "치료후관리",
-    title: "신경치료 후 주의사항 — 치아를 오래 쓰려면",
+    title: "신경치료 받은 치아, 오래 쓰려면",
+    subtitle: "치아를 오래 보존하는 신경치료 후 주의사항",
     excerpt:
       "신경치료 중이거나 치료를 마친 후 통증과 관리가 걱정되시나요? 치료 중 주의할 점, 치료 후 통증 관리, 크라운까지의 과정을 안내합니다.",
     content: [
@@ -933,7 +957,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-scaling-care",
     tags: ["스케일링", "시린이"],
     category: "치료후관리",
-    title: "스케일링 후 주의사항 — 시린 증상은 정상입니다",
+    title: "스케일링 후 시리다고요? 정상입니다",
+    subtitle: "스케일링 후 관리법과 주의사항",
     excerpt:
       "스케일링 후 이가 시리고 잇몸에서 피가 나나요? 대부분 자연스러운 반응입니다. 스케일링 후 나타나는 증상과 올바른 관리법을 안내합니다.",
     content: [
@@ -971,7 +996,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-filling-care",
     tags: ["충치"],
     category: "치료후관리",
-    title: "충치 치료(레진/인레이) 후 주의사항",
+    title: "충치 치료 후 바로 밥 먹어도 될까?",
+    subtitle: "레진·인레이 치료 후 주의사항 총정리",
     excerpt:
       "충치 부위를 레진이나 인레이로 떼운 후 식사는 언제부터 가능할까요? 재료별 특성과 치료 후 관리법, 주의해야 할 증상을 알려드립니다.",
     content: [
@@ -1009,7 +1035,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-whitening-care",
     tags: ["미백"],
     category: "치료후관리",
-    title: "치아 미백 후 주의사항 — 효과를 오래 유지하려면",
+    title: "미백 효과, 카레 한 끼에 사라진다?",
+    subtitle: "치아 미백 효과를 오래 유지하는 관리법",
     excerpt:
       "미백 시술 후 48시간이 결과를 좌우합니다. 미백 후 피해야 할 음식, 시린 증상 대처법, 효과를 오래 유지하는 관리법을 안내합니다.",
     content: [
@@ -1047,7 +1074,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-orthodontic-device-care",
     tags: ["교정"],
     category: "치료후관리",
-    title: "교정 장치 부착 후 주의사항 — 적응 기간 관리법",
+    title: "교정 장치, 처음이 가장 힘듭니다",
+    subtitle: "부착 후 적응 기간 관리법과 주의사항",
     excerpt:
       "교정 장치를 처음 붙이면 통증과 불편감이 생깁니다. 장치 적응법, 피해야 할 음식, 교정 중 양치법, 장치 파손 시 대처법을 안내합니다.",
     content: [
@@ -1085,7 +1113,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-gum-surgery-care",
     tags: ["잇몸"],
     category: "치료후관리",
-    title: "잇몸 수술 후 주의사항 — 회복을 돕는 관리법",
+    title: "잇몸 수술, 회복이 결과를 좌우합니다",
+    subtitle: "잇몸 수술 후 회복을 돕는 핵심 관리법",
     excerpt:
       "잇몸 수술(치주 수술) 후 통증, 붓기, 출혈은 자연스러운 회복 과정입니다. 수술 후 식사, 양치, 약 복용 등 빠른 회복을 위한 관리법을 안내합니다.",
     content: [
@@ -1123,7 +1152,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-crown-prosthetic-care",
     tags: ["크라운"],
     category: "치료후관리",
-    title: "크라운·브릿지 장착 후 주의사항",
+    title: "크라운 씌웠는데 왜 불편할까?",
+    subtitle: "크라운·브릿지 장착 후 주의사항 가이드",
     excerpt:
       "크라운이나 브릿지를 새로 씌운 후 적응 기간과 관리법이 궁금하신가요? 교합 적응, 식사 주의점, 장기 관리법을 알려드립니다.",
     content: [
@@ -1161,7 +1191,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "after-child-dental-treatment-care",
     tags: ["소아치과"],
     category: "치료후관리",
-    title: "어린이 치과 치료 후 주의사항 — 보호자 필독 가이드",
+    title: "아이가 치과 치료 받고 왔다면",
+    subtitle: "보호자가 꼭 알아야 할 치료 후 주의사항",
     excerpt:
       "아이가 치과 치료를 받은 후 보호자가 알아야 할 핵심 주의사항을 정리했습니다. 마취 후 관리, 식사 요령, 아이를 안심시키는 방법까지 안내합니다.",
     content: [
@@ -1199,7 +1230,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "dental-xray-radiation-safety",
     tags: ["소아치과"],
     category: "치아상식",
-    title: "치과 엑스레이(X-ray) 방사선, 정말 괜찮을까?",
+    title: "치과 엑스레이, 방사선이 걱정되시나요?",
+    subtitle: "엑스레이 방사선 안전성의 모든 것",
     excerpt:
       "치과 진료 때마다 촬영하는 엑스레이, 방사선이 걱정되시나요? 파노라마·CT·치근단 촬영별 방사선량을 일상 피폭량과 비교하고, 안전하게 촬영받는 방법을 안내합니다.",
     content: [
@@ -1237,7 +1269,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "cracked-tooth-syndrome",
     tags: ["크라운", "이갈이"],
     category: "치아상식",
-    title: "치아 크랙(균열) — 눈에 안 보이는데 씹으면 아픈 이유",
+    title: "씹을 때만 아프다면 의심하세요",
+    subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:
       "씹을 때 찌릿한 통증이 있지만 겉으로 이상이 없다면 치아 균열을 의심해 보세요. 치아 크랙의 원인, 단계별 증상, 진단 방법, 그리고 치료법까지 자세히 알려드립니다.",
     content: [
@@ -1280,7 +1313,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "denture-care-tips",
     tags: ["틀니", "잇몸"],
     category: "치료후관리",
-    title: "틀니 사용 시 꼭 알아야 할 주의사항과 관리법",
+    title: "틀니, 올바르게 관리하고 계신가요?",
+    subtitle: "틀니 사용 시 꼭 알아야 할 관리법",
     excerpt:
       "틀니를 처음 사용하시거나 관리가 어려우신가요? 올바른 세척법, 착용 요령, 음식 주의사항, 정기 점검의 중요성까지 틀니 사용자라면 꼭 알아야 할 핵심 관리법을 안내합니다.",
     content: [
@@ -1323,7 +1357,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "clear-aligner-care-guide",
     tags: ["교정"],
     category: "치료후관리",
-    title: "투명교정 장치 사용 시 주의사항 — 교정 효과를 높이는 관리법",
+    title: "투명교정, 끼기만 하면 될까?",
+    subtitle: "교정 효과를 높이는 투명교정 관리법",
     excerpt:
       "투명교정(클리어 얼라이너)을 시작하셨나요? 착용 시간, 식사 요령, 세척법, 통증 관리까지 교정 효과를 극대화하는 핵심 주의사항을 정리했습니다.",
     content: [

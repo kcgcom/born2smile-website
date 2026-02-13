@@ -176,10 +176,13 @@ export default function BlogContent() {
                     </button>
                   </div>
 
-                  {/* 제목 + 본문 */}
-                  <h2 className="mb-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                  {/* 제목 + 부제 */}
+                  <h2 className="mb-1 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
                     {post.title}
                   </h2>
+                  <p className="mb-3 text-sm font-medium text-[var(--color-muted)]">
+                    {post.subtitle}
+                  </p>
                   <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
                     {post.excerpt}
                   </p>

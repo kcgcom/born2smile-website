@@ -21,11 +21,13 @@ export async function generateMetadata({
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) return {};
 
+  const fullTitle = `${post.title} — ${post.subtitle}`;
+
   return {
-    title: post.title,
+    title: fullTitle,
     description: post.excerpt,
     openGraph: {
-      title: `${post.title} | ${CLINIC.name} 블로그`,
+      title: `${fullTitle} | ${CLINIC.name} 블로그`,
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
@@ -107,6 +109,9 @@ export default async function BlogPostPage({
           <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
             {post.title}
           </h1>
+          <p className="mt-3 text-lg text-gray-500 md:text-xl">
+            {post.subtitle}
+          </p>
         </div>
       </section>
 
@@ -161,9 +166,12 @@ export default async function BlogPostPage({
                       >
                         {rp.category}
                       </span>
-                      <h3 className="mb-2 text-base font-bold leading-snug text-gray-900">
+                      <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
                         {rp.title}
                       </h3>
+                      <p className="mb-2 text-sm text-gray-500">
+                        {rp.subtitle}
+                      </p>
                       <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600 line-clamp-2">
                         {rp.excerpt}
                       </p>

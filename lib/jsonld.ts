@@ -125,7 +125,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title,
+    headline: `${post.title} — ${post.subtitle}`,
     description: post.excerpt,
     datePublished: post.date,
     dateModified: post.date,
