@@ -259,11 +259,11 @@ export default function Home() {
                     <Clock size={18} className="mr-2 inline-block" />
                     진료시간
                   </h3>
-                  <ul className="space-y-2 text-sm">
+                  <ul className="max-w-xs space-y-2 text-sm">
                     {HOURS.schedule.map((item) => (
                       <li
                         key={item.day}
-                        className="flex items-center gap-4 border-b border-gray-100 pb-2"
+                        className="flex items-center justify-between border-b border-gray-100 pb-2"
                       >
                         <span className="flex items-center gap-1.5 font-medium text-gray-700">
                           {item.day}
