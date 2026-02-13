@@ -64,7 +64,7 @@ components/
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
-  blog-posts.ts              # Blog post data (30 posts) and categories
+  blog-posts.ts              # Blog post data (34 posts), categories, and tags
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
 public/
@@ -96,7 +96,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (blog data in `lib/blog-posts.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 30 blog posts |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 34 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -151,8 +151,12 @@ pnpm-workspace.yaml          # pnpm workspace config
 ### 블로그 포스트 추가
 
 1. `lib/blog-posts.ts` → `BLOG_POSTS` 배열에 항목 추가 (`BlogPost` 인터페이스 준수)
+   - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
+   - `tags`: `BLOG_TAGS` 배열에 정의된 14개 태그 중 선택 (복수 가능)
 2. 카테고리는 `"구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리"` 중 선택
 3. 새 카테고리 추가 시 `BLOG_CATEGORIES` 배열과 `BlogPost` 타입도 함께 수정
+4. 새 태그 추가 시 `BLOG_TAGS` 배열에 추가
+5. 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플)
 
 ### 병원 정보 수정
 
@@ -235,4 +239,4 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열
 - `lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요 (카카오맵 주소 기반 geocoding 폴백 있음)
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
-- `hosting-redirect/`: Firebase Hosting redirect용 `index.html` 파일 없음 — `firebase.json`의 regex redirect로 처리 중
+- `hosting-redirect/`: Naver 웹마스터 인증 파일만 존재 — `firebase.json`의 regex redirect로 처리 중
