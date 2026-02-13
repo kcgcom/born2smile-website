@@ -23,7 +23,6 @@ export interface BlogPost {
 export const BLOG_TAGS = [
   "임플란트",
   "교정",
-  "사랑니",
   "충치",
   "잇몸",
   "양치",
@@ -590,7 +589,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 15,
     slug: "wisdom-teeth-extraction",
-    tags: ["사랑니", "발치"],
+    tags: ["발치"],
     category: "치아상식",
     title: "사랑니, 꼭 빼야 하나요? 발치 기준과 관리법",
     excerpt:
