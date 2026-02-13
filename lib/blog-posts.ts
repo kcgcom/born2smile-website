@@ -11,7 +11,13 @@ export interface BlogPostSection {
 export interface BlogPost {
   id: number;
   slug: string;
-  category: "구강관리" | "예방치료" | "치아상식" | "생활습관" | "치료후관리";
+  category:
+    | "예방·구강관리"
+    | "보존치료"
+    | "보철치료"
+    | "임플란트"
+    | "교정치료"
+    | "구강건강상식";
   tags: string[];
   title: string;
   subtitle: string;
@@ -22,12 +28,11 @@ export interface BlogPost {
 }
 
 export const BLOG_TAGS = [
-  "예방",
-  "보존",
-  "보철",
-  "임플란트",
-  "교정",
-  "치과상식",
+  "치료후관리",
+  "생활습관",
+  "팩트체크",
+  "증상가이드",
+  "비교가이드",
   "어린이",
   "임산부",
   "시니어",
@@ -35,11 +40,12 @@ export const BLOG_TAGS = [
 
 export const BLOG_CATEGORIES = [
   "전체",
-  "구강관리",
-  "예방치료",
-  "치아상식",
-  "생활습관",
-  "치료후관리",
+  "예방·구강관리",
+  "보존치료",
+  "보철치료",
+  "임플란트",
+  "교정치료",
+  "구강건강상식",
 ] as const;
 
 export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
@@ -48,8 +54,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 1,
     slug: "correct-brushing-method",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "매일 닦는데 왜 충치가 생길까요?",
     subtitle: "올바른 양치질 방법과 치과 전문의의 핵심 팁",
     excerpt:
@@ -87,8 +93,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 2,
     slug: "implant-aftercare-tips",
-    tags: ["임플란트"],
-    category: "예방치료",
+    tags: ["치료후관리"],
+    category: "임플란트",
     title: "임플란트, 심으면 끝일까요?",
     subtitle: "임플란트 수명을 결정하는 관리법 5가지",
     excerpt:
@@ -131,8 +137,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 3,
     slug: "children-dental-care",
-    tags: ["어린이", "보존"],
-    category: "구강관리",
+    tags: ["어린이"],
+    category: "예방·구강관리",
     title: "첫 치과, 타이밍이 중요합니다",
     subtitle: "우리 아이 첫 치과 방문 시기와 준비 가이드",
     excerpt:
@@ -170,8 +176,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 4,
     slug: "gum-disease-prevention",
-    tags: ["예방"],
-    category: "예방치료",
+    tags: ["증상가이드"],
+    category: "예방·구강관리",
     title: "양치할 때 피가 나시나요?",
     subtitle: "잇몸 질환 초기 증상과 예방법",
     excerpt:
@@ -209,8 +215,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 5,
     slug: "food-for-dental-health",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관"],
+    category: "예방·구강관리",
     title: "먹는 것이 치아를 결정합니다",
     subtitle: "치아 건강에 좋은 음식 vs 나쁜 음식",
     excerpt:
@@ -248,8 +254,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 6,
     slug: "dental-floss-guide",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "양치만으로는 40%가 부족합니다",
     subtitle: "치실의 필요성과 올바른 사용법 가이드",
     excerpt:
@@ -287,8 +293,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 7,
     slug: "teeth-sensitivity-causes",
-    tags: ["치과상식"],
-    category: "치아상식",
+    tags: ["증상가이드"],
+    category: "구강건강상식",
     title: "찬물이 무서운 당신에게",
     subtitle: "시린 치아의 원인과 대처법 총정리",
     excerpt:
@@ -326,8 +332,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 8,
     slug: "scaling-myths-and-facts",
-    tags: ["치과상식", "예방"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "예방·구강관리",
     title: "스케일링하면 이가 깎인다?",
     subtitle: "스케일링에 대한 흔한 오해와 진실",
     excerpt:
@@ -365,8 +371,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 9,
     slug: "orthodontics-for-adults",
-    tags: ["교정"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "교정치료",
     title: "교정은 어릴 때만? 아닙니다",
     subtitle: "성인 교정에 대한 궁금증 총정리",
     excerpt:
@@ -404,8 +410,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 10,
     slug: "stress-and-teeth-grinding",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관", "증상가이드"],
+    category: "구강건강상식",
     title: "자는 동안 이를 갈고 있다면",
     subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
     excerpt:
@@ -443,8 +449,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 11,
     slug: "bad-breath-causes-and-solutions",
-    tags: ["치과상식"],
-    category: "구강관리",
+    tags: ["증상가이드"],
+    category: "구강건강상식",
     title: "혹시 나도 입 냄새?",
     subtitle: "구취의 원인부터 해결법까지",
     excerpt:
@@ -482,8 +488,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 12,
     slug: "cavity-stages-and-treatment",
-    tags: ["보존", "보철"],
-    category: "치아상식",
+    tags: [],
+    category: "보존치료",
     title: "충치도 단계가 있습니다",
     subtitle: "단계별로 달라지는 충치 치료법 총정리",
     excerpt:
@@ -521,8 +527,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 13,
     slug: "teeth-whitening-safety",
-    tags: ["치과상식", "예방"],
-    category: "치아상식",
+    tags: ["팩트체크"],
+    category: "구강건강상식",
     title: "하얀 치아, 안전하게 가능할까?",
     subtitle: "치아 미백의 종류와 주의사항",
     excerpt:
@@ -560,8 +566,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 14,
     slug: "pregnancy-dental-care",
-    tags: ["임산부", "예방"],
-    category: "구강관리",
+    tags: ["임산부", "증상가이드"],
+    category: "예방·구강관리",
     title: "임신 중 잇몸이 아프다면",
     subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:
@@ -599,8 +605,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 15,
     slug: "wisdom-teeth-extraction",
-    tags: ["치과상식"],
-    category: "치아상식",
+    tags: [],
+    category: "구강건강상식",
     title: "사랑니, 남길까 뺄까?",
     subtitle: "발치가 필요한 기준과 수술 후 관리법",
     excerpt:
@@ -638,8 +644,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 16,
     slug: "denture-vs-implant",
-    tags: ["보철", "임플란트", "시니어"],
-    category: "예방치료",
+    tags: ["시니어", "비교가이드"],
+    category: "보철치료",
     title: "틀니와 임플란트, 뭐가 나을까?",
     subtitle: "나에게 맞는 치아 보철 선택 가이드",
     excerpt:
@@ -677,8 +683,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 17,
     slug: "dry-mouth-syndrome",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관", "증상가이드"],
+    category: "구강건강상식",
     title: "입이 자꾸 마르시나요?",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
@@ -716,8 +722,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 18,
     slug: "toothbrush-hygiene-tips",
-    tags: ["예방"],
-    category: "구강관리",
+    tags: [],
+    category: "예방·구강관리",
     title: "그 칫솔, 정말 깨끗한가요?",
     subtitle: "의외로 모르는 칫솔 세균 관리법",
     excerpt:
@@ -755,8 +761,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 19,
     slug: "diabetes-and-dental-health",
-    tags: ["치과상식"],
-    category: "생활습관",
+    tags: ["생활습관"],
+    category: "구강건강상식",
     title: "당뇨가 치아를 망칠 수 있다?",
     subtitle: "당뇨와 치아 건강의 상호 관계",
     excerpt:
@@ -794,8 +800,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 20,
     slug: "root-canal-and-crown",
-    tags: ["보존", "보철"],
-    category: "예방치료",
+    tags: ["비교가이드"],
+    category: "보존치료",
     title: "신경치료만 하면 끝일까요?",
     subtitle: "크라운이 반드시 필요한 이유",
     excerpt:
@@ -833,8 +839,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 21,
     slug: "after-tooth-extraction-care",
-    tags: ["보존"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "발치 후 이것만은 피하세요",
     subtitle: "빠른 회복을 위한 발치 후 핵심 주의사항",
     excerpt:
@@ -872,8 +878,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 22,
     slug: "after-implant-surgery-care",
-    tags: ["임플란트"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "임플란트",
     title: "임플란트 성공, 수술 후가 더 중요합니다",
     subtitle: "성공률을 높이는 임플란트 수술 후 관리법",
     excerpt:
@@ -911,8 +917,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 23,
     slug: "after-root-canal-care",
-    tags: ["보존", "보철"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "신경치료 받은 치아, 오래 쓰려면",
     subtitle: "치아를 오래 보존하는 신경치료 후 주의사항",
     excerpt:
@@ -950,8 +956,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 24,
     slug: "after-scaling-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "예방·구강관리",
     title: "스케일링 후 시리다고요? 정상입니다",
     subtitle: "스케일링 후 관리법과 주의사항",
     excerpt:
@@ -989,8 +995,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 25,
     slug: "after-filling-care",
-    tags: ["보존"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "보존치료",
     title: "충치 치료 후 바로 밥 먹어도 될까?",
     subtitle: "레진·인레이 치료 후 주의사항 총정리",
     excerpt:
@@ -1028,8 +1034,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 26,
     slug: "after-whitening-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "구강건강상식",
     title: "미백 효과, 카레 한 끼에 사라진다?",
     subtitle: "치아 미백 효과를 오래 유지하는 관리법",
     excerpt:
@@ -1067,8 +1073,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 27,
     slug: "after-orthodontic-device-care",
-    tags: ["교정"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "교정치료",
     title: "교정 장치, 처음이 가장 힘듭니다",
     subtitle: "부착 후 적응 기간 관리법과 주의사항",
     excerpt:
@@ -1106,8 +1112,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 28,
     slug: "after-gum-surgery-care",
-    tags: ["예방"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "예방·구강관리",
     title: "잇몸 수술, 회복이 결과를 좌우합니다",
     subtitle: "잇몸 수술 후 회복을 돕는 핵심 관리법",
     excerpt:
@@ -1145,8 +1151,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 29,
     slug: "after-crown-prosthetic-care",
-    tags: ["보철"],
-    category: "치료후관리",
+    tags: ["치료후관리", "증상가이드"],
+    category: "보철치료",
     title: "크라운 씌웠는데 왜 불편할까?",
     subtitle: "크라운·브릿지 장착 후 주의사항 가이드",
     excerpt:
@@ -1184,8 +1190,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 30,
     slug: "after-child-dental-treatment-care",
-    tags: ["어린이"],
-    category: "치료후관리",
+    tags: ["어린이", "치료후관리"],
+    category: "구강건강상식",
     title: "아이가 치과 치료 받고 왔다면",
     subtitle: "보호자가 꼭 알아야 할 치료 후 주의사항",
     excerpt:
@@ -1223,8 +1229,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 31,
     slug: "dental-xray-radiation-safety",
-    tags: ["치과상식", "어린이"],
-    category: "치아상식",
+    tags: ["어린이", "팩트체크"],
+    category: "구강건강상식",
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",
     excerpt:
@@ -1262,8 +1268,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 32,
     slug: "cracked-tooth-syndrome",
-    tags: ["치과상식", "보철"],
-    category: "치아상식",
+    tags: ["증상가이드"],
+    category: "보존치료",
     title: "씹을 때만 아프다면 의심하세요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:
@@ -1306,8 +1312,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 33,
     slug: "denture-care-tips",
-    tags: ["보철", "시니어"],
-    category: "치료후관리",
+    tags: ["시니어", "치료후관리"],
+    category: "보철치료",
     title: "틀니, 올바르게 관리하고 계신가요?",
     subtitle: "틀니 사용 시 꼭 알아야 할 관리법",
     excerpt:
@@ -1350,8 +1356,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     id: 34,
     slug: "clear-aligner-care-guide",
-    tags: ["교정"],
-    category: "치료후관리",
+    tags: ["치료후관리"],
+    category: "교정치료",
     title: "투명교정, 끼기만 하면 될까?",
     subtitle: "교정 효과를 높이는 투명교정 관리법",
     excerpt:
