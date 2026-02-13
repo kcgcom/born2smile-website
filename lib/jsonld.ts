@@ -1,4 +1,5 @@
 import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
+import type { BlogPost } from "./blog-posts";
 
 /**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
@@ -111,6 +112,40 @@ export function getFaqJsonLd(faq: { q: string; a: string }[]) {
         text: item.a,
       },
     })),
+  };
+}
+
+/**
+ * 블로그 포스트용 JSON-LD (BlogPosting)
+ * Google 검색 결과에 블로그 글 정보가 표시됩니다.
+ */
+export function getBlogPostJsonLd(post: BlogPost) {
+  const doctor = DOCTORS[0];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.date,
+    dateModified: post.date,
+    url: `${BASE_URL}/blog/${post.slug}`,
+    author: {
+      "@type": "Person",
+      name: doctor.name,
+      jobTitle: doctor.position,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: CLINIC.name,
+      url: BASE_URL,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${BASE_URL}/blog/${post.slug}`,
+    },
+    articleSection: post.category,
+    inLanguage: "ko-KR",
   };
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Share2, Check, Clock } from "lucide-react";
+import Link from "next/link";
+import { Share2, Check, Clock, ArrowRight } from "lucide-react";
 import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { BLOG_POSTS, BLOG_CATEGORIES } from "@/lib/blog-posts";
 import type { BlogCategory } from "@/lib/blog-posts";
@@ -17,7 +18,14 @@ export default function BlogContent() {
       : BLOG_POSTS.filter((post) => post.category === activeCategory);
 
   const handleShare = useCallback(
-    async (postId: number, slug: string, title: string) => {
+    async (
+      e: React.MouseEvent,
+      postId: number,
+      slug: string,
+      title: string
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
       const url = `${BASE_URL}/blog/${slug}`;
 
       if (typeof navigator !== "undefined" && navigator.share) {
@@ -25,7 +33,6 @@ export default function BlogContent() {
           await navigator.share({ title, url });
           return;
         } catch {
-          // 사용자가 공유를 취소한 경우 — clipboard 복사로 대체하지 않음
           return;
         }
       }
@@ -35,7 +42,6 @@ export default function BlogContent() {
         setCopiedId(postId);
         setTimeout(() => setCopiedId(null), 2000);
       } catch {
-        // clipboard API 미지원 시 fallback
         const textarea = document.createElement("textarea");
         textarea.value = url;
         textarea.style.position = "fixed";
@@ -61,6 +67,7 @@ export default function BlogContent() {
     예방치료: "bg-green-100 text-green-700",
     치아상식: "bg-purple-100 text-purple-700",
     생활습관: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
+    치료후관리: "bg-rose-100 text-rose-700",
   };
 
   return (
@@ -90,52 +97,60 @@ export default function BlogContent() {
         >
           {filteredPosts.map((post) => (
             <StaggerItem key={post.id}>
-              <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
-                {/* 상단: 카테고리 + 공유 */}
-                <div className="mb-4 flex items-center justify-between">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
-                  >
-                    {post.category}
-                  </span>
-                  <button
-                    onClick={() =>
-                      handleShare(post.id, post.slug, post.title)
-                    }
-                    className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                    aria-label={`"${post.title}" 공유하기`}
-                  >
-                    {copiedId === post.id ? (
-                      <>
-                        <Check size={14} className="text-green-500" />
-                        <span className="text-green-600">복사됨</span>
-                      </>
-                    ) : (
-                      <>
-                        <Share2 size={14} />
-                        <span className="hidden sm:inline">공유</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              <Link href={`/blog/${post.slug}`} className="block h-full">
+                <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
+                  {/* 상단: 카테고리 + 공유 */}
+                  <div className="mb-4 flex items-center justify-between">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                    >
+                      {post.category}
+                    </span>
+                    <button
+                      onClick={(e) =>
+                        handleShare(e, post.id, post.slug, post.title)
+                      }
+                      className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                      aria-label={`"${post.title}" 공유하기`}
+                    >
+                      {copiedId === post.id ? (
+                        <>
+                          <Check size={14} className="text-green-500" />
+                          <span className="text-green-600">복사됨</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 size={14} />
+                          <span className="hidden sm:inline">공유</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                {/* 제목 + 본문 */}
-                <h2 className="mb-3 text-lg font-bold leading-snug text-gray-900">
-                  {post.title}
-                </h2>
-                <p className="mb-6 flex-1 text-sm leading-relaxed text-gray-600">
-                  {post.excerpt}
-                </p>
+                  {/* 제목 + 본문 */}
+                  <h2 className="mb-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                    {post.title}
+                  </h2>
+                  <p className="mb-6 flex-1 text-sm leading-relaxed text-gray-600">
+                    {post.excerpt}
+                  </p>
 
-                {/* 하단: 날짜 + 읽기 시간 */}
-                <div className="flex items-center gap-3 border-t border-gray-100 pt-4 text-xs text-gray-400">
-                  <span>{formatDate(post.date)}</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {post.readTime} 읽기
-                  </span>
-                </div>
-              </article>
+                  {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span>{formatDate(post.date)}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {post.readTime} 읽기
+                      </span>
+                    </div>
+                    <span className="flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] opacity-0 transition-opacity group-hover:opacity-100">
+                      자세히 읽기
+                      <ArrowRight size={12} />
+                    </span>
+                  </div>
+                </article>
+              </Link>
             </StaggerItem>
           ))}
         </StaggerContainer>
