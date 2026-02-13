@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Share2, Check, Clock, Link as LinkIcon } from "lucide-react";
+import { Share2, Check, Clock } from "lucide-react";
 import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { BLOG_POSTS, BLOG_CATEGORIES } from "@/lib/blog-posts";
 import type { BlogCategory } from "@/lib/blog-posts";

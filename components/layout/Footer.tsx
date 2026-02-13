@@ -23,9 +23,7 @@ export function Footer() {
                 </a>
               </li>
               <li>대표자: {CLINIC.representative}</li>
-              {CLINIC.businessNumber !== "000-00-00000" && (
-                <li>사업자등록번호: {CLINIC.businessNumber}</li>
-              )}
+              <li>사업자등록번호: {CLINIC.businessNumber}</li>
             </ul>
           </div>
 
@@ -68,7 +66,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/contact" className="hover:text-white">
-                  예약/상담
+                  상담 안내
                 </Link>
               </li>
               <li>

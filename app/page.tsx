@@ -48,11 +48,18 @@ export default function Home() {
               </Link>
               <a
                 href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
               >
                 <Phone size={18} />
-                {CLINIC.phone}
+                전화 상담 {CLINIC.phone}
               </a>
+              <Link
+                href="/treatments"
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-medium text-gray-700 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                진료 안내
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </FadeIn>
         </div>
@@ -314,11 +321,18 @@ export default function Home() {
               </Link>
               <a
                 href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
               >
                 <Phone size={18} />
-                전화 상담
+                전화 상담 {CLINIC.phone}
               </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+              >
+                상담 안내
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </div>
         </FadeIn>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS } from "@/lib/constants";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
   title: "진료 안내",

@@ -1,20 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Phone, MessageCircle, MapPin, Clock, Send } from "lucide-react";
-import { CLINIC, HOURS, TREATMENTS } from "@/lib/constants";
+import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
+import { CLINIC, HOURS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // TODO: 실제 폼 제출 로직 (API Route 또는 외부 서비스)
-    setSubmitted(true);
-  };
-
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
@@ -22,171 +13,52 @@ export default function ContactPage() {
           Contact
         </p>
         <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-          예약 / 상담
+          상담 안내
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-gray-600">
-          궁금하신 점을 남겨주시면 빠르게 연락드리겠습니다.
+          전화로 편리하게 상담받으세요. 친절하게 안내해 드리겠습니다.
         </p>
       </section>
 
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="grid gap-10 md:grid-cols-5">
-            {/* 예약 폼 */}
-            <FadeIn direction="left" className="md:col-span-3">
-              <h2 className="mb-6 text-2xl font-bold text-gray-900">
-                상담 문의
+          <div className="grid gap-10 md:grid-cols-2">
+            {/* 전화 상담 안내 */}
+            <FadeIn direction="left" className="space-y-6">
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
+                전화 상담
               </h2>
+              <p className="text-gray-600">
+                진료 예약 및 상담은 전화로 접수하고 있습니다.
+                <br />
+                궁금하신 점이 있으시면 언제든 연락주세요.
+              </p>
 
-              {submitted ? (
-                <div
-                  role="alert"
-                  className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center"
-                >
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                    <Send size={28} aria-hidden="true" />
-                  </div>
-                  <h3 className="mb-2 text-xl font-bold text-gray-900">
-                    문의가 접수되었습니다
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    확인 후 빠른 시간 내에 연락드리겠습니다.
-                  </p>
+              <a
+                href={CLINIC.phoneHref}
+                aria-label={`대표전화 ${CLINIC.phone}`}
+                className="flex items-center gap-4 rounded-2xl bg-[var(--color-primary)] p-6 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+                  <Phone size={28} aria-hidden="true" />
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
-                    >
-                      이름 <span aria-hidden="true" className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      aria-required="true"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-                      placeholder="홍길동"
-                    />
-                  </div>
+                <div>
+                  <div className="text-sm text-blue-200">대표전화</div>
+                  <div className="text-2xl font-bold">{CLINIC.phone}</div>
+                </div>
+              </a>
 
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
-                    >
-                      연락처 <span aria-hidden="true" className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      required
-                      aria-required="true"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-                      placeholder="010-0000-0000"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="treatment"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
-                    >
-                      진료 과목
-                    </label>
-                    <select
-                      id="treatment"
-                      name="treatment"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-                    >
-                      <option value="">선택해 주세요</option>
-                      {TREATMENTS.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                      <option value="other">기타</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="date"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
-                    >
-                      희망 날짜
-                    </label>
-                    <input
-                      type="date"
-                      id="date"
-                      name="date"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="message"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
-                    >
-                      문의 내용
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      rows={4}
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] focus:outline-none"
-                      placeholder="궁금하신 내용을 입력해 주세요."
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-[var(--color-primary)] px-6 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-                  >
-                    상담 문의하기
-                  </button>
-                </form>
-              )}
-            </FadeIn>
-
-            {/* 사이드 정보 */}
-            <FadeIn direction="right" delay={0.2} className="space-y-6 md:col-span-2">
-              {/* 빠른 연락 */}
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">
-                  빠른 연락
-                </h3>
-                <div className="space-y-4">
-                  <a
-                    href={CLINIC.phoneHref}
-                    aria-label={`대표전화 ${CLINIC.phone}`}
-                    className="flex items-center gap-3 rounded-xl bg-[var(--color-primary)] p-4 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-                  >
-                    <Phone size={20} aria-hidden="true" />
-                    <div>
-                      <div className="text-xs text-blue-200">대표전화</div>
-                      <div className="text-lg font-bold">{CLINIC.phone}</div>
-                    </div>
-                  </a>
-                  <a
-                    href={CLINIC.phoneHref}
-                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-gray-700 transition-colors hover:border-[var(--color-primary)]"
-                  >
-                    <MessageCircle
-                      size={20}
-                      aria-hidden="true"
-                      className="text-[var(--color-gold)]"
-                    />
-                    <div>
-                      <div className="text-xs text-gray-400">카카오톡 상담</div>
-                      <div className="text-sm font-medium">채널 준비 중</div>
-                    </div>
-                  </a>
+              <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
+                  <MessageCircle
+                    size={28}
+                    aria-hidden="true"
+                    className="text-[var(--color-gold)]"
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400">카카오톡 상담</div>
+                  <div className="text-sm font-medium">채널 준비 중</div>
                 </div>
               </div>
 
@@ -211,27 +83,44 @@ export default function ContactPage() {
                         className={item.open ? "font-medium text-gray-900" : "text-gray-400"}
                       >
                         {item.time}
+                        {"note" in item && item.note && (
+                          <span className="ml-1 text-xs text-[var(--color-gold)]">
+                            ({item.note})
+                          </span>
+                        )}
                       </span>
                     </li>
                   ))}
                 </ul>
                 <p className="mt-3 text-xs text-gray-500">
-                  점심시간: {HOURS.lunchTime}
+                  점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
                 </p>
+                {HOURS.notice && (
+                  <p className="mt-1 text-xs text-gray-500">{HOURS.notice}</p>
+                )}
               </div>
+            </FadeIn>
 
-              {/* 오시는 길 + 지도 */}
+            {/* 오시는 길 + 지도 */}
+            <FadeIn direction="right" delay={0.2} className="space-y-6">
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
+                <MapPin
+                  size={22}
+                  aria-hidden="true"
+                  className="mr-2 inline-block text-[var(--color-primary)]"
+                />
+                오시는 길
+              </h2>
+              <NaverMap className="aspect-square md:aspect-[4/3]" />
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <MapPin
-                    size={18}
-                    aria-hidden="true"
-                    className="text-[var(--color-primary)]"
-                  />
-                  오시는 길
-                </h3>
-                <KakaoMap className="mb-3 aspect-video" />
-                <p className="text-sm text-gray-600">{CLINIC.address}</p>
+                <p className="font-medium text-gray-900">{CLINIC.name}</p>
+                <p className="mt-1 text-sm text-gray-600">{CLINIC.address}</p>
+                <a
+                  href={CLINIC.phoneHref}
+                  className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
+                >
+                  {CLINIC.phone}
+                </a>
               </div>
             </FadeIn>
           </div>

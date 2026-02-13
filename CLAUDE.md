@@ -52,7 +52,7 @@ app/                          # Next.js App Router pages
   blog/page.tsx               # Blog hub (delegates to BlogContent)
   contact/
     layout.tsx                # Contact layout wrapper with metadata
-    page.tsx                  # Booking/inquiry form ("use client")
+    page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
 components/
   layout/               # Header, Footer, FloatingCTA
   ui/                   # Motion (animations), KakaoMap
@@ -89,7 +89,7 @@ postcss.config.mjs           # PostCSS with @tailwindcss/postcss
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (blog data in `lib/blog-posts.ts`) |
-| `/contact` | Client-side | `"use client"` form with state |
+| `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -223,6 +223,6 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
 코드에 남아있는 미완료 항목:
 
-- `lib/constants.ts`: 사업자등록번호(`businessNumber`), SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크), 정확한 지도 좌표(`MAP`)
-- `app/contact/page.tsx`: 폼 제출 로직 (API Route 또는 외부 서비스 연동 필요)
+- `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크)
+- `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
 - `app/layout.tsx`: Google Search Console / Naver Search Advisor 인증 코드
