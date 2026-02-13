@@ -67,6 +67,7 @@ export default function BlogContent() {
     예방치료: "bg-green-100 text-green-700",
     치아상식: "bg-purple-100 text-purple-700",
     생활습관: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
+    치료후관리: "bg-rose-100 text-rose-700",
   };
 
   return (
