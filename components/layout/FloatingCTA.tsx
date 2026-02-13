@@ -1,6 +1,7 @@
 "use client";
 
-import { Phone, MessageCircle, MapPin, CalendarCheck } from "lucide-react";
+import Link from "next/link";
+import { Phone, Building2, BookOpen, MapPin } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
@@ -20,32 +21,30 @@ export function FloatingCTA() {
             <Phone size={20} aria-hidden="true" />
             전화
           </a>
-          <a
-            href={CLINIC.phoneHref}
-            aria-label="카카오톡 상담"
+          <Link
+            href="/about"
+            aria-label="병원소개"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
-            <MessageCircle size={20} aria-hidden="true" />
-            상담
-          </a>
-          <a
-            href={`https://map.kakao.com/link/search/${encodeURIComponent(CLINIC.address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="오시는 길 - 카카오맵"
+            <Building2 size={20} aria-hidden="true" />
+            병원소개
+          </Link>
+          <Link
+            href="/blog"
+            aria-label="블로그"
             className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
+          >
+            <BookOpen size={20} aria-hidden="true" />
+            블로그
+          </Link>
+          <Link
+            href="/contact"
+            aria-label="오시는 길"
+            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
           >
             <MapPin size={20} aria-hidden="true" />
             오시는 길
-          </a>
-          <a
-            href="/contact"
-            aria-label="상담 문의"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
-          >
-            <CalendarCheck size={20} aria-hidden="true" />
-            문의
-          </a>
+          </Link>
         </div>
       </nav>
 
