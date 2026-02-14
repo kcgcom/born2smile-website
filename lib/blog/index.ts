@@ -43,8 +43,8 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 3,
     slug: "children-dental-care",
-    category: "예방·구강관리",
-    tags: ["어린이"],
+    category: "소아치료",
+    tags: [],
     title: "첫 치과, 타이밍이 중요합니다",
     subtitle: "우리 아이 첫 치과 방문 시기와 준비 가이드",
     excerpt:
@@ -367,8 +367,8 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 30,
     slug: "after-child-dental-treatment-care",
-    category: "구강건강상식",
-    tags: ["어린이", "치료후관리"],
+    category: "소아치료",
+    tags: ["치료후관리"],
     title: "아이가 치과 치료 받고 왔다면",
     subtitle: "보호자가 꼭 알아야 할 치료 후 주의사항",
     excerpt:
@@ -380,7 +380,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     id: 31,
     slug: "dental-xray-radiation-safety",
     category: "구강건강상식",
-    tags: ["어린이", "팩트체크"],
+    tags: ["팩트체크"],
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",
     excerpt:
@@ -475,8 +475,8 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 39,
     slug: "sealant-for-children",
-    category: "예방·구강관리",
-    tags: ["어린이"],
+    category: "소아치료",
+    tags: [],
     title: "실란트, 꼭 해야 하나요?",
     subtitle: "우리 아이 충치 예방의 첫 번째 방패",
     excerpt:
