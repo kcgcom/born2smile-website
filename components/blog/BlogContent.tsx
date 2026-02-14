@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -20,6 +20,7 @@ export default function BlogContent() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
   const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS_META);
@@ -33,6 +34,22 @@ export default function BlogContent() {
       setShuffledPosts(posts);
     });
     return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // 스크롤 시 자동으로 다음 페이지 로드
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount((prev) => prev + POSTS_PER_PAGE);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const filteredPosts = shuffledPosts.filter((post) => {
@@ -245,18 +262,8 @@ export default function BlogContent() {
           </p>
         )}
 
-        {/* 더 보기 버튼 */}
-        {hasMore && (
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => setVisibleCount((prev) => prev + POSTS_PER_PAGE)}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
-            >
-              더 보기
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        )}
+        {/* 무한 스크롤 감지 센티넬 */}
+        {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
     </section>
   );
