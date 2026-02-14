@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
-import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   BLOG_POSTS_META,
   BLOG_CATEGORIES,
@@ -20,6 +20,7 @@ export default function BlogContent() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
   const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS_META);
@@ -33,6 +34,22 @@ export default function BlogContent() {
       setShuffledPosts(posts);
     });
     return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // 스크롤 시 자동으로 다음 페이지 로드
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount((prev) => prev + POSTS_PER_PAGE);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const filteredPosts = shuffledPosts.filter((post) => {
@@ -106,6 +123,16 @@ export default function BlogContent() {
     return `${year}.${month}.${day}`;
   };
 
+  const shouldReduce = useReducedMotion();
+  const cardAnimation = shouldReduce
+    ? {}
+    : {
+        initial: { opacity: 0, y: 16 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true as const },
+        transition: { duration: 0.3, ease: "easeOut" as const },
+      };
+
   return (
     <section className="section-padding bg-white">
       <div className="container-narrow">
@@ -145,12 +172,9 @@ export default function BlogContent() {
         </div>
 
         {/* 포스트 그리드 */}
-        <StaggerContainer
-          key={`${activeCategory}-${activeTag}`}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {visiblePosts.map((post) => (
-            <StaggerItem key={post.id}>
+            <motion.div key={post.id} {...cardAnimation}>
               <Link href={`/blog/${post.slug}`} className="block h-full">
                 <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 공유 */}
@@ -228,9 +252,9 @@ export default function BlogContent() {
                   </div>
                 </article>
               </Link>
-            </StaggerItem>
+            </motion.div>
           ))}
-        </StaggerContainer>
+        </div>
 
         {filteredPosts.length === 0 && (
           <p className="py-20 text-center text-gray-400">
@@ -238,18 +262,8 @@ export default function BlogContent() {
           </p>
         )}
 
-        {/* 더 보기 버튼 */}
-        {hasMore && (
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => setVisibleCount((prev) => prev + POSTS_PER_PAGE)}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
-            >
-              더 보기
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        )}
+        {/* 무한 스크롤 감지 센티넬 */}
+        {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
     </section>
   );
