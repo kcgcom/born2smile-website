@@ -7,11 +7,13 @@
     "dev": "tsx scripts/generate-blog-meta.ts && next dev",
     "build": "tsx scripts/generate-blog-meta.ts && next build",
     "start": "next start",
+    "migrate-to-notion": "tsx scripts/migrate-to-notion.ts",
     "lint": "eslint",
     "deploy": "firebase deploy --only apphosting"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.9",
+    "@notionhq/client": "^5.9.0",
     "firebase": "^12.9.0",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.563.0",

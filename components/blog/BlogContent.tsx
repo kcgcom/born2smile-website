@@ -5,17 +5,20 @@ import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  BLOG_POSTS_META,
   BLOG_CATEGORIES,
   BLOG_TAGS,
   categoryColors,
 } from "@/lib/blog";
-import type { BlogCategory, BlogTag } from "@/lib/blog";
+import type { BlogCategory, BlogTag, BlogPostMeta } from "@/lib/blog";
 import { BASE_URL } from "@/lib/constants";
 
 const POSTS_PER_PAGE = 12;
 
-export default function BlogContent() {
+interface BlogContentProps {
+  posts: BlogPostMeta[];
+}
+
+export default function BlogContent({ posts }: BlogContentProps) {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -24,18 +27,18 @@ export default function BlogContent() {
 
   // SSR 초기값은 최신순 정렬 (크롤러에게 일관된 순서 제공)
   // 클라이언트 hydration 후 랜덤 셔플로 다양한 글 노출
-  const sortedByDate = [...BLOG_POSTS_META].sort(
+  const sortedByDate = [...posts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
   const [shuffledPosts, setShuffledPosts] = useState(sortedByDate);
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
-      const posts = [...BLOG_POSTS_META];
-      for (let i = posts.length - 1; i > 0; i--) {
+      const shuffled = [...posts];
+      for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [posts[i], posts[j]] = [posts[j], posts[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
-      setShuffledPosts(posts);
+      setShuffledPosts(shuffled);
     });
     return () => cancelAnimationFrame(frameId);
   }, []);

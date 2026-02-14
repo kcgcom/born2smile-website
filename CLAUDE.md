@@ -31,6 +31,7 @@ pnpm dev                      # http://localhost:3000
 - `pnpm dev` — Start dev server (블로그 메타데이터 자동 생성 후 실행)
 - `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
+- `pnpm migrate-to-notion` — 기존 .ts 포스트를 Notion DB로 마이그레이션 (NOTION_API_KEY, NOTION_PARENT_PAGE_ID 필요)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
 
@@ -63,12 +64,17 @@ components/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
+    NotionRenderer.tsx        # Notion 블록 → React 렌더러 (heading, list, image, callout 등)
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore)
+  notion/
+    client.ts                # Notion 클라이언트 초기화 (싱글턴)
+    blog.ts                  # Notion 블로그 DB 조회 (메타데이터, 블록, slug)
+    index.ts                 # Notion 모듈 re-export
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -111,8 +117,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 51 blog posts |
+| `/blog` | ISR (1h) | Notion 연동 시 ISR, 파일 기반 시 SSG |
+| `/blog/[slug]` | ISR (1h) | Notion 연동 시 ISR, 파일 기반 시 SSG |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -166,7 +172,17 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 블로그 포스트 추가
 
-**포스트 파일 1개만 생성하면 끝** (메타데이터는 빌드 시 자동 추출):
+**방법 A: Notion CMS (권장)** — 환경변수 `NOTION_API_KEY`와 `NOTION_BLOG_DATABASE_ID` 설정 시:
+
+1. Notion 데이터베이스에서 새 페이지 생성
+2. 속성 입력: Title, Subtitle, Slug, Category, Tags, Excerpt, Date, ReadTime
+3. 본문을 Notion 블록으로 작성 (heading, paragraph, list, callout, image 등)
+4. Published 체크박스 활성화
+5. ISR(1시간)로 자동 반영, 즉시 반영 필요 시 재배포
+
+**초기 설정:** `pnpm migrate-to-notion` 으로 기존 51개 포스트를 Notion으로 마이그레이션
+
+**방법 B: .ts 파일 기반 (기존 방식)** — Notion 미설정 시 자동으로 이 방식 사용:
 
 1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
    - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
@@ -175,6 +191,9 @@ pnpm-workspace.yaml          # pnpm workspace config
    - 수동 재생성: `pnpm generate-blog-meta`
    - 생성 파일: `lib/blog/generated/posts-meta.ts` (gitignored)
 3. ~~`lib/blog/index.ts` 수동 등록 불필요~~ — `getPostBySlug()`가 동적 import로 자동 탐색
+
+**공통 사항:**
+
 4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "구강건강상식"`
 5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택
    - 유형 태그: `"치료후관리"`, `"생활습관"`, `"팩트체크"`, `"증상가이드"`, `"비교가이드"`
@@ -259,6 +278,8 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
 - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
+- `NOTION_API_KEY` — Notion Integration API Key (optional, 블로그 Notion CMS 연동)
+- `NOTION_BLOG_DATABASE_ID` — Notion 블로그 Database ID (optional, `pnpm migrate-to-notion` 실행 후 생성됨)
 
 ## Known TODO Items
 

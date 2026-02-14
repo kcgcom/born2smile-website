@@ -19,3 +19,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NOTION_API_KEY
+    secret: notionApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NOTION_BLOG_DATABASE_ID
+    secret: notionBlogDatabaseId
+    availability:
+      - BUILD
+      - RUNTIME

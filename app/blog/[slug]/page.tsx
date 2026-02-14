@@ -2,21 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone, Clock } from "lucide-react";
-import { CLINIC, BASE_URL } from "@/lib/constants";
+import { CLINIC, BASE_URL, TREATMENTS } from "@/lib/constants";
 import {
-  BLOG_POSTS_META,
+  getAllPostsMeta,
+  getPostData,
+  getPostSlugs,
   getPostBySlug,
   getRelatedTreatmentId,
   categoryColors,
 } from "@/lib/blog";
-import { TREATMENTS } from "@/lib/constants";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import LikeButton from "@/components/blog/LikeButton";
+import NotionRenderer from "@/components/blog/NotionRenderer";
 
-export function generateStaticParams() {
-  return BLOG_POSTS_META.map((post) => ({ slug: post.slug }));
+// ISR: 1시간마다 재생성 (Notion 수정 반영)
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const slugs = await getPostSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -50,8 +56,10 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
-  if (!post) notFound();
+  const data = await getPostData(slug);
+  if (!data) notFound();
+
+  const { meta, blocks, content } = data;
 
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-");
@@ -59,15 +67,16 @@ export default async function BlogPostPage({
   };
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
-  const relatedPosts = BLOG_POSTS_META.filter(
-    (p) => p.category === post.category && p.id !== post.id
-  ).slice(0, 3);
+  const allPosts = await getAllPostsMeta();
+  const relatedPosts = allPosts
+    .filter((p) => p.category === meta.category && p.slug !== meta.slug)
+    .slice(0, 3);
 
-  const blogPostJsonLd = getBlogPostJsonLd(post);
+  const blogPostJsonLd = getBlogPostJsonLd(meta);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "블로그", href: "/blog" },
-    { name: post.title, href: `/blog/${slug}` },
+    { name: meta.title, href: `/blog/${slug}` },
   ]);
 
   return (
@@ -96,24 +105,24 @@ export default async function BlogPostPage({
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[meta.category] ?? "bg-gray-100 text-gray-600"}`}
               >
-                {post.category}
+                {meta.category}
               </span>
               <span className="text-sm text-gray-400">
-                {formatDate(post.date)}
+                {formatDate(meta.date)}
               </span>
               <span className="flex items-center gap-1 text-sm text-gray-400">
                 <Clock size={13} />
-                {post.readTime} 읽기
+                {meta.readTime} 읽기
               </span>
             </div>
 
             <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
-              {post.title}
+              {meta.title}
             </h1>
             <p className="mt-3 text-lg text-gray-500 md:text-xl">
-              {post.subtitle}
+              {meta.subtitle}
             </p>
           </div>
         </header>
@@ -121,25 +130,31 @@ export default async function BlogPostPage({
         {/* 본문 */}
         <section className="section-padding bg-white">
           <FadeIn className="mx-auto max-w-3xl">
-            <div className="space-y-10">
-              {post.content.map((section) => (
-                <div key={section.heading}>
-                  <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
-                    {section.heading}
-                  </h2>
-                  <p className="text-base leading-relaxed text-gray-700 md:text-lg">
-                    {section.content}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {blocks ? (
+              /* Notion 블록 렌더링 */
+              <NotionRenderer blocks={blocks} />
+            ) : content ? (
+              /* 기존 파일 기반 렌더링 */
+              <div className="space-y-10">
+                {content.map((section) => (
+                  <div key={section.heading}>
+                    <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
+                      {section.heading}
+                    </h2>
+                    <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+                      {section.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </FadeIn>
         </section>
       </article>
 
       {/* 관련 진료 배너 */}
       {(() => {
-        const treatmentId = getRelatedTreatmentId(post.category);
+        const treatmentId = getRelatedTreatmentId(meta.category);
         if (!treatmentId) return null;
         const treatment = TREATMENTS.find((t) => t.id === treatmentId);
         if (!treatment) return null;
@@ -181,8 +196,8 @@ export default async function BlogPostPage({
             목록으로 돌아가기
           </Link>
           <div className="flex items-center gap-2">
-            <LikeButton slug={post.slug} />
-            <BlogShareButton slug={post.slug} title={post.title} />
+            <LikeButton slug={meta.slug} />
+            <BlogShareButton slug={meta.slug} title={meta.title} />
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
-import type { BlogPost } from "./blog/types";
+import type { BlogPostMeta } from "./blog/types";
 
 /**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
@@ -124,7 +124,7 @@ export function getFaqJsonLd(faq: { q: string; a: string }[]) {
  * 블로그 포스트용 JSON-LD (BlogPosting)
  * Google 검색 결과에 블로그 글 정보가 표시됩니다.
  */
-export function getBlogPostJsonLd(post: BlogPost) {
+export function getBlogPostJsonLd(post: BlogPostMeta) {
   const doctor = DOCTORS[0];
 
   return {
