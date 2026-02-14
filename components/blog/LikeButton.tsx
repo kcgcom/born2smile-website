@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Heart } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, isFirebaseConfigured } from "@/lib/firebase";
 import {
   doc,
   getDoc,
@@ -28,10 +28,19 @@ interface LikeButtonProps {
 export default function LikeButton({ slug }: LikeButtonProps) {
   const [count, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isFirebaseConfigured);
+  const [unavailable, setUnavailable] = useState(!isFirebaseConfigured);
 
   // Firestore에서 좋아요 데이터 로드
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      console.warn(
+        "[LikeButton] NEXT_PUBLIC_FIREBASE_API_KEY가 설정되지 않았습니다. " +
+        ".env.local 파일에 Firebase API 키를 추가하세요."
+      );
+      return;
+    }
+
     const uid = getUserId();
     const docRef = doc(db, "blog-likes", slug);
 
@@ -43,14 +52,15 @@ export default function LikeButton({ slug }: LikeButtonProps) {
           setLiked((data.users as string[])?.includes(uid) ?? false);
         }
       })
-      .catch(() => {
-        // Firestore 미연결 시 조용히 실패 (좋아요 0으로 표시)
+      .catch((error) => {
+        console.error("[LikeButton] Firestore 연결 실패:", error);
+        setUnavailable(true);
       })
       .finally(() => setLoading(false));
   }, [slug]);
 
   const handleToggle = useCallback(async () => {
-    if (loading) return;
+    if (loading || unavailable) return;
 
     const uid = getUserId();
     if (!uid) return;
@@ -82,12 +92,27 @@ export default function LikeButton({ slug }: LikeButtonProps) {
           });
         }
       });
-    } catch {
+    } catch (error) {
+      console.error("[LikeButton] 좋아요 저장 실패:", error);
       // 실패 시 롤백
       setLiked(wasLiked);
       setCount((prev) => prev + (wasLiked ? 1 : -1));
     }
-  }, [slug, liked, loading]);
+  }, [slug, liked, loading, unavailable]);
+
+  if (unavailable) {
+    return (
+      <button
+        disabled
+        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium bg-gray-50 text-gray-300 cursor-not-allowed"
+        aria-label="좋아요 기능을 사용할 수 없습니다"
+        title="좋아요 기능 준비 중"
+      >
+        <Heart size={16} />
+        <span>좋아요</span>
+      </button>
+    );
+  }
 
   return (
     <button
