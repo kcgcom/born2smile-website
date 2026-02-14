@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
-import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   BLOG_POSTS_META,
   BLOG_CATEGORIES,
@@ -106,6 +106,16 @@ export default function BlogContent() {
     return `${year}.${month}.${day}`;
   };
 
+  const shouldReduce = useReducedMotion();
+  const cardAnimation = shouldReduce
+    ? {}
+    : {
+        initial: { opacity: 0, y: 16 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true as const },
+        transition: { duration: 0.3, ease: "easeOut" as const },
+      };
+
   return (
     <section className="section-padding bg-white">
       <div className="container-narrow">
@@ -145,12 +155,9 @@ export default function BlogContent() {
         </div>
 
         {/* 포스트 그리드 */}
-        <StaggerContainer
-          key={`${activeCategory}-${activeTag}`}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {visiblePosts.map((post) => (
-            <StaggerItem key={post.id}>
+            <motion.div key={post.id} {...cardAnimation}>
               <Link href={`/blog/${post.slug}`} className="block h-full">
                 <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 공유 */}
@@ -228,9 +235,9 @@ export default function BlogContent() {
                   </div>
                 </article>
               </Link>
-            </StaggerItem>
+            </motion.div>
           ))}
-        </StaggerContainer>
+        </div>
 
         {filteredPosts.length === 0 && (
           <p className="py-20 text-center text-gray-400">
