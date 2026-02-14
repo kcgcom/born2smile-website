@@ -16,33 +16,33 @@ export function FloatingCTA() {
           <Link
             href="/#hero"
             aria-label="홈"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
+            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
-            <Home size={20} aria-hidden="true" />
+            <Home size={22} aria-hidden="true" />
             홈
           </Link>
           <Link
             href="/about"
             aria-label="병원소개"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
+            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
-            <Building2 size={20} aria-hidden="true" />
+            <Building2 size={22} aria-hidden="true" />
             병원소개
           </Link>
           <Link
             href="/blog"
             aria-label="블로그"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs text-gray-600 transition-colors hover:text-[var(--color-primary)]"
+            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
-            <BookOpen size={20} aria-hidden="true" />
+            <BookOpen size={22} aria-hidden="true" />
             블로그
           </Link>
           <Link
             href="/contact"
             aria-label="상담안내"
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs font-medium text-[var(--color-gold)]"
+            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm font-medium text-[var(--color-gold)]"
           >
-            <Phone size={20} aria-hidden="true" />
+            <Phone size={22} aria-hidden="true" />
             상담안내
           </Link>
         </div>
