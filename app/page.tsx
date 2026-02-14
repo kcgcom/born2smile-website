@@ -269,10 +269,10 @@ export default function Home() {
             <div className="grid gap-10 md:grid-cols-2">
               {/* 진료시간 */}
               <FadeIn direction="left">
-                <h3 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+                <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
                   <Clock size={24} className="text-[var(--color-gold)]" />
                   진료시간
-                </h3>
+                </h2>
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                   <table className="w-full text-sm">
                     <tbody>
@@ -308,10 +308,10 @@ export default function Home() {
 
               {/* 오시는 길 */}
               <FadeIn direction="right">
-                <h3 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+                <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
                   <MapPin size={24} className="text-[var(--color-primary)]" />
                   오시는 길
-                </h3>
+                </h2>
                 <KakaoMap className="mb-6 aspect-[4/3]" />
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-3">

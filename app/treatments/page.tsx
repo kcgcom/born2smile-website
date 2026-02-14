@@ -21,9 +21,10 @@ export default function TreatmentsPage() {
         <div className="container-narrow">
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
-              <h1 className="mb-6 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                진료 안내
-              </h1>
+              <h1 className="sr-only">진료 안내</h1>
+              <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+                Philosophy
+              </p>
               <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
                 진료 철학
               </h2>
@@ -99,9 +100,9 @@ export default function TreatmentsPage() {
                   href={treatment.href}
                   className="group block rounded-2xl border border-gray-100 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
                 >
-                  <h2 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                  <h3 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
                     {treatment.name}
-                  </h2>
+                  </h3>
                   <p className="mb-6 text-sm leading-relaxed text-gray-600">
                     {treatment.shortDesc}
                   </p>
