@@ -100,9 +100,9 @@ export default function TreatmentsPage() {
                   href={treatment.href}
                   className="group block rounded-2xl border border-gray-100 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
                 >
-                  <h2 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                  <h3 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
                     {treatment.name}
-                  </h2>
+                  </h3>
                   <p className="mb-6 text-sm leading-relaxed text-gray-600">
                     {treatment.shortDesc}
                   </p>
