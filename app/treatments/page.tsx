@@ -25,7 +25,7 @@ export default function TreatmentsPage() {
                 진료 안내
               </h1>
               <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-                {CLINIC.name}의 진료 철학
+                진료 철학
               </h2>
               <p className="text-lg leading-relaxed text-gray-600">
                 치아는 한번 잃으면 다시 돌아오지 않습니다.
