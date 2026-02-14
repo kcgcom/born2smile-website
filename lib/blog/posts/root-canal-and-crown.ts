@@ -5,8 +5,8 @@ export const post: BlogPost = {
     slug: "root-canal-and-crown",
     tags: ["비교가이드"],
     category: "보존치료",
-    title: "신경치료만 하면 끝일까요?",
-    subtitle: "크라운이 반드시 필요한 이유",
+    title: "신경치료 후에는 꼭 크라운을 씌워야 하나요?",
+    subtitle: "신경치료 후 크라운이 반드시 필요한 이유",
     excerpt:
       "신경치료를 받은 치아는 내부가 비어 약해지기 때문에 크라운으로 보호해야 합니다. 신경치료의 과정, 크라운의 필요성, 종류별 특징을 알아봅니다.",
     content: [

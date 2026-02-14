@@ -249,8 +249,8 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "root-canal-and-crown",
     category: "보존치료",
     tags: ["비교가이드"],
-    title: "신경치료만 하면 끝일까요?",
-    subtitle: "크라운이 반드시 필요한 이유",
+    title: "신경치료 후에는 꼭 크라운을 씌워야 하나요?",
+    subtitle: "신경치료 후 크라운이 반드시 필요한 이유",
     excerpt:
       "신경치료를 받은 치아는 내부가 비어 약해지기 때문에 크라운으로 보호해야 합니다. 신경치료의 과정, 크라운의 필요성, 종류별 특징을 알아봅니다.",
     date: "2025-12-02",
@@ -568,6 +568,18 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     date: "2026-02-14",
     readTime: "5분",
   },
+  {
+    id: 47,
+    slug: "scaling-frequency-guide",
+    category: "예방·구강관리",
+    tags: [],
+    title: "스케일링, 얼마나 자주 받아야 하나요?",
+    subtitle: "구강 상태별 적정 스케일링 주기 가이드",
+    excerpt:
+      "6개월? 1년? 스케일링 주기는 사람마다 다릅니다. 일반적인 권장 주기부터 잇몸 상태에 따른 맞춤 주기, 건강보험 적용까지 스케일링 주기의 모든 것을 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "4분",
+  },
 ];
 
 /** slug로 포스트 전체 데이터 로드 (서버 전용) */
@@ -619,6 +631,7 @@ export async function getPostBySlug(slug: string) {
     "orthodontic-treatment-duration": () => import("./posts/orthodontic-treatment-duration"),
     "clear-vs-bracket-orthodontics": () => import("./posts/clear-vs-bracket-orthodontics"),
     "denture-adjustment-guide": () => import("./posts/denture-adjustment-guide"),
+    "scaling-frequency-guide": () => import("./posts/scaling-frequency-guide"),
   };
 
   const loader = modules[slug];
