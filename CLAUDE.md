@@ -28,8 +28,9 @@ pnpm dev                      # http://localhost:3000
 
 ## Commands
 
-- `pnpm dev` — Start dev server
-- `pnpm build` — Production build (standalone output to `.next/`)
+- `pnpm dev` — Start dev server (블로그 메타데이터 자동 생성 후 실행)
+- `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
+- `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
 
@@ -73,13 +74,17 @@ lib/
   blog/
     types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
     category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
-    index.ts                 # 메타데이터 배열(BLOG_POSTS_META) + getPostBySlug() + 진료↔블로그 매핑
-    posts/                   # 개별 포스트 파일 (51개, slug.ts 형식)
+    index.ts                 # re-export + getPostBySlug() + 진료↔블로그 매핑
+    generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
+      posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출)
+    posts/                   # 개별 포스트 파일 (51개, slug.ts 형식) — Single Source of Truth
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
   BingSiteAuth.xml           # Bing webmaster verification
   naver*.html                # Naver webmaster verification
+scripts/
+  generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .firebaserc                  # Firebase project alias config (default: born2smile-website)
 apphosting.yaml              # Firebase App Hosting runtime config
@@ -161,11 +166,15 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 블로그 포스트 추가
 
+**포스트 파일 1개만 생성하면 끝** (메타데이터는 빌드 시 자동 추출):
+
 1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
    - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
    - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
-2. `lib/blog/index.ts` → `BLOG_POSTS_META` 배열에 메타데이터 추가 (본문 `content` 제외)
-3. `lib/blog/index.ts` → `getPostBySlug()` 내 `modules` 맵에 dynamic import 추가
+2. `pnpm dev` 또는 `pnpm build` 실행 시 메타데이터가 자동 생성됨
+   - 수동 재생성: `pnpm generate-blog-meta`
+   - 생성 파일: `lib/blog/generated/posts-meta.ts` (gitignored)
+3. ~~`lib/blog/index.ts` 수동 등록 불필요~~ — `getPostBySlug()`가 동적 import로 자동 탐색
 4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "구강건강상식"`
 5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택
    - 유형 태그: `"치료후관리"`, `"생활습관"`, `"팩트체크"`, `"증상가이드"`, `"비교가이드"`
