@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "generate-blog-meta": "tsx scripts/generate-blog-meta.ts",
+    "dev": "tsx scripts/generate-blog-meta.ts && next dev",
+    "build": "tsx scripts/generate-blog-meta.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "firebase deploy --only apphosting"
@@ -27,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
