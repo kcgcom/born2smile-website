@@ -380,7 +380,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     id: 31,
     slug: "dental-xray-radiation-safety",
     category: "구강건강상식",
-    tags: ["팩트체크"],
+    tags: ["팩트체크", "임산부"],
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",
     excerpt:
