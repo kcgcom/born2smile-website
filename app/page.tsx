@@ -33,7 +33,7 @@ export default function Home() {
           <FadeIn delay={0.6}>
             <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
               서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
-              <br className="hidden md:block" />
+              <br />
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
           </FadeIn>
