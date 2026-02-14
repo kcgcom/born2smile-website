@@ -244,7 +244,7 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
 - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `born2smile-website`)
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
 
 ## Known TODO Items
 
