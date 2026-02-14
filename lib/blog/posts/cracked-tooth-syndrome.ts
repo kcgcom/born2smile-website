@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "cracked-tooth-syndrome",
     tags: ["증상가이드"],
     category: "보존치료",
-    title: "씹을 때만 아프다면 의심하세요",
+    title: "씹을 때 이가 시큰거려요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:
       "씹을 때 찌릿한 통증이 있지만 겉으로 이상이 없다면 치아 균열을 의심해 보세요. 치아 크랙의 원인, 단계별 증상, 진단 방법, 그리고 치료법까지 자세히 알려드립니다.",

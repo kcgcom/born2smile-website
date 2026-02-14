@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "bad-breath-causes-and-solutions",
     tags: ["증상가이드"],
     category: "구강건강상식",
-    title: "혹시 나도 입 냄새?",
+    title: "입 냄새가 나는 것 같아요",
     subtitle: "구취의 원인부터 해결법까지",
     excerpt:
       "구취의 약 90%는 구강 내 원인에서 발생합니다. 혀 세균, 잇몸 질환, 구강 건조증 등 입 냄새의 주요 원인과 근본적인 해결 방법을 치과 전문의가 알려드립니다.",

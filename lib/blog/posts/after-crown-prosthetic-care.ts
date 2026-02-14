@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "after-crown-prosthetic-care",
     tags: ["치료후관리", "증상가이드"],
     category: "보철치료",
-    title: "크라운 씌웠는데 왜 불편할까?",
+    title: "크라운 씌웠는데 불편해요",
     subtitle: "크라운·브릿지 장착 후 주의사항 가이드",
     excerpt:
       "크라운이나 브릿지를 새로 씌운 후 적응 기간과 관리법이 궁금하신가요? 교합 적응, 식사 주의점, 장기 관리법을 알려드립니다.",

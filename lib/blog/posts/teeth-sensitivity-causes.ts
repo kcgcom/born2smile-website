@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "teeth-sensitivity-causes",
     tags: ["증상가이드"],
     category: "구강건강상식",
-    title: "찬물이 무서운 당신에게",
+    title: "찬물 마시면 이가 시려요",
     subtitle: "시린 치아의 원인과 대처법 총정리",
     excerpt:
       "시린 이의 원인은 잇몸 퇴축, 법랑질 손상, 충치 등 다양합니다. 시린 이 전용 치약의 효과, 병원에서 받을 수 있는 치료, 일상에서의 관리법을 함께 알아봅니다.",

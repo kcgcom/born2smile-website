@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "gum-disease-prevention",
     tags: ["증상가이드"],
     category: "예방·구강관리",
-    title: "양치할 때 피가 나시나요?",
+    title: "양치할 때 피가 나요",
     subtitle: "잇몸 질환 초기 증상과 예방법",
     excerpt:
       "양치할 때 잇몸에서 피가 나거나 붓는 증상은 잇몸 질환의 초기 신호일 수 있습니다. 치은염과 치주염의 차이, 초기에 발견하고 관리하는 방법을 알아봅니다.",

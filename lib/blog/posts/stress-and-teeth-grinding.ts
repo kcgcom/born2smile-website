@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "stress-and-teeth-grinding",
     tags: ["생활습관", "증상가이드"],
     category: "구강건강상식",
-    title: "자는 동안 이를 갈고 있다면",
+    title: "자고 나면 턱이 뻐근해요",
     subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
     excerpt:
       "스트레스, 수면 자세, 교합 문제 등으로 발생하는 이갈이는 치아 마모, 턱관절 장애로 이어질 수 있습니다. 자가 진단법과 치과에서의 치료법을 소개합니다.",

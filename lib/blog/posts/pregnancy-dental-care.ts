@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "pregnancy-dental-care",
     tags: ["임산부", "증상가이드"],
     category: "예방·구강관리",
-    title: "임신 중 잇몸이 아프다면",
+    title: "임신했는데 잇몸이 아파요",
     subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:
       "임신 중 호르몬 변화로 잇몸 출혈과 부종이 흔하게 나타납니다. 임산부가 알아야 할 구강 관리법, 치과 치료 시기, 입덧 시 양치 요령을 안내합니다.",
