@@ -621,6 +621,42 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     date: "2026-02-14",
     readTime: "5분",
   },
+  {
+    id: 49,
+    slug: "pregnancy-dental-treatment-safety",
+    category: "구강건강상식",
+    tags: ["임산부", "팩트체크"],
+    title: "임신 중 충치 치료, 해도 될까요?",
+    subtitle: "임신 시기별 치과 치료 가능 범위와 안전 가이드",
+    excerpt:
+      "임신 중 충치가 생겼는데 치료를 받아도 되는지 걱정되시나요? 임신 중기라면 대부분의 치과 치료가 가능합니다. 마취, 약물, 엑스레이의 안전성과 시기별 치료 가이드를 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 50,
+    slug: "postpartum-dental-health",
+    category: "구강건강상식",
+    tags: ["임산부", "증상가이드"],
+    title: "출산 후 이가 약해진 것 같아요",
+    subtitle: "산후 치아·잇몸 문제의 원인과 회복 가이드",
+    excerpt:
+      "출산 후 이가 시리거나 잇몸에서 피가 나고, 충치가 갑자기 늘었다면 혼자만의 경험이 아닙니다. 산후 구강 건강 악화의 원인과 회복 방법, 모유수유 중 치과 치료 가능 여부를 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 51,
+    slug: "prepregnancy-dental-checkup",
+    category: "예방·구강관리",
+    tags: ["임산부"],
+    title: "임신 전 치과 검진이 중요한 이유",
+    subtitle: "임신 계획 중이라면 치과부터 다녀오세요",
+    excerpt:
+      "임신을 계획하고 있다면 산부인과만큼 치과 검진도 중요합니다. 임신 중에는 치료에 제약이 많기 때문에 미리 해결해야 할 치과 치료와 검진 항목을 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
 ];
 
 /** slug로 포스트 전체 데이터 로드 (서버 전용) */
@@ -674,6 +710,9 @@ export async function getPostBySlug(slug: string) {
     "denture-adjustment-guide": () => import("./posts/denture-adjustment-guide"),
     "scaling-frequency-guide": () => import("./posts/scaling-frequency-guide"),
     "senior-orthodontics": () => import("./posts/senior-orthodontics"),
+    "pregnancy-dental-treatment-safety": () => import("./posts/pregnancy-dental-treatment-safety"),
+    "postpartum-dental-health": () => import("./posts/postpartum-dental-health"),
+    "prepregnancy-dental-checkup": () => import("./posts/prepregnancy-dental-checkup"),
   };
 
   const loader = modules[slug];
