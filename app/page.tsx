@@ -20,7 +20,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl px-4 text-center">
           <FadeIn delay={0.2}>
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
-              우리동네 좋은치과
+              우리가족 평생주치의
             </p>
           </FadeIn>
           <FadeIn delay={0.4}>
@@ -32,7 +32,7 @@ export default function Home() {
           </FadeIn>
           <FadeIn delay={0.6}>
             <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
-              서울대 출신의 전문의가 정성을 다해 진료합니다.
+              서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
               <br className="hidden md:block" />
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
