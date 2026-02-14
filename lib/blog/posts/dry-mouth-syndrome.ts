@@ -5,7 +5,7 @@ export const post: BlogPost = {
     slug: "dry-mouth-syndrome",
     tags: ["생활습관", "증상가이드"],
     category: "구강건강상식",
-    title: "입이 자꾸 마르시나요?",
+    title: "입이 자꾸 말라요",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
       "입이 마르고 침이 부족하면 충치, 잇몸 질환, 구취의 위험이 높아집니다. 구강 건조증의 원인, 자가 관리법, 치과에서의 치료를 알아봅니다.",

@@ -57,7 +57,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "gum-disease-prevention",
     category: "예방·구강관리",
     tags: ["증상가이드"],
-    title: "양치할 때 피가 나시나요?",
+    title: "양치할 때 피가 나요",
     subtitle: "잇몸 질환 초기 증상과 예방법",
     excerpt:
       "양치할 때 잇몸에서 피가 나거나 붓는 증상은 잇몸 질환의 초기 신호일 수 있습니다. 치은염과 치주염의 차이, 초기에 발견하고 관리하는 방법을 알아봅니다.",
@@ -93,7 +93,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "teeth-sensitivity-causes",
     category: "구강건강상식",
     tags: ["증상가이드"],
-    title: "찬물이 무서운 당신에게",
+    title: "찬물 마시면 이가 시려요",
     subtitle: "시린 치아의 원인과 대처법 총정리",
     excerpt:
       "시린 이의 원인은 잇몸 퇴축, 법랑질 손상, 충치 등 다양합니다. 시린 이 전용 치약의 효과, 병원에서 받을 수 있는 치료, 일상에서의 관리법을 함께 알아봅니다.",
@@ -129,7 +129,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "stress-and-teeth-grinding",
     category: "구강건강상식",
     tags: ["생활습관", "증상가이드"],
-    title: "자는 동안 이를 갈고 있다면",
+    title: "자고 나면 턱이 뻐근해요",
     subtitle: "이갈이의 원인과 방치하면 안 되는 이유",
     excerpt:
       "스트레스, 수면 자세, 교합 문제 등으로 발생하는 이갈이는 치아 마모, 턱관절 장애로 이어질 수 있습니다. 자가 진단법과 치과에서의 치료법을 소개합니다.",
@@ -141,7 +141,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "bad-breath-causes-and-solutions",
     category: "구강건강상식",
     tags: ["증상가이드"],
-    title: "혹시 나도 입 냄새?",
+    title: "입 냄새가 나는 것 같아요",
     subtitle: "구취의 원인부터 해결법까지",
     excerpt:
       "구취의 약 90%는 구강 내 원인에서 발생합니다. 혀 세균, 잇몸 질환, 구강 건조증 등 입 냄새의 주요 원인과 근본적인 해결 방법을 치과 전문의가 알려드립니다.",
@@ -177,7 +177,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "pregnancy-dental-care",
     category: "예방·구강관리",
     tags: ["임산부", "증상가이드"],
-    title: "임신 중 잇몸이 아프다면",
+    title: "임신했는데 잇몸이 아파요",
     subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:
       "임신 중 호르몬 변화로 잇몸 출혈과 부종이 흔하게 나타납니다. 임산부가 알아야 할 구강 관리법, 치과 치료 시기, 입덧 시 양치 요령을 안내합니다.",
@@ -213,7 +213,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "dry-mouth-syndrome",
     category: "구강건강상식",
     tags: ["생활습관", "증상가이드"],
-    title: "입이 자꾸 마르시나요?",
+    title: "입이 자꾸 말라요",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
       "입이 마르고 침이 부족하면 충치, 잇몸 질환, 구취의 위험이 높아집니다. 구강 건조증의 원인, 자가 관리법, 치과에서의 치료를 알아봅니다.",
@@ -357,7 +357,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "after-crown-prosthetic-care",
     category: "보철치료",
     tags: ["치료후관리", "증상가이드"],
-    title: "크라운 씌웠는데 왜 불편할까?",
+    title: "크라운 씌웠는데 불편해요",
     subtitle: "크라운·브릿지 장착 후 주의사항 가이드",
     excerpt:
       "크라운이나 브릿지를 새로 씌운 후 적응 기간과 관리법이 궁금하신가요? 교합 적응, 식사 주의점, 장기 관리법을 알려드립니다.",
@@ -393,7 +393,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     slug: "cracked-tooth-syndrome",
     category: "보존치료",
     tags: ["증상가이드"],
-    title: "씹을 때만 아프다면 의심하세요",
+    title: "씹을 때 이가 시큰거려요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:
       "씹을 때 찌릿한 통증이 있지만 겉으로 이상이 없다면 치아 균열을 의심해 보세요. 치아 크랙의 원인, 단계별 증상, 진단 방법, 그리고 치료법까지 자세히 알려드립니다.",
