@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Building2, BookOpen, Home } from "lucide-react";
+import { Phone, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
@@ -14,20 +14,20 @@ export function FloatingCTA() {
       >
         <div className="grid grid-cols-4">
           <Link
-            href="/#hero"
-            aria-label="홈"
-            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
-          >
-            <Home size={22} aria-hidden="true" />
-            홈
-          </Link>
-          <Link
             href="/about"
             aria-label="병원소개"
             className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
             <Building2 size={22} aria-hidden="true" />
             병원소개
+          </Link>
+          <Link
+            href="/treatments"
+            aria-label="진료안내"
+            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
+          >
+            <Stethoscope size={22} aria-hidden="true" />
+            진료안내
           </Link>
           <Link
             href="/blog"
