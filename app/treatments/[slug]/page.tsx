@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
-import { CLINIC, TREATMENTS } from "@/lib/constants";
+import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { getRelatedBlogPosts, categoryColors } from "@/lib/blog";
@@ -22,6 +22,8 @@ export async function generateMetadata({
   const detail = TREATMENT_DETAILS[slug];
   if (!detail) return {};
 
+  const treatmentUrl = `${BASE_URL}/treatments/${slug}`;
+
   // 스케일링 페이지는 타겟 키워드를 포함한 맞춤 메타데이터 사용
   if (slug === "scaling") {
     return {
@@ -29,12 +31,26 @@ export async function generateMetadata({
       description:
         "김포 스케일링 잘하는 치과, 서울본치과. 에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.",
       keywords: ["안아픈 스케일링", "에어플로우 스케일링", "스케일링 잘하는 치과", "김포 스케일링", "장기동 스케일링"],
+      alternates: { canonical: treatmentUrl },
+      openGraph: {
+        title: `안아픈 스케일링 | 에어플로우 스케일링 | ${CLINIC.name}`,
+        description: "에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.",
+        url: treatmentUrl,
+      },
     };
   }
 
+  const description = `김포한강신도시 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`;
+
   return {
     title: detail.name,
-    description: `김포한강신도시 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`,
+    description,
+    alternates: { canonical: treatmentUrl },
+    openGraph: {
+      title: `${detail.name} | ${CLINIC.name}`,
+      description,
+      url: treatmentUrl,
+    },
   };
 }
 

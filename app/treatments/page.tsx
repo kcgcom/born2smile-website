@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Heart, HandHeart, Leaf } from "lucide-react";
-import { CLINIC, TREATMENTS } from "@/lib/constants";
+import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import {
   FadeIn,
   StaggerContainer,
@@ -11,6 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "진료 안내",
   description: `${CLINIC.name} 진료 안내 - 김포한강신도시 장기동 치과 임플란트, 치아교정, 틀니 및 심미보철, 소아치료, 보존치료, 스케일링`,
+  alternates: { canonical: `${BASE_URL}/treatments` },
 };
 
 export default function TreatmentsPage() {

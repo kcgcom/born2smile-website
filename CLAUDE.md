@@ -262,24 +262,16 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
 ### SEO 개선 TODO
 
-**Critical — OG 이미지 및 메타태그:**
+**Critical — OG 이미지:**
 
-- `public/images/og-image.jpg` 파일 없음 — `lib/jsonld.ts`와 `lib/constants.ts`에서 참조하지만 실제 파일 부재. 1200×630px OG 이미지 생성 필요
-- `app/page.tsx`: 홈페이지 `metadata` export 없음 — 가장 중요한 페이지가 layout 기본값만 사용 중. 전용 title/description/OG 추가 필요
-- `app/layout.tsx`: `openGraph.images` 속성 없음 — 전 페이지 소셜 공유 시 썸네일 미표시
-- 전체 동적 페이지: `alternates.canonical` 미설정 — 중복 콘텐츠 이슈 방지를 위해 canonical URL 추가 필요
+- `public/images/og-image.jpg` 파일 없음 — 메타태그에서 참조하지만 실제 파일 부재. 1200×630px OG 이미지 생성 필요
 
 **High — 구조화 데이터 보강:**
 
-- `app/layout.tsx`: `twitter` 카드 메타데이터 없음 — `{ card: "summary_large_image", ... }` 추가
-- `lib/jsonld.ts` `getClinicJsonLd()`: `sameAs`(외부 프로필 링크), `areaServed`(서비스 지역) 속성 없음. `LINKS` 상수 채운 후 연동
-- `lib/jsonld.ts` `getClinicJsonLd()`: 주소 하드코딩(`"태장로 820, ..."`) → `CLINIC.address` 상수 사용으로 변경
+- `lib/jsonld.ts` `getClinicJsonLd()`: `sameAs`(외부 프로필 링크) 속성 없음 — `LINKS` 상수 채운 후 연동
 - `lib/jsonld.ts` `getBlogPostJsonLd()`: `image` 속성 없음 — 리치 스니펫 노출 불가
-- `app/treatments/[slug]/page.tsx`: `generateMetadata()`에 `openGraph` 없음 (스케일링 페이지 포함)
 
 **Medium — 추가 최적화:**
 
-- `app/layout.tsx`: `robots` 메타데이터 없음 — `googleBot: { "max-image-preview": "large" }` 등 리치 결과 설정 권장
 - `lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일 — 실제 수정일 별도 관리 필요
-- `lib/constants.ts`: 전화번호 국제 형식(`"+82-1833-7552"`) 미제공 — JSON-LD 스키마 권장 형식
 - 시설 사진 영역: 이미지 없이 텍스트 플레이스홀더만 존재 — 실제 이미지 + alt 텍스트 추가 필요
