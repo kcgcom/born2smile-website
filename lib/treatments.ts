@@ -64,7 +64,7 @@ export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
   },
   prosthetics: {
     id: "prosthetics",
-    name: "틀니 및 심미보철",
+    name: "보철치료(틀니·심미보철)",
     subtitle: "자연스럽고 아름다운 보철 치료",
     description:
       "손상되거나 상실된 치아를 인공 보철물로 복원하는 치료입니다. 틀니, 크라운, 브릿지, 라미네이트 등 다양한 보철 옵션을 통해 기능과 심미성을 모두 회복할 수 있습니다.",
@@ -133,7 +133,7 @@ export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
   },
   scaling: {
     id: "scaling",
-    name: "스케일링",
+    name: "예방치료",
     subtitle: "에어플로우로 편안하게, 안아픈 스케일링",
     description:
       "서울본치과는 최신 에어플로우(Airflow) 장비를 활용하여 통증을 최소화한 안아픈 스케일링을 제공합니다. 에어플로우는 미세한 파우더 입자를 분사하여 치석과 착색을 부드럽게 제거하는 첨단 장비로, 기존 초음파 스케일링에 비해 시린 증상과 불편감이 현저히 적습니다. 잇몸 질환 예방과 구강 건강 유지에 필수적이며, 연 1회 건강보험이 적용됩니다.",

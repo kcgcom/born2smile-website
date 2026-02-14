@@ -97,7 +97,7 @@ export const TREATMENTS = [
   },
   {
     id: "prosthetics",
-    name: "틀니 및 심미보철",
+    name: "보철치료(틀니·심미보철)",
     shortDesc: "자연스럽고 아름다운 보철 치료",
     icon: "prosthetics",
     href: "/treatments/prosthetics",
@@ -118,7 +118,7 @@ export const TREATMENTS = [
   },
   {
     id: "scaling",
-    name: "스케일링",
+    name: "예방치료",
     shortDesc: "에어플로우로 안아픈 스케일링",
     icon: "scaling",
     href: "/treatments/scaling",
