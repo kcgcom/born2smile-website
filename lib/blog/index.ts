@@ -241,7 +241,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     id: 17,
     slug: "dry-mouth-syndrome",
     category: "구강건강상식",
-    tags: ["생활습관", "증상가이드"],
+    tags: ["생활습관", "증상가이드", "시니어"],
     title: "입이 자꾸 말라요",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:
@@ -541,7 +541,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     id: 42,
     slug: "implant-eligibility-checklist",
     category: "임플란트",
-    tags: ["증상가이드"],
+    tags: ["증상가이드", "시니어"],
     title: "임플란트, 누구나 할 수 있을까?",
     subtitle: "시술 전 꼭 확인해야 할 건강 체크리스트",
     excerpt:
