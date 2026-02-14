@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     id: 42,
     slug: "implant-eligibility-checklist",
-    tags: ["증상가이드"],
+    tags: ["증상가이드", "시니어"],
     category: "임플란트",
     title: "임플란트, 누구나 할 수 있을까?",
     subtitle: "시술 전 꼭 확인해야 할 건강 체크리스트",
