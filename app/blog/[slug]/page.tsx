@@ -81,58 +81,61 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      {/* 헤더 */}
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
-        <div className="mx-auto max-w-3xl px-4">
-          <Link
-            href="/blog"
-            className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
-          >
-            <ArrowLeft size={14} />
-            블로그 목록
-          </Link>
-
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+      {/* 블로그 포스트 */}
+      <article>
+        {/* 헤더 */}
+        <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
+          <div className="mx-auto max-w-3xl px-4">
+            <Link
+              href="/blog"
+              className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
             >
-              {post.category}
-            </span>
-            <span className="text-sm text-gray-400">
-              {formatDate(post.date)}
-            </span>
-            <span className="flex items-center gap-1 text-sm text-gray-400">
-              <Clock size={13} />
-              {post.readTime} 읽기
-            </span>
-          </div>
+              <ArrowLeft size={14} />
+              블로그 목록
+            </Link>
 
-          <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
-            {post.title}
-          </h1>
-          <p className="mt-3 text-lg text-gray-500 md:text-xl">
-            {post.subtitle}
-          </p>
-        </div>
-      </section>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+              >
+                {post.category}
+              </span>
+              <span className="text-sm text-gray-400">
+                {formatDate(post.date)}
+              </span>
+              <span className="flex items-center gap-1 text-sm text-gray-400">
+                <Clock size={13} />
+                {post.readTime} 읽기
+              </span>
+            </div>
 
-      {/* 본문 */}
-      <section className="section-padding bg-white">
-        <FadeIn className="mx-auto max-w-3xl">
-          <div className="space-y-10">
-            {post.content.map((section) => (
-              <div key={section.heading}>
-                <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
-                  {section.heading}
-                </h2>
-                <p className="text-base leading-relaxed text-gray-700 md:text-lg">
-                  {section.content}
-                </p>
-              </div>
-            ))}
+            <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
+              {post.title}
+            </h1>
+            <p className="mt-3 text-lg text-gray-500 md:text-xl">
+              {post.subtitle}
+            </p>
           </div>
-        </FadeIn>
-      </section>
+        </header>
+
+        {/* 본문 */}
+        <section className="section-padding bg-white">
+          <FadeIn className="mx-auto max-w-3xl">
+            <div className="space-y-10">
+              {post.content.map((section) => (
+                <div key={section.heading}>
+                  <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
+                    {section.heading}
+                  </h2>
+                  <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+                    {section.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </section>
+      </article>
 
       {/* 관련 진료 배너 */}
       {(() => {

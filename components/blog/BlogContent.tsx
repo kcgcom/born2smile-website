@@ -10,14 +10,14 @@ import {
   BLOG_TAGS,
   categoryColors,
 } from "@/lib/blog";
-import type { BlogCategory } from "@/lib/blog";
+import type { BlogCategory, BlogTag } from "@/lib/blog";
 import { BASE_URL } from "@/lib/constants";
 
 const POSTS_PER_PAGE = 12;
 
 export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,7 @@ export default function BlogContent() {
     setVisibleCount(POSTS_PER_PAGE);
   };
 
-  const handleTagClick = (tag: string, e?: React.MouseEvent) => {
+  const handleTagClick = (tag: BlogTag, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -146,6 +146,7 @@ export default function BlogContent() {
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
+              aria-pressed={activeCategory === cat && !activeTag}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeCategory === cat && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
@@ -163,6 +164,7 @@ export default function BlogContent() {
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
+              aria-pressed={activeTag === tag}
               className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 activeTag === tag
                   ? "bg-[var(--color-gold)] text-white"

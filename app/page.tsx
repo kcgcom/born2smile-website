@@ -33,9 +33,8 @@ export default function Home() {
 
   return (
     <>
-      {/* ───────────── 히어로 섹션 (병원 소개 통합) ───────────── */}
+      {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        {/* 상단 히어로 배너 */}
         <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <FadeIn delay={0.2}>
@@ -68,9 +67,10 @@ export default function Home() {
             </FadeIn>
           </div>
         </div>
+      </section>
 
-        {/* 인사말 */}
-        <div className="section-padding bg-white">
+      {/* ───────────── 인사말 · 핵심가치 ───────────── */}
+      <section id="greeting" className="section-padding bg-white">
           <div className="container-narrow">
             <FadeIn>
               <div className="mx-auto max-w-2xl text-center">
@@ -132,10 +132,10 @@ export default function Home() {
               ))}
             </StaggerContainer>
           </div>
-        </div>
+      </section>
 
-        {/* 의료진 상세 */}
-        <div className="section-padding bg-gray-50">
+      {/* ───────────── 의료진 소개 ───────────── */}
+      <section id="doctor" className="section-padding bg-gray-50">
           <div className="container-narrow">
             <FadeIn className="mb-12 text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
@@ -245,37 +245,12 @@ export default function Home() {
               </StaggerContainer>
             </div>
           </div>
-        </div>
+      </section>
 
-        {/* 시설 안내 */}
-        <div className="section-padding bg-white">
-          <div className="container-narrow">
-            <FadeIn className="mb-12 text-center">
-              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                Facility
-              </p>
-              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                시설 안내
-              </h2>
-            </FadeIn>
+      {/* TODO: 시설 안내 섹션 — 실제 시설 사진 준비 후 활성화 */}
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {["진료실", "대기실", "상담실", "소독실", "X-ray실", "외관"].map(
-                (name) => (
-                  <div
-                    key={name}
-                    className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100"
-                  >
-                    <p className="text-sm text-gray-400">{name} 사진</p>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 진료시간 + 오시는 길 */}
-        <div className="section-padding bg-gray-50">
+      {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
+      <section id="info" className="section-padding bg-gray-50">
           <div className="container-narrow">
             <div className="grid gap-10 md:grid-cols-2">
               {/* 진료시간 */}
@@ -348,7 +323,6 @@ export default function Home() {
               </FadeIn>
             </div>
           </div>
-        </div>
       </section>
 
       {/* ───────────── CTA 배너 ───────────── */}

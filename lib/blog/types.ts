@@ -12,7 +12,7 @@ export interface BlogPostMeta {
   id: number;
   slug: string;
   category: BlogCategoryValue;
-  tags: string[];
+  tags: (typeof BLOG_TAGS)[number][];
   title: string;
   subtitle: string;
   excerpt: string;
@@ -50,3 +50,5 @@ export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
 
 /** 카테고리 중 "전체"를 제외한 실제 분류값 */
 export type BlogCategoryValue = Exclude<BlogCategory, "전체">;
+
+export type BlogTag = (typeof BLOG_TAGS)[number];
