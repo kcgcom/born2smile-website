@@ -7,6 +7,7 @@ export const categoryColors: Record<string, string> = {
   보존치료: "bg-green-100 text-green-700",
   보철치료: "bg-purple-100 text-purple-700",
   임플란트: "bg-rose-100 text-rose-700",
-  교정치료: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
+  치아교정: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
+  소아치료: "bg-orange-100 text-orange-700",
   구강건강상식: "bg-teal-100 text-teal-700",
 };

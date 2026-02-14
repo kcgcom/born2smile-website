@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     id: 31,
     slug: "dental-xray-radiation-safety",
-    tags: ["어린이", "팩트체크"],
+    tags: ["팩트체크", "임산부"],
     category: "구강건강상식",
     title: "치과 엑스레이, 방사선이 걱정되시나요?",
     subtitle: "엑스레이 방사선 안전성의 모든 것",

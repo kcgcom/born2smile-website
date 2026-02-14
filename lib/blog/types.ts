@@ -31,7 +31,6 @@ export const BLOG_TAGS = [
   "팩트체크",
   "증상가이드",
   "비교가이드",
-  "어린이",
   "임산부",
   "시니어",
 ] as const;
@@ -42,7 +41,8 @@ export const BLOG_CATEGORIES = [
   "보존치료",
   "보철치료",
   "임플란트",
-  "교정치료",
+  "치아교정",
+  "소아치료",
   "구강건강상식",
 ] as const;
 

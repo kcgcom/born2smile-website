@@ -4,7 +4,7 @@ export const post: BlogPost = {
     id: 27,
     slug: "after-orthodontic-device-care",
     tags: ["치료후관리"],
-    category: "교정치료",
+    category: "치아교정",
     title: "교정 장치, 처음이 가장 힘듭니다",
     subtitle: "부착 후 적응 기간 관리법과 주의사항",
     excerpt:
