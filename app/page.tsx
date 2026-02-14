@@ -6,6 +6,11 @@ import {
   Shield,
   Heart,
   Stethoscope,
+  GraduationCap,
+  Award,
+  Users,
+  Briefcase,
+  MapPin,
 } from "lucide-react";
 import { CLINIC, HOURS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -13,12 +18,14 @@ import { KakaoMap } from "@/components/ui/KakaoMap";
 
 
 export default function Home() {
+  const doctor = DOCTORS[0];
+
   return (
     <>
-      {/* ───────────── 히어로 섹션 (병원 소개 포함) ───────────── */}
-      <section id="hero" className="relative bg-gradient-to-b from-blue-50 to-white">
-        {/* 상단 히어로 영역 */}
-        <div className="flex min-h-screen items-center justify-center">
+      {/* ───────────── 히어로 섹션 (병원 소개 통합) ───────────── */}
+      <section id="hero">
+        {/* 상단 히어로 배너 */}
+        <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <FadeIn delay={0.2}>
               <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
@@ -51,33 +58,35 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 병원 소개 영역 */}
-        <div className="section-padding">
-          <div className="container-narrow text-center">
+        {/* 인사말 */}
+        <div className="section-padding bg-white">
+          <div className="container-narrow">
             <FadeIn>
-              <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-                안녕하세요. {CLINIC.name}입니다.
-              </h2>
-              <div className="mx-auto mb-12 max-w-2xl space-y-4 text-lg leading-relaxed text-gray-600">
-                <p>
-                  {CLINIC.name}는 환자분 한 분 한 분의 구강건강을 최우선으로 생각합니다.
-                  <br />
-                  꼭 필요한 진료만 정직하게 진료하겠습니다.
-                </p>
-                <p>
-                  충분히 듣고, 충분히 설명하겠습니다.
-                  <br />
-                  환자분이 불안하지 않도록 불편하지 않도록 주의깊게 진료하겠습니다.
-                </p>
-                <p>
-                  자연치아를 최대한 보존하는 것을 원칙으로
-                  <br />
-                  환자분께서 건강한 미소를 되찾으실때까지 함께하겠습니다.
-                </p>
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+                  안녕하세요. {CLINIC.name}입니다.
+                </h2>
+                <div className="space-y-4 text-lg leading-relaxed text-gray-600">
+                  <p>
+                    {CLINIC.name}는 환자분 한 분 한 분의 구강건강을 최우선으로 생각합니다.
+                    <br />
+                    꼭 필요한 진료만 정직하게 진료하겠습니다.
+                  </p>
+                  <p>
+                    충분히 듣고, 충분히 설명하겠습니다.
+                    <br />
+                    환자분이 불안하지 않도록 불편하지 않도록 주의깊게 진료하겠습니다.
+                  </p>
+                  <p>
+                    자연치아를 최대한 보존하는 것을 원칙으로
+                    <br />
+                    환자분께서 건강한 미소를 되찾으실때까지 함께하겠습니다.
+                  </p>
+                </div>
               </div>
             </FadeIn>
 
-            <StaggerContainer className="grid gap-8 md:grid-cols-3">
+            <StaggerContainer className="mt-16 grid gap-8 md:grid-cols-3">
               {[
                 {
                   icon: Shield,
@@ -113,148 +122,220 @@ export default function Home() {
             </StaggerContainer>
           </div>
         </div>
-      </section>
 
-      {/* ───────────── 의료진 ───────────── */}
-      <section className="section-padding bg-gray-50">
-        <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
-              Doctor
-            </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              의료진 소개
-            </h2>
-          </FadeIn>
+        {/* 의료진 상세 */}
+        <div className="section-padding bg-gray-50">
+          <div className="container-narrow">
+            <FadeIn className="mb-12 text-center">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+                Doctor
+              </p>
+              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                의료진 소개
+              </h2>
+            </FadeIn>
 
-          {DOCTORS.map((doctor) => (
-            <FadeIn key={doctor.id}>
-              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-gray-100 bg-white">
-                <div className="grid md:grid-cols-2">
-                  {/* 사진 영역 (플레이스홀더) */}
-                  <div className="flex items-center justify-center bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] p-12 md:min-h-[400px]">
-                    <div className="text-center">
-                      <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-[#F5E6C8] text-4xl font-bold text-[var(--color-gold-dark)]">
-                        {doctor.name.charAt(0)}
-                      </div>
-                      <p className="text-sm text-gray-500">프로필 사진 영역</p>
-                    </div>
+            <div className="mx-auto max-w-5xl">
+              {/* 프로필 상단 */}
+              <div className="mb-10 grid items-center gap-8 md:grid-cols-3">
+                <div className="flex items-center justify-center">
+                  <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] text-6xl font-bold text-[var(--color-gold-dark)]">
+                    {doctor.name.charAt(0)}
                   </div>
-
-                  {/* 정보 영역 */}
-                  <div className="p-8 md:p-10">
-                    <div className="mb-1 text-sm font-medium text-[var(--color-gold)]">
-                      {doctor.title}
-                    </div>
-                    <h3 className="mb-1 text-2xl font-bold text-gray-900">
-                      {doctor.name}
-                    </h3>
-                    <p className="mb-6 text-sm text-gray-500">
-                      {doctor.position}
-                    </p>
-
-                    <div className="space-y-4 text-sm">
-                      <div>
-                        <h4 className="mb-2 font-bold text-gray-900">학력</h4>
-                        <ul className="space-y-1 text-gray-600">
-                          {doctor.education.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="mb-2 font-bold text-gray-900">자격</h4>
-                        <ul className="space-y-1 text-gray-600">
-                          <li>미국 치과의사 자격시험(NBDE) 통과</li>
-                          <li>미국치과임플란트학회(AAID) 인정의</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <Link
-                      href="/about"
-                      className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]"
-                    >
-                      상세 경력 보기
-                      <ArrowRight size={14} />
-                    </Link>
-                  </div>
+                </div>
+                <div className="text-center md:col-span-2 md:text-left">
+                  <p className="text-sm font-medium text-[var(--color-gold)]">
+                    {doctor.title}
+                  </p>
+                  <h3 className="mt-1 text-3xl font-bold text-gray-900">
+                    {doctor.name}
+                  </h3>
+                  <p className="mt-1 text-gray-500">{doctor.position}</p>
                 </div>
               </div>
-            </FadeIn>
-          ))}
-        </div>
-      </section>
 
-      {/* ───────────── 오시는 길 + 진료시간 ───────────── */}
-      <section className="section-padding bg-gray-50">
-        <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-              Location
-            </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              오시는 길
-            </h2>
-          </FadeIn>
-
-          <div className="grid items-stretch gap-8 md:grid-cols-2">
-            {/* 카카오맵 */}
-            <FadeIn direction="left" className="flex">
-              <KakaoMap className="min-h-[300px] w-full flex-1" />
-            </FadeIn>
-
-            {/* 병원 정보 */}
-            <FadeIn direction="right">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="mb-3 text-lg font-bold text-gray-900">
-                    {CLINIC.name}
-                  </h3>
-                  <p className="text-gray-600">{CLINIC.address}</p>
-                  <a
-                    href={CLINIC.phoneHref}
-                    className="mt-1 inline-block font-medium text-[var(--color-primary)]"
-                  >
-                    {CLINIC.phone}
-                  </a>
-                </div>
-
-                <div>
-                  <h3 className="mb-3 text-lg font-bold text-gray-900">
-                    <Clock size={18} className="mr-2 inline-block" />
-                    진료시간
-                  </h3>
-                  <ul className="max-w-xs space-y-2 text-sm">
-                    {HOURS.schedule.map((item) => (
-                      <li
-                        key={item.day}
-                        className="flex items-center justify-between border-b border-gray-100 pb-2"
-                      >
-                        <span className="flex items-center gap-1.5 font-medium text-gray-700">
-                          {item.day}
-                          {"note" in item && item.note && (
-                            <span className="rounded-full bg-[var(--color-gold)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-gold)]">
-                              {item.note}
-                            </span>
-                          )}
-                        </span>
-                        <span
-                          className={
-                            item.open ? "text-gray-900" : "text-gray-400"
-                          }
-                        >
-                          {item.time}
-                        </span>
+              {/* 경력 그리드 */}
+              <StaggerContainer className="grid gap-6 md:grid-cols-2">
+                {/* 학력 */}
+                <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
+                  <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <GraduationCap
+                      size={20}
+                      className="text-[var(--color-primary)]"
+                    />
+                    학력
+                  </h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {doctor.education.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                        {item}
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-3 text-xs text-gray-500">
-                    점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
-                  </p>
-                </div>
-              </div>
+                </StaggerItem>
+
+                {/* 자격 및 수료 */}
+                <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
+                  <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <Award
+                      size={20}
+                      className="text-[var(--color-gold)]"
+                    />
+                    자격 및 수료
+                  </h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {doctor.credentials.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </StaggerItem>
+
+                {/* 학회 활동 */}
+                <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
+                  <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <Users
+                      size={20}
+                      className="text-[var(--color-primary)]"
+                    />
+                    학회 활동
+                  </h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {doctor.memberships.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </StaggerItem>
+
+                {/* 현직 */}
+                <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
+                  <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <Briefcase
+                      size={20}
+                      className="text-[var(--color-primary)]"
+                    />
+                    현직
+                  </h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {doctor.currentPositions.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </StaggerItem>
+              </StaggerContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* 시설 안내 */}
+        <div className="section-padding bg-white">
+          <div className="container-narrow">
+            <FadeIn className="mb-12 text-center">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+                Facility
+              </p>
+              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                시설 안내
+              </h2>
             </FadeIn>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {["진료실", "대기실", "상담실", "소독실", "X-ray실", "외관"].map(
+                (name) => (
+                  <div
+                    key={name}
+                    className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100"
+                  >
+                    <p className="text-sm text-gray-400">{name} 사진</p>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 진료시간 + 오시는 길 */}
+        <div className="section-padding bg-gray-50">
+          <div className="container-narrow">
+            <div className="grid gap-10 md:grid-cols-2">
+              {/* 진료시간 */}
+              <FadeIn direction="left">
+                <h3 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+                  <Clock size={24} className="text-[var(--color-gold)]" />
+                  진료시간
+                </h3>
+                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {HOURS.schedule.map((item) => (
+                        <tr
+                          key={item.day}
+                          className="border-b border-gray-50 last:border-0"
+                        >
+                          <td className="px-5 py-3 font-medium text-gray-700">
+                            {item.day}
+                          </td>
+                          <td
+                            className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-400"}`}
+                          >
+                            {item.time}
+                            {"note" in item && item.note && (
+                              <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-xs text-[var(--color-gold-dark)]">
+                                {item.note}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-xs text-gray-500">
+                    점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
+                    <br />
+                    {HOURS.notice}
+                  </div>
+                </div>
+              </FadeIn>
+
+              {/* 오시는 길 */}
+              <FadeIn direction="right">
+                <h3 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+                  <MapPin size={24} className="text-[var(--color-primary)]" />
+                  오시는 길
+                </h3>
+                <KakaoMap className="mb-6 aspect-[4/3]" />
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <MapPin
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[var(--color-primary)]"
+                    />
+                    <span className="text-gray-700">{CLINIC.address}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[var(--color-primary)]"
+                    />
+                    <a
+                      href={CLINIC.phoneHref}
+                      className="font-medium text-[var(--color-primary)]"
+                    >
+                      {CLINIC.phone}
+                    </a>
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
           </div>
         </div>
       </section>
