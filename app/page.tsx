@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Phone,
@@ -12,10 +13,20 @@ import {
   Briefcase,
   MapPin,
 } from "lucide-react";
-import { CLINIC, HOURS, DOCTORS } from "@/lib/constants";
+import { CLINIC, HOURS, DOCTORS, SEO, BASE_URL } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
+export const metadata: Metadata = {
+  title: SEO.defaultTitle,
+  description: SEO.defaultDescription,
+  alternates: { canonical: BASE_URL },
+  openGraph: {
+    title: SEO.defaultTitle,
+    description: SEO.defaultDescription,
+    url: BASE_URL,
+  },
+};
 
 export default function Home() {
   const doctor = DOCTORS[0];

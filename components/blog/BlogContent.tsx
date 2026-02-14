@@ -22,8 +22,12 @@ export default function BlogContent() {
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
-  const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS_META);
+  // SSR 초기값은 최신순 정렬 (크롤러에게 일관된 순서 제공)
+  // 클라이언트 hydration 후 랜덤 셔플로 다양한 글 노출
+  const sortedByDate = [...BLOG_POSTS_META].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  const [shuffledPosts, setShuffledPosts] = useState(sortedByDate);
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
       const posts = [...BLOG_POSTS_META];

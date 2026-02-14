@@ -15,14 +15,19 @@ export function getClinicJsonLd() {
     alternateName: CLINIC.nameEn,
     description: `김포한강신도시 장기동 ${CLINIC.name}. 김포한강신도시 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
     url: BASE_URL,
-    telephone: CLINIC.phone,
+    telephone: CLINIC.phoneIntl,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "태장로 820, 엠프라자 2층 (장기동)",
+      streetAddress: CLINIC.addressShort,
       addressLocality: "김포시 장기동",
       addressRegion: "경기도",
+      postalCode: "10089",
       addressCountry: "KR",
     },
+    areaServed: [
+      { "@type": "City", name: "김포시" },
+      { "@type": "AdministrativeArea", name: "한강신도시" },
+    ],
     geo: {
       "@type": "GeoCoordinates",
       latitude: 37.6319,
@@ -92,7 +97,7 @@ export function getTreatmentJsonLd(treatmentId: string) {
     provider: {
       "@type": "Dentist",
       name: CLINIC.name,
-      telephone: CLINIC.phone,
+      telephone: CLINIC.phoneIntl,
     },
   };
 }

@@ -8,7 +8,7 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-import { CLINIC, DOCTORS, HOURS } from "@/lib/constants";
+import { CLINIC, DOCTORS, HOURS, BASE_URL } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
@@ -16,6 +16,7 @@ import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
 export const metadata: Metadata = {
   title: "병원 소개",
   description: `${CLINIC.name} - 김포한강신도시 장기동 치과의원. 김포한강신도시 장기동 치과. 서울대 출신 통합치의학전문의 김창균 원장이 정성을 다해 진료합니다.`,
+  alternates: { canonical: `${BASE_URL}/about` },
 };
 
 export default function AboutPage() {

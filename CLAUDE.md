@@ -44,6 +44,7 @@ app/                          # Next.js App Router pages
   layout.tsx                  # Root layout (header, footer, floating CTA, JSON-LD)
   page.tsx                    # Homepage (hero, values, treatments, doctor, map, CTA)
   globals.css                 # Design tokens, @theme inline, utility classes
+  favicon.ico                 # Favicon
   robots.ts                   # robots.txt generation (force-static)
   sitemap.ts                  # Sitemap XML generation (force-static, includes blog posts)
   about/page.tsx              # Clinic info, doctor bio, facility, hours
@@ -72,16 +73,18 @@ lib/
   blog/
     types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
     category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
-    index.ts                 # 메타데이터 배열(BLOG_POSTS_META) + getPostBySlug() 로더
-    posts/                   # 개별 포스트 파일 (38개, slug.ts 형식)
+    index.ts                 # 메타데이터 배열(BLOG_POSTS_META) + getPostBySlug() + 진료↔블로그 매핑
+    posts/                   # 개별 포스트 파일 (51개, slug.ts 형식)
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
   BingSiteAuth.xml           # Bing webmaster verification
   naver*.html                # Naver webmaster verification
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
+.firebaserc                  # Firebase project alias config (default: born2smile-website)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
+firestore.rules              # Firestore security rules (blog-likes 컬렉션 read/write 규칙)
 postcss.config.mjs           # PostCSS with @tailwindcss/postcss
 pnpm-workspace.yaml          # pnpm workspace config
 ```
@@ -92,6 +95,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers.
+- **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -103,7 +107,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 38 blog posts |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 51 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -162,10 +166,10 @@ pnpm-workspace.yaml          # pnpm workspace config
    - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
 2. `lib/blog/index.ts` → `BLOG_POSTS_META` 배열에 메타데이터 추가 (본문 `content` 제외)
 3. `lib/blog/index.ts` → `getPostBySlug()` 내 `modules` 맵에 dynamic import 추가
-4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "교정치료" | "구강건강상식"`
-5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 8개 태그 중 선택
+4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "구강건강상식"`
+5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택
    - 유형 태그: `"치료후관리"`, `"생활습관"`, `"팩트체크"`, `"증상가이드"`, `"비교가이드"`
-   - 대상 태그: `"어린이"`, `"임산부"`, `"시니어"`
+   - 대상 태그: `"임산부"`, `"시니어"`
 6. 새 카테고리 추가 시 `lib/blog/types.ts`의 `BLOG_CATEGORIES`와 `BlogCategoryValue` 타입도 함께 수정
 7. 새 태그 추가 시 `lib/blog/types.ts`의 `BLOG_TAGS` 배열에 추가
 8. 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플, 12개씩 페이지네이션)
@@ -232,6 +236,7 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
   - `concurrency: 80`
   - `cpu: 1`, `memoryMiB: 512`
 - `firebase.json` — Firebase Hosting이 301 redirect로 App Hosting URL로 전달
+- `firestore.rules` — Firestore 보안 규칙: `blog-likes/{slug}` 컬렉션만 read/write 허용 (count, users 필드), 나머지 전체 차단
 - 빌드는 Cloud Build에서 원격 실행 → 로컬 `next build` 불필요
 - 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
 - SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
@@ -254,3 +259,19 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - `lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요 (카카오맵 주소 기반 geocoding 폴백 있음)
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
 - `hosting-redirect/`: Naver 웹마스터 인증 파일만 존재 — `firebase.json`의 regex redirect로 처리 중
+
+### SEO 개선 TODO
+
+**Critical — OG 이미지:**
+
+- `public/images/og-image.jpg` 파일 없음 — 메타태그에서 참조하지만 실제 파일 부재. 1200×630px OG 이미지 생성 필요
+
+**High — 구조화 데이터 보강:**
+
+- `lib/jsonld.ts` `getClinicJsonLd()`: `sameAs`(외부 프로필 링크) 속성 없음 — `LINKS` 상수 채운 후 연동
+- `lib/jsonld.ts` `getBlogPostJsonLd()`: `image` 속성 없음 — 리치 스니펫 노출 불가
+
+**Medium — 추가 최적화:**
+
+- `lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일 — 실제 수정일 별도 관리 필요
+- 시설 사진 영역: 이미지 없이 텍스트 플레이스홀더만 존재 — 실제 이미지 + alt 텍스트 추가 필요

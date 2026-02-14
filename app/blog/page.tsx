@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { CLINIC } from "@/lib/constants";
+import { CLINIC, BASE_URL } from "@/lib/constants";
 import BlogContent from "@/components/blog/BlogContent";
 
 export const metadata: Metadata = {
   title: "구강건강 블로그",
   description: `${CLINIC.name} 구강건강 블로그 - 올바른 양치법, 잇몸 관리, 임플란트 관리, 충치 예방 등 일상에서 실천할 수 있는 구강관리 정보를 전해드립니다.`,
+  alternates: { canonical: `${BASE_URL}/blog` },
 };
 
 export default function BlogPage() {

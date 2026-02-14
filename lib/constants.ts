@@ -11,6 +11,7 @@ export const CLINIC = {
   nameEn: "Seoul Born Dental Clinic",
   slogan: "당신의 미소를 디자인합니다",
   phone: "1833-7552",
+  phoneIntl: "+82-1833-7552",
   phoneHref: "tel:1833-7552",
   address: "경기도 김포시 태장로 820, 엠프라자 2층 (장기동)",
   addressShort: "김포시 태장로 820, 엠프라자 2층 (장기동)",
