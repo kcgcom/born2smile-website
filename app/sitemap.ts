@@ -2,7 +2,7 @@ export const dynamic = "force-static";
 
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
-import { BLOG_POSTS } from "@/lib/blog-posts";
+import { BLOG_POSTS_META } from "@/lib/blog";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const treatmentPages = TREATMENTS.map((t) => ({
@@ -38,7 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.6,
     },
-    ...BLOG_POSTS.map((post) => ({
+    ...BLOG_POSTS_META.map((post) => ({
       url: `${BASE_URL}/blog/${post.slug}`,
       lastModified: new Date(post.date),
       changeFrequency: "monthly" as const,

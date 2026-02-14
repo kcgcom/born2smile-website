@@ -4,20 +4,28 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
 import { StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { BLOG_POSTS, BLOG_CATEGORIES, BLOG_TAGS } from "@/lib/blog-posts";
-import type { BlogCategory } from "@/lib/blog-posts";
+import {
+  BLOG_POSTS_META,
+  BLOG_CATEGORIES,
+  BLOG_TAGS,
+  categoryColors,
+} from "@/lib/blog";
+import type { BlogCategory } from "@/lib/blog";
 import { BASE_URL } from "@/lib/constants";
+
+const POSTS_PER_PAGE = 12;
 
 export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
   // 접속할 때마다 포스트 순서를 랜덤으로 섞어 다양한 글 노출
-  const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS);
+  const [shuffledPosts, setShuffledPosts] = useState(BLOG_POSTS_META);
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
-      const posts = [...BLOG_POSTS];
+      const posts = [...BLOG_POSTS_META];
       for (let i = posts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [posts[i], posts[j]] = [posts[j], posts[i]];
@@ -34,9 +42,13 @@ export default function BlogContent() {
     return categoryMatch && tagMatch;
   });
 
+  const visiblePosts = filteredPosts.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredPosts.length;
+
   const handleCategoryClick = (cat: BlogCategory) => {
     setActiveCategory(cat);
     setActiveTag(null);
+    setVisibleCount(POSTS_PER_PAGE);
   };
 
   const handleTagClick = (tag: string, e?: React.MouseEvent) => {
@@ -46,6 +58,7 @@ export default function BlogContent() {
     }
     setActiveTag((prev) => (prev === tag ? null : tag));
     setActiveCategory("전체");
+    setVisibleCount(POSTS_PER_PAGE);
   };
 
   const handleShare = useCallback(
@@ -93,15 +106,6 @@ export default function BlogContent() {
     return `${year}.${month}.${day}`;
   };
 
-  const categoryColors: Record<string, string> = {
-    "예방·구강관리": "bg-blue-100 text-blue-700",
-    보존치료: "bg-green-100 text-green-700",
-    보철치료: "bg-purple-100 text-purple-700",
-    임플란트: "bg-rose-100 text-rose-700",
-    교정치료: "bg-[#FDF3E0] text-[var(--color-gold-dark)]",
-    구강건강상식: "bg-teal-100 text-teal-700",
-  };
-
   return (
     <section className="section-padding bg-white">
       <div className="container-narrow">
@@ -145,7 +149,7 @@ export default function BlogContent() {
           key={`${activeCategory}-${activeTag}`}
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {filteredPosts.map((post) => (
+          {visiblePosts.map((post) => (
             <StaggerItem key={post.id}>
               <Link href={`/blog/${post.slug}`} className="block h-full">
                 <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
@@ -232,6 +236,19 @@ export default function BlogContent() {
           <p className="py-20 text-center text-gray-400">
             해당 조건의 글이 아직 없습니다.
           </p>
+        )}
+
+        {/* 더 보기 버튼 */}
+        {hasMore && (
+          <div className="mt-10 text-center">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + POSTS_PER_PAGE)}
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
+            >
+              더 보기
+              <ArrowRight size={14} />
+            </button>
+          </div>
         )}
       </div>
     </section>

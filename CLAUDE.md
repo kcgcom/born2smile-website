@@ -14,6 +14,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Animation**: Framer Motion 12 (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
+- **Database**: Firebase Firestore (블로그 좋아요 기능)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -59,14 +60,20 @@ components/
   blog/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
+    LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
-  blog-posts.ts              # Blog post data (34 posts), categories, and tags
+  firebase.ts                # Firebase 클라이언트 초기화 (Firestore)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
+  blog/
+    types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
+    category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
+    index.ts                 # 메타데이터 배열(BLOG_POSTS_META) + getPostBySlug() 로더
+    posts/                   # 개별 포스트 파일 (38개, slug.ts 형식)
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -83,8 +90,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
-- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and nav items. Update data there, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, Contact form, Motion wrappers.
+- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -95,8 +102,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | SSG | Static (blog data in `lib/blog-posts.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 34 blog posts |
+| `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 38 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -150,15 +157,18 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 블로그 포스트 추가
 
-1. `lib/blog-posts.ts` → `BLOG_POSTS` 배열에 항목 추가 (`BlogPost` 인터페이스 준수)
+1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
+   - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
    - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
-2. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "교정치료" | "구강건강상식"`
-3. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열에 정의된 8개 태그 중 선택
+2. `lib/blog/index.ts` → `BLOG_POSTS_META` 배열에 메타데이터 추가 (본문 `content` 제외)
+3. `lib/blog/index.ts` → `getPostBySlug()` 내 `modules` 맵에 dynamic import 추가
+4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "교정치료" | "구강건강상식"`
+5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 8개 태그 중 선택
    - 유형 태그: `"치료후관리"`, `"생활습관"`, `"팩트체크"`, `"증상가이드"`, `"비교가이드"`
    - 대상 태그: `"어린이"`, `"임산부"`, `"시니어"`
-4. 새 카테고리 추가 시 `BLOG_CATEGORIES` 배열과 `BlogPost` 타입도 함께 수정
-5. 새 태그 추가 시 `BLOG_TAGS` 배열에 추가
-6. 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플)
+6. 새 카테고리 추가 시 `lib/blog/types.ts`의 `BLOG_CATEGORIES`와 `BlogCategoryValue` 타입도 함께 수정
+7. 새 태그 추가 시 `lib/blog/types.ts`의 `BLOG_TAGS` 배열에 추가
+8. 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플, 12개씩 페이지네이션)
 
 ### 병원 정보 수정
 
@@ -168,7 +178,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - `DOCTORS` — 의료진 정보 (학력, 자격, 학회, 현직)
 - `HOURS` — 진료시간 (요일별 시간, 점심시간, 휴진일)
 - `TREATMENTS` — 진료 과목 목록 (id, name, shortDesc, icon, href)
-- `SEO` — 메타데이터, 키워드 (24개 로컬 SEO 키워드)
+- `SEO` — 메타데이터, 키워드 (23개 로컬 SEO 키워드)
 - `LINKS` — SNS/외부 링크 (카카오, 인스타, 네이버, 지도)
 - `MAP` — 네이버 지도 좌표 및 줌 레벨
 - `BASE_URL` — 사이트 기본 URL
@@ -233,6 +243,8 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
 
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
+- `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `born2smile-website`)
 
 ## Known TODO Items
 
