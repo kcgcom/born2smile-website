@@ -609,6 +609,18 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     date: "2026-02-14",
     readTime: "4분",
   },
+  {
+    id: 48,
+    slug: "senior-orthodontics",
+    category: "치아교정",
+    tags: ["시니어", "팩트체크"],
+    title: "70대에 교정치료, 정말 가능할까?",
+    subtitle: "고령자 치아교정의 조건, 방법, 주의사항 총정리",
+    excerpt:
+      "나이가 많으면 교정을 못 한다? 잇몸과 뼈 상태가 건강하다면 70대 이상도 교정 치료가 가능합니다. 고령자 교정의 조건, 적합한 교정 방법, 만성질환별 주의사항을 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
 ];
 
 /** slug로 포스트 전체 데이터 로드 (서버 전용) */
@@ -661,6 +673,7 @@ export async function getPostBySlug(slug: string) {
     "clear-vs-bracket-orthodontics": () => import("./posts/clear-vs-bracket-orthodontics"),
     "denture-adjustment-guide": () => import("./posts/denture-adjustment-guide"),
     "scaling-frequency-guide": () => import("./posts/scaling-frequency-guide"),
+    "senior-orthodontics": () => import("./posts/senior-orthodontics"),
   };
 
   const loader = modules[slug];
