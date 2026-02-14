@@ -452,7 +452,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     id: 37,
     slug: "diabetes-and-implant",
     category: "임플란트",
-    tags: ["생활습관"],
+    tags: ["생활습관", "시니어"],
     title: "당뇨가 있어도 임플란트 가능한가요?",
     subtitle: "전신 질환과 임플란트의 관계",
     excerpt:
