@@ -16,29 +16,17 @@ export const metadata: Metadata = {
 export default function TreatmentsPage() {
   return (
     <>
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-          Treatments
-        </p>
-        <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-          진료 안내
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-gray-600">
-          {CLINIC.name}에서 제공하는 진료 분야를 안내해 드립니다.
-        </p>
-      </section>
-
       {/* ───────────── 진료 철학 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding pt-32 bg-white">
         <div className="container-narrow">
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
                 Philosophy
               </p>
-              <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+              <h1 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
                 {CLINIC.name}의 진료 철학
-              </h2>
+              </h1>
               <p className="text-lg leading-relaxed text-gray-600">
                 치아는 한번 잃으면 다시 돌아오지 않습니다.
                 <br />
