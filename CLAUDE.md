@@ -274,4 +274,4 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 **Medium — 추가 최적화:**
 
 - `lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일 — 실제 수정일 별도 관리 필요
-- 시설 사진 영역: 이미지 없이 텍스트 플레이스홀더만 존재 — 실제 이미지 + alt 텍스트 추가 필요
+- 시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨(`app/page.tsx` TODO 주석) — 실제 시설 사진(진료실, 대기실, 상담실, 소독실, X-ray실, 외관) 촬영 후 `public/images/facility/`에 추가하고 섹션 복원 필요
