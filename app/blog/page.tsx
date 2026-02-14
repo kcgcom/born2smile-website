@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
-import { getAllPostsMeta } from "@/lib/blog";
 import BlogContent from "@/components/blog/BlogContent";
-
-// Notion 사용 시 ISR로 1시간마다 갱신, 파일 기반 시 정적 생성
-export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "구강건강 블로그",
@@ -12,9 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${BASE_URL}/blog` },
 };
 
-export default async function BlogPage() {
-  const posts = await getAllPostsMeta();
-
+export default function BlogPage() {
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
@@ -31,7 +25,7 @@ export default async function BlogPage() {
         </p>
       </section>
 
-      <BlogContent posts={posts} />
+      <BlogContent />
 
       <div className="h-16 md:hidden" />
     </>

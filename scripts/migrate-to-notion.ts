@@ -219,10 +219,9 @@ async function main() {
   console.log(`\n=== 다음 단계 ===`);
   console.log(`1. .env.local에 추가:`);
   console.log(`   NOTION_BLOG_DATABASE_ID=${dbId}`);
-  console.log(`2. pnpm dev 로 확인`);
-  console.log(
-    `3. Notion에서 포스트 편집 시 1시간 이내 자동 반영 (ISR revalidate: 3600)`
-  );
+  console.log(`2. Notion에서 포스트 편집`);
+  console.log(`3. pnpm sync-from-notion 으로 .ts 파일에 반영`);
+  console.log(`4. git commit & pnpm deploy 로 배포`);
 }
 
 main().catch((err) => {

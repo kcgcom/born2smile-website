@@ -32,6 +32,7 @@ pnpm dev                      # http://localhost:3000
 - `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm migrate-to-notion` — 기존 .ts 포스트를 Notion DB로 마이그레이션 (NOTION_API_KEY, NOTION_PARENT_PAGE_ID 필요)
+- `pnpm sync-from-notion` — Notion DB에서 .ts 파일로 동기화 + 메타데이터 재생성 (NOTION_API_KEY, NOTION_BLOG_DATABASE_ID 필요)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
 
@@ -64,17 +65,12 @@ components/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
-    NotionRenderer.tsx        # Notion 블록 → React 렌더러 (heading, list, image, callout 등)
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore)
-  notion/
-    client.ts                # Notion 클라이언트 초기화 (싱글턴)
-    blog.ts                  # Notion 블로그 DB 조회 (메타데이터, 블록, slug)
-    index.ts                 # Notion 모듈 re-export
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -91,6 +87,8 @@ public/
   naver*.html                # Naver webmaster verification
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
+  migrate-to-notion.ts       # 기존 .ts 포스트 → Notion DB 마이그레이션 (1회성)
+  sync-from-notion.ts        # Notion DB → .ts 파일 동기화 (편집 후 실행)
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .firebaserc                  # Firebase project alias config (default: born2smile-website)
 apphosting.yaml              # Firebase App Hosting runtime config
@@ -117,8 +115,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | ISR (1h) | Notion 연동 시 ISR, 파일 기반 시 SSG |
-| `/blog/[slug]` | ISR (1h) | Notion 연동 시 ISR, 파일 기반 시 SSG |
+| `/blog` | SSG | Static (metadata from `lib/blog/generated/posts-meta.ts`) |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -172,17 +170,14 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 블로그 포스트 추가
 
-**방법 A: Notion CMS (권장)** — 환경변수 `NOTION_API_KEY`와 `NOTION_BLOG_DATABASE_ID` 설정 시:
+**방법 A: Notion에서 편집 → 파일 동기화 (권장)** — Notion을 편집 UI로 사용:
 
-1. Notion 데이터베이스에서 새 페이지 생성
-2. 속성 입력: Title, Subtitle, Slug, Category, Tags, Excerpt, Date, ReadTime
-3. 본문을 Notion 블록으로 작성 (heading, paragraph, list, callout, image 등)
-4. Published 체크박스 활성화
-5. ISR(1시간)로 자동 반영, 즉시 반영 필요 시 재배포
+1. 초기 설정: `pnpm migrate-to-notion` 으로 기존 포스트를 Notion DB로 이전
+2. Notion에서 포스트 편집 (제목, 본문, 카테고리, 태그 등)
+3. `pnpm sync-from-notion` 실행 → .ts 파일 자동 업데이트 + 메타데이터 재생성
+4. `git diff`로 변경분 확인 후 commit & deploy
 
-**초기 설정:** `pnpm migrate-to-notion` 으로 기존 51개 포스트를 Notion으로 마이그레이션
-
-**방법 B: .ts 파일 기반 (기존 방식)** — Notion 미설정 시 자동으로 이 방식 사용:
+**방법 B: .ts 파일 직접 편집** — Notion 없이 코드로 직접 관리:
 
 1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
    - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
@@ -278,8 +273,8 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
 - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
-- `NOTION_API_KEY` — Notion Integration API Key (optional, 블로그 Notion CMS 연동)
-- `NOTION_BLOG_DATABASE_ID` — Notion 블로그 Database ID (optional, `pnpm migrate-to-notion` 실행 후 생성됨)
+- `NOTION_API_KEY` — Notion Integration API Key (로컬 스크립트 전용, 런타임 불필요)
+- `NOTION_BLOG_DATABASE_ID` — Notion 블로그 Database ID (로컬 스크립트 전용, `pnpm migrate-to-notion` 실행 후 생성됨)
 
 ## Known TODO Items
 

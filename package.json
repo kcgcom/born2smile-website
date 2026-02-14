@@ -8,6 +8,7 @@
     "build": "tsx scripts/generate-blog-meta.ts && next build",
     "start": "next start",
     "migrate-to-notion": "tsx scripts/migrate-to-notion.ts",
+    "sync-from-notion": "tsx scripts/sync-from-notion.ts && tsx scripts/generate-blog-meta.ts",
     "lint": "eslint",
     "deploy": "firebase deploy --only apphosting"
   },
