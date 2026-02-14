@@ -12,7 +12,36 @@ export type {
 export { BLOG_CATEGORIES, BLOG_TAGS } from "./types";
 export { categoryColors } from "./category-colors";
 
-import type { BlogPostMeta } from "./types";
+import type { BlogPostMeta, BlogCategoryValue } from "./types";
+
+// =============================================================
+// 진료 과목 ↔ 블로그 카테고리 매핑
+// =============================================================
+
+const TREATMENT_CATEGORY_MAP: Record<string, BlogCategoryValue> = {
+  implant: "임플란트",
+  orthodontics: "치아교정",
+  prosthetics: "보철치료",
+  pediatric: "소아치료",
+  restorative: "보존치료",
+  scaling: "예방·구강관리",
+};
+
+const CATEGORY_TREATMENT_MAP: Partial<Record<BlogCategoryValue, string>> = Object.fromEntries(
+  Object.entries(TREATMENT_CATEGORY_MAP).map(([k, v]) => [v, k])
+);
+
+/** 진료 과목 ID로 해당 블로그 카테고리의 포스트 목록 조회 */
+export function getRelatedBlogPosts(treatmentId: string, limit = 4): BlogPostMeta[] {
+  const category = TREATMENT_CATEGORY_MAP[treatmentId];
+  if (!category) return [];
+  return BLOG_POSTS_META.filter((p) => p.category === category).slice(0, limit);
+}
+
+/** 블로그 카테고리로 매핑되는 진료 과목 ID 조회 (없으면 null) */
+export function getRelatedTreatmentId(category: BlogCategoryValue): string | null {
+  return CATEGORY_TREATMENT_MAP[category] ?? null;
+}
 
 /** 목록용 메타데이터 배열 (본문 content 미포함) */
 export const BLOG_POSTS_META: BlogPostMeta[] = [

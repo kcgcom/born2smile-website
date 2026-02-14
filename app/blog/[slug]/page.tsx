@@ -6,8 +6,10 @@ import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   BLOG_POSTS_META,
   getPostBySlug,
+  getRelatedTreatmentId,
   categoryColors,
 } from "@/lib/blog";
+import { TREATMENTS } from "@/lib/constants";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
@@ -130,6 +132,39 @@ export default async function BlogPostPage({
           </div>
         </FadeIn>
       </section>
+
+      {/* 관련 진료 배너 */}
+      {(() => {
+        const treatmentId = getRelatedTreatmentId(post.category);
+        if (!treatmentId) return null;
+        const treatment = TREATMENTS.find((t) => t.id === treatmentId);
+        if (!treatment) return null;
+        return (
+          <section className="bg-white px-4 pb-4">
+            <FadeIn className="mx-auto max-w-3xl">
+              <Link
+                href={treatment.href}
+                className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-5 transition-all hover:border-blue-200 hover:shadow-md"
+              >
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-[var(--color-gold)]">
+                    관련 진료
+                  </span>
+                  <span className="text-base font-bold text-gray-900">
+                    {treatment.name}
+                  </span>
+                  <span className="ml-2 text-sm text-gray-500">
+                    {treatment.shortDesc}
+                  </span>
+                </div>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white transition-transform group-hover:translate-x-0.5">
+                  <ArrowRight size={16} />
+                </span>
+              </Link>
+            </FadeIn>
+          </section>
+        );
+      })()}
 
       {/* 좋아요 + 공유 + 목록 돌아가기 */}
       <section className="bg-white px-4 pb-12">

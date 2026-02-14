@@ -5,7 +5,9 @@ import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { CLINIC, TREATMENTS } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getRelatedBlogPosts, categoryColors } from "@/lib/blog";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { Clock } from "lucide-react";
 
 export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
@@ -179,6 +181,69 @@ export default async function TreatmentDetailPage({
           </div>
         </section>
       )}
+
+      {/* 관련 블로그 */}
+      {(() => {
+        const relatedBlogPosts = getRelatedBlogPosts(slug, 4);
+        if (relatedBlogPosts.length === 0) return null;
+        const formatDate = (dateStr: string) => {
+          const [year, month, day] = dateStr.split("-");
+          return `${year}.${month}.${day}`;
+        };
+        return (
+          <section className="section-padding bg-white">
+            <div className="container-narrow">
+              <FadeIn>
+                <div className="mb-10 text-center">
+                  <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
+                    관련 블로그
+                  </span>
+                  <h2 className="font-headline text-3xl font-bold text-gray-900">
+                    {detail.name}에 대해 더 알아보기
+                  </h2>
+                </div>
+              </FadeIn>
+              <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {relatedBlogPosts.map((rp) => (
+                  <StaggerItem key={rp.id}>
+                    <Link href={`/blog/${rp.slug}`} className="block h-full">
+                      <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:shadow-lg">
+                        <span
+                          className={`mb-3 w-fit rounded-full px-3 py-1 text-xs font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
+                        >
+                          {rp.category}
+                        </span>
+                        <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
+                          {rp.title}
+                        </h3>
+                        <p className="mb-3 text-sm text-gray-500">
+                          {rp.subtitle}
+                        </p>
+                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-xs text-gray-400">
+                          <span>{formatDate(rp.date)}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {rp.readTime} 읽기
+                          </span>
+                        </div>
+                      </article>
+                    </Link>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+              <FadeIn className="mt-8 text-center">
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                >
+                  블로그에서 더 많은 글 보기
+                  <ArrowRight size={14} />
+                </Link>
+              </FadeIn>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* CTA */}
 
