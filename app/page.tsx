@@ -15,7 +15,7 @@ import {
 import { CLINIC, HOURS, DOCTORS } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
-import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
+
 
 export default function Home() {
   const doctor = DOCTORS[0];
@@ -61,11 +61,8 @@ export default function Home() {
         {/* 인사말 */}
         <div className="section-padding bg-white">
           <div className="container-narrow">
-            <div className="grid items-center gap-10 md:grid-cols-2">
-              <FadeIn direction="left">
-                <ClinicIllustration className="mx-auto w-full max-w-md drop-shadow-md" />
-              </FadeIn>
-              <FadeIn direction="right">
+            <FadeIn>
+              <div className="mx-auto max-w-2xl text-center">
                 <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
                   안녕하세요. {CLINIC.name}입니다.
                 </h2>
@@ -86,8 +83,8 @@ export default function Home() {
                     환자분께서 건강한 미소를 되찾으실때까지 함께하겠습니다.
                   </p>
                 </div>
-              </FadeIn>
-            </div>
+              </div>
+            </FadeIn>
 
             <StaggerContainer className="mt-16 grid gap-8 md:grid-cols-3">
               {[
