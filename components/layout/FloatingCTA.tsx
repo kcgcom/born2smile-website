@@ -14,7 +14,7 @@ export function FloatingCTA() {
       >
         <div className="grid grid-cols-4">
           <Link
-            href="/about"
+            href="/#hero"
             aria-label="병원소개"
             className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
           >
