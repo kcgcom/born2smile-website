@@ -472,6 +472,102 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
     date: "2026-02-13",
     readTime: "5분",
   },
+  {
+    id: 39,
+    slug: "sealant-for-children",
+    category: "예방·구강관리",
+    tags: ["어린이"],
+    title: "실란트, 꼭 해야 하나요?",
+    subtitle: "우리 아이 충치 예방의 첫 번째 방패",
+    excerpt:
+      "어금니 홈을 메워 충치를 막는 실란트. 언제 하는 게 좋은지, 효과는 얼마나 되는지, 건강보험 적용은 되는지 소아치과 전문의 관점에서 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "4분",
+  },
+  {
+    id: 40,
+    slug: "crown-material-comparison",
+    category: "보철치료",
+    tags: ["비교가이드"],
+    title: "크라운, 어떤 재료가 오래 갈까?",
+    subtitle: "지르코니아·골드·PFM 크라운 재료별 수명과 특징 비교",
+    excerpt:
+      "크라운 재료에 따라 수명, 심미성, 강도가 모두 다릅니다. 지르코니아, 골드, PFM 등 대표 크라운 재료의 장단점과 수명을 비교해 나에게 맞는 선택을 도와드립니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 41,
+    slug: "airflow-scaling-benefits",
+    category: "예방·구강관리",
+    tags: ["비교가이드"],
+    title: "에어플로우 스케일링, 뭐가 다른가요?",
+    subtitle: "일반 초음파 스케일링과 에어플로우의 차이점 비교",
+    excerpt:
+      "스케일링이 아파서 미루고 계셨나요? 에어플로우 스케일링은 기존 초음파 방식보다 시린 증상과 불편감이 적습니다. 두 방식의 원리, 차이점, 장단점을 비교해 드립니다.",
+    date: "2026-02-14",
+    readTime: "4분",
+  },
+  {
+    id: 42,
+    slug: "implant-eligibility-checklist",
+    category: "임플란트",
+    tags: ["증상가이드"],
+    title: "임플란트, 누구나 할 수 있을까?",
+    subtitle: "시술 전 꼭 확인해야 할 건강 체크리스트",
+    excerpt:
+      "임플란트를 고려하고 있지만 나이, 만성질환, 뼈 상태가 걱정되시나요? 당뇨·고혈압·골다공증 등 상황별 임플란트 가능 여부와 시술 전 체크리스트를 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 43,
+    slug: "root-canal-pain-truth",
+    category: "보존치료",
+    tags: ["팩트체크"],
+    title: "신경치료, 정말 아플까요?",
+    subtitle: "신경치료 과정과 통증에 대한 오해와 진실",
+    excerpt:
+      "신경치료가 아프다는 이야기에 치료를 미루고 계신가요? 마취 기술의 발전으로 시술 중 통증은 거의 없습니다. 신경치료의 실제 과정과 통증 관리법을 솔직하게 알려드립니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 44,
+    slug: "orthodontic-treatment-duration",
+    category: "교정치료",
+    tags: [],
+    title: "교정, 얼마나 걸리나요?",
+    subtitle: "케이스별로 알아보는 교정 기간 가이드",
+    excerpt:
+      "치아 교정을 시작하고 싶지만 기간이 걱정되시나요? 부분 교정 6개월부터 전체 교정 2년까지, 교정 유형과 치아 상태에 따른 예상 기간을 정리했습니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 45,
+    slug: "clear-vs-bracket-orthodontics",
+    category: "교정치료",
+    tags: ["비교가이드"],
+    title: "투명교정 vs 브라켓, 뭐가 맞을까?",
+    subtitle: "나에게 맞는 교정 방법 선택 가이드",
+    excerpt:
+      "투명교정이 좋을까, 브라켓 교정이 좋을까? 심미성, 교정력, 편의성, 비용, 적합한 케이스까지 두 교정 방법의 장단점을 비교하여 올바른 선택을 도와드립니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
+  {
+    id: 46,
+    slug: "denture-adjustment-guide",
+    category: "보철치료",
+    tags: ["시니어"],
+    title: "처음 틀니, 불편한 게 당연한가요?",
+    subtitle: "틀니 적응 기간과 불편감 해결법 가이드",
+    excerpt:
+      "틀니를 처음 하면 누구나 불편합니다. 하지만 적응 기간을 잘 보내면 편안하게 사용할 수 있습니다. 적응 단계별 증상과 빠른 적응을 위한 핵심 요령을 안내합니다.",
+    date: "2026-02-14",
+    readTime: "5분",
+  },
 ];
 
 /** slug로 포스트 전체 데이터 로드 (서버 전용) */
@@ -515,6 +611,14 @@ export async function getPostBySlug(slug: string) {
     "implant-pain-myths": () => import("./posts/implant-pain-myths"),
     "diabetes-and-implant": () => import("./posts/diabetes-and-implant"),
     "implant-lifespan-facts": () => import("./posts/implant-lifespan-facts"),
+    "sealant-for-children": () => import("./posts/sealant-for-children"),
+    "crown-material-comparison": () => import("./posts/crown-material-comparison"),
+    "airflow-scaling-benefits": () => import("./posts/airflow-scaling-benefits"),
+    "implant-eligibility-checklist": () => import("./posts/implant-eligibility-checklist"),
+    "root-canal-pain-truth": () => import("./posts/root-canal-pain-truth"),
+    "orthodontic-treatment-duration": () => import("./posts/orthodontic-treatment-duration"),
+    "clear-vs-bracket-orthodontics": () => import("./posts/clear-vs-bracket-orthodontics"),
+    "denture-adjustment-guide": () => import("./posts/denture-adjustment-guide"),
   };
 
   const loader = modules[slug];
