@@ -14,6 +14,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Animation**: Framer Motion 12 (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
+- **Database**: Firebase Firestore (블로그 좋아요 기능)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -59,11 +60,13 @@ components/
   blog/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
+    LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, ClinicIllustration
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
+  firebase.ts                # Firebase 클라이언트 초기화 (Firestore)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -88,7 +91,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, Contact form, Motion wrappers.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -240,6 +243,8 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
 
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
+- `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `born2smile-website`)
 
 ## Known TODO Items
 

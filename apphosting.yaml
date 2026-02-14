@@ -14,3 +14,8 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: firebaseApiKey
+    availability:
+      - BUILD
+      - RUNTIME

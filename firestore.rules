@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 블로그 좋아요: 누구나 읽기 가능, 쓰기는 count/users 필드만 허용
+    match /blog-likes/{slug} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(["count", "users"])
+                   && request.resource.data.count is int
+                   && request.resource.data.users is list;
+    }
+
+    // 그 외 모든 컬렉션은 접근 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

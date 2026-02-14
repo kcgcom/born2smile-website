@@ -11,6 +11,7 @@ import {
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
+import LikeButton from "@/components/blog/LikeButton";
 
 export function generateStaticParams() {
   return BLOG_POSTS_META.map((post) => ({ slug: post.slug }));
@@ -130,7 +131,7 @@ export default async function BlogPostPage({
         </FadeIn>
       </section>
 
-      {/* 공유 + 목록 돌아가기 */}
+      {/* 좋아요 + 공유 + 목록 돌아가기 */}
       <section className="bg-white px-4 pb-12">
         <div className="mx-auto flex max-w-3xl items-center justify-between border-t border-gray-100 pt-8">
           <Link
@@ -140,7 +141,10 @@ export default async function BlogPostPage({
             <ArrowLeft size={16} />
             목록으로 돌아가기
           </Link>
-          <BlogShareButton slug={post.slug} title={post.title} />
+          <div className="flex items-center gap-2">
+            <LikeButton slug={post.slug} />
+            <BlogShareButton slug={post.slug} title={post.title} />
+          </div>
         </div>
       </section>
 
