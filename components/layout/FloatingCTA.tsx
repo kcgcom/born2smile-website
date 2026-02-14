@@ -1,19 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Phone, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
-    { href: "/about", label: "병원소개", icon: Building2 },
+    { href: "/#hero", label: "병원소개", icon: Building2 },
     { href: "/treatments", label: "진료안내", icon: Stethoscope },
     { href: "/blog", label: "블로그", icon: BookOpen },
     { href: "/contact", label: "상담안내", icon: Phone },
   ] as const;
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href === "/#hero") {
+      e.preventDefault();
+      if (pathname === "/") {
+        document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        router.push("/#hero");
+      }
+    }
+  };
 
   return (
     <>
@@ -24,12 +36,16 @@ export function FloatingCTA() {
       >
         <div className="grid grid-cols-4">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isActive =
+              item.href === "/#hero"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const isContact = item.href === "/contact";
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
