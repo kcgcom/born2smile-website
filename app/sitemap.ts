@@ -4,10 +4,13 @@ import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { BLOG_POSTS_META } from "@/lib/blog";
 
+// 정적 페이지는 실제 최종 수정일을 고정하여 매 빌드마다 변경되지 않도록 함
+const SITE_LAST_MODIFIED = new Date("2025-06-01");
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
-    lastModified: new Date(),
+    lastModified: SITE_LAST_MODIFIED,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
@@ -15,26 +18,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: BASE_URL,
-      lastModified: new Date(),
+      lastModified: SITE_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${BASE_URL}/about`,
-      lastModified: new Date(),
+      lastModified: SITE_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/treatments`,
-      lastModified: new Date(),
+      lastModified: SITE_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     ...treatmentPages,
     {
       url: `${BASE_URL}/blog`,
-      lastModified: new Date(),
+      lastModified: SITE_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 0.6,
     },
@@ -46,7 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     {
       url: `${BASE_URL}/contact`,
-      lastModified: new Date(),
+      lastModified: SITE_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.9,
     },

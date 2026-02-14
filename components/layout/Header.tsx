@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -51,15 +53,23 @@ export function Header() {
 
           {/* 데스크톱 네비게이션 */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="메인 메뉴">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-gray-700 transition-colors hover:text-[var(--color-primary)]"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                    isActive
+                      ? "text-[var(--color-primary)]"
+                      : "text-gray-700"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
             <a
               href={CLINIC.phoneHref}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
@@ -91,16 +101,24 @@ export function Header() {
             aria-label="모바일 메뉴"
           >
             <nav className="flex flex-col px-4 py-4">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium text-gray-700"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
+                      isActive
+                        ? "text-[var(--color-primary)]"
+                        : "text-gray-700"
+                    }`}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
               <a
                 href={CLINIC.phoneHref}
                 className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"

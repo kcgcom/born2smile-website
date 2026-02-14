@@ -61,6 +61,9 @@ export default function RootLayout({
       lang="ko"
       className={`${pretendard.variable} ${notoSerifKR.variable}`}
     >
+      <head>
+        <meta name="theme-color" content="#2563EB" />
+      </head>
       <body>
         <script
           type="application/ld+json"

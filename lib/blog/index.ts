@@ -8,6 +8,7 @@ export type {
   BlogPostSection,
   BlogCategory,
   BlogCategoryValue,
+  BlogTag,
 } from "./types";
 export { BLOG_CATEGORIES, BLOG_TAGS } from "./types";
 export { categoryColors } from "./category-colors";

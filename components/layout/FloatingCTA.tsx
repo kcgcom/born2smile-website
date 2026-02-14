@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Phone, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: "/about", label: "병원소개", icon: Building2 },
+    { href: "/treatments", label: "진료안내", icon: Stethoscope },
+    { href: "/blog", label: "블로그", icon: BookOpen },
+    { href: "/contact", label: "상담안내", icon: Phone },
+  ] as const;
+
   return (
     <>
       {/* 모바일 하단 고정 바 */}
@@ -13,38 +23,28 @@ export function FloatingCTA() {
         aria-label="빠른 메뉴"
       >
         <div className="grid grid-cols-4">
-          <Link
-            href="/#hero"
-            aria-label="병원소개"
-            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
-          >
-            <Building2 size={22} aria-hidden="true" />
-            병원소개
-          </Link>
-          <Link
-            href="/treatments"
-            aria-label="진료안내"
-            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
-          >
-            <Stethoscope size={22} aria-hidden="true" />
-            진료안내
-          </Link>
-          <Link
-            href="/blog"
-            aria-label="블로그"
-            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm text-gray-600 transition-colors hover:text-[var(--color-primary)]"
-          >
-            <BookOpen size={22} aria-hidden="true" />
-            블로그
-          </Link>
-          <Link
-            href="/contact"
-            aria-label="상담안내"
-            className="flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm font-medium text-[var(--color-gold)]"
-          >
-            <Phone size={22} aria-hidden="true" />
-            상담안내
-          </Link>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isContact = item.href === "/contact";
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
+                  isActive
+                    ? "font-medium text-[var(--color-primary)]"
+                    : isContact
+                      ? "font-medium text-[var(--color-gold)]"
+                      : "text-gray-600 hover:text-[var(--color-primary)]"
+                }`}
+              >
+                <item.icon size={22} aria-hidden="true" />
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

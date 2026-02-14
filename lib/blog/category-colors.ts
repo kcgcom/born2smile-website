@@ -2,7 +2,9 @@
 // 블로그 카테고리 색상 (목록/상세 공유)
 // =============================================================
 
-export const categoryColors: Record<string, string> = {
+import type { BlogCategoryValue } from "./types";
+
+export const categoryColors: Record<BlogCategoryValue, string> = {
   "예방·구강관리": "bg-blue-100 text-blue-700",
   보존치료: "bg-green-100 text-green-700",
   보철치료: "bg-purple-100 text-purple-700",
