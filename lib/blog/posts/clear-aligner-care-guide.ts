@@ -4,7 +4,7 @@ export const post: BlogPost = {
     id: 34,
     slug: "clear-aligner-care-guide",
     tags: ["치료후관리"],
-    category: "교정치료",
+    category: "치아교정",
     title: "투명교정, 끼기만 하면 될까?",
     subtitle: "교정 효과를 높이는 투명교정 관리법",
     excerpt:

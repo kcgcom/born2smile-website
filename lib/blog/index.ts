@@ -115,7 +115,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 9,
     slug: "orthodontics-for-adults",
-    category: "교정치료",
+    category: "치아교정",
     tags: ["팩트체크"],
     title: "교정은 어릴 때만? 아닙니다",
     subtitle: "성인 교정에 대한 궁금증 총정리",
@@ -331,7 +331,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 27,
     slug: "after-orthodontic-device-care",
-    category: "교정치료",
+    category: "치아교정",
     tags: ["치료후관리"],
     title: "교정 장치, 처음이 가장 힘듭니다",
     subtitle: "부착 후 적응 기간 관리법과 주의사항",
@@ -415,7 +415,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 34,
     slug: "clear-aligner-care-guide",
-    category: "교정치료",
+    category: "치아교정",
     tags: ["치료후관리"],
     title: "투명교정, 끼기만 하면 될까?",
     subtitle: "교정 효과를 높이는 투명교정 관리법",
@@ -535,7 +535,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 44,
     slug: "orthodontic-treatment-duration",
-    category: "교정치료",
+    category: "치아교정",
     tags: [],
     title: "교정, 얼마나 걸리나요?",
     subtitle: "케이스별로 알아보는 교정 기간 가이드",
@@ -547,7 +547,7 @@ export const BLOG_POSTS_META: BlogPostMeta[] = [
   {
     id: 45,
     slug: "clear-vs-bracket-orthodontics",
-    category: "교정치료",
+    category: "치아교정",
     tags: ["비교가이드"],
     title: "투명교정 vs 브라켓, 뭐가 맞을까?",
     subtitle: "나에게 맞는 교정 방법 선택 가이드",

@@ -41,7 +41,7 @@ export const BLOG_CATEGORIES = [
   "보존치료",
   "보철치료",
   "임플란트",
-  "교정치료",
+  "치아교정",
   "소아치료",
   "구강건강상식",
 ] as const;

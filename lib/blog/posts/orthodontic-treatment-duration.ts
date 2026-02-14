@@ -4,7 +4,7 @@ export const post: BlogPost = {
     id: 44,
     slug: "orthodontic-treatment-duration",
     tags: [],
-    category: "교정치료",
+    category: "치아교정",
     title: "교정, 얼마나 걸리나요?",
     subtitle: "케이스별로 알아보는 교정 기간 가이드",
     excerpt:
