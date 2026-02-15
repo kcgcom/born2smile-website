@@ -1,4 +1,4 @@
-import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS, LINKS } from "./constants";
+import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS } from "./constants";
 import type { BlogPost } from "./blog/types";
 
 /**
@@ -30,8 +30,8 @@ export function getClinicJsonLd() {
     ],
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 37.6319,
-      longitude: 126.715,
+      latitude: MAP.lat,
+      longitude: MAP.lng,
     },
     openingHoursSpecification: HOURS.schedule
       .filter((h) => h.open)
@@ -139,7 +139,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
     headline: `${post.title} — ${post.subtitle}`,
     description: post.excerpt,
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.dateModified ?? post.date,
     url: `${BASE_URL}/blog/${post.slug}`,
     author: {
       "@type": "Person",

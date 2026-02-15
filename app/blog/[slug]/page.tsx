@@ -46,6 +46,7 @@ export async function generateMetadata({
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
+      ...(post.dateModified && { modifiedTime: post.dateModified }),
       section: post.category,
       tags: post.tags,
       authors: [`${CLINIC.name}`],

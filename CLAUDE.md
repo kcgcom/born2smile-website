@@ -342,5 +342,5 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 **Medium — 추가 최적화:**
 
-- `lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일 — 실제 수정일 별도 관리 필요
+- ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
 - 시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨(`app/page.tsx` TODO 주석) — 실제 시설 사진(진료실, 대기실, 상담실, 소독실, X-ray실, 외관) 촬영 후 `public/images/facility/`에 추가하고 섹션 복원 필요
