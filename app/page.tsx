@@ -147,12 +147,9 @@ export default function Home() {
                       &ldquo;{review.text}&rdquo;
                     </p>
 
-                    {/* 하단: 이름 + 진료 과목 */}
-                    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                    {/* 하단: 이름 */}
+                    <div className="border-t border-gray-200 pt-4">
                       <span className="text-sm font-medium text-gray-900">{review.name}</span>
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
-                        {review.treatment}
-                      </span>
                     </div>
                   </div>
                 </StaggerItem>
