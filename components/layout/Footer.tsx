@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Instagram, MessageCircle, BookOpen, MapPin } from "lucide-react";
-import { CLINIC, HOURS, LINKS } from "@/lib/constants";
+import { Instagram, MessageCircle, BookOpen, MapPin, Star } from "lucide-react";
+import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -81,9 +81,31 @@ export function Footer() {
           </div>
         </div>
 
-        {/* SNS 링크 */}
-        {Object.values(LINKS).some((url) => url !== "") && (
+        {/* SNS 링크 + 리뷰 */}
+        {(Object.values(LINKS).some((url) => url !== "") || GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
           <div className="mt-8 flex items-center justify-center gap-4">
+            {GOOGLE_REVIEW.writeReviewUrl && (
+              <a
+                href={GOOGLE_REVIEW.writeReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Google 리뷰 남기기"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[var(--color-gold)] hover:text-white"
+              >
+                <Star size={18} />
+              </a>
+            )}
+            {NAVER_REVIEW.writeReviewUrl && (
+              <a
+                href={NAVER_REVIEW.writeReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="네이버 리뷰 남기기"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
+              >
+                <Star size={18} />
+              </a>
+            )}
             {LINKS.kakaoChannel && (
               <a
                 href={LINKS.kakaoChannel}
