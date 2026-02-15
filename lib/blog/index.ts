@@ -36,11 +36,14 @@ const CATEGORY_TREATMENT_MAP: Partial<Record<BlogCategoryValue, string>> = Objec
   Object.entries(TREATMENT_CATEGORY_MAP).map(([k, v]) => [v, k])
 );
 
-/** 진료 과목 ID로 해당 블로그 카테고리의 포스트 목록 조회 */
+/** 진료 과목 ID로 해당 블로그 카테고리의 포스트 목록 조회 (미발행 제외) */
 export function getRelatedBlogPosts(treatmentId: string, limit = 4): BlogPostMeta[] {
   const category = TREATMENT_CATEGORY_MAP[treatmentId];
   if (!category) return [];
-  return BLOG_POSTS_META.filter((p) => p.category === category).slice(0, limit);
+  const today = new Date().toISOString().slice(0, 10);
+  return BLOG_POSTS_META
+    .filter((p) => p.category === category && p.date <= today)
+    .slice(0, limit);
 }
 
 /** 블로그 카테고리로 매핑되는 진료 과목 ID 조회 (없으면 null) */

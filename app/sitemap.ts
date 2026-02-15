@@ -41,12 +41,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.6,
     },
-    ...BLOG_POSTS_META.map((post) => ({
-      url: `${BASE_URL}/blog/${post.slug}`,
-      lastModified: new Date(post.date),
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    })),
+    ...BLOG_POSTS_META
+      .filter((post) => post.date <= new Date().toISOString().slice(0, 10))
+      .map((post) => ({
+        url: `${BASE_URL}/blog/${post.slug}`,
+        lastModified: new Date(post.date),
+        changeFrequency: "monthly" as const,
+        priority: 0.5,
+      })),
     {
       url: `${BASE_URL}/contact`,
       lastModified: SITE_LAST_MODIFIED,

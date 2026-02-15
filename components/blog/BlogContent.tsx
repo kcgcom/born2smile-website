@@ -22,15 +22,19 @@ export default function BlogContent() {
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // 발행일이 오늘 이하인 포스트만 표시 (예약 발행)
+  const today = new Date().toISOString().slice(0, 10);
+  const publishedPosts = BLOG_POSTS_META.filter((p) => p.date <= today);
+
   // SSR 초기값은 최신순 정렬 (크롤러에게 일관된 순서 제공)
   // 클라이언트 hydration 후 랜덤 셔플로 다양한 글 노출
-  const sortedByDate = [...BLOG_POSTS_META].sort(
+  const sortedByDate = [...publishedPosts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
   const [shuffledPosts, setShuffledPosts] = useState(sortedByDate);
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
-      const posts = [...BLOG_POSTS_META];
+      const posts = [...publishedPosts];
       for (let i = posts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [posts[i], posts[j]] = [posts[j], posts[i]];
@@ -38,7 +42,8 @@ export default function BlogContent() {
       setShuffledPosts(posts);
     });
     return () => cancelAnimationFrame(frameId);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today]);
 
   // 스크롤 시 자동으로 다음 페이지 로드
   useEffect(() => {

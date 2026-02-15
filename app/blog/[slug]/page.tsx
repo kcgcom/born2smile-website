@@ -15,8 +15,12 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import LikeButton from "@/components/blog/LikeButton";
 
+// 빌드 시점 기준 발행일이 지난 포스트만 정적 생성 (예약 발행)
 export function generateStaticParams() {
-  return BLOG_POSTS_META.map((post) => ({ slug: post.slug }));
+  const today = new Date().toISOString().slice(0, 10);
+  return BLOG_POSTS_META
+    .filter((post) => post.date <= today)
+    .map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
@@ -27,6 +31,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) return {};
+  // 미발행 포스트는 메타데이터 미생성
+  const today = new Date().toISOString().slice(0, 10);
+  if (post.date > today) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
 
@@ -52,15 +59,18 @@ export default async function BlogPostPage({
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) notFound();
+  // 미발행 포스트는 404
+  const today = new Date().toISOString().slice(0, 10);
+  if (post.date > today) notFound();
 
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-");
     return `${year}.${month}.${day}`;
   };
 
-  // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
+  // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 미발행 제외, 최대 3개)
   const relatedPosts = BLOG_POSTS_META.filter(
-    (p) => p.category === post.category && p.id !== post.id
+    (p) => p.category === post.category && p.id !== post.id && p.date <= today
   ).slice(0, 3);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
