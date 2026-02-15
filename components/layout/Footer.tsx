@@ -78,7 +78,10 @@ export function Footer() {
           {/* 리뷰 남기기 */}
           {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
             <div>
-              <h3 className="mb-4 text-lg font-bold text-white">리뷰 남기기</h3>
+              <h3 className="mb-2 text-lg font-bold text-white">리뷰 남기기</h3>
+              <p className="mb-3 text-xs leading-relaxed text-gray-400">
+                소중한 시간을 내어 남겨주시는 리뷰는 더 나은 진료 서비스를 위한 큰 힘이 됩니다.
+              </p>
               <div className="space-y-3">
                 {GOOGLE_REVIEW.writeReviewUrl && (
                   <a
