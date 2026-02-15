@@ -113,7 +113,7 @@ export default function AboutPage() {
                   <h3 className="mb-2 text-lg font-bold text-gray-900">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-gray-600">
+                  <p className="text-base leading-relaxed text-gray-600">
                     {item.desc}
                   </p>
                 </div>
@@ -160,7 +160,7 @@ export default function AboutPage() {
                   />
                   학력
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.education.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -179,7 +179,7 @@ export default function AboutPage() {
                   />
                   자격 및 수료
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.credentials.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -198,7 +198,7 @@ export default function AboutPage() {
                   />
                   학회 활동
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.memberships.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -217,7 +217,7 @@ export default function AboutPage() {
                   />
                   현직
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.currentPositions.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -282,7 +282,7 @@ export default function AboutPage() {
                 진료시간
               </h2>
               <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-                <table className="w-full text-sm">
+                <table className="w-full text-base">
                   <tbody>
                     {HOURS.schedule.map((item) => (
                       <tr
@@ -324,7 +324,7 @@ export default function AboutPage() {
               {/* 카카오맵 */}
               <KakaoMap className="mb-6 aspect-[4/3]" />
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-base">
                 <div className="flex items-start gap-3">
                   <MapPin
                     size={18}
