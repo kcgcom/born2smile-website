@@ -13,8 +13,7 @@ export function Footer() {
               오시는 길
             </h3>
             <ul className="space-y-3 text-lg md:text-base">
-              <li className="flex items-start gap-2">
-                <MapPin size={16} className="mt-0.5 shrink-0 text-gray-500" />
+              <li>
                 {LINKS.naverMap ? (
                   <a
                     href={LINKS.naverMap}
