@@ -30,6 +30,7 @@ pnpm dev                      # http://localhost:3000
 
 - `pnpm dev` — Start dev server (블로그 메타데이터 자동 생성 후 실행)
 - `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
+- `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
@@ -77,7 +78,7 @@ lib/
     index.ts                 # re-export + getPostBySlug() + 진료↔블로그 매핑
     generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
       posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출)
-    posts/                   # 개별 포스트 파일 (51개, slug.ts 형식) — Single Source of Truth
+    posts/                   # 개별 포스트 파일 (78개, slug.ts 형식) — Single Source of Truth
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -86,6 +87,9 @@ public/
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
+.github/
+  workflows/
+    scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용)
 .firebaserc                  # Firebase project alias config (default: born2smile-website)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
@@ -112,7 +116,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 51 blog posts |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 78 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
@@ -250,6 +254,10 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
 - SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
 - GitHub 연동 시 push → 자동 배포 가능
+
+### 예약 발행 자동 재빌드
+
+GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매일 KST 00:05 (UTC 15:05)에 빈 커밋을 push하여 Firebase App Hosting 재빌드를 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `workflow_dispatch`로 수동 실행도 가능.
 
 ## Environment Variables
 
