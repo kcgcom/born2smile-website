@@ -53,6 +53,8 @@ export function Header() {
               alt="서울대학교 엠블럼"
               width={40}
               height={40}
+              sizes="40px"
+              priority
               className="h-8 w-8 md:h-10 md:w-10"
             />
             <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-2xl">
