@@ -142,7 +142,7 @@ export default async function TreatmentDetailPage({
                 <h3 className="mb-2 text-lg font-bold text-gray-900">
                   {step.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-gray-600">
+                <p className="text-base leading-relaxed text-gray-700">
                   {step.desc}
                 </p>
               </StaggerItem>
@@ -168,7 +168,7 @@ export default async function TreatmentDetailPage({
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0] text-sm text-[var(--color-gold)]">
                   ✓
                 </span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-base font-medium text-gray-800">
                   {adv}
                 </span>
               </StaggerItem>
@@ -199,7 +199,7 @@ export default async function TreatmentDetailPage({
                       className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
                     />
                   </summary>
-                  <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-600">
+                  <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-700">
                     {item.a}
                   </div>
                 </details>

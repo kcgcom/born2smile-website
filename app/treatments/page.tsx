@@ -82,7 +82,7 @@ export default function TreatmentsPage() {
                   <h3 className="mb-3 text-lg font-bold text-gray-900">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-gray-600">
+                  <p className="text-base leading-relaxed text-gray-700">
                     {item.desc}
                   </p>
                 </div>
@@ -114,7 +114,7 @@ export default function TreatmentsPage() {
                   <h3 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
                     {treatment.name}
                   </h3>
-                  <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                  <p className="mb-6 text-base leading-relaxed text-gray-700">
                     {treatment.shortDesc}
                   </p>
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">

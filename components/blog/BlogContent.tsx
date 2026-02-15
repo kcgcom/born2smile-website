@@ -269,10 +269,10 @@ export default function BlogContent() {
                   <h2 className="mb-1 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
                     {post.title}
                   </h2>
-                  <p className="mb-3 text-sm font-medium text-[var(--color-muted)]">
+                  <p className="mb-3 text-sm font-medium text-gray-500">
                     {post.subtitle}
                   </p>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     {post.excerpt}
                   </p>
 

@@ -92,7 +92,7 @@ export default function Home() {
                     <h3 className="mb-2 text-xl font-bold text-gray-900">
                       {item.title}
                     </h3>
-                    <p className="text-sm leading-relaxed text-gray-600">
+                    <p className="text-base leading-relaxed text-gray-700">
                       {item.desc}
                     </p>
                   </div>
@@ -134,7 +134,7 @@ export default function Home() {
                     </div>
 
                     {/* 후기 내용 */}
-                    <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
+                    <p className="mb-4 flex-1 text-base leading-relaxed text-gray-700">
                       &ldquo;{review.text}&rdquo;
                     </p>
 

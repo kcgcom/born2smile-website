@@ -232,7 +232,7 @@ export default async function BlogPostPage({
                       <p className="mb-2 text-sm text-gray-500">
                         {rp.subtitle}
                       </p>
-                      <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600 line-clamp-2">
+                      <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-2">
                         {rp.excerpt}
                       </p>
                       <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-400">

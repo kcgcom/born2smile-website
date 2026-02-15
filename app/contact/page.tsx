@@ -28,7 +28,7 @@ export default function ContactPage() {
               <h2 className="mb-2 text-2xl font-bold text-gray-900">
                 전화 상담
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-700">
                 진료 예약 및 상담은 전화로 접수하고 있습니다.
                 <br />
                 궁금하신 점이 있으시면 언제든 연락주세요.
@@ -43,7 +43,7 @@ export default function ContactPage() {
                   <Phone size={28} aria-hidden="true" />
                 </div>
                 <div>
-                  <div className="text-sm text-blue-200">대표전화</div>
+                  <div className="text-sm text-blue-100">대표전화</div>
                   <div className="text-2xl font-bold">{CLINIC.phone}</div>
                 </div>
               </a>
@@ -98,7 +98,7 @@ export default function ContactPage() {
                   {HOURS.schedule.map((item) => (
                     <li
                       key={item.day}
-                      className="flex justify-between text-gray-600"
+                      className="flex justify-between text-gray-700"
                     >
                       <span>{item.day}</span>
                       <span
