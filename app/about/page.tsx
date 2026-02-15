@@ -187,12 +187,12 @@ export default function AboutPage() {
 
           <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { name: "진료실", src: "/images/facility/진료실.jpg" },
-              { name: "대기실", src: "/images/facility/대기실.jpg" },
-              { name: "상담실", src: "/images/facility/상담실.jpg" },
-              { name: "VIP실", src: "/images/facility/VIP실.jpg" },
-              { name: "X-ray실", src: "/images/facility/X-ray실.jpg" },
-              { name: "외관", src: "/images/facility/외관.jpg" },
+              { name: "진료실", src: "/images/facility/treatment-room.jpg" },
+              { name: "대기실", src: "/images/facility/waiting-room.jpg" },
+              { name: "상담실", src: "/images/facility/consultation-room.jpg" },
+              { name: "VIP실", src: "/images/facility/vip-room.jpg" },
+              { name: "X-ray실", src: "/images/facility/xray-room.jpg" },
+              { name: "외관", src: "/images/facility/exterior.jpg" },
             ].map((item) => (
               <StaggerItem key={item.name}>
                 <div className="group relative overflow-hidden rounded-2xl">
