@@ -86,7 +86,7 @@ export function Footer() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-400">치료 후기</div>
-                      <div className="text-sm font-medium text-white">네이버 리뷰 남기기</div>
+                      <div className="text-sm font-medium text-white">Naver 리뷰 남기기</div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
                   </a>
