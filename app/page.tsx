@@ -3,9 +3,6 @@ import Link from "next/link";
 import {
   Phone,
   ArrowRight,
-  Shield,
-  Heart,
-  Stethoscope,
   Star,
   ExternalLink,
 } from "lucide-react";
@@ -77,27 +74,21 @@ export default function Home() {
             <StaggerContainer className="grid gap-8 md:grid-cols-3">
               {[
                 {
-                  icon: Shield,
                   title: "신뢰",
                   desc: "서울대 출신 전문의의 정확한 진단과 치료 계획을 제공합니다.",
                 },
                 {
-                  icon: Heart,
                   title: "정성",
                   desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
                   gold: true,
                 },
                 {
-                  icon: Stethoscope,
                   title: "전문성",
                   desc: "국내외 학회 활동과 지속적인 연구로 최선의 치료를 제공합니다.",
                 },
               ].map((item) => (
                 <StaggerItem key={item.title}>
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                    <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full ${"gold" in item && item.gold ? "bg-[#FDF3E0] text-[var(--color-gold)]" : "bg-blue-100 text-[var(--color-primary)]"}`}>
-                      <item.icon size={24} />
-                    </div>
                     <h3 className="mb-2 text-xl font-bold text-gray-900">
                       {item.title}
                     </h3>
