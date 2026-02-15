@@ -36,6 +36,20 @@ export function Footer() {
                   {CLINIC.phone}
                 </a>
               </li>
+              {LINKS.naverMap && (
+                <li className="pt-1">
+                  <a
+                    href={LINKS.naverMap}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
+                  >
+                    <MapPin size={14} className="shrink-0" />
+                    네이버 지도에서 보기
+                    <ExternalLink size={12} className="shrink-0" />
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
 
