@@ -8,7 +8,8 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>
-            <h3 className="mb-4 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
+            <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
+              <MapPin size={18} />
               오시는 길
             </h3>
             <ul className="space-y-3 text-lg md:text-base">
