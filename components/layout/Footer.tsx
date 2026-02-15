@@ -50,7 +50,7 @@ export function Footer() {
               <Clock size={18} className="text-[var(--color-gold-light)]" />
               진료시간
             </h3>
-            <ul className="max-w-56 space-y-1.5 text-sm">
+            <ul className="max-w-72 space-y-1.5 text-sm">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
                   <span>
