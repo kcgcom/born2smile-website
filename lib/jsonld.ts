@@ -1,4 +1,4 @@
-import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS } from "./constants";
+import { BASE_URL, CLINIC, DOCTORS, HOURS, TREATMENTS, LINKS } from "./constants";
 import type { BlogPost } from "./blog/types";
 
 /**
@@ -70,7 +70,13 @@ export function getClinicJsonLd() {
       name: doctor.name,
       jobTitle: doctor.position,
       description: `${doctor.education[0]}. ${doctor.credentials[0]}.`,
+      qualifications: doctor.credentials.map((c) => c),
+      memberOf: doctor.memberships.map((m) => ({
+        "@type": "Organization",
+        name: m,
+      })),
     },
+    sameAs: Object.values(LINKS).filter((url) => url !== ""),
     priceRange: "₩₩",
     image: `${BASE_URL}/opengraph-image`,
   };
@@ -144,12 +150,23 @@ export function getBlogPostJsonLd(post: BlogPost) {
       "@type": "Organization",
       name: CLINIC.name,
       url: BASE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/opengraph-image`,
+      },
+    },
+    image: {
+      "@type": "ImageObject",
+      url: `${BASE_URL}/opengraph-image`,
+      width: 1200,
+      height: 630,
     },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `${BASE_URL}/blog/${post.slug}`,
     },
     articleSection: post.category,
+    keywords: post.tags,
     inLanguage: "ko-KR",
   };
 }
