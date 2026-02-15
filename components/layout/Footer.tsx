@@ -80,7 +80,7 @@ export function Footer() {
             <div>
               <h3 className="mb-2 text-lg font-bold text-white">리뷰 남기기</h3>
               <p className="mb-3 text-xs leading-relaxed text-gray-400">
-                남겨주시는 리뷰가 큰 힘이 됩니다.
+                환자분의 리뷰가 더 나은 진료 서비스를 위해 큰 힘이 됩니다.
               </p>
               <div className="space-y-3">
                 {GOOGLE_REVIEW.writeReviewUrl && (
