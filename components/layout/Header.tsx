@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
@@ -45,7 +46,14 @@ export function Header() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
-          <Link href="/" className="flex flex-col">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/images/Logo_SNU.png"
+              alt="서울대학교 엠블럼"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
             <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-xl">
               {CLINIC.name}
             </span>
