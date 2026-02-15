@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CLINIC, HOURS } from "@/lib/constants";
+import { Instagram, MessageCircle, BookOpen, MapPin } from "lucide-react";
+import { CLINIC, HOURS, LINKS } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -79,6 +80,56 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
+        {/* SNS 링크 */}
+        {Object.values(LINKS).some((url) => url !== "") && (
+          <div className="mt-8 flex items-center justify-center gap-4">
+            {LINKS.kakaoChannel && (
+              <a
+                href={LINKS.kakaoChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="카카오톡 채널"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#FEE500] hover:text-gray-900"
+              >
+                <MessageCircle size={18} />
+              </a>
+            )}
+            {LINKS.instagram && (
+              <a
+                href={LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="인스타그램"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-gradient-to-tr hover:from-[#f9ce34] hover:via-[#ee2a7b] hover:to-[#6228d7] hover:text-white"
+              >
+                <Instagram size={18} />
+              </a>
+            )}
+            {LINKS.naverBlog && (
+              <a
+                href={LINKS.naverBlog}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="네이버 블로그"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
+              >
+                <BookOpen size={18} />
+              </a>
+            )}
+            {LINKS.naverMap && (
+              <a
+                href={LINKS.naverMap}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="네이버 지도"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
+              >
+                <MapPin size={18} />
+              </a>
+            )}
+          </div>
+        )}
 
         {/* 하단 카피라이트 */}
         <div className="mt-10 border-t border-gray-700 pt-6 text-center text-xs text-gray-500">

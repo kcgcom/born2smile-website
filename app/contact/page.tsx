@@ -1,7 +1,7 @@
 "use client";
 
 import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
-import { CLINIC, HOURS } from "@/lib/constants";
+import { CLINIC, HOURS, LINKS } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -48,19 +48,41 @@ export default function ContactPage() {
                 </div>
               </a>
 
-              <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
-                  <MessageCircle
-                    size={28}
-                    aria-hidden="true"
-                    className="text-[var(--color-gold)]"
-                  />
+              {LINKS.kakaoChannel ? (
+                <a
+                  href={LINKS.kakaoChannel}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="카카오톡 채널로 상담하기"
+                  className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#FEE500] p-6 text-gray-900 transition-colors hover:bg-[#FDD835]"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/60">
+                    <MessageCircle
+                      size={28}
+                      aria-hidden="true"
+                      className="text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-700">카카오톡 상담</div>
+                    <div className="text-sm font-bold">채널 바로가기</div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
+                    <MessageCircle
+                      size={28}
+                      aria-hidden="true"
+                      className="text-[var(--color-gold)]"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-400">카카오톡 상담</div>
+                    <div className="text-sm font-medium">채널 준비 중</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-400">카카오톡 상담</div>
-                  <div className="text-sm font-medium">채널 준비 중</div>
-                </div>
-              </div>
+              )}
 
               {/* 진료시간 */}
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">

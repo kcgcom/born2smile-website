@@ -5,7 +5,7 @@ import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { BLOG_POSTS_META } from "@/lib/blog";
 
 // 정적 페이지는 실제 최종 수정일을 고정하여 매 빌드마다 변경되지 않도록 함
-const SITE_LAST_MODIFIED = new Date("2025-06-01");
+const SITE_LAST_MODIFIED = new Date("2026-02-15");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const treatmentPages = TREATMENTS.map((t) => ({

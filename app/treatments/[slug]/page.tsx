@@ -26,30 +26,41 @@ export async function generateMetadata({
 
   // 스케일링 페이지는 타겟 키워드를 포함한 맞춤 메타데이터 사용
   if (slug === "scaling") {
+    const scalingOgTitle = `안아픈 스케일링 | 에어플로우 스케일링 | ${CLINIC.name}`;
+    const scalingDesc = "에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.";
     return {
       title: "안아픈 스케일링 | 에어플로우 스케일링",
       description:
-        "김포 스케일링 잘하는 치과, 서울본치과. 에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.",
+        `김포 스케일링 잘하는 치과, 서울본치과. ${scalingDesc}`,
       keywords: ["안아픈 스케일링", "에어플로우 스케일링", "스케일링 잘하는 치과", "김포 스케일링", "장기동 스케일링"],
       alternates: { canonical: treatmentUrl },
       openGraph: {
-        title: `안아픈 스케일링 | 에어플로우 스케일링 | ${CLINIC.name}`,
-        description: "에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.",
+        title: scalingOgTitle,
+        description: scalingDesc,
         url: treatmentUrl,
+      },
+      twitter: {
+        title: scalingOgTitle,
+        description: scalingDesc,
       },
     };
   }
 
   const description = `김포한강신도시 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`;
+  const ogTitle = `${detail.name} | ${CLINIC.name}`;
 
   return {
     title: detail.name,
     description,
     alternates: { canonical: treatmentUrl },
     openGraph: {
-      title: `${detail.name} | ${CLINIC.name}`,
+      title: ogTitle,
       description,
       url: treatmentUrl,
+    },
+    twitter: {
+      title: ogTitle,
+      description,
     },
   };
 }

@@ -37,12 +37,14 @@ export async function generateMetadata({
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
 
+  const ogTitle = `${fullTitle} | ${CLINIC.name} 블로그`;
+
   return {
     title: fullTitle,
     description: post.excerpt,
     alternates: { canonical: `${BASE_URL}/blog/${slug}` },
     openGraph: {
-      title: `${fullTitle} | ${CLINIC.name} 블로그`,
+      title: ogTitle,
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
@@ -51,6 +53,10 @@ export async function generateMetadata({
       tags: post.tags,
       authors: [`${CLINIC.name}`],
       url: `${BASE_URL}/blog/${slug}`,
+    },
+    twitter: {
+      title: ogTitle,
+      description: post.excerpt,
     },
   };
 }
