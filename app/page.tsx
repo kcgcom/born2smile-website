@@ -168,8 +168,11 @@ export default function Home() {
             {/* 리뷰 남기기 버튼 */}
             {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
               <FadeIn className="mt-10 text-center">
+                <h3 className="font-headline mb-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  치료에 만족하셨나요?
+                </h3>
                 <p className="mb-4 text-sm leading-relaxed text-gray-500">
-                  치료에 만족하셨나요? 소중한 리뷰를 남겨주시면 다른 분들에게 큰 도움이 됩니다.
+                  소중한 리뷰를 남겨주시면 다른 분들에게 큰 도움이 됩니다.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-4">
                 {GOOGLE_REVIEW.writeReviewUrl && (
