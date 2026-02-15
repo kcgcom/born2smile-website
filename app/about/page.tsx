@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import {
   GraduationCap,
   Award,
@@ -184,18 +185,31 @@ export default function AboutPage() {
             </h2>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {["진료실", "대기실", "상담실", "소독실", "X-ray실", "외관"].map(
-              (name) => (
-                <div
-                  key={name}
-                  className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-gray-200 bg-gray-100"
-                >
-                  <p className="text-sm text-gray-400">{name} 사진</p>
+          <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { name: "진료실", src: "/images/facility/진료실.jpg" },
+              { name: "대기실", src: "/images/facility/대기실.jpg" },
+              { name: "상담실", src: "/images/facility/상담실.jpg" },
+              { name: "VIP실", src: "/images/facility/VIP실.jpg" },
+              { name: "X-ray실", src: "/images/facility/X-ray실.jpg" },
+              { name: "외관", src: "/images/facility/외관.jpg" },
+            ].map((item) => (
+              <StaggerItem key={item.name}>
+                <div className="group relative overflow-hidden rounded-2xl">
+                  <Image
+                    src={item.src}
+                    alt={`${CLINIC.name} ${item.name}`}
+                    width={600}
+                    height={450}
+                    className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                    <p className="text-sm font-medium text-white">{item.name}</p>
+                  </div>
                 </div>
-              )
-            )}
-          </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
       </section>
 
