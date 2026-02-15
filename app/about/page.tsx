@@ -160,14 +160,9 @@ export default function AboutPage() {
           </div>
 
           <div className="mx-auto max-w-5xl">
-            {/* 프로필 상단 */}
-            <div className="mb-10 grid items-center gap-8 md:grid-cols-3">
-              <div className="flex items-center justify-center">
-                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] text-6xl font-bold text-[var(--color-gold-dark)]">
-                  {doctor.name.charAt(0)}
-                </div>
-              </div>
-              <div className="text-center md:col-span-2 md:text-left">
+            {/* 프로필 상단 — 프로필 사진 준비 시 grid + 사진 영역 복원 */}
+            <div className="mb-10">
+              <div className="text-center">
                 <p className="text-sm font-medium text-[var(--color-gold)]">
                   {doctor.title}
                 </p>
