@@ -30,6 +30,7 @@ pnpm dev                      # http://localhost:3000
 
 - `pnpm dev` — Start dev server (블로그 메타데이터 자동 생성 후 실행)
 - `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
+- `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
@@ -77,7 +78,7 @@ lib/
     index.ts                 # re-export + getPostBySlug() + 진료↔블로그 매핑
     generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
       posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출)
-    posts/                   # 개별 포스트 파일 (51개, slug.ts 형식) — Single Source of Truth
+    posts/                   # 개별 포스트 파일 (78개, slug.ts 형식) — Single Source of Truth
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -86,7 +87,10 @@ public/
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
-.firebaserc                  # Firebase project alias config (default: born2smile-website)
+.github/
+  workflows/
+    scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용)
+.firebaserc                  # Firebase project alias config (default: seoul-born2smile)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
 firestore.rules              # Firestore security rules (blog-likes 컬렉션 read/write 규칙)
@@ -101,6 +105,11 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers.
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
+  ```
+  implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
+  pediatric → 소아치료, restorative → 보존치료, scaling → 예방·구강관리
+  ```
+  `"구강건강상식"` 카테고리는 특정 진료 과목에 매핑되지 않음 (일반 건강 정보).
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -112,10 +121,35 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 51 blog posts |
+| `/blog/[slug]` | SSG | `generateStaticParams()` for 78 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
+
+### 블로그 예약 발행 메커니즘
+
+미래 날짜(`date` 필드)를 가진 포스트는 다음 두 곳에서 필터링되어 노출되지 않음:
+
+1. **클라이언트 필터링** (`BlogContent.tsx`): `date <= today` 조건으로 미발행 포스트 제외
+2. **Sitemap 필터링** (`app/sitemap.ts`): 동일 조건으로 미발행 포스트 sitemap에서 제외
+
+블로그 목록 표시 전략 (SSR/CSR 이중 전략):
+- **SSR 초기 렌더**: 최신순 정렬 (검색엔진 크롤러 일관성)
+- **클라이언트 hydration 후**: Fisher-Yates 셔플로 랜덤 순서 표시 (콘텐츠 다양성)
+- **페이지네이션**: Intersection Observer 기반 무한 스크롤, 12개씩 로드
+
+### 블로그 포스트 콘텐츠 구조
+
+각 포스트 파일은 `BlogPost` 인터페이스를 따르며, 본문은 `BlogPostSection[]` 배열:
+
+```typescript
+content: [
+  { heading: "섹션 제목", content: "섹션 본문 텍스트" },
+  { heading: "다음 섹션", content: "..." },
+]
+```
+
+빌드 시 `generate-blog-meta.ts` 스크립트가 포스트 파일에서 메타데이터만 추출하고 `content` 필드는 제거하여 `posts-meta.ts`를 생성. 이를 통해 목록 페이지 번들에 본문이 포함되지 않아 번들 크기 최적화.
 
 ### Font System
 
@@ -155,6 +189,33 @@ pnpm-workspace.yaml          # pnpm workspace config
 - `.section-padding` — 섹션 공통 패딩 (`px-4 py-16` ~ `lg:px-8 lg:py-32`)
 - `.container-narrow` — 최대 너비 컨테이너 (`max-w-6xl mx-auto`)
 - `.font-headline` — 세리프 헤드라인 폰트 (Noto Serif KR)
+
+### Key Components
+
+**FloatingCTA** (`components/layout/FloatingCTA.tsx`):
+- 모바일: 하단 고정 네비게이션 바 (병원소개, 진료안내, 블로그, 상담안내 4개 버튼). 상담안내는 골드 색상, 나머지는 블루.
+- 데스크톱: 우하단 플로팅 전화 버튼 (`tel:` 링크)
+
+**KakaoMap** (`components/ui/KakaoMap.tsx`):
+- SDK를 `document.head.appendChild(script)`로 동적 로드
+- 이중 좌표 전략: 주소 기반 Kakao Geocoder API 시도 → 실패 시 `lib/constants.ts`의 하드코딩 좌표로 폴백
+- Cloud Secret Manager 공백 문제 대응: 환경 변수 값을 `.trim()` 처리
+
+**LikeButton** (`components/blog/LikeButton.tsx`):
+- Firestore 스키마: `blog-likes/{slug}` 컬렉션, `count`(int) + `users`(UUID 배열) 필드
+- 사용자 식별: `crypto.randomUUID()`로 생성한 UUID를 `localStorage`(`born2smile_uid` 키)에 저장
+- Optimistic update: UI 즉시 반영 → `runTransaction()`으로 원자적 저장 → 실패 시 롤백
+- Firebase 미설정 시 graceful degradation: `isFirebaseConfigured` 플래그로 판단, 버튼 비활성 표시. 장애 모니터링은 Firebase Cloud Monitoring 알림으로 운영.
+
+**BlogShareButton** (`components/blog/BlogShareButton.tsx`):
+- Web Share API 우선 사용 (`navigator.share`) → 미지원 브라우저에서 클립보드 복사 폴백
+
+### Firebase 클라이언트 (`lib/firebase.ts`)
+
+- 최소 설정: `apiKey` + `projectId`만 사용 (Auth, Storage 등 미사용)
+- `isFirebaseConfigured` boolean export: API key 미설정 시 Firestore 의존 기능(좋아요)을 graceful하게 비활성화
+- 기본 projectId: `"seoul-born2smile"` (환경 변수 없으면 폴백)
+- 싱글톤 패턴: 이미 초기화된 앱이 있으면 재사용
 
 ## Common Tasks
 
@@ -250,6 +311,10 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 - 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
 - SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
 - GitHub 연동 시 push → 자동 배포 가능
+
+### 예약 발행 자동 재빌드
+
+GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매일 KST 00:05 (UTC 15:05)에 빈 커밋을 push하여 Firebase App Hosting 재빌드를 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `workflow_dispatch`로 수동 실행도 가능.
 
 ## Environment Variables
 
