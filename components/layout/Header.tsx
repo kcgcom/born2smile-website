@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { label: "홈", href: "/" },
   { label: "병원 소개", href: "/about" },
   { label: "진료 안내", href: "/treatments" },
-  { label: "블로그", href: "/blog" },
+  { label: "건강정보", href: "/blog" },
   { label: "상담 안내", href: "/contact" },
 ];
 
