@@ -17,6 +17,7 @@ export interface BlogPostMeta {
   subtitle: string;
   excerpt: string;
   date: string;
+  dateModified?: string;
   readTime: string;
 }
 
