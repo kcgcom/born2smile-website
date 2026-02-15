@@ -21,10 +21,10 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="text-white hover:underline"
                   >
-                    {CLINIC.address}
+                    {CLINIC.addressShort}
                   </a>
                 ) : (
-                  <span>{CLINIC.address}</span>
+                  <span>{CLINIC.addressShort}</span>
                 )}
               </li>
               {LINKS.naverMap && (

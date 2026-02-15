@@ -13,7 +13,7 @@ export const CLINIC = {
   phone: "1833-7552",
   phoneIntl: "+82-1833-7552",
   phoneHref: "tel:1833-7552",
-  address: "경기도 김포시 태장로 820, 엠프라자 2층",
+  address: "경기도 김포시 태장로 820, 엠프라자 2층 (장기동)",
   addressShort: "김포시 태장로 820, 엠프라자 2층",
   neighborhood: "한강신도시 장기동",
   businessNumber: "647-18-00478", // 사업자등록번호
