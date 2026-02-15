@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Share2, Check, Clock, ArrowRight, Tag } from "lucide-react";
+import { Share2, Check, Clock, ArrowRight, Tag, Search, X } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   BLOG_POSTS_META,
@@ -18,9 +18,11 @@ const POSTS_PER_PAGE = 12;
 export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // 발행일이 오늘 이하인 포스트만 표시 (예약 발행)
   const today = new Date().toISOString().slice(0, 10);
@@ -65,7 +67,14 @@ export default function BlogContent() {
     const categoryMatch =
       activeCategory === "전체" || post.category === activeCategory;
     const tagMatch = !activeTag || post.tags.includes(activeTag);
-    return categoryMatch && tagMatch;
+    if (!categoryMatch || !tagMatch) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      post.title.toLowerCase().includes(q) ||
+      post.subtitle.toLowerCase().includes(q) ||
+      post.excerpt.toLowerCase().includes(q)
+    );
   });
 
   const visiblePosts = filteredPosts.slice(0, visibleCount);
@@ -85,6 +94,17 @@ export default function BlogContent() {
     setActiveTag((prev) => (prev === tag ? null : tag));
     setActiveCategory("전체");
     setVisibleCount(POSTS_PER_PAGE);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setVisibleCount(POSTS_PER_PAGE);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setVisibleCount(POSTS_PER_PAGE);
+    searchInputRef.current?.focus();
   };
 
   const handleShare = useCallback(
@@ -145,6 +165,35 @@ export default function BlogContent() {
   return (
     <section className="section-padding bg-white">
       <div className="container-narrow">
+        {/* 검색 */}
+        <div className="mx-auto mb-6 max-w-md">
+          <div className="relative">
+            <Search
+              size={18}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="궁금한 키워드를 검색해보세요"
+              aria-label="블로그 검색"
+              className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[var(--color-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="검색어 지우기"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* 카테고리 필터 */}
         <div className="mb-4 flex flex-wrap justify-center gap-2">
           {BLOG_CATEGORIES.map((cat) => (
@@ -269,7 +318,9 @@ export default function BlogContent() {
 
         {filteredPosts.length === 0 && (
           <p className="py-20 text-center text-gray-400">
-            해당 조건의 글이 아직 없습니다.
+            {searchQuery.trim()
+              ? `"${searchQuery.trim()}"에 대한 검색 결과가 없습니다.`
+              : "해당 조건의 글이 아직 없습니다."}
           </p>
         )}
 
