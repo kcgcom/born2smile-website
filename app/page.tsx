@@ -276,6 +276,7 @@ export default function Home() {
                     alt={`${CLINIC.name} ${item.name}`}
                     width={600}
                     height={450}
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
