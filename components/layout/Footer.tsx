@@ -1,4 +1,4 @@
-import { Instagram, MessageCircle, BookOpen, MapPin, Phone, Star, ExternalLink } from "lucide-react";
+import { Instagram, MessageCircle, BookOpen, MapPin, Phone, Star, ExternalLink, Clock } from "lucide-react";
 import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 export function Footer() {
@@ -41,7 +41,10 @@ export function Footer() {
 
           {/* 진료시간 */}
           <div>
-            <h3 className="mb-4 text-lg font-bold text-white">진료시간</h3>
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+              <Clock size={18} className="text-[var(--color-gold-light)]" />
+              진료시간
+            </h3>
             <ul className="max-w-56 space-y-1.5 text-sm">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
@@ -60,6 +63,9 @@ export function Footer() {
               ))}
               <li className="mt-2 border-t border-gray-700 pt-2">
                 점심시간: {HOURS.lunchTime}
+              </li>
+              <li className="text-gray-500">
+                공휴일 휴진
               </li>
             </ul>
           </div>
