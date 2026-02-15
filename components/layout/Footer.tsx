@@ -1,4 +1,4 @@
-import { Instagram, MessageCircle, BookOpen, MapPin, Phone, Star, ExternalLink, Clock } from "lucide-react";
+import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock } from "lucide-react";
 import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 export function Footer() {
@@ -26,15 +26,6 @@ export function Footer() {
                 ) : (
                   <span>{CLINIC.address}</span>
                 )}
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone size={16} className="shrink-0 text-gray-500" />
-                <a
-                  href={CLINIC.phoneHref}
-                  className="text-white hover:underline"
-                >
-                  {CLINIC.phone}
-                </a>
               </li>
               {LINKS.naverMap && (
                 <li className="pt-1">
