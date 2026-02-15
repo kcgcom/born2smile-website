@@ -90,7 +90,7 @@ hosting-redirect/            # Firebase Hosting redirect (serves verification fi
 .github/
   workflows/
     scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용)
-.firebaserc                  # Firebase project alias config (default: born2smile-website)
+.firebaserc                  # Firebase project alias config (default: seoul-born2smile)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
 firestore.rules              # Firestore security rules (blog-likes 컬렉션 read/write 규칙)
