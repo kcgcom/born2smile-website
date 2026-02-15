@@ -8,10 +8,10 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>
-            <h3 className="mb-4 text-lg font-bold text-[var(--color-gold-light)]">
+            <h3 className="mb-4 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
               오시는 길
             </h3>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-lg md:text-base">
               <li className="flex items-start gap-2">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-gray-500" />
                 {LINKS.naverMap ? (
@@ -46,11 +46,11 @@ export function Footer() {
 
           {/* 진료시간 */}
           <div>
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+            <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
               <Clock size={18} className="text-[var(--color-gold-light)]" />
               진료시간
             </h3>
-            <ul className="max-w-56 space-y-1.5 text-sm">
+            <ul className="max-w-72 space-y-1.5 text-lg md:text-base">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
                   <span>
@@ -78,8 +78,8 @@ export function Footer() {
           {/* 리뷰 남기기 */}
           {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
             <div>
-              <h3 className="mb-2 text-lg font-bold text-white">리뷰 남기기</h3>
-              <p className="mb-3 text-xs leading-relaxed text-gray-400">
+              <h3 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h3>
+              <p className="mb-3 text-base md:text-sm leading-relaxed text-gray-400">
                 환자분의 리뷰가 더 나은 진료 서비스를 위해 큰 힘이 됩니다.
               </p>
               <div className="space-y-3">
@@ -94,8 +94,8 @@ export function Footer() {
                       <Star size={18} className="fill-[var(--color-gold)] text-[var(--color-gold)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-400">치료 후기</div>
-                      <div className="text-sm font-medium text-white">Google 리뷰 남기기</div>
+                      <div className="text-base md:text-sm text-gray-400">치료 후기</div>
+                      <div className="text-lg md:text-base font-medium text-white">Google 리뷰 남기기</div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
                   </a>
@@ -111,8 +111,8 @@ export function Footer() {
                       <Star size={18} className="fill-[#03C75A] text-[#03C75A]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-400">치료 후기</div>
-                      <div className="text-sm font-medium text-white">Naver 리뷰 남기기</div>
+                      <div className="text-base md:text-sm text-gray-400">치료 후기</div>
+                      <div className="text-lg md:text-base font-medium text-white">Naver 리뷰 남기기</div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
                   </a>
@@ -173,7 +173,7 @@ export function Footer() {
         )}
 
         {/* 하단 카피라이트 */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-xs text-gray-500">
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm md:text-xs text-gray-500">
           <p>
             &copy; 2017–{new Date().getFullYear()} {CLINIC.name}. All rights
             reserved.
