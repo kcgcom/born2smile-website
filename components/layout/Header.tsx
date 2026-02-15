@@ -21,6 +21,10 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
@@ -91,16 +95,26 @@ export function Header() {
             </a>
           </nav>
 
-          {/* 모바일 햄버거 버튼 */}
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-lg md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* 모바일: 전화번호 + 햄버거 버튼 */}
+          <div className="flex items-center gap-2 md:hidden">
+            <a
+              href={CLINIC.phoneHref}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white"
+              aria-label={`전화 상담 ${CLINIC.phone}`}
+            >
+              <Phone size={14} aria-hidden="true" />
+              {CLINIC.phone}
+            </a>
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-lg"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {/* 모바일 메뉴 */}

@@ -44,13 +44,17 @@ export default function AboutPage() {
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
+          <h1 className="sr-only">병원소개</h1>
           <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
             About Us
           </p>
-          <h1 className="font-headline mb-6 text-4xl font-bold text-gray-900 md:text-5xl">
-            안녕하세요, {CLINIC.name}입니다
-          </h1>
+          <h2 className="font-headline mb-6 text-4xl font-bold text-gray-900 md:text-5xl">
+            인사말
+          </h2>
           <p className="text-lg leading-relaxed text-gray-600">
+            안녕하세요, {CLINIC.name}입니다.
+          </p>
+          <p className="mt-4 text-lg leading-relaxed text-gray-600">
             {CLINIC.name}는 환자분 한 분 한 분의 구강 건강을 최우선으로
             생각합니다. 꼭 필요한 진료만, 충분한 설명과 함께 정직하게
             진료하겠습니다.

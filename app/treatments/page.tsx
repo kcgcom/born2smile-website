@@ -33,7 +33,7 @@ export default function TreatmentsPage() {
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
               <h1 className="sr-only">진료 안내</h1>
-              <p className="mb-4 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
                 Philosophy
               </p>
               <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
