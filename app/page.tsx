@@ -70,7 +70,7 @@ export default function Home() {
                 Our Values
               </p>
               <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                {CLINIC.name}의 약속
+                {CLINIC.name}의 핵심가치
               </h2>
             </FadeIn>
 
