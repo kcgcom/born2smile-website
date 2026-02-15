@@ -13,8 +13,10 @@ import {
   Users,
   Briefcase,
   MapPin,
+  Star,
+  ExternalLink,
 } from "lucide-react";
-import { CLINIC, HOURS, DOCTORS, SEO, BASE_URL } from "@/lib/constants";
+import { CLINIC, HOURS, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -247,6 +249,72 @@ export default function Home() {
             </div>
           </div>
       </section>
+
+      {/* ───────────── 환자분들의 이야기 ───────────── */}
+      {REVIEWS.length > 0 && (
+        <section id="reviews" className="section-padding bg-white">
+          <div className="container-narrow">
+            <FadeIn className="mb-12 text-center">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+                Reviews
+              </p>
+              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                환자분들의 이야기
+              </h2>
+              <p className="mt-4 text-gray-600">
+                {CLINIC.name}에서 치료받으신 분들의 소중한 후기입니다.
+              </p>
+            </FadeIn>
+
+            <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {REVIEWS.map((review, index) => (
+                <StaggerItem key={index}>
+                  <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md">
+                    {/* 별점 */}
+                    <div className="mb-3 flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={16}
+                          className={i < review.rating ? "fill-[var(--color-gold)] text-[var(--color-gold)]" : "text-gray-300"}
+                        />
+                      ))}
+                    </div>
+
+                    {/* 후기 내용 */}
+                    <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
+                      &ldquo;{review.text}&rdquo;
+                    </p>
+
+                    {/* 하단: 이름 + 진료 과목 */}
+                    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                      <span className="text-sm font-medium text-gray-900">{review.name}</span>
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
+                        {review.treatment}
+                      </span>
+                    </div>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+
+            {/* 구글 리뷰 남기기 버튼 */}
+            {GOOGLE_REVIEW.writeReviewUrl && (
+              <FadeIn className="mt-10 text-center">
+                <a
+                  href={GOOGLE_REVIEW.writeReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--color-primary)] px-6 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+                >
+                  Google 리뷰 남기기
+                  <ExternalLink size={16} />
+                </a>
+              </FadeIn>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ───────────── 시설 안내 ───────────── */}
       <section id="facility" className="section-padding bg-white">

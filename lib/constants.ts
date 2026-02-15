@@ -127,6 +127,73 @@ export const TREATMENTS = [
 ] as const;
 
 // -------------------------------------------------------------
+// 환자 후기
+// Google Place ID를 입력하면 리뷰 남기기 버튼이 자동으로 활성화됩니다.
+// https://developers.google.com/maps/documentation/places/web-service/place-id
+// -------------------------------------------------------------
+export const GOOGLE_REVIEW = {
+  placeId: "", // Google Place ID — 입력하면 리뷰 남기기 버튼 활성화
+  get writeReviewUrl() {
+    return this.placeId
+      ? `https://search.google.com/local/writereview?placeid=${this.placeId}`
+      : "";
+  },
+} as const;
+
+export interface Review {
+  name: string; // 환자 이름 (익명 처리 가능, 예: "김○○")
+  rating: number; // 별점 (1-5)
+  text: string; // 후기 내용
+  treatment: string; // 진료 과목 태그
+  date: string; // 작성일 (YYYY-MM)
+}
+
+export const REVIEWS: Review[] = [
+  {
+    name: "김○○",
+    rating: 5,
+    text: "임플란트 상담부터 시술까지 원장님이 꼼꼼하게 설명해주셔서 안심하고 치료받을 수 있었습니다. 결과도 너무 만족합니다.",
+    treatment: "임플란트",
+    date: "2025-12",
+  },
+  {
+    name: "이○○",
+    rating: 5,
+    text: "아이가 치과를 무서워했는데 선생님이 친절하게 대해주셔서 이제는 치과 가는 걸 좋아합니다. 감사합니다.",
+    treatment: "소아치료",
+    date: "2025-11",
+  },
+  {
+    name: "박○○",
+    rating: 5,
+    text: "에어플로우 스케일링 처음 받아봤는데 정말 안 아프더라구요. 이전 치과에서는 항상 피가 났었는데 여기는 달라요.",
+    treatment: "예방치료",
+    date: "2026-01",
+  },
+  {
+    name: "최○○",
+    rating: 5,
+    text: "교정 상담 여러 군데 다녔는데 여기가 가장 자세하게 설명해주셨어요. 무리한 치료를 권하지 않아서 신뢰가 갑니다.",
+    treatment: "치아교정",
+    date: "2025-10",
+  },
+  {
+    name: "정○○",
+    rating: 5,
+    text: "충치 치료를 받았는데 거의 아프지 않았어요. 치료 전에 상태를 사진으로 보여주시면서 설명해주셔서 좋았습니다.",
+    treatment: "보존치료",
+    date: "2026-02",
+  },
+  {
+    name: "강○○",
+    rating: 5,
+    text: "틀니가 맞지 않아 고생했는데 여기서 다시 만들고 나서 식사가 편해졌습니다. 세심한 조정에 감사드려요.",
+    treatment: "보철치료",
+    date: "2025-09",
+  },
+];
+
+// -------------------------------------------------------------
 // SNS / 외부 링크
 // -------------------------------------------------------------
 export const LINKS = {

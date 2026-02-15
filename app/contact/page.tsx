@@ -1,7 +1,7 @@
 "use client";
 
-import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
-import { CLINIC, HOURS, LINKS } from "@/lib/constants";
+import { Phone, MessageCircle, MapPin, Clock, Star, ExternalLink } from "lucide-react";
+import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW } from "@/lib/constants";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -121,6 +121,35 @@ export default function ContactPage() {
                   <p className="mt-1 text-xs text-gray-500">{HOURS.notice}</p>
                 )}
               </div>
+
+              {/* 구글 리뷰 남기기 */}
+              {GOOGLE_REVIEW.writeReviewUrl && (
+                <a
+                  href={GOOGLE_REVIEW.writeReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-6 transition-colors hover:border-[var(--color-gold)] hover:bg-[#FFFBF0]"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
+                    <Star
+                      size={28}
+                      aria-hidden="true"
+                      className="fill-[var(--color-gold)] text-[var(--color-gold)]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-500">치료 후기</div>
+                    <div className="text-sm font-bold text-gray-900">
+                      Google 리뷰 남기기
+                    </div>
+                  </div>
+                  <ExternalLink
+                    size={18}
+                    aria-hidden="true"
+                    className="shrink-0 text-gray-400"
+                  />
+                </a>
+              )}
             </FadeIn>
 
             {/* 오시는 길 + 지도 */}
