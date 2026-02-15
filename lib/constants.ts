@@ -132,7 +132,7 @@ export const TREATMENTS = [
 // https://developers.google.com/maps/documentation/places/web-service/place-id
 // -------------------------------------------------------------
 export const GOOGLE_REVIEW = {
-  placeId: "", // Google Place ID — 입력하면 리뷰 남기기 버튼 활성화
+  placeId: "ChIJv6ztq7eGfDURXB0HJQ3ZpQg", // Google Place ID — 입력하면 리뷰 남기기 버튼 활성화
   get writeReviewUrl() {
     return this.placeId
       ? `https://search.google.com/local/writereview?placeid=${this.placeId}`
