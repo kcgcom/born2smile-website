@@ -51,11 +51,11 @@ export function Header() {
             <Image
               src="/images/Logo_SNU.png"
               alt="서울대학교 엠블럼"
-              width={32}
-              height={32}
-              className="h-8 w-8"
+              width={40}
+              height={40}
+              className="h-8 w-8 md:h-10 md:w-10"
             />
-            <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-xl">
+            <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-2xl">
               {CLINIC.name}
             </span>
           </Link>
@@ -68,7 +68,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                  className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] md:text-base ${
                     isActive
                       ? "text-[var(--color-primary)]"
                       : "text-gray-700"
@@ -81,7 +81,7 @@ export function Header() {
             })}
             <a
               href={CLINIC.phoneHref}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] md:text-base"
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
               <Phone size={16} aria-hidden="true" />
