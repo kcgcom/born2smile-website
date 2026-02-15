@@ -12,7 +12,7 @@ export function Footer() {
               <MapPin size={18} />
               오시는 길
             </h3>
-            <ul className="space-y-3 text-lg md:text-base">
+            <ul className="space-y-2 text-lg md:text-base">
               <li>
                 {LINKS.naverMap ? (
                   <a
@@ -21,12 +21,14 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="text-white hover:underline"
                   >
-                    {CLINIC.addressShort}
+                    {CLINIC.address}
                   </a>
                 ) : (
-                  <span>{CLINIC.addressShort}</span>
+                  <span>{CLINIC.address}</span>
                 )}
               </li>
+              <li className="text-gray-400 text-base md:text-sm">한강센트럴자이 아파트 101동 대각선</li>
+              <li className="text-gray-400 text-base md:text-sm">커피빈(김포장기DT점) 맞은편</li>
               {LINKS.naverMap && (
                 <li className="pt-1">
                   <a
@@ -66,11 +68,8 @@ export function Footer() {
                   </span>
                 </li>
               ))}
-              <li className="mt-2 border-t border-gray-700 pt-2">
-                점심시간: {HOURS.lunchTime}
-              </li>
-              <li className="text-gray-500">
-                공휴일 휴진
+              <li className="mt-2 border-t border-gray-700 pt-2 text-gray-500">
+                공휴일 휴진 · 점심시간 {HOURS.lunchTime}
               </li>
             </ul>
           </div>
@@ -80,7 +79,7 @@ export function Footer() {
             <div>
               <h3 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h3>
               <p className="mb-3 text-base md:text-sm leading-relaxed text-gray-400">
-                소중한 후기가 큰 힘이 됩니다.
+                소중한 후기가 다른 분들에게 큰 도움이 됩니다.
               </p>
               <div className="space-y-3">
                 {GOOGLE_REVIEW.writeReviewUrl && (
