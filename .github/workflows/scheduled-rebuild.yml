@@ -1,0 +1,22 @@
+name: 예약 발행 자동 재빌드
+
+on:
+  schedule:
+    # 매일 KST 00:05 (UTC 15:05) — 자정 직후 재빌드하여 예약 포스트 발행
+    - cron: "5 15 * * *"
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 빈 커밋으로 재빌드 트리거
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: 예약 발행 자동 재빌드 ($(TZ=Asia/Seoul date +%Y-%m-%d))"
+          git push
