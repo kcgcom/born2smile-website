@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
+import { getBreadcrumbJsonLd } from "@/lib/jsonld";
 import BlogContent from "@/components/blog/BlogContent";
 
 export const metadata: Metadata = {
@@ -9,8 +10,17 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
+  const breadcrumbJsonLd = getBreadcrumbJsonLd([
+    { name: "홈", href: "/" },
+    { name: "블로그", href: "/blog" },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
           Dental Health Blog

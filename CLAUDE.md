@@ -336,10 +336,9 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ### SEO 개선 TODO
 
-**High — 구조화 데이터 보강:**
+**High — 외부 링크 연동:**
 
-- `lib/jsonld.ts` `getClinicJsonLd()`: `sameAs`(외부 프로필 링크) 속성 없음 — `LINKS` 상수 채운 후 연동
-- `lib/jsonld.ts` `getBlogPostJsonLd()`: `image` 속성 없음 — 리치 스니펫 노출 불가
+- `lib/constants.ts` `LINKS`: SNS 링크(카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열. 채우면 `getClinicJsonLd()`의 `sameAs`에 자동 반영
 
 **Medium — 추가 최적화:**
 

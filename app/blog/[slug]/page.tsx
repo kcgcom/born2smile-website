@@ -46,6 +46,9 @@ export async function generateMetadata({
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
+      section: post.category,
+      tags: post.tags,
+      authors: [`${CLINIC.name}`],
       url: `${BASE_URL}/blog/${slug}`,
     },
   };

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Heart, HandHeart, Leaf } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
+import { getBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
   FadeIn,
   StaggerContainer,
@@ -15,8 +16,17 @@ export const metadata: Metadata = {
 };
 
 export default function TreatmentsPage() {
+  const breadcrumbJsonLd = getBreadcrumbJsonLd([
+    { name: "홈", href: "/" },
+    { name: "진료 안내", href: "/treatments" },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* ───────────── 진료 철학 ───────────── */}
       <section className="section-padding pt-32 bg-white">
         <div className="container-narrow">
