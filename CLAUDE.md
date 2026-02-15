@@ -336,10 +336,6 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ### SEO 개선 TODO
 
-**Critical — OG 이미지:**
-
-- `public/images/og-image.jpg` 파일 없음 — 메타태그에서 참조하지만 실제 파일 부재. 1200×630px OG 이미지 생성 필요
-
 **High — 구조화 데이터 보강:**
 
 - `lib/jsonld.ts` `getClinicJsonLd()`: `sameAs`(외부 프로필 링크) 속성 없음 — `LINKS` 상수 채운 후 연동
