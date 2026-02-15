@@ -19,10 +19,12 @@ export function Header() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  useEffect(() => {
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     const handleScroll = () => {
