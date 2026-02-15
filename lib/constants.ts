@@ -142,7 +142,7 @@ export const GOOGLE_REVIEW = {
 } as const;
 
 export const NAVER_REVIEW = {
-  placeId: "", // 네이버 플레이스 ID — 입력하면 리뷰 남기기 버튼 활성화
+  placeId: "698879488", // 네이버 플레이스 ID — 입력하면 리뷰 남기기 버튼 활성화
   get writeReviewUrl() {
     return this.placeId
       ? `https://m.place.naver.com/dentist/${this.placeId}/review/visitor`
