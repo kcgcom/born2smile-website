@@ -72,7 +72,7 @@ export function getClinicJsonLd() {
       description: `${doctor.education[0]}. ${doctor.credentials[0]}.`,
     },
     priceRange: "₩₩",
-    image: `${BASE_URL}/images/og-image.jpg`,
+    image: `${BASE_URL}/opengraph-image`,
   };
 }
 

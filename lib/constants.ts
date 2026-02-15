@@ -185,5 +185,4 @@ export const SEO = {
     "스케일링잘하는치과",
     "김포스케일링잘하는치과",
   ],
-  ogImage: "/images/og-image.jpg",
 } as const;
