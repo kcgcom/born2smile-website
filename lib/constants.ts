@@ -130,11 +130,11 @@ export const TREATMENTS = [
 // SNS / 외부 링크
 // -------------------------------------------------------------
 export const LINKS = {
-  // TODO: 실제 링크로 교체
-  kakaoChannel: "", // 카카오톡 채널 URL
-  instagram: "",
-  naverBlog: "",
-  naverMap: "", // 네이버 지도 링크
+  // 실제 URL을 입력하면 Footer, Contact 페이지, JSON-LD sameAs에 자동 반영됩니다.
+  kakaoChannel: "", // 카카오톡 채널 URL → Contact 페이지 카카오 상담 버튼 + Footer 아이콘
+  instagram: "", // 인스타그램 URL → Footer 아이콘
+  naverBlog: "", // 네이버 블로그 URL → Footer 아이콘
+  naverMap: "", // 네이버 지도 링크 → Footer 아이콘
   kakaoMap: "", // 카카오맵 링크
 } as const;
 
