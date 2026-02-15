@@ -13,7 +13,7 @@ import { CLINIC, DOCTORS, HOURS, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
-import { ClinicIllustration } from "@/components/ui/ClinicIllustration";
+
 
 export const metadata: Metadata = {
   title: "병원 소개",
@@ -48,11 +48,8 @@ export default function AboutPage() {
       {/* ───────────── 인사말 ───────────── */}
       <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="grid items-center gap-10 md:grid-cols-2">
-            <FadeIn direction="left">
-              <ClinicIllustration className="mx-auto w-full max-w-md drop-shadow-md" />
-            </FadeIn>
-            <FadeIn direction="right">
+          <FadeIn>
+            <div className="mx-auto max-w-2xl text-center">
               <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900">
                 안녕하세요, {CLINIC.name}입니다
               </h2>
@@ -65,8 +62,8 @@ export default function AboutPage() {
                 자연치아를 최대한 보존하는 것을 원칙으로, 환자분께서 건강한 미소를
                 되찾으실 때까지 함께하겠습니다.
               </p>
-            </FadeIn>
-          </div>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
