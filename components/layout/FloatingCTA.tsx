@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
@@ -7,6 +8,17 @@ import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
   const pathname = usePathname();
+
+  const handleNavClick = useCallback(
+    (href: string) => {
+      const isCurrentPage =
+        href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+      if (isCurrentPage) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    [pathname]
+  );
 
   const navItems = [
     { href: "/", label: "홈", icon: Home },
@@ -36,6 +48,7 @@ export function FloatingCTA() {
                 href={item.href}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
+                onClick={() => handleNavClick(item.href)}
                 className={`flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
                   isActive
                     ? "font-medium text-[var(--color-primary)]"

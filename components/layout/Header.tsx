@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -32,6 +32,17 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleNavClick = useCallback(
+    (href: string) => {
+      const isCurrentPage =
+        href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+      if (isCurrentPage) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    [pathname]
+  );
+
   return (
     <>
       {/* 본문 바로가기 링크 */}
@@ -51,7 +62,7 @@ export function Header() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2" onClick={() => handleNavClick("/")}>
             <Image
               src="/images/Logo_SNU.png"
               alt="서울대학교 엠블럼"
@@ -80,6 +91,7 @@ export function Header() {
                       : "text-gray-700"
                   }`}
                   aria-current={isActive ? "page" : undefined}
+                  onClick={() => handleNavClick(item.href)}
                 >
                   {item.label}
                 </Link>
@@ -141,7 +153,10 @@ export function Header() {
                         : "text-gray-700"
                     }`}
                     aria-current={isActive ? "page" : undefined}
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleNavClick(item.href);
+                    }}
                   >
                     {item.label}
                   </Link>
