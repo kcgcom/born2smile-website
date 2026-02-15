@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Phone,
   ArrowRight,
@@ -247,7 +248,45 @@ export default function Home() {
           </div>
       </section>
 
-      {/* TODO: 시설 안내 섹션 — 실제 시설 사진 준비 후 활성화 */}
+      {/* ───────────── 시설 안내 ───────────── */}
+      <section id="facility" className="section-padding bg-white">
+        <div className="container-narrow">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Facility
+            </p>
+            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              시설 안내
+            </h2>
+          </FadeIn>
+
+          <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { name: "진료실", src: "/images/facility/진료실.jpg" },
+              { name: "대기실", src: "/images/facility/대기실.jpg" },
+              { name: "상담실", src: "/images/facility/상담실.jpg" },
+              { name: "VIP실", src: "/images/facility/VIP실.jpg" },
+              { name: "X-ray실", src: "/images/facility/X-ray실.jpg" },
+              { name: "외관", src: "/images/facility/외관.jpg" },
+            ].map((item) => (
+              <StaggerItem key={item.name}>
+                <div className="group relative overflow-hidden rounded-2xl">
+                  <Image
+                    src={item.src}
+                    alt={`${CLINIC.name} ${item.name}`}
+                    width={600}
+                    height={450}
+                    className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                    <p className="text-sm font-medium text-white">{item.name}</p>
+                  </div>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
 
       {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
       <section id="info" className="section-padding bg-gray-50">
