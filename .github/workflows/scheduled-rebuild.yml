@@ -20,3 +20,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit --allow-empty -m "chore: 예약 발행 자동 재빌드 ($(TZ=Asia/Seoul date +%Y-%m-%d))"
           git push
+
+      - name: IndexNow로 새 포스트 URL 제출
+        run: node scripts/submit-indexnow.mjs
+        env:
+          TZ: Asia/Seoul

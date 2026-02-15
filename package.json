@@ -8,7 +8,9 @@
     "build": "tsx scripts/generate-blog-meta.ts && next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "firebase deploy --only apphosting"
+    "deploy": "firebase deploy --only apphosting",
+    "submit-indexnow": "node scripts/submit-indexnow.mjs",
+    "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all"
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.2.9",

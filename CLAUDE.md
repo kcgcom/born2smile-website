@@ -34,6 +34,8 @@ pnpm dev                      # http://localhost:3000
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
+- `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
+- `pnpm submit-indexnow:all` — 전체 사이트 URL을 IndexNow에 제출 (초기 설정 또는 전체 재인덱싱 시)
 
 ## No Test Suite
 
@@ -84,12 +86,14 @@ public/
   images/                    # Clinic and doctor images
   BingSiteAuth.xml           # Bing webmaster verification
   naver*.html                # Naver webmaster verification
+  7d01a83d...*.txt           # IndexNow API 키 파일
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
+  submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .github/
   workflows/
-    scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용)
+    scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용) + IndexNow 제출
 .firebaserc                  # Firebase project alias config (default: seoul-born2smile)
 apphosting.yaml              # Firebase App Hosting runtime config
 firebase.json                # Firebase project config (Hosting redirect + App Hosting)
@@ -315,6 +319,17 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 ### 예약 발행 자동 재빌드
 
 GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매일 KST 00:05 (UTC 15:05)에 빈 커밋을 push하여 Firebase App Hosting 재빌드를 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `workflow_dispatch`로 수동 실행도 가능.
+
+재빌드 커밋 push 후, `scripts/submit-indexnow.mjs`가 실행되어 오늘 발행된 포스트 URL을 IndexNow API에 자동 제출.
+
+### IndexNow
+
+[IndexNow](https://www.indexnow.org/)를 통해 새 콘텐츠를 검색엔진(Bing, Naver, Yandex 등)에 즉시 알림:
+
+- **API 키 파일**: `public/7d01a83dddd13f9abf9186b937921369.txt`
+- **제출 스크립트**: `scripts/submit-indexnow.mjs` (Node.js 내장 모듈만 사용, 의존성 설치 불필요)
+- **자동 제출**: GitHub Actions 스케줄 재빌드 시 오늘 날짜 포스트를 자동 감지하여 제출
+- **수동 제출**: `pnpm submit-indexnow` (오늘 발행분) / `pnpm submit-indexnow:all` (전체 URL)
 
 ## Environment Variables
 
