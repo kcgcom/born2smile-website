@@ -108,7 +108,7 @@ export default function Home() {
           <div className="container-narrow">
             <FadeIn className="mb-12 text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                Reviews
+                Testimonials
               </p>
               <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
                 환자분들의 이야기
