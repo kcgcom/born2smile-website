@@ -80,7 +80,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
           level: MAP.zoomLevel,
         });
 
-        const infoContent = `<div style="padding:4px 8px;font-size:13px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
+        const infoContent = `<div style="padding:5px 10px;font-size:15px;font-weight:600;white-space:nowrap;">${CLINIC.name}</div>`;
 
         const createMarker = (position: unknown) => {
           const marker = new kakao.maps.Marker({ map, position });

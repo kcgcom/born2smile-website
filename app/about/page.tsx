@@ -297,7 +297,7 @@ export default function AboutPage() {
                         >
                           {item.time}
                           {"note" in item && item.note && (
-                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-xs text-[var(--color-gold-dark)]">
+                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
                               {item.note}
                             </span>
                           )}
@@ -306,7 +306,7 @@ export default function AboutPage() {
                     ))}
                   </tbody>
                 </table>
-                <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-xs text-gray-500">
+                <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-sm text-gray-500">
                   점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
                   <br />
                   {HOURS.notice}

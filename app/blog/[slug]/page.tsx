@@ -116,7 +116,7 @@ export default async function BlogPostPage({
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
               >
                 {post.category}
               </span>
@@ -171,7 +171,7 @@ export default async function BlogPostPage({
                 className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-5 transition-all hover:border-blue-200 hover:shadow-md"
               >
                 <div>
-                  <span className="mb-1 block text-xs font-medium text-[var(--color-gold)]">
+                  <span className="mb-1 block text-sm font-medium text-[var(--color-gold)]">
                     관련 진료
                   </span>
                   <span className="text-base font-bold text-gray-900">
@@ -222,7 +222,7 @@ export default async function BlogPostPage({
                   <Link href={`/blog/${rp.slug}`} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                       <span
-                        className={`mb-3 w-fit rounded-full px-3 py-1 text-xs font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
                       >
                         {rp.category}
                       </span>
@@ -235,10 +235,10 @@ export default async function BlogPostPage({
                       <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600 line-clamp-2">
                         {rp.excerpt}
                       </p>
-                      <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-xs text-gray-400">
+                      <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-400">
                         <span>{formatDate(rp.date)}</span>
                         <span className="flex items-center gap-1">
-                          <Clock size={12} />
+                          <Clock size={14} />
                           {rp.readTime} 읽기
                         </span>
                       </div>

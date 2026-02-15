@@ -106,7 +106,7 @@ export default function ContactPage() {
                       >
                         {item.time}
                         {"note" in item && item.note && (
-                          <span className="ml-1 text-xs text-[var(--color-gold)]">
+                          <span className="ml-1 text-sm text-[var(--color-gold)]">
                             ({item.note})
                           </span>
                         )}
@@ -114,11 +114,11 @@ export default function ContactPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 text-xs text-gray-500">
+                <p className="mt-3 text-sm text-gray-500">
                   점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
                 </p>
                 {HOURS.notice && (
-                  <p className="mt-1 text-xs text-gray-500">{HOURS.notice}</p>
+                  <p className="mt-1 text-sm text-gray-500">{HOURS.notice}</p>
                 )}
               </div>
             </FadeIn>

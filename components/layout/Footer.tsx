@@ -173,7 +173,7 @@ export function Footer() {
         )}
 
         {/* 하단 카피라이트 */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm md:text-xs text-gray-500">
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
           <p>
             &copy; 2017–{new Date().getFullYear()} {CLINIC.name}. All rights
             reserved.
