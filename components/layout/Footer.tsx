@@ -8,12 +8,12 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>
-            <h3 className="mb-4 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
+            <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
+              <MapPin size={18} />
               오시는 길
             </h3>
             <ul className="space-y-3 text-lg md:text-base">
-              <li className="flex items-start gap-2">
-                <MapPin size={16} className="mt-0.5 shrink-0 text-gray-500" />
+              <li>
                 {LINKS.naverMap ? (
                   <a
                     href={LINKS.naverMap}
@@ -21,10 +21,10 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="text-white hover:underline"
                   >
-                    {CLINIC.address}
+                    {CLINIC.addressShort}
                   </a>
                 ) : (
-                  <span>{CLINIC.address}</span>
+                  <span>{CLINIC.addressShort}</span>
                 )}
               </li>
               {LINKS.naverMap && (
@@ -50,7 +50,7 @@ export function Footer() {
               <Clock size={18} className="text-[var(--color-gold-light)]" />
               진료시간
             </h3>
-            <ul className="max-w-72 space-y-1.5 text-lg md:text-base">
+            <ul className="max-w-80 space-y-1.5 text-lg md:text-base">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
                   <span>
@@ -80,7 +80,7 @@ export function Footer() {
             <div>
               <h3 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h3>
               <p className="mb-3 text-base md:text-sm leading-relaxed text-gray-400">
-                환자분의 리뷰가 더 나은 진료 서비스를 위해 큰 힘이 됩니다.
+                소중한 후기가 큰 힘이 됩니다.
               </p>
               <div className="space-y-3">
                 {GOOGLE_REVIEW.writeReviewUrl && (

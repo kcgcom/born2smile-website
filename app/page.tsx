@@ -3,9 +3,6 @@ import Link from "next/link";
 import {
   Phone,
   ArrowRight,
-  Shield,
-  Heart,
-  Stethoscope,
   Star,
   ExternalLink,
 } from "lucide-react";
@@ -70,34 +67,28 @@ export default function Home() {
                 Our Values
               </p>
               <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                {CLINIC.name}의 약속
+                {CLINIC.name}의 핵심가치
               </h2>
             </FadeIn>
 
             <StaggerContainer className="grid gap-8 md:grid-cols-3">
               {[
                 {
-                  icon: Shield,
                   title: "신뢰",
                   desc: "서울대 출신 전문의의 정확한 진단과 치료 계획을 제공합니다.",
                 },
                 {
-                  icon: Heart,
                   title: "정성",
                   desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
                   gold: true,
                 },
                 {
-                  icon: Stethoscope,
                   title: "전문성",
                   desc: "국내외 학회 활동과 지속적인 연구로 최선의 치료를 제공합니다.",
                 },
               ].map((item) => (
                 <StaggerItem key={item.title}>
                   <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                    <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full ${"gold" in item && item.gold ? "bg-[#FDF3E0] text-[var(--color-gold)]" : "bg-blue-100 text-[var(--color-primary)]"}`}>
-                      <item.icon size={24} />
-                    </div>
                     <h3 className="mb-2 text-xl font-bold text-gray-900">
                       {item.title}
                     </h3>
@@ -117,7 +108,7 @@ export default function Home() {
           <div className="container-narrow">
             <FadeIn className="mb-12 text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                Reviews
+                Testimonials
               </p>
               <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
                 환자분들의 이야기
@@ -176,7 +167,11 @@ export default function Home() {
 
             {/* 리뷰 남기기 버튼 */}
             {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
-              <FadeIn className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <FadeIn className="mt-10 text-center">
+                <p className="mb-4 text-sm leading-relaxed text-gray-500">
+                  치료에 만족하셨나요? 소중한 리뷰를 남겨주시면 다른 분들에게 큰 도움이 됩니다.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-4">
                 {GOOGLE_REVIEW.writeReviewUrl && (
                   <a
                     href={GOOGLE_REVIEW.writeReviewUrl}
@@ -199,6 +194,7 @@ export default function Home() {
                     <ExternalLink size={16} />
                   </a>
                 )}
+                </div>
               </FadeIn>
             )}
           </div>
@@ -229,7 +225,7 @@ export default function Home() {
                 className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
               >
                 <Phone size={18} />
-                전화 상담 {CLINIC.phone}
+                {CLINIC.phone}
               </a>
             </div>
           </div>
