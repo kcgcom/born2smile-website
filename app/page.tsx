@@ -195,7 +195,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border-2 border-[#03C75A] px-6 py-3 text-sm font-medium text-[#03C75A] transition-colors hover:bg-[#03C75A] hover:text-white"
                   >
-                    네이버 리뷰 남기기
+                    Naver 리뷰 남기기
                     <ExternalLink size={16} />
                   </a>
                 )}

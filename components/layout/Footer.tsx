@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Instagram, MessageCircle, BookOpen, MapPin, Star } from "lucide-react";
+import { Instagram, MessageCircle, BookOpen, MapPin, Phone, Star, ExternalLink } from "lucide-react";
 import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 export function Footer() {
@@ -7,15 +6,29 @@ export function Footer() {
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-          {/* 병원 정보 */}
+          {/* 오시는 길 */}
           <div>
             <h3 className="mb-4 text-lg font-bold text-[var(--color-gold-light)]">
-              {CLINIC.name}
+              오시는 길
             </h3>
-            <ul className="space-y-2 text-sm">
-              <li>{CLINIC.address}</li>
-              <li>
-                대표전화:{" "}
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-gray-500" />
+                {LINKS.naverMap ? (
+                  <a
+                    href={LINKS.naverMap}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:underline"
+                  >
+                    {CLINIC.address}
+                  </a>
+                ) : (
+                  <span>{CLINIC.address}</span>
+                )}
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone size={16} className="shrink-0 text-gray-500" />
                 <a
                   href={CLINIC.phoneHref}
                   className="text-white hover:underline"
@@ -23,8 +36,6 @@ export function Footer() {
                   {CLINIC.phone}
                 </a>
               </li>
-              <li>대표자: {CLINIC.representative}</li>
-              <li>사업자등록번호: {CLINIC.businessNumber}</li>
             </ul>
           </div>
 
@@ -53,59 +64,53 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* 바로가기 */}
-          <div>
-            <h3 className="mb-4 text-lg font-bold text-white">바로가기</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="hover:text-white">
-                  병원 소개
-                </Link>
-              </li>
-              <li>
-                <Link href="/treatments" className="hover:text-white">
-                  진료 안내
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white">
-                  상담 안내
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-white">
-                  블로그
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* 리뷰 남기기 */}
+          {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
+            <div>
+              <h3 className="mb-4 text-lg font-bold text-white">리뷰 남기기</h3>
+              <div className="space-y-3">
+                {GOOGLE_REVIEW.writeReviewUrl && (
+                  <a
+                    href={GOOGLE_REVIEW.writeReviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-xl bg-gray-800 p-4 transition-colors hover:bg-gray-700"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0]">
+                      <Star size={18} className="fill-[var(--color-gold)] text-[var(--color-gold)]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400">치료 후기</div>
+                      <div className="text-sm font-medium text-white">Google 리뷰 남기기</div>
+                    </div>
+                    <ExternalLink size={14} className="shrink-0 text-gray-500" />
+                  </a>
+                )}
+                {NAVER_REVIEW.writeReviewUrl && (
+                  <a
+                    href={NAVER_REVIEW.writeReviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-xl bg-gray-800 p-4 transition-colors hover:bg-gray-700"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F5E9]">
+                      <Star size={18} className="fill-[#03C75A] text-[#03C75A]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400">치료 후기</div>
+                      <div className="text-sm font-medium text-white">Naver 리뷰 남기기</div>
+                    </div>
+                    <ExternalLink size={14} className="shrink-0 text-gray-500" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* SNS 링크 + 리뷰 */}
-        {(Object.values(LINKS).some((url) => url !== "") || GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
+        {/* SNS 링크 */}
+        {Object.values(LINKS).some((url) => url !== "") && (
           <div className="mt-8 flex items-center justify-center gap-4">
-            {GOOGLE_REVIEW.writeReviewUrl && (
-              <a
-                href={GOOGLE_REVIEW.writeReviewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Google 리뷰 남기기"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[var(--color-gold)] hover:text-white"
-              >
-                <Star size={18} />
-              </a>
-            )}
-            {NAVER_REVIEW.writeReviewUrl && (
-              <a
-                href={NAVER_REVIEW.writeReviewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="네이버 리뷰 남기기"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
-              >
-                <Star size={18} />
-              </a>
-            )}
             {LINKS.kakaoChannel && (
               <a
                 href={LINKS.kakaoChannel}
