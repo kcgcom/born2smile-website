@@ -127,15 +127,25 @@ export const TREATMENTS = [
 ] as const;
 
 // -------------------------------------------------------------
-// 환자 후기
-// Google Place ID를 입력하면 리뷰 남기기 버튼이 자동으로 활성화됩니다.
-// https://developers.google.com/maps/documentation/places/web-service/place-id
+// 환자 후기 — 리뷰 남기기 링크
+// Place ID를 입력하면 리뷰 남기기 버튼이 자동으로 활성화됩니다.
+// Google: https://developers.google.com/maps/documentation/places/web-service/place-id
+// Naver: 네이버 지도에서 검색 → URL의 /place/ 뒤 숫자 (예: map.naver.com/v5/entry/place/1234567890)
 // -------------------------------------------------------------
 export const GOOGLE_REVIEW = {
   placeId: "ChIJv6ztq7eGfDURXB0HJQ3ZpQg", // Google Place ID — 입력하면 리뷰 남기기 버튼 활성화
   get writeReviewUrl() {
     return this.placeId
       ? `https://search.google.com/local/writereview?placeid=${this.placeId}`
+      : "";
+  },
+} as const;
+
+export const NAVER_REVIEW = {
+  placeId: "", // 네이버 플레이스 ID — 입력하면 리뷰 남기기 버튼 활성화
+  get writeReviewUrl() {
+    return this.placeId
+      ? `https://m.place.naver.com/dentist/${this.placeId}/review/visitor`
       : "";
   },
 } as const;

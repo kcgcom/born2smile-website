@@ -16,7 +16,7 @@ import {
   Star,
   ExternalLink,
 } from "lucide-react";
-import { CLINIC, HOURS, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW } from "@/lib/constants";
+import { CLINIC, HOURS, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -298,18 +298,31 @@ export default function Home() {
               ))}
             </StaggerContainer>
 
-            {/* 구글 리뷰 남기기 버튼 */}
-            {GOOGLE_REVIEW.writeReviewUrl && (
-              <FadeIn className="mt-10 text-center">
-                <a
-                  href={GOOGLE_REVIEW.writeReviewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--color-primary)] px-6 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
-                >
-                  Google 리뷰 남기기
-                  <ExternalLink size={16} />
-                </a>
+            {/* 리뷰 남기기 버튼 */}
+            {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
+              <FadeIn className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                {GOOGLE_REVIEW.writeReviewUrl && (
+                  <a
+                    href={GOOGLE_REVIEW.writeReviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--color-primary)] px-6 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+                  >
+                    Google 리뷰 남기기
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+                {NAVER_REVIEW.writeReviewUrl && (
+                  <a
+                    href={NAVER_REVIEW.writeReviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border-2 border-[#03C75A] px-6 py-3 text-sm font-medium text-[#03C75A] transition-colors hover:bg-[#03C75A] hover:text-white"
+                  >
+                    네이버 리뷰 남기기
+                    <ExternalLink size={16} />
+                  </a>
+                )}
               </FadeIn>
             )}
           </div>
