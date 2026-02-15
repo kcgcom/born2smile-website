@@ -234,7 +234,7 @@ export default function Home() {
                 className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
               >
                 <Phone size={18} />
-                전화 상담 {CLINIC.phone}
+                {CLINIC.phone}
               </a>
             </div>
           </div>
