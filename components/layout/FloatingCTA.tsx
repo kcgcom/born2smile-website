@@ -1,31 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Phone, Building2, BookOpen, Stethoscope } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { CLINIC } from "@/lib/constants";
 
 export function FloatingCTA() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const navItems = [
-    { href: "/#hero", label: "병원소개", icon: Building2 },
+    { href: "/", label: "홈", icon: Home },
+    { href: "/about", label: "병원소개", icon: Building2 },
     { href: "/treatments", label: "진료안내", icon: Stethoscope },
     { href: "/blog", label: "블로그", icon: BookOpen },
     { href: "/contact", label: "상담안내", icon: Phone },
   ] as const;
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href === "/#hero") {
-      e.preventDefault();
-      if (pathname === "/") {
-        document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
-      } else {
-        router.push("/#hero");
-      }
-    }
-  };
 
   return (
     <>
@@ -34,10 +23,10 @@ export function FloatingCTA() {
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white md:hidden"
         aria-label="빠른 메뉴"
       >
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {navItems.map((item) => {
             const isActive =
-              item.href === "/#hero"
+              item.href === "/"
                 ? pathname === "/"
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const isContact = item.href === "/contact";
@@ -45,7 +34,6 @@ export function FloatingCTA() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={(e) => handleNavClick(e, item.href)}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
