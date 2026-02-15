@@ -113,7 +113,7 @@ export default function AboutPage() {
                   <h3 className="mb-2 text-lg font-bold text-gray-900">
                     {item.title}
                   </h3>
-                  <p className="text-base leading-relaxed text-gray-600">
+                  <p className="text-base leading-relaxed text-gray-700">
                     {item.desc}
                   </p>
                 </div>
@@ -160,7 +160,7 @@ export default function AboutPage() {
                   />
                   학력
                 </h4>
-                <ul className="space-y-2 text-base text-gray-600">
+                <ul className="space-y-2 text-base text-gray-700">
                   {doctor.education.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -179,7 +179,7 @@ export default function AboutPage() {
                   />
                   자격 및 수료
                 </h4>
-                <ul className="space-y-2 text-base text-gray-600">
+                <ul className="space-y-2 text-base text-gray-700">
                   {doctor.credentials.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -198,7 +198,7 @@ export default function AboutPage() {
                   />
                   학회 활동
                 </h4>
-                <ul className="space-y-2 text-base text-gray-600">
+                <ul className="space-y-2 text-base text-gray-700">
                   {doctor.memberships.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -217,7 +217,7 @@ export default function AboutPage() {
                   />
                   현직
                 </h4>
-                <ul className="space-y-2 text-base text-gray-600">
+                <ul className="space-y-2 text-base text-gray-700">
                   {doctor.currentPositions.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -297,7 +297,7 @@ export default function AboutPage() {
                         >
                           {item.time}
                           {"note" in item && item.note && (
-                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-xs text-[var(--color-gold-dark)]">
+                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
                               {item.note}
                             </span>
                           )}
@@ -306,7 +306,7 @@ export default function AboutPage() {
                     ))}
                   </tbody>
                 </table>
-                <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-xs text-gray-500">
+                <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-sm text-gray-500">
                   점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
                   <br />
                   {HOURS.notice}

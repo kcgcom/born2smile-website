@@ -142,7 +142,7 @@ export default async function TreatmentDetailPage({
                 <h3 className="mb-2 text-lg font-bold text-gray-900">
                   {step.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-gray-600">
+                <p className="text-base leading-relaxed text-gray-700">
                   {step.desc}
                 </p>
               </StaggerItem>
@@ -168,7 +168,7 @@ export default async function TreatmentDetailPage({
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0] text-sm text-[var(--color-gold)]">
                   ✓
                 </span>
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-base font-medium text-gray-800">
                   {adv}
                 </span>
               </StaggerItem>
@@ -199,7 +199,7 @@ export default async function TreatmentDetailPage({
                       className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
                     />
                   </summary>
-                  <div className="border-t border-gray-100 px-5 py-4 text-sm leading-relaxed text-gray-600">
+                  <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-700">
                     {item.a}
                   </div>
                 </details>
@@ -236,7 +236,7 @@ export default async function TreatmentDetailPage({
                     <Link href={`/blog/${rp.slug}`} className="block h-full">
                       <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:shadow-lg">
                         <span
-                          className={`mb-3 w-fit rounded-full px-3 py-1 text-xs font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
+                          className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
                         >
                           {rp.category}
                         </span>
@@ -246,10 +246,10 @@ export default async function TreatmentDetailPage({
                         <p className="mb-3 text-sm text-gray-500">
                           {rp.subtitle}
                         </p>
-                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-xs text-gray-400">
+                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-400">
                           <span>{formatDate(rp.date)}</span>
                           <span className="flex items-center gap-1">
-                            <Clock size={12} />
+                            <Clock size={14} />
                             {rp.readTime} 읽기
                           </span>
                         </div>

@@ -219,13 +219,13 @@ export default function BlogContent() {
               key={tag}
               onClick={() => handleTagClick(tag)}
               aria-pressed={activeTag === tag}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTag === tag
                   ? "bg-[var(--color-gold)] text-white"
                   : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}
             >
-              <Tag size={10} />
+              <Tag size={12} />
               {tag}
             </button>
           ))}
@@ -240,7 +240,7 @@ export default function BlogContent() {
                   {/* 상단: 카테고리 + 공유 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                      className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
                     >
                       {post.category}
                     </span>
@@ -248,7 +248,7 @@ export default function BlogContent() {
                       onClick={(e) =>
                         handleShare(e, post.id, post.slug, post.title)
                       }
-                      className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                      className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                       aria-label={`"${post.title}" 공유하기`}
                     >
                       {copiedId === post.id ? (
@@ -269,10 +269,10 @@ export default function BlogContent() {
                   <h2 className="mb-1 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
                     {post.title}
                   </h2>
-                  <p className="mb-3 text-sm font-medium text-[var(--color-muted)]">
+                  <p className="mb-3 text-sm font-medium text-gray-500">
                     {post.subtitle}
                   </p>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-600">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     {post.excerpt}
                   </p>
 
@@ -283,13 +283,13 @@ export default function BlogContent() {
                         <button
                           key={tag}
                           onClick={(e) => handleTagClick(tag, e)}
-                          className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] transition-colors ${
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm transition-colors ${
                             activeTag === tag
                               ? "bg-[var(--color-gold)] text-white"
                               : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                           }`}
                         >
-                          <Tag size={8} />
+                          <Tag size={12} />
                           {tag}
                         </button>
                       ))}
@@ -298,16 +298,16 @@ export default function BlogContent() {
 
                   {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <div className="flex items-center gap-3 text-sm text-gray-400">
                       <span>{formatDate(post.date)}</span>
                       <span className="flex items-center gap-1">
-                        <Clock size={12} />
+                        <Clock size={14} />
                         {post.readTime} 읽기
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] opacity-0 transition-opacity group-hover:opacity-100">
                       자세히 읽기
-                      <ArrowRight size={12} />
+                      <ArrowRight size={14} />
                     </span>
                   </div>
                 </article>
