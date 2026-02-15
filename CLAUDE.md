@@ -345,7 +345,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 코드에 남아있는 미완료 항목:
 
 - `lib/constants.ts`: SNS 링크(`LINKS` — 카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열
-- `lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요 (카카오맵 주소 기반 geocoding 폴백 있음)
+- ~~`lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요~~ — 해결: 카카오맵 주소 기반 geocoding이 정상 동작하므로 하드코딩 좌표는 폴백용으로만 사용
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
 - `hosting-redirect/`: Naver 웹마스터 인증 파일만 존재 — `firebase.json`의 regex redirect로 처리 중
 
@@ -353,9 +353,9 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 **High — 외부 링크 연동:**
 
-- `lib/constants.ts` `LINKS`: SNS 링크(카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열. 채우면 `getClinicJsonLd()`의 `sameAs`에 자동 반영
+- `lib/constants.ts` `LINKS`: SNS 링크(카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열. 채우면 Footer 아이콘, Contact 페이지 카카오 상담 버튼, `getClinicJsonLd()`의 `sameAs`에 자동 반영
 
 **Medium — 추가 최적화:**
 
 - ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
-- 시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨(`app/page.tsx` TODO 주석) — 실제 시설 사진(진료실, 대기실, 상담실, 소독실, X-ray실, 외관) 촬영 후 `public/images/facility/`에 추가하고 섹션 복원 필요
+- ~~시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨~~ — 해결: `app/page.tsx`에 시설 안내 섹션 표시 중, `public/images/facility/`에 6장(진료실, 대기실, 상담실, VIP실, X-ray실, 외관) 포함
