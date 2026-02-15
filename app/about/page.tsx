@@ -8,12 +8,6 @@ import {
   Clock,
   MapPin,
   Phone,
-  ShieldCheck,
-  MessageCircle,
-  Smile,
-  Timer,
-  Sparkles,
-  HeartHandshake,
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd } from "@/lib/jsonld";
@@ -82,41 +76,32 @@ export default function AboutPage() {
             {[
               {
                 num: "01",
-                icon: ShieldCheck,
-                title: "과잉진료 ZERO",
+                title: "\u201C안 해도 됩니다\u201D",
                 desc: "필요하지 않은 치료는 권하지 않겠습니다. \"이건 치료 안 하셔도 됩니다\"라고 솔직하게 말씀드리겠습니다.",
-                gold: true,
               },
               {
                 num: "02",
-                icon: MessageCircle,
-                title: "충분한 상담",
+                title: "궁금한 건 다 물어보세요",
                 desc: "환자분의 고민을 충분히 듣고 환자분이 이해하실때까지 충분히 설명하겠습니다.",
               },
               {
                 num: "03",
-                icon: Smile,
-                title: "통증과 불안 최소화",
+                title: "아프지 않게, 무섭지 않게",
                 desc: "최신 마취 기법과 무통마취기를 사용하여 치료 과정의 통증과 불안을 최소화하겠습니다.",
-                gold: true,
               },
               {
                 num: "04",
-                icon: Timer,
-                title: "대기시간 최소화",
+                title: "약속한 시간, 지킵니다",
                 desc: "예약 시스템을 철저히 운영하여 환자분의 소중한 시간을 존중하겠습니다.",
               },
               {
                 num: "05",
-                icon: Sparkles,
-                title: "철저한 감염관리",
+                title: "보이지 않는 곳까지",
                 desc: "철저한 멸균 소독과 수질관리로 서울대학교병원 수준의 감염 관리를 실천합니다.",
-                gold: true,
               },
               {
                 num: "06",
-                icon: HeartHandshake,
-                title: "끝까지 책임",
+                title: "한 번 인연, 평생 주치의",
                 desc: "치료 후에도 정기 검진과 관리로 끝까지 책임집니다. 평생 주치의가 되겠습니다.",
               },
             ].map((item) => (
@@ -125,19 +110,10 @@ export default function AboutPage() {
                   <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-gray-100">
                     {item.num}
                   </span>
-                  <div
-                    className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full ${
-                      "gold" in item && item.gold
-                        ? "bg-[#FDF3E0] text-[var(--color-gold)]"
-                        : "bg-blue-100 text-[var(--color-primary)]"
-                    }`}
-                  >
-                    <item.icon size={24} />
-                  </div>
                   <h3 className="mb-2 text-lg font-bold text-gray-900">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-gray-600">
+                  <p className="text-base leading-relaxed text-gray-600">
                     {item.desc}
                   </p>
                 </div>
@@ -160,14 +136,9 @@ export default function AboutPage() {
           </div>
 
           <div className="mx-auto max-w-5xl">
-            {/* 프로필 상단 */}
-            <div className="mb-10 grid items-center gap-8 md:grid-cols-3">
-              <div className="flex items-center justify-center">
-                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-[#FDF3E0] to-[#FEF9F0] text-6xl font-bold text-[var(--color-gold-dark)]">
-                  {doctor.name.charAt(0)}
-                </div>
-              </div>
-              <div className="text-center md:col-span-2 md:text-left">
+            {/* 프로필 상단 — 프로필 사진 준비 시 grid + 사진 영역 복원 */}
+            <div className="mb-10">
+              <div className="text-center">
                 <p className="text-sm font-medium text-[var(--color-gold)]">
                   {doctor.title}
                 </p>
@@ -189,7 +160,7 @@ export default function AboutPage() {
                   />
                   학력
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.education.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -208,7 +179,7 @@ export default function AboutPage() {
                   />
                   자격 및 수료
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.credentials.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -227,7 +198,7 @@ export default function AboutPage() {
                   />
                   학회 활동
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.memberships.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -246,7 +217,7 @@ export default function AboutPage() {
                   />
                   현직
                 </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-base text-gray-600">
                   {doctor.currentPositions.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -311,7 +282,7 @@ export default function AboutPage() {
                 진료시간
               </h2>
               <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-                <table className="w-full text-sm">
+                <table className="w-full text-base">
                   <tbody>
                     {HOURS.schedule.map((item) => (
                       <tr
@@ -353,7 +324,7 @@ export default function AboutPage() {
               {/* 카카오맵 */}
               <KakaoMap className="mb-6 aspect-[4/3]" />
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-base">
                 <div className="flex items-start gap-3">
                   <MapPin
                     size={18}
