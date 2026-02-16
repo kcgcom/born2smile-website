@@ -43,13 +43,13 @@
 }
 
 /* 기본 스타일 */
-/* text-size-adjust: 카카오톡 등 인앱 브라우저의 텍스트 자동확대 방지 */
-/* 모든 요소에 적용하여 WebView가 요소별로 스케일링하는 경우도 차단 */
-/* 시스템 레벨 스케일링(Android textZoom)은 layout.tsx의 JS로 보정 */
+/* text-size-adjust: 브라우저의 텍스트 인플레이션 알고리즘을 완전 비활성화 */
+/* none이 100%보다 더 공격적으로 모바일 브라우저의 자동 텍스트 확대를 차단 */
+/* 단, Android WebView textZoom은 CSS로 제어 불가 → layout.tsx의 JS로 보정 */
 html, body, *, *::before, *::after {
-  -webkit-text-size-adjust: 100%;
-  -moz-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 body {
