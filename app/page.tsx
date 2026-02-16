@@ -80,9 +80,12 @@ export default function Home() {
       <section id="greeting" className="section-padding bg-white">
         <div className="mx-auto max-w-2xl">
           <FadeIn>
-            <p className="mb-6 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Greeting
             </p>
+            <h2 className="mb-6 text-center font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              인사말
+            </h2>
           </FadeIn>
           <FadeIn delay={0.15}>
             <div className="greeting-letter">
