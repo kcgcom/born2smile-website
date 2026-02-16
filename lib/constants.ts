@@ -74,7 +74,7 @@ export const HOURS = {
     { day: "일요일", time: "휴진", open: false },
   ],
   lunchTime: "13:00 - 14:00",
-  closedDays: "수요일, 일요일, 공휴일 휴진",
+  closedDays: "공휴일 휴진",
   notice: "토요일은 점심시간 없이 진료합니다",
 } as const;
 
