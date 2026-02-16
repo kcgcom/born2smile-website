@@ -6,7 +6,7 @@ import {
   Star,
   ExternalLink,
 } from "lucide-react";
-import { CLINIC, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 
 export const metadata: Metadata = {
@@ -59,43 +59,70 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───────────── 인사말 ───────────── */}
-      <section id="greeting" className="section-padding bg-white">
-        <div className="mx-auto max-w-2xl text-center">
+      {/* ───────────── 인사말 (편지 스타일) ───────────── */}
+      <section id="greeting" className="section-padding bg-[#FAF9F6]">
+        <div className="mx-auto max-w-2xl">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-              About Us
+            <p className="mb-6 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Greeting
             </p>
-            <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-              인사말
-            </h2>
-            <p className="text-lg leading-relaxed text-gray-600">
-              안녕하세요, {CLINIC.name}입니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도 부담 없이
-              꺼내놓을 수 있고, 궁금한 것은 무엇이든 물어볼 수 있는 곳.{" "}
-              {CLINIC.name}가 그런 곳이 되고 싶습니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              눈앞의 이익보다 건강한 구강 상태가 저희에게는 소중합니다. 임플란트
-              치료도 잘하지만, 스케일링 잘하는 치과, 신경치료 잘하는 치과로
-              칭찬받고 싶습니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              빠르고 저렴한 치료가 주목받는 시대이지만, 느리더라도 꼼꼼한 치료,
-              정석대로 하는 치료를 하는 치과가 동네마다 하나쯤은 있어야 한다고
-              생각합니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              동네사랑방 같은 치과가 되겠습니다. 치료를 받지 않으셔도 괜찮습니다.
-              궁금한 게 있으시면 언제든 편하게 찾아와 주세요. 충분히 듣고, 함께
-              고민하겠습니다.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 보답하는{" "}
-              {CLINIC.name}가 되겠습니다.
-            </p>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <div className="greeting-letter">
+              {/* 골드 상단 라인 */}
+              <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold-light)] to-transparent" />
+
+              <div className="px-6 py-10 sm:px-10 md:px-14 md:py-14">
+                {/* 수신인 */}
+                <p className="font-headline mb-8 text-lg text-[var(--color-gold-dark)] md:text-xl">
+                  소중한 여러분께
+                </p>
+
+                {/* 본문 */}
+                <div className="font-headline space-y-5 text-base leading-[1.9] text-gray-700 md:text-lg md:leading-[2]">
+                  <p>안녕하세요, {CLINIC.name}입니다.</p>
+                  <p>
+                    치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도
+                    부담 없이 꺼내놓을 수 있고, 궁금한 것은 무엇이든 물어볼 수
+                    있는 곳. {CLINIC.name}가 그런 곳이 되고 싶습니다.
+                  </p>
+                  <p>
+                    눈앞의 이익보다 건강한 구강 상태가 저희에게는 소중합니다.
+                    임플란트 치료도 잘하지만, 스케일링 잘하는 치과, 신경치료
+                    잘하는 치과로 칭찬받고 싶습니다.
+                  </p>
+                  <p>
+                    빠르고 저렴한 치료가 주목받는 시대이지만, 느리더라도 꼼꼼한
+                    치료, 정석대로 하는 치료를 하는 치과가 동네마다 하나쯤은
+                    있어야 한다고 생각합니다.
+                  </p>
+                  <p>
+                    동네사랑방 같은 치과가 되겠습니다. 치료를 받지 않으셔도
+                    괜찮습니다. 궁금한 게 있으시면 언제든 편하게 찾아와 주세요.
+                    충분히 듣고, 함께 고민하겠습니다.
+                  </p>
+                  <p>
+                    찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 보답하는{" "}
+                    {CLINIC.name}가 되겠습니다.
+                  </p>
+                </div>
+
+                {/* 서명 */}
+                <div className="mt-10 text-right">
+                  <div className="inline-block text-right">
+                    <p className="font-headline text-base text-gray-600 md:text-lg">
+                      {CLINIC.name}
+                    </p>
+                    <p className="font-headline mt-1 text-lg font-bold text-gray-800 md:text-xl">
+                      원장 {DOCTORS[0].name} 드림
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 골드 하단 라인 */}
+              <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold-light)] to-transparent" />
+            </div>
           </FadeIn>
         </div>
       </section>
