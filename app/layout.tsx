@@ -64,11 +64,13 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#2563EB" />
-        {/* 카카오톡 등 인앱 브라우저의 시스템 텍스트 스케일링 보정 */}
-        {/* 3중 타이밍: 즉시 + DOMContentLoaded + 지연실행으로 확실히 감지 */}
+        {/* 카카오톡 등 인앱 브라우저의 Android WebView textZoom 보정 */}
+        {/* textZoom은 CSS 적용 후 네이티브 레벨에서 폰트 크기를 곱하므로 JS로만 대응 가능 */}
+        {/* 100px 기준 측정 → 줌 비율 감지 → html root font-size 역보정 (rem 기반 전체 적용) */}
+        {/* 6중 타이밍: 즉시 + DOMContentLoaded + double-rAF + 100ms + 500ms + 2000ms */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){function f(){var d=document.documentElement,t=document.createElement("div");t.style.cssText="position:absolute;visibility:hidden;font-size:16px;line-height:normal;padding:0;margin:0;border:0";d.appendChild(t);var a=parseFloat(getComputedStyle(t).fontSize);d.removeChild(t);if(Math.abs(a-16)>.5){var p=(16/a*100)+"%";d.style.fontSize=p;d.style.setProperty("--text-zoom-fix",p)}}f();if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",f)}else{f()}setTimeout(f,200);setTimeout(f,1000)})();`,
+            __html: `(function(){var B=100;function m(){var d=document.documentElement,p=document.body||d,t=document.createElement("span");t.style.cssText="position:absolute!important;visibility:hidden!important;font-size:"+B+"px!important;line-height:normal!important;padding:0!important;margin:0!important;border:0!important;left:-9999px!important;top:0!important";p.appendChild(t);var s=parseFloat(getComputedStyle(t).fontSize);t.remove();return s}function f(){var r=m()/B;if(Math.abs(r-1)>0.01){document.documentElement.style.setProperty("font-size",(100/r)+"%","important")}}f();document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f):f();typeof requestAnimationFrame!=="undefined"&&requestAnimationFrame(function(){requestAnimationFrame(f)});setTimeout(f,100);setTimeout(f,500);setTimeout(f,2000)})();`,
           }}
         />
       </head>
