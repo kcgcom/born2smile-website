@@ -73,11 +73,6 @@ export default function Home() {
               <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold-light)] to-transparent" />
 
               <div className="px-6 py-10 sm:px-10 md:px-14 md:py-14">
-                {/* 수신인 */}
-                <p className="font-headline mb-8 text-lg text-[var(--color-gold-dark)] md:text-xl">
-                  소중한 여러분께
-                </p>
-
                 {/* 본문 */}
                 <div className="font-headline space-y-5 text-base leading-[1.9] text-gray-700 md:text-lg md:leading-[2]">
                   <p>안녕하세요, {CLINIC.name}입니다.</p>
