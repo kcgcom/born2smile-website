@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 export const alt = "서울본치과 - 김포한강신도시 장기동 치과";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

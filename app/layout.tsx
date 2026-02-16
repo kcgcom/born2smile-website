@@ -65,9 +65,10 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#2563EB" />
         {/* 카카오톡 등 인앱 브라우저의 시스템 텍스트 스케일링 보정 */}
+        {/* 3중 타이밍: 즉시 + DOMContentLoaded + 지연실행으로 확실히 감지 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var d=document.documentElement,t=document.createElement("div");t.style.cssText="position:absolute;visibility:hidden;font-size:16px";d.appendChild(t);var a=parseFloat(getComputedStyle(t).fontSize);d.removeChild(t);if(Math.abs(a-16)>.5)d.style.fontSize=(16/a*100)+"%"})();`,
+            __html: `(function(){function f(){var d=document.documentElement,t=document.createElement("div");t.style.cssText="position:absolute;visibility:hidden;font-size:16px;line-height:normal;padding:0;margin:0;border:0";d.appendChild(t);var a=parseFloat(getComputedStyle(t).fontSize);d.removeChild(t);if(Math.abs(a-16)>.5){var p=(16/a*100)+"%";d.style.fontSize=p;d.style.setProperty("--text-zoom-fix",p)}}f();if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",f)}else{f()}setTimeout(f,200);setTimeout(f,1000)})();`,
           }}
         />
       </head>
