@@ -80,10 +80,13 @@ export function Header() {
             </span>
           </Link>
 
-          {/* 데스크톱 네비게이션 (홈은 로고가 대체) */}
+          {/* 데스크톱 네비게이션 */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="메인 메뉴">
-            {NAV_ITEMS.filter((item) => item.href !== "/").map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
