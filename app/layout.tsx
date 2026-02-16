@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { pretendard, notoSerifKR } from "@/lib/fonts";
+import { pretendard, notoSerifKR, maruBuri } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd } from "@/lib/jsonld";
 import { Header } from "@/components/layout/Header";
@@ -60,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${pretendard.variable} ${notoSerifKR.variable}`}
+      className={`${pretendard.variable} ${notoSerifKR.variable} ${maruBuri.variable}`}
     >
       <head>
         <meta name="theme-color" content="#2563EB" />
