@@ -80,9 +80,12 @@ export default function Home() {
       <section id="greeting" className="section-padding bg-white">
         <div className="mx-auto max-w-2xl">
           <FadeIn>
-            <p className="mb-6 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Greeting
             </p>
+            <h2 className="mb-6 text-center font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              인사말
+            </h2>
           </FadeIn>
           <FadeIn delay={0.15}>
             <div className="greeting-letter">
@@ -186,7 +189,7 @@ export default function Home() {
             ].map((item) => (
               <StaggerItem key={item.num}>
                 <div className="relative flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-7 transition-shadow hover:shadow-md">
-                  <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-gray-100">
+                  <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-[var(--color-gold)]/15">
                     {item.num}
                   </span>
                   <h3 className="mb-2 text-lg font-bold text-gray-900">
