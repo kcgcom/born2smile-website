@@ -37,7 +37,7 @@ export async function generateMetadata({
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
 
-  const ogTitle = `${fullTitle} | ${CLINIC.name} 블로그`;
+  const ogTitle = `${fullTitle} | ${CLINIC.name} 건강칼럼`;
 
   return {
     title: fullTitle,
@@ -98,7 +98,7 @@ export default async function BlogPostPage({
   const blogPostJsonLd = getBlogPostJsonLd(post);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
-    { name: "블로그", href: "/blog" },
+    { name: "건강칼럼", href: "/blog" },
     { name: post.title, href: `/blog/${slug}` },
   ]);
 
@@ -123,7 +123,7 @@ export default async function BlogPostPage({
               className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
             >
               <ArrowLeft size={14} />
-              블로그 목록
+              건강칼럼 목록
             </Link>
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
