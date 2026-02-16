@@ -1,4 +1,5 @@
 import localFont from "next/font/local";
+import { Maru_Buri } from "next/font/google";
 
 export const pretendard = localFont({
   src: [
@@ -32,6 +33,14 @@ export const notoSerifKR = localFont({
     },
   ],
   variable: "--font-noto-serif",
+  display: "swap",
+  fallback: ["Georgia", "serif"],
+});
+
+export const maruBuri = Maru_Buri({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-maru-buri",
   display: "swap",
   fallback: ["Georgia", "serif"],
 });

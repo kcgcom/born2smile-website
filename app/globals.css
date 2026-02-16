@@ -80,6 +80,11 @@ body {
   font-family: var(--font-noto-serif), serif;
 }
 
+/* 인사말 편지 폰트 (마루부리) */
+.font-greeting {
+  font-family: var(--font-maru-buri), serif;
+}
+
 /* 편지 스타일 카드 */
 .greeting-letter {
   background: linear-gradient(135deg, #FFFEF9 0%, #FFF9EE 50%, #FFFEF9 100%);
