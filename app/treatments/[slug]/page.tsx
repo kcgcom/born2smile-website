@@ -247,7 +247,7 @@ export default async function TreatmentDetailPage({
               <FadeIn>
                 <div className="mb-10 text-center">
                   <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
-                    관련 블로그
+                    관련 칼럼
                   </span>
                   <h2 className="font-headline text-3xl font-bold text-gray-900">
                     {detail.name}에 대해 더 알아보기
@@ -287,7 +287,7 @@ export default async function TreatmentDetailPage({
                   href="/blog"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
-                  블로그에서 더 많은 글 보기
+                  건강칼럼에서 더 많은 글 보기
                   <ArrowRight size={14} />
                 </Link>
               </FadeIn>

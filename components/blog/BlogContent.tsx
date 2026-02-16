@@ -179,7 +179,7 @@ export default function BlogContent() {
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="궁금한 키워드를 검색해보세요"
-              aria-label="블로그 검색"
+              aria-label="건강칼럼 검색"
               className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[var(--color-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
             {searchQuery && (

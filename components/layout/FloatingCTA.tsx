@@ -24,7 +24,7 @@ export function FloatingCTA() {
     { href: "/", label: "홈", icon: Home },
     { href: "/about", label: "병원소개", icon: Building2 },
     { href: "/treatments", label: "진료안내", icon: Stethoscope },
-    { href: "/blog", label: "건강정보", icon: BookOpen },
+    { href: "/blog", label: "건강칼럼", icon: BookOpen },
     { href: "/contact", label: "상담안내", icon: Phone },
   ] as const;
 
