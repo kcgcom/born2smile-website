@@ -64,6 +64,12 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#2563EB" />
+        {/* 카카오톡 등 인앱 브라우저의 시스템 텍스트 스케일링 보정 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var d=document.documentElement,t=document.createElement("div");t.style.cssText="position:absolute;visibility:hidden;font-size:16px";d.appendChild(t);var a=parseFloat(getComputedStyle(t).fontSize);d.removeChild(t);if(Math.abs(a-16)>.5)d.style.fontSize=(16/a*100)+"%"})();`,
+          }}
+        />
       </head>
       <body>
         <script
