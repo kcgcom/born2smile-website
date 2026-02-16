@@ -165,24 +165,25 @@ export default function AboutPage() {
 
           <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { name: "진료실", src: "/images/facility/treatment-room.jpg" },
-              { name: "대기실", src: "/images/facility/waiting-room.jpg" },
-              { name: "상담실", src: "/images/facility/consultation-room.jpg" },
-              { name: "VIP실", src: "/images/facility/vip-room.jpg" },
-              { name: "X-ray실", src: "/images/facility/xray-room.jpg" },
-              { name: "외관", src: "/images/facility/exterior.jpg" },
+              { name: "진료실", desc: "파티션으로 구분된 개별 진료공간", src: "/images/facility/treatment-room.jpg" },
+              { name: "대기실", desc: "갤러리 같은 편안한 대기공간", src: "/images/facility/waiting-room.jpg" },
+              { name: "상담실", desc: "1:1맞춤상담이 가능한 별도의 상담실", src: "/images/facility/consultation-room.jpg" },
+              { name: "VIP실", desc: "프라이버시가 보장된 독립 진료실", src: "/images/facility/vip-room.jpg" },
+              { name: "X-ray실", desc: "방사선 노출이 적은 최신 디지털CT", src: "/images/facility/xray-room.jpg" },
+              { name: "외관", desc: "김포시 장기동 엠프라자 2층", src: "/images/facility/exterior.jpg" },
             ].map((item) => (
               <StaggerItem key={item.name}>
                 <div className="group relative overflow-hidden rounded-2xl">
                   <Image
                     src={item.src}
-                    alt={`${CLINIC.name} ${item.name}`}
+                    alt={`${CLINIC.name} ${item.name} - ${item.desc}`}
                     width={600}
                     height={450}
                     className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
                     <p className="text-sm font-medium text-white">{item.name}</p>
+                    <p className="text-xs text-white/80">{item.desc}</p>
                   </div>
                 </div>
               </StaggerItem>
