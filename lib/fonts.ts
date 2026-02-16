@@ -1,5 +1,4 @@
 import localFont from "next/font/local";
-import { Maru_Buri } from "next/font/google";
 
 export const pretendard = localFont({
   src: [
@@ -37,10 +36,20 @@ export const notoSerifKR = localFont({
   fallback: ["Georgia", "serif"],
 });
 
-export const maruBuri = Maru_Buri({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-maru-buri",
+export const gowunBatang = localFont({
+  src: [
+    {
+      path: "../public/fonts/gowun-batang-korean-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/gowun-batang-korean-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-gowun-batang",
   display: "swap",
   fallback: ["Georgia", "serif"],
 });
