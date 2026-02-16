@@ -73,13 +73,28 @@ export default function Home() {
               안녕하세요, {CLINIC.name}입니다.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              {CLINIC.name}는 환자분 한 분 한 분의 구강 건강을 최우선으로
-              생각합니다. 꼭 필요한 진료만, 충분한 설명과 함께 정직하게
-              진료하겠습니다.
+              치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도 부담 없이
+              꺼내놓을 수 있고, 궁금한 것은 무엇이든 물어볼 수 있는 곳.{" "}
+              {CLINIC.name}가 그런 곳이 되고 싶습니다.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-gray-600">
-              자연치아를 최대한 보존하는 것을 원칙으로, 환자분께서 건강한 미소를
-              되찾으실 때까지 함께하겠습니다.
+              눈앞의 이익보다 건강한 구강 상태가 저희에게는 소중합니다. 임플란트
+              치료도 잘하지만, 스케일링 잘하는 치과, 신경치료 잘하는 치과로
+              칭찬받고 싶습니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              빠르고 저렴한 치료가 주목받는 시대이지만, 느리더라도 꼼꼼한 치료,
+              정석대로 하는 치료를 하는 치과가 동네마다 하나쯤은 있어야 한다고
+              생각합니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              동네사랑방 같은 치과가 되겠습니다. 치료를 받지 않으셔도 괜찮습니다.
+              궁금한 게 있으시면 언제든 편하게 찾아와 주세요. 충분히 듣고, 함께
+              고민하겠습니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 보답하는{" "}
+              {CLINIC.name}가 되겠습니다.
             </p>
           </FadeIn>
         </div>
