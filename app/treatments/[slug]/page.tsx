@@ -37,11 +37,23 @@ export async function generateMetadata({
       openGraph: {
         title: scalingOgTitle,
         description: scalingDesc,
+        siteName: CLINIC.name,
+        locale: "ko_KR",
         url: treatmentUrl,
+        images: [
+          {
+            url: "/images/og-image.jpg",
+            width: 1200,
+            height: 630,
+            alt: CLINIC.name,
+          },
+        ],
       },
       twitter: {
+        card: "summary_large_image",
         title: scalingOgTitle,
         description: scalingDesc,
+        images: ["/images/og-image.jpg"],
       },
     };
   }
@@ -56,11 +68,23 @@ export async function generateMetadata({
     openGraph: {
       title: ogTitle,
       description,
+      siteName: CLINIC.name,
+      locale: "ko_KR",
       url: treatmentUrl,
+      images: [
+        {
+          url: "/images/og-image.jpg",
+          width: 1200,
+          height: 630,
+          alt: CLINIC.name,
+        },
+      ],
     },
     twitter: {
+      card: "summary_large_image",
       title: ogTitle,
       description,
+      images: ["/images/og-image.jpg"],
     },
   };
 }

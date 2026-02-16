@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: SEO.defaultTitle,
     description: SEO.defaultDescription,
+    siteName: CLINIC.name,
+    locale: "ko_KR",
+    type: "website",
     url: BASE_URL,
   },
 };
