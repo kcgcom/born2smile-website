@@ -59,6 +59,47 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ───────────── 인사말 ───────────── */}
+      <section id="greeting" className="section-padding bg-white">
+        <div className="mx-auto max-w-2xl text-center">
+          <FadeIn>
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              About Us
+            </p>
+            <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+              인사말
+            </h2>
+            <p className="text-lg leading-relaxed text-gray-600">
+              안녕하세요, {CLINIC.name}입니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도 부담 없이
+              꺼내놓을 수 있고, 궁금한 것은 무엇이든 물어볼 수 있는 곳.{" "}
+              {CLINIC.name}가 그런 곳이 되고 싶습니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              눈앞의 이익보다 건강한 구강 상태가 저희에게는 소중합니다. 임플란트
+              치료도 잘하지만, 스케일링 잘하는 치과, 신경치료 잘하는 치과로
+              칭찬받고 싶습니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              빠르고 저렴한 치료가 주목받는 시대이지만, 느리더라도 꼼꼼한 치료,
+              정석대로 하는 치료를 하는 치과가 동네마다 하나쯤은 있어야 한다고
+              생각합니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              동네사랑방 같은 치과가 되겠습니다. 치료를 받지 않으셔도 괜찮습니다.
+              궁금한 게 있으시면 언제든 편하게 찾아와 주세요. 충분히 듣고, 함께
+              고민하겠습니다.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
+              찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 보답하는{" "}
+              {CLINIC.name}가 되겠습니다.
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ───────────── 핵심가치 ───────────── */}
       <section id="values" className="section-padding bg-white">
           <div className="container-narrow">
@@ -168,8 +209,11 @@ export default function Home() {
             {/* 리뷰 남기기 버튼 */}
             {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
               <FadeIn className="mt-10 text-center">
+                <h3 className="font-headline mb-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  치료에 만족하셨나요?
+                </h3>
                 <p className="mb-4 text-sm leading-relaxed text-gray-500">
-                  치료에 만족하셨나요? 소중한 리뷰를 남겨주시면 다른 분들에게 큰 도움이 됩니다.
+                  소중한 리뷰를 남겨주시면 다른 분들에게 큰 도움이 됩니다.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-4">
                 {GOOGLE_REVIEW.writeReviewUrl && (
