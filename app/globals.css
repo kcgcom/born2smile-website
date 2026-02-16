@@ -89,9 +89,9 @@ body {
   font-family: var(--font-noto-serif), serif;
 }
 
-/* 인사말 편지 폰트 (마루부리) */
+/* 인사말 편지 폰트 (고운바탕) */
 .font-greeting {
-  font-family: var(--font-maru-buri), serif;
+  font-family: var(--font-gowun-batang), serif;
 }
 
 /* 편지 스타일 카드 */
