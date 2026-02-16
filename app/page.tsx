@@ -74,7 +74,7 @@ export default function Home() {
 
               <div className="px-6 py-10 sm:px-10 md:px-14 md:py-14">
                 {/* 본문 */}
-                <div className="font-greeting space-y-5 text-base leading-[1.9] text-gray-700 md:text-lg md:leading-[2]">
+                <div className="font-greeting font-bold space-y-5 text-base leading-[1.9] text-gray-700 md:text-lg md:leading-[2]">
                   <p>안녕하세요, {CLINIC.name}입니다.</p>
                   <p>
                     치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도
@@ -105,7 +105,7 @@ export default function Home() {
                 {/* 서명 */}
                 <div className="mt-10 text-right">
                   <div className="inline-block text-right">
-                    <p className="font-greeting text-base text-gray-600 md:text-lg">
+                    <p className="font-greeting font-bold text-base text-gray-600 md:text-lg">
                       {CLINIC.name}
                     </p>
                     <p className="font-greeting mt-1 text-lg font-bold text-gray-800 md:text-xl">
