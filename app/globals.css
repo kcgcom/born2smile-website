@@ -43,6 +43,9 @@
 }
 
 /* 기본 스타일 */
+/* text-size-adjust: CSS 레벨 텍스트 자동확대 방지 */
+/* 카카오톡 인앱 브라우저(Android WebView)의 시스템 텍스트 스케일링은 */
+/* layout.tsx의 인라인 스크립트에서 JS로 보정 */
 html {
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
