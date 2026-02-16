@@ -139,49 +139,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───────────── 핵심가치 ───────────── */}
-      <section id="values" className="section-padding bg-white">
-          <div className="container-narrow">
-            <FadeIn className="mb-12 text-center">
-              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                Our Values
-              </p>
-              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                {CLINIC.name}의 핵심가치
-              </h2>
-            </FadeIn>
-
-            <StaggerContainer className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  title: "신뢰",
-                  desc: "서울대 출신 전문의의 정확한 진단과 치료 계획을 제공합니다.",
-                },
-                {
-                  title: "정성",
-                  desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
-                  gold: true,
-                },
-                {
-                  title: "전문성",
-                  desc: "국내외 학회 활동과 지속적인 연구로 최선의 치료를 제공합니다.",
-                },
-              ].map((item) => (
-                <StaggerItem key={item.title}>
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
-                      {item.title}
-                    </h3>
-                    <p className="text-base leading-relaxed text-gray-700">
-                      {item.desc}
-                    </p>
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          </div>
-      </section>
-
       {/* ───────────── 환자분들의 이야기 ───────────── */}
       {REVIEWS.length > 0 && (
         <section id="reviews" className="section-padding bg-white">
