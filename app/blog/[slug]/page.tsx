@@ -141,7 +141,7 @@ export default async function BlogPostPage({
               </span>
             </div>
 
-            <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
+            <h1 className="font-headline text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
               {post.title}
             </h1>
             <p className="mt-3 text-lg text-gray-500 md:text-xl">
@@ -264,9 +264,9 @@ export default async function BlogPostPage({
       )}
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white">
+      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <h2 className="font-headline relative mb-4 text-2xl font-bold md:text-3xl">
+        <h2 className="font-headline relative mb-4 text-3xl font-bold md:text-4xl">
           구강 건강이 궁금하신가요?
         </h2>
         <p className="relative mb-8 text-blue-100">

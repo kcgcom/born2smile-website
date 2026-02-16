@@ -25,7 +25,7 @@ export default function ContactPage() {
           <div className="grid gap-10 md:grid-cols-2">
             {/* 전화 상담 안내 */}
             <FadeIn direction="left" className="space-y-6">
-              <h2 className="mb-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-2 text-2xl font-bold text-gray-900">
                 전화 상담
               </h2>
               <p className="text-gray-700">
@@ -127,7 +127,7 @@ export default function ContactPage() {
 
             {/* 오시는 길 + 지도 */}
             <FadeIn direction="right" delay={0.2} className="space-y-6">
-              <h2 className="mb-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-2 text-2xl font-bold text-gray-900">
                 <MapPin
                   size={22}
                   aria-hidden="true"

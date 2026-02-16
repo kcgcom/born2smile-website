@@ -107,16 +107,16 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 의료진 상세 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-white">
         <div className="container-narrow">
-          <div className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-primary)] uppercase">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Doctor
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
               의료진 소개
             </h2>
-          </div>
+          </FadeIn>
 
           <div className="mx-auto max-w-5xl">
             {/* 프로필 상단 — 프로필 사진 준비 시 grid + 사진 영역 복원 */}
@@ -215,16 +215,16 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 시설 안내 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-gray-50">
         <div className="container-narrow">
-          <div className="mb-12 text-center">
+          <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               Facility
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
               시설 안내
             </h2>
-          </div>
+          </FadeIn>
 
           <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
@@ -255,12 +255,12 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-white">
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-2">
             {/* 진료시간 */}
             <div>
-              <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
                 <Clock size={24} className="text-[var(--color-gold)]" />
                 진료시간
               </h2>
@@ -299,7 +299,7 @@ export default function AboutPage() {
 
             {/* 오시는 길 */}
             <div>
-              <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
                 <MapPin size={24} className="text-[var(--color-primary)]" />
                 오시는 길
               </h2>

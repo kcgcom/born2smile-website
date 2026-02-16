@@ -153,7 +153,7 @@ export default async function TreatmentDetailPage({
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn>
-            <h2 className="font-headline mb-10 text-center text-3xl font-bold text-gray-900">
+            <h2 className="font-headline mb-10 text-center text-3xl font-bold text-gray-900 md:text-4xl">
               치료 과정
             </h2>
           </FadeIn>
@@ -179,7 +179,7 @@ export default async function TreatmentDetailPage({
       <section className="section-padding bg-white">
         <div className="mx-auto max-w-3xl">
           <FadeIn>
-            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
+            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900 md:text-4xl">
               장점
             </h2>
           </FadeIn>
@@ -206,7 +206,7 @@ export default async function TreatmentDetailPage({
         <section className="section-padding bg-gray-50">
           <div className="mx-auto max-w-3xl">
             <FadeIn>
-              <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900">
+              <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900 md:text-4xl">
                 자주 묻는 질문
               </h2>
             </FadeIn>
@@ -249,7 +249,7 @@ export default async function TreatmentDetailPage({
                   <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
                     관련 칼럼
                   </span>
-                  <h2 className="font-headline text-3xl font-bold text-gray-900">
+                  <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
                     {detail.name}에 대해 더 알아보기
                   </h2>
                 </div>
@@ -258,7 +258,7 @@ export default async function TreatmentDetailPage({
                 {relatedBlogPosts.map((rp) => (
                   <StaggerItem key={rp.id}>
                     <Link href={`/blog/${rp.slug}`} className="block h-full">
-                      <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:shadow-lg">
+                      <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                         <span
                           className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
                         >
@@ -298,9 +298,9 @@ export default async function TreatmentDetailPage({
 
       {/* CTA */}
 
-      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white">
+      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <h2 className="font-headline relative mb-4 text-2xl font-bold md:text-3xl">
+        <h2 className="font-headline relative mb-4 text-3xl font-bold md:text-4xl">
           {detail.name} 상담이 필요하신가요?
         </h2>
         <p className="relative mb-8 text-blue-100">
@@ -321,13 +321,6 @@ export default async function TreatmentDetailPage({
             <Phone size={18} />
             전화 상담 {CLINIC.phone}
           </a>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-white/50 px-8 py-4 text-base font-medium text-white hover:border-white hover:bg-white/10"
-          >
-            상담 안내
-            <ArrowRight size={18} />
-          </Link>
         </div>
       </section>
 
