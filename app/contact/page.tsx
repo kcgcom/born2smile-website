@@ -100,16 +100,18 @@ export default function ContactPage() {
                       key={item.day}
                       className="flex justify-between text-gray-700"
                     >
-                      <span>{item.day}</span>
-                      <span
-                        className={item.open ? "font-medium text-gray-900" : "text-gray-400"}
-                      >
-                        {item.time}
+                      <span>
+                        {item.day}
                         {"note" in item && item.note && (
                           <span className="ml-1 text-sm text-[var(--color-gold)]">
                             ({item.note})
                           </span>
                         )}
+                      </span>
+                      <span
+                        className={item.open ? "font-medium text-gray-900" : "text-gray-400"}
+                      >
+                        {item.time}
                       </span>
                     </li>
                   ))}

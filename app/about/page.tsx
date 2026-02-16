@@ -274,16 +274,16 @@ export default function AboutPage() {
                       >
                         <td className="px-5 py-3 font-medium text-gray-700">
                           {item.day}
-                        </td>
-                        <td
-                          className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-400"}`}
-                        >
-                          {item.time}
                           {"note" in item && item.note && (
                             <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
                               {item.note}
                             </span>
                           )}
+                        </td>
+                        <td
+                          className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-400"}`}
+                        >
+                          {item.time}
                         </td>
                       </tr>
                     ))}
@@ -313,7 +313,14 @@ export default function AboutPage() {
                     size={18}
                     className="mt-0.5 shrink-0 text-[var(--color-primary)]"
                   />
-                  <span className="text-gray-700">{CLINIC.address}</span>
+                  <div>
+                    <span className="text-gray-700">{CLINIC.address}</span>
+                    <p className="mt-1 text-sm text-gray-500">
+                      한강센트럴자이 아파트 101동 대각선
+                      <br />
+                      커피빈(김포장기DT점) 맞은편
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone
