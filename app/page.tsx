@@ -99,23 +99,23 @@ export default function Home() {
                     있는 곳. {CLINIC.name}가 그런 곳이 되고 싶습니다.
                   </p>
                   <p>
-                    눈앞의 이익보다 건강한 구강 상태가 저희에게는 소중합니다.
-                    임플란트 치료도 잘하지만, 스케일링 잘하는 치과, 신경치료
-                    잘하는 치과로 칭찬받고 싶습니다.
+                    눈앞의 이익보다, 환자분의 건강한 치아가 저희에게는 더
+                    소중합니다. 임플란트 치료도 잘하지만, 스케일링 잘하는
+                    치과, 신경치료 잘하는 치과로 칭찬받고 싶습니다.
                   </p>
                   <p>
                     빠르고 저렴한 치료가 주목받는 시대이지만, 느리더라도 꼼꼼한
                     치료, 정석대로 하는 치료를 하는 치과가 동네마다 하나쯤은
-                    있어야 한다고 생각합니다.
+                    있어야 한다고 믿습니다.
                   </p>
                   <p>
-                    동네사랑방 같은 치과가 되겠습니다. 치료를 받지 않으셔도
-                    괜찮습니다. 궁금한 게 있으시면 언제든 편하게 찾아와 주세요.
-                    충분히 듣고, 함께 고민하겠습니다.
+                    치료를 받지 않으셔도 괜찮습니다. 궁금한 게 있으시면
+                    언제든 편하게 찾아와 주세요. 충분히 듣고, 함께
+                    고민하겠습니다.
                   </p>
                   <p>
-                    찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 보답하는{" "}
-                    {CLINIC.name}가 되겠습니다.
+                    찾아주시는 한 분 한 분께 감사드리며, 그 믿음에 정성으로
+                    보답하겠습니다.
                   </p>
                 </div>
 
@@ -137,49 +137,6 @@ export default function Home() {
             </div>
           </FadeIn>
         </div>
-      </section>
-
-      {/* ───────────── 핵심가치 ───────────── */}
-      <section id="values" className="section-padding bg-white">
-          <div className="container-narrow">
-            <FadeIn className="mb-12 text-center">
-              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-                Our Values
-              </p>
-              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                {CLINIC.name}의 핵심가치
-              </h2>
-            </FadeIn>
-
-            <StaggerContainer className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  title: "신뢰",
-                  desc: "서울대 출신 전문의의 정확한 진단과 치료 계획을 제공합니다.",
-                },
-                {
-                  title: "정성",
-                  desc: "환자분의 불안을 줄이고 편안한 진료 환경을 만들어 드립니다.",
-                  gold: true,
-                },
-                {
-                  title: "전문성",
-                  desc: "국내외 학회 활동과 지속적인 연구로 최선의 치료를 제공합니다.",
-                },
-              ].map((item) => (
-                <StaggerItem key={item.title}>
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-shadow hover:shadow-md">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
-                      {item.title}
-                    </h3>
-                    <p className="text-base leading-relaxed text-gray-700">
-                      {item.desc}
-                    </p>
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          </div>
       </section>
 
       {/* ───────────── 환자분들의 이야기 ───────────── */}
