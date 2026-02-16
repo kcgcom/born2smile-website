@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@fontsource/noto-serif-kr':
-        specifier: ^5.2.9
-        version: 5.2.9
       firebase:
         specifier: ^12.9.0
         version: 12.9.0
@@ -546,9 +543,6 @@ packages:
 
   '@firebase/webchannel-wrapper@1.0.5':
     resolution: {integrity: sha512-+uGNN7rkfn41HLO0vekTFhTxk61eKa8mTpRGLO0QSqlQdKvIoGAvLp3ppdVIWbTGYJWM6Kp0iN+PjMIOcnVqTw==}
-
-  '@fontsource/noto-serif-kr@5.2.9':
-    resolution: {integrity: sha512-DqWJwPt1yduqF/XRD7S1QrJPoLw3qFxtGgp8sZMB2Tb+mahDXkVm3zD/G+MvF0fIxqSWrnl/iyHotKkfFosepw==}
 
   '@grpc/grpc-js@1.9.15':
     resolution: {integrity: sha512-nqE7Hc0AzI+euzUwDAy0aY5hCp10r734gMGRdU+qOPX0XSceI2ULrcXB5U2xSc5VkWwalCj4M7GzCAygZl2KoQ==}
@@ -3054,8 +3048,6 @@ snapshots:
       tslib: 2.8.1
 
   '@firebase/webchannel-wrapper@1.0.5': {}
-
-  '@fontsource/noto-serif-kr@5.2.9': {}
 
   '@grpc/grpc-js@1.9.15':
     dependencies:
