@@ -127,17 +127,19 @@ export default async function TreatmentDetailPage({
 
       {/* 헤더 */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <Link
-          href="/treatments"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
-        >
-          <ArrowLeft size={14} />
-          진료 안내
-        </Link>
-        <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-          {detail.name}
-        </h1>
-        <p className="mt-3 text-lg text-gray-600">{detail.subtitle}</p>
+        <FadeIn>
+          <Link
+            href="/treatments"
+            className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
+          >
+            <ArrowLeft size={14} />
+            진료 안내
+          </Link>
+          <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            {detail.name}
+          </h1>
+          <p className="mt-3 text-lg text-gray-600">{detail.subtitle}</p>
+        </FadeIn>
       </section>
 
       {/* 설명 */}
@@ -300,28 +302,32 @@ export default async function TreatmentDetailPage({
 
       <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <h2 className="font-headline relative mb-4 text-3xl font-bold md:text-4xl">
-          {detail.name} 상담이 필요하신가요?
-        </h2>
-        <p className="relative mb-8 text-blue-100">
-          {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
-        </p>
-        <div className="relative flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-          >
-            상담 문의
-            <ArrowRight size={18} />
-          </Link>
-          <a
-            href={CLINIC.phoneHref}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-          >
-            <Phone size={18} />
-            전화 상담 {CLINIC.phone}
-          </a>
-        </div>
+        <FadeIn>
+          <div className="relative mx-auto max-w-2xl">
+            <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
+              {detail.name} 상담이 필요하신가요?
+            </h2>
+            <p className="mb-8 text-blue-100">
+              {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
+              >
+                상담 문의
+                <ArrowRight size={18} />
+              </Link>
+              <a
+                href={CLINIC.phoneHref}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
+              >
+                <Phone size={18} />
+                전화 상담 {CLINIC.phone}
+              </a>
+            </div>
+          </div>
+        </FadeIn>
       </section>
 
       <div className="h-16 md:hidden" />
