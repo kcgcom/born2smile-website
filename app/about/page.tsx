@@ -38,8 +38,17 @@ export default function AboutPage() {
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-8 text-center">
         <div className="mx-auto max-w-2xl px-4">
-          <p className="sr-only">About Us</p>
-          <h1 className="sr-only">병원 소개</h1>
+          <FadeIn>
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              About Us
+            </p>
+            <h1 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              병원 소개
+            </h1>
+            <p className="mt-4 text-base text-gray-600 md:text-lg">
+              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다
+            </p>
+          </FadeIn>
         </div>
       </section>
 
