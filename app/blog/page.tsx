@@ -23,17 +23,19 @@ export default function BlogPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <FadeIn>
-          <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-            Health Column
-          </p>
-          <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-            건강칼럼
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-gray-600">
-            올바른 구강관리법과 치과 상식을 쉽고 정확하게 알려드립니다.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-2xl px-4">
+          <FadeIn>
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Health Column
+            </p>
+            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+              건강칼럼
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-gray-600">
+              올바른 구강관리법과 치과 상식을 쉽고 정확하게 알려드립니다.
+            </p>
+          </FadeIn>
+        </div>
       </section>
 
       <BlogContent />

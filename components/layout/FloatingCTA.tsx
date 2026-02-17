@@ -33,6 +33,7 @@ export function FloatingCTA() {
       {/* 모바일 하단 고정 바 */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white md:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label="빠른 메뉴"
       >
         <div className="grid grid-cols-5">
