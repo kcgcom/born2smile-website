@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 49,
     slug: "pregnancy-dental-treatment-safety",
     tags: ["임산부", "팩트체크"],
     category: "구강건강상식",

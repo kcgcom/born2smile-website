@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 67,
     slug: "fluoride-treatment-adults",
     tags: ["팩트체크"],
     category: "예방·구강관리",

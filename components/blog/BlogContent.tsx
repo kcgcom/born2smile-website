@@ -19,7 +19,7 @@ export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +110,6 @@ export default function BlogContent() {
   const handleShare = useCallback(
     async (
       e: React.MouseEvent,
-      postId: number,
       slug: string,
       title: string
     ) => {
@@ -129,8 +128,8 @@ export default function BlogContent() {
 
       try {
         await navigator.clipboard.writeText(url);
-        setCopiedId(postId);
-        setTimeout(() => setCopiedId(null), 2000);
+        setCopiedSlug(slug);
+        setTimeout(() => setCopiedSlug(null), 2000);
       } catch {
         const textarea = document.createElement("textarea");
         textarea.value = url;
@@ -140,8 +139,8 @@ export default function BlogContent() {
         textarea.select();
         document.execCommand("copy");
         document.body.removeChild(textarea);
-        setCopiedId(postId);
-        setTimeout(() => setCopiedId(null), 2000);
+        setCopiedSlug(slug);
+        setTimeout(() => setCopiedSlug(null), 2000);
       }
     },
     []
@@ -234,7 +233,7 @@ export default function BlogContent() {
         {/* 포스트 그리드 */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {visiblePosts.map((post) => (
-            <motion.div key={post.id} {...cardAnimation}>
+            <motion.div key={post.slug} {...cardAnimation}>
               <Link href={`/blog/${post.slug}`} className="block h-full">
                 <article className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 공유 */}
@@ -246,12 +245,12 @@ export default function BlogContent() {
                     </span>
                     <button
                       onClick={(e) =>
-                        handleShare(e, post.id, post.slug, post.title)
+                        handleShare(e, post.slug, post.title)
                       }
                       className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                       aria-label={`"${post.title}" 공유하기`}
                     >
-                      {copiedId === post.id ? (
+                      {copiedSlug === post.slug ? (
                         <>
                           <Check size={14} className="text-green-500" />
                           <span className="text-green-600">복사됨</span>

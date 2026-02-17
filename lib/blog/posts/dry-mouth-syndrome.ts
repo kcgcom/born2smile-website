@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 17,
     slug: "dry-mouth-syndrome",
     tags: ["생활습관", "증상가이드", "시니어"],
     category: "구강건강상식",

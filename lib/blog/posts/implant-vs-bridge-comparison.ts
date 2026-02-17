@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 35,
     slug: "implant-vs-bridge-comparison",
     tags: ["비교가이드"],
     category: "임플란트",

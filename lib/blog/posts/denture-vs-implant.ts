@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 16,
     slug: "denture-vs-implant",
     tags: ["시니어", "비교가이드"],
     category: "보철치료",

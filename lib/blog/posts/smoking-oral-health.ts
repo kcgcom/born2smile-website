@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 71,
     slug: "smoking-oral-health",
     tags: ["생활습관"],
     category: "구강건강상식",

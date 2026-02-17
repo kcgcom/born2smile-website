@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "deploy": "firebase deploy --only apphosting",
+    "review-status": "tsx scripts/review-status.ts",
     "submit-indexnow": "node scripts/submit-indexnow.mjs",
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all"
   },

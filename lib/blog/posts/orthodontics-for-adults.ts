@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 9,
     slug: "orthodontics-for-adults",
     tags: ["팩트체크"],
     category: "치아교정",

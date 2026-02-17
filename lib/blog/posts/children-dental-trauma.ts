@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 54,
     slug: "children-dental-trauma",
     tags: ["증상가이드"],
     category: "소아치료",

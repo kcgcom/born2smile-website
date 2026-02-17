@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 6,
     slug: "dental-floss-guide",
     tags: [],
     category: "예방·구강관리",

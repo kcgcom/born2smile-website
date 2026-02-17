@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 45,
     slug: "clear-vs-bracket-orthodontics",
     tags: ["비교가이드"],
     category: "치아교정",

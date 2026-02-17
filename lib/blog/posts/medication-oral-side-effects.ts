@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 73,
     slug: "medication-oral-side-effects",
     tags: ["생활습관", "시니어"],
     category: "구강건강상식",

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 23,
     slug: "after-root-canal-care",
     tags: ["치료후관리"],
     category: "보존치료",

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 40,
     slug: "crown-material-comparison",
     tags: ["비교가이드"],
     category: "보철치료",

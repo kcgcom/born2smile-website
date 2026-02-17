@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 42,
     slug: "implant-eligibility-checklist",
     tags: ["증상가이드", "시니어"],
     category: "임플란트",

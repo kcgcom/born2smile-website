@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 28,
     slug: "after-gum-surgery-care",
     tags: ["치료후관리"],
     category: "예방·구강관리",

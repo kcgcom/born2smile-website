@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 53,
     slug: "children-malocclusion-guide",
     tags: ["증상가이드"],
     category: "소아치료",

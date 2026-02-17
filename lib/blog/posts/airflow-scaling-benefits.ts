@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 41,
     slug: "airflow-scaling-benefits",
     tags: ["비교가이드"],
     category: "예방·구강관리",
