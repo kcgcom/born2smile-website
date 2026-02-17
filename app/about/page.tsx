@@ -12,8 +12,9 @@ import {
   Syringe,
   ScanLine,
   Check,
+  ShieldCheck,
 } from "lucide-react";
-import { CLINIC, DOCTORS, HOURS, BASE_URL } from "@/lib/constants";
+import { CLINIC, DOCTORS, HOURS, STAFF, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
@@ -161,6 +162,52 @@ export default function AboutPage() {
               </StaggerItem>
             </StaggerContainer>
           </div>
+        </div>
+      </section>
+
+      {/* ───────────── 의료팀 소개 ───────────── */}
+      <section className="section-padding bg-gray-50">
+        <div className="container-narrow">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Our Team
+            </p>
+            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              의료팀 소개
+            </h2>
+          </FadeIn>
+
+          {/* 핵심 메시지 배너 */}
+          <FadeIn delay={0.1}>
+            <div className="mb-10 rounded-2xl border border-[var(--color-gold)]/20 bg-gradient-to-br from-[var(--color-gold)]/5 to-[var(--color-primary)]/5 px-6 py-8 text-center md:px-10 md:py-10">
+              <ShieldCheck
+                size={40}
+                className="mx-auto mb-4 text-[var(--color-gold)]"
+              />
+              <h3 className="font-headline text-xl font-bold text-gray-900 md:text-2xl">
+                {STAFF.credential}
+              </h3>
+              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-gray-700">
+                {STAFF.summary}
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* 역량 카드 */}
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {STAFF.highlights.map((item) => (
+              <StaggerItem key={item.title}>
+                <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-shadow hover:shadow-md">
+                  <h4 className="mb-2 text-lg font-bold text-gray-900">
+                    {item.title}
+                  </h4>
+                  <p className="text-base leading-relaxed text-gray-700">
+                    {item.desc}
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
       </section>
 
