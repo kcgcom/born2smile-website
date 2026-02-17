@@ -7,7 +7,20 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { TREATMENT_DETAILS } from "@/lib/treatments";
+import { getFaqJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { FaqAccordion } from "@/components/ui/FaqAccordion";
+
+// 홈페이지에 노출할 자주 묻는 질문 (각 진료 분야에서 선별)
+const HOMEPAGE_FAQ = [
+  TREATMENT_DETAILS.implant.faq[0],     // 임플란트 수술은 아프나요?
+  TREATMENT_DETAILS.implant.faq[1],     // 임플란트 수명은 얼마나 되나요?
+  TREATMENT_DETAILS.orthodontics.faq[0], // 성인도 교정이 가능한가요?
+  TREATMENT_DETAILS.pediatric.faq[0],    // 아이가 처음 치과에 가는 시기는?
+  TREATMENT_DETAILS.restorative.faq[0],  // 신경치료는 아프나요?
+  TREATMENT_DETAILS.scaling.faq[0],      // 스케일링이 아프지 않나요?
+];
 
 export const metadata: Metadata = {
   title: SEO.defaultTitle,
@@ -317,6 +330,41 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ───────────── 자주 묻는 질문 ───────────── */}
+      <section id="faq" className="section-padding bg-gray-50">
+        <div className="container-narrow">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              FAQ
+            </p>
+            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              자주 묻는 질문
+            </h2>
+            <p className="mt-4 text-gray-600">
+              환자분들이 자주 궁금해하시는 질문을 모았습니다.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <FaqAccordion items={HOMEPAGE_FAQ} />
+          </FadeIn>
+          <FadeIn delay={0.3} className="mt-8 text-center">
+            <Link
+              href="/treatments"
+              className="inline-flex items-center gap-2 text-base font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
+            >
+              진료 안내에서 더 알아보기
+              <ArrowRight size={16} />
+            </Link>
+          </FadeIn>
+        </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getFaqJsonLd(HOMEPAGE_FAQ)),
+          }}
+        />
+      </section>
 
       {/* ───────────── CTA 배너 ───────────── */}
       <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
