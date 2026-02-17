@@ -221,7 +221,7 @@ export const LINKS = {
 export const MAP = {
   lat: 37.6319,
   lng: 126.7150,
-  zoomLevel: 3, // 카카오맵 level (1~14, 숫자가 작을수록 확대)
+  zoomLevel: 4, // 카카오맵 level (1~14, 숫자가 작을수록 확대)
 } as const;
 
 // -------------------------------------------------------------
