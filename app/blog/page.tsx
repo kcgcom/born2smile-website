@@ -29,9 +29,7 @@ export default function BlogPage() {
           건강칼럼
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-gray-600">
-          서울대 출신 전문의가 전하는 올바른 구강관리법과 치과 상식을
-          <br className="hidden sm:block" />
-          쉽고 정확하게 알려드립니다.
+          올바른 구강관리법과 치과 상식을 쉽고 정확하게 알려드립니다.
         </p>
       </section>
 
