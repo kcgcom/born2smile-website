@@ -181,9 +181,9 @@ export default function AboutPage() {
                     height={450}
                     className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                  <div className="absolute inset-x-0 bottom-0 bg-black/55 px-4 py-3 backdrop-blur-[2px]">
                     <p className="text-sm font-medium text-white">{item.name}</p>
-                    <p className="text-xs text-white/80">{item.desc}</p>
+                    <p className="text-xs text-white/90">{item.desc}</p>
                   </div>
                 </div>
               </StaggerItem>
