@@ -166,7 +166,7 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 의료팀 소개 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section id="our-team" className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
