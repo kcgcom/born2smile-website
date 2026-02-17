@@ -36,13 +36,13 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-8 text-center">
+      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
               About Us
             </p>
-            <h1 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
               병원 소개
             </h1>
             <p className="mt-4 text-base text-gray-600 md:text-lg">

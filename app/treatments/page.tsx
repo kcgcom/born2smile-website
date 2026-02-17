@@ -29,15 +29,17 @@ export default function TreatmentsPage() {
       />
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-          Treatments
-        </p>
-        <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-          진료 안내
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-gray-600">
-          자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
-        </p>
+        <FadeIn>
+          <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            Treatments
+          </p>
+          <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            진료 안내
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-gray-600">
+            자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
+          </p>
+        </FadeIn>
       </section>
 
       {/* ───────────── 진료 철학 ───────────── */}

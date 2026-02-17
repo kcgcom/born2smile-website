@@ -118,35 +118,37 @@ export default async function BlogPostPage({
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
           <div className="mx-auto max-w-3xl px-4">
-            <Link
-              href="/blog"
-              className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
-            >
-              <ArrowLeft size={14} />
-              건강칼럼 목록
-            </Link>
-
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+            <FadeIn>
+              <Link
+                href="/blog"
+                className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
               >
-                {post.category}
-              </span>
-              <span className="text-sm text-gray-400">
-                {formatDate(post.date)}
-              </span>
-              <span className="flex items-center gap-1 text-sm text-gray-400">
-                <Clock size={13} />
-                {post.readTime} 읽기
-              </span>
-            </div>
+                <ArrowLeft size={14} />
+                건강칼럼 목록
+              </Link>
 
-            <h1 className="font-headline text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
-              {post.title}
-            </h1>
-            <p className="mt-3 text-lg text-gray-500 md:text-xl">
-              {post.subtitle}
-            </p>
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                >
+                  {post.category}
+                </span>
+                <span className="text-sm text-gray-400">
+                  {formatDate(post.date)}
+                </span>
+                <span className="flex items-center gap-1 text-sm text-gray-400">
+                  <Clock size={13} />
+                  {post.readTime} 읽기
+                </span>
+              </div>
+
+              <h1 className="font-headline text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
+                {post.title}
+              </h1>
+              <p className="mt-3 text-lg text-gray-500 md:text-xl">
+                {post.subtitle}
+              </p>
+            </FadeIn>
           </div>
         </header>
 
@@ -266,28 +268,32 @@ export default async function BlogPostPage({
       {/* CTA */}
       <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <h2 className="font-headline relative mb-4 text-3xl font-bold md:text-4xl">
-          구강 건강이 궁금하신가요?
-        </h2>
-        <p className="relative mb-8 text-blue-100">
-          {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
-        </p>
-        <div className="relative flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-          >
-            상담 문의
-            <ArrowRight size={18} />
-          </Link>
-          <a
-            href={CLINIC.phoneHref}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-          >
-            <Phone size={18} />
-            전화 상담 {CLINIC.phone}
-          </a>
-        </div>
+        <FadeIn>
+          <div className="relative mx-auto max-w-2xl">
+            <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
+              구강 건강이 궁금하신가요?
+            </h2>
+            <p className="mb-8 text-blue-100">
+              {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
+              >
+                상담 문의
+                <ArrowRight size={18} />
+              </Link>
+              <a
+                href={CLINIC.phoneHref}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
+              >
+                <Phone size={18} />
+                전화 상담 {CLINIC.phone}
+              </a>
+            </div>
+          </div>
+        </FadeIn>
       </section>
 
       <div className="h-16 md:hidden" />

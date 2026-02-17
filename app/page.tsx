@@ -349,9 +349,6 @@ export default function Home() {
         </FadeIn>
       </section>
 
-      {/* ───────────── 골드 구분선 ───────────── */}
-      <div className="h-1 bg-gradient-to-r from-[var(--color-gold-light)] via-[var(--color-gold)] to-[var(--color-gold-light)]" />
-
       {/* 모바일 하단 바 공간 확보 */}
       <div className="h-16 md:hidden" />
     </>
