@@ -188,6 +188,7 @@ export default function AboutPage() {
                     alt={`${CLINIC.name} ${item.name} - ${item.desc}`}
                     width={600}
                     height={450}
+                    sizes="(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-black/55 px-4 py-3 backdrop-blur-[2px]">

@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   alternates: { canonical: BASE_URL },
   openGraph: {
     title: SEO.defaultTitle,
-    description: SEO.defaultDescription,
+    description: SEO.ogDescription,
     siteName: CLINIC.name,
     locale: "ko_KR",
     type: "website",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: SEO.defaultTitle,
-    description: SEO.defaultDescription,
+    description: SEO.ogDescription,
     images: ["/images/og-image.jpg"],
   },
 };
