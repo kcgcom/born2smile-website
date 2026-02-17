@@ -189,7 +189,7 @@ export default function Home() {
             ].map((item) => (
               <StaggerItem key={item.num}>
                 <div className="relative flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-7 transition-shadow hover:shadow-md">
-                  <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-[var(--color-gold)]/15">
+                  <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-[var(--color-gold)]/25">
                     {item.num}
                   </span>
                   <h3 className="mb-2 text-lg font-bold text-gray-900">
