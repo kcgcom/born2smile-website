@@ -5,8 +5,9 @@ import {
   ArrowRight,
   Star,
   ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
-import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getFaqJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -216,6 +217,33 @@ export default function Home() {
             ))}
           </StaggerContainer>
         </div>
+      </section>
+
+      {/* ───────────── 면허 치과위생사 신뢰 배너 ───────────── */}
+      <section className="bg-white px-4 py-12 md:py-16">
+        <FadeIn>
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 rounded-2xl border border-[var(--color-gold)]/20 bg-gradient-to-br from-[var(--color-gold)]/5 to-[var(--color-primary)]/5 px-6 py-8 text-center md:flex-row md:gap-6 md:px-10 md:text-left">
+            <ShieldCheck
+              size={36}
+              className="shrink-0 text-[var(--color-gold)]"
+            />
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900">
+                {STAFF.credential} 전원 보유
+              </h3>
+              <p className="mt-1 text-base leading-relaxed text-gray-700">
+                {STAFF.summary}
+              </p>
+            </div>
+            <Link
+              href="/about#our-team"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
+            >
+              자세히 보기
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </FadeIn>
       </section>
 
       {/* ───────────── 환자분들의 이야기 ───────────── */}
