@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 34,
     slug: "clear-aligner-care-guide",
     tags: ["치료후관리"],
     category: "치아교정",

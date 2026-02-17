@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 29,
     slug: "after-crown-prosthetic-care",
     tags: ["치료후관리", "증상가이드"],
     category: "보철치료",

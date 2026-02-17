@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 78,
     slug: "retainer-after-orthodontics",
     tags: ["치료후관리", "팩트체크"],
     category: "치아교정",

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 10,
     slug: "stress-and-teeth-grinding",
     tags: ["생활습관", "증상가이드"],
     category: "구강건강상식",

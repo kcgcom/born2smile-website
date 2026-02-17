@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 60,
     slug: "peri-implantitis-prevention",
     tags: ["증상가이드", "치료후관리"],
     category: "임플란트",

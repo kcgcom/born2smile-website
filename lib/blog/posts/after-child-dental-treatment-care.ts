@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 30,
     slug: "after-child-dental-treatment-care",
     tags: ["치료후관리"],
     category: "소아치료",

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 47,
     slug: "scaling-frequency-guide",
     tags: [],
     category: "예방·구강관리",

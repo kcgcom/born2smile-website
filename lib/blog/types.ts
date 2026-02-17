@@ -9,7 +9,6 @@ export interface BlogPostSection {
 
 /** 목록 페이지용 메타데이터 (본문 미포함) */
 export interface BlogPostMeta {
-  id: number;
   slug: string;
   category: BlogCategoryValue;
   tags: (typeof BLOG_TAGS)[number][];
@@ -26,6 +25,8 @@ export interface BlogPost extends Omit<BlogPostMeta, "readTime"> {
   content: BlogPostSection[];
   /** 수동 입력 시 사용. 생략하면 빌드 시 content 글자 수 기반 자동 계산 (한국어 분당 ~500자) */
   readTime?: string;
+  /** 콘텐츠 검수 완료일 (YYYY-MM-DD). 미입력 시 미검수 상태 */
+  reviewedDate?: string;
 }
 
 export const BLOG_TAGS = [

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 26,
     slug: "after-whitening-care",
     tags: ["치료후관리"],
     category: "구강건강상식",

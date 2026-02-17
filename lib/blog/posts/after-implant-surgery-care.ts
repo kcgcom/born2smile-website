@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 22,
     slug: "after-implant-surgery-care",
     tags: ["치료후관리"],
     category: "임플란트",

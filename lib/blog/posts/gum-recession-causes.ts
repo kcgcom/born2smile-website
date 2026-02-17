@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 57,
     slug: "gum-recession-causes",
     tags: ["증상가이드"],
     category: "구강건강상식",

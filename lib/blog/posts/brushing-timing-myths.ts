@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 63,
     slug: "brushing-timing-myths",
     tags: ["팩트체크", "생활습관"],
     category: "예방·구강관리",

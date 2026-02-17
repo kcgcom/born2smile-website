@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 36,
     slug: "implant-pain-myths",
     tags: ["팩트체크"],
     category: "임플란트",

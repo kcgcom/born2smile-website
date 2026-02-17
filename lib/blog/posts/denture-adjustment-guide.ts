@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 46,
     slug: "denture-adjustment-guide",
     tags: ["시니어"],
     category: "보철치료",

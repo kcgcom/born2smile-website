@@ -45,8 +45,8 @@ async function main() {
     metas.push(meta);
   }
 
-  // id 기준 정렬
-  metas.sort((a, b) => (a.id as number) - (b.id as number));
+  // 발행일 기준 최신순 정렬
+  metas.sort((a, b) => (b.date as string).localeCompare(a.date as string));
 
   const json = JSON.stringify(metas, null, 2);
 

@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 75,
     slug: "old-amalgam-replacement",
     tags: ["팩트체크"],
     category: "보존치료",

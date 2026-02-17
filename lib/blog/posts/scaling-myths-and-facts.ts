@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 8,
     slug: "scaling-myths-and-facts",
     tags: ["팩트체크"],
     category: "예방·구강관리",

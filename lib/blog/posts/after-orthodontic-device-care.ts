@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 27,
     slug: "after-orthodontic-device-care",
     tags: ["치료후관리"],
     category: "치아교정",

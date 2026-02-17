@@ -92,7 +92,7 @@ export default async function BlogPostPage({
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 미발행 제외, 최대 3개)
   const relatedPosts = BLOG_POSTS_META.filter(
-    (p) => p.category === post.category && p.id !== post.id && p.date <= today
+    (p) => p.category === post.category && p.slug !== post.slug && p.date <= today
   ).slice(0, 3);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
@@ -232,7 +232,7 @@ export default async function BlogPostPage({
             </FadeIn>
             <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {relatedPosts.map((rp) => (
-                <StaggerItem key={rp.id}>
+                <StaggerItem key={rp.slug}>
                   <Link href={`/blog/${rp.slug}`} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                       <span

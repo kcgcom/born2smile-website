@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 77,
     slug: "orthodontic-diet-guide",
     tags: ["생활습관", "치료후관리"],
     category: "치아교정",

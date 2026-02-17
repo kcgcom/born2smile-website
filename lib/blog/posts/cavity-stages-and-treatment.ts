@@ -1,7 +1,6 @@
 import type { BlogPost } from "../types";
 
 export const post: BlogPost = {
-    id: 12,
     slug: "cavity-stages-and-treatment",
     tags: [],
     category: "보존치료",
