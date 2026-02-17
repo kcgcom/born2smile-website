@@ -8,6 +8,10 @@ import {
   Clock,
   MapPin,
   Phone,
+  Wind,
+  Syringe,
+  ScanLine,
+  Check,
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd } from "@/lib/jsonld";
@@ -202,8 +206,96 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
+      {/* ───────────── 주요 장비 소개 ───────────── */}
       <section className="section-padding bg-white">
+        <div className="container-narrow">
+          <FadeIn className="mb-12 text-center">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Equipment
+            </p>
+            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              주요 장비 소개
+            </h2>
+            <p className="mt-4 text-gray-600">
+              정확한 진단과 편안한 치료를 위해 최신 장비를 갖추고 있습니다
+            </p>
+          </FadeIn>
+
+          <StaggerContainer className="grid gap-8 md:grid-cols-3">
+            {[
+              {
+                icon: Wind,
+                name: "에어플로우",
+                nameEn: "Airflow",
+                tagline: "아프지 않은 스케일링의 비밀",
+                desc: "미세한 파우더와 물, 공기를 분사하여 치아 표면의 바이오필름과 착색을 부드럽게 제거합니다. 기존 초음파 스케일링과 달리 금속 기구가 치아에 직접 닿지 않아 시린 느낌과 통증이 거의 없습니다.",
+                features: [
+                  "치아와 잇몸에 자극이 적어 통증 최소화",
+                  "초음파 기구가 닿지 못하는 미세한 틈까지 세정",
+                  "치아 표면 손상 없이 착색과 바이오필름 제거",
+                  "임플란트·교정장치 주변도 안전하게 관리",
+                ],
+              },
+              {
+                icon: Syringe,
+                name: "무통마취기",
+                nameEn: "Computer-Controlled Anesthesia",
+                tagline: "마취 주사도 아프지 않게",
+                desc: "컴퓨터가 마취액의 주입 속도와 압력을 정밀하게 조절합니다. 일반 주사기 마취에 비해 통증이 크게 줄어, 치과가 무서우신 분이나 어린이도 편안하게 치료받으실 수 있습니다.",
+                features: [
+                  "컴퓨터 제어로 최적의 주입 속도와 압력 유지",
+                  "일반 주사기 대비 통증 대폭 감소",
+                  "소아 환자·치과 공포증 환자도 편안하게",
+                  "필요한 부위만 정밀하게 마취 가능",
+                ],
+              },
+              {
+                icon: ScanLine,
+                name: "3D 디지털 CT",
+                nameEn: "Cone Beam CT",
+                tagline: "보이지 않는 곳까지 정밀 진단",
+                desc: "3차원 입체 영상으로 치아, 잇몸뼈, 신경관의 위치를 정밀하게 파악합니다. 일반 X-ray로는 확인할 수 없는 구조를 입체적으로 분석하여 정확한 치료 계획을 수립합니다.",
+                features: [
+                  "일반 의료용 CT 대비 방사선량 최소화",
+                  "임플란트 식립 위치·각도 사전 시뮬레이션",
+                  "매복 사랑니, 숨은 병변 등 정밀 진단",
+                  "촬영 시간 약 15초, 빠르고 간편",
+                ],
+              },
+            ].map((item) => (
+              <StaggerItem key={item.name}>
+                <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-7">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
+                    <item.icon size={24} className="text-[var(--color-primary)]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
+                  <p className="mb-3 text-sm text-[var(--color-muted)]">{item.nameEn}</p>
+                  <p className="mb-1 text-sm font-medium text-[var(--color-gold)]">
+                    {item.tagline}
+                  </p>
+                  <p className="mb-6 text-base leading-relaxed text-gray-700">
+                    {item.desc}
+                  </p>
+                  <ul className="mt-auto space-y-2.5">
+                    {item.features.map((f) => (
+                      <li key={f} className="flex gap-2 text-sm text-gray-600">
+                        <Check
+                          size={16}
+                          className="mt-0.5 shrink-0 text-[var(--color-primary)]"
+                        />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
+      <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-2">
             {/* 진료시간 */}
