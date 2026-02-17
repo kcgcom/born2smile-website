@@ -107,7 +107,7 @@ export default function Home() {
 
               <div className="px-6 py-10 sm:px-10 md:px-14 md:py-14">
                 {/* 본문 */}
-                <div className="font-greeting font-bold space-y-5 text-base leading-[1.9] text-gray-700 md:text-lg md:leading-[2]">
+                <div className="font-greeting font-bold space-y-5 text-lg leading-[1.9] text-gray-700 md:text-xl md:leading-[2]">
                   <p>안녕하세요, {CLINIC.name}입니다.</p>
                   <p>
                     치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도
