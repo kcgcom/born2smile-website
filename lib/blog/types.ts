@@ -22,8 +22,10 @@ export interface BlogPostMeta {
 }
 
 /** 상세 페이지용 전체 데이터 (본문 포함) */
-export interface BlogPost extends BlogPostMeta {
+export interface BlogPost extends Omit<BlogPostMeta, "readTime"> {
   content: BlogPostSection[];
+  /** 수동 입력 시 사용. 생략하면 빌드 시 content 글자 수 기반 자동 계산 (한국어 분당 ~500자) */
+  readTime?: string;
 }
 
 export const BLOG_TAGS = [

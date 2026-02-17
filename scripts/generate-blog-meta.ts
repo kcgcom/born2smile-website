@@ -28,8 +28,20 @@ async function main() {
       console.warn(`⚠ ${file}: export const post not found, skipping`);
       continue;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { content, ...meta } = mod.post;
+
+    // readTime 자동 계산: content 전체 글자 수 기반 (한국어 분당 ~500자)
+    const CHARS_PER_MINUTE = 500;
+    const totalChars = Array.isArray(content)
+      ? content.reduce(
+          (sum: number, section: { heading?: string; content?: string }) =>
+            sum + (section.heading?.length ?? 0) + (section.content?.length ?? 0),
+          0,
+        )
+      : 0;
+    const calculatedMinutes = Math.max(1, Math.ceil(totalChars / CHARS_PER_MINUTE));
+    meta.readTime = `${calculatedMinutes}분`;
+
     metas.push(meta);
   }
 

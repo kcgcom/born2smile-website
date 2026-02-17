@@ -47,9 +47,9 @@
 - `post.content`의 heading 배열 활용
 - 데스크톱: sticky 사이드바, 모바일: 상단 드롭다운
 
-### 10. 읽기 시간 자동 계산
+### 10. 읽기 시간 자동 계산 ✅ 구현됨
 - `generate-blog-meta.ts`에서 content 글자 수 기반 자동 계산 (한국어 기준 분당 ~500자)
-- 수동 `readTime` 입력 불필요
+- 수동 `readTime` 입력 불필요 — `BlogPost.readTime`은 optional, 빌드 시 자동 덮어씌움
 
 ### 11. 관련 포스트 알고리즘 개선
 - 현재: 같은 카테고리만 추천
