@@ -67,7 +67,7 @@ components/
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   layout/                     # Header, Footer, FloatingCTA
-  ui/                         # Motion (animations), KakaoMap, ClinicIllustration
+  ui/                         # Motion (animations), KakaoMap
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
@@ -107,7 +107,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, Footer, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers. Footer는 서버 컴포넌트.
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
@@ -163,6 +163,7 @@ content: [
 |------|-------------|-------|
 | Pretendard Variable | `--font-pretendard` | 본문 기본 (`font-sans`) |
 | Noto Serif KR (400, 700) | `--font-noto-serif` | 헤드라인 (`font-serif`, `.font-headline`) |
+| Gowun Batang (400, 700) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) |
 
 `lib/fonts.ts`에서 설정 → `app/layout.tsx`의 `<html>` 태그에 variable 적용 → `globals.css`의 `@theme inline`에서 Tailwind와 연결.
 
@@ -193,11 +194,13 @@ content: [
 - `.section-padding` — 섹션 공통 패딩 (`px-4 py-16` ~ `lg:px-8 lg:py-32`)
 - `.container-narrow` — 최대 너비 컨테이너 (`max-w-6xl mx-auto`)
 - `.font-headline` — 세리프 헤드라인 폰트 (Noto Serif KR)
+- `.font-greeting` — 인사말 편지 폰트 (Gowun Batang)
+- `.greeting-letter` — 편지 스타일 카드 (그라데이션 배경, 라운드 코너)
 
 ### Key Components
 
 **FloatingCTA** (`components/layout/FloatingCTA.tsx`):
-- 모바일: 하단 고정 네비게이션 바 (병원소개, 진료안내, 블로그, 상담안내 4개 버튼). 상담안내는 골드 색상, 나머지는 블루.
+- 모바일: 하단 고정 네비게이션 바 (홈, 병원소개, 진료안내, 건강칼럼, 상담안내 5개 버튼, `grid-cols-5`). 상담안내는 골드 색상, 나머지는 블루.
 - 데스크톱: 우하단 플로팅 전화 버튼 (`tel:` 링크)
 
 **KakaoMap** (`components/ui/KakaoMap.tsx`):
@@ -258,6 +261,9 @@ content: [
 - `TREATMENTS` — 진료 과목 목록 (id, name, shortDesc, icon, href)
 - `SEO` — 메타데이터, 키워드 (23개 로컬 SEO 키워드)
 - `LINKS` — SNS/외부 링크 (카카오, 인스타, 네이버, 지도)
+- `GOOGLE_REVIEW` — Google Place ID 및 리뷰 작성 URL (getter)
+- `NAVER_REVIEW` — 네이버 플레이스 ID 및 리뷰 작성 URL (getter)
+- `REVIEWS` — 환자 후기 배열 (`Review[]`: name, rating, text, source, date)
 - `MAP` — 네이버 지도 좌표 및 줌 레벨
 - `BASE_URL` — 사이트 기본 URL
 
