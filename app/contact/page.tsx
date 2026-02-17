@@ -9,17 +9,19 @@ export default function ContactPage() {
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <FadeIn>
-          <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-            Contact
-          </p>
-          <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-            상담 안내
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-gray-600">
-            전화로 편리하게 상담받으세요. 친절하게 안내해 드리겠습니다.
-          </p>
-        </FadeIn>
+        <div className="mx-auto max-w-2xl px-4">
+          <FadeIn>
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              Contact
+            </p>
+            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+              상담 안내
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-gray-600">
+              전화로 편리하게 상담받으세요. 친절하게 안내해 드리겠습니다.
+            </p>
+          </FadeIn>
+        </div>
       </section>
 
       <section className="section-padding bg-white">

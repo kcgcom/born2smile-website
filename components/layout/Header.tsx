@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { CLINIC } from "@/lib/constants";
 
 const NAV_ITEMS = [
@@ -34,6 +35,18 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // 모바일 메뉴 열림 시 배경 스크롤 방지
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
 
   const handleNavClick = useCallback(
     (href: string) => {
@@ -136,49 +149,55 @@ export function Header() {
         </div>
 
         {/* 모바일 메뉴 */}
-        {isMobileMenuOpen && (
-          <div
-            id="mobile-menu"
-            className="border-t border-gray-100 bg-white md:hidden"
-            role="navigation"
-            aria-label="모바일 메뉴"
-          >
-            <nav className="flex flex-col px-4 py-4">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
-                      isActive
-                        ? "text-[var(--color-primary)]"
-                        : "text-gray-700"
-                    }`}
-                    aria-current={isActive ? "page" : undefined}
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleNavClick(item.href);
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-              <a
-                href={CLINIC.phoneHref}
-                className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
-                aria-label={`전화 상담 ${CLINIC.phone}`}
-              >
-                <Phone size={18} aria-hidden="true" />
-                전화 상담 {CLINIC.phone}
-              </a>
-            </nav>
-          </div>
-        )}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              id="mobile-menu"
+              className="overflow-hidden border-t border-gray-100 bg-white md:hidden"
+              role="navigation"
+              aria-label="모바일 메뉴"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              <nav className="flex flex-col px-4 py-4">
+                {NAV_ITEMS.map((item) => {
+                  const isActive =
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
+                        isActive
+                          ? "text-[var(--color-primary)]"
+                          : "text-gray-700"
+                      }`}
+                      aria-current={isActive ? "page" : undefined}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleNavClick(item.href);
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+                <a
+                  href={CLINIC.phoneHref}
+                  className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+                  aria-label={`전화 상담 ${CLINIC.phone}`}
+                >
+                  <Phone size={18} aria-hidden="true" />
+                  전화 상담 {CLINIC.phone}
+                </a>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
     </>
   );

@@ -127,19 +127,21 @@ export default async function TreatmentDetailPage({
 
       {/* 헤더 */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <FadeIn>
-          <Link
-            href="/treatments"
-            className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
-          >
-            <ArrowLeft size={14} />
-            진료 안내
-          </Link>
-          <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-            {detail.name}
-          </h1>
-          <p className="mt-3 text-lg text-gray-600">{detail.subtitle}</p>
-        </FadeIn>
+        <div className="mx-auto max-w-3xl px-4">
+          <FadeIn>
+            <Link
+              href="/treatments"
+              className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
+            >
+              <ArrowLeft size={14} />
+              진료 안내
+            </Link>
+            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+              {detail.name}
+            </h1>
+            <p className="mt-3 text-lg text-gray-600">{detail.subtitle}</p>
+          </FadeIn>
+        </div>
       </section>
 
       {/* 설명 */}

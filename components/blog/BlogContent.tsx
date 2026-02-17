@@ -305,7 +305,7 @@ export default function BlogContent() {
                         {post.readTime} 읽기
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] opacity-60 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                       자세히 읽기
                       <ArrowRight size={14} />
                     </span>

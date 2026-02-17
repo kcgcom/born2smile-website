@@ -4,7 +4,7 @@ import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constan
 export function Footer() {
   return (
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-28 md:px-6 md:pb-12">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>

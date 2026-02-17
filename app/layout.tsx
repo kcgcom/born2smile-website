@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd } from "@/lib/jsonld";
@@ -6,6 +6,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
