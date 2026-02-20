@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com",
+  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
   "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://apis.google.com https://dapi.kakao.com",
