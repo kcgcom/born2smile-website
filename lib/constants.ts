@@ -238,8 +238,8 @@ export const LINKS = {
   kakaoChannel: "", // 카카오톡 채널 URL → Contact 페이지 카카오 상담 버튼 + Footer 아이콘
   instagram: "", // 인스타그램 URL → Footer 아이콘
   naverBlog: "", // 네이버 블로그 URL → Footer 아이콘
-  naverMap: "", // 네이버 지도 링크 → Footer 아이콘
-  kakaoMap: "", // 카카오맵 링크
+  naverMap: "https://naver.me/IMy2FmsZ", // 네이버 지도 링크 → Footer 아이콘
+  kakaoMap: "https://kko.to/nVk0hY6cH8", // 카카오맵 링크
 } as const;
 
 // -------------------------------------------------------------

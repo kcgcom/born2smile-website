@@ -196,7 +196,7 @@ export function getSiteConfigStatus(): SiteConfigStatus {
 
   const firebase: ConfigItem[] = [
     { label: "Firebase API Key", configured: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY },
-    { label: "Firebase Project ID", configured: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID },
+    { label: "Firebase Project ID", configured: true, value: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "seoul-born2smile (기본값)" },
   ];
 
   const env: ConfigItem[] = [
