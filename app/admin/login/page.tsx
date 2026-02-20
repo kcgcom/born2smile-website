@@ -36,11 +36,11 @@ export default function AdminLoginPage() {
         router.replace("/admin");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : "";
       if (msg.includes("popup-closed") || msg.includes("cancelled-popup-request")) {
         setError(null);
       } else {
-        setError(`로그인 실패: ${msg}`);
+        setError("로그인에 실패했습니다. 다시 시도해 주세요.");
       }
     } finally {
       setLoading(false);
