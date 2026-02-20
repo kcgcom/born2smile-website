@@ -274,7 +274,7 @@ export default async function TreatmentDetailPage({
                         <p className="mb-3 text-sm text-gray-500">
                           {rp.subtitle}
                         </p>
-                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-400">
+                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
                           <span>{formatDate(rp.date)}</span>
                           <span className="flex items-center gap-1">
                             <Clock size={14} />
@@ -309,7 +309,7 @@ export default async function TreatmentDetailPage({
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
               {detail.name} 상담이 필요하신가요?
             </h2>
-            <p className="mb-8 text-blue-100">
+            <p className="mb-8 text-blue-50">
               {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

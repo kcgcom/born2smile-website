@@ -133,10 +133,10 @@ export default async function BlogPostPage({
                 >
                   {post.category}
                 </span>
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-gray-500">
                   {formatDate(post.date)}
                 </span>
-                <span className="flex items-center gap-1 text-sm text-gray-400">
+                <span className="flex items-center gap-1 text-sm text-gray-500">
                   <Clock size={13} />
                   {post.readTime} 읽기
                 </span>
@@ -249,7 +249,7 @@ export default async function BlogPostPage({
                       <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-2">
                         {rp.excerpt}
                       </p>
-                      <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-400">
+                      <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
                         <span>{formatDate(rp.date)}</span>
                         <span className="flex items-center gap-1">
                           <Clock size={14} />
@@ -273,7 +273,7 @@ export default async function BlogPostPage({
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
               구강 건강이 궁금하신가요?
             </h2>
-            <p className="mb-8 text-blue-100">
+            <p className="mb-8 text-blue-50">
               {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

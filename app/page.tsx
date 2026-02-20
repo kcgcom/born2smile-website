@@ -267,12 +267,13 @@ export default function Home() {
                 <StaggerItem key={index}>
                   <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md">
                     {/* 별점 */}
-                    <div className="mb-3 flex items-center gap-1">
+                    <div className="mb-3 flex items-center gap-1" role="img" aria-label={`${review.rating}점 만점에 5점`}>
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
                           size={16}
                           className={i < review.rating ? "fill-[var(--color-gold)] text-[var(--color-gold)]" : "text-gray-300"}
+                          aria-hidden="true"
                         />
                       ))}
                     </div>
@@ -402,7 +403,7 @@ export default function Home() {
             <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
               지금 바로 상담하세요
             </h2>
-            <p className="mb-8 text-lg text-blue-100">
+            <p className="mb-8 text-lg text-blue-50">
               건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

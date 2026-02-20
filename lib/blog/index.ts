@@ -43,6 +43,7 @@ export function getRelatedBlogPosts(treatmentId: string, limit = 4): BlogPostMet
   const today = new Date().toISOString().slice(0, 10);
   return BLOG_POSTS_META
     .filter((p) => p.category === category && p.date <= today)
+    .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, limit);
 }
 

@@ -1,4 +1,4 @@
-import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS } from "./constants";
+import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS, REVIEWS } from "./constants";
 import type { BlogPost } from "./blog/types";
 
 /**
@@ -78,7 +78,28 @@ export function getClinicJsonLd() {
     },
     sameAs: Object.values(LINKS).filter((url) => url !== ""),
     priceRange: "₩₩",
-    image: `${BASE_URL}/opengraph-image`,
+    image: `${BASE_URL}/images/og-image.jpg`,
+    ...(REVIEWS.length > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: String(
+          (REVIEWS.reduce((sum, r) => sum + r.rating, 0) / REVIEWS.length).toFixed(1)
+        ),
+        reviewCount: String(REVIEWS.length),
+        bestRating: "5",
+        worstRating: "1",
+      },
+      review: REVIEWS.map((r) => ({
+        "@type": "Review",
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: String(r.rating),
+        },
+        author: { "@type": "Person", name: r.name },
+        datePublished: r.date.length === 7 ? `${r.date}-01` : r.date,
+        reviewBody: r.text,
+      })),
+    }),
   };
 }
 
@@ -136,7 +157,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: `${post.title} — ${post.subtitle}`,
+    headline: `${post.title} — ${post.subtitle}`.slice(0, 110),
     description: post.excerpt,
     datePublished: post.date,
     dateModified: post.dateModified ?? post.date,
@@ -152,12 +173,12 @@ export function getBlogPostJsonLd(post: BlogPost) {
       url: BASE_URL,
       logo: {
         "@type": "ImageObject",
-        url: `${BASE_URL}/opengraph-image`,
+        url: `${BASE_URL}/images/og-image.jpg`,
       },
     },
     image: {
       "@type": "ImageObject",
-      url: `${BASE_URL}/opengraph-image`,
+      url: `${BASE_URL}/images/og-image.jpg`,
       width: 1200,
       height: 630,
     },

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { CLINIC } from "@/lib/constants";
 
 const NAV_ITEMS = [
@@ -20,19 +19,29 @@ export function Header() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // 페이지 전환 시 모바일 메뉴 닫기 (React "adjust state during rendering" 패턴)
+  const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
-    setIsMobileMenuOpen(false);
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
   }
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-      setIsMobileMenuOpen(false);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 50);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -149,55 +158,51 @@ export function Header() {
         </div>
 
         {/* 모바일 메뉴 */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              id="mobile-menu"
-              className="overflow-hidden border-t border-gray-100 bg-white md:hidden"
-              role="navigation"
-              aria-label="모바일 메뉴"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-            >
-              <nav className="flex flex-col px-4 py-4">
-                {NAV_ITEMS.map((item) => {
-                  const isActive =
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
-                        isActive
-                          ? "text-[var(--color-primary)]"
-                          : "text-gray-700"
-                      }`}
-                      aria-current={isActive ? "page" : undefined}
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleNavClick(item.href);
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-                <a
-                  href={CLINIC.phoneHref}
-                  className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
-                  aria-label={`전화 상담 ${CLINIC.phone}`}
-                >
-                  <Phone size={18} aria-hidden="true" />
-                  전화 상담 {CLINIC.phone}
-                </a>
-              </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div
+          id="mobile-menu"
+          ref={menuRef}
+          className="grid border-t border-gray-100 bg-white transition-[grid-template-rows] duration-[250ms] ease-in-out md:hidden"
+          style={{ gridTemplateRows: isMobileMenuOpen ? "1fr" : "0fr" }}
+          role="navigation"
+          aria-label="모바일 메뉴"
+        >
+          <div className="overflow-hidden">
+            <nav className="flex flex-col px-4 py-4">
+              {NAV_ITEMS.map((item) => {
+                const isActive =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
+                      isActive
+                        ? "text-[var(--color-primary)]"
+                        : "text-gray-700"
+                    }`}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleNavClick(item.href);
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+              <a
+                href={CLINIC.phoneHref}
+                className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+                aria-label={`전화 상담 ${CLINIC.phone}`}
+              >
+                <Phone size={18} aria-hidden="true" />
+                전화 상담 {CLINIC.phone}
+              </a>
+            </nav>
+          </div>
+        </div>
       </header>
     </>
   );
