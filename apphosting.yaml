@@ -32,7 +32,4 @@ env:
     value: sc-domain:born2smile.co.kr
     availability:
       - RUNTIME
-  - variable: GOOGLE_SERVICE_ACCOUNT_KEY
-    secret: googleServiceAccountKey
-    availability:
-      - RUNTIME
+  # GOOGLE_SERVICE_ACCOUNT_KEY는 Cloud Run ADC로 자동 인증 (시크릿 불필요)
