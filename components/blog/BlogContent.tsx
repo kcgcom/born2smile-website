@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag, Search, X } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   BLOG_POSTS_META,
   BLOG_CATEGORIES,
@@ -14,6 +13,7 @@ import type { BlogCategory, BlogTag } from "@/lib/blog";
 import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { shareUrl } from "@/lib/share";
+import { getTodayKST } from "@/lib/date";
 
 const POSTS_PER_PAGE = 12;
 
@@ -21,6 +21,7 @@ export default function BlogContent() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -34,31 +35,42 @@ export default function BlogContent() {
     };
   }, []);
 
+  // 검색어 debounce (250ms)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
+
   // 발행일이 오늘 이하인 포스트만 표시 (예약 발행)
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => getTodayKST(), []);
   const publishedPosts = useMemo(
     () => BLOG_POSTS_META.filter((p) => p.date <= today),
     [today]
   );
 
-  // SSR 초기값은 최신순 정렬 (크롤러에게 일관된 순서 제공)
-  // 클라이언트 hydration 후 랜덤 셔플로 다양한 글 노출
-  const sortedByDate = [...publishedPosts].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  const [shuffledPosts, setShuffledPosts] = useState(sortedByDate);
-  useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      const posts = [...publishedPosts];
-      for (let i = posts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [posts[i], posts[j]] = [posts[j], posts[i]];
-      }
-      setShuffledPosts(posts);
-    });
-    return () => cancelAnimationFrame(frameId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today]);
+  // 일별 고정 시드 셔플 — SSR/CSR 동일 순서로 hydration 깜빡임 방지
+  // 같은 날에는 동일 순서, 날짜가 바뀌면 새로운 셔플
+  const shuffledPosts = useMemo(() => {
+    const posts = [...publishedPosts];
+    // 날짜 기반 시드 생성 (간단한 해시)
+    let seed = 0;
+    for (let i = 0; i < today.length; i++) {
+      seed = ((seed << 5) - seed + today.charCodeAt(i)) | 0;
+    }
+    // seeded Fisher-Yates shuffle
+    const nextRand = () => {
+      seed = (seed * 1664525 + 1013904223) | 0;
+      return (seed >>> 0) / 4294967296;
+    };
+    for (let i = posts.length - 1; i > 0; i--) {
+      const j = Math.floor(nextRand() * (i + 1));
+      [posts[i], posts[j]] = [posts[j], posts[i]];
+    }
+    return posts;
+  }, [publishedPosts, today]);
 
   // 스크롤 시 자동으로 다음 페이지 로드
   useEffect(() => {
@@ -81,14 +93,14 @@ export default function BlogContent() {
       activeCategory === "전체" || post.category === activeCategory;
     const tagMatch = !activeTag || post.tags.includes(activeTag);
     if (!categoryMatch || !tagMatch) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.trim().toLowerCase();
+    if (!debouncedQuery.trim()) return true;
+    const q = debouncedQuery.trim().toLowerCase();
     return (
       post.title.toLowerCase().includes(q) ||
       post.subtitle.toLowerCase().includes(q) ||
       post.excerpt.toLowerCase().includes(q)
     );
-  }), [shuffledPosts, activeCategory, activeTag, searchQuery]);
+  }), [shuffledPosts, activeCategory, activeTag, debouncedQuery]);
 
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
@@ -137,16 +149,6 @@ export default function BlogContent() {
     },
     []
   );
-
-  const shouldReduce = useReducedMotion();
-  const cardAnimation = shouldReduce
-    ? {}
-    : {
-        initial: { opacity: 0, y: 16 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true as const },
-        transition: { duration: 0.3, ease: "easeOut" as const },
-      };
 
   return (
     <section className="section-padding bg-white">
@@ -226,7 +228,7 @@ export default function BlogContent() {
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visiblePosts.map((post) => (
-              <motion.div key={post.slug} {...cardAnimation}>
+              <div key={post.slug}>
                 <article className="group relative flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 공유 */}
                   <div className="mb-4 flex items-center justify-between">
@@ -298,7 +300,7 @@ export default function BlogContent() {
                         {post.readTime} 읽기
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
+                    <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
                       <ArrowRight size={14} />
                     </span>
@@ -312,7 +314,7 @@ export default function BlogContent() {
                     tabIndex={-1}
                   />
                 </article>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

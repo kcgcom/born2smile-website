@@ -6,6 +6,7 @@ import { getBlogStats } from "@/lib/admin-data";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
+import { getTodayKST } from "@/lib/date";
 import { useAdminApi } from "./useAdminApi";
 import { DataTable } from "./DataTable";
 
@@ -26,7 +27,7 @@ type StatusFilter = "all" | "published" | "scheduled";
 // -------------------------------------------------------------
 
 export function BlogTab() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   const blogStats = getBlogStats();
 
   const { data: likesData, loading: likesLoading, error: likesError } =

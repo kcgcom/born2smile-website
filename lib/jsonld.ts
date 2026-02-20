@@ -28,6 +28,7 @@ export function getClinicJsonLd() {
       { "@type": "City", name: "김포시" },
       { "@type": "AdministrativeArea", name: "한강신도시" },
       { "@type": "AdministrativeArea", name: "장기동" },
+      { "@type": "PostalAddress", postalCode: "10089", addressCountry: "KR" },
     ],
     geo: {
       "@type": "GeoCoordinates",

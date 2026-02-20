@@ -24,3 +24,15 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: GA4_PROPERTY_ID
+    value: "525397980"
+    availability:
+      - RUNTIME
+  - variable: SEARCH_CONSOLE_SITE_URL
+    value: sc-domain:born2smile.co.kr
+    availability:
+      - RUNTIME
+  - variable: GOOGLE_SERVICE_ACCOUNT_KEY
+    secret: googleServiceAccountKey
+    availability:
+      - RUNTIME

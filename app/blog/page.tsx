@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import { BLOG_POSTS_META } from "@/lib/blog";
+import { getTodayKST } from "@/lib/date";
 import { getBlogCollectionJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   const publishedPosts = BLOG_POSTS_META
     .filter((p) => p.date <= today)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

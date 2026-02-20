@@ -10,9 +10,17 @@ export function getAdminApp(): App {
   }
 
   // ADC preferred (Cloud Run auto-credentials), JSON key fallback (local dev)
-  const credential = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
-    ? cert(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY))
-    : applicationDefault();
+  let credential;
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+    try {
+      credential = cert(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY));
+    } catch {
+      console.error("GOOGLE_SERVICE_ACCOUNT_KEY 환경변수의 JSON 형식이 올바르지 않습니다. ADC로 폴백합니다.");
+      credential = applicationDefault();
+    }
+  } else {
+    credential = applicationDefault();
+  }
 
   adminApp = initializeApp({ credential });
   return adminApp;

@@ -14,6 +14,7 @@ export { BLOG_CATEGORIES, BLOG_TAGS } from "./types";
 export { categoryColors } from "./category-colors";
 
 import type { BlogPost, BlogPostMeta, BlogCategoryValue } from "./types";
+import { getTodayKST } from "../date";
 
 // 빌드 시 자동 생성된 메타데이터 (pnpm generate-blog-meta)
 export { BLOG_POSTS_META } from "./generated/posts-meta";
@@ -40,7 +41,7 @@ const CATEGORY_TREATMENT_MAP: Partial<Record<BlogCategoryValue, string>> = Objec
 export function getRelatedBlogPosts(treatmentId: string, limit = 4): BlogPostMeta[] {
   const category = TREATMENT_CATEGORY_MAP[treatmentId];
   if (!category) return [];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   return BLOG_POSTS_META
     .filter((p) => p.category === category && p.date <= today)
     .sort((a, b) => b.date.localeCompare(a.date))

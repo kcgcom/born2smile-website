@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Phone,
   ArrowRight,
   Star,
   ExternalLink,
@@ -12,6 +11,7 @@ import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getFaqJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { CTABanner } from "@/components/ui/CTABanner";
 
 // 홈페이지에 노출할 자주 묻는 질문 (각 진료 분야에서 선별)
 const HOMEPAGE_FAQ = [
@@ -58,26 +58,20 @@ export default function Home() {
       <section id="hero">
         <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-blue-50 to-white">
           <div className="mx-auto max-w-4xl px-4 text-center">
-            <FadeIn delay={0.2}>
-              <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
-                우리가족 평생주치의
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.4}>
-              <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-                꼭! 필요한 치료만
-                <br />
-                오래오래 편안하게
-              </h1>
-            </FadeIn>
-            <FadeIn delay={0.6}>
-              <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
-                서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
-                <br />
-                자연치아를 지키는 치료, 서울본치과에서 시작하세요.
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.8}>
+            <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
+              우리가족 평생주치의
+            </p>
+            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+              꼭! 필요한 치료만
+              <br />
+              오래오래 편안하게
+            </h1>
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
+              서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
+              <br />
+              자연치아를 지키는 치료, 서울본치과에서 시작하세요.
+            </p>
+            <FadeIn delay={0.3}>
               <Link
                 href="/contact"
                 className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
@@ -335,6 +329,7 @@ export default function Home() {
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff" opacity="0.9" />
                       </svg>
                       Google 리뷰 남기기
+                      <span className="sr-only"> (새 창)</span>
                       <ExternalLink size={14} />
                     </a>
                   )}
@@ -349,6 +344,7 @@ export default function Home() {
                         <path d="M13.27 10.6L6.49 1H1v18h5.73V9.4L13.51 19H19V1h-5.73z" />
                       </svg>
                       Naver 리뷰 남기기
+                      <span className="sr-only"> (새 창)</span>
                       <ExternalLink size={14} />
                     </a>
                   )}
@@ -396,35 +392,10 @@ export default function Home() {
       </section>
 
       {/* ───────────── CTA 배너 ───────────── */}
-      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <FadeIn>
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              지금 바로 상담하세요
-            </h2>
-            <p className="mb-8 text-lg text-blue-50">
-              건강한 미소를 위한 첫걸음, {CLINIC.name}가 함께합니다.
-            </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
-              >
-                상담 문의
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
-              >
-                <Phone size={18} />
-                {CLINIC.phone}
-              </a>
-            </div>
-          </div>
-        </FadeIn>
-      </section>
+      <CTABanner
+        heading="지금 바로 상담하세요"
+        description={`건강한 미소를 위한 첫걸음, ${CLINIC.name}가 함께합니다.`}
+      />
 
       {/* 모바일 하단 바 공간 확보 */}
       <div className="h-16 md:hidden" />

@@ -1,3 +1,5 @@
+import { calcChange } from "./admin-utils";
+
 // Period helper with 3-day offset for SC data delay
 function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;
@@ -26,11 +28,6 @@ function getPeriodDates(period: string) {
   };
 }
 
-function calcChange(current: number, previous: number): number | null {
-  if (previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 1000) / 10;
-}
-
 export async function fetchSearchConsoleData(period: string) {
   const siteUrl = process.env.SEARCH_CONSOLE_SITE_URL;
   if (!siteUrl) throw new Error("SEARCH_CONSOLE_SITE_URL 환경변수가 설정되지 않았습니다");
@@ -41,13 +38,18 @@ export async function fetchSearchConsoleData(period: string) {
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   let auth;
   if (keyJson) {
-    const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
-    auth = new google.auth.JWT({
-      email: key.client_email,
-      key: key.private_key,
-      scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
-    });
-  } else {
+    try {
+      const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
+      auth = new google.auth.JWT({
+        email: key.client_email,
+        key: key.private_key,
+        scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
+      });
+    } catch {
+      console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
+    }
+  }
+  if (!auth) {
     auth = new google.auth.GoogleAuth({
       scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
     });

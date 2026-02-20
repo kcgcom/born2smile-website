@@ -57,7 +57,7 @@ export default function ContactPage() {
                   href={LINKS.kakaoChannel}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="카카오톡 채널로 상담하기"
+                  aria-label="카카오톡 채널로 상담하기 (새 창)"
                   className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#FEE500] p-6 text-gray-900 transition-colors hover:bg-[#FDD835]"
                 >
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/60">

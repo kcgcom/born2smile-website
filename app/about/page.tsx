@@ -353,6 +353,13 @@ export default function AboutPage() {
               </h2>
               <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                 <table className="w-full text-base">
+                  <caption className="sr-only">요일별 진료시간표</caption>
+                  <thead className="sr-only">
+                    <tr>
+                      <th scope="col">요일</th>
+                      <th scope="col">진료시간</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {HOURS.schedule.map((item) => (
                       <tr

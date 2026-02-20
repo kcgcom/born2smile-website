@@ -8,10 +8,10 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>
-            <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
+            <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
               <MapPin size={18} />
               오시는 길
-            </h3>
+            </h2>
             <ul className="space-y-2 text-lg md:text-base">
               <li>
                 {LINKS.naverMap ? (
@@ -50,10 +50,10 @@ export function Footer() {
 
           {/* 진료시간 */}
           <div>
-            <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
+            <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
               <Clock size={18} className="text-[var(--color-gold-light)]" />
               진료시간
-            </h3>
+            </h2>
             <ul className="space-y-1.5 text-lg md:max-w-80 md:text-base">
               {HOURS.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
@@ -79,7 +79,7 @@ export function Footer() {
           {/* 리뷰 남기기 */}
           {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
             <div>
-              <h3 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h3>
+              <h2 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h2>
               <p className="mb-3 text-base md:text-sm leading-relaxed text-gray-400">
                 소중한 후기가 다른 분들에게 큰 도움이 됩니다.
               </p>

@@ -126,7 +126,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
             rel="noopener noreferrer"
             className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)] underline"
           >
-            카카오맵에서 보기
+            카카오맵에서 보기 <span className="sr-only">(새 창)</span>
           </a>
         </div>
       </div>

@@ -3,6 +3,7 @@ export const dynamic = "force-static";
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { BLOG_POSTS_META } from "@/lib/blog";
+import { getTodayKST } from "@/lib/date";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
 const PAGE_MODIFIED = {
@@ -48,7 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     ...BLOG_POSTS_META
-      .filter((post) => post.date <= new Date().toISOString().slice(0, 10))
+      .filter((post) => post.date <= getTodayKST())
       .map((post) => ({
         url: `${BASE_URL}/blog/${post.slug}`,
         lastModified: new Date(post.dateModified ?? post.date),

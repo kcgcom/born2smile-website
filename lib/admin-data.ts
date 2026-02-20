@@ -5,6 +5,7 @@
 
 import { BLOG_POSTS_META } from "./blog";
 import { LINKS } from "./constants";
+import { getTodayKST } from "./date";
 import type { BlogCategoryValue } from "./blog/types";
 
 // -------------------------------------------------------------
@@ -34,7 +35,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "c4", title: "Firestore 보안 규칙 기본 설정", priority: "CRITICAL", status: "done", description: "blog-likes 컬렉션만 read/write 허용, 나머지 전체 차단" },
 
   // =================================================================
-  // HIGH — 15/18 완료
+  // HIGH — 16/18 완료
   // =================================================================
   { id: "h1", title: "이미지 최적화 (next/image)", priority: "HIGH", status: "done", description: "모든 이미지를 next/image로 변환, lazy loading" },
   { id: "h2", title: "시맨틱 HTML + ARIA", priority: "HIGH", status: "done", description: "시맨틱 태그, ARIA 라벨, skip link, 키보드 접근성" },
@@ -52,11 +53,11 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h14", title: "별점/전화 버튼 접근성", priority: "HIGH", status: "done", description: "별점 aria-label, 전화 버튼 min-h-[44px] 터치 타겟" },
   { id: "h15", title: "관리자 대시보드", priority: "HIGH", status: "done", description: "Firebase Auth Google 로그인, 이메일 화이트리스트, 개선 현황/블로그 통계" },
   { id: "h16", title: "페이지별 OG 이미지 차별화", priority: "HIGH", status: "pending", description: "모든 페이지 동일 OG 이미지 → 카테고리/진료별 구분 이미지 또는 동적 생성" },
-  { id: "h17", title: "모바일 메뉴 포커스 트랩", priority: "HIGH", status: "pending", description: "메뉴 오픈 시 Tab 키 이탈 방지 + Escape 키 닫기" },
+  { id: "h17", title: "모바일 메뉴 포커스 트랩", priority: "HIGH", status: "done", description: "메뉴 오픈 시 Tab 키 이탈 방지 + Escape 키 닫기" },
   { id: "h18", title: "온라인 예약 시스템", priority: "HIGH", status: "owner-decision", description: "온라인 예약 폼 도입 여부 — 현재 전화 상담 안내" },
 
   // =================================================================
-  // MEDIUM — 22/26 완료
+  // MEDIUM — 24/28 완료
   // =================================================================
   { id: "m1", title: "블로그 좋아요 기능", priority: "MEDIUM", status: "done", description: "Firestore 기반, optimistic update, UUID 사용자 식별" },
   { id: "m2", title: "카카오맵 통합", priority: "MEDIUM", status: "done", description: "주소 기반 geocoding + 폴백 좌표, HTTPS 명시" },
@@ -80,15 +81,15 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m20", title: "Framer Motion 페이지 애니메이션", priority: "MEDIUM", status: "done", description: "FadeIn, StaggerContainer, StaggerItem 컴포넌트" },
   { id: "m21", title: "FloatingCTA 모바일 내비", priority: "MEDIUM", status: "done", description: "하단 고정 5버튼 네비게이션 바, 골드 색상 상담 버튼" },
   { id: "m22", title: "관리자 인증 시스템", priority: "MEDIUM", status: "done", description: "Firebase Auth Google 로그인, 이메일 화이트리스트, AuthGuard" },
-  { id: "m23", title: "GitHub Actions SHA 해시 고정", priority: "MEDIUM", status: "pending", description: "actions/checkout@v4 태그 → SHA 해시로 공급망 보안 강화" },
-  { id: "m24", title: "poweredByHeader: false", priority: "MEDIUM", status: "pending", description: "next.config.ts에 X-Powered-By 헤더 비활성화" },
+  { id: "m23", title: "GitHub Actions SHA 해시 고정", priority: "MEDIUM", status: "done", description: "actions/checkout@v4 태그 → SHA 해시로 공급망 보안 강화" },
+  { id: "m24", title: "poweredByHeader: false", priority: "MEDIUM", status: "done", description: "next.config.ts에 X-Powered-By 헤더 비활성화" },
   { id: "m25", title: "SNS 링크 설정", priority: "MEDIUM", status: "owner-decision", description: "카카오, 인스타, 네이버 블로그/지도 URL 입력 필요" },
   { id: "m26", title: "카카오톡 채널 상담", priority: "MEDIUM", status: "owner-decision", description: "카카오톡 채널 URL 입력 시 상담 버튼 활성화" },
   { id: "m27", title: "네이버 지도 링크", priority: "MEDIUM", status: "owner-decision", description: "네이버 지도 URL 입력 시 Footer 아이콘 활성화" },
   { id: "m28", title: "인스타그램 연동", priority: "MEDIUM", status: "owner-decision", description: "인스타그램 URL 입력 시 Footer 아이콘 활성화" },
 
   // =================================================================
-  // LOW — 10/16 완료
+  // LOW — 13/16 완료
   // =================================================================
   { id: "l1", title: "웹마스터 인증", priority: "LOW", status: "done", description: "Bing BingSiteAuth.xml + Naver naver*.html 인증 파일" },
   { id: "l2", title: "Firebase Hosting redirect", priority: "LOW", status: "done", description: "인증 파일 서빙 + App Hosting redirect 설정" },
@@ -102,10 +103,26 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "l10", title: "스크롤 smooth reduced-motion", priority: "LOW", status: "done", description: "window.scrollTo smooth 스크롤 reduced-motion 적용" },
   { id: "l11", title: "PretendardVariable 폰트 서브셋", priority: "LOW", status: "pending", description: "현재 2MB — 정적 웨이트 서브셋으로 전환 검토" },
   { id: "l12", title: "블로그 dateModified 필드", priority: "LOW", status: "pending", description: "수정된 포스트에 dateModified 추가 (현재 0개 설정)" },
-  { id: "l13", title: "areaServed 확장", priority: "LOW", status: "pending", description: "JSON-LD에 장기동, 우편번호 10089 추가" },
-  { id: "l14", title: "target='_blank' 새 탭 표시", priority: "LOW", status: "pending", description: "Footer, 리뷰 외부 링크에 '(새 창)' 또는 aria-label 보충" },
-  { id: "l15", title: "Footer 헤딩 계층 수정", priority: "LOW", status: "pending", description: "Footer h3 → h2로 변경 (최상위 섹션 헤딩)" },
+  { id: "l13", title: "areaServed 확장", priority: "LOW", status: "done", description: "JSON-LD에 장기동, 우편번호 10089 추가" },
+  { id: "l14", title: "target='_blank' 새 탭 표시", priority: "LOW", status: "done", description: "Footer, 리뷰 외부 링크에 '(새 창)' 또는 aria-label 보충" },
+  { id: "l15", title: "Footer 헤딩 계층 수정", priority: "LOW", status: "done", description: "Footer h3 → h2로 변경 (최상위 섹션 헤딩)" },
   { id: "l16", title: "의사 프로필 사진 추가", priority: "LOW", status: "owner-decision", description: "한국 의료 사이트 최고 신뢰 신호 — 사진 제공 필요" },
+
+  // =================================================================
+  // 추가 개선 항목 — 2026-02-20 종합 분석
+  // =================================================================
+  { id: "h19", title: "error.tsx / not-found.tsx 페이지", priority: "HIGH", status: "done", description: "404/에러 페이지에 사이트 헤더/푸터/한국어 표시" },
+  { id: "h20", title: "JSON.parse 에러 처리", priority: "HIGH", status: "done", description: "firebase-admin, GA4, SC 환경변수 파싱 실패 시 서버 크래시 방지" },
+  { id: "h21", title: "UTC/KST 날짜 불일치 수정", priority: "HIGH", status: "done", description: "9곳 getTodayKST() 유틸리티 통일 — 예약 발행 시점 정확도 개선" },
+  { id: "h22", title: "BlogContent Framer Motion 경량화", priority: "HIGH", status: "done", description: "블로그 목록에서 framer-motion 풀 번들 제거 — 클라이언트 번들 ~30KB 절감" },
+  { id: "h23", title: "히어로 LCP 최적화", priority: "HIGH", status: "done", description: "h1/p 애니메이션 딜레이 제거 — LCP ~400ms 개선" },
+  { id: "m29", title: "블로그 검색 debounce", priority: "MEDIUM", status: "done", description: "250ms debounce로 키 입력 시 과도한 필터링 방지" },
+  { id: "m30", title: "블로그 자세히 읽기 aria-hidden", priority: "MEDIUM", status: "done", description: "스크린 리더가 비인터랙티브 텍스트를 건너뛰도록 개선" },
+  { id: "m31", title: "About 진료시간 테이블 접근성", priority: "MEDIUM", status: "done", description: "caption, thead, th scope 추가" },
+  { id: "m32", title: "calcChange() 중복 제거", priority: "MEDIUM", status: "done", description: "admin-analytics, admin-search-console → admin-utils 공통 모듈" },
+  { id: "m33", title: "loading.tsx 서스펜스 바운더리", priority: "MEDIUM", status: "done", description: "blog/[slug], treatments/[slug] 네비게이션 시 즉각 로딩 표시" },
+  { id: "m34", title: "블로그 셔플 CLS 개선", priority: "MEDIUM", status: "done", description: "일별 고정 시드 셔플로 SSR/CSR 콘텐츠 일치" },
+  { id: "m35", title: "CTA 배너 공통 컴포넌트", priority: "MEDIUM", status: "done", description: "3곳 중복 CTA → CTABanner 컴포넌트 추출" },
 ];
 
 export interface ImprovementStats {
@@ -148,7 +165,7 @@ export interface BlogStats {
 }
 
 export function getBlogStats(): BlogStats {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   const total = BLOG_POSTS_META.length;
   const published = BLOG_POSTS_META.filter((p) => p.date <= today).length;
   const scheduled = total - published;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Phone, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   BLOG_POSTS_META,
@@ -10,15 +10,17 @@ import {
   categoryColors,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
+import { getTodayKST } from "@/lib/date";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
 
 // 빌드 시점 기준 발행일이 지난 포스트만 정적 생성 (예약 발행)
 export function generateStaticParams() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   return BLOG_POSTS_META
     .filter((post) => post.date <= today)
     .map((post) => ({ slug: post.slug }));
@@ -33,7 +35,7 @@ export async function generateMetadata({
   const post = await getPostBySlug(slug);
   if (!post) return {};
   // 미발행 포스트는 메타데이터 미생성
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   if (post.date > today) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
@@ -83,7 +85,7 @@ export default async function BlogPostPage({
   const post = await getPostBySlug(slug);
   if (!post) notFound();
   // 미발행 포스트는 404
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayKST();
   if (post.date > today) notFound();
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 미발행 제외, 최대 3개)
@@ -262,35 +264,10 @@ export default async function BlogPostPage({
       )}
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <FadeIn>
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              구강 건강이 궁금하신가요?
-            </h2>
-            <p className="mb-8 text-blue-50">
-              {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
-            </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-              >
-                상담 문의
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-              >
-                <Phone size={18} />
-                전화 상담 {CLINIC.phone}
-              </a>
-            </div>
-          </div>
-        </FadeIn>
-      </section>
+      <CTABanner
+        heading="구강 건강이 궁금하신가요?"
+        description={`${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
+      />
 
       <div className="h-16 md:hidden" />
     </>

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { getRelatedBlogPosts, categoryColors } from "@/lib/blog";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
 import { Clock } from "lucide-react";
 
@@ -298,36 +299,10 @@ export default async function TreatmentDetailPage({
       })()}
 
       {/* CTA */}
-
-      <section className="relative overflow-hidden bg-[var(--color-primary)] px-4 py-16 text-center text-white md:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--color-gold)]/10" />
-        <FadeIn>
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
-              {detail.name} 상담이 필요하신가요?
-            </h2>
-            <p className="mb-8 text-blue-50">
-              {CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.
-            </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-              >
-                상담 문의
-                <ArrowRight size={18} />
-              </Link>
-              <a
-                href={CLINIC.phoneHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] hover:bg-blue-50"
-              >
-                <Phone size={18} />
-                전화 상담 {CLINIC.phone}
-              </a>
-            </div>
-          </div>
-        </FadeIn>
-      </section>
+      <CTABanner
+        heading={`${detail.name} 상담이 필요하신가요?`}
+        description={`${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
+      />
 
       <div className="h-16 md:hidden" />
     </>

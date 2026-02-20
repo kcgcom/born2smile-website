@@ -1,14 +1,19 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { calcChange } from "./admin-utils";
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID ?? "";
 
 function getClient(): BetaAnalyticsDataClient {
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (keyJson) {
-    const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
-    return new BetaAnalyticsDataClient({
-      credentials: { client_email: key.client_email, private_key: key.private_key },
-    });
+    try {
+      const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
+      return new BetaAnalyticsDataClient({
+        credentials: { client_email: key.client_email, private_key: key.private_key },
+      });
+    } catch {
+      console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
+    }
   }
   return new BetaAnalyticsDataClient(); // ADC
 }
@@ -42,11 +47,6 @@ function getPeriodDates(period: string): {
     compareStart: fmt(compareStart),
     compareEnd: fmt(compareEnd),
   };
-}
-
-function calcChange(current: number, previous: number): number | null {
-  if (previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
 export async function fetchGA4Data(period: string) {
