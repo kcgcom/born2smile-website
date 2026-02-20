@@ -7,7 +7,7 @@ const CSP = [
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
   "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://apis.google.com https://dapi.kakao.com",
   "font-src 'self'",
-  "frame-src https://accounts.google.com",
+  "frame-src 'self' https://accounts.google.com",
   "frame-ancestors 'none'",
 ].join("; ");
 
