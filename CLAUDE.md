@@ -15,7 +15,8 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
 - **Database**: Firebase Firestore (블로그 좋아요 기능)
-- **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용)
+- **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용) + Firebase Admin SDK (서버 사이드 토큰 검증)
+- **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -63,9 +64,31 @@ app/                          # Next.js App Router pages
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
       layout.tsx              # AuthGuard wrapper
-      page.tsx                # Dashboard main ("use client")
+      page.tsx                # Dashboard main — 5탭 컨테이너 ("use client")
+      components/
+        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/블로그/설정)
+        OverviewTab.tsx       # 개요 탭 (개선 항목, 블로그 통계, 사이트 설정)
+        TrafficTab.tsx        # 트래픽 탭 (GA4 Data API 연동)
+        SearchTab.tsx         # 검색/SEO 탭 (Search Console API 연동)
+        BlogTab.tsx           # 블로그 관리 탭 (검색/필터/정렬, 좋아요 집계)
+        SettingsTab.tsx       # 설정 탭 (빠른 링크, 병원 정보 요약)
+        MetricCard.tsx        # 지표 카드 (값 + 증감률)
+        DataTable.tsx         # 범용 데이터 테이블
+        PeriodSelector.tsx    # 기간 선택 버튼 그룹
+        useAdminApi.ts        # Admin API 데이터 페칭 훅
     login/
       page.tsx                # Google login page ("use client")
+  api/
+    admin/
+      _lib/
+        auth.ts               # Admin API 인증 미들웨어 (Firebase Admin SDK)
+        cache.ts              # unstable_cache 래퍼 + TTL 상수
+      analytics/
+        route.ts              # GA4 트래픽 데이터 API (GET)
+      search-console/
+        route.ts              # Search Console 검색 성과 API (GET)
+      blog-likes/
+        route.ts              # Firestore 좋아요 집계 API (GET)
   contact/
     layout.tsx                # Contact layout wrapper with metadata
     page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
@@ -84,6 +107,9 @@ lib/
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore + Auth)
   admin-auth.ts              # 관리자 인증 모듈 (Google 로그인, 이메일 화이트리스트)
   admin-data.ts              # 관리자 대시보드 데이터 (개선 항목, 블로그 통계, 사이트 설정)
+  firebase-admin.ts          # Firebase Admin SDK 싱글톤 (ADC 우선, JSON key 폴백)
+  admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
+  admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -139,8 +165,9 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
 | `/blog/[slug]` | SSG | `generateStaticParams()` for 78 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
-| `/admin` | Client-side | 관리자 대시보드 (AuthGuard 보호, `"use client"`) |
+| `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
+| `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -465,12 +492,40 @@ content: [
 - `signInWithGoogle()`: `signInWithPopup` + `GoogleAuthProvider`
 - `signOutAdmin()`: Firebase Auth 로그아웃
 
-### 관리자 대시보드 (`lib/admin-data.ts`)
+### Firebase Admin SDK (`lib/firebase-admin.ts`)
+
+- 싱글톤 패턴: `getAdminApp()` — 이미 초기화된 앱이 있으면 재사용
+- **ADC (Application Default Credentials) 우선**: Cloud Run 환경에서 자동 인증
+- **JSON key 폴백**: `GOOGLE_SERVICE_ACCOUNT_KEY` 환경변수 (로컬 개발용)
+- GA4/SC API 인증에도 동일 크레덴셜 사용
+
+### 관리자 대시보드 데이터 (`lib/admin-data.ts`)
 
 - `IMPROVEMENT_ITEMS`: 웹사이트 개선 항목 배열 (id, 제목, 우선순위, 상태, 설명)
 - `getImprovementStats()`: 우선순위별 완료/전체 통계
 - `getBlogStats()`: `BLOG_POSTS_META`에서 전체/발행/예약 포스트 수, 카테고리별 분포
 - `getSiteConfigStatus()`: SNS 링크, Firebase 설정, 환경변수 상태 확인
+
+### 관리자 대시보드 (`app/admin/(dashboard)/`)
+
+5탭 구조 대시보드. URL query param `?tab=traffic`으로 탭 상태 관리.
+
+| 탭 | 컴포넌트 | 데이터 소스 |
+|---|---|---|
+| 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` (클라이언트 상수) |
+| 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4 Data API) |
+| 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` (SC API) |
+| 블로그 | `BlogTab.tsx` | `BLOG_POSTS_META` + `/api/admin/blog-likes` (Firestore) |
+| 설정 | `SettingsTab.tsx` | `lib/constants.ts` + `lib/admin-data.ts` |
+
+### Admin API Routes (`app/api/admin/`)
+
+- **공통 인증** (`_lib/auth.ts`): `verifyAdminRequest()` — Firebase Admin SDK로 ID 토큰 검증, `checkRevoked: true`, `email_verified` 확인, 401/403 구분
+- **공통 캐시** (`_lib/cache.ts`): `unstable_cache` 래퍼, TTL — GA4: 1시간, SC: 6시간, 좋아요: 5분
+- **응답 헤더**: 모든 경로에 `Cache-Control: private, no-store`
+- `GET /api/admin/analytics?period=7d|30d|90d` — GA4 트래픽 지표 (세션, 사용자, 페이지뷰, 인기 페이지, 유입 경로, 기기별, 일별 추이)
+- `GET /api/admin/search-console?period=7d|28d|90d` — 검색 성과 (노출, 클릭, CTR, 순위, 상위 키워드/페이지, 블로그 검색 성과). 3일 데이터 지연 오프셋 자동 적용
+- `GET /api/admin/blog-likes` — Firestore `blog-likes` 컬렉션 전체 좋아요 수 집계
 
 ### AuthGuard (`components/admin/AuthGuard.tsx`)
 
@@ -602,6 +657,9 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 + 관리자 인증)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
 - `NEXT_PUBLIC_ADMIN_EMAILS` — 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`)
+- `GOOGLE_SERVICE_ACCOUNT_KEY` — Google 서비스 계정 JSON key (로컬 개발용, 프로덕션은 ADC 사용)
+- `GA4_PROPERTY_ID` — Google Analytics 4 속성 ID (예: `properties/123456789`, 트래픽 탭 필수)
+- `SEARCH_CONSOLE_SITE_URL` — Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, 검색/SEO 탭 필수)
 
 ## Known TODO Items
 
