@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
-import { getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { BLOG_POSTS_META } from "@/lib/blog";
+import { getBlogCollectionJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";
 
@@ -11,6 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
+  const today = new Date().toISOString().slice(0, 10);
+  const publishedPosts = BLOG_POSTS_META
+    .filter((p) => p.date <= today)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const collectionJsonLd = getBlogCollectionJsonLd(publishedPosts);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
@@ -18,6 +24,10 @@ export default function BlogPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

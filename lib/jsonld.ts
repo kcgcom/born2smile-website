@@ -27,6 +27,7 @@ export function getClinicJsonLd() {
     areaServed: [
       { "@type": "City", name: "김포시" },
       { "@type": "AdministrativeArea", name: "한강신도시" },
+      { "@type": "AdministrativeArea", name: "장기동" },
     ],
     geo: {
       "@type": "GeoCoordinates",
@@ -116,6 +117,10 @@ export function getTreatmentJsonLd(treatmentId: string) {
     name: `${treatment.name} | ${CLINIC.name}`,
     description: treatment.shortDesc,
     url: `${BASE_URL}${treatment.href}`,
+    medicalAudience: {
+      "@type": "Patient",
+    },
+    specialty: "Dentistry",
     mainEntity: {
       "@type": "MedicalProcedure",
       name: treatment.name,
@@ -189,6 +194,32 @@ export function getBlogPostJsonLd(post: BlogPost) {
     articleSection: post.category,
     keywords: post.tags,
     inLanguage: "ko-KR",
+  };
+}
+
+/**
+ * 블로그 목록 페이지용 JSON-LD (CollectionPage + ItemList)
+ * 최신 10개 포스트를 구조화 데이터로 표시
+ */
+export function getBlogCollectionJsonLd(
+  posts: { slug: string; title: string }[]
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `건강칼럼 | ${CLINIC.name}`,
+    description: `${CLINIC.name} 건강칼럼 - 올바른 구강관리법과 치과 상식`,
+    url: `${BASE_URL}/blog`,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: Math.min(posts.length, 10),
+      itemListElement: posts.slice(0, 10).map((post, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${BASE_URL}/blog/${post.slug}`,
+        name: post.title,
+      })),
+    },
   };
 }
 

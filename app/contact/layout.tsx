@@ -4,7 +4,8 @@ import { getBreadcrumbJsonLd } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
   title: "상담 안내",
-  description: `${CLINIC.name} 전화 상담 안내. 대표전화 ${CLINIC.phone}. ${CLINIC.address}`,
+  description: `${CLINIC.name} 전화 상담 안내. 대표전화 ${CLINIC.phone}. ${CLINIC.address}. 김포한강신도시 장기동 치과 예약.`,
+  keywords: ["김포치과 예약", "김포한강신도시 치과 상담", "장기동 치과 전화", "서울본치과 상담"],
   alternates: { canonical: `${BASE_URL}/contact` },
 };
 

@@ -12,6 +12,8 @@ import {
 } from "@/lib/blog";
 import type { BlogCategory, BlogTag } from "@/lib/blog";
 import { BASE_URL } from "@/lib/constants";
+import { formatDate } from "@/lib/format";
+import { shareUrl } from "@/lib/share";
 
 const POSTS_PER_PAGE = 12;
 
@@ -74,7 +76,7 @@ export default function BlogContent() {
     return () => observer.disconnect();
   }, []);
 
-  const filteredPosts = shuffledPosts.filter((post) => {
+  const filteredPosts = useMemo(() => shuffledPosts.filter((post) => {
     const categoryMatch =
       activeCategory === "전체" || post.category === activeCategory;
     const tagMatch = !activeTag || post.tags.includes(activeTag);
@@ -86,7 +88,7 @@ export default function BlogContent() {
       post.subtitle.toLowerCase().includes(q) ||
       post.excerpt.toLowerCase().includes(q)
     );
-  });
+  }), [shuffledPosts, activeCategory, activeTag, searchQuery]);
 
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
@@ -126,33 +128,15 @@ export default function BlogContent() {
     ) => {
       e.preventDefault();
       e.stopPropagation();
-      const url = `${BASE_URL}/blog/${slug}`;
-
-      if (typeof navigator !== "undefined" && navigator.share) {
-        try {
-          await navigator.share({ title, url });
-          return;
-        } catch {
-          return;
-        }
-      }
-
-      try {
-        await navigator.clipboard.writeText(url);
+      const result = await shareUrl(`${BASE_URL}/blog/${slug}`, title);
+      if (result === "copied") {
         setCopiedSlug(slug);
         if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
         copyTimerRef.current = setTimeout(() => setCopiedSlug(null), 2000);
-      } catch {
-        // clipboard API denied — silently fail
       }
     },
     []
   );
-
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("-");
-    return `${year}.${month}.${day}`;
-  };
 
   const shouldReduce = useReducedMotion();
   const cardAnimation = shouldReduce

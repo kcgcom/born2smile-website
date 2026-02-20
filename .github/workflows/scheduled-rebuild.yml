@@ -6,6 +6,9 @@ on:
     - cron: "5 15 * * *"
   workflow_dispatch: # 수동 실행도 가능
 
+permissions:
+  contents: write
+
 jobs:
   rebuild:
     runs-on: ubuntu-latest

@@ -22,6 +22,7 @@ export function Footer() {
                     className="text-white hover:underline"
                   >
                     {CLINIC.address}
+                    <span className="sr-only"> (새 창)</span>
                   </a>
                 ) : (
                   <span>{CLINIC.address}</span>
@@ -39,6 +40,7 @@ export function Footer() {
                   >
                     <MapPin size={14} className="shrink-0" />
                     네이버 지도에서 보기
+                    <span className="sr-only"> (새 창)</span>
                     <ExternalLink size={12} className="shrink-0" />
                   </a>
                 </li>
@@ -94,7 +96,7 @@ export function Footer() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-base md:text-sm text-gray-400">치료 후기</div>
-                      <div className="text-lg md:text-base font-medium text-white">Google 리뷰 남기기</div>
+                      <div className="text-lg md:text-base font-medium text-white">Google 리뷰 남기기 <span className="sr-only">(새 창)</span></div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
                   </a>
@@ -111,7 +113,7 @@ export function Footer() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-base md:text-sm text-gray-400">치료 후기</div>
-                      <div className="text-lg md:text-base font-medium text-white">Naver 리뷰 남기기</div>
+                      <div className="text-lg md:text-base font-medium text-white">Naver 리뷰 남기기 <span className="sr-only">(새 창)</span></div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
                   </a>
@@ -129,7 +131,7 @@ export function Footer() {
                 href={LINKS.kakaoChannel}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="카카오톡 채널"
+                aria-label="카카오톡 채널 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#FEE500] hover:text-gray-900"
               >
                 <MessageCircle size={18} />
@@ -140,7 +142,7 @@ export function Footer() {
                 href={LINKS.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="인스타그램"
+                aria-label="인스타그램 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-gradient-to-tr hover:from-[#f9ce34] hover:via-[#ee2a7b] hover:to-[#6228d7] hover:text-white"
               >
                 <Instagram size={18} />
@@ -151,7 +153,7 @@ export function Footer() {
                 href={LINKS.naverBlog}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="네이버 블로그"
+                aria-label="네이버 블로그 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
               >
                 <BookOpen size={18} />
@@ -162,7 +164,7 @@ export function Footer() {
                 href={LINKS.naverMap}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="네이버 지도"
+                aria-label="네이버 지도 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
               >
                 <MapPin size={18} />

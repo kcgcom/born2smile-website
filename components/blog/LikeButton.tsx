@@ -34,10 +34,12 @@ export default function LikeButton({ slug }: LikeButtonProps) {
   // Firestore에서 좋아요 데이터 로드
   useEffect(() => {
     if (!isFirebaseConfigured) {
-      console.warn(
-        "[LikeButton] NEXT_PUBLIC_FIREBASE_API_KEY가 설정되지 않았습니다. " +
-        ".env.local 파일에 Firebase API 키를 추가하세요."
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[LikeButton] NEXT_PUBLIC_FIREBASE_API_KEY가 설정되지 않았습니다. " +
+          ".env.local 파일에 Firebase API 키를 추가하세요."
+        );
+      }
       return;
     }
 
@@ -53,7 +55,9 @@ export default function LikeButton({ slug }: LikeButtonProps) {
         }
       })
       .catch((error) => {
-        console.error("[LikeButton] Firestore 연결 실패:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.error("[LikeButton] Firestore 연결 실패:", error);
+        }
         setUnavailable(true);
       })
       .finally(() => setLoading(false));
@@ -93,7 +97,9 @@ export default function LikeButton({ slug }: LikeButtonProps) {
         }
       });
     } catch (error) {
-      console.error("[LikeButton] 좋아요 저장 실패:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[LikeButton] 좋아요 저장 실패:", error);
+      }
       // 실패 시 롤백
       setLiked(wasLiked);
       setCount((prev) => prev + (wasLiked ? 1 : -1));

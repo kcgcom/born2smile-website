@@ -5,15 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
-import { CLINIC } from "@/lib/constants";
-
-const NAV_ITEMS = [
-  { label: "홈", href: "/" },
-  { label: "병원 소개", href: "/about" },
-  { label: "진료 안내", href: "/treatments" },
-  { label: "건강칼럼", href: "/blog" },
-  { label: "상담 안내", href: "/contact" },
-];
+import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
   const pathname = usePathname();

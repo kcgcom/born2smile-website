@@ -7,6 +7,7 @@ import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { getRelatedBlogPosts, categoryColors } from "@/lib/blog";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { formatDate } from "@/lib/format";
 import { Clock } from "lucide-react";
 
 export function generateStaticParams() {
@@ -241,10 +242,6 @@ export default async function TreatmentDetailPage({
       {(() => {
         const relatedBlogPosts = getRelatedBlogPosts(slug, 4);
         if (relatedBlogPosts.length === 0) return null;
-        const formatDate = (dateStr: string) => {
-          const [year, month, day] = dateStr.split("-");
-          return `${year}.${month}.${day}`;
-        };
         return (
           <section className="section-padding bg-white">
             <div className="container-narrow">

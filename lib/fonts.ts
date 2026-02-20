@@ -51,5 +51,6 @@ export const gowunBatang = localFont({
   ],
   variable: "--font-gowun-batang",
   display: "swap",
+  preload: false, // 홈페이지 인사말에만 사용 — 비홈페이지에서 불필요한 프리로드 방지
   fallback: ["Georgia", "serif"],
 });

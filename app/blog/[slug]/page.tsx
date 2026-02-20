@@ -13,7 +13,8 @@ import { TREATMENTS } from "@/lib/constants";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import BlogShareButton from "@/components/blog/BlogShareButton";
-import LikeButton from "@/components/blog/LikeButton";
+import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
+import { formatDate } from "@/lib/format";
 
 // 빌드 시점 기준 발행일이 지난 포스트만 정적 생성 (예약 발행)
 export function generateStaticParams() {
@@ -84,11 +85,6 @@ export default async function BlogPostPage({
   // 미발행 포스트는 404
   const today = new Date().toISOString().slice(0, 10);
   if (post.date > today) notFound();
-
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("-");
-    return `${year}.${month}.${day}`;
-  };
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 미발행 제외, 최대 3개)
   const relatedPosts = BLOG_POSTS_META.filter(
@@ -215,7 +211,7 @@ export default async function BlogPostPage({
             목록으로 돌아가기
           </Link>
           <div className="flex items-center gap-2">
-            <LikeButton slug={post.slug} />
+            <LikeButtonLazy slug={post.slug} />
             <BlogShareButton slug={post.slug} title={post.title} />
           </div>
         </div>

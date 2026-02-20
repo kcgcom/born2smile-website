@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Share2, Check } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
+import { shareUrl } from "@/lib/share";
 
 interface BlogShareButtonProps {
   slug: string;
@@ -23,24 +24,11 @@ export default function BlogShareButton({
   }, []);
 
   const handleShare = useCallback(async () => {
-    const url = `${BASE_URL}/blog/${slug}`;
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch {
-        return;
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
+    const result = await shareUrl(`${BASE_URL}/blog/${slug}`, title);
+    if (result === "copied") {
       setCopied(true);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard API denied — silently fail
     }
   }, [slug, title]);
 
