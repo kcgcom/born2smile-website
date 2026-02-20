@@ -53,13 +53,17 @@ app/                          # Next.js App Router pages
   favicon.ico                 # Favicon
   robots.ts                   # robots.txt generation (force-static)
   sitemap.ts                  # Sitemap XML generation (force-static, includes blog posts)
+  error.tsx                   # 에러 페이지 (한국어, 다시 시도 + 전화 상담)
+  not-found.tsx               # 404 페이지 (한국어, 홈으로 + 전화 상담)
   about/page.tsx              # Clinic info, doctor bio, facility, hours
   treatments/
     page.tsx                  # Treatment listing (6 cards)
     [slug]/page.tsx           # Individual treatment detail (generateStaticParams)
+    [slug]/loading.tsx        # Suspense loading boundary
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
     [slug]/page.tsx           # Individual blog post detail (generateStaticParams)
+    [slug]/loading.tsx        # Suspense loading boundary
   admin/
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
@@ -100,13 +104,16 @@ components/
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
   layout/                     # Header, Footer, FloatingCTA
-  ui/                         # Motion (animations), KakaoMap
+  ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
+  date.ts                    # KST 날짜 유틸리티 (getTodayKST)
+  format.ts                  # 날짜 포맷 유틸리티 (formatDate)
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore + Auth)
   admin-auth.ts              # 관리자 인증 모듈 (Google 로그인, 이메일 화이트리스트)
   admin-data.ts              # 관리자 대시보드 데이터 (개선 항목, 블로그 통계, 사이트 설정)
+  admin-utils.ts             # 관리자 공통 유틸리티 (calcChange)
   firebase-admin.ts          # Firebase Admin SDK 싱글톤 (ADC 우선, JSON key 폴백)
   admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
@@ -178,9 +185,9 @@ pnpm-workspace.yaml          # pnpm workspace config
 1. **클라이언트 필터링** (`BlogContent.tsx`): `date <= today` 조건으로 미발행 포스트 제외
 2. **Sitemap 필터링** (`app/sitemap.ts`): 동일 조건으로 미발행 포스트 sitemap에서 제외
 
-블로그 목록 표시 전략 (SSR/CSR 이중 전략):
-- **SSR 초기 렌더**: 최신순 정렬 (검색엔진 크롤러 일관성)
-- **클라이언트 hydration 후**: Fisher-Yates 셔플로 랜덤 순서 표시 (콘텐츠 다양성)
+블로그 목록 표시 전략 (일별 시드 셔플):
+- **SSR/CSR 동일 순서**: 날짜 기반 고정 시드 Fisher-Yates 셔플 (CLS 방지)
+- **매일 다른 순서**: 오늘 날짜를 시드로 사용하여 하루 동안 동일한 순서 유지
 - **페이지네이션**: Intersection Observer 기반 무한 스크롤, 12개씩 로드
 
 ### 블로그 포스트 콘텐츠 구조
@@ -477,6 +484,11 @@ content: [
 **BlogShareButton** (`components/blog/BlogShareButton.tsx`):
 - Web Share API 우선 사용 (`navigator.share`) → 미지원 브라우저에서 클립보드 복사 폴백
 
+**CTABanner** (`components/ui/CTABanner.tsx`):
+- 공통 CTA 배너 컴포넌트 (`heading`, `description` props)
+- 홈, 블로그 상세, 진료 상세 3곳에서 공유 사용
+- 전화 상담 버튼 (`tel:` 링크) + 병원 전화번호 표시
+
 ### Firebase 클라이언트 (`lib/firebase.ts`)
 
 - 최소 설정: `apiKey` + `projectId`만 사용
@@ -657,8 +669,8 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 + 관리자 인증)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
 - `NEXT_PUBLIC_ADMIN_EMAILS` — 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`)
-- `GOOGLE_SERVICE_ACCOUNT_KEY` — Google 서비스 계정 JSON key (로컬 개발용, 프로덕션은 ADC 사용)
-- `GA4_PROPERTY_ID` — Google Analytics 4 속성 ID (예: `properties/123456789`, 트래픽 탭 필수)
+- `GOOGLE_SERVICE_ACCOUNT_KEY` — Google 서비스 계정 JSON key (로컬 개발 전용). 프로덕션은 Cloud Run ADC가 자동 인증하므로 불필요. App Hosting 서비스 계정(`firebase-app-hosting-compute@seoul-born2smile.iam.gserviceaccount.com`)에 GA4 뷰어 + Search Console 전체 권한 필요.
+- `GA4_PROPERTY_ID` — Google Analytics 4 속성 ID (숫자만, 예: `525397980`, 트래픽 탭 필수)
 - `SEARCH_CONSOLE_SITE_URL` — Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, 검색/SEO 탭 필수)
 
 ## Known TODO Items
@@ -669,6 +681,17 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 - `lib/constants.ts` `LINKS`: SNS 링크(카카오, 인스타, 네이버블로그, 지도 링크) — 현재 빈 문자열. 채우면 Footer 아이콘, Contact 페이지 카카오 상담 버튼, `getClinicJsonLd()`의 `sameAs`에 자동 반영
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
+- 페이지별 OG 이미지 차별화 — 현재 모든 페이지 동일 OG 이미지. 카테고리별 이미지 또는 동적 생성 검토
+- 의사 프로필 사진 추가 — 한국 의료 사이트 최고 신뢰 신호, 사진 제공 필요
+
+### 개선 현황 (61/68개 완료, 90%)
+
+`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능.
+
+- CRITICAL: 4/4 완료
+- HIGH: 16/18 완료 (미완료: OG 이미지 차별화, 온라인 예약)
+- MEDIUM: 24/28 완료 (미완료: SNS 링크 4건 — 오너 결정 필요)
+- LOW: 15/16 완료 (미완료: 의사 프로필 사진)
 
 ### 해결됨
 
@@ -676,3 +699,5 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
 - ~~시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨~~ — 해결: `app/about/page.tsx`에 시설 안내 섹션 표시 중, `public/images/facility/`에 6장(진료실, 대기실, 상담실, VIP실, X-ray실, 외관) 포함
 - ~~`hosting-redirect/`: Naver 웹마스터 인증 파일만 존재~~ — 정상: `firebase.json`의 regex redirect로 App Hosting 전달 처리 중. 인증 파일 서빙 목적으로 설계된 구조이므로 추가 작업 불필요
+- ~~PretendardVariable 폰트 서브셋~~ — 검토 완료: 한국어 Variable 2MB는 표준 크기, 서브셋/정적 전환 시 이점 미미
+- ~~블로그 dateModified 필드~~ — 인프라 준비 완료: sitemap + JSON-LD에서 `dateModified` 자동 반영. 포스트 수정 시 필드 추가하면 됨
