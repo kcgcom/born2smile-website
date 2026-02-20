@@ -14,8 +14,11 @@
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all"
   },
   "dependencies": {
+    "@google-analytics/data": "^5.2.1",
     "firebase": "^12.9.0",
+    "firebase-admin": "^13.6.1",
     "framer-motion": "^12.34.0",
+    "googleapis": "^171.4.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "pretendard": "^1.3.9",
