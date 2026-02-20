@@ -119,7 +119,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
         className={`flex items-center justify-center rounded-2xl border border-gray-200 bg-gray-100 ${className}`}
       >
         <div className="text-center">
-          <p className="text-sm text-gray-400">지도를 불러올 수 없습니다</p>
+          <p className="text-sm text-gray-500">지도를 불러올 수 없습니다</p>
           <a
             href={`https://map.kakao.com/link/search/${encodeURIComponent(CLINIC.address)}`}
             target="_blank"

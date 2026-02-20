@@ -368,7 +368,7 @@ export default function AboutPage() {
                           )}
                         </td>
                         <td
-                          className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-400"}`}
+                          className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-500"}`}
                         >
                           {item.time}
                         </td>

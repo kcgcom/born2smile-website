@@ -47,7 +47,7 @@ export default function ContactPage() {
                   <Phone size={28} aria-hidden="true" />
                 </div>
                 <div>
-                  <div className="text-sm text-blue-100">대표전화</div>
+                  <div className="text-sm text-blue-50">대표전화</div>
                   <div className="text-2xl font-bold">{CLINIC.phone}</div>
                 </div>
               </a>
@@ -82,7 +82,7 @@ export default function ContactPage() {
                     />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">카카오톡 상담</div>
+                    <div className="text-sm text-gray-500">카카오톡 상담</div>
                     <div className="text-sm font-medium">채널 준비 중</div>
                   </div>
                 </div>
@@ -113,7 +113,7 @@ export default function ContactPage() {
                         )}
                       </span>
                       <span
-                        className={item.open ? "font-medium text-gray-900" : "text-gray-400"}
+                        className={item.open ? "font-medium text-gray-900" : "text-gray-500"}
                       >
                         {item.time}
                       </span>
