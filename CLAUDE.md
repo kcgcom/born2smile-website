@@ -15,6 +15,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
 - **Database**: Firebase Firestore (블로그 좋아요 기능)
+- **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -58,6 +59,13 @@ app/                          # Next.js App Router pages
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
     [slug]/page.tsx           # Individual blog post detail (generateStaticParams)
+  admin/
+    layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
+    (dashboard)/
+      layout.tsx              # AuthGuard wrapper
+      page.tsx                # Dashboard main ("use client")
+    login/
+      page.tsx                # Google login page ("use client")
   contact/
     layout.tsx                # Contact layout wrapper with metadata
     page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
@@ -66,12 +74,16 @@ components/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
+  admin/
+    AuthGuard.tsx             # Firebase Auth guard ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
-  firebase.ts                # Firebase 클라이언트 초기화 (Firestore)
+  firebase.ts                # Firebase 클라이언트 초기화 (Firestore + Auth)
+  admin-auth.ts              # 관리자 인증 모듈 (Google 로그인, 이메일 화이트리스트)
+  admin-data.ts              # 관리자 대시보드 데이터 (개선 항목, 블로그 통계, 사이트 설정)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -127,6 +139,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
 | `/blog/[slug]` | SSG | `generateStaticParams()` for 78 blog posts |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
+| `/admin` | Client-side | 관리자 대시보드 (AuthGuard 보호, `"use client"`) |
+| `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -438,10 +452,33 @@ content: [
 
 ### Firebase 클라이언트 (`lib/firebase.ts`)
 
-- 최소 설정: `apiKey` + `projectId`만 사용 (Auth, Storage 등 미사용)
+- 최소 설정: `apiKey` + `projectId`만 사용
 - `isFirebaseConfigured` boolean export: API key 미설정 시 Firestore 의존 기능(좋아요)을 graceful하게 비활성화
 - 기본 projectId: `"seoul-born2smile"` (환경 변수 없으면 폴백)
 - 싱글톤 패턴: 이미 초기화된 앱이 있으면 재사용
+- **Auth 지연 초기화**: `getFirebaseAuth()`, `getGoogleProvider()` — 빌드 시점 API key 검증 오류 방지를 위해 lazy getter 패턴 사용. 모듈 import 시점이 아닌 최초 호출 시점에 Auth 인스턴스 생성.
+
+### 관리자 인증 (`lib/admin-auth.ts`)
+
+- `ADMIN_EMAILS`: `NEXT_PUBLIC_ADMIN_EMAILS` 환경변수에서 읽어 화이트리스트 관리
+- `isAdminEmail(email)`: 이메일 화이트리스트 검증
+- `signInWithGoogle()`: `signInWithPopup` + `GoogleAuthProvider`
+- `signOutAdmin()`: Firebase Auth 로그아웃
+
+### 관리자 대시보드 (`lib/admin-data.ts`)
+
+- `IMPROVEMENT_ITEMS`: 웹사이트 개선 항목 배열 (id, 제목, 우선순위, 상태, 설명)
+- `getImprovementStats()`: 우선순위별 완료/전체 통계
+- `getBlogStats()`: `BLOG_POSTS_META`에서 전체/발행/예약 포스트 수, 카테고리별 분포
+- `getSiteConfigStatus()`: SNS 링크, Firebase 설정, 환경변수 상태 확인
+
+### AuthGuard (`components/admin/AuthGuard.tsx`)
+
+- `onAuthStateChanged`로 로그인 상태 감시
+- 미로그인 → `/admin/login`으로 리다이렉트
+- 로그인했지만 관리자 아님 → 접근 거부 메시지 + 로그아웃 버튼
+- 관리자 확인 → children 렌더
+- Route group `(dashboard)` 하위에 적용되어 로그인 페이지는 보호 대상에서 제외
 
 ## Common Tasks
 
@@ -562,12 +599,13 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
 
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
-- `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 기능)
+- `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 + 관리자 인증)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
+- `NEXT_PUBLIC_ADMIN_EMAILS` — 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`)
 
 ## Known TODO Items
 
-> 마지막 점검: 2026-02-17
+> 마지막 점검: 2026-02-20
 
 ### 미완료 — 오너 비즈니스 결정 필요
 
