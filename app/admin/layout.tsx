@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { AuthGuard } from "@/components/admin/AuthGuard";
 
 export const metadata: Metadata = {
-  title: "관리자 대시보드",
+  title: "관리자",
   robots: { index: false, follow: false },
 };
 
@@ -11,5 +10,14 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthGuard>{children}</AuthGuard>;
+  return (
+    <>
+      {/* 루트 레이아웃의 Header/Footer/FloatingCTA를 관리자 영역에서 숨김 */}
+      <style>{`
+        header, footer, #floating-cta { display: none !important; }
+        #main-content { padding-bottom: 0; }
+      `}</style>
+      {children}
+    </>
+  );
 }
