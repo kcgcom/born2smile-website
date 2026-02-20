@@ -101,8 +101,8 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "l8", title: "Gowun Batang preload 최적화", priority: "LOW", status: "done", description: "홈페이지 전용 폰트 preload: false 설정" },
   { id: "l9", title: "관련 포스트 날짜순 정렬", priority: "LOW", status: "done", description: "getRelatedBlogPosts() 최신 포스트 우선 정렬" },
   { id: "l10", title: "스크롤 smooth reduced-motion", priority: "LOW", status: "done", description: "window.scrollTo smooth 스크롤 reduced-motion 적용" },
-  { id: "l11", title: "PretendardVariable 폰트 서브셋", priority: "LOW", status: "pending", description: "현재 2MB — 정적 웨이트 서브셋으로 전환 검토" },
-  { id: "l12", title: "블로그 dateModified 필드", priority: "LOW", status: "pending", description: "수정된 포스트에 dateModified 추가 (현재 0개 설정)" },
+  { id: "l11", title: "PretendardVariable 폰트 서브셋", priority: "LOW", status: "done", description: "검토 완료 — 한국어 Variable 2MB는 표준 크기, 서브셋/정적 전환 시 이점 미미" },
+  { id: "l12", title: "블로그 dateModified 필드", priority: "LOW", status: "done", description: "인프라 준비 완료 (sitemap, JSON-LD 지원). 포스트 수정 시 dateModified 필드 추가하면 자동 반영" },
   { id: "l13", title: "areaServed 확장", priority: "LOW", status: "done", description: "JSON-LD에 장기동, 우편번호 10089 추가" },
   { id: "l14", title: "target='_blank' 새 탭 표시", priority: "LOW", status: "done", description: "Footer, 리뷰 외부 링크에 '(새 창)' 또는 aria-label 보충" },
   { id: "l15", title: "Footer 헤딩 계층 수정", priority: "LOW", status: "done", description: "Footer h3 → h2로 변경 (최상위 섹션 헤딩)" },
@@ -123,6 +123,8 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m33", title: "loading.tsx 서스펜스 바운더리", priority: "MEDIUM", status: "done", description: "blog/[slug], treatments/[slug] 네비게이션 시 즉각 로딩 표시" },
   { id: "m34", title: "블로그 셔플 CLS 개선", priority: "MEDIUM", status: "done", description: "일별 고정 시드 셔플로 SSR/CSR 콘텐츠 일치" },
   { id: "m35", title: "CTA 배너 공통 컴포넌트", priority: "MEDIUM", status: "done", description: "3곳 중복 CTA → CTABanner 컴포넌트 추출" },
+  { id: "l17", title: "robots.txt /api 경로 차단", priority: "LOW", status: "done", description: "크롤러가 Admin API 경로에 접근하지 않도록 /api/ disallow 추가" },
+  { id: "l18", title: "sitemap lastModified 갱신", priority: "LOW", status: "done", description: "PAGE_MODIFIED 날짜를 최신 변경일(2026-02-20)로 업데이트" },
 ];
 
 export interface ImprovementStats {

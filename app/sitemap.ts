@@ -7,11 +7,11 @@ import { getTodayKST } from "@/lib/date";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
 const PAGE_MODIFIED = {
-  home: new Date("2026-02-19"),
-  about: new Date("2026-02-15"),
-  treatments: new Date("2026-02-15"),
-  blog: new Date("2026-02-19"),
-  contact: new Date("2026-02-01"),
+  home: new Date("2026-02-20"),
+  about: new Date("2026-02-20"),
+  treatments: new Date("2026-02-20"),
+  blog: new Date("2026-02-20"),
+  contact: new Date("2026-02-20"),
 } as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
