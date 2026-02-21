@@ -19,7 +19,7 @@ export function AdminFloatingButton() {
   return (
     <Link
       href="/admin"
-      className="fixed bottom-20 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg transition-transform hover:scale-110 hover:bg-gray-700 md:bottom-6 md:left-6 md:h-12 md:w-12"
+      className="fixed bottom-20 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-gray-600 text-white shadow-lg transition-transform hover:scale-110 hover:bg-gray-500 md:bottom-6 md:left-6 md:h-12 md:w-12"
       aria-label="관리자 대시보드"
       title="관리자 대시보드"
     >
