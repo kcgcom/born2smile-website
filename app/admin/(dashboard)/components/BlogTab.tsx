@@ -447,30 +447,28 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                       key={post.slug}
                       className="flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
                     >
-                      {/* Row 1: Status badge + Title + Category */}
-                      <div className="flex items-start gap-3">
+                      {/* Row 1: Category + Title + Status */}
+                      <div className="flex items-center gap-2">
+                        <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                          {post.category}
+                        </span>
+                        <a
+                          href={`/blog/${post.slug}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                        >
+                          {post.title}
+                        </a>
                         <span
-                          className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
+                          className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
                         >
                           {statusLabel}
                         </span>
-                        <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
-                          <a
-                            href={`/blog/${post.slug}`}
-                            target="_blank"
-                            rel="noopener"
-                            className="truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                          >
-                            {post.title}
-                          </a>
-                          <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                            {post.category}
-                          </span>
-                        </div>
                       </div>
 
                       {/* Row 2: Date/meta + CRUD buttons */}
-                      <div className="flex items-center justify-between gap-2 pl-0 sm:pl-[calc(2rem+0.75rem)]">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
                           <span>{post.date}</span>
                           {dDay !== null && (
