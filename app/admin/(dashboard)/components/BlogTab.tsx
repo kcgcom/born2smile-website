@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
@@ -109,7 +109,11 @@ type StatusFilter = "all" | "published" | "scheduled" | "draft";
 // BlogTab
 // -------------------------------------------------------------
 
-export function BlogTab() {
+interface BlogTabProps {
+  editSlug?: string | null;
+}
+
+export function BlogTab({ editSlug }: BlogTabProps) {
   const today = getTodayKST();
 
   const {
@@ -139,6 +143,21 @@ export function BlogTab() {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // 딥링크: ?edit=slug 파라미터로 특정 포스트 편집 모드 자동 진입
+  const deepLinkProcessed = useRef(false);
+  useEffect(() => {
+    if (!editSlug || postsLoading || deepLinkProcessed.current) return;
+    const target = posts.find((p) => p.slug === editSlug);
+    if (target) {
+      deepLinkProcessed.current = true;
+      const timer = setTimeout(() => {
+        setEditingPost(target);
+        setEditorOpen(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [editSlug, posts, postsLoading]);
 
   // Computed blog stats from API data
   const blogStats = useMemo(() => {

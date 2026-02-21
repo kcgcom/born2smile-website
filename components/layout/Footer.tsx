@@ -1,5 +1,6 @@
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { AdminSettingsLink } from "@/components/admin/AdminSettingsLink";
 
 export function Footer() {
   return (
@@ -24,6 +25,7 @@ export function Footer() {
             <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
               <MapPin size={18} className="text-[var(--color-gold-light)]" />
               오시는 길
+              <AdminSettingsLink />
             </h2>
             <ul className="space-y-2 text-lg md:text-base">
               <li>
@@ -81,6 +83,7 @@ export function Footer() {
             <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
               <Clock size={18} className="text-[var(--color-gold-light)]" />
               진료시간
+              <AdminSettingsLink />
             </h2>
             <ul className="space-y-1.5 text-lg md:max-w-80 md:text-base">
               {HOURS.schedule.map((item) => (

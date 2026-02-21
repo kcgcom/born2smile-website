@@ -24,6 +24,7 @@ export default function AdminDashboardPage() {
   const searchParams = useSearchParams();
 
   const rawTab = searchParams.get("tab");
+  const editSlug = searchParams.get("edit");
   const validTabIds = TABS.map((t) => t.id) as string[];
   const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "overview";
 
@@ -81,7 +82,7 @@ export default function AdminDashboardPage() {
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "traffic" && <TrafficTab />}
         {activeTab === "search" && <SearchTab />}
-        {activeTab === "blog" && <BlogTab />}
+        {activeTab === "blog" && <BlogTab editSlug={editSlug} />}
         {activeTab === "settings" && <SettingsTab />}
       </div>
     </div>

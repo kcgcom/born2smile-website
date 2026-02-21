@@ -6,6 +6,7 @@ import { getClinicJsonLd } from "@/lib/jsonld";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
+import { AdminFloatingButton } from "@/components/admin/AdminFloatingButton";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -90,6 +91,7 @@ export default function RootLayout({
         <main id="main-content">{children}</main>
         <Footer />
         <FloatingCTA />
+        <AdminFloatingButton />
         <GoogleAnalytics gaId="G-3ZDMMFGP6Z" />
       </body>
     </html>

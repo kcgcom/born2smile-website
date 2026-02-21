@@ -14,6 +14,7 @@ import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { shareUrl } from "@/lib/share";
 import { getTodayKST } from "@/lib/date";
+import { AdminEditIcon } from "@/components/admin/AdminEditIcon";
 
 const POSTS_PER_PAGE = 12;
 
@@ -237,6 +238,11 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
                     >
                       {post.category}
                     </span>
+                    <div className="flex items-center gap-1.5">
+                    <AdminEditIcon
+                      href={`/admin?tab=blog&edit=${post.slug}`}
+                      label={`"${post.title}" 수정`}
+                    />
                     <button
                       onClick={(e) =>
                         handleShare(e, post.slug, post.title)
@@ -256,6 +262,7 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
                         </>
                       )}
                     </button>
+                    </div>
                   </div>
 
                   {/* 제목 + 부제 */}
