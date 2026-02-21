@@ -55,7 +55,7 @@ export function FloatingCTA() {
                   isActive
                     ? "font-medium text-[var(--color-primary)]"
                     : isContact
-                      ? "font-medium text-[var(--color-gold)]"
+                      ? "font-medium text-[var(--color-gold-dark)]"
                       : "text-gray-600 hover:text-[var(--color-primary)]"
                 }`}
               >
