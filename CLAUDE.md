@@ -73,7 +73,7 @@ app/                          # Next.js App Router pages
       layout.tsx              # AuthGuard wrapper
       page.tsx                # Dashboard main — 5탭 컨테이너 ("use client")
       components/
-        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/블로그/설정)
+        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/블로그/설정, 아이콘+반응형 텍스트)
         OverviewTab.tsx       # 개요 탭 (블로그 통계, 사이트 설정 상태, 개선 항목)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바 차트, Search Console API)
@@ -128,6 +128,7 @@ components/
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
+    DashboardHeader.tsx       # 관리자/개발 대시보드 공유 헤더 (variant prop, 양방향 네비게이션) ("use client")
     AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client")
     AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
