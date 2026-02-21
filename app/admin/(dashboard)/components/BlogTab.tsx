@@ -349,12 +349,12 @@ export function BlogTab({ editSlug }: BlogTabProps) {
 
       {!postsLoading && !postsError && (
         <>
-          {/* Summary cards */}
+          {/* Summary cards (clickable filters) */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" />
-            <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" />
-            <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" />
-            <StatCard label="임시저장" value={blogStats.draft} color="text-gray-500" variant="elevated" />
+            <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => setStatusFilter("all")} active={statusFilter === "all"} />
+            <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => setStatusFilter("published")} active={statusFilter === "published"} />
+            <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => setStatusFilter("scheduled")} active={statusFilter === "scheduled"} />
+            <StatCard label="임시저장" value={blogStats.draft} color="text-gray-500" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
           </div>
 
           {/* Search & Filter bar */}
