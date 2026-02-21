@@ -9,7 +9,7 @@
 export const CLINIC = {
   name: "서울본치과",
   nameEn: "Seoul Born Dental Clinic",
-  slogan: "당신의 미소를 디자인합니다",
+  slogan: "꼭 필요한 치료만, 오래오래 편안하게",
   phone: "1833-7552",
   phoneIntl: "+82-1833-7552",
   phoneHref: "tel:1833-7552",
