@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd } from "@/lib/jsonld";
@@ -89,6 +90,7 @@ export default function RootLayout({
         <main id="main-content">{children}</main>
         <Footer />
         <FloatingCTA />
+        <GoogleAnalytics gaId="G-3ZDMMFGP6Z" />
       </body>
     </html>
   );
