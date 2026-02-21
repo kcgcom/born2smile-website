@@ -208,7 +208,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     }
     setSaving(true);
     setSaveError(null);
-    const { error } = await onSave({ ...form });
+    const { error } = await onSave({ ...form, published: false });
     setSaving(false);
     if (error) setSaveError(error);
   };
@@ -325,7 +325,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
           </Field>
 
           {/* Date */}
-          <Field label="발행일" required>
+          <Field label="발행일" required hint="발행 시 변경 가능">
             <input
               type="date"
               value={form.date}
@@ -351,20 +351,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
               {readTime}
             </div>
           </Field>
-
-          {/* Published */}
-          <div className="flex items-center gap-3">
-            <input
-              id="published"
-              type="checkbox"
-              checked={form.published}
-              onChange={(e) => setField("published", e.target.checked)}
-              className="h-4 w-4 rounded border-[var(--border)] accent-[var(--color-primary)]"
-            />
-            <label htmlFor="published" className="text-sm font-medium text-[var(--foreground)]">
-              발행 (체크 해제 시 임시저장)
-            </label>
-          </div>
 
           {/* Content sections */}
           <div>
@@ -469,7 +455,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4" />
-            {saving ? "저장 중..." : "저장"}
+            {saving ? "저장 중..." : "임시저장"}
           </button>
         </div>
       </div>

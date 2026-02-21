@@ -69,3 +69,11 @@ export const siteHoursSchema = z.object({
   closedDays: z.string().max(100),
   notice: z.string().max(200),
 });
+
+// ---------------------------------------------------------------------------
+// Publish Schedule Schema
+// ---------------------------------------------------------------------------
+
+export const siteScheduleSchema = z.object({
+  publishDays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+});

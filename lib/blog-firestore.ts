@@ -280,6 +280,7 @@ export function getRelatedPostsFromFirestore(
 
 export type CreateBlogPostData = Omit<BlogPost, "readTime"> & {
   readTime?: string;
+  published?: boolean;
 };
 
 /**
@@ -306,7 +307,7 @@ export async function createBlogPost(
     content: data.content,
     readTime,
     reviewedDate: null,
-    published: true,
+    published: data.published ?? false,
     createdAt: now,
     updatedAt: now,
     updatedBy,

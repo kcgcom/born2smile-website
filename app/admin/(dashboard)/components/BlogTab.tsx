@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, X } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
@@ -145,9 +145,17 @@ export function BlogTab({ editSlug }: BlogTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
 
+  // Schedule data for publish date recommendation
+  const { data: scheduleData } = useAdminApi<{ publishDays: number[] }>(
+    "/api/admin/site-config/schedule",
+  );
+
   // CRUD state
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
+  const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
+  const [publishDate, setPublishDate] = useState("");
+  const [publishing, setPublishing] = useState(false);
   const { mutate } = useAdminMutation();
 
   useEffect(() => {
@@ -250,6 +258,55 @@ export function BlogTab({ editSlug }: BlogTabProps) {
     if (!window.confirm("이 포스트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
     const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "DELETE");
     if (!error) refetchPosts();
+  };
+
+  // Publish flow
+  const getNextPublishDate = (): string => {
+    const days = scheduleData?.publishDays ?? [1, 3, 5];
+    if (days.length === 0) {
+      // No schedule — default to tomorrow
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    // Collect dates already scheduled (published posts with future dates)
+    const scheduledDates = new Set(
+      posts.filter((p) => p.published && p.date > today).map((p) => p.date),
+    );
+    // Find next available date starting from today
+    const d = new Date();
+    for (let i = 0; i < 90; i++) {
+      const iso = d.toISOString().slice(0, 10);
+      const dow = d.getDay(); // 0=Sun
+      if (days.includes(dow) && !scheduledDates.has(iso) && iso >= today) {
+        return iso;
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    // Fallback: tomorrow
+    const fb = new Date();
+    fb.setDate(fb.getDate() + 1);
+    return fb.toISOString().slice(0, 10);
+  };
+
+  const handlePublishOpen = (slug: string) => {
+    setPublishingSlug(slug);
+    setPublishDate(getNextPublishDate());
+  };
+
+  const handlePublishConfirm = async () => {
+    if (!publishingSlug || !publishDate) return;
+    setPublishing(true);
+    const { error } = await mutate(
+      `/api/admin/blog-posts/${publishingSlug}`,
+      "PUT",
+      { published: true, date: publishDate },
+    );
+    setPublishing(false);
+    if (!error) {
+      setPublishingSlug(null);
+      refetchPosts();
+    }
   };
 
   const handleEditorSave = async (data: BlogEditorData): Promise<{ error: string | null }> => {
@@ -426,6 +483,16 @@ export function BlogTab({ editSlug }: BlogTabProps) {
 
                       {/* CRUD buttons */}
                       <div className="flex shrink-0 items-center gap-1">
+                        {!post.published && (
+                          <button
+                            onClick={() => handlePublishOpen(post.slug)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                            aria-label={`${post.title} 발행`}
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            발행
+                          </button>
+                        )}
                         <button
                           onClick={() => handleEdit(post)}
                           className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
@@ -537,6 +604,60 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             )}
           </section>
         </>
+      )}
+
+      {/* Publish popup */}
+      {publishingSlug && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="발행 예약"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setPublishingSlug(null)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-xl bg-[var(--surface)] p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-[var(--foreground)]">발행 예약</h3>
+              <button
+                onClick={() => setPublishingSlug(null)}
+                className="rounded-lg p-1 text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--foreground)]"
+                aria-label="닫기"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-1 text-sm text-[var(--muted)]">
+              스케줄 기반 추천 날짜입니다. 변경할 수 있습니다.
+            </p>
+            <input
+              type="date"
+              value={publishDate}
+              onChange={(e) => setPublishDate(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setPublishingSlug(null)}
+                disabled={publishing}
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handlePublishConfirm}
+                disabled={publishing || !publishDate}
+                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                <Calendar className="h-4 w-4" />
+                {publishing ? "처리 중..." : "발행 예약"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Blog editor modal */}

@@ -464,6 +464,91 @@ function HoursEditor() {
 // SettingsTab (main)
 // -------------------------------------------------------------
 
+// -------------------------------------------------------------
+// Section 4: Publish Schedule Editor
+// -------------------------------------------------------------
+
+const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+function ScheduleEditor() {
+  const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>(
+    "/api/admin/site-config/schedule",
+  );
+  const { mutate, loading: saving } = useAdminMutation();
+  const [formEdits, setFormEdits] = useState<number[] | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const days = formEdits ?? data?.publishDays ?? [1, 3, 5];
+
+  const toggleDay = (day: number) => {
+    setFormEdits((prev) => {
+      const current = prev ?? data?.publishDays ?? [1, 3, 5];
+      if (current.includes(day)) {
+        // Don't allow removing all days
+        if (current.length <= 1) return current;
+        return current.filter((d) => d !== day);
+      }
+      return [...current, day].sort((a, b) => a - b);
+    });
+  };
+
+  const handleSave = async () => {
+    const { error } = await mutate(
+      "/api/admin/site-config/schedule",
+      "PUT",
+      { publishDays: days },
+    );
+    if (!error) {
+      setFormEdits(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refetch();
+    }
+  };
+
+  if (loading) return <LoadingPlaceholder />;
+
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-[var(--foreground)]">발행 스케줄</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            블로그 포스트 발행 요일을 설정합니다. 발행 시 추천 날짜 계산에 사용됩니다.
+          </p>
+        </div>
+        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {DAY_LABELS.map((label, idx) => {
+          const selected = days.includes(idx);
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => toggleDay(idx)}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+                selected
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                  : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-[var(--muted)]">
+        선택된 요일: {days.length === 0 ? "없음" : days.map((d) => DAY_LABELS[d]).join(", ")} (주 {days.length}회)
+      </p>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// SettingsTab (main)
+// -------------------------------------------------------------
+
 export function SettingsTab() {
   const siteConfig = getSiteConfigStatus();
 
@@ -472,6 +557,7 @@ export function SettingsTab() {
       <SnsLinksEditor />
       <ClinicInfoEditor />
       <HoursEditor />
+      <ScheduleEditor />
       <SiteConfigSection config={siteConfig} />
       <QuickLinksSection />
     </div>

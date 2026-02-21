@@ -5,17 +5,20 @@ import {
   getSiteLinks,
   getSiteClinic,
   getSiteHours,
+  getSiteSchedule,
   updateSiteLinks,
   updateSiteClinic,
   updateSiteHours,
+  updateSiteSchedule,
 } from "@/lib/site-config-firestore";
 import {
   siteLinksSchema,
   siteClinicSchema,
   siteHoursSchema,
+  siteScheduleSchema,
 } from "@/lib/blog-validation";
 
-const VALID_TYPES = ["links", "clinic", "hours"] as const;
+const VALID_TYPES = ["links", "clinic", "hours", "schedule"] as const;
 type ConfigType = (typeof VALID_TYPES)[number];
 
 function isValidType(type: string): type is ConfigType {
@@ -34,7 +37,7 @@ export async function GET(
   const { type } = await params;
   if (!isValidType(type)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 타입입니다 (links, clinic, hours)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 타입입니다 (links, clinic, hours, schedule)" },
       { status: 400, headers: CACHE_HEADERS },
     );
   }
@@ -43,7 +46,8 @@ export async function GET(
     let config;
     if (type === "links") config = await getSiteLinks();
     else if (type === "clinic") config = await getSiteClinic();
-    else config = await getSiteHours();
+    else if (type === "hours") config = await getSiteHours();
+    else config = await getSiteSchedule();
 
     return Response.json({ data: config }, { headers: CACHE_HEADERS });
   } catch (e) {
@@ -65,7 +69,7 @@ export async function PUT(
   const { type } = await params;
   if (!isValidType(type)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 타입입니다 (links, clinic, hours)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 타입입니다 (links, clinic, hours, schedule)" },
       { status: 400, headers: CACHE_HEADERS },
     );
   }
@@ -88,14 +92,19 @@ export async function PUT(
     } else if (type === "clinic") {
       validated = siteClinicSchema.parse(body);
       await updateSiteClinic(validated, auth.email);
-    } else {
+    } else if (type === "hours") {
       validated = siteHoursSchema.parse(body);
       await updateSiteHours(validated, auth.email);
+    } else {
+      validated = siteScheduleSchema.parse(body);
+      await updateSiteSchedule(validated, auth.email);
     }
 
-    revalidatePath("/");
-    revalidatePath("/about");
-    revalidatePath("/contact");
+    if (type !== "schedule") {
+      revalidatePath("/");
+      revalidatePath("/about");
+      revalidatePath("/contact");
+    }
 
     return Response.json(
       { data: { type, updated: true } },

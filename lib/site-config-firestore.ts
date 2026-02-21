@@ -7,6 +7,7 @@ const COLLECTION = "site-config";
 const CACHE_TAG_LINKS = "site-config-links";
 const CACHE_TAG_CLINIC = "site-config-clinic";
 const CACHE_TAG_HOURS = "site-config-hours";
+const CACHE_TAG_SCHEDULE = "site-config-schedule";
 const CACHE_TTL = 3600; // 1 hour
 
 // =============================================================
@@ -40,6 +41,10 @@ export type SiteHours = {
   lunchTime: string;
   closedDays: string;
   notice: string;
+};
+
+export type SiteSchedule = {
+  publishDays: number[]; // 0=일, 1=월, ..., 6=토
 };
 
 // =============================================================
@@ -131,4 +136,35 @@ export async function updateSiteHours(
     .doc("hours")
     .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
   revalidateTag(CACHE_TAG_HOURS, "max");
+}
+
+// =============================================================
+// Schedule (Publish Schedule)
+// =============================================================
+
+const DEFAULT_SCHEDULE: SiteSchedule = { publishDays: [1, 3, 5] }; // 월, 수, 금
+
+export const getSiteSchedule = unstable_cache(
+  async (): Promise<SiteSchedule> => {
+    const db = getFirestore(getAdminApp());
+    const doc = await db.collection(COLLECTION).doc("schedule").get();
+    if (!doc.exists) return { ...DEFAULT_SCHEDULE };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { updatedAt, updatedBy, ...fields } = doc.data() as Record<string, unknown> & { updatedAt?: Timestamp; updatedBy?: string };
+    return { ...DEFAULT_SCHEDULE, ...(fields as Partial<SiteSchedule>) };
+  },
+  [CACHE_TAG_SCHEDULE],
+  { revalidate: CACHE_TTL, tags: [CACHE_TAG_SCHEDULE] },
+);
+
+export async function updateSiteSchedule(
+  data: SiteSchedule,
+  updatedBy: string,
+): Promise<void> {
+  const db = getFirestore(getAdminApp());
+  await db
+    .collection(COLLECTION)
+    .doc("schedule")
+    .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
+  revalidateTag(CACHE_TAG_SCHEDULE, "max");
 }
