@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import {
   getImprovementStats,
   getBlogStats,
@@ -13,77 +12,6 @@ import {
 } from "@/lib/admin-data";
 import { ConfigRow } from "./ConfigRow";
 import { StatCard } from "./StatCard";
-
-// ---------------------------------------------------------------
-// Category hex colors for Recharts
-// ---------------------------------------------------------------
-
-const CATEGORY_HEX: Record<string, string> = {
-  "예방·구강관리": "#1D4ED8",
-  "보존치료":     "#15803D",
-  "보철치료":     "#7E22CE",
-  "임플란트":     "#BE123C",
-  "치아교정":     "#A67B1E",
-  "소아치료":     "#C2410C",
-  "구강건강상식": "#0F766E",
-};
-
-type CategoryData = { category: string; count: number };
-
-const CategoryPieChart = dynamic(
-  () =>
-    import("recharts").then((mod) => {
-      function Chart({ data }: { data: CategoryData[] }) {
-        const pieData = data.map((d) => ({
-          name: d.category,
-          value: d.count,
-          fill: CATEGORY_HEX[d.category] ?? "#6B7280",
-        }));
-        return (
-          <mod.ResponsiveContainer width="100%" height={240}>
-            <mod.PieChart>
-              <mod.Pie
-                data={pieData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label={(props) => {
-                  const { cx: cxVal, cy: cyVal, midAngle, innerRadius: ir, outerRadius: or, percent } = props as unknown as { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number };
-                  const RADIAN = Math.PI / 180;
-                  const radius = ir + (or - ir) * 0.5;
-                  const x = cxVal + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cyVal + radius * Math.sin(-midAngle * RADIAN);
-                  if (percent < 0.05) return null;
-                  return (
-                    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
-                      {(percent * 100).toFixed(0)}%
-                    </text>
-                  );
-                }}
-                labelLine={false}
-              >
-                {pieData.map((entry, index) => (
-                  <mod.Cell key={index} fill={entry.fill} />
-                ))}
-              </mod.Pie>
-              <mod.Tooltip
-                formatter={
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ((value: number, name: string) => [`${value}편`, name]) as any
-                }
-                contentStyle={{ fontSize: 12 }}
-              />
-              <mod.Legend wrapperStyle={{ fontSize: 11 }} iconSize={10} />
-            </mod.PieChart>
-          </mod.ResponsiveContainer>
-        );
-      }
-      return Chart;
-    }),
-  { ssr: false },
-);
 
 // -------------------------------------------------------------
 // OverviewTab
@@ -299,14 +227,6 @@ function BlogSection({ stats }: { stats: BlogStats }) {
         <StatCard label="전체" value={stats.total} />
         <StatCard label="발행" value={stats.published} color="text-green-600" />
         <StatCard label="예약" value={stats.scheduled} color="text-[var(--color-gold)]" />
-      </div>
-
-      {/* 카테고리별 분포 */}
-      <div className="mb-4">
-        <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-          카테고리별 분포
-        </h4>
-        <CategoryPieChart data={stats.byCategory} />
       </div>
 
       {/* 예약 발행 대기 */}
