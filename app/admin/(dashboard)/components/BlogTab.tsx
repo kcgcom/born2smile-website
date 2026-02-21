@@ -445,18 +445,16 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                   return (
                     <li
                       key={post.slug}
-                      className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
+                      className="flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
                     >
-                      {/* Status badge */}
-                      <span
-                        className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
-                      >
-                        {statusLabel}
-                      </span>
-
-                      {/* Title & meta */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
+                      {/* Row 1: Status badge + Title + Category */}
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
+                        >
+                          {statusLabel}
+                        </span>
+                        <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
                           <a
                             href={`/blog/${post.slug}`}
                             target="_blank"
@@ -469,7 +467,11 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                             {post.category}
                           </span>
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
+                      </div>
+
+                      {/* Row 2: Date/meta + CRUD buttons */}
+                      <div className="flex items-center justify-between gap-2 pl-0 sm:pl-[calc(2rem+0.75rem)]">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
                           <span>{post.date}</span>
                           {dDay !== null && (
                             <span className="font-medium text-amber-600">D-{dDay}</span>
@@ -479,36 +481,34 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                             {likesLoading ? "..." : likeCount}
                           </span>
                         </div>
-                      </div>
-
-                      {/* CRUD buttons */}
-                      <div className="flex shrink-0 items-center gap-1">
-                        {!post.published && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          {!post.published && (
+                            <button
+                              onClick={() => handlePublishOpen(post.slug)}
+                              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                              aria-label={`${post.title} 발행`}
+                            >
+                              <Calendar className="h-3.5 w-3.5" />
+                              발행
+                            </button>
+                          )}
                           <button
-                            onClick={() => handlePublishOpen(post.slug)}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
-                            aria-label={`${post.title} 발행`}
+                            onClick={() => handleEdit(post)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                            aria-label={`${post.title} 수정`}
                           >
-                            <Calendar className="h-3.5 w-3.5" />
-                            발행
+                            <Pencil className="h-3.5 w-3.5" />
+                            수정
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleEdit(post)}
-                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
-                          aria-label={`${post.title} 수정`}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDelete(post.slug)}
-                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
-                          aria-label={`${post.title} 삭제`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          삭제
-                        </button>
+                          <button
+                            onClick={() => handleDelete(post.slug)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                            aria-label={`${post.title} 삭제`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            삭제
+                          </button>
+                        </div>
                       </div>
                     </li>
                   );
