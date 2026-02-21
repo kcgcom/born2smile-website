@@ -18,13 +18,13 @@ const PRIORITY_STYLES: Record<string, string> = {
   CRITICAL: "bg-red-100 text-red-800",
   HIGH: "bg-orange-100 text-orange-800",
   MEDIUM: "bg-blue-100 text-blue-800",
-  LOW: "bg-gray-100 text-gray-800",
+  LOW: "bg-[var(--background)] text-[var(--foreground)]",
 };
 
 function PriorityBadge({ priority }: { priority: string }) {
   return (
     <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_STYLES[priority] ?? "bg-gray-100 text-gray-600"}`}
+      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_STYLES[priority] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
     >
       {priority}
     </span>
@@ -55,7 +55,7 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
     );
   }
   return (
-    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted-light)]">
       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
       </svg>

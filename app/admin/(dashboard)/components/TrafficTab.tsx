@@ -417,7 +417,7 @@ export function TrafficTab() {
           onChange={(v) => setPeriod(v as Period)}
         />
         {data?.dataAsOf && (
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-[var(--muted)]">
+          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
             ⓘ 데이터 기준: {data.dataAsOf}
           </span>
         )}

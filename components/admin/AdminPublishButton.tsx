@@ -160,31 +160,31 @@ export function AdminPublishButton({ slug }: AdminPublishButtonProps) {
             onClick={() => setShowPopup(false)}
             aria-hidden="true"
           />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+          <div className="relative z-10 w-full max-w-sm rounded-xl bg-[var(--surface)] p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold text-gray-900">발행 예약</h3>
+              <h3 className="text-base font-bold text-[var(--foreground)]">발행 예약</h3>
               <button
                 onClick={() => setShowPopup(false)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                 aria-label="닫기"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mb-1 text-sm text-gray-500">
+            <p className="mb-1 text-sm text-[var(--muted)]">
               스케줄 기반 추천 날짜입니다. 변경할 수 있습니다.
             </p>
             <input
               type="date"
               value={publishDate}
               onChange={(e) => setPublishDate(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="mb-4 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             />
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowPopup(false)}
                 disabled={publishing}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--background)] disabled:opacity-50"
               >
                 취소
               </button>

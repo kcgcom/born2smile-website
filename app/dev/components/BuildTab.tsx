@@ -36,7 +36,7 @@ export function BuildTab() {
       align: "center" as const,
       render: (row: Record<string, unknown>) => (
         <span
-          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[row.type as string] ?? "bg-gray-100 text-gray-700"}`}
+          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[row.type as string] ?? "bg-[var(--background)] text-[var(--foreground)]"}`}
         >
           {row.type as string}
         </span>
@@ -48,7 +48,7 @@ export function BuildTab() {
       align: "center" as const,
       render: (row: Record<string, unknown>) => (
         <span
-          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${RENDERING_STYLES[row.rendering as string] ?? "bg-gray-100 text-gray-700"}`}
+          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${RENDERING_STYLES[row.rendering as string] ?? "bg-[var(--background)] text-[var(--foreground)]"}`}
         >
           {row.rendering as string}
         </span>

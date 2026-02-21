@@ -98,7 +98,7 @@ function FormField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
+        className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
       />
     </div>
   );
@@ -389,7 +389,7 @@ function HoursEditor() {
       <div className="mb-4 overflow-x-auto rounded-lg border border-[var(--border)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 text-[var(--muted)]">
+            <tr className="bg-[var(--background)] text-[var(--muted)]">
               <th className="py-2 pl-4 pr-2 text-left font-medium">요일</th>
               <th className="px-2 py-2 text-left font-medium">시간</th>
               <th className="px-2 py-2 text-center font-medium">운영</th>
@@ -407,7 +407,7 @@ function HoursEditor() {
                     type="text"
                     value={row.time}
                     onChange={(e) => setScheduleField(i, "time", e.target.value)}
-                    className="w-36 rounded border border-[var(--border)] bg-gray-50 px-2 py-1 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-blue-100"
+                    className="w-36 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/15"
                   />
                 </td>
                 <td className="px-2 py-1.5 text-center">
@@ -424,7 +424,7 @@ function HoursEditor() {
                     value={row.note ?? ""}
                     onChange={(e) => setScheduleField(i, "note", e.target.value)}
                     placeholder="예: 야간진료"
-                    className="w-full rounded border border-[var(--border)] bg-gray-50 px-2 py-1 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-blue-100"
+                    className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/15"
                   />
                 </td>
               </tr>
@@ -504,7 +504,7 @@ function QuickLinkCard({
       rel="noopener noreferrer"
       className="flex flex-col items-center gap-2 rounded-lg border border-[var(--border)] p-4 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-blue-50"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-[var(--muted)]">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted)]">
         <QuickLinkIcon icon={link.icon} />
       </span>
       <span className="text-xs font-medium text-[var(--foreground)] leading-tight">

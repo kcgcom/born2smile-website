@@ -59,7 +59,7 @@ function ImprovementSection({ stats }: { stats: ImprovementStats }) {
             {stats.done}/{stats.total} ({pct}%)
           </span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+        <div className="h-3 overflow-hidden rounded-full bg-[var(--border)]">
           <div
             className="h-full rounded-full bg-[var(--color-primary)] transition-all"
             style={{ width: `${pct}%` }}
@@ -76,11 +76,13 @@ function ImprovementSection({ stats }: { stats: ImprovementStats }) {
             <div key={bp.priority}>
               <button
                 onClick={() => togglePriority(bp.priority)}
-                className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-gray-50"
+                aria-expanded={isExpanded}
+                aria-label={`${bp.priority} 우선순위 항목 ${isExpanded ? "접기" : "펼치기"}`}
+                className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]"
               >
                 <PriorityBadge priority={bp.priority} />
                 <div className="flex-1">
-                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--border)]">
                     <div
                       className="h-full rounded-full bg-[var(--color-primary)] transition-all"
                       style={{
@@ -100,7 +102,7 @@ function ImprovementSection({ stats }: { stats: ImprovementStats }) {
                 </svg>
               </button>
               {isExpanded && (
-                <ul className="mb-2 ml-1 mt-1 space-y-1.5 border-l-2 border-gray-100 pl-3">
+                <ul className="mb-2 ml-1 mt-1 space-y-1.5 border-l-2 border-[var(--border)] pl-3">
                   {items.map((item) => (
                     <li key={item.id} className="flex items-start gap-2 text-sm">
                       <StatusIcon status={item.status} />
@@ -192,7 +194,7 @@ function PriorityBadge({ priority }: { priority: string }) {
     CRITICAL: "bg-red-100 text-red-700",
     HIGH: "bg-orange-100 text-orange-700",
     MEDIUM: "bg-blue-100 text-blue-700",
-    LOW: "bg-gray-100 text-gray-600",
+    LOW: "bg-[var(--background)] text-[var(--muted)]",
   };
 
   return (
@@ -239,7 +241,7 @@ function BlogSection({ stats }: { stats: BlogStats }) {
             {visibleScheduled.map((p) => (
               <li
                 key={p.slug}
-                className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg bg-[var(--background)] px-3 py-2 text-sm"
               >
                 <span className="truncate text-[var(--foreground)]">{p.title}</span>
                 <span className="ml-2 shrink-0 text-xs text-[var(--muted)]">{p.date}</span>
@@ -249,7 +251,7 @@ function BlogSection({ stats }: { stats: BlogStats }) {
           {hasMore && (
             <button
               onClick={() => setShowAllScheduled((prev) => !prev)}
-              className="mt-2 w-full rounded-lg border border-[var(--border)] py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-gray-50 hover:text-[var(--foreground)]"
+              className="mt-2 w-full rounded-lg border border-[var(--border)] py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
             >
               {showAllScheduled
                 ? "접기"

@@ -157,7 +157,7 @@ export function SearchTab() {
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
         {data?.dataAsOf && (
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-[var(--muted)]">
+          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
             ⓘ 데이터 기준: {data.dataAsOf} (2~3일 지연)
           </span>
         )}

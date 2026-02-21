@@ -19,10 +19,12 @@ export function PeriodSelector({
           <button
             key={period.value}
             onClick={() => onChange(period.value)}
+            aria-label={`${period.label} 기간 선택`}
+            aria-pressed={isSelected}
             className={`rounded px-3 py-1.5 text-sm transition-colors ${
               isSelected
                 ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-[var(--muted)] hover:bg-gray-200"
+                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
             }`}
           >
             {period.label}

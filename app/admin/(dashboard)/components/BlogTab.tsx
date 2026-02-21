@@ -354,7 +354,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => setStatusFilter("all")} active={statusFilter === "all"} />
             <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => setStatusFilter("published")} active={statusFilter === "published"} />
             <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => setStatusFilter("scheduled")} active={statusFilter === "scheduled"} />
-            <StatCard label="임시저장" value={blogStats.draft} color="text-gray-500" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
+            <StatCard label="임시저장" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
           </div>
 
           {/* Search & Filter bar */}
@@ -366,14 +366,14 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                 placeholder="제목 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100 min-w-[160px]"
+                className="h-9 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 min-w-[160px]"
               />
 
               {/* Category dropdown */}
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 {BLOG_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -384,7 +384,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 <option value="all">전체 상태</option>
                 <option value="published">발행</option>
@@ -396,7 +396,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 <option value="newest">최신순</option>
                 <option value="oldest">오래된순</option>
@@ -414,7 +414,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
           <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
             <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">포스트 목록</h3>
             {filteredPosts.length === 0 ? (
-              <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
+              <div className="rounded-lg bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted)]">
                 검색 결과가 없습니다
               </div>
             ) : (
@@ -429,7 +429,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                         )
                       : null;
                   const catColor =
-                    categoryColors[post.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
+                    categoryColors[post.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
 
                   const statusLabel = !post.published
                     ? "임시"
@@ -437,7 +437,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                     ? "발행"
                     : "예약";
                   const statusClass = !post.published
-                    ? "bg-gray-100 text-gray-600"
+                    ? "bg-[var(--background)] text-[var(--muted)]"
                     : isPublished
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700";
@@ -445,7 +445,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                   return (
                     <li
                       key={post.slug}
-                      className="flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
+                      className="flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm"
                     >
                       {/* Row 1: Category + Title + Status */}
                       <div className="flex items-center gap-2">
@@ -533,7 +533,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             </div>
 
             {likesLoading && (
-              <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
+              <div className="rounded-lg bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted)]">
                 불러오는 중...
               </div>
             )}
@@ -575,7 +575,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                     label: "카테고리",
                     render: (row) => {
                       const catColor =
-                        categoryColors[row.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
+                        categoryColors[row.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
                       return (
                         <span className={`rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
                           {String(row.category)}
@@ -625,7 +625,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
               <h3 className="text-base font-bold text-[var(--foreground)]">발행 예약</h3>
               <button
                 onClick={() => setPublishingSlug(null)}
-                className="rounded-lg p-1 text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--foreground)]"
+                className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                 aria-label="닫기"
               >
                 <X className="h-4 w-4" />
@@ -642,7 +642,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                 type="date"
                 value={publishDate}
                 onChange={(e) => setPublishDate(e.target.value)}
-                className="flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
               />
               <button
                 type="button"
@@ -650,7 +650,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                 className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   publishDate === today
                     ? "border-[var(--color-primary)] bg-blue-50 text-[var(--color-primary)]"
-                    : "border-[var(--border)] text-[var(--muted)] hover:bg-gray-50 hover:text-[var(--foreground)]"
+                    : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                 }`}
               >
                 오늘
@@ -665,7 +665,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
               <button
                 onClick={() => setPublishingSlug(null)}
                 disabled={publishing}
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--background)] disabled:opacity-50"
               >
                 취소
               </button>
@@ -796,7 +796,7 @@ function ScheduleEditor() {
               className={`flex h-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
                 selected
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                  : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
               }`}
             >
               {label}

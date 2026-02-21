@@ -239,7 +239,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--foreground)]"
+            className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
             aria-label="닫기"
           >
             <X className="h-5 w-5" />
@@ -314,7 +314,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                       selected
                         ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                        : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                        : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                     }`}
                   >
                     {tag}
@@ -347,7 +347,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
 
           {/* Read time (read-only) */}
           <Field label="예상 읽기 시간 (자동계산)">
-            <div className="flex h-9 items-center rounded-lg border border-[var(--border)] bg-gray-100 px-3 text-sm text-[var(--muted)]">
+            <div className="flex h-9 items-center rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--muted)]">
               {readTime}
             </div>
           </Field>
@@ -368,7 +368,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
               {form.content.map((sec, idx) => (
                 <div
                   key={idx}
-                  className="rounded-lg border border-[var(--border)] bg-gray-50 p-4 space-y-3"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-4 space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[var(--muted)]">섹션 {idx + 1}</span>
@@ -444,7 +444,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-lg border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--background)] disabled:opacity-50"
           >
             취소
           </button>
@@ -472,8 +472,8 @@ function inputClass(hasError: boolean, readOnly = false): string {
     "w-full rounded-lg border px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2",
     hasError
       ? "border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-100"
-      : "border-[var(--border)] bg-white focus:border-[var(--color-primary)] focus:ring-blue-100",
-    readOnly ? "bg-gray-100 cursor-not-allowed" : "",
+      : "border-[var(--border)] bg-white focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]/15",
+    readOnly ? "bg-[var(--background)] cursor-not-allowed" : "",
   ]
     .filter(Boolean)
     .join(" ");

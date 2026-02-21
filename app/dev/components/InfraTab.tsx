@@ -92,7 +92,7 @@ export function InfraTab() {
             {methods.map((m) => (
               <span
                 key={m}
-                className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${METHOD_STYLES[m] ?? "bg-gray-100 text-gray-700"}`}
+                className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${METHOD_STYLES[m] ?? "bg-[var(--background)] text-[var(--foreground)]"}`}
               >
                 {m}
               </span>
@@ -113,7 +113,7 @@ export function InfraTab() {
             </svg>
           </span>
         ) : (
-          <span className="text-gray-300">—</span>
+          <span className="text-[var(--muted-light)]">—</span>
         ),
     },
     { key: "description", label: "설명" },

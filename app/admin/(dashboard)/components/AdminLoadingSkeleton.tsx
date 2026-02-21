@@ -5,14 +5,14 @@ interface AdminLoadingSkeletonProps {
 }
 
 function Bone({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-gray-200 ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded bg-[var(--border)] ${className ?? ""}`} />;
 }
 
 function MetricsSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="rounded-lg bg-gray-50 p-3 text-center">
+        <div key={i} className="rounded-lg bg-[var(--background)] p-3 text-center">
           <Bone className="mx-auto h-8 w-16" />
           <Bone className="mx-auto mt-2 h-3 w-20" />
         </div>
