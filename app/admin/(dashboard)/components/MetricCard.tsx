@@ -6,6 +6,7 @@ interface MetricCardProps {
   change?: number | null;
   color?: string;
   loading?: boolean;
+  invertChange?: boolean;
 }
 
 export function MetricCard({
@@ -14,6 +15,7 @@ export function MetricCard({
   change,
   color,
   loading = false,
+  invertChange = false,
 }: MetricCardProps) {
   return (
     <div className="rounded-lg bg-gray-50 p-3 text-center">
@@ -30,9 +32,15 @@ export function MetricCard({
           {change === null ? (
             <span className="text-[var(--muted)]">—</span>
           ) : change >= 0 ? (
-            <span className="text-green-600">↑ {change}%</span>
+            invertChange ? (
+              <span className="text-red-600">▼ {change}%</span>
+            ) : (
+              <span className="text-green-600">▲ {change}%</span>
+            )
+          ) : invertChange ? (
+            <span className="text-green-600">▲ {Math.abs(change)}%</span>
           ) : (
-            <span className="text-red-600">↓ {Math.abs(change)}%</span>
+            <span className="text-red-600">▼ {Math.abs(change)}%</span>
           )}
         </p>
       )}

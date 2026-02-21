@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   getImprovementStats,
   getBlogStats,
@@ -10,6 +11,68 @@ import {
   type BlogStats,
   type SiteConfigStatus,
 } from "@/lib/admin-data";
+import { ConfigRow } from "./ConfigRow";
+import { StatCard } from "./StatCard";
+
+// ---------------------------------------------------------------
+// Category hex colors for Recharts
+// ---------------------------------------------------------------
+
+const CATEGORY_HEX: Record<string, string> = {
+  "예방·구강관리": "#1D4ED8",
+  "보존치료":     "#15803D",
+  "보철치료":     "#7E22CE",
+  "임플란트":     "#BE123C",
+  "치아교정":     "#A67B1E",
+  "소아치료":     "#C2410C",
+  "구강건강상식": "#0F766E",
+};
+
+type CategoryData = { category: string; count: number };
+
+const CategoryPieChart = dynamic(
+  () =>
+    import("recharts").then((mod) => {
+      function Chart({ data }: { data: CategoryData[] }) {
+        const pieData = data.map((d) => ({
+          name: d.category,
+          value: d.count,
+          fill: CATEGORY_HEX[d.category] ?? "#6B7280",
+        }));
+        return (
+          <mod.ResponsiveContainer width="100%" height={240}>
+            <mod.PieChart>
+              <mod.Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label={({ name, percent }: { name?: string; percent?: number }) =>
+                  `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                labelLine={false}
+              >
+                {pieData.map((entry, index) => (
+                  <mod.Cell key={index} fill={entry.fill} />
+                ))}
+              </mod.Pie>
+              <mod.Tooltip
+                formatter={
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ((value: number, name: string) => [`${value}편`, name]) as any
+                }
+                contentStyle={{ fontSize: 12 }}
+              />
+              <mod.Legend wrapperStyle={{ fontSize: 11 }} iconSize={10} />
+            </mod.PieChart>
+          </mod.ResponsiveContainer>
+        );
+      }
+      return Chart;
+    }),
+  { ssr: false },
+);
 
 // -------------------------------------------------------------
 // OverviewTab
@@ -207,7 +270,6 @@ function PriorityBadge({ priority }: { priority: string }) {
 // -------------------------------------------------------------
 
 function BlogSection({ stats }: { stats: BlogStats }) {
-  const maxCount = Math.max(...stats.byCategory.map((c) => c.count), 1);
   const SCHEDULED_PREVIEW = 5;
   const [showAllScheduled, setShowAllScheduled] = useState(false);
   const visibleScheduled = showAllScheduled
@@ -233,25 +295,7 @@ function BlogSection({ stats }: { stats: BlogStats }) {
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           카테고리별 분포
         </h4>
-        <div className="space-y-2">
-          {stats.byCategory.map((c) => (
-            <div key={c.category} className="flex items-center gap-3 text-sm">
-              <span className="w-24 shrink-0 truncate text-[var(--muted)]">
-                {c.category}
-              </span>
-              <div className="flex-1">
-                <div className="h-5 overflow-hidden rounded bg-gray-100">
-                  <div
-                    className="flex h-full items-center rounded bg-[var(--color-primary)] px-2 text-xs font-medium text-white transition-all"
-                    style={{ width: `${(c.count / maxCount) * 100}%`, minWidth: "2rem" }}
-                  >
-                    {c.count}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <CategoryPieChart data={stats.byCategory} />
       </div>
 
       {/* 예약 발행 대기 */}
@@ -284,23 +328,6 @@ function BlogSection({ stats }: { stats: BlogStats }) {
         </div>
       )}
     </section>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  color = "text-[var(--foreground)]",
-}: {
-  label: string;
-  value: number;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-lg bg-gray-50 p-3 text-center">
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="mt-0.5 text-xs text-[var(--muted)]">{label}</p>
-    </div>
   );
 }
 
@@ -350,25 +377,3 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
   );
 }
 
-function ConfigRow({ item }: { item: { label: string; configured: boolean } }) {
-  return (
-    <li className="flex items-center gap-2 text-sm">
-      {item.configured ? (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
-      ) : (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-          </svg>
-        </span>
-      )}
-      <span className={item.configured ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>
-        {item.label}
-      </span>
-    </li>
-  );
-}

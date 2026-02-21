@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
-import { BLOG_POSTS_META } from "@/lib/blog";
-import { getTodayKST } from "@/lib/date";
+import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
 import { getBlogCollectionJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "건강칼럼",
@@ -12,11 +13,8 @@ export const metadata: Metadata = {
   alternates: { canonical: `${BASE_URL}/blog` },
 };
 
-export default function BlogPage() {
-  const today = getTodayKST();
-  const publishedPosts = BLOG_POSTS_META
-    .filter((p) => p.date <= today)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+export default async function BlogPage() {
+  const publishedPosts = await getAllPublishedPostMetas();
   const collectionJsonLd = getBlogCollectionJsonLd(publishedPosts);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -49,7 +47,7 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <BlogContent />
+      <BlogContent initialPosts={publishedPosts} />
 
       <div className="h-16 md:hidden" />
     </>

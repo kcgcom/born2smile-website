@@ -1,10 +1,88 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useAdminApi } from "./useAdminApi";
 import { MetricCard } from "./MetricCard";
 import { PeriodSelector } from "./PeriodSelector";
 import { DataTable } from "./DataTable";
+import { AdminErrorState } from "./AdminErrorState";
+import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
+
+// ---------------------------------------------------------------
+// Recharts keyword chart — loaded client-side only
+// ---------------------------------------------------------------
+
+type KeywordChartItem = {
+  query: string;
+  impressions: number;
+  clicks: number;
+};
+
+const KeywordBarChart = dynamic(
+  () =>
+    import("recharts").then((mod) => {
+      function Chart({ data }: { data: KeywordChartItem[] }) {
+        const truncate = (s: string, n = 10) =>
+          s.length > n ? s.slice(0, n) + "…" : s;
+        const chartData = data.slice(0, 10).map((d) => ({
+          ...d,
+          label: truncate(d.query),
+        }));
+        return (
+          <mod.ResponsiveContainer width="100%" height={300}>
+            <mod.BarChart
+              data={chartData}
+              margin={{ top: 4, right: 8, left: 0, bottom: 52 }}
+            >
+              <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <mod.XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "#6B7280" }}
+                angle={-35}
+                textAnchor="end"
+                interval={0}
+              />
+              <mod.YAxis tick={{ fontSize: 11, fill: "#6B7280" }} width={44} />
+              <mod.Tooltip
+                formatter={
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ((value: number, name: string) => [value.toLocaleString("ko-KR"), name === "impressions" ? "노출" : "클릭"]) as any
+                }
+                labelFormatter={
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ((label: string) => { const item = chartData.find((d) => d.label === label); return item?.query ?? label; }) as any
+                }
+                contentStyle={{ fontSize: 12 }}
+              />
+              <mod.Legend
+                formatter={(value) =>
+                  value === "impressions" ? "노출" : "클릭"
+                }
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              />
+              <mod.Bar
+                dataKey="impressions"
+                name="impressions"
+                fill="#2563EB"
+                radius={[2, 2, 0, 0]}
+                maxBarSize={32}
+              />
+              <mod.Bar
+                dataKey="clicks"
+                name="clicks"
+                fill="#C9962B"
+                radius={[2, 2, 0, 0]}
+                maxBarSize={32}
+              />
+            </mod.BarChart>
+          </mod.ResponsiveContainer>
+        );
+      }
+      return Chart;
+    }),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------
 // Types
@@ -59,30 +137,6 @@ const PERIODS = [
 ];
 
 // ---------------------------------------------------------------
-// Skeleton loader
-// ---------------------------------------------------------------
-
-function Skeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg bg-gray-50 p-3 text-center">
-            <div className="mx-auto h-8 w-16 animate-pulse rounded bg-gray-200" />
-            <div className="mx-auto mt-2 h-3 w-20 animate-pulse rounded bg-gray-200" />
-          </div>
-        ))}
-      </div>
-      <div className="space-y-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-8 animate-pulse rounded bg-gray-100" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------
 
@@ -110,20 +164,10 @@ export function SearchTab() {
       </div>
 
       {/* Error state */}
-      {error && (
-        <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-4">
-          <p className="text-sm text-red-700">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-2 text-sm font-medium text-red-700 underline underline-offset-2"
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
+      {error && <AdminErrorState message={error} onRetry={refetch} />}
 
       {/* Loading state */}
-      {loading && <Skeleton />}
+      {loading && <AdminLoadingSkeleton variant="metrics" />}
 
       {/* Data */}
       {!loading && !error && data && (
@@ -145,23 +189,25 @@ export function SearchTab() {
               value={`${data.summary.ctr.value}%`}
               change={data.summary.ctr.change}
             />
-            {/* Position: lower number = better rank, so invert the change sign */}
+            {/* Position: lower number = better rank, so invert change color */}
             <MetricCard
               label="평균 순위"
               value={data.summary.position.value}
-              change={
-                data.summary.position.change !== null
-                  ? Math.round(data.summary.position.change * -10) / 10
-                  : null
-              }
+              change={data.summary.position.change}
+              invertChange={true}
             />
           </div>
 
-          {/* Top queries */}
+          {/* Top queries — chart + table */}
           <section>
             <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
               상위 검색 키워드
             </h3>
+            {data.topQueries.length > 0 && (
+              <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+                <KeywordBarChart data={data.topQueries} />
+              </div>
+            )}
             <DataTable
               columns={[
                 { key: "query", label: "키워드", align: "left" },

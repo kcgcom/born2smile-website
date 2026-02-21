@@ -17,14 +17,14 @@ interface AdminTabsProps {
 
 export function AdminTabs({ activeTab, onTabChange }: AdminTabsProps) {
   return (
-    <nav className="flex flex-row gap-1" aria-label="대시보드 탭">
+    <nav className="flex flex-row gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" aria-label="대시보드 탭">
       {TABS.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-[var(--color-primary)] text-white"
                 : "text-[var(--muted)] hover:bg-gray-50"

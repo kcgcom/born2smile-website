@@ -1,7 +1,43 @@
 "use client";
 
+import { useState, useMemo } from "react";
+import { Save, Loader2, Check } from "lucide-react";
 import { getSiteConfigStatus, type SiteConfigStatus } from "@/lib/admin-data";
-import { CLINIC, HOURS, DOCTORS } from "@/lib/constants";
+import { ConfigRow } from "./ConfigRow";
+import { useAdminApi, useAdminMutation } from "./useAdminApi";
+
+// -------------------------------------------------------------
+// Local type definitions (mirror lib/site-config-firestore.ts)
+// -------------------------------------------------------------
+
+type SiteLinks = {
+  kakaoChannel: string;
+  instagram: string;
+  naverBlog: string;
+  naverMap: string;
+  kakaoMap: string;
+};
+
+type SiteClinic = {
+  name: string;
+  nameEn: string;
+  slogan: string;
+  phone: string;
+  phoneIntl: string;
+  phoneHref: string;
+  address: string;
+  addressShort: string;
+  neighborhood: string;
+  businessNumber: string;
+  representative: string;
+};
+
+type SiteHours = {
+  schedule: Array<{ day: string; time: string; open: boolean; note?: string }>;
+  lunchTime: string;
+  closedDays: string;
+  notice: string;
+};
 
 // -------------------------------------------------------------
 // Quick Links data
@@ -38,7 +74,394 @@ const QUICK_LINKS = [
 type IconType = "search" | "chart" | "database" | "code" | "map";
 
 // -------------------------------------------------------------
-// SettingsTab
+// Shared UI components
+// -------------------------------------------------------------
+
+function FormField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+      <label className="w-28 shrink-0 text-sm font-medium text-[var(--muted)]">
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
+      />
+    </div>
+  );
+}
+
+function LoadingPlaceholder() {
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>불러오는 중...</span>
+      </div>
+    </section>
+  );
+}
+
+function SaveButton({
+  saving,
+  saved,
+  onClick,
+}: {
+  saving: boolean;
+  saved: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={saving}
+      className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+    >
+      {saving ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : saved ? (
+        <Check className="h-4 w-4" />
+      ) : (
+        <Save className="h-4 w-4" />
+      )}
+      {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
+    </button>
+  );
+}
+
+// -------------------------------------------------------------
+// Section 1: SNS Links Editor
+// -------------------------------------------------------------
+
+function SnsLinksEditor() {
+  const { data, loading, refetch } = useAdminApi<SiteLinks>(
+    "/api/admin/site-config/links",
+  );
+  const { mutate, loading: saving } = useAdminMutation();
+  const [formEdits, setFormEdits] = useState<SiteLinks | null>(null);
+  const [saved, setSaved] = useState(false);
+  const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
+
+  const handleSave = async () => {
+    if (!form) return;
+    const { error } = await mutate("/api/admin/site-config/links", "PUT", form);
+    if (!error) {
+      setFormEdits(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refetch();
+    }
+  };
+
+  const set = (key: keyof SiteLinks) => (value: string) =>
+    setFormEdits((prev) => ({ ...(prev ?? data ?? {} as SiteLinks), [key]: value }));
+
+  if (loading || !form) return <LoadingPlaceholder />;
+
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-[var(--foreground)]">SNS 링크</h3>
+        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
+      </div>
+      <div className="space-y-3">
+        <FormField
+          label="카카오 채널"
+          value={form.kakaoChannel}
+          onChange={set("kakaoChannel")}
+          placeholder="https://pf.kakao.com/..."
+        />
+        <FormField
+          label="인스타그램"
+          value={form.instagram}
+          onChange={set("instagram")}
+          placeholder="https://www.instagram.com/..."
+        />
+        <FormField
+          label="네이버 블로그"
+          value={form.naverBlog}
+          onChange={set("naverBlog")}
+          placeholder="https://blog.naver.com/..."
+        />
+        <FormField
+          label="네이버 지도"
+          value={form.naverMap}
+          onChange={set("naverMap")}
+          placeholder="https://naver.me/..."
+        />
+        <FormField
+          label="카카오맵"
+          value={form.kakaoMap}
+          onChange={set("kakaoMap")}
+          placeholder="https://kko.to/..."
+        />
+      </div>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// Section 2: Clinic Info Editor
+// -------------------------------------------------------------
+
+function ClinicInfoEditor() {
+  const { data, loading, refetch } = useAdminApi<SiteClinic>(
+    "/api/admin/site-config/clinic",
+  );
+  const { mutate, loading: saving } = useAdminMutation();
+  const [formEdits, setFormEdits] = useState<SiteClinic | null>(null);
+  const [saved, setSaved] = useState(false);
+  const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
+
+  const handleSave = async () => {
+    if (!form) return;
+    const { error } = await mutate(
+      "/api/admin/site-config/clinic",
+      "PUT",
+      form,
+    );
+    if (!error) {
+      setFormEdits(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refetch();
+    }
+  };
+
+  const set = (key: keyof SiteClinic) => (value: string) =>
+    setFormEdits((prev) => ({ ...(prev ?? data ?? {} as SiteClinic), [key]: value }));
+
+  if (loading || !form) return <LoadingPlaceholder />;
+
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-[var(--foreground)]">병원 정보</h3>
+        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <FormField
+          label="병원명"
+          value={form.name}
+          onChange={set("name")}
+          placeholder="서울본치과의원"
+        />
+        <FormField
+          label="영문명"
+          value={form.nameEn}
+          onChange={set("nameEn")}
+          placeholder="Seoul Born Dental Clinic"
+        />
+        <div className="md:col-span-2">
+          <FormField
+            label="슬로건"
+            value={form.slogan}
+            onChange={set("slogan")}
+            placeholder="정직한 진료, 따뜻한 미소"
+          />
+        </div>
+        <FormField
+          label="전화번호"
+          value={form.phone}
+          onChange={set("phone")}
+          placeholder="031-000-0000"
+        />
+        <FormField
+          label="국제전화"
+          value={form.phoneIntl}
+          onChange={set("phoneIntl")}
+          placeholder="+82-31-000-0000"
+        />
+        <FormField
+          label="전화 링크"
+          value={form.phoneHref}
+          onChange={set("phoneHref")}
+          placeholder="tel:031-000-0000"
+        />
+        <FormField
+          label="지역"
+          value={form.neighborhood}
+          onChange={set("neighborhood")}
+          placeholder="김포"
+        />
+        <div className="md:col-span-2">
+          <FormField
+            label="주소"
+            value={form.address}
+            onChange={set("address")}
+            placeholder="경기도 김포시 ..."
+          />
+        </div>
+        <div className="md:col-span-2">
+          <FormField
+            label="짧은 주소"
+            value={form.addressShort}
+            onChange={set("addressShort")}
+            placeholder="김포시 ..."
+          />
+        </div>
+        <FormField
+          label="사업자번호"
+          value={form.businessNumber}
+          onChange={set("businessNumber")}
+          placeholder="000-00-00000"
+        />
+        <FormField
+          label="대표자"
+          value={form.representative}
+          onChange={set("representative")}
+          placeholder="홍길동"
+        />
+      </div>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// Section 3: Hours Editor
+// -------------------------------------------------------------
+
+function HoursEditor() {
+  const { data, loading, refetch } = useAdminApi<SiteHours>(
+    "/api/admin/site-config/hours",
+  );
+  const { mutate, loading: saving } = useAdminMutation();
+  const [formEdits, setFormEdits] = useState<SiteHours | null>(null);
+  const [saved, setSaved] = useState(false);
+  const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
+
+  const handleSave = async () => {
+    if (!form) return;
+    const { error } = await mutate(
+      "/api/admin/site-config/hours",
+      "PUT",
+      form,
+    );
+    if (!error) {
+      setFormEdits(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refetch();
+    }
+  };
+
+  const setScheduleField = (
+    index: number,
+    key: "time" | "open" | "note",
+    value: string | boolean,
+  ) => {
+    setFormEdits((prev) => {
+      const base = prev ?? data;
+      if (!base) return prev;
+      const schedule = base.schedule.map((row, i) =>
+        i === index ? { ...row, [key]: value } : row,
+      );
+      return { ...base, schedule };
+    });
+  };
+
+  const setTop = (key: "lunchTime" | "closedDays" | "notice") => (value: string) =>
+    setFormEdits((prev) => ({ ...(prev ?? data ?? {} as SiteHours), [key]: value }));
+
+  if (loading || !form) return <LoadingPlaceholder />;
+
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-[var(--foreground)]">진료시간</h3>
+        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
+      </div>
+
+      {/* Schedule table */}
+      <div className="mb-4 overflow-x-auto rounded-lg border border-[var(--border)]">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 text-[var(--muted)]">
+              <th className="py-2 pl-4 pr-2 text-left font-medium">요일</th>
+              <th className="px-2 py-2 text-left font-medium">시간</th>
+              <th className="px-2 py-2 text-center font-medium">운영</th>
+              <th className="px-2 py-2 pl-2 pr-4 text-left font-medium">비고</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border)]">
+            {form.schedule.map((row, i) => (
+              <tr key={row.day}>
+                <td className="py-2 pl-4 pr-2 font-medium text-[var(--foreground)]">
+                  {row.day}
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={row.time}
+                    onChange={(e) => setScheduleField(i, "time", e.target.value)}
+                    className="w-36 rounded border border-[var(--border)] bg-gray-50 px-2 py-1 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-blue-100"
+                  />
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  <input
+                    type="checkbox"
+                    checked={row.open}
+                    onChange={(e) => setScheduleField(i, "open", e.target.checked)}
+                    className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
+                  />
+                </td>
+                <td className="px-2 py-1.5 pr-4">
+                  <input
+                    type="text"
+                    value={row.note ?? ""}
+                    onChange={(e) => setScheduleField(i, "note", e.target.value)}
+                    placeholder="예: 야간진료"
+                    className="w-full rounded border border-[var(--border)] bg-gray-50 px-2 py-1 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-blue-100"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Additional fields */}
+      <div className="space-y-3">
+        <FormField
+          label="점심시간"
+          value={form.lunchTime}
+          onChange={setTop("lunchTime")}
+          placeholder="13:00 - 14:00"
+        />
+        <FormField
+          label="휴진일"
+          value={form.closedDays}
+          onChange={setTop("closedDays")}
+          placeholder="일요일, 공휴일 휴진"
+        />
+        <FormField
+          label="공지사항"
+          value={form.notice}
+          onChange={setTop("notice")}
+          placeholder="토요일 점심시간 없이 진료"
+        />
+      </div>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// SettingsTab (main)
 // -------------------------------------------------------------
 
 export function SettingsTab() {
@@ -46,15 +469,17 @@ export function SettingsTab() {
 
   return (
     <div className="grid gap-6">
+      <SnsLinksEditor />
+      <ClinicInfoEditor />
+      <HoursEditor />
       <SiteConfigSection config={siteConfig} />
       <QuickLinksSection />
-      <ClinicInfoSection />
     </div>
   );
 }
 
 // -------------------------------------------------------------
-// Section 1: 사이트 설정 상태
+// SiteConfigSection (unchanged)
 // -------------------------------------------------------------
 
 function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
@@ -99,31 +524,8 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
   );
 }
 
-function ConfigRow({ item }: { item: { label: string; configured: boolean } }) {
-  return (
-    <li className="flex items-center gap-2 text-sm">
-      {item.configured ? (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
-      ) : (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-          </svg>
-        </span>
-      )}
-      <span className={item.configured ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>
-        {item.label}
-      </span>
-    </li>
-  );
-}
-
 // -------------------------------------------------------------
-// Section 2: 빠른 링크
+// QuickLinksSection (unchanged)
 // -------------------------------------------------------------
 
 function QuickLinksSection() {
@@ -201,84 +603,4 @@ function QuickLinkIcon({ icon }: { icon: IconType }) {
         </svg>
       );
   }
-}
-
-// -------------------------------------------------------------
-// Section 3: 병원 정보 요약 (Read Only)
-// -------------------------------------------------------------
-
-function ClinicInfoSection() {
-  const doctor = DOCTORS[0];
-
-  return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-        병원 정보 요약
-      </h3>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* 병원 기본 정보 */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">병원 기본 정보</h4>
-          <dl className="space-y-2 text-sm">
-            <InfoRow label="병원명" value={CLINIC.name} />
-            <InfoRow label="전화번호" value={CLINIC.phone} />
-            <InfoRow label="주소" value={CLINIC.addressShort} />
-            <InfoRow label="대표자" value={CLINIC.representative} />
-          </dl>
-        </div>
-
-        {/* 진료시간 */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">진료시간</h4>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-[var(--border)]">
-              {HOURS.schedule.map((s) => (
-                <tr key={s.day}>
-                  <td className="py-1 pr-3 text-[var(--muted)]">{s.day}</td>
-                  <td className={`py-1 ${s.open ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}>
-                    {s.time}
-                    {"note" in s && s.note ? (
-                      <span className="ml-1 text-xs text-[var(--color-primary)]">({s.note})</span>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-[var(--muted)]">점심: {HOURS.lunchTime}</p>
-          <p className="text-xs text-[var(--muted)]">{HOURS.closedDays}</p>
-        </div>
-
-        {/* 의료진 */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">의료진</h4>
-          <dl className="space-y-2 text-sm">
-            <InfoRow label="성명" value={doctor.name} />
-            <InfoRow label="직위" value={doctor.title} />
-            <InfoRow label="자격" value={doctor.position} />
-          </dl>
-        </div>
-      </div>
-
-      {/* 수정 안내 */}
-      <div className="mt-6 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
-        <p className="font-medium">ℹ 병원 정보를 수정하려면 lib/constants.ts 파일을 편집해 주세요.</p>
-        <ul className="mt-1.5 space-y-0.5 text-xs text-blue-700">
-          <li>• 병원 기본 정보 → CLINIC 객체</li>
-          <li>• 진료시간 → HOURS 객체</li>
-          <li>• 의료진 → DOCTORS 배열</li>
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <dt className="w-16 shrink-0 text-[var(--muted)]">{label}</dt>
-      <dd className="text-[var(--foreground)]">{value}</dd>
-    </div>
-  );
 }

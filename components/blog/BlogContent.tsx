@@ -4,12 +4,12 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag, Search, X } from "lucide-react";
 import {
-  BLOG_POSTS_META,
   BLOG_CATEGORIES,
   BLOG_TAGS,
   categoryColors,
 } from "@/lib/blog";
 import type { BlogCategory, BlogTag } from "@/lib/blog";
+import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { shareUrl } from "@/lib/share";
@@ -17,7 +17,11 @@ import { getTodayKST } from "@/lib/date";
 
 const POSTS_PER_PAGE = 12;
 
-export default function BlogContent() {
+interface BlogContentProps {
+  initialPosts: BlogPostMeta[];
+}
+
+export default function BlogContent({ initialPosts }: BlogContentProps) {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,17 +48,13 @@ export default function BlogContent() {
     };
   }, [searchQuery]);
 
-  // 발행일이 오늘 이하인 포스트만 표시 (예약 발행)
+  // 날짜 기반 시드 셔플용 오늘 날짜 (shuffle seed로만 사용)
   const today = useMemo(() => getTodayKST(), []);
-  const publishedPosts = useMemo(
-    () => BLOG_POSTS_META.filter((p) => p.date <= today),
-    [today]
-  );
 
   // 일별 고정 시드 셔플 — SSR/CSR 동일 순서로 hydration 깜빡임 방지
   // 같은 날에는 동일 순서, 날짜가 바뀌면 새로운 셔플
   const shuffledPosts = useMemo(() => {
-    const posts = [...publishedPosts];
+    const posts = [...initialPosts];
     // 날짜 기반 시드 생성 (간단한 해시)
     let seed = 0;
     for (let i = 0; i < today.length; i++) {
@@ -70,7 +70,7 @@ export default function BlogContent() {
       [posts[i], posts[j]] = [posts[j], posts[i]];
     }
     return posts;
-  }, [publishedPosts, today]);
+  }, [initialPosts, today]);
 
   // 스크롤 시 자동으로 다음 페이지 로드
   useEffect(() => {

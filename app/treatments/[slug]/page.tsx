@@ -5,7 +5,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
-import { getRelatedBlogPosts, categoryColors } from "@/lib/blog";
+import { TREATMENT_CATEGORY_MAP, categoryColors } from "@/lib/blog";
+import { getRelatedPostsFromFirestore } from "@/lib/blog-firestore";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
@@ -99,6 +100,11 @@ export default async function TreatmentDetailPage({
   const { slug } = await params;
   const detail = TREATMENT_DETAILS[slug];
   if (!detail) notFound();
+
+  const blogCategory = TREATMENT_CATEGORY_MAP[slug];
+  const relatedBlogPosts = blogCategory
+    ? await getRelatedPostsFromFirestore(blogCategory, slug, 4)
+    : [];
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);
   const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
@@ -240,63 +246,59 @@ export default async function TreatmentDetailPage({
       )}
 
       {/* 관련 블로그 */}
-      {(() => {
-        const relatedBlogPosts = getRelatedBlogPosts(slug, 4);
-        if (relatedBlogPosts.length === 0) return null;
-        return (
-          <section className="section-padding bg-white">
-            <div className="container-narrow">
-              <FadeIn>
-                <div className="mb-10 text-center">
-                  <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
-                    관련 칼럼
-                  </span>
-                  <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-                    {detail.name}에 대해 더 알아보기
-                  </h2>
-                </div>
-              </FadeIn>
-              <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {relatedBlogPosts.map((rp) => (
-                  <StaggerItem key={rp.slug}>
-                    <Link href={`/blog/${rp.slug}`} className="block h-full">
-                      <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:shadow-lg">
-                        <span
-                          className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
-                        >
-                          {rp.category}
+      {relatedBlogPosts.length > 0 && (
+        <section className="section-padding bg-white">
+          <div className="container-narrow">
+            <FadeIn>
+              <div className="mb-10 text-center">
+                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
+                  관련 칼럼
+                </span>
+                <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                  {detail.name}에 대해 더 알아보기
+                </h2>
+              </div>
+            </FadeIn>
+            <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedBlogPosts.map((rp) => (
+                <StaggerItem key={rp.slug}>
+                  <Link href={`/blog/${rp.slug}`} className="block h-full">
+                    <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:shadow-lg">
+                      <span
+                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
+                      >
+                        {rp.category}
+                      </span>
+                      <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
+                        {rp.title}
+                      </h3>
+                      <p className="mb-3 text-sm text-gray-500">
+                        {rp.subtitle}
+                      </p>
+                      <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
+                        <span>{formatDate(rp.date)}</span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {rp.readTime} 읽기
                         </span>
-                        <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
-                          {rp.title}
-                        </h3>
-                        <p className="mb-3 text-sm text-gray-500">
-                          {rp.subtitle}
-                        </p>
-                        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
-                          <span>{formatDate(rp.date)}</span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={14} />
-                            {rp.readTime} 읽기
-                          </span>
-                        </div>
-                      </article>
-                    </Link>
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
-              <FadeIn className="mt-8 text-center">
-                <Link
-                  href="/blog"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
-                >
-                  건강칼럼에서 더 많은 글 보기
-                  <ArrowRight size={14} />
-                </Link>
-              </FadeIn>
-            </div>
-          </section>
-        );
-      })()}
+                      </div>
+                    </article>
+                  </Link>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+            <FadeIn className="mt-8 text-center">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
+              >
+                건강칼럼에서 더 많은 글 보기
+                <ArrowRight size={14} />
+              </Link>
+            </FadeIn>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <CTABanner

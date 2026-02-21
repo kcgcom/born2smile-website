@@ -4,26 +4,28 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
-  BLOG_POSTS_META,
-  getPostBySlug,
   getRelatedTreatmentId,
   categoryColors,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
-import { getTodayKST } from "@/lib/date";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
+import {
+  getPostBySlugFromFirestore,
+  getPublishedPostSlugs,
+  getRelatedPostsFromFirestore,
+} from "@/lib/blog-firestore";
+
+export const revalidate = 3600;
 
 // 빌드 시점 기준 발행일이 지난 포스트만 정적 생성 (예약 발행)
-export function generateStaticParams() {
-  const today = getTodayKST();
-  return BLOG_POSTS_META
-    .filter((post) => post.date <= today)
-    .map((post) => ({ slug: post.slug }));
+export async function generateStaticParams() {
+  const slugs = await getPublishedPostSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -32,11 +34,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const post = await getPostBySlugFromFirestore(slug);
   if (!post) return {};
-  // 미발행 포스트는 메타데이터 미생성
-  const today = getTodayKST();
-  if (post.date > today) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
 
@@ -82,16 +81,11 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const post = await getPostBySlugFromFirestore(slug);
   if (!post) notFound();
-  // 미발행 포스트는 404
-  const today = getTodayKST();
-  if (post.date > today) notFound();
 
-  // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 미발행 제외, 최대 3개)
-  const relatedPosts = BLOG_POSTS_META.filter(
-    (p) => p.category === post.category && p.slug !== post.slug && p.date <= today
-  ).slice(0, 3);
+  // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
+  const relatedPosts = await getRelatedPostsFromFirestore(post.category, post.slug, 3);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
@@ -136,7 +130,7 @@ export default async function BlogPostPage({
                 </span>
                 <span className="flex items-center gap-1 text-sm text-gray-500">
                   <Clock size={13} />
-                  {post.readTime} 읽기
+                  {post.readTime ?? "1분"} 읽기
                 </span>
               </div>
 

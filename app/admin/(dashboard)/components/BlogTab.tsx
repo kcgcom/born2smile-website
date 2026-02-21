@@ -1,18 +1,101 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { BLOG_POSTS_META } from "@/lib/blog";
-import { getBlogStats } from "@/lib/admin-data";
+import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Pencil, Trash2, Plus } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
-import { useAdminApi } from "./useAdminApi";
+import { useAdminApi, useAdminMutation } from "./useAdminApi";
 import { DataTable } from "./DataTable";
+import { StatCard } from "./StatCard";
+import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
+import { AdminErrorState } from "./AdminErrorState";
+import BlogEditor from "./BlogEditor";
+import type { BlogEditorData } from "./BlogEditor";
+
+// ---------------------------------------------------------------
+// Category hex colors for Recharts (maps from Tailwind class names)
+// ---------------------------------------------------------------
+
+const CATEGORY_HEX: Record<string, string> = {
+  "예방·구강관리": "#1D4ED8",
+  "보존치료":     "#15803D",
+  "보철치료":     "#7E22CE",
+  "임플란트":     "#BE123C",
+  "치아교정":     "#A67B1E",
+  "소아치료":     "#C2410C",
+  "구강건강상식": "#0F766E",
+};
+
+// ---------------------------------------------------------------
+// Recharts PieChart — loaded client-side only
+// ---------------------------------------------------------------
+
+type CategoryData = { category: string; count: number };
+
+const CategoryPieChart = dynamic(
+  () =>
+    import("recharts").then((mod) => {
+      function Chart({ data }: { data: CategoryData[] }) {
+        const pieData = data.map((d) => ({
+          name: d.category,
+          value: d.count,
+          fill: CATEGORY_HEX[d.category] ?? "#6B7280",
+        }));
+        return (
+          <mod.ResponsiveContainer width="100%" height={260}>
+            <mod.PieChart>
+              <mod.Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={90}
+                label={({ name, percent }: { name?: string; percent?: number }) =>
+                  `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                labelLine={false}
+              >
+                {pieData.map((entry, index) => (
+                  <mod.Cell key={index} fill={entry.fill} />
+                ))}
+              </mod.Pie>
+              <mod.Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={((value: number, name: string) => [`${value}편`, name]) as any}
+                contentStyle={{ fontSize: 12 }}
+              />
+              <mod.Legend
+                wrapperStyle={{ fontSize: 11 }}
+                iconSize={10}
+              />
+            </mod.PieChart>
+          </mod.ResponsiveContainer>
+        );
+      }
+      return Chart;
+    }),
+  { ssr: false },
+);
 
 // -------------------------------------------------------------
 // Types
 // -------------------------------------------------------------
+
+interface AdminBlogPost {
+  slug: string;
+  title: string;
+  subtitle: string;
+  excerpt: string;
+  category: string;
+  tags: string[];
+  date: string;
+  dateModified?: string;
+  readTime: string;
+  published: boolean;
+}
 
 interface BlogLikesData {
   likes: Record<string, number>;
@@ -20,7 +103,7 @@ interface BlogLikesData {
 }
 
 type SortKey = "newest" | "oldest" | "likes";
-type StatusFilter = "all" | "published" | "scheduled";
+type StatusFilter = "all" | "published" | "scheduled" | "draft";
 
 // -------------------------------------------------------------
 // BlogTab
@@ -28,293 +111,427 @@ type StatusFilter = "all" | "published" | "scheduled";
 
 export function BlogTab() {
   const today = getTodayKST();
-  const blogStats = getBlogStats();
+
+  const {
+    data: postsData,
+    loading: postsLoading,
+    error: postsError,
+    refetch: refetchPosts,
+  } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
+
+  const posts = useMemo(() => postsData ?? [], [postsData]);
 
   const { data: likesData, loading: likesLoading, error: likesError } =
     useAdminApi<BlogLikesData>("/api/admin/blog-likes");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [categoryFilter, setCategoryFilter] = useState<string>("전체");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
 
+  // CRUD state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
+  const { mutate } = useAdminMutation();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Computed blog stats from API data
+  const blogStats = useMemo(() => {
+    const total = posts.length;
+    const published = posts.filter((p) => p.published && p.date <= today).length;
+    const scheduled = posts.filter((p) => p.published && p.date > today).length;
+    const draft = posts.filter((p) => !p.published).length;
+
+    const categories = BLOG_CATEGORIES.filter((c) => c !== "전체");
+    const byCategory = categories.map((cat) => ({
+      category: cat,
+      count: posts.filter((p) => p.category === cat).length,
+    }));
+
+    return { total, published, scheduled, draft, byCategory };
+  }, [posts, today]);
+
   const filteredPosts = useMemo(() => {
-    let posts = [...BLOG_POSTS_META];
+    let filtered = [...posts];
 
     // Status filter
     if (statusFilter === "published") {
-      posts = posts.filter((p) => p.date <= today);
+      filtered = filtered.filter((p) => p.published && p.date <= today);
     } else if (statusFilter === "scheduled") {
-      posts = posts.filter((p) => p.date > today);
+      filtered = filtered.filter((p) => p.published && p.date > today);
+    } else if (statusFilter === "draft") {
+      filtered = filtered.filter((p) => !p.published);
     }
 
     // Category filter
     if (categoryFilter !== "전체") {
-      posts = posts.filter((p) => p.category === categoryFilter);
+      filtered = filtered.filter((p) => p.category === categoryFilter);
     }
 
     // Text search
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      posts = posts.filter((p) => p.title.toLowerCase().includes(q));
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.trim().toLowerCase();
+      filtered = filtered.filter((p) => p.title.toLowerCase().includes(q));
     }
 
     // Sort
     if (sortKey === "newest") {
-      posts.sort((a, b) => b.date.localeCompare(a.date));
+      filtered.sort((a, b) => b.date.localeCompare(a.date));
     } else if (sortKey === "oldest") {
-      posts.sort((a, b) => a.date.localeCompare(b.date));
+      filtered.sort((a, b) => a.date.localeCompare(b.date));
     } else if (sortKey === "likes") {
-      posts.sort((a, b) => {
+      filtered.sort((a, b) => {
         const la = likesData?.likes[a.slug] ?? 0;
         const lb = likesData?.likes[b.slug] ?? 0;
         return lb - la;
       });
     }
 
-    return posts;
-  }, [searchQuery, categoryFilter, statusFilter, sortKey, today, likesData]);
+    return filtered;
+  }, [posts, debouncedQuery, categoryFilter, statusFilter, sortKey, today, likesData]);
 
   // Top 10 by likes
   const top10Posts = useMemo(() => {
     if (!likesData) return [];
-    return [...BLOG_POSTS_META]
-      .filter((p) => p.date <= today)
+    return [...posts]
+      .filter((p) => p.published && p.date <= today)
       .map((p) => ({ ...p, likeCount: likesData.likes[p.slug] ?? 0 }))
       .sort((a, b) => b.likeCount - a.likeCount)
       .slice(0, 10);
-  }, [likesData, today]);
+  }, [likesData, posts, today]);
 
-  const maxCategoryCount = Math.max(...blogStats.byCategory.map((c) => c.count), 1);
+  // CRUD handlers
+  const handleCreate = () => {
+    setEditingPost(null);
+    setEditorOpen(true);
+  };
+
+  const handleEdit = (post: AdminBlogPost) => {
+    setEditingPost(post);
+    setEditorOpen(true);
+  };
+
+  const handleDelete = async (slug: string) => {
+    if (!window.confirm("이 포스트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "DELETE");
+    if (!error) refetchPosts();
+  };
+
+  const handleEditorSave = async (data: BlogEditorData): Promise<{ error: string | null }> => {
+    if (editingPost) {
+      const { error } = await mutate(`/api/admin/blog-posts/${editingPost.slug}`, "PUT", data);
+      if (!error) {
+        setEditorOpen(false);
+        refetchPosts();
+      }
+      return { error };
+    } else {
+      const { error } = await mutate("/api/admin/blog-posts", "POST", data);
+      if (!error) {
+        setEditorOpen(false);
+        refetchPosts();
+      }
+      return { error };
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="전체 포스트" value={blogStats.total} />
-        <StatCard label="발행" value={blogStats.published} color="text-green-600" />
-        <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" />
+      {/* Top action bar */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-[var(--foreground)]">블로그 관리</h2>
+        <button
+          onClick={handleCreate}
+          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          새 포스트 작성
+        </button>
       </div>
 
-      {/* Search & Filter bar */}
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Text search */}
-          <input
-            type="search"
-            placeholder="제목 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100 min-w-[160px]"
-          />
+      {/* Posts loading / error */}
+      {postsLoading && <AdminLoadingSkeleton variant="table" />}
+      {postsError && (
+        <AdminErrorState message={postsError} onRetry={refetchPosts} />
+      )}
 
-          {/* Category dropdown */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            {BLOG_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          {/* Status filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            <option value="all">전체 상태</option>
-            <option value="published">발행</option>
-            <option value="scheduled">예약</option>
-          </select>
-
-          {/* Sort */}
-          <select
-            value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-            <option value="likes">좋아요순</option>
-          </select>
-        </div>
-
-        {/* Results count */}
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          {filteredPosts.length}개 포스트
-        </p>
-      </section>
-
-      {/* Post list */}
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">포스트 목록</h3>
-        {filteredPosts.length === 0 ? (
-          <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
-            검색 결과가 없습니다
+      {!postsLoading && !postsError && (
+        <>
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" />
+            <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" />
+            <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" />
+            <StatCard label="임시저장" value={blogStats.draft} color="text-gray-500" variant="elevated" />
           </div>
-        ) : (
-          <ul className="space-y-2">
-            {filteredPosts.map((post) => {
-              const isPublished = post.date <= today;
-              const likeCount = likesData?.likes[post.slug] ?? 0;
-              const dDay = isPublished
-                ? null
-                : Math.ceil((new Date(post.date).getTime() - new Date(today).getTime()) / 86400000);
-              const catColor = categoryColors[post.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
 
-              return (
-                <li
-                  key={post.slug}
-                  className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
-                >
-                  {/* Status badge */}
-                  <span
-                    className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${
-                      isPublished
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {isPublished ? "발행" : "예약"}
-                  </span>
+          {/* Search & Filter bar */}
+          <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Text search */}
+              <input
+                type="search"
+                placeholder="제목 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100 min-w-[160px]"
+              />
 
-                  {/* Title & meta */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+              {/* Category dropdown */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+              >
+                {BLOG_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+
+              {/* Status filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+              >
+                <option value="all">전체 상태</option>
+                <option value="published">발행</option>
+                <option value="scheduled">예약</option>
+                <option value="draft">임시저장</option>
+              </select>
+
+              {/* Sort */}
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value as SortKey)}
+                className="h-9 rounded-lg border border-[var(--border)] bg-gray-50 px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+              >
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="likes">좋아요순</option>
+              </select>
+            </div>
+
+            {/* Results count */}
+            <p className="mt-3 text-xs text-[var(--muted)]">
+              {filteredPosts.length}개 포스트
+            </p>
+          </section>
+
+          {/* Post list */}
+          <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">포스트 목록</h3>
+            {filteredPosts.length === 0 ? (
+              <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
+                검색 결과가 없습니다
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {filteredPosts.map((post) => {
+                  const isPublished = post.published && post.date <= today;
+                  const likeCount = likesData?.likes[post.slug] ?? 0;
+                  const dDay =
+                    post.published && post.date > today
+                      ? Math.ceil(
+                          (new Date(post.date).getTime() - new Date(today).getTime()) / 86400000,
+                        )
+                      : null;
+                  const catColor =
+                    categoryColors[post.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
+
+                  const statusLabel = !post.published
+                    ? "임시"
+                    : isPublished
+                    ? "발행"
+                    : "예약";
+                  const statusClass = !post.published
+                    ? "bg-gray-100 text-gray-600"
+                    : isPublished
+                    ? "bg-green-100 text-green-700"
+                    : "bg-amber-100 text-amber-700";
+
+                  return (
+                    <li
+                      key={post.slug}
+                      className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-gray-50 px-4 py-3 text-sm"
+                    >
+                      {/* Status badge */}
+                      <span
+                        className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
+                      >
+                        {statusLabel}
+                      </span>
+
+                      {/* Title & meta */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <a
+                            href={`/blog/${post.slug}`}
+                            target="_blank"
+                            rel="noopener"
+                            className="truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                          >
+                            {post.title}
+                          </a>
+                          <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                            {post.category}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
+                          <span>{post.date}</span>
+                          {dDay !== null && (
+                            <span className="font-medium text-amber-600">D-{dDay}</span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <HeartIcon />
+                            {likesLoading ? "..." : likeCount}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CRUD buttons */}
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          onClick={() => handleEdit(post)}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                          aria-label={`${post.title} 수정`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDelete(post.slug)}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                          aria-label={`${post.title} 삭제`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          삭제
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* Category distribution */}
+          <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
+            <CategoryPieChart data={blogStats.byCategory} />
+          </section>
+
+          {/* Popular posts TOP 10 */}
+          <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-[var(--foreground)]">인기 포스트 TOP 10</h3>
+              {likesData && (
+                <span className="text-xs text-[var(--muted)]">
+                  전체 좋아요 {likesData.totalLikes.toLocaleString()}개
+                </span>
+              )}
+            </div>
+
+            {likesLoading && (
+              <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
+                불러오는 중...
+              </div>
+            )}
+
+            {likesError && (
+              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+                {likesError}
+              </div>
+            )}
+
+            {!likesLoading && !likesError && (
+              <DataTable
+                columns={[
+                  {
+                    key: "rank",
+                    label: "#",
+                    align: "center",
+                    render: (_row) => {
+                      const idx = top10Posts.findIndex((p) => p.slug === _row.slug);
+                      return <span className="font-semibold text-[var(--muted)]">{idx + 1}</span>;
+                    },
+                  },
+                  {
+                    key: "title",
+                    label: "제목",
+                    render: (row) => (
                       <a
-                        href={`/blog/${post.slug}`}
+                        href={`/blog/${row.slug}`}
                         target="_blank"
                         rel="noopener"
-                        className="truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                        className="hover:text-[var(--color-primary)] hover:underline"
                       >
-                        {post.title}
+                        {String(row.title)}
                       </a>
-                      <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                        {post.category}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
-                      <span>{post.date}</span>
-                      {!isPublished && dDay !== null && (
-                        <span className="font-medium text-amber-600">D-{dDay}</span>
-                      )}
-                      <span className="flex items-center gap-1">
+                    ),
+                  },
+                  {
+                    key: "category",
+                    label: "카테고리",
+                    render: (row) => {
+                      const catColor =
+                        categoryColors[row.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
+                      return (
+                        <span className={`rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                          {String(row.category)}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "likeCount",
+                    label: "좋아요",
+                    align: "right",
+                    render: (row) => (
+                      <span className="flex items-center justify-end gap-1 font-semibold text-rose-500">
                         <HeartIcon />
-                        {likesLoading ? "..." : likeCount}
+                        {Number(row.likeCount).toLocaleString()}
                       </span>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                    ),
+                  },
+                ]}
+                rows={top10Posts as unknown as Record<string, unknown>[]}
+                keyField="slug"
+                emptyMessage="좋아요 데이터가 없습니다"
+              />
+            )}
+          </section>
+        </>
+      )}
 
-      {/* Category distribution */}
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
-        <div className="space-y-2">
-          {blogStats.byCategory.map((c) => (
-            <div key={c.category} className="flex items-center gap-3 text-sm">
-              <span className="w-24 shrink-0 truncate text-[var(--muted)]">{c.category}</span>
-              <div className="flex-1">
-                <div className="h-5 overflow-hidden rounded bg-gray-100">
-                  <div
-                    className="flex h-full items-center rounded bg-[var(--color-primary)] px-2 text-xs font-medium text-white transition-all"
-                    style={{ width: `${(c.count / maxCategoryCount) * 100}%`, minWidth: "2rem" }}
-                  >
-                    {c.count}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Popular posts TOP 10 */}
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-[var(--foreground)]">인기 포스트 TOP 10</h3>
-          {likesData && (
-            <span className="text-xs text-[var(--muted)]">
-              전체 좋아요 {likesData.totalLikes.toLocaleString()}개
-            </span>
-          )}
-        </div>
-
-        {likesLoading && (
-          <div className="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-[var(--muted)]">
-            불러오는 중...
-          </div>
-        )}
-
-        {likesError && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {likesError}
-          </div>
-        )}
-
-        {!likesLoading && !likesError && (
-          <DataTable
-            columns={[
-              {
-                key: "rank",
-                label: "#",
-                align: "center",
-                render: (_row) => {
-                  const idx = top10Posts.findIndex((p) => p.slug === _row.slug);
-                  return <span className="font-semibold text-[var(--muted)]">{idx + 1}</span>;
-                },
-              },
-              {
-                key: "title",
-                label: "제목",
-                render: (row) => (
-                  <a
-                    href={`/blog/${row.slug}`}
-                    target="_blank"
-                    rel="noopener"
-                    className="hover:text-[var(--color-primary)] hover:underline"
-                  >
-                    {String(row.title)}
-                  </a>
-                ),
-              },
-              {
-                key: "category",
-                label: "카테고리",
-                render: (row) => {
-                  const catColor = categoryColors[row.category as BlogCategoryValue] ?? "bg-gray-100 text-gray-600";
-                  return (
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                      {String(row.category)}
-                    </span>
-                  );
-                },
-              },
-              {
-                key: "likeCount",
-                label: "좋아요",
-                align: "right",
-                render: (row) => (
-                  <span className="flex items-center justify-end gap-1 font-semibold text-rose-500">
-                    <HeartIcon />
-                    {Number(row.likeCount).toLocaleString()}
-                  </span>
-                ),
-              },
-            ]}
-            rows={top10Posts as unknown as Record<string, unknown>[]}
-            keyField="slug"
-            emptyMessage="좋아요 데이터가 없습니다"
-          />
-        )}
-      </section>
+      {/* Blog editor modal */}
+      {editorOpen && (
+        <BlogEditor
+          mode={editingPost ? "edit" : "create"}
+          initialData={
+            editingPost
+              ? {
+                  slug: editingPost.slug,
+                  title: editingPost.title,
+                  subtitle: editingPost.subtitle,
+                  excerpt: editingPost.excerpt,
+                  category: editingPost.category,
+                  tags: editingPost.tags,
+                  date: editingPost.date,
+                  content: [], // fetched inside BlogEditor via API
+                  published: editingPost.published,
+                }
+              : undefined
+          }
+          onSave={handleEditorSave}
+          onClose={() => setEditorOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -322,23 +539,6 @@ export function BlogTab() {
 // -------------------------------------------------------------
 // Sub-components
 // -------------------------------------------------------------
-
-function StatCard({
-  label,
-  value,
-  color = "text-[var(--foreground)]",
-}: {
-  label: string;
-  value: number;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-[var(--surface)] p-4 text-center shadow-sm">
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="mt-0.5 text-xs text-[var(--muted)]">{label}</p>
-    </div>
-  );
-}
 
 function HeartIcon() {
   return (

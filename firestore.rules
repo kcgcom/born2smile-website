@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 블로그 좋아요: 누구나 읽기 가능, 쓰기는 검증된 count/users 필드만 허용
+    // 기존: 블로그 좋아요 (필드 검증 규칙 100% 보존)
     match /blog-likes/{slug} {
       allow read: if true;
       allow write: if request.resource.data.keys().hasOnly(["count", "users"])
@@ -11,6 +11,16 @@ service cloud.firestore {
                    && request.resource.data.users.size() <= 10000
                    && request.resource.data.count == request.resource.data.users.size()
                    && slug.matches('^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$');
+    }
+
+    // 신규: 블로그 포스트 — Admin SDK 전용 (클라이언트 접근 차단)
+    match /blog-posts/{slug} {
+      allow read, write: if false;
+    }
+
+    // 신규: 사이트 설정 — Admin SDK 전용 (클라이언트 접근 차단)
+    match /site-config/{document} {
+      allow read, write: if false;
     }
 
     // 그 외 모든 컬렉션은 접근 차단

@@ -1,9 +1,8 @@
-export const dynamic = "force-static";
+export const revalidate = 86400;
 
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
-import { BLOG_POSTS_META } from "@/lib/blog";
-import { getTodayKST } from "@/lib/date";
+import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
 const PAGE_MODIFIED = {
@@ -14,13 +13,15 @@ const PAGE_MODIFIED = {
   contact: new Date("2026-02-20"),
 } as const;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
     lastModified: PAGE_MODIFIED.treatments,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
+
+  const publishedPosts = await getAllPublishedPostMetas();
 
   return [
     {
@@ -48,14 +49,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
-    ...BLOG_POSTS_META
-      .filter((post) => post.date <= getTodayKST())
-      .map((post) => ({
-        url: `${BASE_URL}/blog/${post.slug}`,
-        lastModified: new Date(post.dateModified ?? post.date),
-        changeFrequency: "monthly" as const,
-        priority: 0.6,
-      })),
+    ...publishedPosts.map((post) => ({
+      url: `${BASE_URL}/blog/${post.slug}`,
+      lastModified: new Date(post.dateModified ?? post.date),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     {
       url: `${BASE_URL}/contact`,
       lastModified: PAGE_MODIFIED.contact,
