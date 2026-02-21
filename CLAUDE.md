@@ -198,7 +198,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
@@ -335,6 +335,7 @@ content: [
 - **LikeButton** — Firestore `blog-likes/{slug}` optimistic update, `localStorage` UUID 식별
 - **BlogShareButton** — Web Share API → 클립보드 복사 폴백
 - **CTABanner** — 공통 CTA 배너 (홈/블로그/진료 상세 3곳 공유)
+- **DashboardHeader** — 관리자/개발 대시보드 공유 헤더 (`variant: "admin" | "dev"`), 양방향 크로스 네비게이션 (Admin↔Dev), 뱃지 색상 구분 (블루/그린)
 
 ### Firebase 인프라
 
@@ -343,17 +344,17 @@ content: [
 - **관리자 인증** (`lib/admin-auth.ts`): 이메일 화이트리스트 (`NEXT_PUBLIC_ADMIN_EMAILS`), Google 로그인
 - **AuthGuard** (`components/admin/AuthGuard.tsx`): `onAuthStateChanged` → 미로그인 리다이렉트, 비관리자 차단
 
-### 관리자 대시보드
+### 관리자 대시보드 & 개발 대시보드
 
-5탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+두 대시보드는 `DashboardHeader` 공유 헤더를 사용하며 양방향 네비게이션으로 연결됨. 탭 컴포넌트(AdminTabs, DevTabs)는 동일한 아이콘+반응형 텍스트 패턴 사용.
+
+**관리자 대시보드 (`/admin`)** — 5탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
 
-### 개발 대시보드
-
-4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
+**개발 대시보드 (`/dev`)** — 4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
 
 - **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태만 런타임 API (`/api/dev/env-status`)
 - **매니페스트 생성**: `scripts/generate-dev-manifest.ts`가 `pnpm dev`/`pnpm build` 시 자동 실행. `package.json`, `tsconfig.json`, `firestore.indexes.json`, `firestore.rules`, `app/` 디렉토리를 스캔하여 의존성, 라우트, 렌더링 전략, 프로젝트 통계 수집
