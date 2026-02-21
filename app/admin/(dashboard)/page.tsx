@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
@@ -48,9 +50,14 @@ export default function AdminDashboardPage() {
       <header className="border-b border-[var(--border)] bg-[var(--surface)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-[var(--foreground)]">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-lg font-bold text-[var(--foreground)] transition-colors hover:text-[var(--color-primary)]"
+              title="사이트로 이동"
+            >
               {CLINIC.name}
-            </h1>
+              <ExternalLink size={14} className="text-[var(--muted)]" aria-hidden="true" />
+            </Link>
             <span className="rounded-md bg-[var(--color-primary)] px-2 py-0.5 text-xs font-medium text-white">
               관리자
             </span>
