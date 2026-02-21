@@ -118,6 +118,7 @@ components/
     AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client")
     AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
+    AdminPublishButton.tsx    # 관리자 발행 예약 버튼 — draft 포스트 상세 페이지용 ("use client")
     AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
@@ -176,7 +177,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
@@ -626,6 +627,7 @@ content: [
 
 **인라인 편집:**
 - `AdminEditButton` — 블로그 상세 페이지 헤더에 "수정" 버튼 (라벨 포함)
+- `AdminPublishButton` — 블로그 상세 페이지 헤더에 "발행 예약" 버튼 (draft 포스트만 표시, 스케줄 기반 추천 날짜 팝업)
 - `AdminEditIcon` — 블로그 목록 카드에 연필 아이콘 (아이콘만)
 - `AdminSettingsLink` — Footer 오시는 길/진료시간 옆 "편집" 링크
 - 모두 `/admin?tab=blog&edit={slug}` 또는 `/admin?tab=settings`로 딥링크
