@@ -70,6 +70,9 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#2563EB" />
+        <link rel="preconnect" href="https://seoul-born2smile.firebaseapp.com" />
+        <link rel="preconnect" href="https://apis.google.com" />
+        <link rel="preconnect" href="https://www.googleapis.com" />
         {/* 카카오톡 등 인앱 브라우저의 Android WebView textZoom 보정 */}
         {/* textZoom은 CSS 적용 후 네이티브 레벨에서 폰트 크기를 곱하므로 JS로만 대응 가능 */}
         {/* 100px 기준 측정 → 줌 비율 감지 → html root font-size 역보정 (rem 기반 전체 적용) */}
