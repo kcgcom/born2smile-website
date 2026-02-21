@@ -99,7 +99,7 @@ export function Footer() {
                 </li>
               ))}
               <li className="mt-2 border-t border-gray-700 pt-2 text-gray-500">
-                점심시간 {HOURS.lunchTime} (토요일 제외) · 공휴일 휴진
+                점심시간 {HOURS.lunchTime} · 공휴일 휴진
               </li>
             </ul>
           </div>
@@ -155,7 +155,7 @@ export function Footer() {
         </div>
 
         {/* SNS 링크 */}
-        {Object.values(LINKS).some((url) => url !== "") && (
+        {(LINKS.kakaoChannel || LINKS.instagram || LINKS.naverBlog) && (
           <div className="mt-8 flex items-center justify-center gap-4">
             {LINKS.kakaoChannel && (
               <a
