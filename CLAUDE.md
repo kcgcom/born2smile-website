@@ -583,7 +583,7 @@ content: [
 | 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` | Recharts 파이차트, 블로그 통계, 사이트 설정 현황 |
 | 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4) | 바/파이/영역 차트, 인기 페이지, 유입 경로, 기기별 |
 | 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` | 바 차트, 상위 키워드/페이지, 블로그 검색 성과 |
-| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` + `site-config/schedule` | CRUD (임시저장/수정/삭제), 발행 예약 팝업, 검색/필터/정렬, 좋아요 집계 |
+| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` + `site-config/schedule` | CRUD (임시저장/수정/삭제), 발행 예약 팝업, 통계 카드 클릭 필터, 검색/필터/정렬, 좋아요 집계 |
 | 설정 | `SettingsTab.tsx` | `/api/admin/site-config` | SNS 링크/병원 정보/진료시간/발행 스케줄 편집 |
 
 ### Admin API Routes (`app/api/admin/`)
