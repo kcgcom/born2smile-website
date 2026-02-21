@@ -309,120 +309,26 @@ content: [
 
 ### Key Components
 
-**FloatingCTA** (`components/layout/FloatingCTA.tsx`):
-- 모바일: 하단 고정 네비게이션 바 (홈, 병원소개, 진료안내, 건강칼럼, 상담안내 5개 버튼, `grid-cols-5`). 상담안내는 골드 색상, 나머지는 블루.
-- 데스크톱: 우하단 플로팅 전화 버튼 (`tel:` 링크)
+- **FloatingCTA** — 모바일: 하단 고정 네비바 5버튼, 데스크톱: 우하단 플로팅 전화 버튼
+- **KakaoMap** — SDK 동적 로드, 주소 기반 geocoding → 하드코딩 좌표 폴백
+- **LikeButton** — Firestore `blog-likes/{slug}` optimistic update, `localStorage` UUID 식별
+- **BlogShareButton** — Web Share API → 클립보드 복사 폴백
+- **CTABanner** — 공통 CTA 배너 (홈/블로그/진료 상세 3곳 공유)
 
-**KakaoMap** (`components/ui/KakaoMap.tsx`):
-- SDK를 `document.head.appendChild(script)`로 동적 로드
-- 이중 좌표 전략: 주소 기반 Kakao Geocoder API 시도 → 실패 시 `lib/constants.ts`의 하드코딩 좌표로 폴백
-- Cloud Secret Manager 공백 문제 대응: 환경 변수 값을 `.trim()` 처리
+### Firebase 인프라
 
-**LikeButton** (`components/blog/LikeButton.tsx`):
-- Firestore 스키마: `blog-likes/{slug}` 컬렉션, `count`(int) + `users`(UUID 배열) 필드
-- 사용자 식별: `crypto.randomUUID()`로 생성한 UUID를 `localStorage`(`born2smile_uid` 키)에 저장
-- Optimistic update: UI 즉시 반영 → `runTransaction()`으로 원자적 저장 → 실패 시 롤백
-- Firebase 미설정 시 graceful degradation: `isFirebaseConfigured` 플래그로 판단, 버튼 비활성 표시. 장애 모니터링은 Firebase Cloud Monitoring 알림으로 운영.
+- **클라이언트** (`lib/firebase.ts`): 싱글톤, `isFirebaseConfigured`로 graceful degradation, Auth lazy getter
+- **Admin SDK** (`lib/firebase-admin.ts`): 싱글톤, ADC 우선 → `GOOGLE_SERVICE_ACCOUNT_KEY` 폴백
+- **관리자 인증** (`lib/admin-auth.ts`): 이메일 화이트리스트 (`NEXT_PUBLIC_ADMIN_EMAILS`), Google 로그인
+- **AuthGuard** (`components/admin/AuthGuard.tsx`): `onAuthStateChanged` → 미로그인 리다이렉트, 비관리자 차단
 
-**BlogShareButton** (`components/blog/BlogShareButton.tsx`):
-- Web Share API 우선 사용 (`navigator.share`) → 미지원 브라우저에서 클립보드 복사 폴백
+### 관리자 대시보드
 
-**CTABanner** (`components/ui/CTABanner.tsx`):
-- 공통 CTA 배너 컴포넌트 (`heading`, `description` props)
-- 홈, 블로그 상세, 진료 상세 3곳에서 공유 사용
-- 전화 상담 버튼 (`tel:` 링크) + 병원 전화번호 표시
+5탭 구조 (`?tab=` query param): 개요(Recharts), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행), 설정(사이트 편집).
 
-### Firebase 클라이언트 (`lib/firebase.ts`)
-
-- 최소 설정: `apiKey` + `projectId`만 사용
-- `isFirebaseConfigured` boolean export: API key 미설정 시 Firestore 의존 기능(좋아요)을 graceful하게 비활성화
-- 기본 projectId: `"seoul-born2smile"` (환경 변수 없으면 폴백)
-- 싱글톤 패턴: 이미 초기화된 앱이 있으면 재사용
-- **Auth 지연 초기화**: `getFirebaseAuth()`, `getGoogleProvider()` — 빌드 시점 API key 검증 오류 방지를 위해 lazy getter 패턴 사용. 모듈 import 시점이 아닌 최초 호출 시점에 Auth 인스턴스 생성.
-
-### 관리자 인증 (`lib/admin-auth.ts`)
-
-- `ADMIN_EMAILS`: `NEXT_PUBLIC_ADMIN_EMAILS` 환경변수에서 읽어 화이트리스트 관리
-- `isAdminEmail(email)`: 이메일 화이트리스트 검증
-- `signInWithGoogle()`: `signInWithPopup` + `GoogleAuthProvider`
-- `signOutAdmin()`: Firebase Auth 로그아웃
-
-### Firebase Admin SDK (`lib/firebase-admin.ts`)
-
-- 싱글톤 패턴: `getAdminApp()` — 이미 초기화된 앱이 있으면 재사용
-- **ADC (Application Default Credentials) 우선**: Cloud Run 환경에서 자동 인증
-- **JSON key 폴백**: `GOOGLE_SERVICE_ACCOUNT_KEY` 환경변수 (로컬 개발용)
-- GA4/SC API 인증에도 동일 크레덴셜 사용
-
-### 관리자 대시보드 데이터 (`lib/admin-data.ts`)
-
-- `IMPROVEMENT_ITEMS`: 웹사이트 개선 항목 배열 (id, 제목, 우선순위, 상태, 설명)
-- `getImprovementStats()`: 우선순위별 완료/전체 통계
-- `getBlogStats()`: `BLOG_POSTS_META`에서 전체/발행/예약 포스트 수, 카테고리별 분포
-- `getSiteConfigStatus()`: SNS 링크, Firebase 설정, 환경변수 상태 확인
-
-### 관리자 대시보드 (`app/admin/(dashboard)/`)
-
-5탭 구조 대시보드. URL query param `?tab=traffic`으로 탭 상태 관리.
-
-| 탭 | 컴포넌트 | 데이터 소스 | 주요 기능 |
-|---|---|---|---|
-| 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` | Recharts 파이차트, 블로그 통계, 사이트 설정 현황 |
-| 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4) | 바/파이/영역 차트, 인기 페이지, 유입 경로, 기기별 |
-| 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` | 바 차트, 상위 키워드/페이지, 블로그 검색 성과 |
-| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` + `site-config/schedule` | CRUD (임시저장/수정/삭제), 발행 예약 팝업, 통계 카드 클릭 필터, 검색/필터/정렬, 좋아요 집계 |
-| 설정 | `SettingsTab.tsx` | `/api/admin/site-config` | SNS 링크/병원 정보/진료시간/발행 스케줄 편집 |
-
-### Admin API Routes (`app/api/admin/`)
-
-- **공통 인증** (`_lib/auth.ts`): `verifyAdminRequest()` — Firebase Admin SDK로 ID 토큰 검증, `checkRevoked: true`, `email_verified` 확인, 401/403 구분
-- **공통 캐시** (`_lib/cache.ts`): `unstable_cache` 래퍼, TTL — GA4: 1시간, SC: 6시간, 좋아요: 5분
-- **응답 헤더**: 모든 경로에 `Cache-Control: private, no-store`
-- `GET /api/admin/analytics?period=7d|30d|90d` — GA4 트래픽 지표 (세션, 사용자, 페이지뷰, 인기 페이지, 유입 경로, 기기별, 일별 추이)
-- `GET /api/admin/search-console?period=7d|28d|90d` — 검색 성과 (노출, 클릭, CTR, 순위, 상위 키워드/페이지, 블로그 검색 성과). 3일 데이터 지연 오프셋 자동 적용
-- `GET /api/admin/blog-likes` — Firestore `blog-likes` 컬렉션 전체 좋아요 수 집계
-- `GET /api/admin/blog-posts` — 전체 블로그 포스트 메타 목록 (관리자용, published 상태 포함)
-- `POST /api/admin/blog-posts` — 새 블로그 포스트 생성 (Zod `blogPostSchema` 검증)
-- `GET /api/admin/blog-posts/[slug]` — 단일 포스트 조회 (본문 포함)
-- `PUT /api/admin/blog-posts/[slug]` — 포스트 수정 (Zod `blogPostUpdateSchema` 검증)
-- `DELETE /api/admin/blog-posts/[slug]` — 포스트 삭제
-- `GET /api/admin/site-config/[type]` — 사이트 설정 조회 (type: `links|clinic|hours|schedule`)
-- `PUT /api/admin/site-config/[type]` — 사이트 설정 수정 (Zod 스키마 검증). `schedule` 타입은 발행 요일 설정 (`publishDays: number[]`, 0=일~6=토)
-
-### AuthGuard (`components/admin/AuthGuard.tsx`)
-
-- `onAuthStateChanged`로 로그인 상태 감시
-- 미로그인 → `/admin/login`으로 리다이렉트
-- 로그인했지만 관리자 아님 → 접근 거부 메시지 + 로그아웃 버튼
-- 관리자 확인 → children 렌더
-- Route group `(dashboard)` 하위에 적용되어 로그인 페이지는 보호 대상에서 제외
-
-### 관리자 편의 기능
-
-관리자 로그인 시 공개 사이트에서 관리자 페이지로의 동선을 제공하는 클라이언트 전용 UI 요소들.
-
-**공유 훅:** `hooks/useAdminAuth.ts`
-- Firebase `onAuthStateChanged` + `isAdminEmail`로 관리자 감지
-- 초기값 `false` → SSR/hydration 시 관리자 UI 미렌더링 (CLS 방지)
-- `isFirebaseConfigured` 체크로 Firebase 미설정 시 graceful degradation
-- 비로그인/일반 사용자에게는 관리자 관련 UI가 전혀 보이지 않음
-
-**플로팅 버튼:** `components/admin/AdminFloatingButton.tsx`
-- 모든 공개 페이지에서 `/admin` 대시보드로 이동하는 좌하단 플로팅 버튼
-- 스타일: `bg-gray-600` (Footer `bg-gray-900` 배경에서 대비 확보)
-- 모바일: `bottom-20 left-4` (FloatingCTA 네비바 위), 데스크톱: `bottom-6 left-6`
-- `/admin` 경로에서는 자동 숨김 (`usePathname()` 체크)
-
-**인라인 편집:**
-- `AdminEditButton` — 블로그 상세 페이지 헤더에 "수정" 버튼 (라벨 포함)
-- `AdminPublishButton` — 블로그 상세 페이지 헤더에 "발행 예약" 버튼 (draft 포스트만 표시, 스케줄 기반 추천 날짜 팝업)
-- `AdminEditIcon` — 블로그 목록 카드에 연필 아이콘 (아이콘만)
-- `AdminSettingsLink` — Footer 오시는 길/진료시간 옆 "편집" 링크
-- 모두 `/admin?tab=blog&edit={slug}` 또는 `/admin?tab=settings`로 딥링크
-
-**대시보드 딥링크:** `?tab=blog&edit={slug}` URL로 접근 시 BlogTab이 해당 포스트 편집기를 자동 오픈
-
-**대시보드 사이트 이동:** 관리자 헤더의 병원명 클릭 → 홈페이지(`/`)로 이동
+- **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
+- **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
+- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
 
 ## Common Tasks
 
