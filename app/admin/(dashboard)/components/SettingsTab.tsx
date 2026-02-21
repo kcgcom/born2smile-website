@@ -510,7 +510,7 @@ function ScheduleEditor() {
 
   return (
     <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-bold text-[var(--foreground)]">발행 스케줄</h3>
           <p className="mt-1 text-xs text-[var(--muted)]">
@@ -519,7 +519,7 @@ function ScheduleEditor() {
         </div>
         <SaveButton saving={saving} saved={saved} onClick={handleSave} />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
         {DAY_LABELS.map((label, idx) => {
           const selected = days.includes(idx);
           return (
@@ -527,7 +527,7 @@ function ScheduleEditor() {
               key={idx}
               type="button"
               onClick={() => toggleDay(idx)}
-              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+              className={`flex h-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
                 selected
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
                   : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
