@@ -49,7 +49,7 @@ There is no testing framework configured. No test commands are available.
 
 ```
 app/                          # Next.js App Router pages
-  layout.tsx                  # Root layout (header, footer, floating CTA, JSON-LD)
+  layout.tsx                  # Root layout (header, footer, floating CTA, admin floating button, JSON-LD)
   page.tsx                    # Homepage (hero, values, treatments, doctor, map, CTA)
   globals.css                 # Design tokens, @theme inline, utility classes
   favicon.ico                 # Favicon
@@ -115,8 +115,14 @@ components/
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
+    AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client")
+    AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
+    AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
+    AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
+hooks/
+  useAdminAuth.ts            # 공유 관리자 인증 훅 (Firebase onAuthStateChanged + isAdminEmail)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
@@ -170,7 +176,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers. Footer는 서버 컴포넌트.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
@@ -592,6 +598,31 @@ content: [
 - 로그인했지만 관리자 아님 → 접근 거부 메시지 + 로그아웃 버튼
 - 관리자 확인 → children 렌더
 - Route group `(dashboard)` 하위에 적용되어 로그인 페이지는 보호 대상에서 제외
+
+### 관리자 편의 기능
+
+관리자 로그인 시 공개 사이트에서 관리자 페이지로의 동선을 제공하는 클라이언트 전용 UI 요소들.
+
+**공유 훅:** `hooks/useAdminAuth.ts`
+- Firebase `onAuthStateChanged` + `isAdminEmail`로 관리자 감지
+- 초기값 `false` → SSR/hydration 시 관리자 UI 미렌더링 (CLS 방지)
+- `isFirebaseConfigured` 체크로 Firebase 미설정 시 graceful degradation
+- 비로그인/일반 사용자에게는 관리자 관련 UI가 전혀 보이지 않음
+
+**플로팅 버튼:** `components/admin/AdminFloatingButton.tsx`
+- 모든 공개 페이지에서 `/admin` 대시보드로 이동하는 좌하단 플로팅 버튼
+- 모바일: `bottom-20 left-4` (FloatingCTA 네비바 위), 데스크톱: `bottom-6 left-6`
+- `/admin` 경로에서는 자동 숨김 (`usePathname()` 체크)
+
+**인라인 편집:**
+- `AdminEditButton` — 블로그 상세 페이지 헤더에 "수정" 버튼 (라벨 포함)
+- `AdminEditIcon` — 블로그 목록 카드에 연필 아이콘 (아이콘만)
+- `AdminSettingsLink` — Footer 오시는 길/진료시간 옆 "편집" 링크
+- 모두 `/admin?tab=blog&edit={slug}` 또는 `/admin?tab=settings`로 딥링크
+
+**대시보드 딥링크:** `?tab=blog&edit={slug}` URL로 접근 시 BlogTab이 해당 포스트 편집기를 자동 오픈
+
+**대시보드 사이트 이동:** 관리자 헤더의 병원명 클릭 → 홈페이지(`/`)로 이동
 
 ## Common Tasks
 
