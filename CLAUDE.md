@@ -574,21 +574,6 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - 페이지별 OG 이미지 차별화 — 현재 모든 페이지 동일 OG 이미지. 카테고리별 이미지 또는 동적 생성 검토
 - 의사 프로필 사진 추가 — 한국 의료 사이트 최고 신뢰 신호, 사진 제공 필요
 
-### 개선 현황 (61/68개 완료, 90%)
+### 개선 현황
 
-`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능.
-
-- CRITICAL: 4/4 완료
-- HIGH: 16/18 완료 (미완료: OG 이미지 차별화, 온라인 예약)
-- MEDIUM: 24/28 완료 (미완료: SNS 링크 4건 — 오너 결정 필요)
-- LOW: 15/16 완료 (미완료: 의사 프로필 사진)
-
-### 해결됨
-
-- ~~관리자 대시보드 종합 개선~~ — 해결 (2026-02-21): Recharts 차트, 블로그 CRUD, 사이트 설정 편집, Firestore 마이그레이션 완료. 80개 포스트 Firestore 이전, SSG+ISR 하이브리드 렌더링, Zod 검증, 공통 컴포넌트 추출
-- ~~`lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요~~ — 해결: 카카오맵 주소 기반 geocoding이 정상 동작하므로 하드코딩 좌표는 폴백용으로만 사용
-- ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
-- ~~시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨~~ — 해결: `app/about/page.tsx`에 시설 안내 섹션 표시 중, `public/images/facility/`에 6장(진료실, 대기실, 상담실, VIP실, X-ray실, 외관) 포함
-- ~~`hosting-redirect/`: Naver 웹마스터 인증 파일만 존재~~ — 정상: `firebase.json`의 regex redirect로 App Hosting 전달 처리 중. 인증 파일 서빙 목적으로 설계된 구조이므로 추가 작업 불필요
-- ~~PretendardVariable 폰트 서브셋~~ — 검토 완료: 한국어 Variable 2MB는 표준 크기, 서브셋/정적 전환 시 이점 미미
-- ~~블로그 dateModified 필드~~ — 인프라 준비 완료: sitemap + JSON-LD에서 `dateModified` 자동 반영. 포스트 수정 시 필드 추가하면 됨
+`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능 (61/68개 완료, 90%).
