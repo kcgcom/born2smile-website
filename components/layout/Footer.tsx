@@ -176,6 +176,9 @@ export function Footer() {
         {/* 하단 카피라이트 */}
         <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
           <p>
+            대표 {CLINIC.representative} · 사업자등록번호 {CLINIC.businessNumber}
+          </p>
+          <p className="mt-1">
             &copy; 2017–{new Date().getFullYear()} {CLINIC.name}. All rights
             reserved.
           </p>
