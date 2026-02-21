@@ -147,7 +147,7 @@ lib/
     index.ts                 # re-export + 진료↔블로그 매핑 (TREATMENT_CATEGORY_MAP)
     generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
       posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출, 폴백용)
-    posts/                   # 개별 포스트 파일 (78개, slug.ts 형식) — 파일 기반 폴백
+    posts/                   # 개별 포스트 파일 (80개, slug.ts 형식) — 파일 기반 폴백
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -211,7 +211,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 | 컬렉션 | 문서 ID | 용도 | 접근 |
 |--------|---------|------|------|
-| `blog-posts` | `{slug}` | 블로그 포스트 (78개) | Admin SDK 전용 |
+| `blog-posts` | `{slug}` | 블로그 포스트 (80개) | Admin SDK 전용 |
 | `blog-likes` | `{slug}` | 좋아요 카운트 + 사용자 UUID | 클라이언트 read/write |
 | `site-config` | `links\|clinic\|hours\|schedule` | 사이트 설정 + 발행 스케줄 | Admin SDK 전용 |
 
@@ -797,7 +797,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ### 해결됨
 
-- ~~관리자 대시보드 종합 개선~~ — 해결 (2026-02-21): Recharts 차트, 블로그 CRUD, 사이트 설정 편집, Firestore 마이그레이션 완료. 78개 포스트 Firestore 이전, SSG+ISR 하이브리드 렌더링, Zod 검증, 공통 컴포넌트 추출
+- ~~관리자 대시보드 종합 개선~~ — 해결 (2026-02-21): Recharts 차트, 블로그 CRUD, 사이트 설정 편집, Firestore 마이그레이션 완료. 80개 포스트 Firestore 이전, SSG+ISR 하이브리드 렌더링, Zod 검증, 공통 컴포넌트 추출
 - ~~`lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요~~ — 해결: 카카오맵 주소 기반 geocoding이 정상 동작하므로 하드코딩 좌표는 폴백용으로만 사용
 - ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
 - ~~시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨~~ — 해결: `app/about/page.tsx`에 시설 안내 섹션 표시 중, `public/images/facility/`에 6장(진료실, 대기실, 상담실, VIP실, X-ray실, 외관) 포함
