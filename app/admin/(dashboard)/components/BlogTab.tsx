@@ -633,12 +633,33 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             <p className="mb-1 text-sm text-[var(--muted)]">
               스케줄 기반 추천 날짜입니다. 변경할 수 있습니다.
             </p>
-            <input
-              type="date"
-              value={publishDate}
-              onChange={(e) => setPublishDate(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
-            />
+            <p className="mb-3 text-xs text-[var(--color-primary)]">
+              즉시 발행을 원할 경우 오늘의 날짜를 선택하십시오.
+            </p>
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="date"
+                value={publishDate}
+                onChange={(e) => setPublishDate(e.target.value)}
+                className="flex-1 rounded-lg border border-[var(--border)] bg-gray-50 px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-blue-100"
+              />
+              <button
+                type="button"
+                onClick={() => setPublishDate(today)}
+                className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  publishDate === today
+                    ? "border-[var(--color-primary)] bg-blue-50 text-[var(--color-primary)]"
+                    : "border-[var(--border)] text-[var(--muted)] hover:bg-gray-50 hover:text-[var(--foreground)]"
+                }`}
+              >
+                오늘
+              </button>
+            </div>
+            {publishDate === today && (
+              <p className="mb-4 -mt-2 text-xs font-medium text-green-600">
+                오늘 날짜가 선택되었습니다. 발행 예약 시 즉시 공개됩니다.
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setPublishingSlug(null)}
