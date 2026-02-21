@@ -32,10 +32,11 @@ pnpm dev                      # http://localhost:3000
 
 ## Commands
 
-- `pnpm dev` — Start dev server (블로그 메타데이터 자동 생성 후 실행)
-- `pnpm build` — Production build (블로그 메타데이터 자동 생성 후 빌드, standalone output to `.next/`)
+- `pnpm dev` — Start dev server (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 실행)
+- `pnpm build` — Production build (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 빌드, standalone output to `.next/`)
 - `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
+- `pnpm generate-dev-manifest` — 개발 대시보드 매니페스트 수동 재생성 (`lib/dev/generated/dev-manifest.ts`)
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
 - `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
@@ -89,7 +90,19 @@ app/                          # Next.js App Router pages
         useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴)
     login/
       page.tsx                # Google login page ("use client")
+  dev/
+    layout.tsx                # Dev layout (noindex, Header/Footer CSS 숨김)
+    page.tsx                  # 개발 대시보드 — 4탭 컨테이너 ("use client", AuthGuard)
+    components/
+      DevTabs.tsx             # 탭 네비게이션 (프로젝트/코드품질/빌드/인프라)
+      ProjectTab.tsx          # 프로젝트 현황 탭 (개선 항목 진행률, 기술 스택)
+      CodeQualityTab.tsx      # 코드 품질 탭 (의존성, TS/ESLint 설정)
+      BuildTab.tsx            # 빌드 & 번들 탭 (라우트, 렌더링 전략, Cloud Run)
+      InfraTab.tsx            # 인프라 탭 (Firestore, API, 캐시, 환경변수)
   api/
+    dev/
+      env-status/
+        route.ts              # 환경변수 상태 API (GET, Admin 인증)
     admin/
       _lib/
         auth.ts               # Admin API 인증 미들웨어 (Firebase Admin SDK)
@@ -138,6 +151,10 @@ lib/
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
+  dev-data.ts                # 개발 대시보드 정적 데이터 (Next.js 설정, ESLint, Firestore, API, 캐시, 환경변수)
+  dev/
+    generated/               # 자동 생성 (gitignored) — pnpm generate-dev-manifest
+      dev-manifest.ts         # DEV_MANIFEST (의존성, 라우트, 프로젝트 통계, TS/Firestore 설정)
   site-config-firestore.ts   # Firestore 사이트 설정 CRUD (links, clinic, hours, schedule)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
@@ -158,6 +175,7 @@ docs/
   blog-writing-guide.md      # 블로그 작성 가이드 (브랜드 보이스, 문체, 용어 통일표, SEO)
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
+  generate-dev-manifest.ts   # 빌드 시 개발 대시보드 매니페스트 생성 스크립트
   submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
   migrate-blog-to-firestore.ts # 파일 → Firestore 블로그 마이그레이션 (1회성)
   verify-migration.ts        # 마이그레이션 검증 스크립트
@@ -201,7 +219,9 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
+| `/dev` | Client-side | 개발 대시보드 4탭 (AuthGuard 보호, `"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
+| `/api/dev/env-status` | Server-side | 환경변수 상태 API (Admin 인증) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -329,6 +349,15 @@ content: [
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
+
+### 개발 대시보드
+
+4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
+
+- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태만 런타임 API (`/api/dev/env-status`)
+- **매니페스트 생성**: `scripts/generate-dev-manifest.ts`가 `pnpm dev`/`pnpm build` 시 자동 실행. `package.json`, `tsconfig.json`, `firestore.indexes.json`, `firestore.rules`, `app/` 디렉토리를 스캔하여 의존성, 라우트, 렌더링 전략, 프로젝트 통계 수집
+- **인증**: 관리자 대시보드와 동일한 AuthGuard + 이메일 화이트리스트 사용
+- **SEO**: `robots.txt`에서 `/dev` Disallow, layout에서 `noindex`
 
 ## Common Tasks
 

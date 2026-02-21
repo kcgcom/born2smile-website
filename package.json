@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "generate-blog-meta": "tsx scripts/generate-blog-meta.ts",
-    "dev": "tsx scripts/generate-blog-meta.ts && next dev",
-    "build": "tsx scripts/generate-blog-meta.ts && next build",
+    "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",
+    "dev": "tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && next dev",
+    "build": "tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "firebase deploy --only apphosting",

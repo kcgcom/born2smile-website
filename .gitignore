@@ -41,3 +41,6 @@ next-env.d.ts
 
 # auto-generated blog metadata
 lib/blog/generated/
+
+# auto-generated dev manifest
+lib/dev/generated/
