@@ -76,9 +76,9 @@ app/                          # Next.js App Router pages
         OverviewTab.tsx       # 개요 탭 (Recharts 파이차트, 블로그 통계, 사이트 설정)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바 차트, Search Console API)
-        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 검색/필터/정렬, 좋아요 집계)
-        BlogEditor.tsx        # 블로그 포스트 편집기 (생성/수정, Zod 검증)
-        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간 실시간 편집)
+        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계)
+        BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장 전용, Zod 검증)
+        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/발행 스케줄 편집)
         StatCard.tsx          # 통계 카드 (아이콘 + 값 + 라벨)
         ConfigRow.tsx         # 설정 행 (라벨 + 값 표시)
         MetricCard.tsx        # 지표 카드 (값 + 증감률)
@@ -136,8 +136,8 @@ lib/
   admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
-  blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정)
-  site-config-firestore.ts   # Firestore 사이트 설정 CRUD (links, clinic, hours)
+  blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
+  site-config-firestore.ts   # Firestore 사이트 설정 CRUD (links, clinic, hours, schedule)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
@@ -212,7 +212,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 |--------|---------|------|------|
 | `blog-posts` | `{slug}` | 블로그 포스트 (78개) | Admin SDK 전용 |
 | `blog-likes` | `{slug}` | 좋아요 카운트 + 사용자 UUID | 클라이언트 read/write |
-| `site-config` | `links\|clinic\|hours` | 사이트 설정 | Admin SDK 전용 |
+| `site-config` | `links\|clinic\|hours\|schedule` | 사이트 설정 + 발행 스케줄 | Admin SDK 전용 |
 
 **복합 인덱스 (3개):**
 - `blog-posts`: `published` ASC + `date` DESC
@@ -223,9 +223,19 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 **캐싱:** `unstable_cache` + `revalidateTag` 조합. 블로그 TTL 1시간, 사이트 설정 TTL 1시간, 관리자 블로그 목록 5분. CRUD 후 `revalidateTag(tag, "max")`으로 즉시 무효화.
 
-### 블로그 예약 발행 메커니즘
+### 블로그 발행 워크플로우
 
-미래 날짜(`date` 필드)를 가진 포스트는 다음 두 곳에서 필터링되어 노출되지 않음:
+**임시저장 → 발행 예약 2단계 워크플로우:**
+
+1. **임시저장**: BlogEditor에서 포스트 저장 시 항상 `published: false` (draft) 상태로 Firestore에 저장
+2. **발행 예약**: BlogTab 포스트 목록에서 draft 포스트의 "발행" 버튼 클릭 → PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭 시 `published: true` + 선택한 날짜로 업데이트
+
+**발행 날짜 추천 로직** (`getNextPublishDate`):
+1. `site-config/schedule`에서 발행 요일 목록 조회 (기본: 월/수/금 = `[1,3,5]`)
+2. 이미 발행 예약된 포스트(`published: true` + 미래 날짜)의 날짜 수집
+3. 오늘부터 90일 내에서 스케줄 요일에 해당하면서 아직 포스트가 없는 가장 빠른 날짜 추천
+
+**발행 후 노출 메커니즘** — `published: true`이면서 `date <= today`인 포스트만 공개 사이트에 노출:
 
 1. **클라이언트 필터링** (`BlogContent.tsx`): `date <= today` 조건으로 미발행 포스트 제외
 2. **Sitemap 필터링** (`app/sitemap.ts`): 동일 조건으로 미발행 포스트 sitemap에서 제외
@@ -572,8 +582,8 @@ content: [
 | 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` | Recharts 파이차트, 블로그 통계, 사이트 설정 현황 |
 | 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4) | 바/파이/영역 차트, 인기 페이지, 유입 경로, 기기별 |
 | 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` | 바 차트, 상위 키워드/페이지, 블로그 검색 성과 |
-| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` | CRUD (생성/수정/삭제), 검색/필터/정렬, 좋아요 집계 |
-| 설정 | `SettingsTab.tsx` | `/api/admin/site-config` | SNS 링크/병원 정보/진료시간 실시간 편집 |
+| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` + `site-config/schedule` | CRUD (임시저장/수정/삭제), 발행 예약 팝업, 검색/필터/정렬, 좋아요 집계 |
+| 설정 | `SettingsTab.tsx` | `/api/admin/site-config` | SNS 링크/병원 정보/진료시간/발행 스케줄 편집 |
 
 ### Admin API Routes (`app/api/admin/`)
 
@@ -588,8 +598,8 @@ content: [
 - `GET /api/admin/blog-posts/[slug]` — 단일 포스트 조회 (본문 포함)
 - `PUT /api/admin/blog-posts/[slug]` — 포스트 수정 (Zod `blogPostUpdateSchema` 검증)
 - `DELETE /api/admin/blog-posts/[slug]` — 포스트 삭제
-- `GET /api/admin/site-config/[type]` — 사이트 설정 조회 (type: `links|clinic|hours`)
-- `PUT /api/admin/site-config/[type]` — 사이트 설정 수정 (Zod 스키마 검증)
+- `GET /api/admin/site-config/[type]` — 사이트 설정 조회 (type: `links|clinic|hours|schedule`)
+- `PUT /api/admin/site-config/[type]` — 사이트 설정 수정 (Zod 스키마 검증). `schedule` 타입은 발행 요일 설정 (`publishDays: number[]`, 0=일~6=토)
 
 ### AuthGuard (`components/admin/AuthGuard.tsx`)
 
@@ -636,9 +646,12 @@ content: [
 
 **방법 1: 관리자 대시보드 (권장)**
 
-1. `/admin` → 블로그 탭 → "새 포스트" 버튼
+1. `/admin` → 블로그 탭 → "새 포스트 작성" 버튼
 2. BlogEditor에서 제목, 부제, 요약, 카테고리, 태그, 본문 섹션 입력
-3. Zod 검증 통과 후 Firestore에 저장, ISR revalidate로 1시간 내 사이트 반영
+3. "임시저장" 클릭 → Firestore에 `published: false` 상태로 저장
+4. 블로그 탭 포스트 목록에서 해당 포스트의 "발행" 버튼 클릭
+5. PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭
+6. `published: true` + 선택한 날짜로 업데이트, ISR revalidate로 사이트 반영
 
 **방법 2: 파일 생성 (폴백/대량 추가용)**
 
@@ -660,7 +673,7 @@ content: [
 
 ### 병원 정보 수정
 
-**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간 실시간 편집 (Firestore `site-config` 컬렉션에 저장).
+**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간, 발행 스케줄 실시간 편집 (Firestore `site-config` 컬렉션에 저장).
 
 **방법 2: 코드 수정** — `lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
 
