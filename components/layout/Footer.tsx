@@ -1,15 +1,28 @@
-import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock } from "lucide-react";
+import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 export function Footer() {
   return (
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-28 md:px-6 md:pb-12">
+        {/* 병원명 + 전화번호 */}
+        <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          <span className="text-xl font-bold text-white">{CLINIC.name}</span>
+          <a
+            href={CLINIC.phoneHref}
+            className="inline-flex items-center gap-2 text-lg font-medium text-[var(--color-gold-light)] transition-colors hover:text-[var(--color-gold)]"
+            aria-label={`전화 상담 ${CLINIC.phone}`}
+          >
+            <Phone size={18} aria-hidden="true" />
+            {CLINIC.phone}
+          </a>
+        </div>
+
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* 오시는 길 */}
           <div>
-            <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-[var(--color-gold-light)]">
-              <MapPin size={18} />
+            <h2 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
+              <MapPin size={18} className="text-[var(--color-gold-light)]" />
               오시는 길
             </h2>
             <ul className="space-y-2 text-lg md:text-base">
@@ -45,6 +58,21 @@ export function Footer() {
                   </a>
                 </li>
               )}
+              {LINKS.kakaoMap && (
+                <li>
+                  <a
+                    href={LINKS.kakaoMap}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
+                  >
+                    <MapPin size={14} className="shrink-0" />
+                    카카오맵에서 보기
+                    <span className="sr-only"> (새 창)</span>
+                    <ExternalLink size={12} className="shrink-0" />
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -71,7 +99,7 @@ export function Footer() {
                 </li>
               ))}
               <li className="mt-2 border-t border-gray-700 pt-2 text-gray-500">
-                공휴일 휴진 · 점심시간 {HOURS.lunchTime}
+                점심시간 {HOURS.lunchTime} (토요일 제외) · 공휴일 휴진
               </li>
             </ul>
           </div>
@@ -79,7 +107,10 @@ export function Footer() {
           {/* 리뷰 남기기 */}
           {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
             <div>
-              <h2 className="mb-2 text-xl md:text-lg font-bold text-white">리뷰 남기기</h2>
+              <h2 className="mb-2 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
+                <Star size={18} className="text-[var(--color-gold-light)]" />
+                리뷰 남기기
+              </h2>
               <p className="mb-3 text-base md:text-sm leading-relaxed text-gray-400">
                 소중한 후기가 다른 분들에게 큰 도움이 됩니다.
               </p>
