@@ -54,8 +54,19 @@ const CategoryPieChart = dynamic(
                 cx="50%"
                 cy="50%"
                 outerRadius={90}
-                label={({ name, percent }: { name?: string; percent?: number }) =>
-                  `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                label={(props) => {
+                  const { cx: cxVal, cy: cyVal, midAngle, innerRadius: ir, outerRadius: or, percent } = props as unknown as { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number };
+                  const RADIAN = Math.PI / 180;
+                  const radius = ir + (or - ir) * 0.5;
+                  const x = cxVal + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cyVal + radius * Math.sin(-midAngle * RADIAN);
+                  if (percent < 0.05) return null;
+                  return (
+                    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+                      {(percent * 100).toFixed(0)}%
+                    </text>
+                  );
+                }}
                 labelLine={false}
               >
                 {pieData.map((entry, index) => (
