@@ -77,7 +77,7 @@ app/                          # Next.js App Router pages
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바 차트, Search Console API)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계)
-        BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장 전용, Zod 검증)
+        BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
         SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/발행 스케줄 편집)
         StatCard.tsx          # 통계 카드 (아이콘 + 값 + 라벨)
         ConfigRow.tsx         # 설정 행 (라벨 + 값 표시)
@@ -228,7 +228,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 **임시저장 → 발행 예약 2단계 워크플로우:**
 
-1. **임시저장**: BlogEditor에서 포스트 저장 시 항상 `published: false` (draft) 상태로 Firestore에 저장
+1. **임시저장/수정**: BlogEditor에서 새 포스트 저장 시 `published: false` (draft) 상태로 Firestore에 저장. 이미 발행된 포스트 수정 시에는 `published: true` 상태 유지
 2. **발행 예약**: BlogTab 포스트 목록에서 draft 포스트의 "발행" 버튼 클릭 → PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭 시 `published: true` + 선택한 날짜로 업데이트. "오늘" 버튼으로 즉시 발행 가능 (오늘 날짜 선택 시 안내 메시지 표시)
 
 **발행 날짜 추천 로직** (`getNextPublishDate`):
@@ -622,6 +622,7 @@ content: [
 
 **플로팅 버튼:** `components/admin/AdminFloatingButton.tsx`
 - 모든 공개 페이지에서 `/admin` 대시보드로 이동하는 좌하단 플로팅 버튼
+- 스타일: `bg-gray-600` (Footer `bg-gray-900` 배경에서 대비 확보)
 - 모바일: `bottom-20 left-4` (FloatingCTA 네비바 위), 데스크톱: `bottom-6 left-6`
 - `/admin` 경로에서는 자동 숨김 (`usePathname()` 체크)
 
