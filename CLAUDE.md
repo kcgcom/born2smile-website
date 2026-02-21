@@ -14,7 +14,9 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Animation**: Framer Motion 12 (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
-- **Database**: Firebase Firestore (블로그 좋아요 기능)
+- **Charts**: Recharts 2 (dynamic import, 트래픽/검색/블로그 탭 인터랙티브 차트)
+- **Validation**: Zod v4 (`zod/v4`, 블로그 CRUD + 사이트 설정 API 입력 검증)
+- **Database**: Firebase Firestore (블로그 포스트 저장소 + 좋아요 + 사이트 설정)
 - **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용) + Firebase Admin SDK (서버 사이드 토큰 검증)
 - **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`)
 - **Package Manager**: pnpm
@@ -71,15 +73,20 @@ app/                          # Next.js App Router pages
       page.tsx                # Dashboard main — 5탭 컨테이너 ("use client")
       components/
         AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/블로그/설정)
-        OverviewTab.tsx       # 개요 탭 (개선 항목, 블로그 통계, 사이트 설정)
-        TrafficTab.tsx        # 트래픽 탭 (GA4 Data API 연동)
-        SearchTab.tsx         # 검색/SEO 탭 (Search Console API 연동)
-        BlogTab.tsx           # 블로그 관리 탭 (검색/필터/정렬, 좋아요 집계)
-        SettingsTab.tsx       # 설정 탭 (빠른 링크, 병원 정보 요약)
+        OverviewTab.tsx       # 개요 탭 (Recharts 파이차트, 블로그 통계, 사이트 설정)
+        TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
+        SearchTab.tsx         # 검색/SEO 탭 (Recharts 바 차트, Search Console API)
+        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 검색/필터/정렬, 좋아요 집계)
+        BlogEditor.tsx        # 블로그 포스트 편집기 (생성/수정, Zod 검증)
+        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간 실시간 편집)
+        StatCard.tsx          # 통계 카드 (아이콘 + 값 + 라벨)
+        ConfigRow.tsx         # 설정 행 (라벨 + 값 표시)
         MetricCard.tsx        # 지표 카드 (값 + 증감률)
-        DataTable.tsx         # 범용 데이터 테이블
+        DataTable.tsx         # 범용 데이터 테이블 (정렬/검색 기능)
+        AdminErrorState.tsx   # 공통 에러 상태 UI
+        AdminLoadingSkeleton.tsx # 공통 로딩 스켈레톤 UI
         PeriodSelector.tsx    # 기간 선택 버튼 그룹
-        useAdminApi.ts        # Admin API 데이터 페칭 훅
+        useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴)
     login/
       page.tsx                # Google login page ("use client")
   api/
@@ -93,6 +100,11 @@ app/                          # Next.js App Router pages
         route.ts              # Search Console 검색 성과 API (GET)
       blog-likes/
         route.ts              # Firestore 좋아요 집계 API (GET)
+      blog-posts/
+        route.ts              # 블로그 포스트 목록/생성 API (GET/POST, Zod 검증)
+        [slug]/route.ts       # 블로그 포스트 상세/수정/삭제 API (GET/PUT/DELETE)
+      site-config/
+        [type]/route.ts       # 사이트 설정 조회/수정 API (GET/PUT, type: links|clinic|hours)
   contact/
     layout.tsx                # Contact layout wrapper with metadata
     page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
@@ -117,15 +129,18 @@ lib/
   firebase-admin.ts          # Firebase Admin SDK 싱글톤 (ADC 우선, JSON key 폴백)
   admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
+  blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
+  blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정)
+  site-config-firestore.ts   # Firestore 사이트 설정 CRUD (links, clinic, hours)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
   blog/
     types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
     category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
-    index.ts                 # re-export + getPostBySlug() + 진료↔블로그 매핑
+    index.ts                 # re-export + 진료↔블로그 매핑 (TREATMENT_CATEGORY_MAP)
     generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
-      posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출)
-    posts/                   # 개별 포스트 파일 (78개, slug.ts 형식) — Single Source of Truth
+      posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출, 폴백용)
+    posts/                   # 개별 포스트 파일 (78개, slug.ts 형식) — 파일 기반 폴백
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -135,6 +150,9 @@ public/
 scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
   submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
+  migrate-blog-to-firestore.ts # 파일 → Firestore 블로그 마이그레이션 (1회성)
+  verify-migration.ts        # 마이그레이션 검증 스크립트
+  deploy-firestore.ts        # Firestore 인덱스/규칙 REST API 배포
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .github/
   workflows/
@@ -169,14 +187,35 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | SSG | Static (metadata from `lib/blog/index.ts`) |
-| `/blog/[slug]` | SSG | `generateStaticParams()` for 78 blog posts |
+| `/blog` | SSG | Static (metadata from Firestore, 파일 폴백) |
+| `/blog/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
-| `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes) |
+| `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
+
+### Firestore 데이터 아키텍처
+
+블로그 포스트의 Single Source of Truth가 파일(`lib/blog/posts/*.ts`)에서 **Firestore**(`blog-posts` 컬렉션)로 이전됨. 파일 기반 데이터는 폴백으로 유지.
+
+**컬렉션 구조:**
+
+| 컬렉션 | 문서 ID | 용도 | 접근 |
+|--------|---------|------|------|
+| `blog-posts` | `{slug}` | 블로그 포스트 (78개) | Admin SDK 전용 |
+| `blog-likes` | `{slug}` | 좋아요 카운트 + 사용자 UUID | 클라이언트 read/write |
+| `site-config` | `links\|clinic\|hours` | 사이트 설정 | Admin SDK 전용 |
+
+**복합 인덱스 (3개):**
+- `blog-posts`: `published` ASC + `date` DESC
+- `blog-posts`: `category` ASC + `date` DESC
+- `blog-posts`: `published` ASC + `category` ASC + `date` DESC
+
+**폴백 전략:** Firestore 복합 인덱스 미배포 시 `FAILED_PRECONDITION` 에러를 감지하여 파일 기반 `BLOG_POSTS_META`로 자동 폴백. 빌드 안정성 보장.
+
+**캐싱:** `unstable_cache` + `revalidateTag` 조합. 블로그 TTL 1시간, 사이트 설정 TTL 1시간, 관리자 블로그 목록 5분. CRUD 후 `revalidateTag(tag, "max")`으로 즉시 무효화.
 
 ### 블로그 예약 발행 메커니즘
 
@@ -522,13 +561,13 @@ content: [
 
 5탭 구조 대시보드. URL query param `?tab=traffic`으로 탭 상태 관리.
 
-| 탭 | 컴포넌트 | 데이터 소스 |
-|---|---|---|
-| 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` (클라이언트 상수) |
-| 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4 Data API) |
-| 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` (SC API) |
-| 블로그 | `BlogTab.tsx` | `BLOG_POSTS_META` + `/api/admin/blog-likes` (Firestore) |
-| 설정 | `SettingsTab.tsx` | `lib/constants.ts` + `lib/admin-data.ts` |
+| 탭 | 컴포넌트 | 데이터 소스 | 주요 기능 |
+|---|---|---|---|
+| 개요 | `OverviewTab.tsx` | `lib/admin-data.ts` | Recharts 파이차트, 블로그 통계, 사이트 설정 현황 |
+| 트래픽 | `TrafficTab.tsx` | `/api/admin/analytics` (GA4) | 바/파이/영역 차트, 인기 페이지, 유입 경로, 기기별 |
+| 검색/SEO | `SearchTab.tsx` | `/api/admin/search-console` | 바 차트, 상위 키워드/페이지, 블로그 검색 성과 |
+| 블로그 | `BlogTab.tsx` | `/api/admin/blog-posts` + `blog-likes` | CRUD (생성/수정/삭제), 검색/필터/정렬, 좋아요 집계 |
+| 설정 | `SettingsTab.tsx` | `/api/admin/site-config` | SNS 링크/병원 정보/진료시간 실시간 편집 |
 
 ### Admin API Routes (`app/api/admin/`)
 
@@ -538,6 +577,13 @@ content: [
 - `GET /api/admin/analytics?period=7d|30d|90d` — GA4 트래픽 지표 (세션, 사용자, 페이지뷰, 인기 페이지, 유입 경로, 기기별, 일별 추이)
 - `GET /api/admin/search-console?period=7d|28d|90d` — 검색 성과 (노출, 클릭, CTR, 순위, 상위 키워드/페이지, 블로그 검색 성과). 3일 데이터 지연 오프셋 자동 적용
 - `GET /api/admin/blog-likes` — Firestore `blog-likes` 컬렉션 전체 좋아요 수 집계
+- `GET /api/admin/blog-posts` — 전체 블로그 포스트 메타 목록 (관리자용, published 상태 포함)
+- `POST /api/admin/blog-posts` — 새 블로그 포스트 생성 (Zod `blogPostSchema` 검증)
+- `GET /api/admin/blog-posts/[slug]` — 단일 포스트 조회 (본문 포함)
+- `PUT /api/admin/blog-posts/[slug]` — 포스트 수정 (Zod `blogPostUpdateSchema` 검증)
+- `DELETE /api/admin/blog-posts/[slug]` — 포스트 삭제
+- `GET /api/admin/site-config/[type]` — 사이트 설정 조회 (type: `links|clinic|hours`)
+- `PUT /api/admin/site-config/[type]` — 사이트 설정 수정 (Zod 스키마 검증)
 
 ### AuthGuard (`components/admin/AuthGuard.tsx`)
 
@@ -557,26 +603,35 @@ content: [
 
 ### 블로그 포스트 추가
 
-**포스트 파일 1개만 생성하면 끝** (메타데이터는 빌드 시 자동 추출):
+**방법 1: 관리자 대시보드 (권장)**
+
+1. `/admin` → 블로그 탭 → "새 포스트" 버튼
+2. BlogEditor에서 제목, 부제, 요약, 카테고리, 태그, 본문 섹션 입력
+3. Zod 검증 통과 후 Firestore에 저장, ISR revalidate로 1시간 내 사이트 반영
+
+**방법 2: 파일 생성 (폴백/대량 추가용)**
 
 1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
    - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
    - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
 2. `pnpm dev` 또는 `pnpm build` 실행 시 메타데이터가 자동 생성됨
    - 수동 재생성: `pnpm generate-blog-meta`
-   - 생성 파일: `lib/blog/generated/posts-meta.ts` (gitignored)
-3. ~~`lib/blog/index.ts` 수동 등록 불필요~~ — `getPostBySlug()`가 동적 import로 자동 탐색
-4. 카테고리(진료 분야별, 1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "구강건강상식"`
-5. 태그(콘텐츠 유형 + 대상, 복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택
+3. Firestore에도 반영 필요 시: `GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa-key.json npx tsx scripts/migrate-blog-to-firestore.ts`
+
+**공통 사항:**
+- 카테고리(1개 선택): `"예방·구강관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "구강건강상식"`
+- 태그(복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택
    - 유형 태그: `"치료후관리"`, `"생활습관"`, `"팩트체크"`, `"증상가이드"`, `"비교가이드"`
    - 대상 태그: `"임산부"`, `"시니어"`
-6. 새 카테고리 추가 시 `lib/blog/types.ts`의 `BLOG_CATEGORIES`와 `BlogCategoryValue` 타입도 함께 수정
-7. 새 태그 추가 시 `lib/blog/types.ts`의 `BLOG_TAGS` 배열에 추가
-8. 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플, 12개씩 페이지네이션)
+- 새 카테고리 추가 시 `lib/blog/types.ts`의 `BLOG_CATEGORIES`와 `BlogCategoryValue` 타입도 함께 수정
+- 새 태그 추가 시 `lib/blog/types.ts`의 `BLOG_TAGS` 배열에 추가
+- 블로그 목록은 접속 시마다 랜덤 순서로 표시됨 (클라이언트 측 셔플, 12개씩 페이지네이션)
 
 ### 병원 정보 수정
 
-`lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
+**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간 실시간 편집 (Firestore `site-config` 컬렉션에 저장).
+
+**방법 2: 코드 수정** — `lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
 
 - `CLINIC` — 병원명, 주소, 전화번호, 대표자
 - `DOCTORS` — 의료진 정보 (학력, 자격, 학회, 현직)
@@ -639,7 +694,8 @@ Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
   - `concurrency: 80`
   - `cpu: 1`, `memoryMiB: 512`
 - `firebase.json` — Firebase Hosting이 301 redirect로 App Hosting URL로 전달
-- `firestore.rules` — Firestore 보안 규칙: `blog-likes/{slug}` 컬렉션만 read/write 허용 (count, users 필드), 나머지 전체 차단
+- `firestore.rules` — Firestore 보안 규칙: `blog-likes/{slug}` 클라이언트 read/write 허용 (count, users 필드 검증), `blog-posts` + `site-config`는 Admin SDK 전용 (클라이언트 접근 차단), 나머지 전체 차단
+- `firestore.indexes.json` — 복합 인덱스 3개 정의 (published+date, category+date, published+category+date)
 - 빌드는 Cloud Build에서 원격 실행 → 로컬 `next build` 불필요
 - 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
 - SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
@@ -675,7 +731,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ## Known TODO Items
 
-> 마지막 점검: 2026-02-20
+> 마지막 점검: 2026-02-21
 
 ### 미완료 — 오너 비즈니스 결정 필요
 
@@ -695,6 +751,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ### 해결됨
 
+- ~~관리자 대시보드 종합 개선~~ — 해결 (2026-02-21): Recharts 차트, 블로그 CRUD, 사이트 설정 편집, Firestore 마이그레이션 완료. 78개 포스트 Firestore 이전, SSG+ISR 하이브리드 렌더링, Zod 검증, 공통 컴포넌트 추출
 - ~~`lib/constants.ts`: 지도 좌표(`MAP`) 정확도 확인 필요~~ — 해결: 카카오맵 주소 기반 geocoding이 정상 동작하므로 하드코딩 좌표는 폴백용으로만 사용
 - ~~`lib/jsonld.ts` `getBlogPostJsonLd()`: `dateModified`가 `datePublished`와 동일~~ — 해결: `BlogPostMeta`에 `dateModified?: string` 필드 추가, `getBlogPostJsonLd()`에서 `post.dateModified ?? post.date`로 처리. 포스트 파일에 `dateModified` 필드를 추가하면 자동 반영됨
 - ~~시설 사진 섹션: 현재 홈페이지에서 숨김 처리됨~~ — 해결: `app/about/page.tsx`에 시설 안내 섹션 표시 중, `public/images/facility/`에 6장(진료실, 대기실, 상담실, VIP실, X-ray실, 외관) 포함
