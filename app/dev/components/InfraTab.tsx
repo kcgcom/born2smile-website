@@ -165,11 +165,16 @@ export function InfraTab() {
             {firestoreRules.map((rule) => (
               <div
                 key={rule.collection}
-                className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg bg-[var(--background)] px-3 py-2 text-sm"
               >
-                <span className="font-mono text-[var(--foreground)]">
-                  {rule.collection}
-                </span>
+                <div>
+                  <span className="font-mono text-[var(--foreground)]">
+                    {rule.collection}
+                  </span>
+                  {rule.note && (
+                    <p className="text-xs text-[var(--muted-light)]">{rule.note}</p>
+                  )}
+                </div>
                 <span className="flex items-center gap-2 text-xs">
                   <span className={rule.read ? "text-green-600" : "text-red-500"}>
                     R:{rule.read ? "O" : "X"}
@@ -181,11 +186,6 @@ export function InfraTab() {
               </div>
             ))}
           </div>
-          {firestoreRules.length > 0 && (
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              {firestoreRules.find((r) => r.note)?.note}
-            </p>
-          )}
         </div>
       </div>
 
@@ -212,7 +212,7 @@ export function InfraTab() {
             {CACHE_TTLS.map((ttl) => (
               <div
                 key={ttl.key}
-                className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg bg-[var(--background)] px-3 py-2 text-sm"
               >
                 <span className="font-mono text-[var(--foreground)]">{ttl.key}</span>
                 <span className="text-[var(--muted)]">

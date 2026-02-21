@@ -60,10 +60,13 @@ export function BuildTab() {
     <div className="space-y-6">
       {/* 렌더링 전략 통계 */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {Object.entries(routeStats.byRendering).map(([key, count]) => (
-          <StatCard key={key} label={key} value={count as number} />
-        ))}
+        <StatCard label="페이지" value={routeStats.totalPages} variant="elevated" />
         <StatCard label="API" value={routeStats.totalApi} color="text-purple-600" />
+        {Object.entries(routeStats.byRendering)
+          .filter(([key]) => key !== "Server")
+          .map(([key, count]) => (
+            <StatCard key={key} label={key} value={count as number} />
+          ))}
       </div>
 
       {/* 프로젝트 구조 통계 */}

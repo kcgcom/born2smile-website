@@ -15,7 +15,7 @@ export function ConfigRow({ item }: { item: ConfigItem }) {
           </svg>
         </span>
       ) : (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted-light)]">
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
           </svg>

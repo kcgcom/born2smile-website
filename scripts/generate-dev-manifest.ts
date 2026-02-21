@@ -180,7 +180,8 @@ function collectProjectStats() {
     countFiles(path.join(rootDir, "app"), tsExts) +
     countFiles(path.join(rootDir, "components"), tsExts) +
     countFiles(path.join(rootDir, "lib"), tsExts) +
-    countFiles(path.join(rootDir, "hooks"), tsExts);
+    countFiles(path.join(rootDir, "hooks"), tsExts) +
+    countFiles(path.join(rootDir, "scripts"), tsExts);
 
   return {
     totalFiles,
@@ -243,12 +244,21 @@ function collectFirestoreRules() {
     const content = fs.readFileSync(rulesPath, "utf-8");
 
     const rules: { collection: string; read: boolean; write: boolean; note: string }[] = [];
-    const matchRegex = /match\s+\/([a-z-]+)\/\{[^}]+\}\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)?\}/g;
 
+    // 중첩 브레이스를 올바르게 처리하는 brace-depth scanner
+    const matchStart = /match\s+\/([a-z-]+)\/\{[^}]+\}\s*\{/g;
     let m;
-    while ((m = matchRegex.exec(content)) !== null) {
+    while ((m = matchStart.exec(content)) !== null) {
       const collection = m[1];
-      const block = m[2] ?? "";
+      let depth = 1;
+      let i = matchStart.lastIndex;
+      const start = i;
+      while (i < content.length && depth > 0) {
+        if (content[i] === "{") depth++;
+        else if (content[i] === "}") depth--;
+        i++;
+      }
+      const block = content.slice(start, i - 1);
 
       // /{document=**} 패턴은 "기타" 으로 처리
       if (collection === "databases" || collection === "documents") continue;

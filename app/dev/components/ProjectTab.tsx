@@ -82,7 +82,7 @@ function TechStackGrid() {
       </h3>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {keyDeps.map((d) => (
-          <div key={d.name} className="rounded-lg bg-gray-50 p-2.5 text-center">
+          <div key={d.name} className="rounded-lg bg-[var(--background)] p-2.5 text-center">
             <p className="text-sm font-medium text-[var(--foreground)]">{d.name}</p>
             <p className="text-xs text-[var(--muted)]">{d.version}</p>
           </div>
@@ -159,7 +159,7 @@ export function ProjectTab() {
         {stats.byPriority.map((bp) => (
           <StatCard
             key={bp.priority}
-            label={bp.priority}
+            label={`${bp.priority} (${bp.done}/${bp.total})`}
             value={bp.done}
             color={
               bp.done === bp.total
@@ -185,7 +185,7 @@ export function ProjectTab() {
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               filter === f.id
                 ? "bg-emerald-600 text-white"
-                : "bg-gray-100 text-[var(--muted)] hover:bg-gray-200"
+                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
             }`}
           >
             {f.label}

@@ -66,7 +66,7 @@ function DevDashboardContent() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin"
-              className="flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-gray-50 hover:text-[var(--foreground)]"
+              className="flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
             >
               <Settings size={14} aria-hidden="true" />
               <span className="hidden sm:inline">관리자</span>
@@ -76,7 +76,7 @@ function DevDashboardContent() {
             </span>
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-gray-50 hover:text-[var(--foreground)]"
+              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
             >
               로그아웃
             </button>

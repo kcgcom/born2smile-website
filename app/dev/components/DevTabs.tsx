@@ -28,11 +28,12 @@ export function DevTabs({ activeTab, onTabChange }: DevTabsProps) {
         return (
           <button
             key={tab.id}
+            title={tab.label}
             onClick={() => onTabChange(tab.id)}
             className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-emerald-600 text-white"
-                : "text-[var(--muted)] hover:bg-gray-50"
+                : "text-[var(--muted)] hover:bg-[var(--background)]"
             }`}
             aria-current={isActive ? "page" : undefined}
           >

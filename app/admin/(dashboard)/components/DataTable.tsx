@@ -23,7 +23,7 @@ interface DataTableProps<T> {
 function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
   if (direction === "asc") return <span aria-hidden="true" className="ml-1 text-[var(--color-primary)]">▲</span>;
   if (direction === "desc") return <span aria-hidden="true" className="ml-1 text-[var(--color-primary)]">▼</span>;
-  return <span aria-hidden="true" className="ml-1 text-gray-300">⇅</span>;
+  return <span aria-hidden="true" className="ml-1 text-[var(--border)]">⇅</span>;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -37,9 +37,9 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-10 text-center">
+      <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-[var(--background)] px-4 py-10 text-center">
         <svg
-          className="h-8 w-8 text-gray-300"
+          className="h-8 w-8 text-[var(--border)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -105,7 +105,7 @@ export function DataTable<T extends Record<string, unknown>>({
           {rows.map((row) => (
             <tr
               key={String(row[keyField])}
-              className="border-b border-gray-50 transition-colors hover:bg-gray-50"
+              className="border-b border-[var(--background)] transition-colors hover:bg-[var(--background)]"
             >
               {columns.map((col) => (
                 <td
