@@ -20,6 +20,7 @@ import {
   getRelatedPostsFromFirestore,
 } from "@/lib/blog-firestore";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
+import { AdminPublishButton } from "@/components/admin/AdminPublishButton";
 
 export const revalidate = 3600;
 
@@ -134,6 +135,7 @@ export default async function BlogPostPage({
                   {post.readTime ?? "1분"} 읽기
                 </span>
                 <AdminEditButton href={`/admin?tab=blog&edit=${slug}`} />
+                <AdminPublishButton slug={slug} />
               </div>
 
               <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
