@@ -73,12 +73,12 @@ app/                          # Next.js App Router pages
       page.tsx                # Dashboard main — 5탭 컨테이너 ("use client")
       components/
         AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/블로그/설정)
-        OverviewTab.tsx       # 개요 탭 (Recharts 파이차트, 블로그 통계, 사이트 설정)
+        OverviewTab.tsx       # 개요 탭 (블로그 통계, 사이트 설정 상태, 개선 항목)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바 차트, Search Console API)
-        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계)
+        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
         BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
-        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/발행 스케줄 편집)
+        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)
         StatCard.tsx          # 통계 카드 (아이콘 + 값 + 라벨)
         ConfigRow.tsx         # 설정 행 (라벨 + 값 표시)
         MetricCard.tsx        # 지표 카드 (값 + 증감률)
@@ -324,7 +324,7 @@ content: [
 
 ### 관리자 대시보드
 
-5탭 구조 (`?tab=` query param): 개요(Recharts), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행), 설정(사이트 편집).
+5탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
@@ -369,7 +369,7 @@ content: [
 
 ### 병원 정보 수정
 
-**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간, 발행 스케줄 실시간 편집 (Firestore `site-config` 컬렉션에 저장).
+**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간 실시간 편집 (Firestore `site-config` 컬렉션에 저장). 발행 스케줄은 블로그 탭에서 편집.
 
 **방법 2: 코드 수정** — `lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
 
