@@ -208,7 +208,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     }
     setSaving(true);
     setSaveError(null);
-    const { error } = await onSave({ ...form, published: false });
+    const { error } = await onSave({ ...form, published: form.published });
     setSaving(false);
     if (error) setSaveError(error);
   };
