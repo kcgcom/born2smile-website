@@ -96,12 +96,12 @@ export function Footer() {
                       </span>
                     )}
                   </span>
-                  <span className={item.open ? "text-white" : "text-gray-500"}>
+                  <span className={item.open ? "text-white" : "text-gray-400"}>
                     {item.time}
                   </span>
                 </li>
               ))}
-              <li className="mt-2 border-t border-gray-700 pt-2 text-gray-500">
+              <li className="mt-2 border-t border-gray-700 pt-2 text-gray-400">
                 점심시간 {HOURS.lunchTime} · 공휴일 휴진
               </li>
             </ul>
@@ -208,7 +208,7 @@ export function Footer() {
         )}
 
         {/* 하단 카피라이트 */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
           <p>
             대표 {CLINIC.representative} · 사업자등록번호 {CLINIC.businessNumber}
           </p>

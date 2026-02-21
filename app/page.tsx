@@ -233,7 +233,7 @@ export default function Home() {
               href="/about#our-team"
               className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
             >
-              자세히 보기
+              의료진 소개 보기
               <ArrowRight size={14} />
             </Link>
           </div>
