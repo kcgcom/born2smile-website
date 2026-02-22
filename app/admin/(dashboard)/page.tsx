@@ -11,6 +11,7 @@ import { OverviewTab } from "./components/OverviewTab";
 import { TrafficTab } from "./components/TrafficTab";
 import { SearchTab } from "./components/SearchTab";
 import { BlogTab } from "./components/BlogTab";
+import { TrendTab } from "./components/TrendTab";
 import { SettingsTab } from "./components/SettingsTab";
 
 // -------------------------------------------------------------
@@ -25,6 +26,7 @@ export default function AdminDashboardPage() {
 
   const rawTab = searchParams.get("tab");
   const editSlug = searchParams.get("edit");
+  const newCategory = searchParams.get("newCategory");
   const validTabIds = TABS.map((t) => t.id) as string[];
   const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "overview";
 
@@ -59,7 +61,8 @@ export default function AdminDashboardPage() {
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "traffic" && <TrafficTab />}
         {activeTab === "search" && <SearchTab />}
-        {activeTab === "blog" && <BlogTab editSlug={editSlug} />}
+        {activeTab === "blog" && <BlogTab editSlug={editSlug} newCategory={newCategory} />}
+        {activeTab === "trend" && <TrendTab />}
         {activeTab === "settings" && <SettingsTab />}
       </div>
     </div>

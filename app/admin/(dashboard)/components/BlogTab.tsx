@@ -8,7 +8,7 @@ import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
-import { getBlogPostUrl } from "@/lib/blog/category-slugs";
+import { getBlogPostUrl, getCategoryFromSlug } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
 import { DataTable } from "./DataTable";
@@ -165,9 +165,10 @@ function calcDraftRecommendationOrder(
 
 interface BlogTabProps {
   editSlug?: string | null;
+  newCategory?: string | null;
 }
 
-export function BlogTab({ editSlug }: BlogTabProps) {
+export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   const today = getTodayKST();
 
   const {
@@ -232,6 +233,21 @@ export function BlogTab({ editSlug }: BlogTabProps) {
       return () => clearTimeout(timer);
     }
   }, [editSlug, posts, postsLoading]);
+
+  // 딥링크: ?newCategory=slug 파라미터로 해당 카테고리의 새 포스트 편집기 자동 진입
+  const newCategoryProcessed = useRef(false);
+  useEffect(() => {
+    if (!newCategory || newCategoryProcessed.current) return;
+    const categoryValue = getCategoryFromSlug(newCategory);
+    if (categoryValue) {
+      newCategoryProcessed.current = true;
+      const timer = setTimeout(() => {
+        setEditingPost(null);
+        setEditorOpen(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [newCategory]);
 
   // Computed blog stats from API data
   const blogStats = useMemo(() => {
@@ -797,6 +813,17 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                   date: editingPost.date,
                   content: [], // fetched inside BlogEditor via API
                   published: editingPost.published,
+                }
+              : !editingPost && newCategory && getCategoryFromSlug(newCategory)
+              ? {
+                  slug: "",
+                  title: "",
+                  subtitle: "",
+                  excerpt: "",
+                  category: getCategoryFromSlug(newCategory) as string,
+                  tags: [],
+                  date: today,
+                  content: [],
                 }
               : undefined
           }
