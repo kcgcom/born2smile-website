@@ -20,7 +20,7 @@ import {
   getRelatedPostsFromFirestore,
 } from "@/lib/blog-firestore";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
-import { AdminPublishButton } from "@/components/admin/AdminPublishButton";
+import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 
 export const revalidate = 3600;
 
@@ -135,7 +135,6 @@ export default async function BlogPostPage({
                   {post.readTime ?? "1분"} 읽기
                 </span>
                 <AdminEditButton href={`/admin?tab=blog&edit=${slug}`} />
-                <AdminPublishButton slug={slug} />
               </div>
 
               <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
@@ -266,6 +265,8 @@ export default async function BlogPostPage({
         heading="구강 건강이 궁금하신가요?"
         description={`${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
       />
+
+      <AdminDraftBar slug={slug} />
 
       <div className="h-16 md:hidden" />
     </>

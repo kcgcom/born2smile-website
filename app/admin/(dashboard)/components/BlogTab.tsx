@@ -359,7 +359,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => setStatusFilter("all")} active={statusFilter === "all"} />
             <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => setStatusFilter("published")} active={statusFilter === "published"} />
             <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => setStatusFilter("scheduled")} active={statusFilter === "scheduled"} />
-            <StatCard label="임시저장" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
+            <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
           </div>
 
           {/* Search & Filter bar */}
@@ -394,7 +394,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                 <option value="all">전체 상태</option>
                 <option value="published">발행</option>
                 <option value="scheduled">예약</option>
-                <option value="draft">임시저장</option>
+                <option value="draft">초안</option>
               </select>
 
               {/* Sort */}

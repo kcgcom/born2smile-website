@@ -249,9 +249,9 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 블로그 발행 워크플로우
 
-**임시저장 → 발행 예약 2단계 워크플로우:**
+**초안 → 발행 예약 2단계 워크플로우:**
 
-1. **임시저장/수정**: BlogEditor에서 새 포스트 저장 시 `published: false` (draft) 상태로 Firestore에 저장. 이미 발행된 포스트 수정 시에는 `published: true` 상태 유지
+1. **초안 저장/수정**: BlogEditor에서 새 포스트 저장 시 `published: false` (초안) 상태로 Firestore에 저장. 이미 발행된 포스트 수정 시에는 `published: true` 상태 유지
 2. **발행 예약**: BlogTab 포스트 목록에서 draft 포스트의 "발행" 버튼 클릭 → PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭 시 `published: true` + 선택한 날짜로 업데이트. "오늘" 버튼으로 즉시 발행 가능 (오늘 날짜 선택 시 안내 메시지 표시)
 
 **발행 날짜 추천 로직** (`getNextPublishDate`):
