@@ -7,8 +7,9 @@ import {
   BLOG_CATEGORIES,
   BLOG_TAGS,
   categoryColors,
+  getBlogPostUrl,
 } from "@/lib/blog";
-import type { BlogCategory, BlogTag } from "@/lib/blog";
+import type { BlogCategory, BlogCategoryValue, BlogTag } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
@@ -20,10 +21,11 @@ const POSTS_PER_PAGE = 12;
 
 interface BlogContentProps {
   initialPosts: BlogPostMeta[];
+  activeDefaultCategory?: BlogCategoryValue;
 }
 
-export default function BlogContent({ initialPosts }: BlogContentProps) {
-  const [activeCategory, setActiveCategory] = useState<BlogCategory>("전체");
+export default function BlogContent({ initialPosts, activeDefaultCategory }: BlogContentProps) {
+  const [activeCategory, setActiveCategory] = useState<BlogCategory>(activeDefaultCategory ?? "전체");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -137,11 +139,12 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
     async (
       e: React.MouseEvent,
       slug: string,
-      title: string
+      title: string,
+      category: BlogCategoryValue,
     ) => {
       e.preventDefault();
       e.stopPropagation();
-      const result = await shareUrl(`${BASE_URL}/blog/${slug}`, title);
+      const result = await shareUrl(`${BASE_URL}${getBlogPostUrl(slug, category)}`, title);
       if (result === "copied") {
         setCopiedSlug(slug);
         if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -245,7 +248,7 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
                     />
                     <button
                       onClick={(e) =>
-                        handleShare(e, post.slug, post.title)
+                        handleShare(e, post.slug, post.title, post.category)
                       }
                       className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
                       aria-label={`"${post.title}" 공유하기`}
@@ -267,7 +270,7 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
 
                   {/* 제목 + 부제 */}
                   <h2 className="mb-1 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
-                    <Link href={`/blog/${post.slug}`} className="relative z-10">
+                    <Link href={getBlogPostUrl(post.slug, post.category)} className="relative z-10">
                       {post.title}
                     </Link>
                   </h2>
@@ -315,7 +318,7 @@ export default function BlogContent({ initialPosts }: BlogContentProps) {
 
                   {/* 카드 전체 링크 (인터랙티브 요소 뒤에 배치) */}
                   <Link
-                    href={`/blog/${post.slug}`}
+                    href={getBlogPostUrl(post.slug, post.category)}
                     className="absolute inset-0 z-0 rounded-2xl"
                     aria-label={`${post.title} — ${post.subtitle} 읽기`}
                     tabIndex={-1}

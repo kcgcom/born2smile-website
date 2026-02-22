@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
-import { TREATMENT_CATEGORY_MAP, categoryColors } from "@/lib/blog";
+import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl } from "@/lib/blog";
 import { getRelatedPostsFromFirestore } from "@/lib/blog-firestore";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
@@ -262,7 +262,7 @@ export default async function TreatmentDetailPage({
             <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {relatedBlogPosts.map((rp) => (
                 <StaggerItem key={rp.slug}>
-                  <Link href={`/blog/${rp.slug}`} className="block h-full">
+                  <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                       <span
                         className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}

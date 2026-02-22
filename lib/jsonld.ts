@@ -1,5 +1,7 @@
 import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS, REVIEWS } from "./constants";
 import type { BlogPost } from "./blog/types";
+import type { BlogCategoryValue } from "./blog/types";
+import { getBlogPostUrl } from "./blog/category-slugs";
 
 /**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
@@ -167,7 +169,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
     description: post.excerpt,
     datePublished: post.date,
     dateModified: post.dateModified ?? post.date,
-    url: `${BASE_URL}/blog/${post.slug}`,
+    url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
     author: {
       "@type": "Person",
       name: doctor.name,
@@ -190,7 +192,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${BASE_URL}/blog/${post.slug}`,
+      "@id": `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
     },
     articleSection: post.category,
     keywords: post.tags,
@@ -203,7 +205,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
  * 최신 10개 포스트를 구조화 데이터로 표시
  */
 export function getBlogCollectionJsonLd(
-  posts: { slug: string; title: string }[]
+  posts: { slug: string; title: string; category: BlogCategoryValue }[]
 ) {
   return {
     "@context": "https://schema.org",
@@ -217,7 +219,7 @@ export function getBlogCollectionJsonLd(
       itemListElement: posts.slice(0, 10).map((post, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: `${BASE_URL}/blog/${post.slug}`,
+        url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
         name: post.title,
       })),
     },

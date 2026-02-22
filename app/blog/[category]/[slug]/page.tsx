@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   getRelatedTreatmentId,
   categoryColors,
+  getCategoryFromSlug,
+  getCategorySlug,
+  getBlogPostUrl,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
@@ -16,7 +19,7 @@ import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
 import {
   getPostBySlugFromFirestore,
-  getPublishedPostSlugs,
+  getAllPublishedPostMetas,
   getRelatedPostsFromFirestore,
 } from "@/lib/blog-firestore";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
@@ -24,29 +27,34 @@ import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 
 export const revalidate = 3600;
 
-// 빌드 시점 기준 발행일이 지난 포스트만 정적 생성 (예약 발행)
 export async function generateStaticParams() {
-  const slugs = await getPublishedPostSlugs();
-  return slugs.map((slug) => ({ slug }));
+  const posts = await getAllPublishedPostMetas();
+  return posts.map((post) => ({
+    category: getCategorySlug(post.category),
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ category: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { category, slug } = await params;
+  const categoryValue = getCategoryFromSlug(category);
+  if (!categoryValue) return {};
+
   const post = await getPostBySlugFromFirestore(slug);
   if (!post) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
-
   const ogTitle = `${fullTitle} | ${CLINIC.name} 건강칼럼`;
+  const postUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
 
   return {
     title: fullTitle,
     description: post.excerpt,
-    alternates: { canonical: `${BASE_URL}/blog/${slug}` },
+    alternates: { canonical: postUrl },
     openGraph: {
       title: ogTitle,
       description: post.excerpt,
@@ -58,7 +66,7 @@ export async function generateMetadata({
       section: post.category,
       tags: post.tags,
       authors: [`${CLINIC.name}`],
-      url: `${BASE_URL}/blog/${slug}`,
+      url: postUrl,
       images: [
         {
           url: "/images/og-image.jpg",
@@ -80,11 +88,21 @@ export async function generateMetadata({
 export default async function BlogPostPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ category: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { category, slug } = await params;
+
+  // 카테고리 슬러그 유효성 검증
+  const categoryValue = getCategoryFromSlug(category);
+  if (!categoryValue) notFound();
+
   const post = await getPostBySlugFromFirestore(slug);
   if (!post) notFound();
+
+  // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
+  if (getCategorySlug(post.category) !== category) {
+    permanentRedirect(getBlogPostUrl(slug, post.category));
+  }
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
   const relatedPosts = await getRelatedPostsFromFirestore(post.category, post.slug, 3);
@@ -93,7 +111,8 @@ export default async function BlogPostPage({
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
-    { name: post.title, href: `/blog/${slug}` },
+    { name: post.category, href: `/blog/${category}` },
+    { name: post.title, href: getBlogPostUrl(slug, post.category) },
   ]);
 
   return (
@@ -114,19 +133,20 @@ export default async function BlogPostPage({
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <Link
-                href="/blog"
+                href={`/blog/${category}`}
                 className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={14} />
-                건강칼럼 목록
+                {post.category} 목록
               </Link>
 
               <div className="mb-4 flex flex-wrap items-center gap-3">
-                <span
+                <Link
+                  href={`/blog/${category}`}
                   className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
                 >
                   {post.category}
-                </span>
+                </Link>
                 <span className="text-sm text-gray-500">
                   {formatDate(post.date)}
                 </span>
@@ -203,15 +223,15 @@ export default async function BlogPostPage({
       <section className="bg-white px-4 pb-12">
         <div className="mx-auto flex max-w-3xl items-center justify-between border-t border-gray-100 pt-8">
           <Link
-            href="/blog"
+            href={`/blog/${category}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[var(--color-primary)]"
           >
             <ArrowLeft size={16} />
-            목록으로 돌아가기
+            {post.category} 목록으로
           </Link>
           <div className="flex items-center gap-2">
             <LikeButtonLazy slug={post.slug} />
-            <BlogShareButton slug={post.slug} title={post.title} />
+            <BlogShareButton slug={post.slug} title={post.title} category={post.category} />
           </div>
         </div>
       </section>
@@ -228,7 +248,7 @@ export default async function BlogPostPage({
             <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {relatedPosts.map((rp) => (
                 <StaggerItem key={rp.slug}>
-                  <Link href={`/blog/${rp.slug}`} className="block h-full">
+                  <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                       <span
                         className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}

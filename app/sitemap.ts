@@ -3,6 +3,7 @@ export const revalidate = 86400;
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
 const PAGE_MODIFIED = {
@@ -49,8 +50,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    ...ALL_CATEGORY_SLUGS.map((categorySlug) => ({
+      url: `${BASE_URL}/blog/${categorySlug}`,
+      lastModified: PAGE_MODIFIED.blog,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
     ...publishedPosts.map((post) => ({
-      url: `${BASE_URL}/blog/${post.slug}`,
+      url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
       lastModified: new Date(post.dateModified ?? post.date),
       changeFrequency: "monthly" as const,
       priority: 0.6,

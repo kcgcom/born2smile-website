@@ -65,8 +65,10 @@ app/                          # Next.js App Router pages
     [slug]/loading.tsx        # Suspense loading boundary
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
-    [slug]/page.tsx           # Individual blog post detail (generateStaticParams)
-    [slug]/loading.tsx        # Suspense loading boundary
+    [category]/page.tsx       # Category hub landing page (7 categories, generateStaticParams)
+    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard)
+    [category]/[slug]/loading.tsx # Suspense loading boundary
+    redirect/[slug]/page.tsx  # Old URL redirect handler (Firestore lookup → permanentRedirect)
   admin/
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
@@ -160,9 +162,10 @@ lib/
       dev-manifest.ts         # DEV_MANIFEST (의존성, 라우트, 프로젝트 통계, TS/Firestore 설정)
   site-config-firestore.ts   # Firestore 사이트 설정 CRUD (links, clinic, hours, schedule)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
-  jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb
+  jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb, collection
   blog/
     types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
+    category-slugs.ts        # 카테고리 ↔ URL 슬러그 매핑 (single source of truth)
     category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
     index.ts                 # re-export + 진료↔블로그 매핑 (TREATMENT_CATEGORY_MAP)
     generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
@@ -183,6 +186,7 @@ scripts/
   migrate-blog-to-firestore.ts # 파일 → Firestore 블로그 마이그레이션 (1회성)
   verify-migration.ts        # 마이그레이션 검증 스크립트
   deploy-firestore.ts        # Firestore 인덱스/규칙 REST API 배포
+middleware.ts                 # 구형 블로그 URL 리다이렉트 (Edge Runtime, /blog/[slug] → /blog/redirect/[slug] rewrite)
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .github/
   workflows/
@@ -207,6 +211,7 @@ pnpm-workspace.yaml          # pnpm workspace config
   pediatric → 소아치료, restorative → 보존치료, scaling → 예방관리
   ```
   `"건강상식"` 카테고리는 특정 진료 과목에 매핑되지 않음 (일반 건강 정보).
+- **Blog URL structure**: `/blog/[category]/[slug]` 계층 구조. 카테고리 허브 7개 (`/blog/implant`, `/blog/orthodontics` 등). 카테고리↔URL 슬러그 매핑은 `lib/blog/category-slugs.ts`가 single source of truth. 구형 `/blog/[slug]` URL은 `middleware.ts`에서 `/blog/redirect/[slug]`로 rewrite → Firestore 조회 후 308 permanentRedirect.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -218,7 +223,9 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
 | `/blog` | SSG | Static (metadata from Firestore, 파일 폴백) |
-| `/blog/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
+| `/blog/[category]` | SSG + ISR | 카테고리 허브 페이지 (7개), `generateStaticParams()` + `revalidate: 3600` |
+| `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
+| `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |

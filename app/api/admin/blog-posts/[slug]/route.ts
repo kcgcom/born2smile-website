@@ -8,6 +8,8 @@ import {
   type UpdateBlogPostData,
 } from "@/lib/blog-firestore";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
+import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
+import type { BlogCategoryValue } from "@/lib/blog/types";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -81,8 +83,15 @@ export async function PUT(
 
     await updateBlogPost(slug, data, auth.email);
 
+    // 카테고리 결정: 업데이트된 카테고리 또는 기존 카테고리
+    const category = (data.category ?? existing.category) as BlogCategoryValue;
     revalidatePath("/blog");
-    revalidatePath(`/blog/${slug}`);
+    revalidatePath(getBlogPostUrl(slug, category));
+    revalidatePath(`/blog/${getCategorySlug(category)}`);
+    // 카테고리가 변경된 경우 이전 카테고리 허브도 무효화
+    if (data.category && data.category !== existing.category) {
+      revalidatePath(`/blog/${getCategorySlug(existing.category as BlogCategoryValue)}`);
+    }
     revalidatePath("/sitemap.xml");
 
     return Response.json({ data: { slug } }, { headers: HEADERS });

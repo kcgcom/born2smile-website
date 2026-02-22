@@ -8,6 +8,7 @@ import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
+import { getBlogPostUrl } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
 import { DataTable } from "./DataTable";
@@ -466,14 +467,9 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                       <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
                         {post.category}
                       </span>
-                      <a
-                        href={`/blog/${post.slug}`}
-                        target="_blank"
-                        rel="noopener"
-                        className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                      >
+                      <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
                         {post.title}
-                      </a>
+                      </span>
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           onClick={() => handlePublishOpen(post.slug)}
@@ -601,14 +597,20 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                         <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
                           {post.category}
                         </span>
-                        <a
-                          href={`/blog/${post.slug}`}
-                          target="_blank"
-                          rel="noopener"
-                          className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                        >
-                          {post.title}
-                        </a>
+                        {isDraft ? (
+                          <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
+                            {post.title}
+                          </span>
+                        ) : (
+                          <a
+                            href={getBlogPostUrl(post.slug, post.category as BlogCategoryValue)}
+                            target="_blank"
+                            rel="noopener"
+                            className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                          >
+                            {post.title}
+                          </a>
+                        )}
                         <span
                           className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
                         >
@@ -713,7 +715,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                     label: "제목",
                     render: (row) => (
                       <a
-                        href={`/blog/${row.slug}`}
+                        href={getBlogPostUrl(String(row.slug), String(row.category) as BlogCategoryValue)}
                         target="_blank"
                         rel="noopener"
                         className="hover:text-[var(--color-primary)] hover:underline"

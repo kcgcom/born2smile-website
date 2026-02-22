@@ -12,6 +12,14 @@ export type {
 } from "./types";
 export { BLOG_CATEGORIES, BLOG_TAGS } from "./types";
 export { categoryColors } from "./category-colors";
+export {
+  CATEGORY_SLUG_MAP,
+  SLUG_CATEGORY_MAP,
+  ALL_CATEGORY_SLUGS,
+  getCategorySlug,
+  getCategoryFromSlug,
+  getBlogPostUrl,
+} from "./category-slugs";
 
 import type { BlogCategoryValue } from "./types";
 

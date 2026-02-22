@@ -4,15 +4,19 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Share2, Check } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
 import { shareUrl } from "@/lib/share";
+import { getBlogPostUrl } from "@/lib/blog";
+import type { BlogCategoryValue } from "@/lib/blog/types";
 
 interface BlogShareButtonProps {
   slug: string;
   title: string;
+  category: BlogCategoryValue;
 }
 
 export default function BlogShareButton({
   slug,
   title,
+  category,
 }: BlogShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -24,13 +28,13 @@ export default function BlogShareButton({
   }, []);
 
   const handleShare = useCallback(async () => {
-    const result = await shareUrl(`${BASE_URL}/blog/${slug}`, title);
+    const result = await shareUrl(`${BASE_URL}${getBlogPostUrl(slug, category)}`, title);
     if (result === "copied") {
       setCopied(true);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopied(false), 2000);
     }
-  }, [slug, title]);
+  }, [slug, title, category]);
 
   return (
     <button
