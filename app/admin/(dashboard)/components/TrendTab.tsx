@@ -26,6 +26,7 @@ interface OverviewCategory {
   risingCount?: number;
   fallingCount?: number;
   stableCount?: number;
+  monthlyTotalVolume?: number | null;
   error: string | null;
 }
 
@@ -39,6 +40,9 @@ interface ContentGapItem {
   currentAvg: number;
   existingPostCount: number;
   gapScore: number;
+  monthlyVolume: number | null;
+  volumeSource: "searchad" | "datalab-fallback";
+  isEstimated: boolean;
 }
 
 interface TopicSuggestionItem {
@@ -58,6 +62,8 @@ interface OverviewData {
   categories: OverviewCategory[];
   contentGap: ContentGapItem[];
   suggestions: TopicSuggestionItem[];
+  volumeSource: "searchad" | "datalab-fallback";
+  volumeCoverage: number | null;
 }
 
 interface SubGroupDetail {
@@ -305,6 +311,11 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
         <TrendIcon trend={trend} />
       </div>
       <TrendText trend={trend} changeRate={changeRate} />
+      {cat.monthlyTotalVolume != null && (
+        <p className="mt-1 text-xs font-medium text-[var(--foreground)] tabular-nums">
+          월 {cat.monthlyTotalVolume.toLocaleString("ko-KR")} 검색
+        </p>
+      )}
       <p className="mt-1.5 text-xs text-[var(--muted)]">
         상승 {risingCount}개 영역
         {cat.topSubGroup && (
@@ -400,7 +411,7 @@ function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProp
 // Sort state management for content gap table
 // ---------------------------------------------------------------
 
-type GapSortKey = "gapScore" | "changeRate" | "existingPostCount";
+type GapSortKey = "gapScore" | "changeRate" | "existingPostCount" | "currentAvg";
 
 function useGapTableSort(initial: GapSortKey = "gapScore") {
   const [sortKey, setSortKey] = useState<GapSortKey>(initial);
@@ -576,7 +587,9 @@ export function TrendTab() {
               콘텐츠 갭 분석 — 검색 수요 vs 콘텐츠 현황
             </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              갭 점수 = (검색량·변화율 정규화 점수 × 0.6) + (콘텐츠 부족도 × 0.4)
+              {overviewData?.volumeSource === "searchad"
+                ? "갭 점수 = 검색량(60%) + 트렌드 보너스(10%) + 콘텐츠 부족도(40%)"
+                : "갭 점수 = 상대 검색량(60%) + 트렌드 보너스(10%) + 콘텐츠 부족도(40%)"}
               &nbsp;·&nbsp;
               <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
               &nbsp;·&nbsp;
@@ -619,11 +632,24 @@ export function TrendTab() {
                   label: "검색량",
                   align: "right",
                   sortable: true,
-                  render: (row) => (
-                    <span className="tabular-nums text-[var(--foreground)]">
-                      {Number(row.currentAvg).toFixed(1)}
-                    </span>
-                  ),
+                  render: (row) => {
+                    const mv = row.monthlyVolume as number | null;
+                    if (mv != null) {
+                      return (
+                        <span className="tabular-nums text-[var(--foreground)]">
+                          {row.isEstimated ? "≈ " : ""}
+                          {mv.toLocaleString("ko-KR")}
+                          <span className="ml-0.5 text-[10px] text-[var(--muted)]">/월</span>
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="tabular-nums text-[var(--muted)]">
+                        {Number(row.currentAvg).toFixed(1)}
+                        <span className="ml-0.5 text-[10px]">(상대)</span>
+                      </span>
+                    );
+                  },
                 },
                 {
                   key: "changeRate",

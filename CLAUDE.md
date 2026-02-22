@@ -18,7 +18,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Validation**: Zod v4 (`zod/v4`, 블로그 CRUD + 사이트 설정 API 입력 검증)
 - **Database**: Firebase Firestore (블로그 포스트 저장소 + 좋아요 + 사이트 설정)
 - **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용) + Firebase Admin SDK (서버 사이드 토큰 검증)
-- **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`)
+- **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`), Naver DataLab API (검색 트렌드), Naver Search Ads API (절대 검색량)
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -79,6 +79,7 @@ app/                          # Next.js App Router pages
         OverviewTab.tsx       # 개요 탭 (블로그 통계, 사이트 설정 상태, 개선 항목)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
+        TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
         BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
         SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)
@@ -115,6 +116,13 @@ app/                          # Next.js App Router pages
         route.ts              # Search Console 검색 성과 API (GET)
       naver-datalab/
         route.ts              # 네이버 DataLab 검색 트렌드 API (GET)
+        overview/
+          route.ts            # 트렌드 개요 API — 카테고리별 트렌드 + 콘텐츠 갭 + 주제 추천 (GET)
+        category/
+          [slug]/route.ts     # 카테고리별 상세 트렌드 API (GET)
+      naver-searchad/
+        volume/
+          route.ts            # 네이버 검색광고 키워드 검색량 API (GET, 24시간 캐시)
       blog-likes/
         route.ts              # Firestore 좋아요 집계 API (GET)
       blog-posts/
@@ -157,6 +165,9 @@ lib/
   admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   admin-naver-datalab.ts     # 네이버 DataLab 검색 트렌드 API 클라이언트 (5개 키워드 그룹)
+  admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (7카테고리×5서브그룹, volumeKeywords, TopicAngles)
+  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, 절대 검색량 조회)
+  trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
   dev-data.ts                # 개발 대시보드 정적 데이터 (Next.js 설정, ESLint, Firestore, API, 캐시, 환경변수)
@@ -363,7 +374,7 @@ content: [
 **관리자 대시보드 (`/admin`)** — 5탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
-- **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab`, `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
+- **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
 
 **개발 대시보드 (`/dev`)** — 4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
@@ -513,6 +524,9 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `SEARCH_CONSOLE_SITE_URL` — Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, 검색/SEO 탭 필수)
 - `NAVER_DATALAB_CLIENT_ID` — 네이버 DataLab API Client ID (검색/SEO 탭 네이버 트렌드, 미설정 시 섹션 숨김)
 - `NAVER_DATALAB_CLIENT_SECRET` — 네이버 DataLab API Client Secret (Secret Manager)
+- `NAVER_SEARCHAD_API_KEY` — 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백)
+- `NAVER_SEARCHAD_SECRET_KEY` — 네이버 검색광고 API Secret Key (HMAC-SHA256 서명, Secret Manager)
+- `NAVER_SEARCHAD_CUSTOMER_ID` — 네이버 검색광고 고객 ID
 
 ## Known TODO Items
 

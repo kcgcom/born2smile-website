@@ -6,8 +6,9 @@
 import type { BlogCategoryValue } from "./blog/types";
 
 export interface KeywordSubGroup {
-  name: string;       // 서브그룹명 (예: "비용/가격")
-  keywords: string[]; // 최대 20개 키워드 (네이버 DataLab API 그룹당 최대 20개)
+  name: string;             // 서브그룹명 (예: "비용/가격")
+  keywords: string[];       // 최대 20개 키워드 (네이버 DataLab API 그룹당 최대 20개)
+  volumeKeywords: string[]; // 검색광고 API 검색량 조회용 (2-3개, 대표성 높은 키워드)
 }
 
 export interface TopicAngle {
@@ -47,6 +48,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 본인부담금",
           "노인 임플란트 비용",
         ],
+        volumeKeywords: ["임플란트 비용", "임플란트 가격"],
       },
       {
         name: "과정/기간",
@@ -60,6 +62,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "뼈이식 임플란트",
           "임플란트 완성까지",
         ],
+        volumeKeywords: ["임플란트 과정", "임플란트 기간"],
       },
       {
         name: "부작용/관리",
@@ -73,6 +76,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 염증",
           "임플란트 주의사항",
         ],
+        volumeKeywords: ["임플란트 부작용", "임플란트 관리"],
       },
       {
         name: "종류/브랜드",
@@ -86,6 +90,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 추천",
           "디지털 임플란트",
         ],
+        volumeKeywords: ["임플란트 종류", "오스템 임플란트"],
       },
       {
         name: "대상/조건",
@@ -99,6 +104,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "뼈 없는 임플란트",
           "임플란트 가능 여부",
         ],
+        volumeKeywords: ["당뇨 임플란트", "임플란트 조건"],
       },
     ],
     topicAngles: [
@@ -149,6 +155,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 방법",
           "치아교정 종류",
         ],
+        volumeKeywords: ["투명교정", "치아교정 종류"],
       },
       {
         name: "비용/기간",
@@ -162,6 +169,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 얼마",
           "교정 치료 기간",
         ],
+        volumeKeywords: ["치아교정 비용", "교정 기간"],
       },
       {
         name: "부작용/관리",
@@ -175,6 +183,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 후 후퇴",
           "유지장치",
         ],
+        volumeKeywords: ["교정 통증", "교정 부작용"],
       },
       {
         name: "대상/나이",
@@ -188,6 +197,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "40대 교정",
           "교정 적합 나이",
         ],
+        volumeKeywords: ["성인 교정", "교정 나이"],
       },
       {
         name: "생활/관리",
@@ -201,6 +211,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 후 유지",
           "교정 리테이너",
         ],
+        volumeKeywords: ["교정 칫솔질", "교정 중 관리"],
       },
     ],
     topicAngles: [
@@ -224,6 +235,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         subGroup: "대상/나이",
         aspect: "나이별 교정 시작 가이드",
       },
+      {
+        template: "{keyword} 중 꼭 알아야 할 생활 관리법 {count}가지",
+        subGroup: "생활/관리",
+        aspect: "",
+      },
     ],
   },
 
@@ -246,6 +262,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "브릿지 비용",
           "치관 보철",
         ],
+        volumeKeywords: ["치아 크라운", "브릿지"],
       },
       {
         name: "틀니",
@@ -259,6 +276,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "틀니 종류",
           "틀니 적응",
         ],
+        volumeKeywords: ["틀니", "틀니 비용"],
       },
       {
         name: "심미보철",
@@ -272,6 +290,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "앞니 크라운",
           "심미 치료",
         ],
+        volumeKeywords: ["라미네이트", "치아 미백"],
       },
       {
         name: "비용",
@@ -285,6 +304,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "보철 건강보험",
           "보철 본인부담",
         ],
+        volumeKeywords: ["보철 비용", "크라운 가격"],
       },
       {
         name: "소재/종류",
@@ -298,6 +318,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "지르코니아 크라운",
           "세라믹 크라운",
         ],
+        volumeKeywords: ["지르코니아", "골드 크라운"],
       },
     ],
     topicAngles: [
@@ -321,6 +342,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         subGroup: "심미보철",
         aspect: "앞니 심미보철 전후 비교",
       },
+      {
+        template: "{year}년 {keyword} 현실 가이드: {aspect}",
+        subGroup: "비용",
+        aspect: "건강보험 적용 범위와 실제 부담 비용",
+      },
     ],
   },
 
@@ -343,6 +369,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "2차 충치",
           "충치 예방",
         ],
+        volumeKeywords: ["충치치료", "충치 비용"],
       },
       {
         name: "신경치료",
@@ -356,6 +383,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치수염",
           "신경치료 후 관리",
         ],
+        volumeKeywords: ["신경치료", "신경치료 비용"],
       },
       {
         name: "레진/인레이",
@@ -369,6 +397,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "레진 수명",
           "레진 변색",
         ],
+        volumeKeywords: ["레진 치료", "인레이 비용"],
       },
       {
         name: "통증/관리",
@@ -382,6 +411,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "크랙 치아",
           "지각과민",
         ],
+        volumeKeywords: ["이갈이", "치아 시림"],
       },
       {
         name: "예방",
@@ -395,6 +425,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 마모",
           "에나멜 보호",
         ],
+        volumeKeywords: ["충치 예방", "치아 관리"],
       },
     ],
     topicAngles: [
@@ -416,6 +447,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         template: "{keyword} 원인과 해결법 {count}가지",
         subGroup: "통증/관리",
+        aspect: "",
+      },
+      {
+        template: "{keyword}로 치아 수명 늘리는 {count}가지 방법",
+        subGroup: "예방",
         aspect: "",
       },
     ],
@@ -440,6 +476,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "소아 충치 치료",
           "어린이 치과 비용",
         ],
+        volumeKeywords: ["소아치과", "어린이 충치"],
       },
       {
         name: "유치관리",
@@ -453,6 +490,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "유치 보존",
           "유치 치료 필요성",
         ],
+        volumeKeywords: ["유치 충치", "유치 관리"],
       },
       {
         name: "교정시기",
@@ -466,6 +504,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "혼합치열 교정",
           "성장기 교정",
         ],
+        volumeKeywords: ["소아 교정", "교정 시작 나이"],
       },
       {
         name: "습관/예방",
@@ -479,6 +518,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "아이 구강 습관",
           "치아 발육",
         ],
+        volumeKeywords: ["손가락 빨기", "어린이 칫솔질"],
       },
       {
         name: "불소/실란트",
@@ -492,6 +532,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "불소 안전성",
           "어린이 예방 치료",
         ],
+        volumeKeywords: ["불소 도포", "실란트"],
       },
     ],
     topicAngles: [
@@ -509,6 +550,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "우리 아이 {keyword}, 언제 시작해야 할까?",
         subGroup: "교정시기",
         aspect: "",
+      },
+      {
+        template: "우리 아이 {keyword}, {aspect}",
+        subGroup: "습관/예방",
+        aspect: "올바른 구강 습관 만들기 가이드",
       },
       {
         template: "{keyword} 효과와 비용: {aspect}",
@@ -537,6 +583,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "스케일링 통증",
           "치석 제거",
         ],
+        volumeKeywords: ["스케일링", "스케일링 비용"],
       },
       {
         name: "잇몸질환",
@@ -550,6 +597,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸 출혈",
           "잇몸 내려앉음",
         ],
+        volumeKeywords: ["잇몸질환", "치주염"],
       },
       {
         name: "구강위생",
@@ -563,6 +611,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 관리 방법",
           "구강 관리 루틴",
         ],
+        volumeKeywords: ["치실 사용법", "전동칫솔"],
       },
       {
         name: "구취",
@@ -576,6 +625,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "구취 예방",
           "아침 입냄새",
         ],
+        volumeKeywords: ["구취", "입냄새 원인"],
       },
       {
         name: "정기검진",
@@ -589,6 +639,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 예방",
           "정기 스케일링",
         ],
+        volumeKeywords: ["치과 정기검진", "치과 검진 주기"],
       },
     ],
     topicAngles: [
@@ -639,6 +690,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 관리 팁",
           "구강 건강 비결",
         ],
+        volumeKeywords: ["구강건강", "치아 건강"],
       },
       {
         name: "영양/음식",
@@ -652,6 +704,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 건강 식품",
           "구강 건강 식단",
         ],
+        volumeKeywords: ["치아에 좋은 음식", "치아에 나쁜 음식"],
       },
       {
         name: "전신건강",
@@ -665,6 +718,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "전신질환 구강",
           "치과 건강 관계",
         ],
+        volumeKeywords: ["당뇨와 치과", "구강 전신건강"],
       },
       {
         name: "임산부",
@@ -678,6 +732,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임신 구강관리",
           "임산부 마취",
         ],
+        volumeKeywords: ["임산부 치과", "임신 중 치과"],
       },
       {
         name: "시니어",
@@ -691,6 +746,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "노인 구강건강",
           "노년 치아 관리",
         ],
+        volumeKeywords: ["노인 구강관리", "어르신 치과"],
       },
     ],
     topicAngles: [
@@ -740,6 +796,21 @@ export function validateCategoryKeywords(): void {
         throw new Error(
           `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹의 키워드가 ${sg.keywords.length}개입니다. ` +
             "네이버 DataLab API는 그룹당 최대 20개 키워드만 허용합니다.",
+        );
+      }
+      if (sg.volumeKeywords.length === 0 || sg.volumeKeywords.length > 3) {
+        throw new Error(
+          `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹의 volumeKeywords가 ${sg.volumeKeywords.length}개입니다. ` +
+            "검색광고 API 효율을 위해 1~3개가 필요합니다.",
+        );
+      }
+    }
+    // TopicAngle 커버리지 검증: 모든 서브그룹에 대응하는 TopicAngle이 있어야 함
+    for (const sg of cat.subGroups) {
+      const hasAngle = cat.topicAngles.some((ta) => ta.subGroup === sg.name);
+      if (!hasAngle) {
+        throw new Error(
+          `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹에 topicAngle이 없습니다.`,
         );
       }
     }

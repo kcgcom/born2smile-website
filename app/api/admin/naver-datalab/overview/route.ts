@@ -4,8 +4,9 @@ import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions } from "@/lib/trend-analysis";
-import type { CategoryTrendData } from "@/lib/trend-analysis";
+import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { isSearchAdConfigured, fetchKeywordSearchVolume } from "@/lib/admin-naver-searchad";
 
 const VALID_PERIODS = ["7d", "28d", "90d"];
 
@@ -27,18 +28,90 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch all 7 categories in parallel with partial failure tolerance
-    const results = await Promise.allSettled(
-      CATEGORY_KEYWORDS.map(async (ck) => {
-        const getData = createCachedFetcher(
-          `naver-trend-${ck.slug}-${period}`,
-          () => fetchNaverDatalabByCategory(ck.subGroups, period),
-          CACHE_TTL.NAVER_DATALAB,
-        );
-        const raw = await getData();
-        return { ck, raw };
-      }),
-    );
+    // Fetch DataLab trends, published posts, and search volume in parallel
+    const [results, publishedPosts, volumeResult] = await Promise.all([
+      // 1) DataLab: all 7 categories with partial failure tolerance
+      Promise.allSettled(
+        CATEGORY_KEYWORDS.map(async (ck) => {
+          const getData = createCachedFetcher(
+            `naver-trend-${ck.slug}-${period}`,
+            () => fetchNaverDatalabByCategory(ck.subGroups, period),
+            CACHE_TTL.NAVER_DATALAB,
+          );
+          const raw = await getData();
+          return { ck, raw };
+        }),
+      ),
+      // 2) Published posts for content gap analysis
+      getAllPublishedPostMetas(),
+      // 3) Search volume data (검색광고 API) — graceful degradation
+      (async () => {
+        if (!isSearchAdConfigured()) return undefined;
+        try {
+          const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];
+          for (const ck of CATEGORY_KEYWORDS) {
+            for (const sg of ck.subGroups) {
+              allKeywords.push({
+                category: ck.category,
+                subGroup: sg.name,
+                keywords: sg.volumeKeywords,
+              });
+            }
+          }
+
+          const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
+
+          const getVolume = createCachedFetcher(
+            "searchad-volume-overview",
+            () => fetchKeywordSearchVolume(flatKeywords),
+            86400, // 24시간 캐시
+          );
+          const volumeResults = await getVolume();
+
+          if (volumeResults && volumeResults.length > 0) {
+            const keywordMap = new Map(
+              volumeResults.map((v) => [v.keyword.toLowerCase().trim(), v]),
+            );
+
+            const data: Record<string, VolumeDataEntry> = {};
+            let matched = 0;
+            for (const group of allKeywords) {
+              const key = `${group.category}:${group.subGroup}`;
+              let totalQcCnt = 0;
+              let anyEstimated = false;
+              let hasData = false;
+
+              for (const kw of group.keywords) {
+                const kwData = keywordMap.get(kw.toLowerCase().trim());
+                if (kwData) {
+                  totalQcCnt += kwData.monthlyTotalQcCnt;
+                  if (kwData.isEstimated) anyEstimated = true;
+                  hasData = true;
+                }
+              }
+
+              if (hasData) {
+                matched++;
+                data[key] = {
+                  monthlyTotalQcCnt: totalQcCnt,
+                  isEstimated: anyEstimated,
+                };
+              }
+            }
+            const coverage = allKeywords.length > 0 ? matched / allKeywords.length : 0;
+            return { data, coverage };
+          }
+          return undefined;
+        } catch {
+          // 검색광고 API 실패 시 graceful degradation
+          return undefined;
+        }
+      })(),
+    ]);
+
+    // Extract volume data (available before categories.map)
+    const volumeData = volumeResult?.data;
+    const volumeCoverage = volumeResult?.coverage ?? null;
 
     // Separate fulfilled vs rejected, build categories summary
     const successfulCategoryData: CategoryTrendData[] = [];
@@ -108,6 +181,21 @@ export async function GET(request: NextRequest) {
         subGroups: enrichedSubGroups,
       });
 
+      // 카테고리 전체 월간 검색량 합산 (검색광고 연동 시)
+      let monthlyTotalVolume: number | null = null;
+      if (volumeData) {
+        let total = 0;
+        let hasAny = false;
+        for (const esg of enrichedSubGroups) {
+          const vol = volumeData[`${ck.category}:${esg.name}`];
+          if (vol) {
+            total += vol.monthlyTotalQcCnt;
+            hasAny = true;
+          }
+        }
+        if (hasAny) monthlyTotalVolume = total;
+      }
+
       return {
         category: ck.category,
         slug: ck.slug,
@@ -118,15 +206,13 @@ export async function GET(request: NextRequest) {
         risingCount,
         fallingCount,
         stableCount,
+        monthlyTotalVolume,
         error: null,
       };
     });
 
-    // Fetch published posts for content gap analysis
-    const publishedPosts = await getAllPublishedPostMetas();
-
     // Run content gap analysis on successful categories
-    const contentGap = analyzeContentGap(successfulCategoryData, publishedPosts, CATEGORY_KEYWORDS);
+    const contentGap = analyzeContentGap(successfulCategoryData, publishedPosts, CATEGORY_KEYWORDS, volumeData);
 
     // Generate topic suggestions
     const suggestions = generateTopicSuggestions(contentGap, CATEGORY_KEYWORDS);
@@ -145,6 +231,8 @@ export async function GET(request: NextRequest) {
           categories,
           contentGap,
           suggestions,
+          volumeSource: volumeData ? "searchad" : "datalab-fallback",
+          volumeCoverage: volumeCoverage,
         },
       },
       { headers: { "Cache-Control": "private, no-store" } },
