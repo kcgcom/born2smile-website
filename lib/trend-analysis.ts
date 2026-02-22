@@ -37,6 +37,8 @@ export interface ContentGap {
   trend: TrendDirection;
   /** 변화율 (%) */
   changeRate: number;
+  /** 후반부 평균 ratio (카테고리 내 검색량 지표) */
+  currentAvg: number;
   /** title/subtitle/excerpt 키워드 매칭된 포스트 수 */
   existingPostCount: number;
   /** 0~100, 높을수록 콘텐츠 필요 */
@@ -123,10 +125,19 @@ export function analyzeTrend(data: Array<{ period: string; ratio: number }>): Tr
  *   포스트의 title+subtitle+excerpt에 포함되면 매칭
  * - categoryKeywords가 없는 경우: 서브그룹명으로 단순 매칭
  *
- * gapScore 공식 (카테고리 간 비교 가능하도록 변화율 기반):
- * - trendScore = min(100, max(0, 50 + changeRate))
- * - contentLack = max(0, 100 - existingPostCount × 25)
- * - gapScore = trendScore × 0.6 + contentLack × 0.4
+ * gapScore 공식 (검색량 + 변화율 + 콘텐츠 부족도):
+ *
+ * Phase 1: 카테고리 내 원시 트렌드 점수 계산
+ *   rawTrendScore = currentAvg × 0.7 + changeComponent × 0.3
+ *   (currentAvg: 절대 검색량, changeComponent: 50 + changeRate, 0~100 클램프)
+ *
+ * Phase 2: 카테고리 간 정규화
+ *   normalizedTrendScore = (rawTrendScore / maxRawInCategory) × 100
+ *   → 각 카테고리 최고 서브그룹이 100점이 되어 카테고리 간 비교 가능
+ *
+ * Phase 3: 최종 갭 점수
+ *   contentLack = max(0, 100 - existingPostCount × 25)
+ *   gapScore = normalizedTrendScore × 0.6 + contentLack × 0.4
  */
 export function analyzeContentGap(
   categoryData: CategoryTrendData[],
@@ -141,6 +152,17 @@ export function analyzeContentGap(
 
     // 이 카테고리의 원본 키워드 정의 조회 (있는 경우)
     const catKw = categoryKeywords?.find((ck) => ck.category === catData.category);
+
+    // Phase 1: 카테고리 내 원시 트렌드 점수 계산
+    const catGaps: Array<{
+      subGroup: string;
+      keywords: string[];
+      trend: TrendDirection;
+      changeRate: number;
+      currentAvg: number;
+      existingPostCount: number;
+      rawTrendScore: number;
+    }> = [];
 
     for (const sg of catData.subGroups) {
       // 원본 키워드 배열 조회
@@ -157,19 +179,39 @@ export function analyzeContentGap(
         return text.includes(sg.name);
       }).length;
 
-      // gapScore 계산 (changeRate 기반 — 카테고리 간 비교 가능)
-      const trendScore = Math.min(100, Math.max(0, 50 + sg.changeRate));
-      const contentLack = Math.max(0, 100 - existingPostCount * 25);
-      const gapScore = Math.round(trendScore * 0.6 + contentLack * 0.4);
+      // rawTrendScore: 검색량 70% + 변화율 30%
+      const changeComponent = Math.min(100, Math.max(0, 50 + sg.changeRate));
+      const rawTrendScore = sg.currentAvg * 0.7 + changeComponent * 0.3;
 
-      gaps.push({
-        category: catData.category,
-        slug: catData.slug,
+      catGaps.push({
         subGroup: sg.name,
         keywords,
         trend: sg.trend,
         changeRate: sg.changeRate,
+        currentAvg: sg.currentAvg,
         existingPostCount,
+        rawTrendScore,
+      });
+    }
+
+    // Phase 2: 카테고리 내 정규화 (최고 서브그룹 = 100)
+    const maxRaw = Math.max(...catGaps.map((g) => g.rawTrendScore), 1);
+
+    for (const g of catGaps) {
+      // Phase 3: 최종 갭 점수
+      const normalizedTrendScore = (g.rawTrendScore / maxRaw) * 100;
+      const contentLack = Math.max(0, 100 - g.existingPostCount * 25);
+      const gapScore = Math.round(normalizedTrendScore * 0.6 + contentLack * 0.4);
+
+      gaps.push({
+        category: catData.category,
+        slug: catData.slug,
+        subGroup: g.subGroup,
+        keywords: g.keywords,
+        trend: g.trend,
+        changeRate: g.changeRate,
+        currentAvg: g.currentAvg,
+        existingPostCount: g.existingPostCount,
         gapScore,
       });
     }
@@ -227,11 +269,11 @@ export function generateTopicSuggestions(
     // 추천 이유 생성 (한국어)
     const trendLabel =
       gap.trend === "rising" ? "상승" : gap.trend === "falling" ? "하락" : "보합";
-    const changeRateAbs = Math.abs(gap.changeRate);
+    const volumeLabel = gap.currentAvg >= 60 ? "높은" : gap.currentAvg >= 30 ? "중간" : "낮은";
     const reasoning =
       gap.existingPostCount === 0
-        ? `'${gap.subGroup}' 검색 트렌드 ${trendLabel} (변화율 ${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%), 관련 포스트 없음`
-        : `'${gap.subGroup}' 검색 트렌드 ${changeRateAbs.toFixed(1)}% ${trendLabel}, 관련 포스트 ${gap.existingPostCount}개로 커버리지 부족`;
+        ? `'${gap.subGroup}' ${volumeLabel} 검색량(${gap.currentAvg.toFixed(0)}) · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%) · 관련 포스트 없음`
+        : `'${gap.subGroup}' ${volumeLabel} 검색량(${gap.currentAvg.toFixed(0)}) · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%) · 포스트 ${gap.existingPostCount}개`;
 
     const priority: TopicSuggestion["priority"] =
       gap.gapScore >= 70 ? "high" : gap.gapScore >= 40 ? "medium" : "low";

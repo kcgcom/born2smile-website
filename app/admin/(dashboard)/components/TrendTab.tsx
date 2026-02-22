@@ -36,6 +36,7 @@ interface ContentGapItem {
   keywords: string[];
   trend: "rising" | "falling" | "stable";
   changeRate: number;
+  currentAvg: number;
   existingPostCount: number;
   gapScore: number;
 }
@@ -575,7 +576,7 @@ export function TrendTab() {
               콘텐츠 갭 분석 — 검색 수요 vs 콘텐츠 현황
             </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              갭 점수 = (트렌드 변화율 점수 × 0.6) + (콘텐츠 부족도 × 0.4)
+              갭 점수 = (검색량·변화율 정규화 점수 × 0.6) + (콘텐츠 부족도 × 0.4)
               &nbsp;·&nbsp;
               <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
               &nbsp;·&nbsp;
@@ -610,6 +611,17 @@ export function TrendTab() {
                   render: (row) => (
                     <span className="flex justify-center">
                       <TrendIcon trend={row.trend as "rising" | "falling" | "stable"} />
+                    </span>
+                  ),
+                },
+                {
+                  key: "currentAvg",
+                  label: "검색량",
+                  align: "right",
+                  sortable: true,
+                  render: (row) => (
+                    <span className="tabular-nums text-[var(--foreground)]">
+                      {Number(row.currentAvg).toFixed(1)}
                     </span>
                   ),
                 },
