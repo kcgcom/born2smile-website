@@ -324,15 +324,17 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             </div>
           </Field>
 
-          {/* Date */}
-          <Field label="발행일" required hint="발행 시 변경 가능">
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setField("date", e.target.value)}
-              className={inputClass(false)}
-            />
-          </Field>
+          {/* Date — 신규 작성 시 숨김 (발행 시점에 날짜 결정), 수정 모드에서 발행 포스트만 표시 */}
+          {mode === "edit" && form.published && (
+            <Field label="발행일" required hint="발행 시 변경 가능">
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setField("date", e.target.value)}
+                className={inputClass(false)}
+              />
+            </Field>
+          )}
 
           {/* Excerpt */}
           <Field label="요약" required error={fieldErrors.excerpt} hint={`${form.excerpt.length}/500`}>

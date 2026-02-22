@@ -52,7 +52,8 @@ interface FirestoreDocData {
 
 function docToMeta(
   data: FirebaseFirestore.DocumentData,
-): BlogPostMeta & { published: boolean } {
+): BlogPostMeta & { published: boolean; createdAt?: string } {
+  const createdAtTs = data.createdAt as FirebaseFirestore.Timestamp | undefined;
   return {
     slug: data.slug as string,
     title: data.title as string,
@@ -64,6 +65,7 @@ function docToMeta(
     dateModified: (data.dateModified as string | null | undefined) ?? undefined,
     readTime: (data.readTime as string | undefined) ?? "1분",
     published: (data.published as boolean | undefined) ?? true,
+    createdAt: createdAtTs?.toDate().toISOString(),
   };
 }
 
@@ -158,9 +160,9 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
  * For admin dashboard use only. Ordered by date DESC.
  */
 export const getAllPostMetas: () => Promise<
-  (BlogPostMeta & { published: boolean })[]
+  (BlogPostMeta & { published: boolean; createdAt?: string })[]
 > = unstable_cache(
-  async (): Promise<(BlogPostMeta & { published: boolean })[]> => {
+  async (): Promise<(BlogPostMeta & { published: boolean; createdAt?: string })[]> => {
     const snapshot = await getDb()
       .collection(COLLECTION)
       .orderBy("date", "desc")

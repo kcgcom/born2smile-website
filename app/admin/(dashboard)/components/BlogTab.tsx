@@ -106,6 +106,7 @@ interface AdminBlogPost {
   dateModified?: string;
   readTime: string;
   published: boolean;
+  createdAt?: string;
 }
 
 interface BlogLikesData {
@@ -113,8 +114,47 @@ interface BlogLikesData {
   totalLikes: number;
 }
 
-type SortKey = "newest" | "oldest" | "likes";
+type SortKey = "newest" | "oldest" | "likes" | "recommended";
 type StatusFilter = "all" | "published" | "scheduled" | "draft";
+
+// ---------------------------------------------------------------------------
+// 초안 발행 추천순 계산
+// ---------------------------------------------------------------------------
+
+function calcDraftRecommendationOrder(
+  drafts: AdminBlogPost[],
+  allPosts: AdminBlogPost[],
+  today: string,
+): AdminBlogPost[] {
+  // 카테고리별 가장 최근 발행일 계산
+  const lastPublishedByCategory: Record<string, string> = {};
+  for (const p of allPosts) {
+    if (p.published && p.date <= today) {
+      const prev = lastPublishedByCategory[p.category];
+      if (!prev || p.date > prev) {
+        lastPublishedByCategory[p.category] = p.date;
+      }
+    }
+  }
+
+  const todayMs = new Date(today).getTime();
+  const DAY_MS = 86400000;
+
+  return [...drafts].sort((a, b) => {
+    // 카테고리 점수: 마지막 발행일로부터의 일수 (미발행 카테고리 = 9999)
+    const lastA = lastPublishedByCategory[a.category];
+    const lastB = lastPublishedByCategory[b.category];
+    const scoreA = lastA ? Math.floor((todayMs - new Date(lastA).getTime()) / DAY_MS) : 9999;
+    const scoreB = lastB ? Math.floor((todayMs - new Date(lastB).getTime()) / DAY_MS) : 9999;
+
+    if (scoreA !== scoreB) return scoreB - scoreA; // 높은 점수 우선
+
+    // 동점: 먼저 작성한 초안 우선 (FIFO)
+    const createdA = a.createdAt ?? "";
+    const createdB = b.createdAt ?? "";
+    return createdA.localeCompare(createdB);
+  });
+}
 
 // -------------------------------------------------------------
 // BlogTab
@@ -144,6 +184,16 @@ export function BlogTab({ editSlug }: BlogTabProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>("전체");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+
+  // statusFilter 변경 시 sortKey도 연동
+  const handleStatusFilterChange = (next: StatusFilter) => {
+    setStatusFilter(next);
+    if (next === "draft") {
+      setSortKey("recommended");
+    } else if (sortKey === "recommended") {
+      setSortKey("newest");
+    }
+  };
 
   // Schedule data for publish date recommendation
   const { data: scheduleData } = useAdminApi<{ publishDays: number[] }>(
@@ -220,7 +270,9 @@ export function BlogTab({ editSlug }: BlogTabProps) {
     }
 
     // Sort
-    if (sortKey === "newest") {
+    if (sortKey === "recommended") {
+      filtered = calcDraftRecommendationOrder(filtered, posts, today);
+    } else if (sortKey === "newest") {
       filtered.sort((a, b) => b.date.localeCompare(a.date));
     } else if (sortKey === "oldest") {
       filtered.sort((a, b) => a.date.localeCompare(b.date));
@@ -356,10 +408,10 @@ export function BlogTab({ editSlug }: BlogTabProps) {
         <>
           {/* Summary cards (clickable filters) */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => setStatusFilter("all")} active={statusFilter === "all"} />
-            <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => setStatusFilter("published")} active={statusFilter === "published"} />
-            <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => setStatusFilter("scheduled")} active={statusFilter === "scheduled"} />
-            <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => setStatusFilter("draft")} active={statusFilter === "draft"} />
+            <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => handleStatusFilterChange("all")} active={statusFilter === "all"} />
+            <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => handleStatusFilterChange("published")} active={statusFilter === "published"} />
+            <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => handleStatusFilterChange("scheduled")} active={statusFilter === "scheduled"} />
+            <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => handleStatusFilterChange("draft")} active={statusFilter === "draft"} />
           </div>
 
           {/* Search & Filter bar */}
@@ -388,7 +440,7 @@ export function BlogTab({ editSlug }: BlogTabProps) {
               {/* Status filter */}
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                onChange={(e) => handleStatusFilterChange(e.target.value as StatusFilter)}
                 className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 <option value="all">전체 상태</option>
@@ -406,6 +458,9 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                 <option value="newest">최신순</option>
                 <option value="oldest">오래된순</option>
                 <option value="likes">좋아요순</option>
+                {statusFilter === "draft" && (
+                  <option value="recommended">추천순</option>
+                )}
               </select>
             </div>
 
@@ -436,16 +491,20 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                   const catColor =
                     categoryColors[post.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
 
-                  const statusLabel = !post.published
-                    ? "임시"
+                  const isDraft = !post.published;
+                  const statusLabel = isDraft
+                    ? "초안"
                     : isPublished
                     ? "발행"
                     : "예약";
-                  const statusClass = !post.published
-                    ? "bg-[var(--background)] text-[var(--muted)]"
+                  const statusClass = isDraft
+                    ? "bg-amber-50 text-amber-700"
                     : isPublished
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700";
+                  const draftRank = isDraft && sortKey === "recommended"
+                    ? filteredPosts.filter((p) => !p.published).indexOf(post) + 1
+                    : null;
 
                   return (
                     <li
@@ -475,7 +534,10 @@ export function BlogTab({ editSlug }: BlogTabProps) {
                       {/* Row 2: Date/meta + CRUD buttons */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
-                          <span>{post.date}</span>
+                          {draftRank !== null && (
+                            <span className="font-semibold text-amber-600">#{draftRank}</span>
+                          )}
+                          <span>{isDraft ? "미정" : post.date}</span>
                           {dDay !== null && (
                             <span className="font-medium text-amber-600">D-{dDay}</span>
                           )}
