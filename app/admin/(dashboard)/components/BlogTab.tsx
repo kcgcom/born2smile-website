@@ -246,6 +246,13 @@ export function BlogTab({ editSlug }: BlogTabProps) {
     return { total, published, scheduled, draft, byCategory };
   }, [posts, today]);
 
+  // 추천순 초안 대기열
+  const draftQueue = useMemo(() => {
+    const drafts = posts.filter((p) => !p.published);
+    if (drafts.length === 0) return [];
+    return calcDraftRecommendationOrder(drafts, posts, today);
+  }, [posts, today]);
+
   const filteredPosts = useMemo(() => {
     let filtered = [...posts];
 
@@ -413,6 +420,64 @@ export function BlogTab({ editSlug }: BlogTabProps) {
             <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => handleStatusFilterChange("scheduled")} active={statusFilter === "scheduled"} />
             <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => handleStatusFilterChange("draft")} active={statusFilter === "draft"} />
           </div>
+
+          {/* 발행 대기열 — 초안이 있을 때만 표시 */}
+          {draftQueue.length > 0 && (
+            <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-amber-800">
+                  발행 대기열
+                  <span className="ml-2 font-normal text-amber-600">({draftQueue.length}개)</span>
+                </h3>
+                <span className="text-xs text-amber-600">카테고리 분산 추천순</span>
+              </div>
+              <ul className="space-y-1.5">
+                {draftQueue.map((post, idx) => {
+                  const catColor =
+                    categoryColors[post.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
+                  return (
+                    <li
+                      key={post.slug}
+                      className="flex items-center gap-2.5 rounded-lg bg-white/80 px-3 py-2 text-sm"
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-800">
+                        {idx + 1}
+                      </span>
+                      <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                        {post.category}
+                      </span>
+                      <a
+                        href={`/blog/${post.slug}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                      >
+                        {post.title}
+                      </a>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          onClick={() => handlePublishOpen(post.slug)}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                          aria-label={`${post.title} 발행`}
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          발행
+                        </button>
+                        <button
+                          onClick={() => handleEdit(post)}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                          aria-label={`${post.title} 수정`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          수정
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
 
           {/* Search & Filter bar */}
           <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
