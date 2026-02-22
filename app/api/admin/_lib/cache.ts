@@ -12,5 +12,6 @@ export const CACHE_TTL = {
   GA4_SUMMARY: 3600,      // 1 hour
   GA4_DAILY: 21600,        // 6 hours
   SEARCH_CONSOLE: 21600,   // 6 hours
+  NAVER_DATALAB: 21600,    // 6 hours
   BLOG_LIKES: 300,         // 5 minutes
 } as const;

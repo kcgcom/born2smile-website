@@ -85,12 +85,111 @@ const KeywordBarChart = dynamic(
 );
 
 // ---------------------------------------------------------------
+// Recharts Naver trend line chart — loaded client-side only
+// ---------------------------------------------------------------
+
+const NAVER_GROUP_COLORS: Record<string, string> = {
+  "임플란트": "#2563EB",
+  "치아교정": "#C9962B",
+  "보철·보존": "#16A34A",
+  "소아치과": "#9333EA",
+  "예방·건강": "#0891B2",
+};
+
+interface NaverTrendChartProps {
+  groups: Array<{
+    title: string;
+    data: Array<{ period: string; ratio: number }>;
+  }>;
+}
+
+const NaverTrendLineChart = dynamic(
+  () =>
+    import("recharts").then((mod) => {
+      function Chart({ groups }: NaverTrendChartProps) {
+        // Merge all groups into a single data array keyed by period
+        const periodMap = new Map<string, Record<string, number | string>>();
+        for (const group of groups) {
+          for (const d of group.data) {
+            const key = d.period;
+            if (!periodMap.has(key)) periodMap.set(key, { period: key });
+            periodMap.get(key)![group.title] = d.ratio;
+          }
+        }
+        const chartData = Array.from(periodMap.values()).sort((a, b) =>
+          String(a.period).localeCompare(String(b.period)),
+        );
+
+        const formatDate = (value: string) => {
+          if (!value) return "";
+          // "2026-02-15" → "2/15"
+          const parts = value.split("-");
+          return `${Number(parts[1])}/${Number(parts[2])}`;
+        };
+
+        return (
+          <mod.ResponsiveContainer width="100%" height={300}>
+            <mod.LineChart
+              data={chartData}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+            >
+              <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <mod.XAxis
+                dataKey="period"
+                tickFormatter={formatDate}
+                tick={{ fontSize: 11, fill: "#6B7280" }}
+                interval="preserveStartEnd"
+              />
+              <mod.YAxis
+                tick={{ fontSize: 11, fill: "#6B7280" }}
+                width={36}
+                domain={[0, 100]}
+              />
+              <mod.Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                labelFormatter={((label: string) => label) as any}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={((value: number, name: string) => [value, name]) as any}
+                contentStyle={{ fontSize: 12 }}
+              />
+              <mod.Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+              {groups.map((g) => (
+                <mod.Line
+                  key={g.title}
+                  type="monotone"
+                  dataKey={g.title}
+                  name={g.title}
+                  stroke={NAVER_GROUP_COLORS[g.title] ?? "#6B7280"}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              ))}
+            </mod.LineChart>
+          </mod.ResponsiveContainer>
+        );
+      }
+      return Chart;
+    }),
+  { ssr: false },
+);
+
+// ---------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------
 
 interface MetricValue {
   value: number;
   change: number | null;
+}
+
+interface NaverDatalabData {
+  period: { start: string; end: string };
+  timeUnit: string;
+  groups: Array<{
+    title: string;
+    data: Array<{ period: string; ratio: number }>;
+  }>;
 }
 
 interface SearchConsoleData {
@@ -146,6 +245,9 @@ export function SearchTab() {
   const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
     `/api/admin/search-console?period=${period}`,
   );
+
+  const { data: naverData, loading: naverLoading, error: naverError, refetch: naverRefetch } =
+    useAdminApi<NaverDatalabData | null>(`/api/admin/naver-datalab?period=${period}`);
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value as "7d" | "28d" | "90d");
@@ -299,6 +401,40 @@ export function SearchTab() {
             />
           </section>
         </>
+      )}
+
+      {/* ───────────── Naver DataLab Trend ───────────── */}
+      {naverData && (
+        <>
+          <hr className="border-[var(--border)]" />
+          <section>
+            <h3 className="mb-1 text-sm font-semibold text-[var(--foreground)]">
+              네이버 검색 트렌드
+            </h3>
+            <p className="mb-3 text-xs text-[var(--muted)]">
+              치과 관련 키워드의 네이버 상대 검색량 추이 (100 = 기간 내 최대)
+            </p>
+            <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+              <NaverTrendLineChart groups={naverData.groups} />
+            </div>
+          </section>
+        </>
+      )}
+
+      {naverError && !naverLoading && (
+        <section>
+          <hr className="border-[var(--border)]" />
+          <div className="mt-6">
+            <AdminErrorState message={`네이버 트렌드: ${naverError}`} onRetry={naverRefetch} />
+          </div>
+        </section>
+      )}
+
+      {naverLoading && !naverData && (
+        <section>
+          <hr className="my-6 border-[var(--border)]" />
+          <AdminLoadingSkeleton variant="chart" />
+        </section>
       )}
     </div>
   );
