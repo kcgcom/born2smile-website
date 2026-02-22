@@ -16,7 +16,12 @@ export function useAdminAuth(): boolean {
   useEffect(() => {
     if (!isFirebaseConfigured) return;
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
-      setIsAdmin(!!user && isAdminEmail(user.email));
+      const admin = !!user && isAdminEmail(user.email);
+      setIsAdmin(admin);
+      try {
+        if (admin) localStorage.setItem("born2smile-admin", "1");
+        else localStorage.removeItem("born2smile-admin");
+      } catch { /* SSR / private browsing */ }
     });
     return unsubscribe;
   }, []);
