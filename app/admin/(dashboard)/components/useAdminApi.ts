@@ -8,7 +8,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
@@ -19,6 +19,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
       const token = await user.getIdToken();
       const res = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
+        signal,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "데이터를 불러올 수 없습니다" }));
@@ -27,6 +28,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
       const json = await res.json();
       setData(json.data ?? json);
     } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "알 수 없는 오류");
     } finally {
       setLoading(false);
@@ -34,7 +36,10 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   }, [endpoint]);
 
   useEffect(() => {
-    if (enabled) fetchData();
+    if (!enabled) return;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
   }, [enabled, fetchData]);
 
   return { data, loading, error, refetch: fetchData };

@@ -3,39 +3,7 @@
 import { useState, useMemo } from "react";
 import { Save, Loader2, Check } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
-
-// -------------------------------------------------------------
-// Local type definitions (mirror lib/site-config-firestore.ts)
-// -------------------------------------------------------------
-
-type SiteLinks = {
-  kakaoChannel: string;
-  instagram: string;
-  naverBlog: string;
-  naverMap: string;
-  kakaoMap: string;
-};
-
-type SiteClinic = {
-  name: string;
-  nameEn: string;
-  slogan: string;
-  phone: string;
-  phoneIntl: string;
-  phoneHref: string;
-  address: string;
-  addressShort: string;
-  neighborhood: string;
-  businessNumber: string;
-  representative: string;
-};
-
-type SiteHours = {
-  schedule: Array<{ day: string; time: string; open: boolean; note?: string }>;
-  lunchTime: string;
-  closedDays: string;
-  notice: string;
-};
+import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-firestore";
 
 // -------------------------------------------------------------
 // Quick Links data
@@ -153,12 +121,16 @@ function SnsLinksEditor() {
   const { mutate, loading: saving } = useAdminMutation();
   const [formEdits, setFormEdits] = useState<SiteLinks | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
 
   const handleSave = async () => {
     if (!form) return;
+    setSaveError(null);
     const { error } = await mutate("/api/admin/site-config/links", "PUT", form);
-    if (!error) {
+    if (error) {
+      setSaveError(error);
+    } else {
       setFormEdits(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -177,6 +149,11 @@ function SnsLinksEditor() {
         <h3 className="text-lg font-bold text-[var(--foreground)]">SNS 링크</h3>
         <SaveButton saving={saving} saved={saved} onClick={handleSave} />
       </div>
+      {saveError && (
+        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          저장 실패: {saveError}
+        </p>
+      )}
       <div className="space-y-3">
         <FormField
           label="카카오 채널"
@@ -224,16 +201,20 @@ function ClinicInfoEditor() {
   const { mutate, loading: saving } = useAdminMutation();
   const [formEdits, setFormEdits] = useState<SiteClinic | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
 
   const handleSave = async () => {
     if (!form) return;
+    setSaveError(null);
     const { error } = await mutate(
       "/api/admin/site-config/clinic",
       "PUT",
       form,
     );
-    if (!error) {
+    if (error) {
+      setSaveError(error);
+    } else {
       setFormEdits(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -252,6 +233,11 @@ function ClinicInfoEditor() {
         <h3 className="text-lg font-bold text-[var(--foreground)]">병원 정보</h3>
         <SaveButton saving={saving} saved={saved} onClick={handleSave} />
       </div>
+      {saveError && (
+        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          저장 실패: {saveError}
+        </p>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         <FormField
           label="병원명"
@@ -341,16 +327,20 @@ function HoursEditor() {
   const { mutate, loading: saving } = useAdminMutation();
   const [formEdits, setFormEdits] = useState<SiteHours | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
 
   const handleSave = async () => {
     if (!form) return;
+    setSaveError(null);
     const { error } = await mutate(
       "/api/admin/site-config/hours",
       "PUT",
       form,
     );
-    if (!error) {
+    if (error) {
+      setSaveError(error);
+    } else {
       setFormEdits(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -385,6 +375,11 @@ function HoursEditor() {
         <SaveButton saving={saving} saved={saved} onClick={handleSave} />
       </div>
 
+      {saveError && (
+        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          저장 실패: {saveError}
+        </p>
+      )}
       {/* Schedule table */}
       <div className="mb-4 overflow-x-auto rounded-lg border border-[var(--border)]">
         <table className="w-full text-sm">

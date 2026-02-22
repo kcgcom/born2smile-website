@@ -87,7 +87,7 @@ app/                          # Next.js App Router pages
         AdminErrorState.tsx   # 공통 에러 상태 UI
         AdminLoadingSkeleton.tsx # 공통 로딩 스켈레톤 UI
         PeriodSelector.tsx    # 기간 선택 버튼 그룹
-        useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴)
+        useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴, AbortController로 race condition 방지)
     login/
       page.tsx                # Google login page ("use client")
   dev/
@@ -134,10 +134,12 @@ components/
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
     AdminPublishButton.tsx    # 관리자 발행 예약 버튼 — draft 포스트 상세 페이지용 ("use client")
     AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client")
+    PublishPopup.tsx          # 발행 팝업 공유 컴포넌트 — BlogTab/AdminPublishButton/AdminDraftBar 3곳 공유 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
 hooks/
   useAdminAuth.ts            # 공유 관리자 인증 훅 (Firebase onAuthStateChanged + isAdminEmail)
+  usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminPublishButton/AdminDraftBar 공유)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ

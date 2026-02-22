@@ -9,7 +9,7 @@ interface AdminErrorStateProps {
 
 export function AdminErrorState({ message, onRetry }: AdminErrorStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-6 py-10 text-center" role="alert">
       <AlertCircle className="h-8 w-8 text-red-400" aria-hidden="true" />
       <p className="text-sm text-red-700">{message}</p>
       {onRetry && (
