@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "brushing-timing-myths",
     tags: ["팩트체크", "생활습관"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "밥 먹고 바로 양치하면 안 된다?",
     subtitle: "양치 타이밍에 대한 오해와 올바른 습관",
     excerpt:

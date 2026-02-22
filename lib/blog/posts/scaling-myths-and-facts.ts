@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "scaling-myths-and-facts",
   tags: ["팩트체크"],
-  category: "예방·구강관리",
+  category: "예방관리",
   title: "스케일링하면 이가 깎인다?",
   subtitle: "스케일링에 대한 오해 3가지, 팩트로 정리합니다",
   excerpt:

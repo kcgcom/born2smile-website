@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-whitening-care",
     tags: ["치료후관리"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "미백 효과, 카레 한 끼에 사라진다?",
     subtitle: "치아 미백 효과를 오래 유지하는 관리법",
     excerpt:

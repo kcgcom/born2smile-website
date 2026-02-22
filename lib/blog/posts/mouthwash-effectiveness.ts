@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "mouthwash-effectiveness",
     tags: ["팩트체크"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "가글(구강청결제)만으로 충분할까?",
     subtitle: "구강청결제의 올바른 사용법과 한계",
     excerpt:

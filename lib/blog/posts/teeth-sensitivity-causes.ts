@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "teeth-sensitivity-causes",
   tags: ["증상가이드"],
-  category: "구강건강상식",
+  category: "건강상식",
   title: "찬물 마시면 이가 시려요",
   subtitle: "시린 치아의 원인과 단계별 대처법",
   excerpt:

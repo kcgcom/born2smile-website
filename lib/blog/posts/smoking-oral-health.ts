@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "smoking-oral-health",
     tags: ["생활습관"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "담배가 치아에 미치는 영향",
     subtitle: "흡연자가 꼭 알아야 할 구강 건강 위험과 관리법",
     excerpt:

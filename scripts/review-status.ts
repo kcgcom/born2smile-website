@@ -43,13 +43,13 @@ async function main() {
 
   // 카테고리별 그룹핑
   const categories = [
-    "예방·구강관리",
+    "예방관리",
     "보존치료",
     "보철치료",
     "임플란트",
     "치아교정",
     "소아치료",
-    "구강건강상식",
+    "건강상식",
   ];
 
   if (unreviewed.length > 0) {

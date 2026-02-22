@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "mouth-breathing-dental-effects",
     tags: ["생활습관", "증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "잠잘 때 입 벌리고 자면 치아에 안 좋을까?",
     subtitle: "구강 호흡이 치아와 잇몸에 미치는 영향과 개선법",
     excerpt:

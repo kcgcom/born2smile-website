@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "dental-floss-guide",
   tags: ["생활습관"],
-  category: "예방·구강관리",
+  category: "예방관리",
   title: "양치만으로는 40%가 부족합니다",
   subtitle: "치실의 필요성과 올바른 사용법 가이드",
   excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "gum-color-changes",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "잇몸 색깔이 이상해요",
     subtitle: "잇몸 색 변화로 알 수 있는 구강 건강 신호",
     excerpt:

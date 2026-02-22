@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "teeth-whitening-safety",
     tags: ["팩트체크"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "하얀 치아, 안전하게 가능할까?",
     subtitle: "치아 미백의 종류와 부작용, 관리법 총정리",
     excerpt:

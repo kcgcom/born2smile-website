@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "pregnancy-dental-treatment-safety",
     tags: ["임산부", "팩트체크"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "임신 중 충치 치료, 해도 될까요?",
     subtitle: "임신 시기별 치과 치료 가능 범위와 안전 가이드",
     excerpt:

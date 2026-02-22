@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "electric-vs-manual-toothbrush",
     tags: ["비교가이드"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "전동칫솔, 정말 더 잘 닦일까?",
     subtitle: "전동칫솔 vs 일반칫솔 효과 비교와 선택 가이드",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-gum-surgery-care",
     tags: ["치료후관리"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "잇몸 수술 받았는데 관리가 걱정돼요",
     subtitle: "잇몸 수술 후 회복을 돕는 핵심 관리법",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "gum-disease-prevention",
   tags: ["증상가이드"],
-  category: "예방·구강관리",
+  category: "예방관리",
   title: "양치할 때 피가 나요",
   subtitle: "잇몸 질환의 초기 신호와 단계별 예방법",
   excerpt:

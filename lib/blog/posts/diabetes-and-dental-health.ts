@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "diabetes-and-dental-health",
     tags: ["생활습관"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "당뇨가 치아를 망칠 수 있다?",
     subtitle: "당뇨와 구강 건강, 서로에게 미치는 영향",
     excerpt:

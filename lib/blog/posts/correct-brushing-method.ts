@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "correct-brushing-method",
   tags: ["생활습관"],
-  category: "예방·구강관리",
+  category: "예방관리",
   title: "매일 닦는데 왜 충치가 생길까요?",
   subtitle: "올바른 양치질 방법과 자주 하는 실수 바로잡기",
   excerpt:

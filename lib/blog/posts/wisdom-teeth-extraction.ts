@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "wisdom-teeth-extraction",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "사랑니, 남길까 뺄까?",
     subtitle: "발치가 필요한 기준과 수술 후 관리법",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "gum-recession-causes",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "잇몸이 내려앉은 것 같아요",
     subtitle: "잇몸 퇴축의 원인과 진행을 막는 방법",
     excerpt:

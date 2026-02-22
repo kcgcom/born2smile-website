@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "scaling-frequency-guide",
     tags: ["생활습관"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "스케일링, 얼마나 자주 받아야 하나요?",
     subtitle: "구강 상태별 적정 스케일링 주기 가이드",
     excerpt:

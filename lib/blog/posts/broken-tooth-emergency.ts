@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "broken-tooth-emergency",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "치아가 갑자기 부러졌어요",
     subtitle: "치아 파절 시 응급 대처법과 치료 옵션",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "postpartum-dental-health",
     tags: ["임산부", "증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "출산 후 이가 약해진 것 같아요",
     subtitle: "산후 치아·잇몸 문제의 원인과 회복 가이드",
     excerpt:

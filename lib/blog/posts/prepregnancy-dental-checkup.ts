@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "prepregnancy-dental-checkup",
     tags: ["임산부"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "임신 전 치과 검진이 중요한 이유",
     subtitle: "임신 계획 중이라면 치과부터 다녀오세요",
     excerpt:

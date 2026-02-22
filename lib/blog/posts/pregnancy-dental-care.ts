@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "pregnancy-dental-care",
     tags: ["임산부", "증상가이드"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "임신했는데 잇몸이 아파요",
     subtitle: "임산부가 꼭 알아야 할 구강 관리법",
     excerpt:

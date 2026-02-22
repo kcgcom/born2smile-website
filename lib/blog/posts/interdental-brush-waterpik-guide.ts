@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "interdental-brush-waterpik-guide",
     tags: ["비교가이드"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "치간칫솔과 워터픽, 뭘 써야 하나요?",
     subtitle: "치실 외 보조 구강위생용품 비교와 사용법",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "fluoride-treatment-adults",
     tags: ["팩트체크"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "불소 도포, 어른도 하나요?",
     subtitle: "불소의 충치 예방 효과와 연령별 적용 가이드",
     excerpt:

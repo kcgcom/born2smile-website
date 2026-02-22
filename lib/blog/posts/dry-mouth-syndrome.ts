@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "dry-mouth-syndrome",
     tags: ["생활습관", "증상가이드", "시니어"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "입이 자꾸 말라요",
     subtitle: "구강 건조증의 원인과 관리법",
     excerpt:

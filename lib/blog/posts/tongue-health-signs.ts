@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "tongue-health-signs",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "혀가 하얗게 변했어요",
     subtitle: "설태와 혀 건강 이상 신호 읽는 법",
     excerpt:

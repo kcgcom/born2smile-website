@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "dental-anesthesia-guide",
     tags: ["팩트체크", "증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "치과 마취, 얼마나 아프고 얼마나 가나요?",
     subtitle: "마취 종류부터 지속시간, 안전성까지 한눈에 정리",
     excerpt:

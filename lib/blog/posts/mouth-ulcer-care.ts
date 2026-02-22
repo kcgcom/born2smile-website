@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "mouth-ulcer-care",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "입안이 자꾸 헐어요",
     subtitle: "구내염의 원인과 빠른 회복을 위한 관리법",
     excerpt:

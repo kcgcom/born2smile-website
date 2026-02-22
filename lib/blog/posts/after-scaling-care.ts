@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-scaling-care",
     tags: ["치료후관리"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "스케일링 후 시리다고요? 정상입니다",
     subtitle: "스케일링 후 관리법과 주의사항",
     excerpt:

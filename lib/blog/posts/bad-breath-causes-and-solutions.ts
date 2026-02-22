@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "bad-breath-causes-and-solutions",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "입 냄새가 나는 것 같아요",
     subtitle: "구취의 원인부터 근본적인 해결법까지",
     excerpt:

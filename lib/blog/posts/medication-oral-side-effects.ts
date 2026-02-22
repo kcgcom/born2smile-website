@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "medication-oral-side-effects",
     tags: ["생활습관", "시니어"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "먹는 약이 입안을 마르게 한다?",
     subtitle: "약물 부작용으로 생기는 구강 문제와 대처법",
     excerpt:

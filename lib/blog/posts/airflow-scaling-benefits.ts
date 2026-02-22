@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "airflow-scaling-benefits",
     tags: ["비교가이드"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "에어플로우 스케일링, 뭐가 다른가요?",
     subtitle: "일반 초음파 스케일링과 에어플로우의 차이점 비교",
     excerpt:

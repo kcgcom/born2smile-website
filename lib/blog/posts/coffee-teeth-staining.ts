@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "coffee-teeth-staining",
     tags: ["생활습관"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "커피 마시면 이가 누래진다?",
     subtitle: "음료별 치아 착색 위험도와 예방 습관",
     excerpt:

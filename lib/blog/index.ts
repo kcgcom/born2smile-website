@@ -28,7 +28,7 @@ export const TREATMENT_CATEGORY_MAP: Record<string, BlogCategoryValue> = {
   prosthetics: "보철치료",
   pediatric: "소아치료",
   restorative: "보존치료",
-  scaling: "예방·구강관리",
+  scaling: "예방관리",
 };
 
 const CATEGORY_TREATMENT_MAP: Partial<Record<BlogCategoryValue, string>> = Object.fromEntries(

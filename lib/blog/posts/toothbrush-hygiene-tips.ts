@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "toothbrush-hygiene-tips",
     tags: ["생활습관"],
-    category: "예방·구강관리",
+    category: "예방관리",
     title: "그 칫솔, 정말 깨끗한가요?",
     subtitle: "의외로 모르는 칫솔 세균 관리와 교체 시기",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "stress-and-teeth-grinding",
   tags: ["생활습관", "증상가이드"],
-  category: "구강건강상식",
+  category: "건강상식",
   title: "자고 나면 턱이 뻐근해요",
   subtitle: "이갈이의 원인부터 치료까지 한눈에 보기",
   excerpt:

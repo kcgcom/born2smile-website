@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "tmj-disorder-guide",
     tags: ["증상가이드"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "턱에서 소리가 나요",
     subtitle: "턱관절 장애의 원인과 자가 관리, 치료법",
     excerpt:

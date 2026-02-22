@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "dental-anxiety-tips",
     tags: ["생활습관"],
-    category: "구강건강상식",
+    category: "건강상식",
     title: "치과가 무서워서 못 가겠어요",
     subtitle: "치과 공포증 극복을 위한 현실적인 방법들",
     excerpt:
