@@ -33,16 +33,12 @@ export const notoSerifKR = localFont({
   ],
   variable: "--font-noto-serif",
   display: "swap",
+  preload: false, // 헤드라인 전용 — 초기 렌더링 크리티컬 패스에서 제외 (2MB 절약)
   fallback: ["Georgia", "serif"],
 });
 
 export const gowunBatang = localFont({
   src: [
-    {
-      path: "../public/fonts/gowun-batang-korean-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
     {
       path: "../public/fonts/gowun-batang-korean-700-normal.woff2",
       weight: "700",
