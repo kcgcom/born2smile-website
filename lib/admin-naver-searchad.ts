@@ -90,7 +90,8 @@ async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordDat
   const res = await fetch(url, { headers: getAuthHeaders() });
 
   if (!res.ok) {
-    throw new Error(`Naver SearchAd API error: ${res.status} ${res.statusText}`);
+    const body = await res.text().catch(() => "");
+    throw new Error(`Naver SearchAd API error: ${res.status} ${res.statusText} | ${body}`);
   }
 
   const json = await res.json();
