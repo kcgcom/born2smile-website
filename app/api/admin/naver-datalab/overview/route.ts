@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
           if (volumeResults && volumeResults.length > 0) {
             const keywordMap = new Map(
-              volumeResults.map((v) => [v.keyword.toLowerCase().trim(), v]),
+              volumeResults.map((v) => [v.keyword.replace(/\s+/g, "").toLowerCase(), v]),
             );
 
             const data: Record<string, VolumeDataEntry> = {};
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
               let hasData = false;
 
               for (const kw of group.keywords) {
-                const kwData = keywordMap.get(kw.toLowerCase().trim());
+                const kwData = keywordMap.get(kw.replace(/\s+/g, "").toLowerCase());
                 if (kwData) {
                   totalQcCnt += kwData.monthlyTotalQcCnt;
                   if (kwData.isEstimated) anyEstimated = true;

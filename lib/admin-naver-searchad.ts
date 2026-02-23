@@ -47,6 +47,11 @@ export function isSearchAdConfigured(): boolean {
   return !!(getApiKey() && getSecretKey() && getCustomerId());
 }
 
+/** 키워드 정규화: 공백 제거 + 소문자 (API는 공백 없는 형태로 반환) */
+function normalizeKeyword(kw: string): string {
+  return kw.replace(/\s+/g, "").toLowerCase();
+}
+
 /** "< 10" 등 비정형 값을 안전하게 숫자로 파싱 */
 export function safeParseCount(value: unknown): { count: number; estimated: boolean } {
   if (typeof value === "number" && !Number.isNaN(value)) {
@@ -90,7 +95,8 @@ function getAuthHeaders(): Record<string, string> {
  * @returns 키워드별 검색량 데이터 또는 null (미설정/오류)
  */
 async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordData[]> {
-  const hintKeywords = keywords.slice(0, 5).join(",");
+  // API는 공백 없는 키워드만 허용 (예: "임플란트비용", NOT "임플란트 비용")
+  const hintKeywords = keywords.slice(0, 5).map((k) => k.replace(/\s+/g, "")).join(",");
   const url = `${BASE_URL}${URI}?hintKeywords=${encodeURIComponent(hintKeywords)}&showDetail=1`;
 
   const res = await fetch(url, { headers: getAuthHeaders(), cache: "no-store" });
@@ -103,13 +109,13 @@ async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordDat
   const json = await res.json();
   const items: unknown[] = json.keywordList ?? [];
 
-  // 요청 키워드만 필터링 (연관 키워드 제외)
-  const requestedSet = new Set(keywords.map((k) => k.toLowerCase().trim()));
+  // 요청 키워드만 필터링 — 공백 제거 정규화로 매칭 (연관 키워드 제외)
+  const requestedSet = new Set(keywords.map(normalizeKeyword));
 
   return items
     .filter((item: unknown) => {
       const kw = (item as Record<string, unknown>).relKeyword;
-      return typeof kw === "string" && requestedSet.has(kw.toLowerCase().trim());
+      return typeof kw === "string" && requestedSet.has(normalizeKeyword(kw));
     })
     .map((item: unknown) => {
       const row = item as Record<string, unknown>;
