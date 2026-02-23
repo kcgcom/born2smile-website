@@ -93,6 +93,62 @@ body {
   font-family: var(--font-gowun-batang), serif;
 }
 
+/* =============================================================
+   FadeIn / Stagger 애니메이션 (framer-motion 대체)
+   ============================================================= */
+
+/* 초기 상태: 숨김 */
+.fade-in-target {
+  opacity: 0;
+}
+
+/* 뷰포트 진입 시 애니메이션 */
+.fade-in-target.is-visible {
+  animation: fadeInReveal 0.6s ease-out forwards;
+  animation-duration: var(--fade-dur, 0.6s);
+  animation-delay: var(--fade-delay, 0s);
+}
+
+[data-stagger-item] {
+  opacity: 0;
+}
+
+[data-stagger-item].is-visible {
+  animation: staggerReveal 0.5s ease-out forwards;
+}
+
+@keyframes fadeInReveal {
+  from {
+    opacity: 0;
+    transform: translate(var(--fade-tx, 0px), var(--fade-ty, 40px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes staggerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 모션 감소 설정 시 즉시 표시 */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-target,
+  [data-stagger-item] {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* 편지 스타일 카드 */
 .greeting-letter {
   background: linear-gradient(135deg, #FFFEF9 0%, #FFF9EE 50%, #FFFEF9 100%);

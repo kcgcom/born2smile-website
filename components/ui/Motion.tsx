@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useRef, useEffect, type ReactNode } from "react";
 
 interface FadeInProps {
   children: ReactNode;
@@ -11,12 +10,17 @@ interface FadeInProps {
   duration?: number;
 }
 
-const directionOffset = {
-  up: { y: 40 },
-  down: { y: -40 },
-  left: { x: 40 },
-  right: { x: -40 },
+const directionVars: Record<string, { "--fade-tx": string; "--fade-ty": string }> = {
+  up: { "--fade-tx": "0px", "--fade-ty": "40px" },
+  down: { "--fade-tx": "0px", "--fade-ty": "-40px" },
+  left: { "--fade-tx": "40px", "--fade-ty": "0px" },
+  right: { "--fade-tx": "-40px", "--fade-ty": "0px" },
 };
+
+function usePrefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 /**
  * 스크롤 시 페이드인 애니메이션
@@ -29,22 +33,44 @@ export function FadeIn({
   direction = "up",
   duration = 0.6,
 }: FadeInProps) {
-  const shouldReduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = usePrefersReducedMotion();
 
-  if (shouldReduce) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("is-visible");
+          observer.unobserve(el);
+        }
+      },
+      { rootMargin: "-80px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [reduced]);
+
+  if (reduced) {
     return <div className={className}>{children}</div>;
   }
 
+  const vars = directionVars[direction];
+
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, ...directionOffset[direction] }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration, delay, ease: "easeOut" }}
+    <div
+      ref={ref}
+      className={`fade-in-target${className ? ` ${className}` : ""}`}
+      style={{
+        ...vars,
+        "--fade-dur": `${duration}s`,
+        "--fade-delay": `${delay}s`,
+      } as React.CSSProperties}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -63,26 +89,38 @@ export function StaggerContainer({
   className,
   staggerDelay = 0.1,
 }: StaggerContainerProps) {
-  const shouldReduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = usePrefersReducedMotion();
 
-  if (shouldReduce) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const items = el.querySelectorAll("[data-stagger-item]");
+          items.forEach((item, i) => {
+            (item as HTMLElement).style.animationDelay = `${i * staggerDelay}s`;
+            item.classList.add("is-visible");
+          });
+          observer.unobserve(el);
+        }
+      },
+      { rootMargin: "-80px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [reduced, staggerDelay]);
+
+  if (reduced) {
     return <div className={className}>{children}</div>;
   }
 
   return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      variants={{
-        visible: {
-          transition: { staggerChildren: staggerDelay },
-        },
-      }}
-    >
+    <div ref={ref} className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -97,21 +135,9 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
-  const shouldReduce = useReducedMotion();
-
-  if (shouldReduce) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
-    <motion.div
-      className={className}
-      variants={{
-        hidden: { opacity: 0, y: 30 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-      }}
-    >
+    <div data-stagger-item="" className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
