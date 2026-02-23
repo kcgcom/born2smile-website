@@ -320,7 +320,7 @@ content: [
 
 | Font | CSS Variable | Usage |
 |------|-------------|-------|
-| Pretendard Variable | `--font-pretendard` | 본문 기본 (`font-sans`) |
+| Pretendard Variable (KS X 1001 서브셋, 456KB) | `--font-pretendard` | 본문 기본 (`font-sans`) |
 | Noto Serif KR (400, 700) | `--font-noto-serif` | 헤드라인 (`font-serif`, `.font-headline`) |
 | Gowun Batang (400, 700) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) |
 
