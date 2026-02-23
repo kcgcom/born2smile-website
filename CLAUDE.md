@@ -322,7 +322,7 @@ content: [
 |------|-------------|-------|
 | Pretendard Variable (KS X 1001 서브셋, 456KB) | `--font-pretendard` | 본문 기본 (`font-sans`) |
 | Noto Serif KR (KS X 1001 서브셋, 400: 322KB / 700: 331KB) | `--font-noto-serif` | 헤드라인 (`font-serif`, `.font-headline`) |
-| Gowun Batang (700 only, 438KB) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) |
+| Gowun Batang (KS X 1001 서브셋, 700 only, 172KB) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) |
 
 `lib/fonts.ts`에서 설정 → `app/layout.tsx`의 `<html>` 태그에 variable 적용 → `globals.css`의 `@theme inline`에서 Tailwind와 연결.
 
