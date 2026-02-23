@@ -93,7 +93,7 @@ async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordDat
   const hintKeywords = keywords.slice(0, 5).join(",");
   const url = `${BASE_URL}${URI}?hintKeywords=${encodeURIComponent(hintKeywords)}&showDetail=1`;
 
-  const res = await fetch(url, { headers: getAuthHeaders() });
+  const res = await fetch(url, { headers: getAuthHeaders(), cache: "no-store" });
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");

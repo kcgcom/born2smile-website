@@ -226,6 +226,7 @@ export async function GET(request: NextRequest) {
           suggestions,
           volumeSource: volumeData ? "searchad" : "datalab-fallback",
           volumeCoverage: volumeCoverage,
+          volumeError: volumeResult && "error" in volumeResult ? volumeResult.error : null,
         },
       },
       { headers: { "Cache-Control": "private, no-store" } },
