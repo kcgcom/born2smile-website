@@ -6,8 +6,8 @@ export const TABS = [
   { id: "overview", label: "개요", icon: LayoutDashboard },
   { id: "traffic", label: "트래픽", icon: BarChart3 },
   { id: "search", label: "검색/SEO", icon: Search },
-  { id: "blog", label: "블로그", icon: FileText },
   { id: "trend", label: "트렌드", icon: TrendingUp },
+  { id: "blog", label: "블로그", icon: FileText },
   { id: "settings", label: "설정", icon: Settings },
 ] as const;
 
