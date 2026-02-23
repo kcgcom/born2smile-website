@@ -12,6 +12,7 @@ import { ProjectTab } from "./components/ProjectTab";
 import { CodeQualityTab } from "./components/CodeQualityTab";
 import { BuildTab } from "./components/BuildTab";
 import { InfraTab } from "./components/InfraTab";
+import { PerformanceTab } from "./components/PerformanceTab";
 
 // -------------------------------------------------------------
 // 개발 대시보드 메인 페이지
@@ -63,6 +64,7 @@ function DevDashboardContent() {
         {activeTab === "quality" && <CodeQualityTab />}
         {activeTab === "build" && <BuildTab />}
         {activeTab === "infra" && <InfraTab />}
+        {activeTab === "performance" && <PerformanceTab />}
       </div>
     </div>
   );

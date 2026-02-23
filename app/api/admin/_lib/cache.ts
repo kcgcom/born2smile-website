@@ -15,4 +15,5 @@ export const CACHE_TTL = {
   NAVER_DATALAB: 21600,    // 6 hours
   BLOG_LIKES: 300,         // 5 minutes
   SEARCHAD_VOLUME: 86400,  // 24 hours — 검색량은 월간 데이터이므로 하루 1회 갱신 충분
+  PSI: 21600,              // 6 hours — PageSpeed Insights
 } as const;
