@@ -385,7 +385,7 @@ content: [
 
 **개발 대시보드 (`/dev`)** — 5탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수), 성능(PageSpeed Insights — Lighthouse 점수 게이지+CWV 필드 데이터+개선 기회).
 
-- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 런타임 API (`/api/dev/env-status`), PageSpeed 성능 데이터는 런타임 API (`/api/dev/pagespeed`, PSI API 키 불필요, `unstable_cache` 6시간)
+- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 런타임 API (`/api/dev/env-status`), PageSpeed 성능 데이터는 런타임 API (`/api/dev/pagespeed`, `PAGESPEED_API_KEY` 필수, `unstable_cache` 6시간)
 - **매니페스트 생성**: `scripts/generate-dev-manifest.ts`가 `pnpm dev`/`pnpm build` 시 자동 실행. `package.json`, `tsconfig.json`, `firestore.indexes.json`, `firestore.rules`, `app/` 디렉토리를 스캔하여 의존성, 라우트, 렌더링 전략, 프로젝트 통계 수집
 - **인증**: 관리자 대시보드와 동일한 AuthGuard + 이메일 화이트리스트 사용
 - **SEO**: `robots.txt`에서 `/dev` Disallow, layout에서 `noindex`
@@ -533,6 +533,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `NAVER_SEARCHAD_API_KEY` — 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백)
 - `NAVER_SEARCHAD_SECRET_KEY` — 네이버 검색광고 API Secret Key (HMAC-SHA256 서명, Secret Manager)
 - `NAVER_SEARCHAD_CUSTOMER_ID` — 네이버 검색광고 고객 ID
+- `PAGESPEED_API_KEY` — Google PageSpeed Insights API 키 (성능 탭 필수, Google Cloud Console에서 API 키 생성 + PageSpeed Insights API 활성화 필요)
 
 ### 네이버 검색광고 API 주의사항
 

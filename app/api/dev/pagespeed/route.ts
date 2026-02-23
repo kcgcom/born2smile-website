@@ -9,6 +9,11 @@ const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const TARGET_URL = "https://www.born2smile.co.kr";
 const CATEGORIES = ["performance", "accessibility", "seo", "best-practices"];
 
+// Lazy getter — Cloud Run 시크릿 주입 타이밍 이슈 대응
+function getApiKey(): string | undefined {
+  return process.env.PAGESPEED_API_KEY?.trim() || undefined;
+}
+
 interface PSICategory {
   id: string;
   title: string;
@@ -113,6 +118,8 @@ async function fetchPSI(
   try {
     const params = new URLSearchParams({ url: TARGET_URL, strategy });
     CATEGORIES.forEach((c) => params.append("category", c));
+    const apiKey = getApiKey();
+    if (apiKey) params.set("key", apiKey);
 
     const res = await fetch(`${PSI_API}?${params}`, { cache: "no-store" });
 
@@ -140,6 +147,10 @@ const getCachedPSI = createCachedFetcher<PSIResponseData>(
       fetchPSI("mobile"),
       fetchPSI("desktop"),
     ]);
+    // 두 전략 모두 실패 시 throw → unstable_cache가 실패 결과를 캐싱하지 않음
+    if (!mobile && !desktop) {
+      throw new Error("PSI_BOTH_FAILED");
+    }
     return { mobile, desktop };
   },
   CACHE_TTL.PSI,
@@ -149,15 +160,30 @@ export async function GET(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  const data = await getCachedPSI();
+  try {
+    const data = await getCachedPSI();
 
-  return NextResponse.json(
-    { data },
-    {
-      headers: {
-        "Cache-Control": "private, no-store",
-        Vary: "Authorization",
+    return NextResponse.json(
+      { data },
+      {
+        headers: {
+          "Cache-Control": "private, no-store",
+          Vary: "Authorization",
+        },
       },
-    },
-  );
+    );
+  } catch {
+    const hasKey = !!getApiKey();
+    const message = hasKey
+      ? "PageSpeed API 호출에 실패했습니다. 잠시 후 다시 시도해주세요."
+      : "PageSpeed API 키가 설정되지 않았습니다. PAGESPEED_API_KEY 환경변수를 확인해주세요.";
+
+    return NextResponse.json(
+      { error: "PSI_ERROR", message },
+      {
+        status: 502,
+        headers: { "Cache-Control": "private, no-store" },
+      },
+    );
+  }
 }
