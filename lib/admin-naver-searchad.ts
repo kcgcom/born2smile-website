@@ -5,14 +5,20 @@
 
 import crypto from "crypto";
 
-// ── 환경변수 ──────────────────────────────────────────────────
-
-const API_KEY = (process.env.NAVER_SEARCHAD_API_KEY ?? "").trim();
-const SECRET_KEY = (process.env.NAVER_SEARCHAD_SECRET_KEY ?? "").trim();
-const CUSTOMER_ID = (process.env.NAVER_SEARCHAD_CUSTOMER_ID ?? "").trim();
+// ── 환경변수 (lazy — Cloud Run 시크릿 주입 타이밍 보장) ─────
 
 const BASE_URL = "https://api.searchad.naver.com";
 const URI = "/keywordstool";
+
+function getApiKey(): string {
+  return (process.env.NAVER_SEARCHAD_API_KEY ?? "").trim();
+}
+function getSecretKey(): string {
+  return (process.env.NAVER_SEARCHAD_SECRET_KEY ?? "").trim();
+}
+function getCustomerId(): string {
+  return (process.env.NAVER_SEARCHAD_CUSTOMER_ID ?? "").trim();
+}
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -38,7 +44,7 @@ export interface SubGroupVolume {
 
 /** 환경변수 설정 여부 확인 */
 export function isSearchAdConfigured(): boolean {
-  return !!(API_KEY && SECRET_KEY && CUSTOMER_ID);
+  return !!(getApiKey() && getSecretKey() && getCustomerId());
 }
 
 /** "< 10" 등 비정형 값을 안전하게 숫자로 파싱 */
@@ -55,10 +61,10 @@ export function safeParseCount(value: unknown): { count: number; estimated: bool
 }
 
 /** HMAC-SHA256 서명 생성 */
-function generateSignature(timestamp: string, method: string, uri: string): string {
+function generateSignature(timestamp: string, method: string, uri: string, secretKey: string): string {
   const message = `${timestamp}.${method}.${uri}`;
   return crypto
-    .createHmac("sha256", SECRET_KEY)
+    .createHmac("sha256", secretKey)
     .update(message)
     .digest("base64");
 }
@@ -66,10 +72,10 @@ function generateSignature(timestamp: string, method: string, uri: string): stri
 /** 인증 헤더 생성 */
 function getAuthHeaders(): Record<string, string> {
   const timestamp = Date.now().toString();
-  const signature = generateSignature(timestamp, "GET", URI);
+  const signature = generateSignature(timestamp, "GET", URI, getSecretKey());
   return {
-    "X-API-KEY": API_KEY,
-    "X-Customer": CUSTOMER_ID,
+    "X-API-KEY": getApiKey(),
+    "X-Customer": getCustomerId(),
     "X-Timestamp": timestamp,
     "X-Signature": signature,
     "Content-Type": "application/json",

@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
       // 2) Published posts for content gap analysis
       getAllPublishedPostMetas(),
       // 3) Search volume data (검색광고 API) — graceful degradation
-      (async (): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number; debug?: Record<string, unknown> } | { error: string; debug?: Record<string, unknown> } | undefined> => {
-        if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET", debug: { hasApiKey: !!process.env.NAVER_SEARCHAD_API_KEY, hasSecret: !!process.env.NAVER_SEARCHAD_SECRET_KEY, hasCustId: !!process.env.NAVER_SEARCHAD_CUSTOMER_ID } };
+      (async (): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> => {
+        if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
         try {
           const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];
           for (const ck of CATEGORY_KEYWORDS) {
@@ -60,8 +60,6 @@ export async function GET(request: NextRequest) {
           }
 
           const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
-
-          // 캐시 우회: 직접 호출
           const volumeResults = await fetchKeywordSearchVolume(flatKeywords);
 
           if (volumeResults && volumeResults.length > 0) {
@@ -95,19 +93,16 @@ export async function GET(request: NextRequest) {
               }
             }
             const coverage = allKeywords.length > 0 ? matched / allKeywords.length : 0;
-            return { data, coverage, debug: { flatCount: flatKeywords.length, resultCount: volumeResults.length, matched } };
+            return { data, coverage };
           }
-          return { error: "EMPTY_RESULTS", debug: { flatCount: flatKeywords.length, resultCount: volumeResults?.length ?? -1, isNull: volumeResults === null } };
+          return { error: "EMPTY_RESULTS" };
         } catch (err) {
-          // 검색광고 API 실패 시 graceful degradation (디버그용 에러 반환)
           return { error: err instanceof Error ? err.message : "UNKNOWN_ERROR" };
         }
       })(),
     ]);
 
     // Extract volume data (available before categories.map)
-    const volumeError = volumeResult && "error" in volumeResult ? volumeResult.error : null;
-    const volumeDbg = volumeResult && "debug" in volumeResult ? volumeResult.debug : null;
     const volumeData = volumeResult && "data" in volumeResult ? volumeResult.data : undefined;
     const volumeCoverage = volumeResult && "coverage" in volumeResult ? volumeResult.coverage : null;
 
@@ -231,7 +226,6 @@ export async function GET(request: NextRequest) {
           suggestions,
           volumeSource: volumeData ? "searchad" : "datalab-fallback",
           volumeCoverage: volumeCoverage,
-          volumeDebug: { error: volumeError, detail: volumeDbg },
         },
       },
       { headers: { "Cache-Control": "private, no-store" } },
