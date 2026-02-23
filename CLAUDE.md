@@ -50,7 +50,7 @@ There is no testing framework configured. No test commands are available.
 
 ```
 app/                          # Next.js App Router pages
-  layout.tsx                  # Root layout (header, footer, floating CTA, admin floating button, JSON-LD)
+  layout.tsx                  # Root layout (header, footer, floating CTA, admin floating button, JSON-LD, GA 관리자 트래픽 제외)
   page.tsx                    # Homepage (hero, values, treatments, doctor, map, CTA)
   globals.css                 # Design tokens, @theme inline, utility classes
   favicon.ico                 # Favicon
@@ -109,7 +109,7 @@ app/                          # Next.js App Router pages
     admin/
       _lib/
         auth.ts               # Admin API 인증 미들웨어 (Firebase Admin SDK)
-        cache.ts              # unstable_cache 래퍼 + TTL 상수
+        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab 6h, 검색광고 24h, 좋아요 5m)
       analytics/
         route.ts              # GA4 트래픽 데이터 API (GET)
       search-console/
@@ -150,7 +150,7 @@ components/
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
 hooks/
-  useAdminAuth.ts            # 공유 관리자 인증 훅 (Firebase onAuthStateChanged + isAdminEmail)
+  useAdminAuth.ts            # 공유 관리자 인증 훅 (Firebase onAuthStateChanged + isAdminEmail + GA 관리자 제외 플래그)
   usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminPublishButton/AdminDraftBar 공유)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
@@ -166,7 +166,7 @@ lib/
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   admin-naver-datalab.ts     # 네이버 DataLab 검색 트렌드 API 클라이언트 (5개 키워드 그룹)
   admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (7카테고리×5서브그룹, volumeKeywords, TopicAngles)
-  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, 절대 검색량 조회)
+  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출)
   trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
@@ -376,6 +376,7 @@ content: [
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
+- **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
 
 **개발 대시보드 (`/dev`)** — 4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
 
@@ -527,6 +528,13 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `NAVER_SEARCHAD_API_KEY` — 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백)
 - `NAVER_SEARCHAD_SECRET_KEY` — 네이버 검색광고 API Secret Key (HMAC-SHA256 서명, Secret Manager)
 - `NAVER_SEARCHAD_CUSTOMER_ID` — 네이버 검색광고 고객 ID
+
+### 네이버 검색광고 API 주의사항
+
+- **키워드 공백 불가**: `hintKeywords` 파라미터는 공백 없는 키워드만 허용 (예: `임플란트비용`, NOT `임플란트 비용`). `admin-naver-searchad.ts`의 `normalizeKeyword()`가 자동 처리.
+- **시간당 호출 제한**: API 레이트 리밋 있음. 순차 배치 호출(200ms 간격) + 24시간 `unstable_cache`로 보호.
+- **환경변수 lazy 읽기**: Cloud Run 시크릿 주입 타이밍 이슈로 모듈 레벨 상수 대신 `getApiKey()` 등 lazy getter 사용. 시크릿에 trailing newline이 있을 수 있어 `.trim()` 필수.
+- **HMAC 서명**: `{timestamp}.GET./keywordstool` 형식, SHA-256, Base64 인코딩.
 
 ## Known TODO Items
 
