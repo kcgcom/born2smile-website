@@ -7,9 +7,9 @@ import crypto from "crypto";
 
 // ── 환경변수 ──────────────────────────────────────────────────
 
-const API_KEY = process.env.NAVER_SEARCHAD_API_KEY ?? "";
-const SECRET_KEY = process.env.NAVER_SEARCHAD_SECRET_KEY ?? "";
-const CUSTOMER_ID = process.env.NAVER_SEARCHAD_CUSTOMER_ID ?? "";
+const API_KEY = (process.env.NAVER_SEARCHAD_API_KEY ?? "").trim();
+const SECRET_KEY = (process.env.NAVER_SEARCHAD_SECRET_KEY ?? "").trim();
+const CUSTOMER_ID = (process.env.NAVER_SEARCHAD_CUSTOMER_ID ?? "").trim();
 
 const BASE_URL = "https://api.searchad.naver.com";
 const URI = "/keywordstool";
