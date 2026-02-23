@@ -43,6 +43,7 @@ interface ContentGapItem {
   monthlyVolume: number | null;
   volumeSource: "searchad" | "datalab-fallback";
   isEstimated: boolean;
+  relatedKeywords?: Array<{ keyword: string; volume: number }>;
 }
 
 interface TopicSuggestionItem {
@@ -605,11 +606,34 @@ export function TrendTab() {
                   key: "subGroup",
                   label: "키워드 영역",
                   align: "left",
-                  render: (row) => (
-                    <span className="font-medium text-[var(--foreground)]">
-                      {String(row.subGroup)}
-                    </span>
-                  ),
+                  render: (row) => {
+                    const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
+                    return (
+                      <div>
+                        <span className="font-medium text-[var(--foreground)]">
+                          {String(row.subGroup)}
+                        </span>
+                        {related.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {related.map((rk) => (
+                              <span
+                                key={rk.keyword}
+                                className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                                title={`월 ${rk.volume.toLocaleString("ko-KR")}회`}
+                              >
+                                {rk.keyword}
+                                <span className="ml-0.5 text-blue-400 tabular-nums">
+                                  {rk.volume >= 1000
+                                    ? `${(rk.volume / 1000).toFixed(1)}k`
+                                    : rk.volume}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  },
                 },
                 {
                   key: "category",
@@ -741,6 +765,30 @@ export function TrendTab() {
                         {kw}
                       </span>
                     ))}
+                    {/* 연관 키워드 (콘텐츠 갭에서 조회) */}
+                    {(() => {
+                      const gap = overviewData?.contentGap.find(
+                        (g) => g.slug === item.slug && g.keywords.some((k) => item.keywords.includes(k)),
+                      );
+                      const related = (gap?.relatedKeywords ?? []).filter(
+                        (rk) => !item.keywords.includes(rk.keyword),
+                      );
+                      if (related.length === 0) return null;
+                      return related.slice(0, 3).map((rk) => (
+                        <span
+                          key={rk.keyword}
+                          className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+                          title={`연관 키워드 · 월 ${rk.volume.toLocaleString("ko-KR")}회`}
+                        >
+                          {rk.keyword}
+                          <span className="ml-0.5 text-blue-400 tabular-nums text-[10px]">
+                            {rk.volume >= 1000
+                              ? `${(rk.volume / 1000).toFixed(1)}k`
+                              : rk.volume}
+                          </span>
+                        </span>
+                      ));
+                    })()}
                   </div>
                 )}
 

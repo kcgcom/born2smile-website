@@ -70,9 +70,15 @@ export async function GET(request: NextRequest) {
           const volumeResults = await getCachedVolume();
 
           if (volumeResults && volumeResults.length > 0) {
+            // 요청 키워드 매핑
             const keywordMap = new Map(
-              volumeResults.map((v) => [v.keyword.replace(/\s+/g, "").toLowerCase(), v]),
+              volumeResults
+                .filter((v) => !v.isRelated)
+                .map((v) => [v.keyword.replace(/\s+/g, "").toLowerCase(), v]),
             );
+
+            // 연관 키워드 수집
+            const relatedItems = volumeResults.filter((v) => v.isRelated);
 
             const data: Record<string, VolumeDataEntry> = {};
             let matched = 0;
@@ -91,11 +97,39 @@ export async function GET(request: NextRequest) {
                 }
               }
 
+              // 연관 키워드를 서브그룹에 배정: 서브그룹의 volumeKeywords 중 하나가
+              // 연관 키워드(공백 제거)의 부분 문자열이면 해당 서브그룹에 배정
+              const normalizedVolumeKws = group.keywords.map((k) =>
+                k.replace(/\s+/g, "").toLowerCase(),
+              );
+              const groupRelated: Array<{ keyword: string; volume: number }> = [];
+              for (const ri of relatedItems) {
+                const normalizedRi = ri.keyword.replace(/\s+/g, "").toLowerCase();
+                if (normalizedVolumeKws.some((vk) => normalizedRi.includes(vk))) {
+                  groupRelated.push({
+                    keyword: ri.keyword,
+                    volume: ri.monthlyTotalQcCnt,
+                  });
+                }
+              }
+              // 검색량 내림차순, 상위 5개
+              groupRelated.sort((a, b) => b.volume - a.volume);
+              const topRelated = groupRelated.slice(0, 5);
+
               if (hasData) {
                 matched++;
                 data[key] = {
                   monthlyTotalQcCnt: totalQcCnt,
                   isEstimated: anyEstimated,
+                  relatedKeywords: topRelated,
+                };
+              } else if (topRelated.length > 0) {
+                // 요청 키워드 매칭 없어도 연관 키워드가 있으면 포함
+                matched++;
+                data[key] = {
+                  monthlyTotalQcCnt: 0,
+                  isEstimated: false,
+                  relatedKeywords: topRelated,
                 };
               }
             }

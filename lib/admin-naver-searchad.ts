@@ -29,6 +29,8 @@ export interface SearchAdKeywordData {
   monthlyTotalQcCnt: number;
   isEstimated: boolean;
   compIdx: string;
+  /** true = API가 반환한 연관 키워드, false = 요청한 키워드 */
+  isRelated: boolean;
 }
 
 export interface SubGroupVolume {
@@ -109,25 +111,27 @@ async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordDat
   const json = await res.json();
   const items: unknown[] = json.keywordList ?? [];
 
-  // 요청 키워드만 필터링 — 공백 제거 정규화로 매칭 (연관 키워드 제외)
+  // 요청 키워드 세트 (isRelated 플래그 판별용)
   const requestedSet = new Set(keywords.map(normalizeKeyword));
 
   return items
     .filter((item: unknown) => {
       const kw = (item as Record<string, unknown>).relKeyword;
-      return typeof kw === "string" && requestedSet.has(normalizeKeyword(kw));
+      return typeof kw === "string";
     })
     .map((item: unknown) => {
       const row = item as Record<string, unknown>;
       const pc = safeParseCount(row.monthlyPcQcCnt);
       const mobile = safeParseCount(row.monthlyMobileQcCnt);
+      const keyword = String(row.relKeyword);
       return {
-        keyword: String(row.relKeyword),
+        keyword,
         monthlyPcQcCnt: pc.count,
         monthlyMobileQcCnt: mobile.count,
         monthlyTotalQcCnt: pc.count + mobile.count,
         isEstimated: pc.estimated || mobile.estimated,
         compIdx: String(row.compIdx ?? ""),
+        isRelated: !requestedSet.has(normalizeKeyword(keyword)),
       };
     });
 }

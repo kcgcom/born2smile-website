@@ -49,6 +49,8 @@ export interface ContentGap {
   volumeSource: "searchad" | "datalab-fallback";
   /** "< 10" 추정값 포함 여부 */
   isEstimated: boolean;
+  /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
+  relatedKeywords: Array<{ keyword: string; volume: number }>;
 }
 
 export interface TopicSuggestion {
@@ -169,6 +171,8 @@ export function analyzeTrend(data: Array<{ period: string; ratio: number }>): Tr
 export interface VolumeDataEntry {
   monthlyTotalQcCnt: number;
   isEstimated: boolean;
+  /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
+  relatedKeywords?: Array<{ keyword: string; volume: number }>;
 }
 
 /**
@@ -217,6 +221,7 @@ export function analyzeContentGap(
       rawTrendScore: number;
       monthlyVolume: number | null;
       isEstimated: boolean;
+      relatedKeywords: Array<{ keyword: string; volume: number }>;
     }> = [];
 
     for (const sg of catData.subGroups) {
@@ -252,6 +257,7 @@ export function analyzeContentGap(
         rawTrendScore,
         monthlyVolume: vol?.monthlyTotalQcCnt ?? null,
         isEstimated: vol?.isEstimated ?? false,
+        relatedKeywords: vol?.relatedKeywords ?? [],
       });
     }
 
@@ -293,6 +299,7 @@ export function analyzeContentGap(
         monthlyVolume: g.monthlyVolume,
         volumeSource: hasVolumeData && g.monthlyVolume != null ? "searchad" : "datalab-fallback",
         isEstimated: g.isEstimated,
+        relatedKeywords: g.relatedKeywords,
       });
     }
   }
