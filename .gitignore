@@ -44,3 +44,6 @@ lib/blog/generated/
 
 # auto-generated dev manifest
 lib/dev/generated/
+
+# oh-my-claudecode
+.omc/
