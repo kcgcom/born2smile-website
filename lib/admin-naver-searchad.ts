@@ -154,11 +154,18 @@ export async function fetchKeywordSearchVolume(
   );
 
   const allData: SearchAdKeywordData[] = [];
+  const errors: string[] = [];
   for (const result of results) {
     if (result.status === "fulfilled") {
       allData.push(...result.value);
+    } else {
+      errors.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
     }
-    // 부분 실패는 무시 (성공한 것만 반환)
+  }
+
+  // 전체 실패 시 첫 번째 에러를 throw하여 호출자가 감지할 수 있게 함
+  if (allData.length === 0 && errors.length > 0) {
+    throw new Error(`SearchAd API 전체 실패: ${errors[0]}`);
   }
 
   return allData;
