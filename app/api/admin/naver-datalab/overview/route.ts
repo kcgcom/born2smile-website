@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
       // 2) Published posts for content gap analysis
       getAllPublishedPostMetas(),
       // 3) Search volume data (검색광고 API) — graceful degradation
-      (async () => {
-        if (!isSearchAdConfigured()) return undefined;
+      (async (): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> => {
+        if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
         try {
           const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];
           for (const ck of CATEGORY_KEYWORDS) {
@@ -102,16 +102,17 @@ export async function GET(request: NextRequest) {
             return { data, coverage };
           }
           return undefined;
-        } catch {
-          // 검색광고 API 실패 시 graceful degradation
-          return undefined;
+        } catch (err) {
+          // 검색광고 API 실패 시 graceful degradation (디버그용 에러 반환)
+          return { error: err instanceof Error ? err.message : "UNKNOWN_ERROR" };
         }
       })(),
     ]);
 
     // Extract volume data (available before categories.map)
-    const volumeData = volumeResult?.data;
-    const volumeCoverage = volumeResult?.coverage ?? null;
+    const volumeError = volumeResult && "error" in volumeResult ? volumeResult.error : null;
+    const volumeData = volumeResult && "data" in volumeResult ? volumeResult.data : undefined;
+    const volumeCoverage = volumeResult && "coverage" in volumeResult ? volumeResult.coverage : null;
 
     // Separate fulfilled vs rejected, build categories summary
     const successfulCategoryData: CategoryTrendData[] = [];
@@ -233,6 +234,7 @@ export async function GET(request: NextRequest) {
           suggestions,
           volumeSource: volumeData ? "searchad" : "datalab-fallback",
           volumeCoverage: volumeCoverage,
+          volumeDebug: volumeError,
         },
       },
       { headers: { "Cache-Control": "private, no-store" } },
