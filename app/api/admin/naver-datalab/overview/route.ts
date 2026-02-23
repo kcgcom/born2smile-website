@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       ),
       // 2) Published posts for content gap analysis
       getAllPublishedPostMetas(),
-      // 3) Search volume data (검색광고 API) — graceful degradation
+      // 3) Search volume data (검색광고 API) — 24시간 캐시, graceful degradation
       (async (): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> => {
         if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
         try {
@@ -60,7 +60,14 @@ export async function GET(request: NextRequest) {
           }
 
           const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
-          const volumeResults = await fetchKeywordSearchVolume(flatKeywords);
+
+          // 24시간 캐시 (월간 데이터이므로 빈번한 갱신 불필요, API 레이트 리밋 보호)
+          const getCachedVolume = createCachedFetcher(
+            "searchad-volume",
+            () => fetchKeywordSearchVolume(flatKeywords),
+            CACHE_TTL.SEARCHAD_VOLUME,
+          );
+          const volumeResults = await getCachedVolume();
 
           if (volumeResults && volumeResults.length > 0) {
             const keywordMap = new Map(

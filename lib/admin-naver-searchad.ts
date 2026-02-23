@@ -126,9 +126,14 @@ async function fetchKeywordBatch(keywords: string[]): Promise<SearchAdKeywordDat
     });
 }
 
+/** 지정된 ms만큼 대기 */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * 키워드 목록의 검색량을 조회한다.
- * 5개씩 묶어서 병렬 호출하며, 타임스탬프 스큐 시 1회 재시도.
+ * 5개씩 묶어서 순차 호출 (API 레이트 리밋 방지, 배치 간 200ms 대기).
  *
  * @param keywords 전체 키워드 배열 (5개 초과 시 자동 분할)
  * @returns 키워드별 검색량 배열 또는 null (미설정)
@@ -145,28 +150,27 @@ export async function fetchKeywordSearchVolume(
     batches.push(keywords.slice(i, i + 5));
   }
 
-  const results = await Promise.allSettled(
-    batches.map(async (batch) => {
-      try {
-        return await fetchKeywordBatch(batch);
-      } catch (err) {
-        // 타임스탬프 스큐 가능성 → 5초 후 1회 재시도
-        if (err instanceof Error && err.message.includes("401")) {
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          return await fetchKeywordBatch(batch);
-        }
-        throw err;
-      }
-    }),
-  );
-
   const allData: SearchAdKeywordData[] = [];
   const errors: string[] = [];
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      allData.push(...result.value);
-    } else {
-      errors.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
+
+  for (let i = 0; i < batches.length; i++) {
+    if (i > 0) await sleep(200);
+    try {
+      const result = await fetchKeywordBatch(batches[i]);
+      allData.push(...result);
+    } catch (err) {
+      // 429 레이트 리밋 → 2초 대기 후 1회 재시도
+      if (err instanceof Error && (err.message.includes("429") || err.message.includes("401"))) {
+        await sleep(2000);
+        try {
+          const retry = await fetchKeywordBatch(batches[i]);
+          allData.push(...retry);
+          continue;
+        } catch {
+          // 재시도도 실패 → 에러 기록 후 계속
+        }
+      }
+      errors.push(err instanceof Error ? err.message : String(err));
     }
   }
 
