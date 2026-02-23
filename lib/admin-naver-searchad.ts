@@ -4,6 +4,9 @@
 // =============================================================
 
 import crypto from "crypto";
+import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getAdminApp } from "@/lib/firebase-admin";
+import { getTodayKST } from "@/lib/date";
 
 // ── 환경변수 (lazy — Cloud Run 시크릿 주입 타이밍 보장) ─────
 
@@ -190,4 +193,44 @@ export async function fetchKeywordSearchVolume(
   }
 
   return allData;
+}
+
+/**
+ * Firestore 일별 캐시를 거쳐 키워드 검색량을 조회한다.
+ * 오늘 날짜의 캐시 문서가 있으면 Firestore에서 반환하고,
+ * 없으면 API를 호출한 뒤 Firestore에 저장한다.
+ *
+ * L1(unstable_cache) → L2(Firestore) → API 순으로 fallback.
+ */
+export async function fetchKeywordSearchVolumeWithCache(
+  keywords: string[],
+): Promise<SearchAdKeywordData[] | null> {
+  if (!isSearchAdConfigured()) return null;
+  if (keywords.length === 0) return [];
+
+  const db = getFirestore(getAdminApp());
+  const today = getTodayKST();
+  const docId = `searchad-volume-${today}`;
+  const docRef = db.collection("api-cache").doc(docId);
+
+  // Firestore에서 오늘 캐시 확인
+  const cached = await docRef.get();
+  if (cached.exists) {
+    return cached.data()!.data as SearchAdKeywordData[];
+  }
+
+  // 캐시 미스 → API 호출
+  const result = await fetchKeywordSearchVolume(keywords);
+
+  // API 결과를 Firestore에 저장
+  if (result && result.length > 0) {
+    await docRef.set({
+      data: result,
+      fetchedAt: Timestamp.now(),
+      keywordCount: result.length,
+      requestedKeywords: keywords.length,
+    });
+  }
+
+  return result;
 }

@@ -6,7 +6,7 @@ import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions } from "@/lib/trend-analysis";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
-import { isSearchAdConfigured, fetchKeywordSearchVolume } from "@/lib/admin-naver-searchad";
+import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
 
 const VALID_PERIODS = ["7d", "28d", "90d"];
 
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
           // 24시간 캐시 (월간 데이터이므로 빈번한 갱신 불필요, API 레이트 리밋 보호)
           const getCachedVolume = createCachedFetcher(
             "searchad-volume",
-            () => fetchKeywordSearchVolume(flatKeywords),
+            () => fetchKeywordSearchVolumeWithCache(flatKeywords),
             CACHE_TTL.SEARCHAD_VOLUME,
           );
           const volumeResults = await getCachedVolume();

@@ -23,6 +23,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 신규: API 캐시 — Admin SDK 전용 (클라이언트 접근 차단)
+    match /api-cache/{document} {
+      allow read, write: if false;
+    }
+
     // 그 외 모든 컬렉션은 접근 차단
     match /{document=**} {
       allow read, write: if false;
