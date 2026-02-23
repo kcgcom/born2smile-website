@@ -200,7 +200,8 @@ export async function fetchKeywordSearchVolume(
  * 오늘 날짜의 캐시 문서가 있으면 Firestore에서 반환하고,
  * 없으면 API를 호출한 뒤 Firestore에 저장한다.
  *
- * L1(unstable_cache) → L2(Firestore) → API 순으로 fallback.
+ * Firestore(일별 캐시) → API 순으로 fallback.
+ * Firestore 접근 실패 시 API 직접 호출로 graceful degradation.
  */
 export async function fetchKeywordSearchVolumeWithCache(
   keywords: string[],
@@ -208,29 +209,38 @@ export async function fetchKeywordSearchVolumeWithCache(
   if (!isSearchAdConfigured()) return null;
   if (keywords.length === 0) return [];
 
-  const db = getFirestore(getAdminApp());
-  const today = getTodayKST();
-  const docId = `searchad-volume-${today}`;
-  const docRef = db.collection("api-cache").doc(docId);
+  // Firestore L2 캐시 시도 — 실패 시 직접 API 호출로 폴백
+  try {
+    const db = getFirestore(getAdminApp());
+    const today = getTodayKST();
+    const docId = `searchad-volume-${today}`;
+    const docRef = db.collection("api-cache").doc(docId);
 
-  // Firestore에서 오늘 캐시 확인
-  const cached = await docRef.get();
-  if (cached.exists) {
-    return cached.data()!.data as SearchAdKeywordData[];
+    // Firestore에서 오늘 캐시 확인
+    const cached = await docRef.get();
+    if (cached.exists) {
+      const cachedData = cached.data()?.data;
+      if (Array.isArray(cachedData) && cachedData.length > 0) {
+        return cachedData as SearchAdKeywordData[];
+      }
+    }
+
+    // 캐시 미스 → API 호출
+    const result = await fetchKeywordSearchVolume(keywords);
+
+    // API 결과를 Firestore에 저장 (비동기, 실패해도 무시)
+    if (result && result.length > 0) {
+      docRef.set({
+        data: result,
+        fetchedAt: Timestamp.now(),
+        keywordCount: result.length,
+        requestedKeywords: keywords.length,
+      }).catch(() => {/* Firestore 쓰기 실패 무시 */});
+    }
+
+    return result;
+  } catch {
+    // Firestore 접근 실패 → API 직접 호출로 폴백
+    return fetchKeywordSearchVolume(keywords);
   }
-
-  // 캐시 미스 → API 호출
-  const result = await fetchKeywordSearchVolume(keywords);
-
-  // API 결과를 Firestore에 저장
-  if (result && result.length > 0) {
-    await docRef.set({
-      data: result,
-      fetchedAt: Timestamp.now(),
-      keywordCount: result.length,
-      requestedKeywords: keywords.length,
-    });
-  }
-
-  return result;
 }

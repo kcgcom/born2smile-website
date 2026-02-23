@@ -7,6 +7,7 @@ import { analyzeTrend, analyzeContentGap, generateTopicSuggestions } from "@/lib
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
+import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
 
 const VALID_PERIODS = ["7d", "28d", "90d"];
 
@@ -61,13 +62,10 @@ export async function GET(request: NextRequest) {
 
           const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
 
-          // 24시간 캐시 (월간 데이터이므로 빈번한 갱신 불필요, API 레이트 리밋 보호)
-          const getCachedVolume = createCachedFetcher(
-            "searchad-volume-overview",
-            () => fetchKeywordSearchVolumeWithCache(flatKeywords),
-            CACHE_TTL.SEARCHAD_VOLUME,
-          );
-          const volumeResults = await getCachedVolume();
+          // Firestore 일별 캐시(L2) 직접 사용 — unstable_cache(L1) 래핑 제거
+          // L1이 null을 24h 캐싱하면 전체 fallback되는 문제 방지
+          const volumeResults: SearchAdKeywordData[] | null =
+            await fetchKeywordSearchVolumeWithCache(flatKeywords);
 
           if (volumeResults && volumeResults.length > 0) {
             // 요청 키워드 매핑
