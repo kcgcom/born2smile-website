@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
 
           const getVolume = createCachedFetcher(
-            "searchad-volume-overview",
+            "searchad-volume-v2",
             () => fetchKeywordSearchVolume(flatKeywords),
             86400, // 24시간 캐시
           );
