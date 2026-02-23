@@ -11,7 +11,7 @@ const API_KEY = process.env.NAVER_SEARCHAD_API_KEY ?? "";
 const SECRET_KEY = process.env.NAVER_SEARCHAD_SECRET_KEY ?? "";
 const CUSTOMER_ID = process.env.NAVER_SEARCHAD_CUSTOMER_ID ?? "";
 
-const BASE_URL = "https://api.naver.com";
+const BASE_URL = "https://api.searchad.naver.com";
 const URI = "/keywordstool";
 
 // ── Types ────────────────────────────────────────────────────
