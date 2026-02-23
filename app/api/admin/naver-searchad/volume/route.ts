@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const getData = createCachedFetcher(
-      "searchad-volume",
+      "searchad-volume-endpoint",
       async () => {
         // 모든 카테고리의 volumeKeywords 수집
         const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];

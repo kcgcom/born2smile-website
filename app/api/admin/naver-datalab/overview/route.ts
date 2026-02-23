@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
           // 24시간 캐시 (월간 데이터이므로 빈번한 갱신 불필요, API 레이트 리밋 보호)
           const getCachedVolume = createCachedFetcher(
-            "searchad-volume",
+            "searchad-volume-overview",
             () => fetchKeywordSearchVolumeWithCache(flatKeywords),
             CACHE_TTL.SEARCHAD_VOLUME,
           );
