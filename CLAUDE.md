@@ -95,21 +95,24 @@ app/                          # Next.js App Router pages
       page.tsx                # Google login page ("use client")
   dev/
     layout.tsx                # Dev layout (noindex, Header/Footer CSS 숨김)
-    page.tsx                  # 개발 대시보드 — 4탭 컨테이너 ("use client", AuthGuard)
+    page.tsx                  # 개발 대시보드 — 5탭 컨테이너 ("use client", AuthGuard)
     components/
-      DevTabs.tsx             # 탭 네비게이션 (프로젝트/코드품질/빌드/인프라)
+      DevTabs.tsx             # 탭 네비게이션 (프로젝트/코드품질/빌드/인프라/성능)
       ProjectTab.tsx          # 프로젝트 현황 탭 (개선 항목 진행률, 기술 스택)
       CodeQualityTab.tsx      # 코드 품질 탭 (의존성, TS/ESLint 설정)
       BuildTab.tsx            # 빌드 & 번들 탭 (라우트, 렌더링 전략, Cloud Run)
       InfraTab.tsx            # 인프라 탭 (Firestore, API, 캐시, 환경변수)
+      PerformanceTab.tsx      # 성능 탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 개선 기회)
   api/
     dev/
       env-status/
         route.ts              # 환경변수 상태 API (GET, Admin 인증)
+      pagespeed/
+        route.ts              # PageSpeed Insights API 프록시 (GET, Admin 인증, 6시간 캐시)
     admin/
       _lib/
         auth.ts               # Admin API 인증 미들웨어 (Firebase Admin SDK)
-        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab 6h, 검색광고 24h, 좋아요 5m)
+        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab/PSI 6h, 검색광고 24h, 좋아요 5m)
       analytics/
         route.ts              # GA4 트래픽 데이터 API (GET)
       search-console/
@@ -243,9 +246,10 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
-| `/dev` | Client-side | 개발 대시보드 4탭 (AuthGuard 보호, `"use client"`) |
+| `/dev` | Client-side | 개발 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
 | `/api/dev/env-status` | Server-side | 환경변수 상태 API (Admin 인증) |
+| `/api/dev/pagespeed` | Server-side | PageSpeed Insights API 프록시 (Admin 인증, 6시간 캐시) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -379,9 +383,9 @@ content: [
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
 - **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
 
-**개발 대시보드 (`/dev`)** — 4탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수).
+**개발 대시보드 (`/dev`)** — 5탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수), 성능(PageSpeed Insights — Lighthouse 점수 게이지+CWV 필드 데이터+개선 기회).
 
-- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태만 런타임 API (`/api/dev/env-status`)
+- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 런타임 API (`/api/dev/env-status`), PageSpeed 성능 데이터는 런타임 API (`/api/dev/pagespeed`, PSI API 키 불필요, `unstable_cache` 6시간)
 - **매니페스트 생성**: `scripts/generate-dev-manifest.ts`가 `pnpm dev`/`pnpm build` 시 자동 실행. `package.json`, `tsconfig.json`, `firestore.indexes.json`, `firestore.rules`, `app/` 디렉토리를 스캔하여 의존성, 라우트, 렌더링 전략, 프로젝트 통계 수집
 - **인증**: 관리자 대시보드와 동일한 AuthGuard + 이메일 화이트리스트 사용
 - **SEO**: `robots.txt`에서 `/dev` Disallow, layout에서 `noindex`
