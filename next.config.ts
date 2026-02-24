@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react"],
-    inlineCss: true, // CSS를 <style>로 인라인 — render-blocking <link> 제거, FCP 개선
   },
   images: {
     minimumCacheTTL: 31536000, // 1년 — 정적 이미지 재방문 캐시 효율 극대화
