@@ -281,10 +281,18 @@ export default async function BlogPostPage({
       )}
 
       {/* CTA */}
-      <CTABanner
-        heading="구강 건강이 궁금하신가요?"
-        description={`${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
-      />
+      {(() => {
+        const ctaTreatmentId = getRelatedTreatmentId(post.category);
+        const ctaTreatment = ctaTreatmentId ? TREATMENTS.find((t) => t.id === ctaTreatmentId) : null;
+        return (
+          <CTABanner
+            heading={ctaTreatment ? `${ctaTreatment.name}, 자세한 상담이 필요하신가요?` : "구강 건강이 궁금하신가요?"}
+            description={ctaTreatment
+              ? `${CLINIC.name}에서 1:1 맞춤 ${ctaTreatment.name} 상담을 받으세요.`
+              : `${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
+          />
+        );
+      })()}
 
       <AdminDraftBar slug={slug} />
 

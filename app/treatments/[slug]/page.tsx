@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
-import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd } from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl } from "@/lib/blog";
 import { getRelatedPostsFromFirestore } from "@/lib/blog-firestore";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -109,6 +109,7 @@ export default async function TreatmentDetailPage({
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);
   const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
+  const howToJsonLd = getHowToJsonLd(slug);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "진료 안내", href: "/treatments" },
@@ -127,6 +128,12 @@ export default async function TreatmentDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      {howToJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
         />
       )}
       <script

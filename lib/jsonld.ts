@@ -1,4 +1,5 @@
 import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS, REVIEWS } from "./constants";
+import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
 import { getBlogPostUrl } from "./blog/category-slugs";
@@ -138,6 +139,33 @@ export function getTreatmentJsonLd(treatmentId: string) {
         },
       },
     },
+    provider: {
+      "@type": "Dentist",
+      name: CLINIC.name,
+      telephone: CLINIC.phoneIntl,
+    },
+  };
+}
+
+/**
+ * 진료 과목 시술 과정 HowTo JSON-LD
+ * Google 검색 결과에 "1단계, 2단계..." 리치 스니펫으로 표시됩니다.
+ */
+export function getHowToJsonLd(treatmentId: string) {
+  const detail = TREATMENT_DETAILS[treatmentId];
+  if (!detail || detail.steps.length === 0) return null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `${detail.name} 치료 과정`,
+    description: detail.description,
+    step: detail.steps.map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.title,
+      text: step.desc,
+    })),
     provider: {
       "@type": "Dentist",
       name: CLINIC.name,
