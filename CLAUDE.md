@@ -69,6 +69,7 @@ app/                          # Next.js App Router pages
     [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA)
     [category]/[slug]/loading.tsx # Suspense loading boundary
     redirect/[slug]/page.tsx  # Old URL redirect handler (Firestore lookup → permanentRedirect)
+  faq/page.tsx                # 전체 FAQ 통합 페이지 (6개 진료 과목 FAQ, FAQPage JSON-LD)
   admin/
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
@@ -241,6 +242,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog/[category]` | SSG + ISR | 카테고리 허브 페이지 (7개), `generateStaticParams()` + `revalidate: 3600` |
 | `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
 | `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
+| `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 6탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
@@ -459,8 +461,6 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - m44: 검색 의도(Search Intent) 분류 — 트렌드 탭 키워드 태깅
 - m45: SC 쿼리 × 트렌드 키워드 교차 분석 — 기회 키워드 식별
 - l20: 계절성 트렌드 패턴 감지
-- l21: 전체 FAQ 독립 페이지 `/faq`
-
 ### 중기 과제
 
 - Node.js/pnpm 버전 요구사항 명시
