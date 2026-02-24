@@ -80,7 +80,7 @@ app/                          # Next.js App Router pages
         OverviewTab.tsx       # 개요 탭 (핵심 지표 요약: 트래픽·검색·트렌드, 블로그 통계, 사이트 설정 상태)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
-        TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천)
+        TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천, 기간: 1개월/3개월/1년/3년/10년)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
         BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
         SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)

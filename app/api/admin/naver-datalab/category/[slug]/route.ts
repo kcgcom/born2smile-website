@@ -6,7 +6,7 @@ import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend } from "@/lib/trend-analysis";
 
-const VALID_PERIODS = ["7d", "28d", "90d"];
+const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"];
 
 export async function GET(
   request: NextRequest,
@@ -33,10 +33,10 @@ export async function GET(
     );
   }
 
-  const period = request.nextUrl.searchParams.get("period") ?? "28d";
+  const period = request.nextUrl.searchParams.get("period") ?? "3m";
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 90d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (1m, 3m, 1y, 3y, 10y)" },
       { status: 400, headers: { "Cache-Control": "private, no-store" } },
     );
   }

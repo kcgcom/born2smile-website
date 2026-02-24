@@ -122,6 +122,8 @@ const SubGroupLineChart = dynamic(
         const formatDate = (value: string) => {
           if (!value) return "";
           const parts = value.split("-");
+          // monthly: "2024-01" → "24.1", daily/weekly: "2024-01-15" → "1/15"
+          if (parts.length === 2) return `${parts[0].slice(2)}.${Number(parts[1])}`;
           return `${Number(parts[1])}/${Number(parts[2])}`;
         };
 
@@ -177,9 +179,11 @@ const SubGroupLineChart = dynamic(
 // ---------------------------------------------------------------
 
 const PERIODS = [
-  { value: "7d", label: "7일" },
-  { value: "28d", label: "28일" },
-  { value: "90d", label: "3개월" },
+  { value: "1m", label: "1개월" },
+  { value: "3m", label: "3개월" },
+  { value: "1y", label: "1년" },
+  { value: "3y", label: "3년" },
+  { value: "10y", label: "10년" },
 ];
 
 // ---------------------------------------------------------------
@@ -479,7 +483,7 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
 export function TrendTab() {
   const router = useRouter();
 
-  const [period, setPeriod] = useState<"7d" | "28d" | "90d">("28d");
+  const [period, setPeriod] = useState<"1m" | "3m" | "1y" | "3y" | "10y">("3m");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -495,7 +499,7 @@ export function TrendTab() {
     useGapTableSort("monthlyVolume");
 
   const handlePeriodChange = (value: string) => {
-    setPeriod(value as "7d" | "28d" | "90d");
+    setPeriod(value as "1m" | "3m" | "1y" | "3y" | "10y");
     setSelectedCategory(null);
   };
 

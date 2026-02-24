@@ -9,7 +9,7 @@ import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
 
-const VALID_PERIODS = ["7d", "28d", "90d"];
+const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"];
 
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     return Response.json({ data: null }, { headers: { "Cache-Control": "private, no-store" } });
   }
 
-  const period = request.nextUrl.searchParams.get("period") ?? "28d";
+  const period = request.nextUrl.searchParams.get("period") ?? "3m";
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 90d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (1m, 3m, 1y, 3y, 10y)" },
       { status: 400, headers: { "Cache-Control": "private, no-store" } },
     );
   }

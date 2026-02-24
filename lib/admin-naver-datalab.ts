@@ -23,20 +23,41 @@ export interface NaverDatalabData {
   }>;
 }
 
+/**
+ * 기간 문자열로부터 DataLab API 요청에 필요한 startDate, endDate, timeUnit을 계산한다.
+ *
+ * @param period - "7d" | "28d" | "90d" (SearchTab 호환) | "1m" | "3m" | "1y" | "3y" | "10y" (TrendTab)
+ */
 function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstNow = new Date(Date.now() + kstOffset);
 
-  const days = period === "7d" ? 7 : period === "28d" ? 28 : 90;
-  const timeUnit = period === "90d" ? "week" : "date";
+  const PERIOD_MAP: Record<string, { days: number; timeUnit: string }> = {
+    "7d":  { days: 7,    timeUnit: "date" },
+    "28d": { days: 28,   timeUnit: "date" },
+    "90d": { days: 90,   timeUnit: "week" },
+    "1m":  { days: 30,   timeUnit: "date" },
+    "3m":  { days: 90,   timeUnit: "date" },
+    "1y":  { days: 365,  timeUnit: "week" },
+    "3y":  { days: 1095, timeUnit: "month" },
+    "10y": { days: 3650, timeUnit: "month" },
+  };
+
+  const config = PERIOD_MAP[period] ?? { days: 90, timeUnit: "week" };
 
   const endDate = new Date(kstNow);
   endDate.setDate(endDate.getDate() - 1); // DataLab data available up to yesterday
   const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - days + 1);
+  startDate.setDate(startDate.getDate() - config.days + 1);
+
+  // DataLab 데이터는 2016-01-01부터 존재 — startDate 클램핑
+  const minDate = new Date("2016-01-01T00:00:00Z");
+  if (startDate < minDate) {
+    startDate.setTime(minDate.getTime());
+  }
 
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return { startDate: fmt(startDate), endDate: fmt(endDate), timeUnit };
+  return { startDate: fmt(startDate), endDate: fmt(endDate), timeUnit: config.timeUnit };
 }
 
 export async function fetchNaverDatalabTrend(period: string): Promise<NaverDatalabData> {
@@ -203,7 +224,7 @@ function normalizeBridgedBatches(
  * 5개 이하면 단일 호출, 6개 이상이면 브릿지 배칭으로 자동 분할/정규화한다.
  *
  * @param subGroups - KeywordSubGroup[] (최대 15개, 브릿지 배칭 지원)
- * @param period - "7d" | "28d" | "90d"
+ * @param period - "7d" | "28d" | "90d" | "1m" | "3m" | "1y" | "3y" | "10y"
  * @returns NaverDatalabData
  * @throws Error - 환경변수 미설정 또는 API 오류
  */
