@@ -160,7 +160,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "pending", description: "트렌드 탭 키워드에 의도 태그(정보형/비교형/전환형) 추가. 전환형 키워드 우선순위 상향" },
   { id: "m45", title: "SC 쿼리 × 트렌드 키워드 교차 분석", priority: "MEDIUM", status: "pending", description: "Search Console 유입 쿼리와 DataLab 시장 수요 교차 비교. '수요 높지만 유입 없는' 기회 키워드 식별" },
   { id: "l20", title: "계절성 트렌드 패턴 감지", priority: "LOW", status: "pending", description: "키워드 시계열 데이터로 연간 패턴 분석. 계절별 콘텐츠 발행 타이밍 추천" },
-  { id: "l21", title: "전체 FAQ 독립 페이지", priority: "LOW", status: "pending", description: "6개 진료 과목 FAQ를 모은 /faq 독립 페이지. '치과 자주 묻는 질문' 키워드 타겟" },
+  { id: "l21", title: "전체 FAQ 독립 페이지", priority: "LOW", status: "done", description: "6개 진료 과목 FAQ를 모은 /faq 독립 페이지. '치과 자주 묻는 질문' 키워드 타겟" },
 ];
 
 export interface ImprovementStats {

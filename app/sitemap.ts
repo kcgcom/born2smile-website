@@ -63,6 +63,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     {
+      url: `${BASE_URL}/faq`,
+      lastModified: PAGE_MODIFIED.treatments,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
       url: `${BASE_URL}/contact`,
       lastModified: PAGE_MODIFIED.contact,
       changeFrequency: "monthly",
