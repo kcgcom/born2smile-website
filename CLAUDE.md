@@ -144,11 +144,11 @@ components/
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
     DashboardHeader.tsx       # 관리자/개발 대시보드 공유 헤더 (variant prop, 양방향 네비게이션) ("use client")
-    AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client")
+    AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client", localStorage 게이트 + 동적 Firebase import)
     AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
     AdminPublishButton.tsx    # 관리자 발행 예약 버튼 — draft 포스트 상세 페이지용 ("use client")
-    AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client")
+    AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client", localStorage 게이트 + 동적 Firebase import)
     PublishPopup.tsx          # 발행 팝업 공유 컴포넌트 — BlogTab/AdminPublishButton/AdminDraftBar 3곳 공유 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
@@ -221,7 +221,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items (`NAV_ITEMS`) are defined in `lib/constants.ts` and imported by `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함). 루트 레이아웃의 Admin 컴포넌트(`AdminFloatingButton`, `AdminSettingsLink`)는 `localStorage` 게이트 + `import()` 동적 Firebase 로드로 비관리자 방문자에게 Firebase SDK 미전송.
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
@@ -269,11 +269,11 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 `next/font/local`로 로컬 폰트를 로드하고 CSS 변수로 연결:
 
-| Font | CSS Variable | Usage |
-|------|-------------|-------|
-| Pretendard Variable (KS X 1001 서브셋, 456KB) | `--font-pretendard` | 본문 기본 (`font-sans`) |
-| Noto Serif KR (KS X 1001 서브셋, 400: 322KB / 700: 331KB) | `--font-noto-serif` | 헤드라인 (`font-serif`, `.font-headline`) |
-| Gowun Batang (KS X 1001 서브셋, 700 only, 172KB) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) |
+| Font | CSS Variable | Usage | Loading |
+|------|-------------|-------|---------|
+| Pretendard Variable (KS X 1001 서브셋, 456KB) | `--font-pretendard` | 본문 기본 (`font-sans`) | preload, `swap` |
+| Noto Serif KR (KS X 1001 서브셋, 400: 322KB / 700: 331KB) | `--font-noto-serif` | 헤드라인 (`font-serif`, `.font-headline`) | no preload, `swap` |
+| Gowun Batang (KS X 1001 서브셋, 700 only, 172KB) | `--font-gowun-batang` | 인사말 편지 (`.font-greeting`) | no preload, `optional` |
 
 `lib/fonts.ts`에서 설정 → `app/layout.tsx`의 `<html>` 태그에 variable 적용 → `globals.css`의 `@theme inline`에서 Tailwind와 연결.
 
@@ -304,7 +304,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
-- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅
+- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Firebase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Firebase SDK(~500KiB)를 제거
 - **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
 
 **개발 대시보드 (`/dev`)** — 5탭 구조 (`?tab=` query param): 프로젝트(개선 항목+기술 스택), 코드품질(의존성+TS/ESLint), 빌드(라우트+렌더링+Cloud Run), 인프라(Firestore+API+캐시+환경변수), 성능(PageSpeed Insights — Lighthouse 점수 게이지+CWV 필드 데이터+개선 기회).
