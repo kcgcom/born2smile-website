@@ -48,7 +48,7 @@ export const gowunBatang = localFont({
     },
   ],
   variable: "--font-gowun-batang",
-  display: "swap",
+  display: "optional", // 100ms 내 로드 실패 시 Georgia 폴백 영구 사용 — FOUT 방지, 대역폭 절약
   preload: false, // 홈페이지 인사말에만 사용 — 비홈페이지에서 불필요한 프리로드 방지
   fallback: ["Georgia", "serif"],
 });
