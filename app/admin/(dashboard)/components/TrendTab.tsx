@@ -95,6 +95,8 @@ const SUB_GROUP_COLORS = [
   "#0891B2",
   "#DC2626",
   "#EA580C",
+  "#D946EF",
+  "#65A30D",
 ];
 
 interface SubGroupChartProps {

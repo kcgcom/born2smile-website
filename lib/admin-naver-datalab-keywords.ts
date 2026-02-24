@@ -1,6 +1,6 @@
 // =============================================================
 // 네이버 DataLab 키워드 택소노미
-// 7개 블로그 카테고리 × 최대 5개 서브그룹 (API 제약: 요청당 최대 5그룹)
+// 8개 카테고리 × 최대 15개 서브그룹 (브릿지 배칭으로 5개 제한 해제)
 // =============================================================
 
 import type { BlogCategoryValue } from "./blog/types";
@@ -20,7 +20,7 @@ export interface TopicAngle {
 export interface CategoryKeywords {
   category: BlogCategoryValue; // 한국어 카테고리명
   slug: string;                // 영어 URL 슬러그 (CATEGORY_SLUG_MAP과 동일)
-  subGroups: KeywordSubGroup[]; // 최대 5개 서브그룹 (API 제약)
+  subGroups: KeywordSubGroup[]; // 최대 15개 서브그룹 (브릿지 배칭 지원)
   topicAngles: TopicAngle[];   // 블로그 주제 템플릿
 }
 
@@ -279,18 +279,32 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         volumeKeywords: ["틀니", "틀니 비용"],
       },
       {
-        name: "심미보철",
+        name: "라미네이트",
         keywords: [
           "라미네이트",
-          "치아 미백",
-          "심미 보철",
-          "앞니 치료",
           "라미네이트 비용",
+          "라미네이트 수명",
+          "앞니 라미네이트",
+          "라미네이트 후기",
+          "라미네이트 부작용",
           "치아 성형",
-          "앞니 크라운",
-          "심미 치료",
+          "심미 보철",
         ],
-        volumeKeywords: ["라미네이트", "치아 미백"],
+        volumeKeywords: ["라미네이트", "라미네이트 비용"],
+      },
+      {
+        name: "치아미백",
+        keywords: [
+          "치아 미백",
+          "치아미백 비용",
+          "자가미백",
+          "전문미백",
+          "치아미백 효과",
+          "치아미백 부작용",
+          "미백 치약",
+          "치아 변색",
+        ],
+        volumeKeywords: ["치아 미백", "치아미백 비용"],
       },
       {
         name: "비용",
@@ -338,9 +352,14 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         aspect: "소재별 장단점 완벽 비교",
       },
       {
-        template: "{keyword}으로 달라지는 {aspect}",
-        subGroup: "심미보철",
-        aspect: "앞니 심미보철 전후 비교",
+        template: "{keyword} 전후 비교: {aspect}",
+        subGroup: "라미네이트",
+        aspect: "앞니 라미네이트 수명과 관리법",
+      },
+      {
+        template: "{keyword} 완벽 가이드: {aspect}",
+        subGroup: "치아미백",
+        aspect: "자가미백 vs 전문미백, 효과와 비용 비교",
       },
       {
         template: "{year}년 {keyword} 현실 가이드: {aspect}",
@@ -641,6 +660,20 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["치과 정기검진", "치과 검진 주기"],
       },
+      {
+        name: "에어플로우",
+        keywords: [
+          "에어플로우",
+          "에어플로우 스케일링",
+          "에어플로우 비용",
+          "에어플로우 효과",
+          "에어플로우 후기",
+          "에어플로우 통증",
+          "파우더 스케일링",
+          "에어플로우 치석",
+        ],
+        volumeKeywords: ["에어플로우", "에어플로우 스케일링"],
+      },
     ],
     topicAngles: [
       {
@@ -667,6 +700,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "치과 {keyword} 얼마나 자주 가야 할까? {aspect}",
         subGroup: "정기검진",
         aspect: "연령별 권장 방문 주기 가이드",
+      },
+      {
+        template: "{keyword} vs 일반 스케일링: {aspect}",
+        subGroup: "에어플로우",
+        aspect: "차이점과 효과, 비용 비교 총정리",
       },
     ],
   },
@@ -887,15 +925,15 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
 ];
 
 // =============================================================
-// 런타임 검증 — subGroups.length <= 5 (네이버 DataLab API 제약)
+// 런타임 검증 — subGroups.length <= 15 (브릿지 배칭 지원)
 // =============================================================
 
 export function validateCategoryKeywords(): void {
   for (const cat of CATEGORY_KEYWORDS) {
-    if (cat.subGroups.length > 5) {
+    if (cat.subGroups.length > 15) {
       throw new Error(
         `[admin-naver-datalab-keywords] "${cat.category}" 카테고리의 서브그룹이 ${cat.subGroups.length}개입니다. ` +
-          "네이버 DataLab API는 요청당 최대 5개 키워드 그룹만 허용합니다.",
+          "브릿지 배칭은 최대 15개 서브그룹까지 지원합니다.",
       );
     }
     for (const sg of cat.subGroups) {

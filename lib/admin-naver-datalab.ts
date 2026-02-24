@@ -84,33 +84,45 @@ export async function fetchNaverDatalabTrend(period: string): Promise<NaverDatal
   };
 }
 
+// ---------------------------------------------------------------
+// Internal helpers for bridged batching (>5 sub-groups)
+// ---------------------------------------------------------------
+
+interface ParsedGroup {
+  title: string;
+  data: Array<{ period: string; ratio: number }>;
+}
+
+/** 데이터 포인트 ratio의 평균을 계산한다. */
+function avgRatio(data: Array<{ ratio: number }>): number {
+  if (data.length === 0) return 0;
+  return data.reduce((sum, d) => sum + d.ratio, 0) / data.length;
+}
+
 /**
- * 주어진 서브그룹 배열로 네이버 DataLab API를 호출한다.
- * 기존 fetchNaverDatalabTrend()과 동일한 로직이나 KEYWORD_GROUPS 대신
- * 외부에서 전달받은 subGroups를 사용한다.
- *
- * @param subGroups - KeywordSubGroup[] (최대 5개, API 제약)
- * @param period - "7d" | "28d" | "90d"
- * @returns NaverDatalabData
- * @throws Error - 환경변수 미설정, subGroups > 5, 또는 API 오류
+ * N개 서브그룹을 5개씩 분할하되, 인접 배치에 브릿지 그룹 1개를 공유한다.
+ * 예: 6개 → [[0,1,2,3,4], [4,5]]  (인덱스 4가 브릿지)
  */
-export async function fetchNaverDatalabByCategory(
+function splitIntoBridgedBatches(subGroups: KeywordSubGroup[]): KeywordSubGroup[][] {
+  const batches: KeywordSubGroup[][] = [];
+  const step = 4; // 배치당 신규 4개 + 브릿지 1개
+  for (let i = 0; i < subGroups.length; i += step) {
+    const end = Math.min(i + 5, subGroups.length);
+    batches.push(subGroups.slice(i, end));
+    if (end >= subGroups.length) break;
+  }
+  return batches;
+}
+
+/** 단일 배치에 대해 네이버 DataLab API를 호출한다. */
+async function fetchSingleBatch(
   subGroups: KeywordSubGroup[],
-  period: string,
-): Promise<NaverDatalabData> {
-  if (subGroups.length > 5) {
-    throw new Error("네이버 DataLab API는 요청당 최대 5개 키워드 그룹만 허용합니다");
-  }
-
-  const clientId = process.env.NAVER_DATALAB_CLIENT_ID;
-  const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error("NAVER_DATALAB_CLIENT_ID/SECRET 환경변수가 설정되지 않았습니다");
-  }
-
-  const { startDate, endDate, timeUnit } = getPeriodDates(period);
-
+  startDate: string,
+  endDate: string,
+  timeUnit: string,
+  clientId: string,
+  clientSecret: string,
+): Promise<ParsedGroup[]> {
   const keywordGroups = subGroups.map((sg) => ({
     groupName: sg.name,
     keywords: sg.keywords,
@@ -123,12 +135,7 @@ export async function fetchNaverDatalabByCategory(
       "X-Naver-Client-Id": clientId,
       "X-Naver-Client-Secret": clientSecret,
     },
-    body: JSON.stringify({
-      startDate,
-      endDate,
-      timeUnit,
-      keywordGroups,
-    }),
+    body: JSON.stringify({ startDate, endDate, timeUnit, keywordGroups }),
   });
 
   if (!res.ok) {
@@ -137,15 +144,105 @@ export async function fetchNaverDatalabByCategory(
   }
 
   const json = await res.json();
+  return (json.results ?? []).map((r: { title: string; data: Array<{ period: string; ratio: number }> }) => ({
+    title: r.title,
+    data: (r.data ?? []).map((d: { period: string; ratio: number }) => ({
+      period: d.period,
+      ratio: d.ratio,
+    })),
+  }));
+}
+
+/**
+ * 브릿지 그룹의 평균 비율로 스케일 팩터를 계산하고,
+ * 배치2+ 결과를 배치1 기준으로 정규화한다.
+ */
+function normalizeBridgedBatches(
+  batches: KeywordSubGroup[][],
+  batchResults: ParsedGroup[][],
+): ParsedGroup[] {
+  if (batchResults.length === 0) return [];
+  if (batchResults.length === 1) return batchResults[0];
+
+  const merged: ParsedGroup[] = [...batchResults[0]];
+  const seen = new Set(merged.map((g) => g.title));
+
+  for (let i = 1; i < batchResults.length; i++) {
+    // 브릿지 = 이전 배치의 마지막 그룹명
+    const bridgeName = batches[i - 1][batches[i - 1].length - 1].name;
+
+    // 브릿지 그룹을 양쪽 배치에서 찾는다
+    const bridgeInPrev = merged.find((g) => g.title === bridgeName);
+    const bridgeInCurr = batchResults[i].find((g) => g.title === bridgeName);
+
+    let scale = 1.0;
+    if (bridgeInPrev && bridgeInCurr) {
+      const avgPrev = avgRatio(bridgeInPrev.data);
+      const avgCurr = avgRatio(bridgeInCurr.data);
+      scale = avgCurr > 0 ? avgPrev / avgCurr : 1.0;
+    }
+
+    for (const group of batchResults[i]) {
+      if (seen.has(group.title)) continue;
+      seen.add(group.title);
+      merged.push({
+        title: group.title,
+        data: group.data.map((d) => ({
+          period: d.period,
+          ratio: d.ratio * scale,
+        })),
+      });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * 주어진 서브그룹 배열로 네이버 DataLab API를 호출한다.
+ * 5개 이하면 단일 호출, 6개 이상이면 브릿지 배칭으로 자동 분할/정규화한다.
+ *
+ * @param subGroups - KeywordSubGroup[] (최대 15개, 브릿지 배칭 지원)
+ * @param period - "7d" | "28d" | "90d"
+ * @returns NaverDatalabData
+ * @throws Error - 환경변수 미설정 또는 API 오류
+ */
+export async function fetchNaverDatalabByCategory(
+  subGroups: KeywordSubGroup[],
+  period: string,
+): Promise<NaverDatalabData> {
+  const clientId = process.env.NAVER_DATALAB_CLIENT_ID;
+  const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("NAVER_DATALAB_CLIENT_ID/SECRET 환경변수가 설정되지 않았습니다");
+  }
+
+  const { startDate, endDate, timeUnit } = getPeriodDates(period);
+
+  let groups: ParsedGroup[];
+
+  if (subGroups.length <= 5) {
+    // 단일 배치 — 기존 로직
+    groups = await fetchSingleBatch(subGroups, startDate, endDate, timeUnit, clientId, clientSecret);
+  } else {
+    // 브릿지 배칭 — 5개씩 분할, 브릿지 그룹으로 정규화
+    const batches = splitIntoBridgedBatches(subGroups);
+    const batchResults: ParsedGroup[][] = [];
+    for (const batch of batches) {
+      batchResults.push(await fetchSingleBatch(batch, startDate, endDate, timeUnit, clientId, clientSecret));
+    }
+    groups = normalizeBridgedBatches(batches, batchResults);
+  }
 
   return {
     period: { start: startDate, end: endDate },
     timeUnit,
-    groups: (json.results ?? []).map((r: { title: string; data: Array<{ period: string; ratio: number }> }) => ({
-      title: r.title,
-      data: (r.data ?? []).map((d: { period: string; ratio: number }) => ({
+    groups: groups.map((g) => ({
+      title: g.title,
+      data: g.data.map((d) => ({
         period: d.period,
-        ratio: Math.round(d.ratio * 10) / 10,
+        ratio: Math.round(Math.min(100, d.ratio) * 10) / 10,
       })),
     })),
   };
