@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
-import { TREATMENT_DETAILS } from "@/lib/treatments";
+import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd } from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl } from "@/lib/blog";
 import { getRelatedPostsFromFirestore } from "@/lib/blog-firestore";
@@ -249,6 +249,47 @@ export default async function TreatmentDetailPage({
                 </details>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* 관련 진료 */}
+      {RELATED_TREATMENTS[slug] && (
+        <section className="section-padding bg-white">
+          <div className="container-narrow">
+            <FadeIn>
+              <div className="mb-10 text-center">
+                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
+                  관련 진료
+                </span>
+                <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                  함께 알아보면 좋은 진료
+                </h2>
+              </div>
+            </FadeIn>
+            <StaggerContainer className="grid gap-6 sm:grid-cols-3">
+              {RELATED_TREATMENTS[slug].map((rel) => {
+                const t = TREATMENTS.find((tr) => tr.id === rel.id);
+                if (!t) return null;
+                return (
+                  <StaggerItem key={rel.id}>
+                    <Link href={t.href} className="block h-full">
+                      <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-blue-200 hover:shadow-lg">
+                        <h3 className="mb-2 text-lg font-bold text-gray-900">
+                          {t.name}
+                        </h3>
+                        <p className="mb-3 text-sm text-gray-500">
+                          {t.shortDesc}
+                        </p>
+                        <p className="mt-auto text-sm leading-relaxed text-gray-700">
+                          {rel.reason}
+                        </p>
+                      </div>
+                    </Link>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerContainer>
           </div>
         </section>
       )}

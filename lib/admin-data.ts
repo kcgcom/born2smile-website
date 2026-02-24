@@ -153,7 +153,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h27", title: "진료 과목 HowTo 스키마", priority: "HIGH", status: "done", description: "치료 과정 steps[]를 HowTo JSON-LD로 변환. Google 검색 리치 스니펫에 단계별 과정 표시" },
 
   // ── 미완료 — 추후 구현 ──
-  { id: "m40", title: "진료 과목 간 교차 링크", priority: "MEDIUM", status: "pending", description: "진료 페이지 하단에 '함께 알아보면 좋은 진료' 섹션. 내부 링크 강화 → 체류 시간 증가 + SEO" },
+  { id: "m40", title: "진료 과목 간 교차 링크", priority: "MEDIUM", status: "done", description: "진료 페이지 하단에 '함께 알아보면 좋은 진료' 섹션. 내부 링크 강화 → 체류 시간 증가 + SEO" },
   { id: "m41", title: "시간대별 CTA 차별화", priority: "MEDIUM", status: "pending", description: "진료시간 중: '지금 전화 상담 가능' (초록), 진료시간 외: '내일 오전 진료 시작' 메시지. HOURS 데이터 활용" },
   { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "pending", description: "BlogPostSection[] 제목으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
   { id: "m43", title: "카테고리 허브 페이지 지역 SEO", priority: "MEDIUM", status: "pending", description: "/blog/implant 등 허브 페이지 title/desc에 '김포' 지역 키워드 추가" },

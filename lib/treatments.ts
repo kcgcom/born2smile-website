@@ -166,3 +166,39 @@ export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
     ],
   },
 };
+
+// -------------------------------------------------------------
+// 진료 과목 간 교차 링크 — 관련 진료 안내
+// -------------------------------------------------------------
+export const RELATED_TREATMENTS: Record<string, { id: string; reason: string }[]> = {
+  implant: [
+    { id: "prosthetics", reason: "임플란트 위에 보철물을 제작하여 자연치아처럼 복원합니다" },
+    { id: "restorative", reason: "치아 보존이 어려울 때 임플란트가 대안이 됩니다" },
+    { id: "scaling", reason: "정기적인 스케일링으로 임플란트 수명을 연장합니다" },
+  ],
+  orthodontics: [
+    { id: "pediatric", reason: "성장기에 시작하면 교정 효과가 극대화됩니다" },
+    { id: "prosthetics", reason: "교정 후 심미 보철로 마무리할 수 있습니다" },
+    { id: "scaling", reason: "교정 중 꼼꼼한 구강 관리가 중요합니다" },
+  ],
+  prosthetics: [
+    { id: "implant", reason: "임플란트 기반 보철로 더 안정적인 결과를 얻습니다" },
+    { id: "restorative", reason: "보존 치료 후 보철로 기능을 회복합니다" },
+    { id: "scaling", reason: "보철물의 수명을 위해 정기 관리가 필요합니다" },
+  ],
+  pediatric: [
+    { id: "orthodontics", reason: "적절한 시기의 교정으로 바른 성장을 유도합니다" },
+    { id: "restorative", reason: "유치 충치도 조기 치료가 중요합니다" },
+    { id: "scaling", reason: "어린이 예방 습관을 형성합니다" },
+  ],
+  restorative: [
+    { id: "implant", reason: "보존이 어려운 치아는 임플란트로 대체할 수 있습니다" },
+    { id: "prosthetics", reason: "치료 후 보철로 심미성과 기능을 복원합니다" },
+    { id: "scaling", reason: "충치 예방을 위해 정기 스케일링을 권장합니다" },
+  ],
+  scaling: [
+    { id: "restorative", reason: "스케일링 시 초기 충치를 조기 발견할 수 있습니다" },
+    { id: "implant", reason: "잇몸 건강이 임플란트 성공률을 좌우합니다" },
+    { id: "pediatric", reason: "어린이도 정기 검진과 예방이 필요합니다" },
+  ],
+};
