@@ -22,17 +22,10 @@ export async function GET(
 
   const { slug } = await params;
 
-  // Validate slug via getCategoryFromSlug — null means invalid
-  const category = getCategoryFromSlug(slug);
-  if (!category) {
-    return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 카테고리 슬러그입니다" },
-      { status: 400, headers: { "Cache-Control": "private, no-store" } },
-    );
-  }
-
   // Find category keywords from CATEGORY_KEYWORDS by slug
+  // (블로그 카테고리가 아닌 키워드 전용 카테고리(예: dental-choice)도 허용)
   const categoryKw = CATEGORY_KEYWORDS.find((ck) => ck.slug === slug);
+  const category = getCategoryFromSlug(slug) ?? categoryKw?.category ?? null;
   if (!categoryKw) {
     return Response.json(
       { error: "BAD_REQUEST", message: "해당 카테고리의 키워드 설정이 없습니다" },

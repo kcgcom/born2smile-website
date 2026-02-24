@@ -42,7 +42,10 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
     return () => controller.abort();
   }, [enabled, fetchData]);
 
-  return { data, loading, error, refetch: fetchData };
+  // refetch를 인자 없이 호출하도록 래핑 (onClick 등에서 MouseEvent가 signal로 전달되는 것 방지)
+  const refetch = useCallback(() => fetchData(), [fetchData]);
+
+  return { data, loading, error, refetch };
 }
 
 export function useAdminMutation<T = unknown>() {
