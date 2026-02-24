@@ -11,7 +11,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 
 - **Framework**: Next.js 16.1.6 with App Router, React 19.2.3, TypeScript 5 (strict mode)
 - **Styling**: Tailwind CSS 4 (inline `@theme` in `globals.css`, no separate `tailwind.config` file), CSS custom properties
-- **Animation**: Framer Motion 12 (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
+- **Animation**: CSS @keyframes + IntersectionObserver (`components/ui/Motion.tsx` provides `<FadeIn>`, `<StaggerContainer>`, `<StaggerItem>`)
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
 - **Charts**: Recharts 2 (dynamic import, 트래픽/검색/블로그 탭 인터랙티브 차트)
@@ -73,7 +73,7 @@ app/                          # Next.js App Router pages
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
       layout.tsx              # AuthGuard wrapper
-      page.tsx                # Dashboard main — 5탭 컨테이너 ("use client")
+      page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
       components/
         AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
         OverviewTab.tsx       # 개요 탭 (블로그 통계, 사이트 설정 상태, 개선 항목)
@@ -220,7 +220,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
-- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items are defined locally in `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
+- **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items (`NAV_ITEMS`) are defined in `lib/constants.ts` and imported by `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함).
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
@@ -244,7 +244,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
 | `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
-| `/admin` | Client-side | 관리자 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
+| `/admin` | Client-side | 관리자 대시보드 6탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
 | `/dev` | Client-side | 개발 대시보드 5탭 (AuthGuard 보호, `"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
@@ -255,60 +255,11 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### Firestore 데이터 아키텍처
 
-블로그 포스트의 Single Source of Truth가 파일(`lib/blog/posts/*.ts`)에서 **Firestore**(`blog-posts` 컬렉션)로 이전됨. 파일 기반 데이터는 폴백으로 유지.
-
-**컬렉션 구조:**
-
-| 컬렉션 | 문서 ID | 용도 | 접근 |
-|--------|---------|------|------|
-| `blog-posts` | `{slug}` | 블로그 포스트 (80개) | Admin SDK 전용 |
-| `blog-likes` | `{slug}` | 좋아요 카운트 + 사용자 UUID | 클라이언트 read/write |
-| `site-config` | `links\|clinic\|hours\|schedule` | 사이트 설정 + 발행 스케줄 | Admin SDK 전용 |
-| `api-cache` | `searchad-volume-{YYYY-MM-DD}` | 검색광고 API 일별 캐시 | Admin SDK 전용 |
-
-**복합 인덱스 (3개):**
-- `blog-posts`: `published` ASC + `date` DESC
-- `blog-posts`: `category` ASC + `date` DESC
-- `blog-posts`: `published` ASC + `category` ASC + `date` DESC
-
-**폴백 전략:** Firestore 복합 인덱스 미배포 시 `FAILED_PRECONDITION` 에러를 감지하여 파일 기반 `BLOG_POSTS_META`로 자동 폴백. 빌드 안정성 보장.
-
-**캐싱:** `unstable_cache` + `revalidateTag` 조합. 블로그 TTL 1시간, 사이트 설정 TTL 1시간, 관리자 블로그 목록 5분. CRUD 후 `revalidateTag(tag, "max")`으로 즉시 무효화. 검색광고 API는 2-tier 캐시: L1 `unstable_cache`(24시간) → L2 Firestore `api-cache` 컬렉션(일별 영구) → API 호출. Cloud Run 콜드 스타트 시에도 Firestore에서 읽어 하루 1회만 API 호출.
+상세 내용은 [`docs/firestore-architecture.md`](docs/firestore-architecture.md) 참조. 4개 컬렉션 (`blog-posts`, `blog-likes`, `site-config`, `api-cache`), 복합 인덱스 3개, Firestore→파일 자동 폴백, `unstable_cache` + 2-tier 캐싱.
 
 ### 블로그 발행 워크플로우
 
-**초안 → 발행 예약 2단계 워크플로우:**
-
-1. **초안 저장/수정**: BlogEditor에서 새 포스트 저장 시 `published: false` (초안) 상태로 Firestore에 저장. 이미 발행된 포스트 수정 시에는 `published: true` 상태 유지
-2. **발행 예약**: BlogTab 포스트 목록에서 draft 포스트의 "발행" 버튼 클릭 → PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭 시 `published: true` + 선택한 날짜로 업데이트. "오늘" 버튼으로 즉시 발행 가능 (오늘 날짜 선택 시 안내 메시지 표시)
-
-**발행 날짜 추천 로직** (`getNextPublishDate`):
-1. `site-config/schedule`에서 발행 요일 목록 조회 (기본: 월/수/금 = `[1,3,5]`)
-2. 이미 발행 예약된 포스트(`published: true` + 미래 날짜)의 날짜 수집
-3. 오늘부터 90일 내에서 스케줄 요일에 해당하면서 아직 포스트가 없는 가장 빠른 날짜 추천
-
-**발행 후 노출 메커니즘** — `published: true`이면서 `date <= today`인 포스트만 공개 사이트에 노출:
-
-1. **클라이언트 필터링** (`BlogContent.tsx`): `date <= today` 조건으로 미발행 포스트 제외
-2. **Sitemap 필터링** (`app/sitemap.ts`): 동일 조건으로 미발행 포스트 sitemap에서 제외
-
-블로그 목록 표시 전략 (일별 시드 셔플):
-- **SSR/CSR 동일 순서**: 날짜 기반 고정 시드 Fisher-Yates 셔플 (CLS 방지)
-- **매일 다른 순서**: 오늘 날짜를 시드로 사용하여 하루 동안 동일한 순서 유지
-- **페이지네이션**: Intersection Observer 기반 무한 스크롤, 12개씩 로드
-
-### 블로그 포스트 콘텐츠 구조
-
-각 포스트 파일은 `BlogPost` 인터페이스를 따르며, 본문은 `BlogPostSection[]` 배열:
-
-```typescript
-content: [
-  { heading: "섹션 제목", content: "섹션 본문 텍스트" },
-  { heading: "다음 섹션", content: "..." },
-]
-```
-
-빌드 시 `generate-blog-meta.ts` 스크립트가 포스트 파일에서 메타데이터만 추출하고 `content` 필드는 제거하여 `posts-meta.ts`를 생성. 이를 통해 목록 페이지 번들에 본문이 포함되지 않아 번들 크기 최적화. `readTime`은 content 글자 수 기반으로 자동 계산 (한국어 분당 ~500자, 최소 1분, 올림 적용). 포스트 파일에 `readTime`을 수동 입력해도 빌드 시 자동 계산 값으로 덮어씌움.
+상세 내용은 [`docs/blog-workflow.md`](docs/blog-workflow.md) 참조. 초안→발행 예약 2단계, 스케줄 기반 날짜 추천, `date <= today` 필터링, 일별 시드 셔플, `BlogPostSection[]` 콘텐츠 구조.
 
 ### 블로그 작성 가이드라인
 
@@ -328,25 +279,7 @@ content: [
 
 ### Design Tokens & Utility Classes
 
-`app/globals.css`에 정의된 컬러 시스템:
-
-블루(전문성/신뢰) + 골드(따뜻함/프리미엄) 듀얼 컬러 시스템:
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--color-primary` | `#2563EB` | 블루 - 주요 강조색 (CTA 버튼, 링크, 폼 포커스) |
-| `--color-primary-dark` | `#1D4ED8` | 블루 hover 상태 |
-| `--color-primary-light` | `#3B82F6` | 밝은 블루 강조 |
-| `--color-secondary` | `#0EA5E9` | 보조 블루 |
-| `--color-gold` | `#C9962B` | 골드 - 따뜻한 액센트 (섹션 라벨, 의료진 타이틀, 배지) |
-| `--color-gold-dark` | `#A67B1E` | 골드 hover/진한 상태 |
-| `--color-gold-light` | `#D4B869` | 밝은 골드 |
-| `--background` | `#FAFBFC` | 페이지 배경 |
-| `--foreground` | `#111827` | 본문 텍스트 |
-| `--surface` | `#FFFFFF` | 카드/패널 배경 |
-| `--border` | `#E5E7EB` | 구분선 |
-| `--muted` | `#6B7280` | 보조 텍스트 |
-| `--muted-light` | `#9CA3AF` | 밝은 보조 텍스트 |
+블루(전문성/신뢰) + 골드(따뜻함/프리미엄) 듀얼 컬러 시스템. 상세 토큰은 `app/globals.css` 참조.
 
 커스텀 유틸리티 클래스:
 
@@ -355,15 +288,6 @@ content: [
 - `.font-headline` — 세리프 헤드라인 폰트 (Noto Serif KR)
 - `.font-greeting` — 인사말 편지 폰트 (Gowun Batang)
 - `.greeting-letter` — 편지 스타일 카드 (그라데이션 배경, 라운드 코너)
-
-### Key Components
-
-- **FloatingCTA** — 모바일: 하단 고정 네비바 5버튼, 데스크톱: 우하단 플로팅 전화 버튼
-- **KakaoMap** — SDK 동적 로드, 주소 기반 geocoding → 하드코딩 좌표 폴백
-- **LikeButton** — Firestore `blog-likes/{slug}` optimistic update, `localStorage` UUID 식별
-- **BlogShareButton** — Web Share API → 클립보드 복사 폴백
-- **CTABanner** — 공통 CTA 배너 (홈/블로그/진료 상세 3곳 공유)
-- **DashboardHeader** — 관리자/개발 대시보드 공유 헤더 (`variant: "admin" | "dev"`), 양방향 크로스 네비게이션 (Admin↔Dev), 뱃지 색상 구분 (블루/그린)
 
 ### Firebase 인프라
 
@@ -376,7 +300,7 @@ content: [
 
 두 대시보드는 `DashboardHeader` 공유 헤더를 사용하며 양방향 네비게이션으로 연결됨. 탭 컴포넌트(AdminTabs, DevTabs)는 동일한 아이콘+반응형 텍스트 패턴 사용.
 
-**관리자 대시보드 (`/admin`)** — 5탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
@@ -447,13 +371,7 @@ content: [
 
 ### JSON-LD 구조화 데이터
 
-`lib/jsonld.ts`에서 5종의 JSON-LD 스키마 생성:
-
-- `getClinicJsonLd()` — Dentist + LocalBusiness (홈, 소개 페이지)
-- `getTreatmentJsonLd(id)` — MedicalWebPage (진료 상세 페이지)
-- `getFaqJsonLd(faq)` — FAQPage (FAQ가 있는 진료 상세 페이지)
-- `getBlogPostJsonLd(post)` — BlogPosting (블로그 상세 페이지)
-- `getBreadcrumbJsonLd(items)` — BreadcrumbList (중첩 페이지)
+JSON-LD 구조화 데이터는 `lib/jsonld.ts`에서 5종 생성 (Clinic, Treatment, FAQ, BlogPost, Breadcrumb).
 
 ## Code Conventions
 
@@ -518,33 +436,11 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ## Environment Variables
 
-로컬 개발: `.env.example` → `.env.local`로 복사하여 사용.
-프로덕션: `apphosting.yaml`의 `env` 섹션 + Cloud Secret Manager로 관리.
-
-- `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` — Kakao Maps JavaScript App Key (required for map component)
-- `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase Web API Key (required for Firestore 좋아요 + 관리자 인증)
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase Project ID (default: `seoul-born2smile`)
-- `NEXT_PUBLIC_ADMIN_EMAILS` — 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`)
-- `GOOGLE_SERVICE_ACCOUNT_KEY` — Google 서비스 계정 JSON key (로컬 개발 전용). 프로덕션은 Cloud Run ADC가 자동 인증하므로 불필요. App Hosting 서비스 계정(`firebase-app-hosting-compute@seoul-born2smile.iam.gserviceaccount.com`)에 GA4 뷰어 + Search Console 전체 권한 필요.
-- `GA4_PROPERTY_ID` — Google Analytics 4 속성 ID (숫자만, 예: `525397980`, 트래픽 탭 필수)
-- `SEARCH_CONSOLE_SITE_URL` — Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, 검색/SEO 탭 필수)
-- `NAVER_DATALAB_CLIENT_ID` — 네이버 DataLab API Client ID (검색/SEO 탭 네이버 트렌드, 미설정 시 섹션 숨김)
-- `NAVER_DATALAB_CLIENT_SECRET` — 네이버 DataLab API Client Secret (Secret Manager)
-- `NAVER_SEARCHAD_API_KEY` — 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백)
-- `NAVER_SEARCHAD_SECRET_KEY` — 네이버 검색광고 API Secret Key (HMAC-SHA256 서명, Secret Manager)
-- `NAVER_SEARCHAD_CUSTOMER_ID` — 네이버 검색광고 고객 ID
-- `PAGESPEED_API_KEY` — Google PageSpeed Insights API 키 (성능 탭 필수, Google Cloud Console에서 API 키 생성 + PageSpeed Insights API 활성화 필요)
-
-### 네이버 검색광고 API 주의사항
-
-- **키워드 공백 불가**: `hintKeywords` 파라미터는 공백 없는 키워드만 허용 (예: `임플란트비용`, NOT `임플란트 비용`). `admin-naver-searchad.ts`의 `normalizeKeyword()`가 자동 처리.
-- **시간당 호출 제한**: API 레이트 리밋 있음. 순차 배치 호출(200ms 간격) + 24시간 `unstable_cache`로 보호.
-- **환경변수 lazy 읽기**: Cloud Run 시크릿 주입 타이밍 이슈로 모듈 레벨 상수 대신 `getApiKey()` 등 lazy getter 사용. 시크릿에 trailing newline이 있을 수 있어 `.trim()` 필수.
-- **HMAC 서명**: `{timestamp}.GET./keywordstool` 형식, SHA-256, Base64 인코딩.
+상세 내용은 [`docs/environment-variables.md`](docs/environment-variables.md) 참조. 로컬 개발: `.env.example` → `.env.local`, 프로덕션: `apphosting.yaml` + Cloud Secret Manager.
 
 ## Known TODO Items
 
-> 마지막 점검: 2026-02-21
+> 마지막 점검: 2026-02-24
 
 ### 미완료 — 오너 비즈니스 결정 필요
 
@@ -553,6 +449,13 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - 페이지별 OG 이미지 차별화 — 현재 모든 페이지 동일 OG 이미지. 카테고리별 이미지 또는 동적 생성 검토
 - 의사 프로필 사진 추가 — 한국 의료 사이트 최고 신뢰 신호, 사진 제공 필요
 
+### 중기 과제
+
+- Node.js/pnpm 버전 요구사항 명시
+- 롤백 절차 문서화
+- 에러 처리 패턴 표준화
+- `docs/blog-writing-guide.md`에 이미지 가이드라인 + 발행 전 체크리스트 추가
+
 ### 개선 현황
 
-`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능 (61/68개 완료, 90%).
+`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. `getImprovementStats()`로 현황 조회. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능.
