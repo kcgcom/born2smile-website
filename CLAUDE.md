@@ -61,7 +61,7 @@ app/                          # Next.js App Router pages
   about/page.tsx              # Clinic info, doctor bio, facility, hours
   treatments/
     page.tsx                  # Treatment listing (6 cards)
-    [slug]/page.tsx           # Individual treatment detail (generateStaticParams)
+    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터)
     [slug]/loading.tsx        # Suspense loading boundary
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
@@ -155,7 +155,7 @@ hooks/
   usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminPublishButton/AdminDraftBar 공유)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
-  treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ
+  treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ (치과 선택 FAQ 포함)
   date.ts                    # KST 날짜 유틸리티 (getTodayKST)
   format.ts                  # 날짜 포맷 유틸리티 (formatDate)
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore + Auth)
@@ -166,8 +166,8 @@ lib/
   admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
   admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
   admin-naver-datalab.ts     # 네이버 DataLab 검색 트렌드 API 클라이언트 (5개 키워드 그룹)
-  admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (7카테고리×5서브그룹, volumeKeywords, TopicAngles)
-  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출)
+  admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (8카테고리×5서브그룹, volumeKeywords, TopicAngles)
+  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출, 배치 간 중복 제거)
   trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
@@ -438,7 +438,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ## Known TODO Items
 
-> 마지막 점검: 2026-02-24
+> 마지막 점검: 2026-02-25
 
 ### 미완료 — 오너 비즈니스 결정 필요
 
@@ -446,6 +446,13 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - `app/contact/page.tsx`: 온라인 예약 시스템 미구축 — 현재 전화 상담 안내 페이지로 운영 중. 향후 온라인 예약 시스템 도입 시 폼 추가 필요
 - 페이지별 OG 이미지 차별화 — 현재 모든 페이지 동일 OG 이미지. 카테고리별 이미지 또는 동적 생성 검토
 - 의사 프로필 사진 추가 — 한국 의료 사이트 최고 신뢰 신호, 사진 제공 필요
+
+### 미완료 — 치과 선택 키워드 기반 개선 (콘텐츠/오너 결정 필요)
+
+- m36: 증상별 블로그 콘텐츠 + 응급 CTA — 긴급 키워드 타겟 포스트 시리즈
+- m37: 치과 선택 가이드 블로그 시리즈 — 의사결정 단계 콘텐츠
+- m38: 의료진 소개 페이지 상세화 — 치료 철학 스토리텔링 (프로필 사진과 함께)
+- m39: 리뷰/후기 섹션 강화 — Google/네이버 리뷰 링크 + 실시간 별점
 
 ### 중기 과제
 
