@@ -7,24 +7,44 @@ import {
   type ImprovementStatus,
 } from "@/lib/admin-data";
 import { DEV_MANIFEST } from "@/lib/dev/generated/dev-manifest";
-import { StatCard } from "@/app/admin/(dashboard)/components/StatCard";
-import { DataTable } from "@/app/admin/(dashboard)/components/DataTable";
+import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
+import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
+import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 
 // -------------------------------------------------------------
-// 우선순위 배지
+// 환경변수 API 응답 타입
 // -------------------------------------------------------------
 
-const PRIORITY_STYLES: Record<string, string> = {
-  CRITICAL: "bg-red-100 text-red-800",
-  HIGH: "bg-orange-100 text-orange-800",
-  MEDIUM: "bg-blue-100 text-blue-800",
-  LOW: "bg-[var(--background)] text-[var(--foreground)]",
-};
+interface EnvStatusData {
+  variables: {
+    key: string;
+    label: string;
+    configured: boolean;
+    required: boolean;
+    scope: "public" | "private";
+  }[];
+  summary: {
+    total: number;
+    configured: number;
+    missing: number;
+  };
+}
+
+// -------------------------------------------------------------
+// 우선순위 배지 (Admin 스타일 통일)
+// -------------------------------------------------------------
 
 function PriorityBadge({ priority }: { priority: string }) {
+  const styles: Record<string, string> = {
+    CRITICAL: "bg-red-100 text-red-700",
+    HIGH: "bg-orange-100 text-orange-700",
+    MEDIUM: "bg-blue-100 text-blue-700",
+    LOW: "bg-[var(--background)] text-[var(--muted)]",
+  };
+
   return (
     <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_STYLES[priority] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
+      className={`inline-block w-20 rounded px-2 py-0.5 text-center text-xs font-semibold ${styles[priority] ?? styles.LOW}`}
     >
       {priority}
     </span>
@@ -32,14 +52,14 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 // -------------------------------------------------------------
-// 상태 아이콘
+// 상태 아이콘 (Admin 스타일 통일)
 // -------------------------------------------------------------
 
 function StatusIcon({ status }: { status: ImprovementStatus }) {
   if (status === "done") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600">
-        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </span>
@@ -47,17 +67,17 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
   }
   if (status === "owner-decision") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
-        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01" />
+      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
         </svg>
       </span>
     );
   }
   return (
-    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted-light)]">
-      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+      <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 8 8">
+        <circle cx="4" cy="4" r="3" />
       </svg>
     </span>
   );
@@ -93,118 +113,234 @@ function TechStackGrid() {
 }
 
 // -------------------------------------------------------------
-// 필터 타입
+// 환경변수 건강 상태 섹션
 // -------------------------------------------------------------
 
-type FilterType = "all" | "done" | "pending" | "owner-decision";
+function EnvHealthSection() {
+  const {
+    data: envData,
+    loading: envLoading,
+    error: envError,
+    refetch: envRefetch,
+  } = useAdminApi<EnvStatusData>("/api/dev/env-status");
 
-const FILTERS: { id: FilterType; label: string }[] = [
-  { id: "all", label: "전체" },
-  { id: "done", label: "완료" },
-  { id: "pending", label: "미완료" },
-  { id: "owner-decision", label: "오너결정" },
-];
+  if (envLoading) {
+    return (
+      <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+          환경변수 상태
+        </h3>
+        <AdminLoadingSkeleton variant="table" />
+      </div>
+    );
+  }
+
+  if (envError) {
+    return (
+      <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+          환경변수 상태
+        </h3>
+        <AdminErrorState message={envError} onRetry={envRefetch} />
+      </div>
+    );
+  }
+
+  if (!envData) return null;
+
+  const missingVars = envData.variables.filter((v) => !v.configured);
+  const missingRequired = missingVars.filter((v) => v.required);
+  const hasMissing = missingVars.length > 0;
+
+  return (
+    <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+        환경변수 상태
+      </h3>
+
+      {/* 요약 카운트 */}
+      <div className="mb-3 flex items-center gap-2 text-sm">
+        <span
+          className={`flex h-5 w-5 items-center justify-center rounded-full ${
+            hasMissing ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
+          }`}
+        >
+          {hasMissing ? (
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
+            </svg>
+          ) : (
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </span>
+        <span className="text-[var(--foreground)]">
+          <strong>{envData.summary.configured}/{envData.summary.total}</strong> 설정됨
+        </span>
+      </div>
+
+      {/* 미설정 필수 환경변수 경고 */}
+      {missingRequired.length > 0 && (
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+          <p className="text-xs font-semibold text-red-700">
+            필수 환경변수 미설정 ({missingRequired.length}건)
+          </p>
+          <p className="mt-1 text-xs text-red-600">
+            {missingRequired.map((v) => v.key).join(", ")}
+          </p>
+        </div>
+      )}
+
+      {/* 미설정 선택 환경변수 */}
+      {missingVars.filter((v) => !v.required).length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <p className="text-xs font-semibold text-amber-700">
+            선택 환경변수 미설정 ({missingVars.filter((v) => !v.required).length}건)
+          </p>
+          <p className="mt-1 text-xs text-amber-600">
+            {missingVars.filter((v) => !v.required).map((v) => v.key).join(", ")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // -------------------------------------------------------------
 // 프로젝트 현황 탭
 // -------------------------------------------------------------
 
 export function ProjectTab() {
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [expandedPriority, setExpandedPriority] = useState<string | null>(null);
   const stats = getImprovementStats();
+  const pct = Math.round((stats.done / stats.total) * 100);
 
-  const filteredItems =
-    filter === "all"
-      ? IMPROVEMENT_ITEMS
-      : IMPROVEMENT_ITEMS.filter((item) => item.status === filter);
+  const pendingItems = IMPROVEMENT_ITEMS.filter((i) => i.status === "pending");
+  const ownerItems = IMPROVEMENT_ITEMS.filter((i) => i.status === "owner-decision");
 
-  const percentage = Math.round((stats.done / stats.total) * 100);
-
-  const columns = [
-    {
-      key: "priority",
-      label: "우선순위",
-      render: (row: Record<string, unknown>) => (
-        <PriorityBadge priority={row.priority as string} />
-      ),
-    },
-    {
-      key: "status",
-      label: "상태",
-      align: "center" as const,
-      render: (row: Record<string, unknown>) => (
-        <StatusIcon status={row.status as ImprovementStatus} />
-      ),
-    },
-    { key: "title", label: "제목", sortable: true },
-    {
-      key: "description",
-      label: "설명",
-      render: (row: Record<string, unknown>) => (
-        <span className="text-[var(--muted)]">{row.description as string}</span>
-      ),
-    },
-  ];
+  const togglePriority = (priority: string) => {
+    setExpandedPriority((prev) => (prev === priority ? null : priority));
+  };
 
   return (
     <div className="space-y-6">
-      {/* 진행률 카드 */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard
-          label="전체 진행률"
-          value={percentage}
-          color="text-emerald-600"
-          variant="elevated"
-        />
-        {stats.byPriority.map((bp) => (
-          <StatCard
-            key={bp.priority}
-            label={`${bp.priority} (${bp.done}/${bp.total})`}
-            value={bp.done}
-            color={
-              bp.done === bp.total
-                ? "text-green-600"
-                : "text-[var(--foreground)]"
-            }
-          />
-        ))}
-      </div>
-
-      {/* 전체 통계 요약 */}
-      <p className="text-sm text-[var(--muted)]">
-        전체 {stats.total}개 중 {stats.done}개 완료, {stats.pending}개 미완료,{" "}
-        {stats.ownerDecision}개 오너결정 필요
-      </p>
-
-      {/* 필터 */}
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              filter === f.id
-                ? "bg-emerald-600 text-white"
-                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* 개선 항목 테이블 */}
-      <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-        <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-          개선 항목 ({filteredItems.length}개)
+      {/* 개선 항목 현황 */}
+      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
+          개선 항목 현황
         </h3>
-        <DataTable
-          columns={columns}
-          rows={filteredItems as unknown as Record<string, unknown>[]}
-          keyField="id"
-          emptyMessage="해당 상태의 항목이 없습니다"
-        />
+
+        {/* 전체 진행률 */}
+        <div className="mb-4">
+          <div className="mb-1 flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">전체 진행률</span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {stats.done}/{stats.total} ({pct}%)
+            </span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-[var(--border)]">
+            <div
+              className="h-full rounded-full bg-[var(--color-primary)] transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 우선순위별 완료율 — 클릭 시 항목 목록 토글 */}
+        <div className="mb-4 space-y-1">
+          {stats.byPriority.map((bp) => {
+            const isExpanded = expandedPriority === bp.priority;
+            const items = IMPROVEMENT_ITEMS.filter((i) => i.priority === bp.priority);
+            return (
+              <div key={bp.priority}>
+                <button
+                  onClick={() => togglePriority(bp.priority)}
+                  aria-expanded={isExpanded}
+                  aria-label={`${bp.priority} 우선순위 항목 ${isExpanded ? "접기" : "펼치기"}`}
+                  className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]"
+                >
+                  <PriorityBadge priority={bp.priority} />
+                  <div className="flex-1">
+                    <div className="h-2 overflow-hidden rounded-full bg-[var(--border)]">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-primary)] transition-all"
+                        style={{
+                          width: bp.total > 0 ? `${(bp.done / bp.total) * 100}%` : "0%",
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="w-12 text-right text-[var(--muted)]">
+                    {bp.done}/{bp.total}
+                  </span>
+                  <svg
+                    className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isExpanded && (
+                  <ul className="mb-2 ml-1 mt-1 space-y-1.5 border-l-2 border-[var(--border)] pl-3">
+                    {items.map((item) => (
+                      <li key={item.id} className="flex items-start gap-2 text-sm">
+                        <StatusIcon status={item.status} />
+                        <div className="min-w-0">
+                          <p className={`font-medium ${item.status === "done" ? "text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
+                            {item.title}
+                          </p>
+                          <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 미완료 항목 */}
+        {pendingItems.length > 0 && (
+          <div className="mb-4">
+            <h4 className="mb-2 text-sm font-semibold text-[var(--color-primary)]">
+              미완료 ({pendingItems.length}건)
+            </h4>
+            <ul className="space-y-1.5">
+              {pendingItems.map((item) => (
+                <li key={item.id} className="flex items-start gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm">
+                  <PriorityBadge priority={item.priority} />
+                  <div className="min-w-0">
+                    <p className="font-medium text-[var(--foreground)]">{item.title}</p>
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 오너 결정 필요 항목 */}
+        {ownerItems.length > 0 && (
+          <div>
+            <h4 className="mb-2 text-sm font-semibold text-[var(--color-gold-dark)]">
+              오너 결정 필요 ({ownerItems.length}건)
+            </h4>
+            <ul className="space-y-1.5">
+              {ownerItems.map((item) => (
+                <li key={item.id} className="rounded-lg bg-amber-50 px-3 py-2 text-sm">
+                  <p className="font-medium text-[var(--foreground)]">{item.title}</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
+
+      {/* 환경변수 건강 상태 */}
+      <EnvHealthSection />
 
       {/* 기술 스택 */}
       <TechStackGrid />

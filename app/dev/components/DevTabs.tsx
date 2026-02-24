@@ -1,13 +1,11 @@
 "use client";
 
-import { ClipboardCheck, ShieldCheck, Package, Database, Gauge } from "lucide-react";
+import { ClipboardCheck, Gauge, BookOpen } from "lucide-react";
 
 export const DEV_TABS = [
-  { id: "project", label: "프로젝트 현황", icon: ClipboardCheck },
-  { id: "quality", label: "코드 품질", icon: ShieldCheck },
-  { id: "build", label: "빌드 & 번들", icon: Package },
-  { id: "infra", label: "인프라", icon: Database },
+  { id: "project", label: "현황", icon: ClipboardCheck },
   { id: "performance", label: "성능", icon: Gauge },
+  { id: "reference", label: "레퍼런스", icon: BookOpen },
 ] as const;
 
 export type DevTabId = (typeof DEV_TABS)[number]["id"];

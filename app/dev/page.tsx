@@ -9,10 +9,8 @@ import { AuthGuard } from "@/components/admin/AuthGuard";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DevTabs, type DevTabId, DEV_TABS } from "./components/DevTabs";
 import { ProjectTab } from "./components/ProjectTab";
-import { CodeQualityTab } from "./components/CodeQualityTab";
-import { BuildTab } from "./components/BuildTab";
-import { InfraTab } from "./components/InfraTab";
 import { PerformanceTab } from "./components/PerformanceTab";
+import { ReferenceTab } from "./components/ReferenceTab";
 
 // -------------------------------------------------------------
 // 개발 대시보드 메인 페이지
@@ -61,10 +59,8 @@ function DevDashboardContent() {
 
         {/* 탭 콘텐츠 */}
         {activeTab === "project" && <ProjectTab />}
-        {activeTab === "quality" && <CodeQualityTab />}
-        {activeTab === "build" && <BuildTab />}
-        {activeTab === "infra" && <InfraTab />}
         {activeTab === "performance" && <PerformanceTab />}
+        {activeTab === "reference" && <ReferenceTab />}
       </div>
     </div>
   );
