@@ -9,6 +9,8 @@ export const pretendard = localFont({
   ],
   variable: "--font-pretendard",
   display: "swap",
+  preload: false, // 468KiB 폰트 preload 제거 — 모바일 4G에서 CSS(15KiB)와 대역폭 경합 해소
+  // font-display:swap + 유사 메트릭 시스템 폰트 폴백으로 FOUT 최소화
   fallback: [
     "-apple-system",
     "BlinkMacSystemFont",
