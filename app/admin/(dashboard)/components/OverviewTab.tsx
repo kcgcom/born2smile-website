@@ -9,19 +9,202 @@ import {
 } from "@/lib/admin-data";
 import { ConfigRow } from "./ConfigRow";
 import { StatCard } from "./StatCard";
+import { MetricCard } from "./MetricCard";
+import { useAdminApi } from "./useAdminApi";
+import type { TabId } from "./AdminTabs";
+
+// -------------------------------------------------------------
+// 핵심 지표 요약 타입
+// -------------------------------------------------------------
+
+interface MetricValue {
+  value: number;
+  change: number | null;
+}
+
+interface AnalyticsSummary {
+  summary: {
+    sessions: MetricValue;
+    users: MetricValue;
+  };
+}
+
+interface SearchSummary {
+  summary: {
+    impressions: MetricValue;
+    clicks: MetricValue;
+  };
+}
+
+interface TrendCategory {
+  category: string;
+  overallTrend: "rising" | "falling" | "stable" | null;
+  error: string | null;
+}
+
+interface TrendOverview {
+  categories: TrendCategory[];
+}
 
 // -------------------------------------------------------------
 // OverviewTab
 // -------------------------------------------------------------
 
-export function OverviewTab() {
+export function OverviewTab({ onNavigate }: { onNavigate?: (tab: TabId) => void }) {
   const blogStats = getBlogStats();
   const siteConfig = getSiteConfigStatus();
 
   return (
     <div className="space-y-6">
+      <KeyMetricsSection onNavigate={onNavigate} />
       <BlogSection stats={blogStats} />
       <SiteConfigSection config={siteConfig} />
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// 핵심 지표 요약
+// -------------------------------------------------------------
+
+function KeyMetricsSection({ onNavigate }: { onNavigate?: (tab: TabId) => void }) {
+  const { data: traffic, loading: tLoading, error: tError } =
+    useAdminApi<AnalyticsSummary>("/api/admin/analytics?period=7d");
+  const { data: search, loading: sLoading, error: sError } =
+    useAdminApi<SearchSummary>("/api/admin/search-console?period=7d");
+  const { data: trend, loading: dLoading, error: dError } =
+    useAdminApi<TrendOverview>("/api/admin/naver-datalab/overview?period=7d");
+
+  return (
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
+        핵심 지표 <span className="text-sm font-normal text-[var(--muted)]">최근 7일</span>
+      </h3>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {/* 트래픽 */}
+        <MetricGroup
+          title="트래픽"
+          onClick={() => onNavigate?.("traffic")}
+          loading={tLoading}
+          error={tError}
+        >
+          {traffic && (
+            <div className="grid grid-cols-2 gap-2">
+              <MetricCard
+                label="세션"
+                value={traffic.summary.sessions.value.toLocaleString("ko-KR")}
+                change={traffic.summary.sessions.change}
+              />
+              <MetricCard
+                label="사용자"
+                value={traffic.summary.users.value.toLocaleString("ko-KR")}
+                change={traffic.summary.users.change}
+              />
+            </div>
+          )}
+        </MetricGroup>
+
+        {/* 검색 */}
+        <MetricGroup
+          title="검색"
+          onClick={() => onNavigate?.("search")}
+          loading={sLoading}
+          error={sError}
+        >
+          {search && (
+            <div className="grid grid-cols-2 gap-2">
+              <MetricCard
+                label="노출수"
+                value={search.summary.impressions.value.toLocaleString("ko-KR")}
+                change={search.summary.impressions.change}
+              />
+              <MetricCard
+                label="클릭수"
+                value={search.summary.clicks.value.toLocaleString("ko-KR")}
+                change={search.summary.clicks.change}
+              />
+            </div>
+          )}
+        </MetricGroup>
+
+        {/* 트렌드 */}
+        <MetricGroup
+          title="트렌드"
+          onClick={() => onNavigate?.("trend")}
+          loading={dLoading}
+          error={dError}
+        >
+          {trend && <TrendBadges categories={trend.categories} />}
+        </MetricGroup>
+      </div>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// 지표 그룹 래퍼
+// -------------------------------------------------------------
+
+function MetricGroup({
+  title,
+  onClick,
+  loading,
+  error,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  loading: boolean;
+  error: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-lg border border-[var(--border)] p-3 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--background)]"
+    >
+      <p className="mb-2 text-xs font-semibold text-[var(--muted)]">{title}</p>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-2">
+          {[0, 1].map((i) => (
+            <div key={i} className="rounded-lg bg-[var(--background)] p-3 text-center">
+              <div className="mx-auto h-8 w-16 animate-pulse rounded bg-[var(--border)]" />
+              <div className="mx-auto mt-2 h-3 w-12 animate-pulse rounded bg-[var(--border)]" />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <p className="py-3 text-center text-xs text-red-500">{error}</p>
+      ) : (
+        children
+      )}
+    </button>
+  );
+}
+
+// -------------------------------------------------------------
+// 트렌드 배지
+// -------------------------------------------------------------
+
+function TrendBadges({ categories }: { categories: TrendCategory[] }) {
+  const valid = categories.filter((c) => c.overallTrend && !c.error);
+  const rising = valid.filter((c) => c.overallTrend === "rising").length;
+  const falling = valid.filter((c) => c.overallTrend === "falling").length;
+  const stable = valid.filter((c) => c.overallTrend === "stable").length;
+
+  return (
+    <div className="flex items-center justify-center gap-3 rounded-lg bg-[var(--background)] p-3">
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+        상승 {rising}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+        하락 {falling}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+        안정 {stable}
+      </span>
     </div>
   );
 }

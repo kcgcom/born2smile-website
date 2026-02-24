@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 탭 콘텐츠 */}
-        {activeTab === "overview" && <OverviewTab />}
+        {activeTab === "overview" && <OverviewTab onNavigate={handleTabChange} />}
         {activeTab === "traffic" && <TrafficTab />}
         {activeTab === "search" && <SearchTab />}
         {activeTab === "blog" && <BlogTab editSlug={editSlug} newCategory={newCategory} />}

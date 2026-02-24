@@ -76,7 +76,7 @@ app/                          # Next.js App Router pages
       page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
       components/
         AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
-        OverviewTab.tsx       # 개요 탭 (블로그 통계, 사이트 설정 상태, 개선 항목)
+        OverviewTab.tsx       # 개요 탭 (핵심 지표 요약: 트래픽·검색·트렌드, 블로그 통계, 사이트 설정 상태)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
         TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천)
@@ -298,7 +298,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 두 대시보드는 `DashboardHeader` 공유 헤더를 사용하며 양방향 네비게이션으로 연결됨. 탭 컴포넌트(AdminTabs, DevTabs)는 동일한 아이콘+반응형 텍스트 패턴 사용.
 
-**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param): 개요(통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param): 개요(핵심 지표 요약+블로그 통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
