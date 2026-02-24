@@ -28,6 +28,12 @@
     "recharts": "^3.7.0",
     "zod": "^4.3.6"
   },
+  "browserslist": [
+    "chrome >= 87",
+    "firefox >= 78",
+    "safari >= 14",
+    "edge >= 88"
+  ],
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

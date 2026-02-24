@@ -77,9 +77,8 @@ export default function RootLayout({
             __html: `try{var p=location.pathname;if(p.startsWith("/admin")||p.startsWith("/dev")||localStorage.getItem("born2smile-admin")==="1")window["ga-disable-G-3ZDMMFGP6Z"]=true}catch(e){}`,
           }}
         />
-        <link rel="preconnect" href="https://seoul-born2smile.firebaseapp.com" />
-        <link rel="preconnect" href="https://apis.google.com" />
-        <link rel="preconnect" href="https://www.googleapis.com" />
+        {/* Firebase preconnect 제거 — AdminFloatingButton 동적 임포트로
+            Firebase SDK가 일반 방문자에게 로드되지 않으므로 불필요한 DNS/TCP 연결 제거 */}
         {/* 카카오톡 등 인앱 브라우저의 Android WebView textZoom 보정 */}
         {/* textZoom은 CSS 적용 후 네이티브 레벨에서 폰트 크기를 곱하므로 JS로만 대응 가능 */}
         {/* 100px 기준 측정 → 줌 비율 감지 → html root font-size 역보정 (rem 기반 전체 적용) */}

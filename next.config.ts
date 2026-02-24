@@ -14,6 +14,12 @@ const CSP = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
+  images: {
+    minimumCacheTTL: 31536000, // 1년 — 정적 이미지 재방문 캐시 효율 극대화
+  },
   async headers() {
     return [
       {
