@@ -243,6 +243,20 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // 카테고리 개요 기본 정렬: 월간 절대 검색량 우선 (미연동 카테고리는 후순위)
+    categories.sort((a, b) => {
+      const av = a.monthlyTotalVolume;
+      const bv = b.monthlyTotalVolume;
+
+      if (av != null && bv != null) return bv - av;
+      if (av != null) return -1;
+      if (bv != null) return 1;
+
+      const aChange = Math.abs(a.changeRate ?? 0);
+      const bChange = Math.abs(b.changeRate ?? 0);
+      return bChange - aChange;
+    });
+
     // Run content gap analysis on successful categories
     const contentGap = analyzeContentGap(successfulCategoryData, publishedPosts, CATEGORY_KEYWORDS, volumeData);
 

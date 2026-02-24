@@ -178,13 +178,13 @@ export interface VolumeDataEntry {
 /**
  * 트렌드 데이터와 발행된 블로그 포스트를 교차 분석하여 콘텐츠 갭을 식별한다.
  *
- * v2 gapScore 공식:
+ * v3 gapScore 공식 (절대 검색량 중심):
  *
  * 정규 공식 (검색광고 연동 시):
  *   volumeScore = min(100, log10(monthlyTotal + 1) × 25)
- *   trendBonus = clamp(-10, 20, changeRate > 0 ? changeRate × 0.4 : changeRate × 0.2)
+ *   trendBonus = clamp(-4, 6, changeRate > 0 ? changeRate × 0.15 : changeRate × 0.08)
  *   contentLack = round(100 × exp(-existingPostCount / 2.5))
- *   gapScore = clamp(0, 100, volumeScore × 0.6 + trendBonus × 0.1 + contentLack × 0.4)
+ *   gapScore = clamp(0, 100, volumeScore × 0.7 + trendBonus × 0.05 + contentLack × 0.25)
  *
  * 폴백 공식 (검색광고 미연동):
  *   volumeScore = normalizedTrendScore (카테고리 내 정규화)
@@ -241,7 +241,7 @@ export function analyzeContentGap(
 
       // rawTrendScore: 폴백용 (카테고리 내 정규화에 사용)
       const changeComponent = Math.min(100, Math.max(0, 50 + sg.changeRate));
-      const rawTrendScore = sg.currentAvg * 0.7 + changeComponent * 0.3;
+      const rawTrendScore = sg.currentAvg * 0.9 + changeComponent * 0.1;
 
       // 검색광고 검색량 조회 (key = "카테고리:서브그룹")
       const volumeKey = `${catData.category}:${sg.name}`;
@@ -265,7 +265,7 @@ export function analyzeContentGap(
     const maxRaw = Math.max(...catGaps.map((g) => g.rawTrendScore), 1);
 
     for (const g of catGaps) {
-      // gapScore v2 공식
+      // gapScore v3 공식 (절대 검색량 중심)
       let volumeScore: number;
       if (hasVolumeData && g.monthlyVolume != null) {
         // 정규 공식: 로그 스케일 검색량
@@ -275,15 +275,15 @@ export function analyzeContentGap(
         volumeScore = (g.rawTrendScore / maxRaw) * 100;
       }
 
-      // trendBonus: 상승 최대 +20, 하락 최대 -10
+      // trendBonus: 상승 최대 +6, 하락 최대 -4 (보조 지표)
       const rawTrendBonus =
-        g.changeRate > 0 ? g.changeRate * 0.4 : g.changeRate * 0.2;
-      const trendBonus = Math.min(20, Math.max(-10, rawTrendBonus));
+        g.changeRate > 0 ? g.changeRate * 0.15 : g.changeRate * 0.08;
+      const trendBonus = Math.min(6, Math.max(-4, rawTrendBonus));
 
       const contentLack = calcContentLack(g.existingPostCount);
 
       // 최종 점수: clamp [0, 100]
-      const rawScore = volumeScore * 0.6 + trendBonus * 0.1 + contentLack * 0.4;
+      const rawScore = volumeScore * 0.7 + trendBonus * 0.05 + contentLack * 0.25;
       const gapScore = Math.round(Math.min(100, Math.max(0, rawScore)));
 
       gaps.push({

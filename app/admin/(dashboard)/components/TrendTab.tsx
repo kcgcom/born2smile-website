@@ -307,21 +307,28 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
       aria-pressed={isSelected}
       aria-label={`${cat.category} 트렌드 상세 보기`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-1">
         <span className="text-sm font-semibold text-[var(--foreground)]">{cat.category}</span>
-        <TrendIcon trend={trend} />
       </div>
-      <TrendText trend={trend} changeRate={changeRate} />
-      {cat.monthlyTotalVolume != null && (
-        <p className="mt-1 text-xs font-medium text-[var(--foreground)] tabular-nums">
-          월 {cat.monthlyTotalVolume.toLocaleString("ko-KR")} 검색
+      {cat.monthlyTotalVolume != null ? (
+        <p className="text-lg font-bold text-[var(--foreground)] tabular-nums leading-tight">
+          {cat.monthlyTotalVolume.toLocaleString("ko-KR")}
+          <span className="ml-0.5 text-xs font-normal text-[var(--muted)]">/월</span>
         </p>
+      ) : (
+        <p className="text-sm text-[var(--muted)]">검색량 미연동</p>
       )}
+      <div className="mt-1 flex items-center gap-1">
+        <TrendIcon trend={trend} />
+        <span className={`text-xs tabular-nums ${
+          trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"
+        }`}>
+          {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
+        </span>
+      </div>
       <p className="mt-1.5 text-xs text-[var(--muted)]">
-        상승 {risingCount}개 영역
-        {cat.topSubGroup && (
-          <span className="ml-1">· {cat.topSubGroup}</span>
-        )}
+        상승 {risingCount}개
+        {cat.topSubGroup && <> · 톱: {cat.topSubGroup}</>}
       </p>
     </button>
   );
@@ -336,9 +343,10 @@ interface CategoryDetailProps {
   period: string;
   onClose: () => void;
   detailRef: React.RefObject<HTMLDivElement | null>;
+  volumeMap: Map<string, number>;
 }
 
-function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProps) {
+function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: CategoryDetailProps) {
   const { data, loading, error, refetch } = useAdminApi<CategoryDetailData>(
     `/api/admin/naver-datalab/category/${slug}?period=${period}`,
   );
@@ -375,9 +383,20 @@ function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProp
           <div className="space-y-2">
             {data.subGroups
               .slice()
-              .sort((a, b) => b.currentAvg - a.currentAvg)
+              .sort((a, b) => {
+                const aVol = volumeMap.get(a.name);
+                const bVol = volumeMap.get(b.name);
+                if (aVol != null && bVol != null) return bVol - aVol;
+                if (aVol != null) return -1;
+                if (bVol != null) return 1;
+                return b.currentAvg - a.currentAvg;
+              })
               .map((sg, idx) => {
-                const barWidth = `${Math.min(100, sg.currentAvg)}%`;
+                const vol = volumeMap.get(sg.name);
+                const maxVol = Math.max(...data.subGroups.map((s) => volumeMap.get(s.name) ?? 0), 1);
+                const barWidth = vol != null
+                  ? `${Math.min(100, (vol / maxVol) * 100)}%`
+                  : `${Math.min(100, sg.currentAvg)}%`;
                 const barColor = SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length];
                 return (
                   <div key={sg.name} className="flex items-center gap-3">
@@ -390,8 +409,8 @@ function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProp
                         style={{ width: barWidth, backgroundColor: barColor }}
                       />
                     </div>
-                    <span className="w-10 shrink-0 text-right text-xs text-[var(--muted)] tabular-nums">
-                      {sg.currentAvg.toFixed(1)}
+                    <span className="w-16 shrink-0 text-right text-xs text-[var(--muted)] tabular-nums">
+                      {vol != null ? vol.toLocaleString("ko-KR") : sg.currentAvg.toFixed(1)}
                     </span>
                     <TrendText trend={sg.trend} changeRate={sg.changeRate} />
                   </div>
@@ -400,7 +419,7 @@ function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProp
           </div>
 
           <p className="mt-3 text-xs text-[var(--muted)]">
-            * ratio 값은 이 카테고리 내에서의 상대적 검색 비율 (0~100, 카테고리 간 직접 비교 불가)
+            * ratio 값은 이 카테고리 내에서의 상대적 검색 비율 (0~100). 검색량은 검색광고 API 연동 시 절대 검색량, 미연동 시 상대값 표시
           </p>
         </>
       )}
@@ -412,7 +431,7 @@ function CategoryDetail({ slug, period, onClose, detailRef }: CategoryDetailProp
 // Sort state management for content gap table
 // ---------------------------------------------------------------
 
-type GapSortKey = "gapScore" | "changeRate" | "existingPostCount" | "currentAvg";
+type GapSortKey = "gapScore" | "changeRate" | "existingPostCount" | "currentAvg" | "monthlyVolume";
 
 function useGapTableSort(initial: GapSortKey = "gapScore") {
   const [sortKey, setSortKey] = useState<GapSortKey>(initial);
@@ -434,8 +453,14 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
   const sort = useCallback(
     (rows: ContentGapItem[]) =>
       [...rows].sort((a, b) => {
-        const av = a[sortKey];
-        const bv = b[sortKey];
+        const av =
+          sortKey === "currentAvg" || sortKey === "monthlyVolume"
+            ? ((a.monthlyVolume ?? a.currentAvg) as number)
+            : (a[sortKey] as number);
+        const bv =
+          sortKey === "currentAvg" || sortKey === "monthlyVolume"
+            ? ((b.monthlyVolume ?? b.currentAvg) as number)
+            : (b[sortKey] as number);
         const dir = sortDirection === "asc" ? 1 : -1;
         return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
       }),
@@ -465,7 +490,7 @@ export function TrendTab() {
   } = useAdminApi<OverviewData>(`/api/admin/naver-datalab/overview?period=${period}`);
 
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
-    useGapTableSort("gapScore");
+    useGapTableSort("monthlyVolume");
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value as "7d" | "28d" | "90d");
@@ -513,6 +538,22 @@ export function TrendTab() {
         id: `${item.slug}-${item.subGroup}`,
       }))
     : [];
+
+  const maxVolume = overviewData
+    ? Math.max(...overviewData.contentGap.map((g) => g.monthlyVolume ?? 0), 1)
+    : 1;
+
+  const selectedVolumeMap = (() => {
+    const map = new Map<string, number>();
+    if (overviewData && selectedCategory) {
+      for (const gap of overviewData.contentGap) {
+        if (gap.slug === selectedCategory && gap.monthlyVolume != null) {
+          map.set(gap.subGroup, gap.monthlyVolume);
+        }
+      }
+    }
+    return map;
+  })();
 
   const suggestions = overviewData?.suggestions ?? [];
 
@@ -576,6 +617,7 @@ export function TrendTab() {
             period={period}
             onClose={() => setSelectedCategory(null)}
             detailRef={detailRef}
+            volumeMap={selectedVolumeMap}
           />
         </section>
       )}
@@ -589,8 +631,8 @@ export function TrendTab() {
             </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
               {overviewData?.volumeSource === "searchad"
-                ? "갭 점수 = 검색량(60%) + 트렌드 보너스(10%) + 콘텐츠 부족도(40%)"
-                : "갭 점수 = 상대 검색량(60%) + 트렌드 보너스(10%) + 콘텐츠 부족도(40%)"}
+                ? "갭 점수 = 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)"
+                : "갭 점수 = 상대 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)"}
               &nbsp;·&nbsp;
               <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
               &nbsp;·&nbsp;
@@ -642,50 +684,40 @@ export function TrendTab() {
                   render: (row) => <CategoryBadge category={String(row.category)} />,
                 },
                 {
-                  key: "trend",
-                  label: "트렌드",
-                  align: "center",
-                  render: (row) => (
-                    <span className="flex justify-center">
-                      <TrendIcon trend={row.trend as "rising" | "falling" | "stable"} />
-                    </span>
-                  ),
-                },
-                {
-                  key: "currentAvg",
+                  key: "monthlyVolume",
                   label: "검색량",
                   align: "right",
                   sortable: true,
                   render: (row) => {
                     const mv = row.monthlyVolume as number | null;
-                    if (mv != null) {
-                      return (
-                        <span className="tabular-nums text-[var(--foreground)]">
-                          {row.isEstimated ? "≈ " : ""}
-                          {mv.toLocaleString("ko-KR")}
-                          <span className="ml-0.5 text-[10px] text-[var(--muted)]">/월</span>
-                        </span>
-                      );
-                    }
+                    const barPct = mv != null ? Math.min(100, (mv / maxVolume) * 100) : 0;
                     return (
-                      <span className="tabular-nums text-[var(--muted)]">
-                        {Number(row.currentAvg).toFixed(1)}
-                        <span className="ml-0.5 text-[10px]">(상대)</span>
-                      </span>
+                      <div>
+                        <span className="tabular-nums font-medium text-[var(--foreground)]">
+                          {mv != null ? (
+                            <>
+                              {row.isEstimated ? "≈ " : ""}
+                              {mv.toLocaleString("ko-KR")}
+                              <span className="ml-0.5 text-[10px] font-normal text-[var(--muted)]">/월</span>
+                            </>
+                          ) : (
+                            <span className="font-normal text-[var(--muted)]">
+                              {Number(row.currentAvg).toFixed(1)}
+                              <span className="ml-0.5 text-[10px]">(상대)</span>
+                            </span>
+                          )}
+                        </span>
+                        {mv != null && (
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
+                            <div
+                              className="h-1.5 rounded-full bg-blue-400"
+                              style={{ width: `${barPct}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     );
                   },
-                },
-                {
-                  key: "changeRate",
-                  label: "변화율",
-                  align: "right",
-                  sortable: true,
-                  render: (row) => (
-                    <TrendText
-                      trend={row.trend as "rising" | "falling" | "stable"}
-                      changeRate={Number(row.changeRate)}
-                    />
-                  ),
                 },
                 {
                   key: "existingPostCount",
@@ -712,6 +744,28 @@ export function TrendTab() {
                     </div>
                   ),
                 },
+                {
+                  key: "trend",
+                  label: "트렌드",
+                  align: "center",
+                  render: (row) => (
+                    <span className="flex justify-center">
+                      <TrendIcon trend={row.trend as "rising" | "falling" | "stable"} />
+                    </span>
+                  ),
+                },
+                {
+                  key: "changeRate",
+                  label: "변화율",
+                  align: "right",
+                  sortable: true,
+                  render: (row) => (
+                    <TrendText
+                      trend={row.trend as "rising" | "falling" | "stable"}
+                      changeRate={Number(row.changeRate)}
+                    />
+                  ),
+                },
               ]}
               rows={gapRows as unknown as Record<string, unknown>[]}
               keyField="id"
@@ -728,7 +782,7 @@ export function TrendTab() {
       {overviewData && suggestions.length > 0 && (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            추천 블로그 주제 — 트렌드 + 콘텐츠 갭 기반
+            추천 블로그 주제 — 검색량 + 콘텐츠 갭 기반
           </h2>
           <div className="space-y-3">
             {suggestions.slice(0, 15).map((item) => (
@@ -742,6 +796,17 @@ export function TrendTab() {
                   </span>
                   <PriorityBadge priority={item.priority} />
                   <CategoryBadge category={item.category} />
+                  {(() => {
+                    const gap = overviewData?.contentGap.find(
+                      (g) => g.slug === item.slug && g.keywords.some((k) => item.keywords.includes(k)),
+                    );
+                    if (!gap?.monthlyVolume) return null;
+                    return (
+                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 tabular-nums">
+                        {gap.monthlyVolume.toLocaleString("ko-KR")}/월
+                      </span>
+                    );
+                  })()}
                   <div className="flex items-center gap-1">
                     <TrendIcon trend={item.trend} />
                   </div>
