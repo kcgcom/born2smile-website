@@ -132,8 +132,8 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
 
   // ── HIGH: 데이터 인프라 + 핵심 SEO ──
-  { id: "h24", title: "트렌드 탭 '치과선택' 키워드 카테고리", priority: "HIGH", status: "pending", description: "키워드 택소노미에 8번째 카테고리 추가. 서브그룹: 지역 검색(김포치과 추천, 김포 임플란트 잘하는 곳), 신뢰/비교(치과 고르는 법, 동네치과 vs 대학병원), 긴급/증상(이가 흔들려요, 잇몸 출혈 응급), 비용/보험(치과 비용 평균, 건강보험 적용), 후기/평판(치과 후기, 치과 리뷰 보는 법). 트렌드 탭에서 치과 선택 키워드의 검색량 추이와 콘텐츠 갭 분석 가능" },
-  { id: "h25", title: "진료 과목 페이지 지역 SEO 메타데이터", priority: "HIGH", status: "pending", description: "각 진료 과목 페이지(/treatments/[slug])의 title·description·OG에 '김포' 지역명 포함. 예: '김포 임플란트 | 서울본치과' → 검색엔진에서 '김포 임플란트' 검색 시 진료 페이지 직접 노출. JSON-LD MedicalProcedure에 availableIn(김포한강신도시) 추가" },
+  { id: "h24", title: "트렌드 탭 '치과선택' 키워드 카테고리", priority: "HIGH", status: "done", description: "키워드 택소노미에 8번째 카테고리 추가. 서브그룹: 지역 검색(김포치과 추천, 김포 임플란트 잘하는 곳), 신뢰/비교(치과 고르는 법, 동네치과 vs 대학병원), 긴급/증상(이가 흔들려요, 잇몸 출혈 응급), 비용/보험(치과 비용 평균, 건강보험 적용), 후기/평판(치과 후기, 치과 리뷰 보는 법). 트렌드 탭에서 치과 선택 키워드의 검색량 추이와 콘텐츠 갭 분석 가능" },
+  { id: "h25", title: "진료 과목 페이지 지역 SEO 메타데이터", priority: "HIGH", status: "done", description: "각 진료 과목 페이지(/treatments/[slug])의 title·description·OG에 '김포' 지역명 포함. 예: '김포 임플란트 | 서울본치과' → 검색엔진에서 '김포 임플란트' 검색 시 진료 페이지 직접 노출. JSON-LD MedicalProcedure에 availableIn(김포한강신도시) 추가" },
 
   // ── MEDIUM: 콘텐츠 전략 + 신뢰 강화 ──
   { id: "m36", title: "증상별 블로그 콘텐츠 + 응급 CTA", priority: "MEDIUM", status: "pending", description: "긴급 키워드 타겟 블로그 포스트 시리즈: '이가 흔들릴 때 대처법', '잇몸에서 피가 날 때', '치아가 깨졌을 때 응급 처치'. 포스트 상단에 '지금 전화 상담' CTA 배너 강조. 높은 전환 의도 키워드 → 즉시 방문/전화 유도" },
@@ -142,7 +142,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m39", title: "리뷰/후기 섹션 강화", priority: "MEDIUM", status: "pending", description: "현재 정적 6개 후기 → Google 리뷰 작성 링크 + 네이버 플레이스 리뷰 링크 노출, 총 리뷰 수/평균 별점 실시간 표시(JSON-LD AggregateRating 연동). 진료 과목 페이지에도 해당 치료 관련 후기 발췌 표시" },
 
   // ── LOW: 보조 콘텐츠 ──
-  { id: "l19", title: "진료 과목 FAQ 선택 관련 질문 추가", priority: "LOW", status: "pending", description: "각 진료 과목 FAQ에 치과 선택 관련 질문 추가: '임플란트 잘하는 치과 고르는 기준은?', '교정 치과 선택 시 확인할 점은?' 등. FAQ 스키마로 검색 결과 리치 스니펫 확장 + 선택 의도 키워드 커버" },
+  { id: "l19", title: "진료 과목 FAQ 선택 관련 질문 추가", priority: "LOW", status: "done", description: "각 진료 과목 FAQ에 치과 선택 관련 질문 추가: '임플란트 잘하는 치과 고르는 기준은?', '교정 치과 선택 시 확인할 점은?' 등. FAQ 스키마로 검색 결과 리치 스니펫 확장 + 선택 의도 키워드 커버" },
 ];
 
 export interface ImprovementStats {
