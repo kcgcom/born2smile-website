@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 import {
-  getImprovementStats,
   getBlogStats,
   getSiteConfigStatus,
-  IMPROVEMENT_ITEMS,
-  type ImprovementStats,
   type BlogStats,
   type SiteConfigStatus,
 } from "@/lib/admin-data";
@@ -18,191 +15,14 @@ import { StatCard } from "./StatCard";
 // -------------------------------------------------------------
 
 export function OverviewTab() {
-  const improvementStats = getImprovementStats();
   const blogStats = getBlogStats();
   const siteConfig = getSiteConfigStatus();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <ImprovementSection stats={improvementStats} />
+    <div className="space-y-6">
       <BlogSection stats={blogStats} />
       <SiteConfigSection config={siteConfig} />
     </div>
-  );
-}
-
-// -------------------------------------------------------------
-// 개선 항목 현황
-// -------------------------------------------------------------
-
-function ImprovementSection({ stats }: { stats: ImprovementStats }) {
-  const pct = Math.round((stats.done / stats.total) * 100);
-  const [expandedPriority, setExpandedPriority] = useState<string | null>(null);
-  const ownerItems = IMPROVEMENT_ITEMS.filter((i) => i.status === "owner-decision");
-  const pendingItems = IMPROVEMENT_ITEMS.filter((i) => i.status === "pending");
-
-  const togglePriority = (priority: string) => {
-    setExpandedPriority((prev) => (prev === priority ? null : priority));
-  };
-
-  return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-        개선 항목 현황
-      </h3>
-
-      {/* 전체 진행률 */}
-      <div className="mb-4">
-        <div className="mb-1 flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">전체 진행률</span>
-          <span className="font-semibold text-[var(--foreground)]">
-            {stats.done}/{stats.total} ({pct}%)
-          </span>
-        </div>
-        <div className="h-3 overflow-hidden rounded-full bg-[var(--border)]">
-          <div
-            className="h-full rounded-full bg-[var(--color-primary)] transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* 우선순위별 완료율 — 클릭 시 항목 목록 토글 */}
-      <div className="mb-4 space-y-1">
-        {stats.byPriority.map((bp) => {
-          const isExpanded = expandedPriority === bp.priority;
-          const items = IMPROVEMENT_ITEMS.filter((i) => i.priority === bp.priority);
-          return (
-            <div key={bp.priority}>
-              <button
-                onClick={() => togglePriority(bp.priority)}
-                aria-expanded={isExpanded}
-                aria-label={`${bp.priority} 우선순위 항목 ${isExpanded ? "접기" : "펼치기"}`}
-                className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]"
-              >
-                <PriorityBadge priority={bp.priority} />
-                <div className="flex-1">
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--border)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-primary)] transition-all"
-                      style={{
-                        width: bp.total > 0 ? `${(bp.done / bp.total) * 100}%` : "0%",
-                      }}
-                    />
-                  </div>
-                </div>
-                <span className="w-12 text-right text-[var(--muted)]">
-                  {bp.done}/{bp.total}
-                </span>
-                <svg
-                  className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {isExpanded && (
-                <ul className="mb-2 ml-1 mt-1 space-y-1.5 border-l-2 border-[var(--border)] pl-3">
-                  {items.map((item) => (
-                    <li key={item.id} className="flex items-start gap-2 text-sm">
-                      <StatusIcon status={item.status} />
-                      <div className="min-w-0">
-                        <p className={`font-medium ${item.status === "done" ? "text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
-                          {item.title}
-                        </p>
-                        <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 미완료 항목 요약 */}
-      {pendingItems.length > 0 && (
-        <div className="mb-4">
-          <h4 className="mb-2 text-sm font-semibold text-[var(--color-primary)]">
-            미완료 ({pendingItems.length}건)
-          </h4>
-          <ul className="space-y-1.5">
-            {pendingItems.map((item) => (
-              <li key={item.id} className="flex items-start gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm">
-                <PriorityBadge priority={item.priority} />
-                <div className="min-w-0">
-                  <p className="font-medium text-[var(--foreground)]">{item.title}</p>
-                  <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* 오너 결정 필요 항목 */}
-      {ownerItems.length > 0 && (
-        <div>
-          <h4 className="mb-2 text-sm font-semibold text-[var(--color-gold-dark)]">
-            오너 결정 필요 ({ownerItems.length}건)
-          </h4>
-          <ul className="space-y-1.5">
-            {ownerItems.map((item) => (
-              <li key={item.id} className="rounded-lg bg-amber-50 px-3 py-2 text-sm">
-                <p className="font-medium text-[var(--foreground)]">{item.title}</p>
-                <p className="mt-0.5 text-xs text-[var(--muted)]">{item.description}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === "done") {
-    return (
-      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
-    );
-  }
-  if (status === "owner-decision") {
-    return (
-      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
-        </svg>
-      </span>
-    );
-  }
-  return (
-    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-      <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 8 8">
-        <circle cx="4" cy="4" r="3" />
-      </svg>
-    </span>
-  );
-}
-
-function PriorityBadge({ priority }: { priority: string }) {
-  const styles: Record<string, string> = {
-    CRITICAL: "bg-red-100 text-red-700",
-    HIGH: "bg-orange-100 text-orange-700",
-    MEDIUM: "bg-blue-100 text-blue-700",
-    LOW: "bg-[var(--background)] text-[var(--muted)]",
-  };
-
-  return (
-    <span
-      className={`inline-block w-20 rounded px-2 py-0.5 text-center text-xs font-semibold ${styles[priority] ?? styles.LOW}`}
-    >
-      {priority}
-    </span>
   );
 }
 
@@ -270,7 +90,7 @@ function BlogSection({ stats }: { stats: BlogStats }) {
 
 function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm lg:col-span-2">
+    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
       <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
         사이트 설정 상태
       </h3>
