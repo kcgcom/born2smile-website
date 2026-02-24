@@ -61,12 +61,12 @@ app/                          # Next.js App Router pages
   about/page.tsx              # Clinic info, doctor bio, facility, hours
   treatments/
     page.tsx                  # Treatment listing (6 cards)
-    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터)
+    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터, HowTo 스키마)
     [slug]/loading.tsx        # Suspense loading boundary
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
     [category]/page.tsx       # Category hub landing page (7 categories, generateStaticParams)
-    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard)
+    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA)
     [category]/[slug]/loading.tsx # Suspense loading boundary
     redirect/[slug]/page.tsx  # Old URL redirect handler (Firestore lookup → permanentRedirect)
   admin/
@@ -369,7 +369,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### JSON-LD 구조화 데이터
 
-JSON-LD 구조화 데이터는 `lib/jsonld.ts`에서 5종 생성 (Clinic, Treatment, FAQ, BlogPost, Breadcrumb).
+JSON-LD 구조화 데이터는 `lib/jsonld.ts`에서 6종 생성 (Clinic, Treatment, HowTo, FAQ, BlogPost, Breadcrumb).
 
 ## Code Conventions
 
@@ -453,6 +453,14 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - m37: 치과 선택 가이드 블로그 시리즈 — 의사결정 단계 콘텐츠
 - m38: 의료진 소개 페이지 상세화 — 치료 철학 스토리텔링 (프로필 사진과 함께)
 - m39: 리뷰/후기 섹션 강화 — Google/네이버 리뷰 링크 + 실시간 별점
+- m40: 진료 과목 간 교차 링크 — 내부 링크 강화
+- m41: 시간대별 CTA 차별화 — 진료시간 여부에 따른 메시지
+- m42: 블로그 목차(TOC) 자동 생성 — passage ranking 개선
+- m43: 카테고리 허브 페이지 지역 SEO
+- m44: 검색 의도(Search Intent) 분류 — 트렌드 탭 키워드 태깅
+- m45: SC 쿼리 × 트렌드 키워드 교차 분석 — 기회 키워드 식별
+- l20: 계절성 트렌드 패턴 감지
+- l21: 전체 FAQ 독립 페이지 `/faq`
 
 ### 중기 과제
 
