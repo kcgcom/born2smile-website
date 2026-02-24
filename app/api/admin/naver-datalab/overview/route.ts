@@ -100,16 +100,18 @@ export async function GET(request: NextRequest) {
               const normalizedVolumeKws = group.keywords.map((k) =>
                 k.replace(/\s+/g, "").toLowerCase(),
               );
-              const groupRelated: Array<{ keyword: string; volume: number }> = [];
+              // Map으로 중복 제거 (동일 키워드가 relatedItems에 여러 번 존재할 수 있음)
+              const groupRelatedMap = new Map<string, { keyword: string; volume: number }>();
               for (const ri of relatedItems) {
                 const normalizedRi = ri.keyword.replace(/\s+/g, "").toLowerCase();
-                if (normalizedVolumeKws.some((vk) => normalizedRi.includes(vk))) {
-                  groupRelated.push({
+                if (!groupRelatedMap.has(normalizedRi) && normalizedVolumeKws.some((vk) => normalizedRi.includes(vk))) {
+                  groupRelatedMap.set(normalizedRi, {
                     keyword: ri.keyword,
                     volume: ri.monthlyTotalQcCnt,
                   });
                 }
               }
+              const groupRelated = Array.from(groupRelatedMap.values());
               // 검색량 내림차순, 상위 5개
               groupRelated.sort((a, b) => b.volume - a.volume);
               const topRelated = groupRelated.slice(0, 5);

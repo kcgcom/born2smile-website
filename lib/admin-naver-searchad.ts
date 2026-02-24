@@ -192,7 +192,17 @@ export async function fetchKeywordSearchVolume(
     throw new Error(`SearchAd API 전체 실패: ${errors[0]}`);
   }
 
-  return allData;
+  // 배치 간 중복 제거 (동일 키워드가 여러 배치 응답에 포함될 수 있음)
+  const deduped = new Map<string, SearchAdKeywordData>();
+  for (const item of allData) {
+    const key = normalizeKeyword(item.keyword);
+    const existing = deduped.get(key);
+    // 요청 키워드(isRelated=false)를 연관 키워드보다 우선
+    if (!existing || (!item.isRelated && existing.isRelated)) {
+      deduped.set(key, item);
+    }
+  }
+  return Array.from(deduped.values());
 }
 
 /**
