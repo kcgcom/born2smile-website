@@ -61,7 +61,7 @@ app/                          # Next.js App Router pages
   about/page.tsx              # Clinic info, doctor bio, facility, hours
   treatments/
     page.tsx                  # Treatment listing (6 cards)
-    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터, HowTo 스키마)
+    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터, HowTo 스키마, 관련 진료 교차 링크)
     [slug]/loading.tsx        # Suspense loading boundary
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
@@ -155,7 +155,7 @@ hooks/
   usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminPublishButton/AdminDraftBar 공유)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
-  treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ (치과 선택 FAQ 포함)
+  treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ (치과 선택 FAQ 포함), RELATED_TREATMENTS 교차 링크 매핑
   date.ts                    # KST 날짜 유틸리티 (getTodayKST)
   format.ts                  # 날짜 포맷 유틸리티 (formatDate)
   firebase.ts                # Firebase 클라이언트 초기화 (Firestore + Auth)
@@ -453,7 +453,6 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 - m37: 치과 선택 가이드 블로그 시리즈 — 의사결정 단계 콘텐츠
 - m38: 의료진 소개 페이지 상세화 — 치료 철학 스토리텔링 (프로필 사진과 함께)
 - m39: 리뷰/후기 섹션 강화 — Google/네이버 리뷰 링크 + 실시간 별점
-- m40: 진료 과목 간 교차 링크 — 내부 링크 강화
 - m41: 시간대별 CTA 차별화 — 진료시간 여부에 따른 메시지
 - m42: 블로그 목차(TOC) 자동 생성 — passage ranking 개선
 - m43: 카테고리 허브 페이지 지역 SEO
