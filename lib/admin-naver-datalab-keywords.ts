@@ -25,7 +25,7 @@ export interface CategoryKeywords {
 }
 
 // =============================================================
-// CATEGORY_KEYWORDS — 7개 카테고리 키워드 택소노미
+// CATEGORY_KEYWORDS — 8개 카테고리 키워드 택소노미
 // =============================================================
 
 export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
@@ -774,6 +774,113 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 구강관리 완벽 가이드: {aspect}",
         subGroup: "시니어",
         aspect: "임플란트부터 틀니까지 노년 치아 관리법",
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // 치과선택 (dental-choice)
+  // ─────────────────────────────────────────────────────────────
+  {
+    category: "치과선택" as BlogCategoryValue,
+    slug: "dental-choice",
+    subGroups: [
+      {
+        name: "지역검색",
+        keywords: [
+          "김포치과 추천",
+          "김포 임플란트 잘하는 곳",
+          "김포 치과 잘하는 곳",
+          "김포 교정 치과",
+          "김포 소아치과",
+          "고촌 치과",
+          "한강신도시 치과",
+          "장기동 치과",
+        ],
+        volumeKeywords: ["김포치과 추천", "김포 임플란트"],
+      },
+      {
+        name: "신뢰/비교",
+        keywords: [
+          "치과 고르는 법",
+          "좋은 치과 특징",
+          "동네치과 대학병원",
+          "치과 선택 기준",
+          "치과 의사 실력",
+          "치과 추천",
+          "치과 비교",
+          "치과 상담",
+        ],
+        volumeKeywords: ["치과 고르는 법", "치과 추천"],
+      },
+      {
+        name: "긴급/증상",
+        keywords: [
+          "이가 흔들려요",
+          "잇몸 출혈",
+          "치아 깨짐",
+          "치통 응급",
+          "이가 아플때",
+          "밤에 치통",
+          "치아 빠짐",
+          "잇몸 부음",
+        ],
+        volumeKeywords: ["치통 응급", "이가 아플때"],
+      },
+      {
+        name: "비용/보험",
+        keywords: [
+          "치과 비용",
+          "치과 치료비",
+          "치과 건강보험",
+          "치과 진료비",
+          "치과 가격",
+          "치과 비용 평균",
+          "치과 보험 적용",
+          "치과 실비",
+        ],
+        volumeKeywords: ["치과 비용", "치과 건강보험"],
+      },
+      {
+        name: "후기/평판",
+        keywords: [
+          "치과 후기",
+          "치과 리뷰",
+          "치과 평판",
+          "치과 후기 보는 법",
+          "치과 만족도",
+          "치과 추천 후기",
+          "치과 블로그 후기",
+          "치과 경험",
+        ],
+        volumeKeywords: ["치과 후기", "치과 리뷰"],
+      },
+    ],
+    topicAngles: [
+      {
+        template: "{year}년 {keyword} 완벽 가이드: {aspect}",
+        subGroup: "지역검색",
+        aspect: "진료 과목별 추천 치과 고르는 법",
+      },
+      {
+        template: "{keyword} {count}가지 핵심 기준: {aspect}",
+        subGroup: "신뢰/비교",
+        aspect: "치과 의사가 알려주는 좋은 치과의 조건",
+      },
+      {
+        template: "{keyword} 대처법: {aspect}",
+        subGroup: "긴급/증상",
+        aspect: "치과 가기 전 응급 처치와 방문 타이밍",
+      },
+      {
+        template: "{year}년 {keyword} 총정리: {aspect}",
+        subGroup: "비용/보험",
+        aspect: "건강보험 적용 범위부터 실제 부담 비용까지",
+      },
+      {
+        template: "{keyword} 제대로 보는 법: {aspect}",
+        subGroup: "후기/평판",
+        aspect: "신뢰할 수 있는 치과 후기 구별 가이드",
       },
     ],
   },

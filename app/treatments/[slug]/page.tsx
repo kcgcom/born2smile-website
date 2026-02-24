@@ -61,12 +61,13 @@ export async function generateMetadata({
     };
   }
 
-  const description = `김포한강신도시 장기동 치과 ${CLINIC.name} ${detail.name} - ${detail.subtitle}. ${detail.description.slice(0, 100)}`;
-  const ogTitle = `${detail.name} | ${CLINIC.name}`;
+  const description = `김포 ${detail.name} 잘하는 치과, ${CLINIC.name}. ${detail.subtitle}. ${detail.description.slice(0, 80)}`;
+  const ogTitle = `김포 ${detail.name} | ${CLINIC.name}`;
 
   return {
-    title: detail.name,
+    title: `김포 ${detail.name}`,
     description,
+    keywords: [`김포 ${detail.name}`, `장기동 ${detail.name}`, `한강신도시 ${detail.name}`, `${detail.name} 잘하는 치과`, `김포 ${detail.name} 추천`],
     alternates: { canonical: treatmentUrl },
     openGraph: {
       title: ogTitle,

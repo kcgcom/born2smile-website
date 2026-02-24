@@ -128,6 +128,15 @@ export function getTreatmentJsonLd(treatmentId: string) {
       "@type": "MedicalProcedure",
       name: treatment.name,
       description: treatment.shortDesc,
+      availableAt: {
+        "@type": "Dentist",
+        name: CLINIC.name,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "김포시 장기동",
+          addressRegion: "경기도",
+        },
+      },
     },
     provider: {
       "@type": "Dentist",
