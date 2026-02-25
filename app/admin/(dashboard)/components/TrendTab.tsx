@@ -860,28 +860,30 @@ export function TrendTab() {
                     key={item.id}
                     className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
                   >
-                    {/* Line 1: category + subgroup + volume + gap badge + change rate */}
+                    {/* Line 1: category + subgroup | volume + gap badge + change rate */}
                     <div className="flex items-center gap-1.5">
-                      <CategoryBadge category={item.category} />
+                      <span className="shrink-0"><CategoryBadge category={item.category} /></span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
                         {item.subGroup}
                       </span>
-                      <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]">
-                        {totalVolume != null ? (
-                          <>
-                            {item.isEstimated ? "≈" : ""}
-                            {totalVolume.toLocaleString("ko-KR")}
-                            <span className="text-[var(--muted)]">/월</span>
-                          </>
-                        ) : (
-                          <span className="text-[var(--muted)]">
-                            {item.currentAvg.toFixed(1)}
-                            <span className="text-[9px]">(상대)</span>
-                          </span>
-                        )}
+                      <span className="flex shrink-0 items-center gap-1">
+                        <span className="text-xs tabular-nums text-[var(--foreground)]">
+                          {totalVolume != null ? (
+                            <>
+                              {item.isEstimated ? "≈" : ""}
+                              {totalVolume.toLocaleString("ko-KR")}
+                              <span className="text-[var(--muted)]">/월</span>
+                            </>
+                          ) : (
+                            <span className="text-[var(--muted)]">
+                              {item.currentAvg.toFixed(1)}
+                              <span className="text-[9px]">(상대)</span>
+                            </span>
+                          )}
+                        </span>
+                        <GapScoreBadge score={item.gapScore} />
+                        <TrendText trend={item.trend} changeRate={item.changeRate} />
                       </span>
-                      <GapScoreBadge score={item.gapScore} />
-                      <TrendText trend={item.trend} changeRate={item.changeRate} />
                     </div>
 
                     {/* Line 2: keyword tags */}
