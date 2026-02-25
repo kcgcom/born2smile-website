@@ -663,14 +663,29 @@ export function TrendTab() {
                   label: "키워드 영역",
                   align: "left",
                   render: (row) => {
+                    const mv = row.monthlyVolume as number | null;
                     const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
+                    const hasKeywords = mv != null || related.length > 0;
                     return (
                       <div>
                         <span className="font-medium text-[var(--foreground)]">
                           {String(row.subGroup)}
                         </span>
-                        {related.length > 0 && (
+                        {hasKeywords && (
                           <div className="mt-1 flex flex-wrap gap-1">
+                            {mv != null && (
+                              <span
+                                className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                                title={`월 ${mv.toLocaleString("ko-KR")}회`}
+                              >
+                                {String(row.subGroup)}
+                                <span className="ml-0.5 text-blue-400 tabular-nums">
+                                  {mv >= 1000
+                                    ? `${(mv / 1000).toFixed(1)}k`
+                                    : mv}
+                                </span>
+                              </span>
+                            )}
                             {related.map((rk) => (
                               <span
                                 key={rk.keyword}
@@ -724,14 +739,6 @@ export function TrendTab() {
                             </span>
                           )}
                         </span>
-                        {totalVolume != null && (
-                          <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700 mt-0.5">
-                            직접
-                            <span className="ml-0.5 tabular-nums text-blue-400">
-                              {(mv ?? 0).toLocaleString("ko-KR")}
-                            </span>
-                          </span>
-                        )}
                         {totalVolume != null && (
                           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
                             <div
