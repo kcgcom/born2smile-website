@@ -51,6 +51,8 @@ export interface ContentGap {
   isEstimated: boolean;
   /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
   relatedKeywords: Array<{ keyword: string; volume: number }>;
+  /** volumeKeywords 개별 검색량 (직접 조회 키워드) */
+  directKeywords: Array<{ keyword: string; volume: number }>;
 }
 
 export interface TopicSuggestion {
@@ -173,6 +175,8 @@ export interface VolumeDataEntry {
   isEstimated: boolean;
   /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
+  /** volumeKeywords 개별 검색량 (직접 조회 키워드) */
+  directKeywords?: Array<{ keyword: string; volume: number }>;
 }
 
 /**
@@ -222,6 +226,7 @@ export function analyzeContentGap(
       monthlyVolume: number | null;
       isEstimated: boolean;
       relatedKeywords: Array<{ keyword: string; volume: number }>;
+      directKeywords: Array<{ keyword: string; volume: number }>;
     }> = [];
 
     for (const sg of catData.subGroups) {
@@ -258,6 +263,7 @@ export function analyzeContentGap(
         monthlyVolume: vol?.monthlyTotalQcCnt ?? null,
         isEstimated: vol?.isEstimated ?? false,
         relatedKeywords: vol?.relatedKeywords ?? [],
+        directKeywords: vol?.directKeywords ?? [],
       });
     }
 
@@ -300,6 +306,7 @@ export function analyzeContentGap(
         volumeSource: hasVolumeData && g.monthlyVolume != null ? "searchad" : "datalab-fallback",
         isEstimated: g.isEstimated,
         relatedKeywords: g.relatedKeywords,
+        directKeywords: g.directKeywords,
       });
     }
   }

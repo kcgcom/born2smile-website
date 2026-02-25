@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
               let totalQcCnt = 0;
               let anyEstimated = false;
               let hasData = false;
+              const directKws: Array<{ keyword: string; volume: number }> = [];
 
               for (const kw of group.keywords) {
                 const kwData = keywordMap.get(kw.replace(/\s+/g, "").toLowerCase());
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
                   totalQcCnt += kwData.monthlyTotalQcCnt;
                   if (kwData.isEstimated) anyEstimated = true;
                   hasData = true;
+                  directKws.push({ keyword: kw, volume: kwData.monthlyTotalQcCnt });
                 }
               }
 
@@ -123,6 +125,7 @@ export async function GET(request: NextRequest) {
                   monthlyTotalQcCnt: totalQcCnt,
                   isEstimated: anyEstimated,
                   relatedKeywords: topRelated,
+                  directKeywords: directKws,
                 };
               } else if (topRelated.length > 0) {
                 // 요청 키워드 매칭 없어도 연관 키워드가 있으면 포함
@@ -131,6 +134,7 @@ export async function GET(request: NextRequest) {
                   monthlyTotalQcCnt: 0,
                   isEstimated: false,
                   relatedKeywords: topRelated,
+                  directKeywords: [],
                 };
               }
             }

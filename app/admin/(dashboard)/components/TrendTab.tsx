@@ -44,6 +44,7 @@ interface ContentGapItem {
   volumeSource: "searchad" | "datalab-fallback";
   isEstimated: boolean;
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
+  directKeywords?: Array<{ keyword: string; volume: number }>;
 }
 
 interface TopicSuggestionItem {
@@ -663,9 +664,9 @@ export function TrendTab() {
                   label: "키워드 영역",
                   align: "left",
                   render: (row) => {
-                    const mv = row.monthlyVolume as number | null;
+                    const direct = (row.directKeywords ?? []) as Array<{ keyword: string; volume: number }>;
                     const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
-                    const hasKeywords = mv != null || related.length > 0;
+                    const hasKeywords = direct.length > 0 || related.length > 0;
                     return (
                       <div>
                         <span className="font-medium text-[var(--foreground)]">
@@ -673,19 +674,20 @@ export function TrendTab() {
                         </span>
                         {hasKeywords && (
                           <div className="mt-1 flex flex-wrap gap-1">
-                            {mv != null && (
+                            {direct.map((dk) => (
                               <span
+                                key={dk.keyword}
                                 className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
-                                title={`월 ${mv.toLocaleString("ko-KR")}회`}
+                                title={`월 ${dk.volume.toLocaleString("ko-KR")}회`}
                               >
-                                {String(row.subGroup)}
+                                {dk.keyword}
                                 <span className="ml-0.5 text-blue-400 tabular-nums">
-                                  {mv >= 1000
-                                    ? `${(mv / 1000).toFixed(1)}k`
-                                    : mv}
+                                  {dk.volume >= 1000
+                                    ? `${(dk.volume / 1000).toFixed(1)}k`
+                                    : dk.volume}
                                 </span>
                               </span>
-                            )}
+                            ))}
                             {related.map((rk) => (
                               <span
                                 key={rk.keyword}
