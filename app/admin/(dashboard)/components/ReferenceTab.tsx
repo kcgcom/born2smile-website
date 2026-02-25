@@ -280,8 +280,6 @@ function RoutesContent() {
 // -------------------------------------------------------------
 
 function InfraContent() {
-  const { projectStats } = DEV_MANIFEST;
-
   return (
     <div className="space-y-4">
       {/* Next.js & Cloud Run 설정 */}
@@ -338,15 +336,6 @@ function InfraContent() {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* 프로젝트 구조 통계 */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="총 파일" value={projectStats.totalFiles} variant="elevated" />
-        <StatCard label="컴포넌트" value={projectStats.components} color="text-sky-600" />
-        <StatCard label="lib 모듈" value={projectStats.libModules} color="text-emerald-600" />
-        <StatCard label="hooks" value={projectStats.hooks} color="text-orange-600" />
-        <StatCard label="블로그 포스트" value={projectStats.blogPosts} color="text-purple-600" />
       </div>
     </div>
   );

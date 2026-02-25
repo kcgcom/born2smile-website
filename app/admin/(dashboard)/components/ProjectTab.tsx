@@ -99,7 +99,7 @@ function TechStackGrid() {
   });
 
   return (
-    <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+    <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
       <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
         기술 스택
       </h3>
@@ -129,7 +129,7 @@ function EnvHealthSection() {
 
   if (envLoading) {
     return (
-      <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
         <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           환경변수 상태
         </h3>
@@ -140,7 +140,7 @@ function EnvHealthSection() {
 
   if (envError) {
     return (
-      <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
         <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           환경변수 상태
         </h3>
@@ -365,7 +365,7 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
         사이트 설정 상태
       </h3>
 
-      <div className="grid gap-6 sm:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2">
         {/* SNS 링크 */}
         <div>
           <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">SNS 링크</h4>
@@ -381,16 +381,6 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
           <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">Firebase</h4>
           <ul className="space-y-2">
             {config.firebase.map((item) => (
-              <ConfigRow key={item.label} item={item} />
-            ))}
-          </ul>
-        </div>
-
-        {/* 환경변수 */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">환경변수</h4>
-          <ul className="space-y-2">
-            {config.env.map((item) => (
               <ConfigRow key={item.label} item={item} />
             ))}
           </ul>
