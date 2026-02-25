@@ -1171,6 +1171,15 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["치과 실비보험", "임플란트 실비"],
       },
+      {
+        name: "브랜드검색",
+        keywords: [
+          "서울본치과", "서울본치과 김포", "본치과",
+          "김포 본치과", "장기동 본치과", "한강신도시 본치과",
+          "born2smile", "본투스마일",
+        ],
+        volumeKeywords: ["서울본치과", "본치과"],
+      },
     ],
     topicAngles: [
       {
@@ -1222,6 +1231,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 활용 가이드: {aspect}",
         subGroup: "보험/실비활용",
         aspect: "치료별 실비 청구 방법과 보장 범위",
+      },
+      {
+        template: "{keyword} 진료 안내: {aspect}",
+        subGroup: "브랜드검색",
+        aspect: "김포 한강신도시 서울본치과 진료 과목과 특징",
       },
     ],
   },
