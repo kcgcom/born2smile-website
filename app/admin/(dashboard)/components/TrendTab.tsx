@@ -656,7 +656,8 @@ export function TrendTab() {
               <span className="text-green-600 font-medium">LOW(&lt;40)</span>
             </p>
           </div>
-          <div className="rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
+          {/* Desktop: DataTable (sm and above) */}
+          <div className="hidden sm:block rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
             <DataTable
               columns={[
                 {
@@ -808,6 +809,116 @@ export function TrendTab() {
               sortDirection={gapSortDir}
               onSort={handleGapSort}
             />
+          </div>
+
+          {/* Mobile: Card list (below sm) */}
+          <div className="block sm:hidden space-y-2">
+            {/* Sort chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {([
+                { key: "monthlyVolume", label: "검색량" },
+                { key: "gapScore", label: "갭 점수" },
+                { key: "changeRate", label: "변화율" },
+              ] as const).map((chip) => {
+                const isActive = gapSortKey === chip.key;
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => handleGapSort(chip.key)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+                    }`}
+                  >
+                    {chip.label}
+                    {isActive && (
+                      <span className="ml-0.5">{gapSortDir === "desc" ? "↓" : "↑"}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Card items */}
+            {gapRows.length === 0 ? (
+              <p className="py-8 text-center text-sm text-[var(--muted)]">
+                콘텐츠 갭 데이터가 없습니다
+              </p>
+            ) : (
+              gapRows.map((item) => {
+                const mv = item.monthlyVolume;
+                const relatedSum = (item.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
+                const totalVolume = mv != null ? mv + relatedSum : null;
+                const direct = item.directKeywords ?? [];
+                const related = item.relatedKeywords ?? [];
+                const hasKeywords = direct.length > 0 || related.length > 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
+                  >
+                    {/* Line 1: category + subgroup + volume + gap badge + change rate */}
+                    <div className="flex items-center gap-1.5">
+                      <CategoryBadge category={item.category} />
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
+                        {item.subGroup}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]">
+                        {totalVolume != null ? (
+                          <>
+                            {item.isEstimated ? "≈" : ""}
+                            {totalVolume.toLocaleString("ko-KR")}
+                            <span className="text-[var(--muted)]">/월</span>
+                          </>
+                        ) : (
+                          <span className="text-[var(--muted)]">
+                            {item.currentAvg.toFixed(1)}
+                            <span className="text-[9px]">(상대)</span>
+                          </span>
+                        )}
+                      </span>
+                      <GapScoreBadge score={item.gapScore} />
+                      <TrendText trend={item.trend} changeRate={item.changeRate} />
+                    </div>
+
+                    {/* Line 2: keyword tags */}
+                    {hasKeywords && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {direct.map((dk) => (
+                          <span
+                            key={dk.keyword}
+                            className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                          >
+                            {dk.keyword}
+                            <span className="ml-0.5 text-blue-400 tabular-nums">
+                              {dk.volume >= 1000
+                                ? `${(dk.volume / 1000).toFixed(1)}k`
+                                : dk.volume}
+                            </span>
+                          </span>
+                        ))}
+                        {related.map((rk) => (
+                          <span
+                            key={rk.keyword}
+                            className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                          >
+                            {rk.keyword}
+                            <span className="ml-0.5 text-blue-400 tabular-nums">
+                              {rk.volume >= 1000
+                                ? `${(rk.volume / 1000).toFixed(1)}k`
+                                : rk.volume}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </section>
       )}
