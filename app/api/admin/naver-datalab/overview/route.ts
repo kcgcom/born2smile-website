@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
-import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
+import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions } from "@/lib/trend-analysis";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
               // Map으로 중복 제거 (동일 키워드가 relatedItems에 여러 번 존재할 수 있음)
               const groupRelatedMap = new Map<string, { keyword: string; volume: number }>();
               for (const ri of relatedItems) {
+                if (!isRelevantRelatedKeyword(ri.keyword)) continue;
                 const normalizedRi = ri.keyword.replace(/\s+/g, "").toLowerCase();
                 if (!groupRelatedMap.has(normalizedRi) && normalizedVolumeKws.some((vk) => normalizedRi.includes(vk))) {
                   groupRelatedMap.set(normalizedRi, {
