@@ -533,7 +533,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "이가 흔들려요", "이 색이 변했어요", "이가 깨졌어요",
           "잇몸이 부었어요", "이가 욱신거려요",
         ],
-        volumeKeywords: ["이가 시려요", "잇몸에서 피나요"],
+        volumeKeywords: ["치아 시림", "잇몸 출혈"],
       },
       {
         name: "사랑니/발치",
@@ -682,7 +682,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "아이 치아 부딪힘", "유치 탈구", "어린이 치아 응급",
           "아이 입 부딪힘", "유치 깨짐",
         ],
-        volumeKeywords: ["아이 이 부러짐", "유치 외상"],
+        volumeKeywords: ["아이 치통", "유치 빠짐"],
       },
     ],
     topicAngles: [
@@ -817,7 +817,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "파우더 스케일링",
           "에어플로우 치석",
         ],
-        volumeKeywords: ["에어플로우", "에어플로우 스케일링"],
+        volumeKeywords: ["스케일링 종류", "파우더 스케일링"],
       },
       {
         name: "잇몸재생/치료",
@@ -978,7 +978,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "아스피린 발치", "항응고제 치과", "비스포스포네이트 치과",
           "당뇨약 치과", "스테로이드 치과",
         ],
-        volumeKeywords: ["혈압약 치과", "혈액희석제 발치"],
+        volumeKeywords: ["치과 항생제", "치과 진통제"],
       },
       {
         name: "구강케어제품",
@@ -1160,7 +1160,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "야간 치과 진료", "주말 치과 진료", "공휴일 치과",
           "김포 일요일 치과", "김포 늦게까지 치과",
         ],
-        volumeKeywords: ["김포 야간치과", "김포 주말치과"],
+        volumeKeywords: ["야간 치과", "주말 치과"],
       },
       {
         name: "보험/실비활용",
