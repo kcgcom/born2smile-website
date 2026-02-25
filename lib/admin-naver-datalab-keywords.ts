@@ -1209,9 +1209,16 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
 // 연관 키워드 필터링 — 비치과 동음이의어 & 타 지역 키워드 제외
 // =============================================================
 
-/** 비치과 산업 용어 (실란트·레진 등 동음이의어 차단) */
+/** 비치과 산업 용어 (명확한 비치과 키워드 즉시 차단) */
 const NON_DENTAL_PATTERN =
-  /방수|우레탄|방화|실리콘|코킹|건축|타일|방습|접착|페인트|도장|배관|창호|외벽|지붕|바닥재|에폭시|레진아트|레진공예|레진테이블/;
+  /방수|우레탄|방화|실리콘|코킹|건축|타일|방습|접착|페인트|도장|배관|창호|외벽|지붕|바닥재|에폭시|폴리|몰탈|줄눈|커튼월|욕실|창틀|레진아트|레진공예|레진테이블/;
+
+/** 동음이의어 — "실란트", "레진" 등 치과 외 산업에서도 쓰이는 단어 */
+const AMBIGUOUS_BASE_PATTERN = /실란트|레진/;
+
+/** 동음이의어 키워드에서 치과 맥락을 판별하는 패턴 */
+const DENTAL_CONTEXT_PATTERN =
+  /치과|치아|충치|불소|어린이|소아|아이|유치|영구치|예방|도포|치료|효과|비용|가격|보험|후기|잇몸|구강|스케일링|신경|크라운|인레이|보존|보철|심미|앞니|수명|변색|관리/;
 
 /** 김포 외 주요 지역명 (타 지역 치과 키워드 차단) */
 const NON_LOCAL_REGION_PATTERN =
@@ -1226,13 +1233,16 @@ const LOCAL_AREA_PATTERN =
  * overview/route.ts에서 연관 키워드를 서브그룹에 배정하기 전에 호출.
  */
 export function isRelevantRelatedKeyword(keyword: string): boolean {
-  // 1) 비치과 산업 용어 차단
+  // 1) 명확한 비치과 산업 용어 차단
   if (NON_DENTAL_PATTERN.test(keyword)) return false;
 
-  // 2) 김포 지역 키워드는 항상 허용
+  // 2) 동음이의어(실란트·레진): 치과 맥락이 없으면 차단
+  if (AMBIGUOUS_BASE_PATTERN.test(keyword) && !DENTAL_CONTEXT_PATTERN.test(keyword)) return false;
+
+  // 3) 김포 지역 키워드는 항상 허용
   if (LOCAL_AREA_PATTERN.test(keyword)) return true;
 
-  // 3) 타 지역명이 포함된 키워드 차단
+  // 4) 타 지역명이 포함된 키워드 차단
   if (NON_LOCAL_REGION_PATTERN.test(keyword)) return false;
 
   return true;
