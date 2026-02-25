@@ -88,8 +88,15 @@ function AccordionSection({
 // 1. 의존성 섹션
 // -------------------------------------------------------------
 
+const KEY_PACKAGES = ["next", "react", "typescript", "tailwindcss", "firebase", "zod"];
+
 function DependenciesContent() {
   const { dependencies, dependencyStats } = DEV_MANIFEST;
+
+  const keyDeps = KEY_PACKAGES.map((name) => {
+    const dep = dependencies.find((d) => d.name === name);
+    return { name, version: dep?.version ?? "—" };
+  });
 
   const columns = [
     { key: "name", label: "패키지명", sortable: true },
@@ -114,11 +121,24 @@ function DependenciesContent() {
 
   return (
     <div className="space-y-4">
+      {/* 주요 기술 스택 */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {keyDeps.map((d) => (
+          <div key={d.name} className="rounded-lg bg-[var(--background)] p-2.5 text-center">
+            <p className="text-sm font-medium text-[var(--foreground)]">{d.name}</p>
+            <p className="text-xs text-[var(--muted)]">{d.version}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* 패키지 통계 */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard label="총 패키지" value={dependencyStats.total} variant="elevated" />
         <StatCard label="Production" value={dependencyStats.prod} color="text-green-600" variant="elevated" />
         <StatCard label="Dev" value={dependencyStats.dev} color="text-purple-600" variant="elevated" />
       </div>
+
+      {/* 전체 의존성 테이블 */}
       <DataTable
         columns={columns}
         rows={dependencies as unknown as Record<string, unknown>[]}
