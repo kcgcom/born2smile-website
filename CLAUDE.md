@@ -74,10 +74,9 @@ app/                          # Next.js App Router pages
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
       layout.tsx              # AuthGuard wrapper
-      page.tsx                # Dashboard main — 7탭 컨테이너 ("use client")
+      page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
       components/
-        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/트렌드/블로그/설정/개발, 아이콘+반응형 텍스트)
-        OverviewTab.tsx       # 개요 탭 (핵심 지표 요약: 트래픽·검색·트렌드, 블로그 통계, 사이트 설정 상태)
+        AdminTabs.tsx         # 탭 네비게이션 (개발/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
         TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천, 기간: 1개월/3개월/1년/3년/10년)
@@ -92,7 +91,7 @@ app/                          # Next.js App Router pages
         AdminLoadingSkeleton.tsx # 공통 로딩 스켈레톤 UI
         PeriodSelector.tsx    # 기간 선택 버튼 그룹
         DevTab.tsx            # 개발 탭 컨테이너 (서브탭: 현황/성능/레퍼런스)
-        ProjectTab.tsx        # 개발>현황 서브탭 (개선 항목 진행률, 환경변수 상태, 기술 스택)
+        ProjectTab.tsx        # 개발>현황 서브탭 (개선 항목 진행률, 환경변수 상태, 기술 스택, 사이트 설정 상태)
         PerformanceTab.tsx    # 개발>성능 서브탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 개선 기회)
         ReferenceTab.tsx      # 개발>레퍼런스 서브탭 (의존성, TS/ESLint, 라우트, 인프라, Firestore, API/캐시 — 아코디언 UI)
         useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴, AbortController로 race condition 방지)
@@ -240,7 +239,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
 | `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
-| `/admin` | Client-side | 관리자 대시보드 7탭 (AuthGuard 보호, `"use client"`) |
+| `/admin` | Client-side | 관리자 대시보드 6탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
 | `/api/dev/env-status` | Server-side | 환경변수 상태 API (Admin 인증) |
@@ -293,7 +292,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 7탭 구조 (`?tab=` query param): 개요(핵심 지표 요약+블로그 통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크), 개발(서브탭: 현황/성능/레퍼런스).
+**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
@@ -457,4 +456,4 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ### 개선 현황
 
-`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. `getImprovementStats()`로 현황 조회. 관리자 대시보드 개요 탭에서 실시간 현황 확인 가능.
+`lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리. `getImprovementStats()`로 현황 조회. 관리자 대시보드 개발>현황 서브탭에서 실시간 현황 확인 가능.

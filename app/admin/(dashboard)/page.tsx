@@ -7,7 +7,6 @@ import { getFirebaseAuth } from "@/lib/firebase";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { AdminTabs, TABS, type TabId } from "./components/AdminTabs";
-import { OverviewTab } from "./components/OverviewTab";
 import { TrafficTab } from "./components/TrafficTab";
 import { SearchTab } from "./components/SearchTab";
 import { BlogTab } from "./components/BlogTab";
@@ -29,7 +28,7 @@ export default function AdminDashboardPage() {
   const editSlug = searchParams.get("edit");
   const newCategory = searchParams.get("newCategory");
   const validTabIds = TABS.map((t) => t.id) as string[];
-  const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "overview";
+  const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "dev";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (u) => setUser(u));
@@ -59,7 +58,6 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 탭 콘텐츠 */}
-        {activeTab === "overview" && <OverviewTab onNavigate={handleTabChange} />}
         {activeTab === "traffic" && <TrafficTab />}
         {activeTab === "search" && <SearchTab />}
         {activeTab === "blog" && <BlogTab editSlug={editSlug} newCategory={newCategory} />}

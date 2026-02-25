@@ -1,12 +1,12 @@
-// Shared component used by OverviewTab and BlogTab
+// Shared component used by BlogTab, ReferenceTab, etc.
 
 export interface StatCardProps {
   label: string;
   value: number;
   color?: string;
   /**
-   * "compact"  — rounded-lg bg-[var(--background)] p-3 (OverviewTab inline cards)
-   * "elevated" — rounded-xl bg-[var(--surface)] p-4 shadow-sm (BlogTab standalone cards)
+   * "compact"  — rounded-lg bg-[var(--background)] p-3 (inline cards)
+   * "elevated" — rounded-xl bg-[var(--surface)] p-4 shadow-sm (standalone cards)
    * Default: "compact"
    */
   variant?: "compact" | "elevated";

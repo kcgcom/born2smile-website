@@ -1,4 +1,4 @@
-// Shared component used by OverviewTab and SettingsTab
+// Shared component used by ProjectTab and SettingsTab
 
 export interface ConfigItem {
   label: string;

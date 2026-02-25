@@ -4,8 +4,11 @@ import { useState } from "react";
 import {
   IMPROVEMENT_ITEMS,
   getImprovementStats,
+  getSiteConfigStatus,
   type ImprovementStatus,
+  type SiteConfigStatus,
 } from "@/lib/admin-data";
+import { ConfigRow } from "./ConfigRow";
 import { DEV_MANIFEST } from "@/lib/dev/generated/dev-manifest";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -344,6 +347,55 @@ export function ProjectTab() {
 
       {/* 기술 스택 */}
       <TechStackGrid />
+
+      {/* 사이트 설정 상태 */}
+      <SiteConfigSection config={getSiteConfigStatus()} />
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// 사이트 설정 상태
+// -------------------------------------------------------------
+
+function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
+  return (
+    <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
+        사이트 설정 상태
+      </h3>
+
+      <div className="grid gap-6 sm:grid-cols-3">
+        {/* SNS 링크 */}
+        <div>
+          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">SNS 링크</h4>
+          <ul className="space-y-2">
+            {config.snsLinks.map((item) => (
+              <ConfigRow key={item.label} item={item} />
+            ))}
+          </ul>
+        </div>
+
+        {/* Firebase */}
+        <div>
+          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">Firebase</h4>
+          <ul className="space-y-2">
+            {config.firebase.map((item) => (
+              <ConfigRow key={item.label} item={item} />
+            ))}
+          </ul>
+        </div>
+
+        {/* 환경변수 */}
+        <div>
+          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">환경변수</h4>
+          <ul className="space-y-2">
+            {config.env.map((item) => (
+              <ConfigRow key={item.label} item={item} />
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
