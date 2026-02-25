@@ -645,18 +645,32 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         volumeKeywords: ["손가락 빨기", "어린이 칫솔질"],
       },
       {
-        name: "불소/실란트",
+        name: "불소도포",
         keywords: [
           "불소 도포",
-          "실란트",
-          "치면 열구 전색",
           "어린이 불소",
           "불소 효과",
-          "실란트 비용",
           "불소 안전성",
-          "어린이 예방 치료",
+          "불소 바니쉬",
+          "불소 도포 비용",
+          "불소 도포 주기",
+          "불소 치약 어린이",
         ],
-        volumeKeywords: ["불소 도포", "실란트"],
+        volumeKeywords: ["불소 도포", "어린이 불소"],
+      },
+      {
+        name: "홈메우기",
+        keywords: [
+          "홈메우기",
+          "실란트",
+          "치면 열구 전색",
+          "홈메우기 비용",
+          "홈메우기 효과",
+          "어린이 홈메우기",
+          "홈메우기 보험",
+          "실란트 비용",
+        ],
+        volumeKeywords: ["홈메우기", "실란트 비용"],
       },
       {
         name: "소아응급/외상",
@@ -691,8 +705,13 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 효과와 비용: {aspect}",
-        subGroup: "불소/실란트",
-        aspect: "어린이 충치 예방 완벽 가이드",
+        subGroup: "불소도포",
+        aspect: "연령별 불소 도포 시기와 안전성 가이드",
+      },
+      {
+        template: "{keyword} 꼭 해야 할까? {aspect}",
+        subGroup: "홈메우기",
+        aspect: "효과·비용·보험 적용까지 완벽 정리",
       },
       {
         template: "아이 {keyword} 응급 대처법: {aspect}",
@@ -1218,7 +1237,7 @@ const AMBIGUOUS_BASE_PATTERN = /실란트|레진/;
 
 /** 동음이의어 키워드에서 치과 맥락을 판별하는 패턴 */
 const DENTAL_CONTEXT_PATTERN =
-  /치과|치아|충치|불소|어린이|소아|아이|유치|영구치|예방|도포|치료|효과|비용|가격|보험|후기|잇몸|구강|스케일링|신경|크라운|인레이|보존|보철|심미|앞니|수명|변색|관리/;
+  /치과|치아|충치|불소|어린이|소아|아이|유치|영구치|예방|도포|치료|효과|비용|가격|보험|후기|잇몸|구강|스케일링|신경|크라운|인레이|보존|보철|심미|앞니|수명|변색|관리|홈메우기/;
 
 /** 김포 외 주요 지역명 (타 지역 치과 키워드 차단) */
 const NON_LOCAL_REGION_PATTERN =
