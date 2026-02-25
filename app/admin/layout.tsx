@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "관리자",
+  title: "관리자 대시보드 | 서울본치과",
   robots: { index: false, follow: false },
 };
 

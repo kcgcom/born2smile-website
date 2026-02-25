@@ -74,9 +74,9 @@ app/                          # Next.js App Router pages
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
     (dashboard)/
       layout.tsx              # AuthGuard wrapper
-      page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
+      page.tsx                # Dashboard main — 7탭 컨테이너 ("use client")
       components/
-        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
+        AdminTabs.tsx         # 탭 네비게이션 (개요/트래픽/검색·SEO/트렌드/블로그/설정/개발, 아이콘+반응형 텍스트)
         OverviewTab.tsx       # 개요 탭 (핵심 지표 요약: 트래픽·검색·트렌드, 블로그 통계, 사이트 설정 상태)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
@@ -91,17 +91,13 @@ app/                          # Next.js App Router pages
         AdminErrorState.tsx   # 공통 에러 상태 UI
         AdminLoadingSkeleton.tsx # 공통 로딩 스켈레톤 UI
         PeriodSelector.tsx    # 기간 선택 버튼 그룹
+        DevTab.tsx            # 개발 탭 컨테이너 (서브탭: 현황/성능/레퍼런스)
+        ProjectTab.tsx        # 개발>현황 서브탭 (개선 항목 진행률, 환경변수 상태, 기술 스택)
+        PerformanceTab.tsx    # 개발>성능 서브탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 개선 기회)
+        ReferenceTab.tsx      # 개발>레퍼런스 서브탭 (의존성, TS/ESLint, 라우트, 인프라, Firestore, API/캐시 — 아코디언 UI)
         useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴, AbortController로 race condition 방지)
     login/
       page.tsx                # Google login page ("use client")
-  dev/
-    layout.tsx                # Dev layout (noindex, Header/Footer CSS 숨김)
-    page.tsx                  # 개발 대시보드 — 3탭 컨테이너 ("use client", AuthGuard)
-    components/
-      DevTabs.tsx             # 탭 네비게이션 (현황/성능/레퍼런스)
-      ProjectTab.tsx          # 현황 탭 (개선 항목 진행률, 환경변수 상태, 기술 스택)
-      ReferenceTab.tsx        # 레퍼런스 탭 (의존성, TS/ESLint, 라우트, 인프라, Firestore, API/캐시 — 아코디언 UI)
-      PerformanceTab.tsx      # 성능 탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 개선 기회)
   api/
     dev/
       env-status/
@@ -142,7 +138,7 @@ components/
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
-    DashboardHeader.tsx       # 관리자/개발 대시보드 공유 헤더 (variant prop, 양방향 네비게이션) ("use client")
+    DashboardHeader.tsx       # 관리자 대시보드 헤더 ("use client")
     AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client", localStorage 게이트 + 동적 Firebase import)
     AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
@@ -244,9 +240,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
 | `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
-| `/admin` | Client-side | 관리자 대시보드 6탭 (AuthGuard 보호, `"use client"`) |
+| `/admin` | Client-side | 관리자 대시보드 7탭 (AuthGuard 보호, `"use client"`) |
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
-| `/dev` | Client-side | 개발 대시보드 3탭 (AuthGuard 보호, `"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
 | `/api/dev/env-status` | Server-side | 환경변수 상태 API (Admin 인증) |
 | `/api/dev/pagespeed` | Server-side | PageSpeed Insights API 프록시 (Admin 인증, 6시간 캐시) |
@@ -296,23 +291,15 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **관리자 인증** (`lib/admin-auth.ts`): 이메일 화이트리스트 (`NEXT_PUBLIC_ADMIN_EMAILS`), Google 로그인
 - **AuthGuard** (`components/admin/AuthGuard.tsx`): `onAuthStateChanged` → 미로그인 리다이렉트, 비관리자 차단
 
-### 관리자 대시보드 & 개발 대시보드
+### 관리자 대시보드
 
-두 대시보드는 `DashboardHeader` 공유 헤더를 사용하며 양방향 네비게이션으로 연결됨. 탭 컴포넌트(AdminTabs, DevTabs)는 동일한 아이콘+반응형 텍스트 패턴 사용.
-
-**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param): 개요(핵심 지표 요약+블로그 통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+**관리자 대시보드 (`/admin`)** — 7탭 구조 (`?tab=` query param): 개요(핵심 지표 요약+블로그 통계+설정상태), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크), 개발(서브탭: 현황/성능/레퍼런스).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Firebase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Firebase SDK(~500KiB)를 제거
 - **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
-
-**개발 대시보드 (`/dev`)** — 3탭 구조 (`?tab=` query param): 현황(개선 진행률+환경변수 상태+기술 스택), 성능(PageSpeed Insights — Lighthouse 점수 게이지+CWV 필드 데이터+개선 기회), 레퍼런스(의존성+TS/ESLint+라우트+인프라+Firestore+API/캐시 — 아코디언 접기/펼치기).
-
-- **데이터 소스**: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 런타임 API (`/api/dev/env-status`), PageSpeed 성능 데이터는 런타임 API (`/api/dev/pagespeed`, `PAGESPEED_API_KEY` 필수, `unstable_cache` 6시간)
-- **매니페스트 생성**: `scripts/generate-dev-manifest.ts`가 `pnpm dev`/`pnpm build` 시 자동 실행. `package.json`, `tsconfig.json`, `firestore.indexes.json`, `firestore.rules`, `app/` 디렉토리를 스캔하여 의존성, 라우트, 렌더링 전략, 프로젝트 통계 수집
-- **인증**: 관리자 대시보드와 동일한 AuthGuard + 이메일 화이트리스트 사용
-- **SEO**: `robots.txt`에서 `/dev` Disallow, layout에서 `noindex`
+- **개발 탭** (`?tab=dev`): 서브탭 3개 — 현황(`sub=project`, 개선 진행률+환경변수+기술 스택), 성능(`sub=perf`, PageSpeed Insights), 레퍼런스(`sub=ref`, 아코디언 6섹션). 데이터 소스: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 `/api/dev/env-status`, PageSpeed는 `/api/dev/pagespeed` (`PAGESPEED_API_KEY` 필수, 6시간 캐시). 매니페스트는 `pnpm dev`/`pnpm build` 시 자동 생성
 
 ## Common Tasks
 

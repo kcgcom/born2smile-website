@@ -13,6 +13,7 @@ import { SearchTab } from "./components/SearchTab";
 import { BlogTab } from "./components/BlogTab";
 import { TrendTab } from "./components/TrendTab";
 import { SettingsTab } from "./components/SettingsTab";
+import { DevTab } from "./components/DevTab";
 
 // -------------------------------------------------------------
 // 대시보드 메인 페이지
@@ -46,7 +47,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <DashboardHeader variant="admin" userEmail={user?.email} onLogout={handleLogout} />
+      <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
 
       {/* 콘텐츠 */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -64,6 +65,7 @@ export default function AdminDashboardPage() {
         {activeTab === "blog" && <BlogTab editSlug={editSlug} newCategory={newCategory} />}
         {activeTab === "trend" && <TrendTab />}
         {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "dev" && <DevTab />}
       </div>
     </div>
   );

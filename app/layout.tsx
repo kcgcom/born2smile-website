@@ -71,10 +71,10 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#2563EB" />
         {/* 관리자 트래픽 GA 제외 — GA 스크립트 로드 전에 실행 */}
-        {/* /admin, /dev 경로 또는 관리자 로그인 브라우저에서 GA 비활성화 */}
+        {/* /admin 경로 또는 관리자 로그인 브라우저에서 GA 비활성화 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var p=location.pathname;if(p.startsWith("/admin")||p.startsWith("/dev")||localStorage.getItem("born2smile-admin")==="1")window["ga-disable-G-3ZDMMFGP6Z"]=true}catch(e){}`,
+            __html: `try{var p=location.pathname;if(p.startsWith("/admin")||localStorage.getItem("born2smile-admin")==="1")window["ga-disable-G-3ZDMMFGP6Z"]=true}catch(e){}`,
           }}
         />
         {/* Firebase preconnect 제거 — AdminFloatingButton 동적 임포트로

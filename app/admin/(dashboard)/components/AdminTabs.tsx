@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, BarChart3, Search, FileText, Settings, TrendingUp } from "lucide-react";
+import { LayoutDashboard, BarChart3, Search, FileText, Settings, TrendingUp, Code } from "lucide-react";
 
 export const TABS = [
   { id: "overview", label: "개요", icon: LayoutDashboard },
@@ -9,6 +9,7 @@ export const TABS = [
   { id: "trend", label: "트렌드", icon: TrendingUp },
   { id: "blog", label: "블로그", icon: FileText },
   { id: "settings", label: "설정", icon: Settings },
+  { id: "dev", label: "개발", icon: Code },
 ] as const;
 
 export type TabId = (typeof TABS)[number]["id"];
