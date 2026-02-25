@@ -459,13 +459,15 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
   const sort = useCallback(
     (rows: ContentGapItem[]) =>
       [...rows].sort((a, b) => {
+        const totalVol = (r: ContentGapItem) =>
+          (r.monthlyVolume ?? 0) + (r.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
         const av =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? ((a.monthlyVolume ?? a.currentAvg) as number)
+            ? (totalVol(a) || a.currentAvg)
             : (a[sortKey] as number);
         const bv =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? ((b.monthlyVolume ?? b.currentAvg) as number)
+            ? (totalVol(b) || b.currentAvg)
             : (b[sortKey] as number);
         const dir = sortDirection === "asc" ? 1 : -1;
         return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
@@ -546,7 +548,12 @@ export function TrendTab() {
     : [];
 
   const maxVolume = overviewData
-    ? Math.max(...overviewData.contentGap.map((g) => g.monthlyVolume ?? 0), 1)
+    ? Math.max(
+        ...overviewData.contentGap.map(
+          (g) => (g.monthlyVolume ?? 0) + (g.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0),
+        ),
+        1,
+      )
     : 1;
 
   const selectedVolumeMap = (() => {
@@ -554,7 +561,8 @@ export function TrendTab() {
     if (overviewData && selectedCategory) {
       for (const gap of overviewData.contentGap) {
         if (gap.slug === selectedCategory && gap.monthlyVolume != null) {
-          map.set(gap.subGroup, gap.monthlyVolume);
+          const relatedSum = (gap.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
+          map.set(gap.subGroup, gap.monthlyVolume + relatedSum);
         }
       }
     }
@@ -696,14 +704,17 @@ export function TrendTab() {
                   sortable: true,
                   render: (row) => {
                     const mv = row.monthlyVolume as number | null;
-                    const barPct = mv != null ? Math.min(100, (mv / maxVolume) * 100) : 0;
+                    const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
+                    const relatedSum = related.reduce((s, rk) => s + rk.volume, 0);
+                    const totalVolume = mv != null ? mv + relatedSum : null;
+                    const barPct = totalVolume != null ? Math.min(100, (totalVolume / maxVolume) * 100) : 0;
                     return (
                       <div>
                         <span className="tabular-nums font-medium text-[var(--foreground)]">
-                          {mv != null ? (
+                          {totalVolume != null ? (
                             <>
                               {row.isEstimated ? "≈ " : ""}
-                              {mv.toLocaleString("ko-KR")}
+                              {totalVolume.toLocaleString("ko-KR")}
                               <span className="ml-0.5 text-[10px] font-normal text-[var(--muted)]">/월</span>
                             </>
                           ) : (
@@ -713,7 +724,15 @@ export function TrendTab() {
                             </span>
                           )}
                         </span>
-                        {mv != null && (
+                        {totalVolume != null && relatedSum > 0 && (
+                          <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700 mt-0.5">
+                            직접
+                            <span className="ml-0.5 tabular-nums text-blue-400">
+                              {(mv ?? 0).toLocaleString("ko-KR")}
+                            </span>
+                          </span>
+                        )}
+                        {totalVolume != null && (
                           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
                             <div
                               className="h-1.5 rounded-full bg-blue-400"
