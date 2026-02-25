@@ -724,7 +724,7 @@ export function TrendTab() {
                             </span>
                           )}
                         </span>
-                        {totalVolume != null && relatedSum > 0 && (
+                        {totalVolume != null && (
                           <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700 mt-0.5">
                             직접
                             <span className="ml-0.5 tabular-nums text-blue-400">
