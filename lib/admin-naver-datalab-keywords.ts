@@ -89,6 +89,9 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "수입 임플란트",
           "임플란트 추천",
           "디지털 임플란트",
+          "네비게이션 임플란트",
+          "원데이 임플란트",
+          "전치부 임플란트",
         ],
         volumeKeywords: ["임플란트 종류", "오스템 임플란트"],
       },
@@ -105,6 +108,24 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 가능 여부",
         ],
         volumeKeywords: ["당뇨 임플란트", "임플란트 조건"],
+      },
+      {
+        name: "첨단/디지털",
+        keywords: [
+          "원데이 임플란트", "네비게이션 임플란트", "즉시 임플란트",
+          "디지털 임플란트", "3D 임플란트", "무절개 임플란트",
+          "가이드 임플란트", "즉시 식립",
+        ],
+        volumeKeywords: ["원데이 임플란트", "즉시 임플란트"],
+      },
+      {
+        name: "임플란트 잇몸",
+        keywords: [
+          "잇몸재생주사", "임플란트 주위염", "잇몸 이식",
+          "임플란트 잇몸 관리", "임플란트 잇몸 염증", "임플란트 잇몸 통증",
+          "임플란트 잇몸 퇴축", "임플란트 점막염",
+        ],
+        volumeKeywords: ["임플란트 주위염", "잇몸재생주사"],
       },
     ],
     topicAngles: [
@@ -132,6 +153,16 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 예방과 대처법 {count}가지",
         subGroup: "부작용/관리",
         aspect: "",
+      },
+      {
+        template: "{keyword} 최신 가이드: {aspect}",
+        subGroup: "첨단/디지털",
+        aspect: "원데이·네비게이션·즉시 식립 차이점 비교",
+      },
+      {
+        template: "{keyword} 예방과 치료: {aspect}",
+        subGroup: "임플란트 잇몸",
+        aspect: "주위염부터 잇몸재생까지 완벽 관리법",
       },
     ],
   },
@@ -213,6 +244,24 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["교정 칫솔질", "교정 중 관리"],
       },
+      {
+        name: "심미/고민",
+        keywords: [
+          "돌출입 교정", "덧니 교정", "교정 전후",
+          "벌어진 앞니 교정", "주걱턱 교정", "무턱 교정",
+          "비대칭 교정", "교정 얼굴 변화",
+        ],
+        volumeKeywords: ["돌출입 교정", "덧니 교정"],
+      },
+      {
+        name: "교정비교/선택",
+        keywords: [
+          "인비절라인 가격", "투명교정 후기", "교정 추천",
+          "교정 병원 추천", "투명교정 비교", "인비절라인 후기",
+          "교정 잘하는 치과", "교정 상담",
+        ],
+        volumeKeywords: ["인비절라인 가격", "투명교정 후기"],
+      },
     ],
     topicAngles: [
       {
@@ -239,6 +288,16 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 중 꼭 알아야 할 생활 관리법 {count}가지",
         subGroup: "생활/관리",
         aspect: "",
+      },
+      {
+        template: "{keyword} 전후 변화: {aspect}",
+        subGroup: "심미/고민",
+        aspect: "교정으로 달라지는 얼굴형과 자신감",
+      },
+      {
+        template: "{keyword} 비교 가이드: {aspect}",
+        subGroup: "교정비교/선택",
+        aspect: "인비절라인부터 세라믹까지 비용·기간·효과 비교",
       },
     ],
   },
@@ -334,6 +393,15 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["지르코니아", "골드 크라운"],
       },
+      {
+        name: "앞니치료",
+        keywords: [
+          "앞니 크라운", "앞니 깨짐", "앞니 레진",
+          "앞니 보철", "앞니 임플란트", "앞니 치료 비용",
+          "앞니 브릿지", "앞니 성형",
+        ],
+        volumeKeywords: ["앞니 크라운", "앞니 깨짐"],
+      },
     ],
     topicAngles: [
       {
@@ -365,6 +433,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{year}년 {keyword} 현실 가이드: {aspect}",
         subGroup: "비용",
         aspect: "건강보험 적용 범위와 실제 부담 비용",
+      },
+      {
+        template: "{keyword} 치료 옵션 비교: {aspect}",
+        subGroup: "앞니치료",
+        aspect: "레진·라미네이트·크라운, 내 앞니에 맞는 선택",
       },
     ],
   },
@@ -429,6 +502,10 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 균열",
           "크랙 치아",
           "지각과민",
+          "이 시림 치료",
+          "이갈이 마우스피스",
+          "턱관절 치료",
+          "이 시림 치약",
         ],
         volumeKeywords: ["이갈이", "치아 시림"],
       },
@@ -445,6 +522,24 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "에나멜 보호",
         ],
         volumeKeywords: ["충치 예방", "치아 관리"],
+      },
+      {
+        name: "증상/자가진단",
+        keywords: [
+          "이가 시려요", "잇몸에서 피나요", "이가 아파요",
+          "이가 흔들려요", "이 색이 변했어요", "이가 깨졌어요",
+          "잇몸이 부었어요", "이가 욱신거려요",
+        ],
+        volumeKeywords: ["이가 시려요", "잇몸에서 피나요"],
+      },
+      {
+        name: "사랑니/발치",
+        keywords: [
+          "사랑니 발치", "사랑니 통증", "매복 사랑니",
+          "사랑니 발치 비용", "사랑니 발치 후 관리", "사랑니 부분 매복",
+          "사랑니 염증", "사랑니 발치 기간",
+        ],
+        volumeKeywords: ["사랑니 발치", "사랑니 통증"],
       },
     ],
     topicAngles: [
@@ -472,6 +567,16 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword}로 치아 수명 늘리는 {count}가지 방법",
         subGroup: "예방",
         aspect: "",
+      },
+      {
+        template: "{keyword}? 증상별 원인과 대처법: {aspect}",
+        subGroup: "증상/자가진단",
+        aspect: "치과 가기 전 셀프 체크 가이드",
+      },
+      {
+        template: "{keyword} 완벽 가이드: {aspect}",
+        subGroup: "사랑니/발치",
+        aspect: "비용·통증·회복기간, 발치 전 꼭 알아야 할 것들",
       },
     ],
   },
@@ -553,6 +658,15 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["불소 도포", "실란트"],
       },
+      {
+        name: "소아응급/외상",
+        keywords: [
+          "아이 이 부러짐", "아이 이 빠졌을때", "유치 외상",
+          "아이 치아 부딪힘", "유치 탈구", "어린이 치아 응급",
+          "아이 입 부딪힘", "유치 깨짐",
+        ],
+        volumeKeywords: ["아이 이 부러짐", "유치 외상"],
+      },
     ],
     topicAngles: [
       {
@@ -579,6 +693,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 효과와 비용: {aspect}",
         subGroup: "불소/실란트",
         aspect: "어린이 충치 예방 완벽 가이드",
+      },
+      {
+        template: "아이 {keyword} 응급 대처법: {aspect}",
+        subGroup: "소아응급/외상",
+        aspect: "골든타임 내 부모가 해야 할 것들",
       },
     ],
   },
@@ -615,6 +734,10 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸 붓기",
           "잇몸 출혈",
           "잇몸 내려앉음",
+          "잇몸 퇴축",
+          "치조골 흡수",
+          "잇몸약",
+          "잇몸 영양제",
         ],
         volumeKeywords: ["잇몸질환", "치주염"],
       },
@@ -674,6 +797,24 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["에어플로우", "에어플로우 스케일링"],
       },
+      {
+        name: "잇몸재생/치료",
+        keywords: [
+          "잇몸재생주사", "잇몸재생술", "잇몸 퇴축 치료",
+          "잇몸 이식 수술", "치조골 재생", "잇몸 재건",
+          "잇몸재생 비용", "잇몸 퇴축 원인",
+        ],
+        volumeKeywords: ["잇몸재생주사", "잇몸재생술"],
+      },
+      {
+        name: "구강건조/타액",
+        keywords: [
+          "구강건조증", "입 마름", "약 부작용 입마름",
+          "타액 분비 감소", "구강건조 치료", "입 마름 원인",
+          "구강건조 예방", "침 분비 촉진",
+        ],
+        volumeKeywords: ["구강건조증", "입 마름"],
+      },
     ],
     topicAngles: [
       {
@@ -705,6 +846,16 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} vs 일반 스케일링: {aspect}",
         subGroup: "에어플로우",
         aspect: "차이점과 효과, 비용 비교 총정리",
+      },
+      {
+        template: "{keyword} 최신 치료법: {aspect}",
+        subGroup: "잇몸재생/치료",
+        aspect: "잇몸재생주사부터 이식 수술까지 옵션 비교",
+      },
+      {
+        template: "{keyword} 원인과 해결법: {aspect}",
+        subGroup: "구강건조/타액",
+        aspect: "약 부작용부터 생활습관까지 구강건조 완벽 가이드",
       },
     ],
   },
@@ -783,8 +934,38 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "65세 치과",
           "노인 구강건강",
           "노년 치아 관리",
+          "시니어 임플란트",
+          "65세 치과 보험",
+          "노인 잇몸 관리",
         ],
         volumeKeywords: ["노인 구강관리", "어르신 치과"],
+      },
+      {
+        name: "치과공포/심리",
+        keywords: [
+          "치과 공포증", "수면 치료", "무통 치료",
+          "치과 무서워요", "진정 치료", "웃음가스 치과",
+          "치과 불안", "치과 두려움 극복",
+        ],
+        volumeKeywords: ["치과 공포증", "수면 치료"],
+      },
+      {
+        name: "약/부작용",
+        keywords: [
+          "혈압약 치과", "혈액희석제 발치", "골다공증약 임플란트",
+          "아스피린 발치", "항응고제 치과", "비스포스포네이트 치과",
+          "당뇨약 치과", "스테로이드 치과",
+        ],
+        volumeKeywords: ["혈압약 치과", "혈액희석제 발치"],
+      },
+      {
+        name: "구강케어제품",
+        keywords: [
+          "전동칫솔 추천", "워터픽 효과", "치약 추천",
+          "구강세정제 추천", "치간칫솔 추천", "치실 추천",
+          "잇몸 치약", "시린이 치약",
+        ],
+        volumeKeywords: ["전동칫솔 추천", "치약 추천"],
       },
     ],
     topicAngles: [
@@ -813,6 +994,21 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         subGroup: "시니어",
         aspect: "임플란트부터 틀니까지 노년 치아 관리법",
       },
+      {
+        template: "{keyword} 극복 가이드: {aspect}",
+        subGroup: "치과공포/심리",
+        aspect: "수면·진정·무통 치료 옵션 완벽 비교",
+      },
+      {
+        template: "{keyword} 치과 치료 시 주의사항: {aspect}",
+        subGroup: "약/부작용",
+        aspect: "복용 약별 치과 치료 전 체크리스트",
+      },
+      {
+        template: "{year}년 {keyword} 가이드: {aspect}",
+        subGroup: "구강케어제품",
+        aspect: "치과 의사가 추천하는 구강 케어 제품 비교",
+      },
     ],
   },
 
@@ -834,6 +1030,13 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "고촌 치과",
           "한강신도시 치과",
           "장기동 치과",
+          "김포 치과 추천",
+          "한강신도시 임플란트",
+          "장기동 임플란트",
+          "고촌 치과 추천",
+          "풍무동 치과",
+          "김포시 치과 추천",
+          "김포 한강신도시 치과",
         ],
         volumeKeywords: ["김포치과 추천", "김포 임플란트"],
       },
@@ -848,6 +1051,10 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 추천",
           "치과 비교",
           "치과 상담",
+          "치과추천",
+          "양심치과",
+          "과잉진료",
+          "세컨드오피니언 치과",
         ],
         volumeKeywords: ["치과 고르는 법", "치과 추천"],
       },
@@ -862,6 +1069,10 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "밤에 치통",
           "치아 빠짐",
           "잇몸 부음",
+          "잇몸에서 피나요",
+          "이가 시려요",
+          "양치할때 피",
+          "이 시림",
         ],
         volumeKeywords: ["치통 응급", "이가 아플때"],
       },
@@ -893,6 +1104,51 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         volumeKeywords: ["치과 후기", "치과 리뷰"],
       },
+      {
+        name: "김포지역세분화",
+        keywords: [
+          "김포 치과", "김포 장기동 치과", "김포 풍무동 치과",
+          "김포 고촌 치과", "김포 구래동 치과", "김포 마산동 치과",
+          "김포 양촌 치과", "김포 걸포동 치과",
+        ],
+        volumeKeywords: ["김포 치과", "김포 장기동 치과"],
+      },
+      {
+        name: "김포진료별",
+        keywords: [
+          "김포 임플란트", "김포 교정", "김포 스케일링",
+          "김포 충치치료", "김포 신경치료", "김포 미백",
+          "김포 틀니", "김포 소아치과",
+        ],
+        volumeKeywords: ["김포 임플란트", "김포 교정"],
+      },
+      {
+        name: "양심/신뢰",
+        keywords: [
+          "양심치과", "과잉진료 치과", "치과 세컨드오피니언",
+          "치과 과잉진료 구별", "양심 치과 고르는 법", "치과 신뢰",
+          "투명 치과", "치과 진단 차이",
+        ],
+        volumeKeywords: ["양심치과", "과잉진료 치과"],
+      },
+      {
+        name: "야간/주말/편의",
+        keywords: [
+          "김포 야간치과", "김포 주말치과", "응급 치과",
+          "야간 치과 진료", "주말 치과 진료", "공휴일 치과",
+          "김포 일요일 치과", "김포 늦게까지 치과",
+        ],
+        volumeKeywords: ["김포 야간치과", "김포 주말치과"],
+      },
+      {
+        name: "보험/실비활용",
+        keywords: [
+          "치과 실비보험", "임플란트 실비", "치과 실비 청구",
+          "치과 보험 적용 항목", "치과 실비 보장", "교정 실비",
+          "크라운 실비", "치과 의료비 공제",
+        ],
+        volumeKeywords: ["치과 실비보험", "임플란트 실비"],
+      },
     ],
     topicAngles: [
       {
@@ -919,6 +1175,31 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 제대로 보는 법: {aspect}",
         subGroup: "후기/평판",
         aspect: "신뢰할 수 있는 치과 후기 구별 가이드",
+      },
+      {
+        template: "{keyword} 추천 가이드: {aspect}",
+        subGroup: "김포지역세분화",
+        aspect: "동네별 위치·특징·진료 과목 비교",
+      },
+      {
+        template: "{keyword} 잘하는 곳 고르는 법: {aspect}",
+        subGroup: "김포진료별",
+        aspect: "진료별 전문성 확인 포인트",
+      },
+      {
+        template: "{keyword} 구별하는 {count}가지 방법: {aspect}",
+        subGroup: "양심/신뢰",
+        aspect: "과잉진료 피하고 신뢰할 수 있는 치과 찾기",
+      },
+      {
+        template: "{keyword} 찾기: {aspect}",
+        subGroup: "야간/주말/편의",
+        aspect: "김포 지역 야간·주말·응급 진료 안내",
+      },
+      {
+        template: "{keyword} 활용 가이드: {aspect}",
+        subGroup: "보험/실비활용",
+        aspect: "치료별 실비 청구 방법과 보장 범위",
       },
     ],
   },
