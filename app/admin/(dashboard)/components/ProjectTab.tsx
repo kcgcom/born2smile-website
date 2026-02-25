@@ -9,7 +9,6 @@ import {
   type SiteConfigStatus,
 } from "@/lib/admin-data";
 import { ConfigRow } from "./ConfigRow";
-import { DEV_MANIFEST } from "@/lib/dev/generated/dev-manifest";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -83,35 +82,6 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
         <circle cx="4" cy="4" r="3" />
       </svg>
     </span>
-  );
-}
-
-// -------------------------------------------------------------
-// 주요 기술 스택 카드
-// -------------------------------------------------------------
-
-const KEY_PACKAGES = ["next", "react", "typescript", "tailwindcss", "firebase", "zod"];
-
-function TechStackGrid() {
-  const keyDeps = KEY_PACKAGES.map((name) => {
-    const dep = DEV_MANIFEST.dependencies.find((d) => d.name === name);
-    return { name, version: dep?.version ?? "—" };
-  });
-
-  return (
-    <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-        기술 스택
-      </h3>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {keyDeps.map((d) => (
-          <div key={d.name} className="rounded-lg bg-[var(--background)] p-2.5 text-center">
-            <p className="text-sm font-medium text-[var(--foreground)]">{d.name}</p>
-            <p className="text-xs text-[var(--muted)]">{d.version}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -409,9 +379,6 @@ export function ProjectTab() {
 
       {/* 환경변수 건강 상태 */}
       <EnvHealthSection />
-
-      {/* 기술 스택 */}
-      <TechStackGrid />
 
       {/* 사이트 설정 상태 */}
       <SiteConfigSection config={getSiteConfigStatus()} />
