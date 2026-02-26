@@ -77,7 +77,8 @@ export function Header() {
       const isCurrentPage =
         href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
       if (isCurrentPage) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
       }
     },
     [pathname]
@@ -172,16 +173,15 @@ export function Header() {
           </div>
         </div>
 
-        {/* 모바일 메뉴 */}
-        <div
-          id="mobile-menu"
-          ref={menuRef}
-          className="grid border-t border-gray-100 bg-white transition-[grid-template-rows] duration-[250ms] ease-in-out md:hidden"
-          style={{ gridTemplateRows: isMobileMenuOpen ? "1fr" : "0fr" }}
-          role="navigation"
-          aria-label="모바일 메뉴"
-        >
-          <div className="overflow-hidden">
+        {/* 모바일 메뉴: 닫힌 상태에서는 DOM에서 제거해 포커스/스크린리더 혼선 방지 */}
+        {isMobileMenuOpen && (
+          <div
+            id="mobile-menu"
+            ref={menuRef}
+            className="border-t border-gray-100 bg-white md:hidden"
+            role="navigation"
+            aria-label="모바일 메뉴"
+          >
             <nav className="flex flex-col px-4 py-4">
               {NAV_ITEMS.map((item) => {
                 const isActive =
@@ -217,7 +217,7 @@ export function Header() {
               </a>
             </nav>
           </div>
-        </div>
+        )}
       </header>
     </>
   );

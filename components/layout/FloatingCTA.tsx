@@ -22,7 +22,8 @@ export function FloatingCTA() {
       const isCurrentPage =
         href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
       if (isCurrentPage) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
       }
     },
     [pathname]
