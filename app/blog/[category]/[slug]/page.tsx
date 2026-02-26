@@ -24,6 +24,7 @@ import {
 } from "@/lib/blog-firestore";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
+import TableOfContents from "@/components/blog/TableOfContents";
 
 export const revalidate = 3600;
 
@@ -170,9 +171,12 @@ export default async function BlogPostPage({
         {/* 본문 */}
         <section className="section-padding bg-white">
           <FadeIn className="mx-auto max-w-3xl">
+            {post.content.length >= 3 && (
+              <TableOfContents headings={post.content.map((s) => s.heading)} />
+            )}
             <div className="space-y-10">
-              {post.content.map((section) => (
-                <div key={section.heading}>
+              {post.content.map((section, index) => (
+                <div key={section.heading} id={`section-${index}`}>
                   <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
                     {section.heading}
                   </h2>
