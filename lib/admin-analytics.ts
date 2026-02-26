@@ -147,12 +147,15 @@ export async function fetchGA4Data(period: string) {
     },
   };
 
-  // Parse top pages
-  const topPages = (pagesReport[0]?.rows ?? []).map((row) => ({
-    path: row.dimensionValues?.[0]?.value ?? "",
-    views: Number(row.metricValues?.[0]?.value ?? 0),
-    sessions: Number(row.metricValues?.[1]?.value ?? 0),
-  }));
+  // Parse top pages (exclude admin/dev paths)
+  const EXCLUDED_PREFIXES = ["/admin", "/api/"];
+  const topPages = (pagesReport[0]?.rows ?? [])
+    .map((row) => ({
+      path: row.dimensionValues?.[0]?.value ?? "",
+      views: Number(row.metricValues?.[0]?.value ?? 0),
+      sessions: Number(row.metricValues?.[1]?.value ?? 0),
+    }))
+    .filter((p) => !EXCLUDED_PREFIXES.some((prefix) => p.path.startsWith(prefix)));
 
   // Parse traffic sources
   const totalSessions = summary.sessions.value || 1;
