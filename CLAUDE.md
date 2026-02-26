@@ -66,7 +66,7 @@ app/                          # Next.js App Router pages
   blog/
     page.tsx                  # Blog hub (delegates to BlogContent)
     [category]/page.tsx       # Category hub landing page (7 categories, generateStaticParams)
-    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA)
+    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA, 목차 TOC)
     [category]/[slug]/loading.tsx # Suspense loading boundary
     redirect/[slug]/page.tsx  # Old URL redirect handler (Firestore lookup → permanentRedirect)
   faq/page.tsx                # 전체 FAQ 통합 페이지 (6개 진료 과목 FAQ, FAQPage JSON-LD)
@@ -134,6 +134,7 @@ components/
   blog/
     BlogContent.tsx           # Blog listing/display component ("use client")
     BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
+    TableOfContents.tsx       # 블로그 목차 자동 생성 ("use client", IntersectionObserver 스크롤 스파이, 모바일 접기/펼치기)
     LikeButton.tsx            # Firestore 좋아요 버튼 ("use client")
   admin/
     AuthGuard.tsx             # Firebase Auth guard ("use client")
