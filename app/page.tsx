@@ -5,6 +5,7 @@ import {
   Star,
   ExternalLink,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
@@ -81,6 +82,15 @@ export default function Home() {
               </Link>
             </FadeIn>
           </div>
+
+          {/* 스크롤 인디케이터 */}
+          <a
+            href="#greeting"
+            aria-label="아래로 스크롤"
+            className="scroll-indicator absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-400 transition-colors hover:text-[var(--color-primary)]"
+          >
+            <ChevronDown size={28} strokeWidth={1.5} />
+          </a>
         </div>
       </section>
 

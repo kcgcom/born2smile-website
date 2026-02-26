@@ -139,6 +139,15 @@ body {
   }
 }
 
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+.scroll-indicator {
+  animation: scrollBounce 1.8s ease-in-out infinite;
+}
+
 /* 모션 감소 설정 시 즉시 표시 */
 @media (prefers-reduced-motion: reduce) {
   .fade-in-target,
@@ -146,6 +155,10 @@ body {
     opacity: 1 !important;
     animation: none !important;
     transform: none !important;
+  }
+
+  .scroll-indicator {
+    animation: none !important;
   }
 }
 
