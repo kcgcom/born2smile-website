@@ -4,7 +4,6 @@ import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
   getCategoryFromSlug,
-  getCategorySlug,
   getBlogPostUrl,
 } from "@/lib/blog";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";

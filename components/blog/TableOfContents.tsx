@@ -9,14 +9,10 @@ interface TableOfContentsProps {
 
 export default function TableOfContents({ headings }: TableOfContentsProps) {
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false
+  );
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // 데스크톱이면 기본 펼침, 모바일이면 기본 접힘
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsOpen(mq.matches);
-  }, []);
 
   // 스크롤 스파이: IntersectionObserver로 현재 보이는 섹션 추적
   useEffect(() => {
