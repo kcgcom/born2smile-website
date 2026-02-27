@@ -187,7 +187,15 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
     refetch: refetchPosts,
   } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
 
-  const posts = useMemo(() => postsData ?? [], [postsData]);
+  // Optimistic publish: mark locally published slugs before server cache refreshes
+  const [publishedSlugs, setPublishedSlugs] = useState<Set<string>>(new Set());
+  const posts = useMemo(() => {
+    const raw = postsData ?? [];
+    if (publishedSlugs.size === 0) return raw;
+    return raw.map((p) =>
+      publishedSlugs.has(p.slug) ? { ...p, published: true } : p,
+    );
+  }, [postsData, publishedSlugs]);
 
   const { data: likesData, loading: likesLoading, error: likesError } =
     useAdminApi<BlogLikesData>("/api/admin/blog-likes");
@@ -439,9 +447,17 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
     if (error) {
       setPublishError(error);
     } else {
+      // Optimistic: immediately mark as published in local state
+      setPublishedSlugs((prev) => new Set(prev).add(publishingSlug));
       if (publishingSlug === expandedSlug) {
         setExpandedSlug(null);
+        setInlineForm(null);
       }
+      setExpandedCache((prev) => {
+        const next = { ...prev };
+        delete next[publishingSlug];
+        return next;
+      });
       setPublishingSlug(null);
       refetchPosts();
     }
