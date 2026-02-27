@@ -43,7 +43,7 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
       const todayKST = getTodayKST();
       const scheduledDates = new Set(
         posts
-          .filter((p) => p.published && p.date > todayKST)
+          .filter((p) => p.published && p.date >= todayKST)
           .map((p) => p.date),
       );
 
