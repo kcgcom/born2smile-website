@@ -232,6 +232,8 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   const { mutate } = useAdminMutation();
 
   // Inline expand state for draft queue
+  const expandAbortRef = useRef<AbortController | null>(null);
+  const inlineSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [expandedCache, setExpandedCache] = useState<Record<string, ExpandedPostData>>({});
   const [inlineForm, setInlineForm] = useState<ExpandedPostData | null>(null);
@@ -239,6 +241,14 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const [inlineSaving, setInlineSaving] = useState(false);
   const [inlineSaved, setInlineSaved] = useState(false);
+
+  // Cleanup expand abort & saved timer on unmount
+  useEffect(() => {
+    return () => {
+      expandAbortRef.current?.abort();
+      if (inlineSavedTimerRef.current) clearTimeout(inlineSavedTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -399,29 +409,29 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   const getNextPublishDate = (): string => {
     const days = scheduleData?.publishDays ?? [1, 3, 5];
     if (days.length === 0) {
-      // No schedule — default to tomorrow
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      return d.toISOString().slice(0, 10);
+      // No schedule — default to tomorrow (KST-aware)
+      const [y, m, d] = today.split("-").map(Number);
+      const tom = new Date(y, m - 1, d + 1);
+      return tom.toISOString().slice(0, 10);
     }
     // Collect dates already occupied (published posts with today or future dates)
     const scheduledDates = new Set(
       posts.filter((p) => p.published && p.date >= today).map((p) => p.date),
     );
-    // Find next available date starting from today
-    const d = new Date();
+    // Find next available date starting from today (KST-based)
+    const [y, m, d] = today.split("-").map(Number);
+    const cursor = new Date(y, m - 1, d);
     for (let i = 0; i < 90; i++) {
-      const iso = d.toISOString().slice(0, 10);
-      const dow = d.getDay(); // 0=Sun
-      if (days.includes(dow) && !scheduledDates.has(iso) && iso >= today) {
+      const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+      const dow = cursor.getDay(); // 0=Sun
+      if (days.includes(dow) && !scheduledDates.has(iso)) {
         return iso;
       }
-      d.setDate(d.getDate() + 1);
+      cursor.setDate(cursor.getDate() + 1);
     }
-    // Fallback: tomorrow
-    const fb = new Date();
-    fb.setDate(fb.getDate() + 1);
-    return fb.toISOString().slice(0, 10);
+    // Fallback: tomorrow (KST-aware)
+    const fb = new Date(y, m - 1, d + 1);
+    return `${fb.getFullYear()}-${String(fb.getMonth() + 1).padStart(2, "0")}-${String(fb.getDate()).padStart(2, "0")}`;
   };
 
   const handlePublishOpen = (slug: string) => {
@@ -483,6 +493,9 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
 
   // Inline expand handlers
   const handleToggleExpand = async (slug: string) => {
+    // Cancel any in-flight expand fetch
+    expandAbortRef.current?.abort();
+
     if (expandedSlug === slug) {
       setExpandedSlug(null);
       return;
@@ -496,9 +509,12 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
         ...expandedCache[slug],
         content: expandedCache[slug].content.map((s) => ({ ...s })),
       });
+      setExpandedLoading(false);
       return;
     }
 
+    const controller = new AbortController();
+    expandAbortRef.current = controller;
     setExpandedLoading(true);
     try {
       const user = getFirebaseAuth().currentUser;
@@ -506,6 +522,7 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
       const token = await user.getIdToken();
       const res = await fetch(`/api/admin/blog-posts/${slug}`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error("포스트를 불러올 수 없습니다");
       const json = await res.json();
@@ -520,6 +537,7 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
       setExpandedCache((prev) => ({ ...prev, [slug]: data }));
       setInlineForm({ ...data, content: data.content.map((s) => ({ ...s })) });
     } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
       setExpandedError(e instanceof Error ? e.message : "알 수 없는 오류");
     } finally {
       setExpandedLoading(false);
@@ -541,10 +559,11 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   };
 
   const handleInlineSave = async () => {
-    if (!expandedSlug || !inlineForm) return;
+    const slug = expandedSlug;
+    if (!slug || !inlineForm) return;
     setInlineSaving(true);
     setExpandedError(null);
-    const { error } = await mutate(`/api/admin/blog-posts/${expandedSlug}`, "PUT", {
+    const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "PUT", {
       title: inlineForm.title,
       subtitle: inlineForm.subtitle,
       excerpt: inlineForm.excerpt,
@@ -556,13 +575,14 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
     } else {
       setExpandedCache((prev) => ({
         ...prev,
-        [expandedSlug]: {
+        [slug]: {
           ...inlineForm,
           content: inlineForm.content.map((s) => ({ ...s })),
         },
       }));
       setInlineSaved(true);
-      setTimeout(() => setInlineSaved(false), 2000);
+      if (inlineSavedTimerRef.current) clearTimeout(inlineSavedTimerRef.current);
+      inlineSavedTimerRef.current = setTimeout(() => setInlineSaved(false), 2000);
       refetchPosts();
     }
   };
@@ -778,7 +798,10 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
                                   발행
                                 </button>
                                 <button
-                                  onClick={() => handleEdit(post)}
+                                  onClick={() => {
+                                    if (inlineDirty && !window.confirm("저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?")) return;
+                                    handleEdit(post);
+                                  }}
                                   className="ml-auto flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--color-primary)] transition-colors"
                                 >
                                   <ExternalLink className="h-3.5 w-3.5" />
