@@ -155,7 +155,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // ── 미완료 — 추후 구현 ──
   { id: "m40", title: "진료 과목 간 교차 링크", priority: "MEDIUM", status: "done", description: "진료 페이지 하단에 '함께 알아보면 좋은 진료' 섹션. 내부 링크 강화 → 체류 시간 증가 + SEO" },
   { id: "m41", title: "시간대별 CTA 차별화", priority: "MEDIUM", status: "pending", description: "진료시간 중: '지금 전화 상담 가능' (초록), 진료시간 외: '내일 오전 진료 시작' 메시지. HOURS 데이터 활용" },
-  { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "pending", description: "BlogPostSection[] 제목으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
+  { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "done", description: "BlogPostSection[] 제목으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
   { id: "m43", title: "카테고리 허브 페이지 지역 SEO", priority: "MEDIUM", status: "pending", description: "/blog/implant 등 허브 페이지 title/desc에 '김포' 지역 키워드 추가" },
   { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "pending", description: "트렌드 탭 키워드에 의도 태그(정보형/비교형/전환형) 추가. 전환형 키워드 우선순위 상향" },
   { id: "m45", title: "SC 쿼리 × 트렌드 키워드 교차 분석", priority: "MEDIUM", status: "pending", description: "Search Console 유입 쿼리와 DataLab 시장 수요 교차 비교. '수요 높지만 유입 없는' 기회 키워드 식별" },
