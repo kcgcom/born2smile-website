@@ -396,9 +396,9 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
       d.setDate(d.getDate() + 1);
       return d.toISOString().slice(0, 10);
     }
-    // Collect dates already scheduled (published posts with future dates)
+    // Collect dates already occupied (published posts with today or future dates)
     const scheduledDates = new Set(
-      posts.filter((p) => p.published && p.date > today).map((p) => p.date),
+      posts.filter((p) => p.published && p.date >= today).map((p) => p.date),
     );
     // Find next available date starting from today
     const d = new Date();
