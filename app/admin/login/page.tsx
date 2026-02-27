@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { signInWithGoogle, signOutAdmin, isAdminEmail } from "@/lib/admin-auth";
+import { signInWithGoogle, signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
 
 export default function AdminLoginPage() {
@@ -15,10 +15,12 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
-      if (user && isAdminEmail(user.email)) {
-        router.replace("/admin");
-      }
-      setChecking(false);
+      void (async () => {
+        if (await verifyAdminUser(user)) {
+          router.replace("/admin");
+        }
+        setChecking(false);
+      })();
     });
     return unsubscribe;
   }, [router]);
@@ -29,7 +31,7 @@ export default function AdminLoginPage() {
     try {
       const result = await signInWithGoogle();
       const email = result.user.email;
-      if (!isAdminEmail(email)) {
+      if (!(await verifyAdminUser(result.user))) {
         setError(`${email} 은(는) 관리자 계정이 아닙니다.`);
         await signOutAdmin();
       } else {

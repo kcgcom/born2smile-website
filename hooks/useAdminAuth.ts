@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
-import { isAdminEmail } from "@/lib/admin-auth";
+import { verifyAdminUser } from "@/lib/admin-auth";
 
 /**
  * 현재 사용자가 관리자인지 감지하는 훅.
@@ -16,12 +16,14 @@ export function useAdminAuth(): boolean {
   useEffect(() => {
     if (!isFirebaseConfigured) return;
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
-      const admin = !!user && isAdminEmail(user.email);
-      setIsAdmin(admin);
-      try {
-        if (admin) localStorage.setItem("born2smile-admin", "1");
-        else localStorage.removeItem("born2smile-admin");
-      } catch { /* SSR / private browsing */ }
+      void (async () => {
+        const admin = await verifyAdminUser(user);
+        setIsAdmin(admin);
+        try {
+          if (admin) localStorage.setItem("born2smile-admin", "1");
+          else localStorage.removeItem("born2smile-admin");
+        } catch { /* SSR / private browsing */ }
+      })();
     });
     return unsubscribe;
   }, []);

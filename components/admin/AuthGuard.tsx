@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { isAdminEmail } from "@/lib/admin-auth";
+import { verifyAdminUser } from "@/lib/admin-auth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,13 +12,18 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+      void (async () => {
+        setUser(firebaseUser);
+        const admin = await verifyAdminUser(firebaseUser);
+        setIsAdmin(admin);
+        setLoading(false);
+      })();
     });
     return unsubscribe;
   }, []);
@@ -39,7 +44,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return null;
   }
 
-  if (!isAdminEmail(user.email)) {
+  if (!isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
         <div className="mx-4 max-w-md rounded-xl bg-[var(--surface)] p-8 text-center shadow-lg">

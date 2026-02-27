@@ -6,17 +6,19 @@
 import { signInWithPopup, signOut } from "firebase/auth";
 import { getFirebaseAuth, getGoogleProvider } from "./firebase";
 
-const ADMIN_EMAILS: string[] = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? ""
-)
-  .split(",")
-  .map((e) => e.trim())
-  .filter(Boolean);
-
-/** 관리자 이메일 화이트리스트 검증 */
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email || ADMIN_EMAILS.length === 0) return false;
-  return ADMIN_EMAILS.includes(email);
+/** 서버 API를 통해 관리자 권한 검증 */
+export async function verifyAdminUser(user: { getIdToken: () => Promise<string> } | null | undefined): Promise<boolean> {
+  if (!user) return false;
+  try {
+    const token = await user.getIdToken();
+    const response = await fetch("/api/admin/auth-check", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 /** Google 팝업 로그인 */

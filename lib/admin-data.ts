@@ -256,7 +256,7 @@ export function getSiteConfigStatus(): SiteConfigStatus {
 
   const env: ConfigItem[] = [
     { label: "카카오맵 앱 키", configured: !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY },
-    { label: "관리자 이메일", configured: !!process.env.NEXT_PUBLIC_ADMIN_EMAILS },
+    { label: "관리자 이메일", configured: !!process.env.ADMIN_EMAILS },
   ];
 
   return { snsLinks, firebase, env };

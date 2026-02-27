@@ -29,7 +29,7 @@ export function AdminFloatingButton() {
     let unsubscribe: (() => void) | undefined;
 
     (async () => {
-      const [{ onAuthStateChanged }, { getFirebaseAuth, isFirebaseConfigured }, { isAdminEmail }] =
+      const [{ onAuthStateChanged }, { getFirebaseAuth, isFirebaseConfigured }, { verifyAdminUser }] =
         await Promise.all([
           import("firebase/auth"),
           import("@/lib/firebase"),
@@ -39,14 +39,16 @@ export function AdminFloatingButton() {
       if (!isFirebaseConfigured) return;
 
       unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
-        const admin = !!user && isAdminEmail(user.email);
-        setIsAdmin(admin);
-        try {
-          if (admin) localStorage.setItem("born2smile-admin", "1");
-          else localStorage.removeItem("born2smile-admin");
-        } catch {
-          /* private browsing */
-        }
+        void (async () => {
+          const admin = await verifyAdminUser(user);
+          setIsAdmin(admin);
+          try {
+            if (admin) localStorage.setItem("born2smile-admin", "1");
+            else localStorage.removeItem("born2smile-admin");
+          } catch {
+            /* private browsing */
+          }
+        })();
       });
     })();
 

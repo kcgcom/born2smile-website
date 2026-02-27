@@ -10,7 +10,7 @@
 | `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` | Kakao Maps JavaScript App Key | 지도 컴포넌트 필수 |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Web API Key | Firestore 좋아요 + 관리자 인증 필수 |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Project ID (default: `seoul-born2smile`) | 필수 |
-| `NEXT_PUBLIC_ADMIN_EMAILS` | 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`) | 필수 |
+| `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`) | 필수 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Google 서비스 계정 JSON key (로컬 개발 전용). 프로덕션은 Cloud Run ADC가 자동 인증. App Hosting SA에 GA4 뷰어 + SC 전체 권한 필요 | 로컬 전용 |
 | `GA4_PROPERTY_ID` | Google Analytics 4 속성 ID (숫자만, 예: `525397980`) | 트래픽 탭 필수 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`) | 검색/SEO 탭 필수 |

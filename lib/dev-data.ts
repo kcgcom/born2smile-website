@@ -157,7 +157,7 @@ export interface EnvVariable {
 export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NEXT_PUBLIC_KAKAO_MAP_APP_KEY", label: "카카오맵 앱 키", required: true, scope: "public" },
   { key: "NEXT_PUBLIC_FIREBASE_API_KEY", label: "Firebase API Key", required: true, scope: "public" },
-  { key: "NEXT_PUBLIC_ADMIN_EMAILS", label: "관리자 이메일", required: true, scope: "public" },
+  { key: "ADMIN_EMAILS", label: "관리자 이메일", required: true, scope: "private" },
   { key: "GA4_PROPERTY_ID", label: "GA4 속성 ID", required: false, scope: "private" },
   { key: "SEARCH_CONSOLE_SITE_URL", label: "Search Console URL", required: false, scope: "private" },
   { key: "NAVER_DATALAB_CLIENT_ID", label: "네이버 DataLab Client ID", required: false, scope: "private" },
