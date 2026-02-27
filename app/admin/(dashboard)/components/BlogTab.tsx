@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { Pencil, Trash2, Plus, Calendar, Save, Loader2, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, Save, Loader2, Check, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORIES } from "@/lib/blog/types";
@@ -112,6 +113,14 @@ interface AdminBlogPost {
   createdAt?: string;
 }
 
+interface ExpandedPostData {
+  title: string;
+  subtitle: string;
+  excerpt: string;
+  tags: string[];
+  content: { heading: string; content: string }[];
+}
+
 interface BlogLikesData {
   likes: Record<string, number>;
   totalLikes: number;
@@ -213,6 +222,15 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
   const [scheduledDate, setScheduledDate] = useState("");
   const [publishing, setPublishing] = useState(false);
   const { mutate } = useAdminMutation();
+
+  // Inline expand state for draft queue
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const [expandedCache, setExpandedCache] = useState<Record<string, ExpandedPostData>>({});
+  const [inlineForm, setInlineForm] = useState<ExpandedPostData | null>(null);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+  const [inlineSaving, setInlineSaving] = useState(false);
+  const [inlineSaved, setInlineSaved] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -323,6 +341,28 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
       .slice(0, 10);
   }, [likesData, posts, today]);
 
+  // Inline expand dirty tracking
+  const inlineDirty = useMemo(() => {
+    if (!expandedSlug || !inlineForm || !expandedCache[expandedSlug]) return false;
+    return JSON.stringify(inlineForm) !== JSON.stringify(expandedCache[expandedSlug]);
+  }, [expandedSlug, inlineForm, expandedCache]);
+
+  const dirtyFields = useMemo(() => {
+    const fields = new Set<string>();
+    if (!expandedSlug || !inlineForm || !expandedCache[expandedSlug]) return fields;
+    const orig = expandedCache[expandedSlug];
+    if (inlineForm.title !== orig.title) fields.add("title");
+    if (inlineForm.subtitle !== orig.subtitle) fields.add("subtitle");
+    if (inlineForm.excerpt !== orig.excerpt) fields.add("excerpt");
+    inlineForm.content.forEach((sec, i) => {
+      if (orig.content[i]) {
+        if (sec.heading !== orig.content[i].heading) fields.add(`sh-${i}`);
+        if (sec.content !== orig.content[i].content) fields.add(`sc-${i}`);
+      }
+    });
+    return fields;
+  }, [expandedSlug, inlineForm, expandedCache]);
+
   // CRUD handlers
   const handleCreate = () => {
     setEditingPost(null);
@@ -422,6 +462,92 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
     }
   };
 
+  // Inline expand handlers
+  const handleToggleExpand = async (slug: string) => {
+    if (expandedSlug === slug) {
+      setExpandedSlug(null);
+      return;
+    }
+    setExpandedSlug(slug);
+    setExpandedError(null);
+    setInlineSaved(false);
+
+    if (expandedCache[slug]) {
+      setInlineForm({
+        ...expandedCache[slug],
+        content: expandedCache[slug].content.map((s) => ({ ...s })),
+      });
+      return;
+    }
+
+    setExpandedLoading(true);
+    try {
+      const user = getFirebaseAuth().currentUser;
+      if (!user) throw new Error("로그인이 필요합니다");
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/admin/blog-posts/${slug}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("포스트를 불러올 수 없습니다");
+      const json = await res.json();
+      const post = json.data ?? json;
+      const data: ExpandedPostData = {
+        title: post.title ?? "",
+        subtitle: post.subtitle ?? "",
+        excerpt: post.excerpt ?? "",
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        content: Array.isArray(post.content) ? post.content : [],
+      };
+      setExpandedCache((prev) => ({ ...prev, [slug]: data }));
+      setInlineForm({ ...data, content: data.content.map((s) => ({ ...s })) });
+    } catch (e) {
+      setExpandedError(e instanceof Error ? e.message : "알 수 없는 오류");
+    } finally {
+      setExpandedLoading(false);
+    }
+  };
+
+  const handleInlineFieldChange = (field: "title" | "subtitle" | "excerpt", value: string) => {
+    setInlineForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+  };
+
+  const handleInlineSectionChange = (idx: number, field: "heading" | "content", value: string) => {
+    setInlineForm((prev) => {
+      if (!prev) return prev;
+      const newContent = prev.content.map((s, i) =>
+        i === idx ? { ...s, [field]: value } : s,
+      );
+      return { ...prev, content: newContent };
+    });
+  };
+
+  const handleInlineSave = async () => {
+    if (!expandedSlug || !inlineForm) return;
+    setInlineSaving(true);
+    setExpandedError(null);
+    const { error } = await mutate(`/api/admin/blog-posts/${expandedSlug}`, "PUT", {
+      title: inlineForm.title,
+      subtitle: inlineForm.subtitle,
+      excerpt: inlineForm.excerpt,
+      content: inlineForm.content,
+    });
+    setInlineSaving(false);
+    if (error) {
+      setExpandedError(error);
+    } else {
+      setExpandedCache((prev) => ({
+        ...prev,
+        [expandedSlug]: {
+          ...inlineForm,
+          content: inlineForm.content.map((s) => ({ ...s })),
+        },
+      }));
+      setInlineSaved(true);
+      setTimeout(() => setInlineSaved(false), 2000);
+      refetchPosts();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top action bar */}
@@ -472,38 +598,178 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
                 {draftQueue.map((post, idx) => {
                   const catColor =
                     categoryColors[post.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
+                  const isExpanded = expandedSlug === post.slug;
                   return (
                     <li
                       key={post.slug}
-                      className="flex items-center gap-2.5 rounded-lg bg-white/80 px-3 py-2 text-sm"
+                      className={`rounded-lg text-sm transition-all ${isExpanded ? "bg-white ring-1 ring-amber-300 shadow-sm" : "bg-white/80"}`}
                     >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-800">
-                        {idx + 1}
-                      </span>
-                      <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                        {post.category}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
-                        {post.title}
-                      </span>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          onClick={() => handlePublishOpen(post.slug)}
-                          className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
-                          aria-label={`${post.title} 발행`}
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          발행
-                        </button>
-                        <button
-                          onClick={() => handleEdit(post)}
-                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
-                          aria-label={`${post.title} 수정`}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          수정
-                        </button>
+                      {/* Header row — clickable to toggle */}
+                      <div
+                        className="flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none"
+                        onClick={() => handleToggleExpand(post.slug)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggleExpand(post.slug); } }}
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-800">
+                          {idx + 1}
+                        </span>
+                        <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                          {post.category}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
+                          {post.title}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handlePublishOpen(post.slug)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                            aria-label={`${post.title} 발행`}
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            발행
+                          </button>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 shrink-0 text-amber-600" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 shrink-0 text-amber-600" />
+                        )}
                       </div>
+
+                      {/* Expanded inline preview / edit */}
+                      {isExpanded && (
+                        <div className="border-t border-amber-200 px-4 py-4 space-y-4">
+                          {expandedLoading && (
+                            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              불러오는 중...
+                            </div>
+                          )}
+                          {expandedError && (
+                            <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+                              {expandedError}
+                            </div>
+                          )}
+                          {inlineForm && !expandedLoading && (
+                            <>
+                              {/* Title */}
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">제목</label>
+                                <input
+                                  type="text"
+                                  value={inlineForm.title}
+                                  onChange={(e) => handleInlineFieldChange("title", e.target.value)}
+                                  className={`w-full rounded-lg border bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 ${dirtyFields.has("title") ? "border-amber-400" : "border-[var(--border)]"}`}
+                                />
+                              </div>
+
+                              {/* Subtitle */}
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">부제</label>
+                                <input
+                                  type="text"
+                                  value={inlineForm.subtitle}
+                                  onChange={(e) => handleInlineFieldChange("subtitle", e.target.value)}
+                                  className={`w-full rounded-lg border bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 ${dirtyFields.has("subtitle") ? "border-amber-400" : "border-[var(--border)]"}`}
+                                />
+                              </div>
+
+                              {/* Excerpt */}
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-[var(--muted)]">요약</label>
+                                <textarea
+                                  rows={3}
+                                  value={inlineForm.excerpt}
+                                  onChange={(e) => handleInlineFieldChange("excerpt", e.target.value)}
+                                  className={`w-full rounded-lg border bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 resize-y ${dirtyFields.has("excerpt") ? "border-amber-400" : "border-[var(--border)]"}`}
+                                />
+                              </div>
+
+                              {/* Tags (read-only) */}
+                              {inlineForm.tags.length > 0 && (
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-[var(--muted)]">태그</label>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {inlineForm.tags.map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="rounded-full bg-[var(--background)] border border-[var(--border)] px-2.5 py-0.5 text-xs text-[var(--muted)]"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Sections */}
+                              {inlineForm.content.length > 0 && (
+                                <div className="space-y-3">
+                                  <label className="block text-xs font-medium text-[var(--muted)]">
+                                    섹션 ({inlineForm.content.length}개)
+                                  </label>
+                                  {inlineForm.content.map((sec, sIdx) => (
+                                    <div
+                                      key={sIdx}
+                                      className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 space-y-2"
+                                    >
+                                      <input
+                                        type="text"
+                                        value={sec.heading}
+                                        onChange={(e) => handleInlineSectionChange(sIdx, "heading", e.target.value)}
+                                        placeholder={`섹션 ${sIdx + 1} 제목`}
+                                        className={`w-full rounded border bg-white px-2.5 py-1.5 text-sm font-medium text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none ${dirtyFields.has(`sh-${sIdx}`) ? "border-amber-400" : "border-[var(--border)]"}`}
+                                      />
+                                      <textarea
+                                        rows={5}
+                                        value={sec.content}
+                                        onChange={(e) => handleInlineSectionChange(sIdx, "content", e.target.value)}
+                                        placeholder="섹션 내용"
+                                        className={`w-full rounded border bg-white px-2.5 py-1.5 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none resize-y ${dirtyFields.has(`sc-${sIdx}`) ? "border-amber-400" : "border-[var(--border)]"}`}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Action bar */}
+                              <div className="flex items-center gap-3 border-t border-[var(--border)] pt-3">
+                                <button
+                                  onClick={handleInlineSave}
+                                  disabled={!inlineDirty || inlineSaving}
+                                  className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-40"
+                                >
+                                  {inlineSaving ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : inlineSaved ? (
+                                    <Check className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Save className="h-3.5 w-3.5" />
+                                  )}
+                                  {inlineSaving ? "저장 중..." : inlineSaved ? "저장됨" : "저장"}
+                                </button>
+                                <button
+                                  onClick={() => handlePublishOpen(post.slug)}
+                                  className="flex items-center gap-1.5 rounded-lg border border-green-300 px-3.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-50"
+                                >
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  발행
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(post)}
+                                  className="ml-auto flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--color-primary)] transition-colors"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  에디터 열기
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
