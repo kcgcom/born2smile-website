@@ -439,6 +439,9 @@ export function BlogTab({ editSlug, newCategory }: BlogTabProps) {
     if (error) {
       setPublishError(error);
     } else {
+      if (publishingSlug === expandedSlug) {
+        setExpandedSlug(null);
+      }
       setPublishingSlug(null);
       refetchPosts();
     }
