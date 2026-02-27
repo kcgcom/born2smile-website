@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
-import { getClinicJsonLd } from "@/lib/jsonld";
+import { getClinicJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
@@ -93,7 +93,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(getClinicJsonLd()),
+            __html: serializeJsonLd(getClinicJsonLd()),
           }}
         />
         <Header />

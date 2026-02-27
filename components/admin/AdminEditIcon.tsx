@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface AdminEditIconProps {
   href: string;
   label: string;
+  isAdmin: boolean;
 }
 
 /**
  * 관리자에게만 보이는 아이콘 편집 버튼 (라벨 없이 아이콘만).
  * 블로그 목록 카드 등 공간이 제한된 곳에서 사용.
  */
-export function AdminEditIcon({ href, label }: AdminEditIconProps) {
-  const isAdmin = useAdminAuth();
+export function AdminEditIcon({ href, label, isAdmin }: AdminEditIconProps) {
   if (!isAdmin) return null;
 
   return (

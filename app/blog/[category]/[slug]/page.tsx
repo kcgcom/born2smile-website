@@ -11,7 +11,7 @@ import {
   getBlogPostUrl,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
-import { getBlogPostJsonLd, getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getBlogPostJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
@@ -120,11 +120,11 @@ export default async function BlogPostPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
 
       {/* 블로그 포스트 */}

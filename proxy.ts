@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { ALL_CATEGORY_SLUGS } from "@/lib/blog/category-slugs";
 
 /**
- * 구형 블로그 URL 리다이렉트 미들웨어
+ * 구형 블로그 URL 리다이렉트 프록시
  *
  * /blog/[slug] (구형) → /blog/redirect/[slug]로 내부 rewrite
  * /blog/redirect/[slug]/page.tsx에서 Firestore 조회 후 /blog/[category]/[slug]로 308 리다이렉트
@@ -13,7 +13,7 @@ import { ALL_CATEGORY_SLUGS } from "@/lib/blog/category-slugs";
 
 const CATEGORY_SLUGS = new Set(ALL_CATEGORY_SLUGS);
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // /blog/[single-segment] 패턴만 매칭 (하위 경로 제외)

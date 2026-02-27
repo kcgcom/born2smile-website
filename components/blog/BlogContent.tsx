@@ -15,6 +15,7 @@ import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { shareUrl } from "@/lib/share";
 import { getTodayKST } from "@/lib/date";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminEditIcon } from "@/components/admin/AdminEditIcon";
 
 const POSTS_PER_PAGE = 12;
@@ -31,6 +32,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
+  const isAdmin = useAdminAuth();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -245,6 +247,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     <AdminEditIcon
                       href={`/admin?tab=blog&edit=${post.slug}`}
                       label={`"${post.title}" 수정`}
+                      isAdmin={isAdmin}
                     />
                     <button
                       onClick={(e) =>

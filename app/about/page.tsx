@@ -15,7 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS, STAFF, BASE_URL } from "@/lib/constants";
-import { getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -38,7 +38,7 @@ export default function AboutPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">

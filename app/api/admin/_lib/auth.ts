@@ -1,9 +1,10 @@
 import { getAuth } from "firebase-admin/auth";
 import { getAdminApp } from "@/lib/firebase-admin";
 
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "kcgcom@gmail.com")
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
   .split(",")
-  .map((e) => e.trim().toLowerCase());
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 interface AuthSuccess {
   ok: true;
@@ -20,6 +21,15 @@ interface AuthFailure {
 export type AuthResult = AuthSuccess | AuthFailure;
 
 export async function verifyAdminRequest(request: Request): Promise<AuthResult> {
+  if (ADMIN_EMAILS.length === 0) {
+    return {
+      ok: false,
+      status: 403,
+      error: "FORBIDDEN",
+      message: "관리자 허용 목록이 설정되지 않았습니다",
+    };
+  }
+
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token) {
     return { ok: false, status: 401, error: "UNAUTHORIZED", message: "인증 토큰이 없습니다" };

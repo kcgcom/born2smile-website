@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
-import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd } from "@/lib/jsonld";
+import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl } from "@/lib/blog";
 import { getRelatedPostsFromFirestore } from "@/lib/blog-firestore";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -121,24 +121,24 @@ export default async function TreatmentDetailPage({
       {treatmentJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(treatmentJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(treatmentJsonLd) }}
         />
       )}
       {faqJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
       {howToJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(howToJsonLd) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
 
       {/* 헤더 */}

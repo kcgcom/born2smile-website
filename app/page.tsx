@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
-import { getFaqJsonLd } from "@/lib/jsonld";
+import { getFaqJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { CTABanner } from "@/components/ui/CTABanner";
@@ -396,7 +396,7 @@ export default function Home() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(getFaqJsonLd(HOMEPAGE_FAQ)),
+            __html: serializeJsonLd(getFaqJsonLd(HOMEPAGE_FAQ)),
           }}
         />
       </section>

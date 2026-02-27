@@ -34,12 +34,28 @@ export type BlogPostUpdateInput = z.infer<typeof blogPostUpdateSchema>;
 // Site Config Schemas
 // ---------------------------------------------------------------------------
 
+const isHttpUrl = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const optionalHttpUrlSchema = z
+  .string()
+  .max(200)
+  .refine((value) => value === "" || isHttpUrl(value), {
+    message: "http/https URL 형식이어야 합니다",
+  });
+
 export const siteLinksSchema = z.object({
-  kakaoChannel: z.string().max(200),
-  instagram: z.string().max(200),
-  naverBlog: z.string().max(200),
-  naverMap: z.string().max(200),
-  kakaoMap: z.string().max(200),
+  kakaoChannel: optionalHttpUrlSchema,
+  instagram: optionalHttpUrlSchema,
+  naverBlog: optionalHttpUrlSchema,
+  naverMap: optionalHttpUrlSchema,
+  kakaoMap: optionalHttpUrlSchema,
 });
 
 export const siteClinicSchema = z.object({

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Heart, HandHeart, Leaf } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
-import { getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import {
   FadeIn,
   StaggerContainer,
@@ -25,7 +25,7 @@ export default function TreatmentsPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">

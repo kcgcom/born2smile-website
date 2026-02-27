@@ -1,11 +1,15 @@
-"use client";
-
 import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
-import { CLINIC, HOURS, LINKS } from "@/lib/constants";
+import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-firestore";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const [clinic, hours, links] = await Promise.all([
+    getSiteClinic(),
+    getSiteHours(),
+    getSiteLinks(),
+  ]);
+
   return (
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
@@ -39,8 +43,8 @@ export default function ContactPage() {
               </p>
 
               <a
-                href={CLINIC.phoneHref}
-                aria-label={`대표전화 ${CLINIC.phone}`}
+                href={clinic.phoneHref}
+                aria-label={`대표전화 ${clinic.phone}`}
                 className="flex items-center gap-4 rounded-2xl bg-[var(--color-primary)] p-6 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
               >
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
@@ -48,13 +52,13 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <div className="text-sm text-blue-50">대표전화</div>
-                  <div className="text-2xl font-bold">{CLINIC.phone}</div>
+                  <div className="text-2xl font-bold">{clinic.phone}</div>
                 </div>
               </a>
 
-              {LINKS.kakaoChannel ? (
+              {links.kakaoChannel ? (
                 <a
-                  href={LINKS.kakaoChannel}
+                  href={links.kakaoChannel}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="카카오톡 채널로 상담하기 (새 창)"
@@ -99,7 +103,7 @@ export default function ContactPage() {
                   진료시간
                 </h3>
                 <ul className="space-y-2 text-sm">
-                  {HOURS.schedule.map((item) => (
+                  {hours.schedule.map((item) => (
                     <li
                       key={item.day}
                       className="flex justify-between text-gray-700"
@@ -121,10 +125,10 @@ export default function ContactPage() {
                   ))}
                 </ul>
                 <p className="mt-3 text-sm text-gray-500">
-                  점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
+                  점심시간: {hours.lunchTime} | {hours.closedDays}
                 </p>
-                {HOURS.notice && (
-                  <p className="mt-1 text-sm text-gray-500">{HOURS.notice}</p>
+                {hours.notice && (
+                  <p className="mt-1 text-sm text-gray-500">{hours.notice}</p>
                 )}
               </div>
             </FadeIn>
@@ -141,13 +145,13 @@ export default function ContactPage() {
               </h2>
               <KakaoMap className="aspect-square md:aspect-[4/3]" />
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-                <p className="font-medium text-gray-900">{CLINIC.name}</p>
-                <p className="mt-1 text-sm text-gray-600">{CLINIC.address}</p>
+                <p className="font-medium text-gray-900">{clinic.name}</p>
+                <p className="mt-1 text-sm text-gray-600">{clinic.address}</p>
                 <a
-                  href={CLINIC.phoneHref}
+                  href={clinic.phoneHref}
                   className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
                 >
-                  {CLINIC.phone}
+                  {clinic.phone}
                 </a>
               </div>
             </FadeIn>

@@ -1,21 +1,28 @@
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
-import { CLINIC, HOURS, LINKS, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-firestore";
 import { AdminSettingsLink } from "@/components/admin/AdminSettingsLink";
 
-export function Footer() {
+export async function Footer() {
+  const [clinic, hours, links] = await Promise.all([
+    getSiteClinic(),
+    getSiteHours(),
+    getSiteLinks(),
+  ]);
+
   return (
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-28 md:px-6 md:pb-12">
         {/* 병원명 + 전화번호 */}
         <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <span className="text-xl font-bold text-white">{CLINIC.name}</span>
+          <span className="text-xl font-bold text-white">{clinic.name}</span>
           <a
-            href={CLINIC.phoneHref}
+            href={clinic.phoneHref}
             className="inline-flex items-center gap-2 text-lg font-medium text-[var(--color-gold-light)] transition-colors hover:text-[var(--color-gold)]"
-            aria-label={`전화 상담 ${CLINIC.phone}`}
+            aria-label={`전화 상담 ${clinic.phone}`}
           >
             <Phone size={18} aria-hidden="true" />
-            {CLINIC.phone}
+            {clinic.phone}
           </a>
         </div>
 
@@ -29,26 +36,26 @@ export function Footer() {
             </h2>
             <ul className="space-y-2 text-lg md:text-base">
               <li>
-                {LINKS.naverMap ? (
+                {links.naverMap ? (
                   <a
-                    href={LINKS.naverMap}
+                    href={links.naverMap}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white hover:underline"
                   >
-                    {CLINIC.address}
+                    {clinic.address}
                     <span className="sr-only"> (새 창)</span>
                   </a>
                 ) : (
-                  <span>{CLINIC.address}</span>
+                  <span>{clinic.address}</span>
                 )}
               </li>
               <li className="text-gray-400 text-base md:text-sm">한강센트럴자이 아파트 101동 대각선</li>
               <li className="text-gray-400 text-base md:text-sm">커피빈(김포장기DT점) 맞은편</li>
-              {LINKS.naverMap && (
+              {links.naverMap && (
                 <li className="pt-1">
                   <a
-                    href={LINKS.naverMap}
+                    href={links.naverMap}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
@@ -60,10 +67,10 @@ export function Footer() {
                   </a>
                 </li>
               )}
-              {LINKS.kakaoMap && (
+              {links.kakaoMap && (
                 <li>
                   <a
-                    href={LINKS.kakaoMap}
+                    href={links.kakaoMap}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
@@ -86,7 +93,7 @@ export function Footer() {
               <AdminSettingsLink />
             </h2>
             <ul className="space-y-1.5 text-lg md:max-w-80 md:text-base">
-              {HOURS.schedule.map((item) => (
+              {hours.schedule.map((item) => (
                 <li key={item.day} className="flex justify-between">
                   <span>
                     {item.day}
@@ -102,7 +109,7 @@ export function Footer() {
                 </li>
               ))}
               <li className="mt-2 border-t border-gray-700 pt-2 text-gray-400">
-                점심시간 {HOURS.lunchTime} · 공휴일 휴진
+                점심시간 {hours.lunchTime} · 공휴일 휴진
               </li>
             </ul>
           </div>
@@ -158,11 +165,11 @@ export function Footer() {
         </div>
 
         {/* SNS 링크 */}
-        {(LINKS.kakaoChannel || LINKS.instagram || LINKS.naverBlog) && (
+        {(links.kakaoChannel || links.instagram || links.naverBlog) && (
           <div className="mt-8 flex items-center justify-center gap-4">
-            {LINKS.kakaoChannel && (
+            {links.kakaoChannel && (
               <a
-                href={LINKS.kakaoChannel}
+                href={links.kakaoChannel}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="카카오톡 채널 (새 창)"
@@ -171,9 +178,9 @@ export function Footer() {
                 <MessageCircle size={18} />
               </a>
             )}
-            {LINKS.instagram && (
+            {links.instagram && (
               <a
-                href={LINKS.instagram}
+                href={links.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="인스타그램 (새 창)"
@@ -182,9 +189,9 @@ export function Footer() {
                 <Instagram size={18} />
               </a>
             )}
-            {LINKS.naverBlog && (
+            {links.naverBlog && (
               <a
-                href={LINKS.naverBlog}
+                href={links.naverBlog}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="네이버 블로그 (새 창)"
@@ -193,9 +200,9 @@ export function Footer() {
                 <BookOpen size={18} />
               </a>
             )}
-            {LINKS.naverMap && (
+            {links.naverMap && (
               <a
-                href={LINKS.naverMap}
+                href={links.naverMap}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="네이버 지도 (새 창)"
@@ -210,10 +217,10 @@ export function Footer() {
         {/* 하단 카피라이트 */}
         <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
           <p>
-            대표 {CLINIC.representative} · 사업자등록번호 {CLINIC.businessNumber}
+            대표 {clinic.representative} · 사업자등록번호 {clinic.businessNumber}
           </p>
           <p className="mt-1">
-            &copy; 2017–{new Date().getFullYear()} {CLINIC.name}. All rights
+            &copy; 2017–{new Date().getFullYear()} {clinic.name}. All rights
             reserved.
           </p>
         </div>

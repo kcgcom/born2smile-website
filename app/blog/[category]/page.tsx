@@ -7,7 +7,7 @@ import {
   getBlogPostUrl,
 } from "@/lib/blog";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
-import { getBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";
 
@@ -125,11 +125,11 @@ export default async function BlogCategoryPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">

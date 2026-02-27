@@ -5,6 +5,18 @@ import type { BlogCategoryValue } from "./blog/types";
 import { getBlogPostUrl } from "./blog/category-slugs";
 
 /**
+ * JSON-LD 문자열 직렬화 시 </script> 브레이크아웃을 막기 위한 이스케이프.
+ */
+export function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+/**
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
  * Google/네이버 검색 결과에 병원 정보, 진료시간, 연락처 등이 표시됩니다.
  */
