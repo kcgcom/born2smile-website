@@ -27,9 +27,6 @@ export const blogPostSchema = z.object({
 
 export const blogPostUpdateSchema = blogPostSchema.partial().omit({ slug: true });
 
-export type BlogPostInput = z.infer<typeof blogPostSchema>;
-export type BlogPostUpdateInput = z.infer<typeof blogPostUpdateSchema>;
-
 // ---------------------------------------------------------------------------
 // Site Config Schemas
 // ---------------------------------------------------------------------------

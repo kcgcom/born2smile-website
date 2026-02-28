@@ -132,7 +132,7 @@ function weightedAvg(values: number[]): number {
  * 0개=100, 1개=67, 2개=45, 3개=30, 4개=20, 5개=14, 10개=2
  * 선형(100-n*25)의 4개 cliff 제거
  */
-export function calcContentLack(postCount: number): number {
+function calcContentLack(postCount: number): number {
   return Math.round(100 * Math.exp(-postCount / 2.5));
 }
 

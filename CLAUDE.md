@@ -76,7 +76,6 @@ app/                          # Next.js App Router pages
     [category]/page.tsx       # Category hub landing page (7 categories, generateStaticParams)
     [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA, 목차 TOC)
     [category]/[slug]/loading.tsx # Suspense loading boundary
-    redirect/[slug]/page.tsx  # Old URL redirect handler (Firestore lookup → permanentRedirect)
   faq/page.tsx                # 전체 FAQ 통합 페이지 (6개 진료 과목 FAQ, FAQPage JSON-LD)
   admin/
     layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
@@ -154,14 +153,13 @@ components/
     AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client", localStorage 게이트 + 동적 Firebase import)
     AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
     AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
-    AdminPublishButton.tsx    # 관리자 발행 예약 버튼 — draft 포스트 상세 페이지용 ("use client")
     AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client", localStorage 게이트 + 동적 Firebase import)
-    PublishPopup.tsx          # 발행 팝업 공유 컴포넌트 — BlogTab/AdminPublishButton/AdminDraftBar 3곳 공유 ("use client")
+    PublishPopup.tsx          # 발행 팝업 공유 컴포넌트 — BlogTab/AdminDraftBar 공유 ("use client")
   layout/                     # Header, Footer, FloatingCTA
   ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
 hooks/
   useAdminAuth.ts            # 공유 관리자 인증 훅 (Firebase onAuthStateChanged + isAdminEmail + GA 관리자 제외 플래그)
-  usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminPublishButton/AdminDraftBar 공유)
+  usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminDraftBar 공유)
 lib/
   constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
   treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ (치과 선택 FAQ 포함), RELATED_TREATMENTS 교차 링크 매핑
@@ -211,10 +209,7 @@ scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
   generate-dev-manifest.ts   # 빌드 시 개발 대시보드 매니페스트 생성 스크립트
   submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
-  migrate-blog-to-firestore.ts # 파일 → Firestore 블로그 마이그레이션 (1회성)
-  verify-migration.ts        # 마이그레이션 검증 스크립트
   deploy-firestore.ts        # Firestore 인덱스/규칙 REST API 배포
-middleware.ts                 # 구형 블로그 URL 리다이렉트 (Edge Runtime, /blog/[slug] → /blog/redirect/[slug] rewrite)
 hosting-redirect/            # Firebase Hosting redirect (serves verification files)
 .github/
   workflows/
@@ -232,14 +227,14 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items (`NAV_ITEMS`) are defined in `lib/constants.ts` and imported by `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
-- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminPublishButton, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함). 루트 레이아웃의 Admin 컴포넌트(`AdminFloatingButton`, `AdminSettingsLink`)는 `localStorage` 게이트 + `import()` 동적 Firebase 로드로 비관리자 방문자에게 Firebase SDK 미전송.
+- **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminDraftBar, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함). 루트 레이아웃의 Admin 컴포넌트(`AdminFloatingButton`, `AdminSettingsLink`)는 `localStorage` 게이트 + `import()` 동적 Firebase 로드로 비관리자 방문자에게 Firebase SDK 미전송.
 - **Treatment↔Blog cross-referencing**: `lib/blog/index.ts`의 `TREATMENT_CATEGORY_MAP`으로 진료 과목 ID와 블로그 카테고리를 매핑. `getRelatedBlogPosts(treatmentId)` / `getRelatedTreatmentId(category)` 헬퍼 함수 제공.
   ```
   implant → 임플란트, orthodontics → 치아교정, prosthetics → 보철치료,
   pediatric → 소아치료, restorative → 보존치료, scaling → 예방관리
   ```
   `"건강상식"` 카테고리는 특정 진료 과목에 매핑되지 않음 (일반 건강 정보).
-- **Blog URL structure**: `/blog/[category]/[slug]` 계층 구조. 카테고리 허브 7개 (`/blog/implant`, `/blog/orthodontics` 등). 카테고리↔URL 슬러그 매핑은 `lib/blog/category-slugs.ts`가 single source of truth. 구형 `/blog/[slug]` URL은 `middleware.ts`에서 `/blog/redirect/[slug]`로 rewrite → Firestore 조회 후 308 permanentRedirect.
+- **Blog URL structure**: `/blog/[category]/[slug]` 계층 구조. 카테고리 허브 7개 (`/blog/implant`, `/blog/orthodontics` 등). 카테고리↔URL 슬러그 매핑은 `lib/blog/category-slugs.ts`가 single source of truth.
 - **SEO**: JSON-LD schemas (`lib/jsonld.ts`), Next.js Metadata API, sitemap, robots.txt. All content is Korean-language and SEO-optimized for local dental search terms.
 
 ### Rendering Strategy
@@ -253,7 +248,6 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/blog` | SSG | Static (metadata from Firestore, 파일 폴백) |
 | `/blog/[category]` | SSG + ISR | 카테고리 허브 페이지 (7개), `generateStaticParams()` + `revalidate: 3600` |
 | `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
-| `/blog/redirect/[slug]` | Dynamic | 구형 URL 리다이렉트 (Firestore 조회 → 308 permanentRedirect) |
 | `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
 | `/contact` | Client-side | `"use client"` 전화 상담 안내 페이지 |
 | `/admin` | Client-side | 관리자 대시보드 6탭 (AuthGuard 보호, `"use client"`) |
@@ -313,7 +307,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
-- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Firebase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Firebase SDK(~500KiB)를 제거
+- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Firebase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Firebase SDK(~500KiB)를 제거
 - **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
 - **개발 탭** (`?tab=dev`): 서브탭 3개 — 현황(`sub=project`, 개선 진행률+환경변수+기술 스택), 성능(`sub=perf`, PageSpeed Insights + 수동 갱신 + 확장형 개선 기회), 레퍼런스(`sub=ref`, 아코디언 6섹션). 데이터 소스: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 `/api/dev/env-status`, PageSpeed는 `/api/dev/pagespeed` (`PAGESPEED_API_KEY` 필수, L1 24h + L2 Firestore 일별 캐시). 매니페스트는 `pnpm dev`/`pnpm build` 시 자동 생성
 
@@ -343,8 +337,6 @@ pnpm-workspace.yaml          # pnpm workspace config
    - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
 2. `pnpm dev` 또는 `pnpm build` 실행 시 메타데이터가 자동 생성됨
    - 수동 재생성: `pnpm generate-blog-meta`
-3. Firestore에도 반영 필요 시: `GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa-key.json npx tsx scripts/migrate-blog-to-firestore.ts`
-
 **공통 사항:**
 - 카테고리(1개 선택): `"예방관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "건강상식"`
 - 태그(복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택

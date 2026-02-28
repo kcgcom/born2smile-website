@@ -3,10 +3,7 @@
 // 개선 항목, 블로그 통계, 사이트 설정 상태
 // =============================================================
 
-import { BLOG_POSTS_META } from "./blog";
 import { LINKS } from "./constants";
-import { getTodayKST } from "./date";
-import type { BlogCategoryValue } from "./blog/types";
 
 // -------------------------------------------------------------
 // 개선 항목 데이터
@@ -188,40 +185,6 @@ export function getImprovementStats(): ImprovementStats {
   });
 
   return { total, done, pending, ownerDecision, byPriority };
-}
-
-// -------------------------------------------------------------
-// 블로그 통계
-// -------------------------------------------------------------
-
-export interface BlogStats {
-  total: number;
-  published: number;
-  scheduled: number;
-  byCategory: { category: BlogCategoryValue; count: number }[];
-  scheduledPosts: { slug: string; title: string; date: string }[];
-}
-
-export function getBlogStats(): BlogStats {
-  const today = getTodayKST();
-  const total = BLOG_POSTS_META.length;
-  const published = BLOG_POSTS_META.filter((p) => p.date <= today).length;
-  const scheduled = total - published;
-
-  const categoryMap = new Map<BlogCategoryValue, number>();
-  for (const post of BLOG_POSTS_META) {
-    categoryMap.set(post.category, (categoryMap.get(post.category) ?? 0) + 1);
-  }
-  const byCategory = Array.from(categoryMap.entries())
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count);
-
-  const scheduledPosts = BLOG_POSTS_META
-    .filter((p) => p.date > today)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((p) => ({ slug: p.slug, title: p.title, date: p.date }));
-
-  return { total, published, scheduled, byCategory, scheduledPosts };
 }
 
 // -------------------------------------------------------------
