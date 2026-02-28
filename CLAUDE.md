@@ -100,7 +100,7 @@ app/                          # Next.js App Router pages
         PeriodSelector.tsx    # 기간 선택 버튼 그룹
         DevTab.tsx            # 개발 탭 컨테이너 (서브탭: 현황/성능/레퍼런스)
         ProjectTab.tsx        # 개발>현황 서브탭 (개선 항목 진행률, 환경변수 상태, 기술 스택, 사이트 설정 상태)
-        PerformanceTab.tsx    # 개발>성능 서브탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 개선 기회)
+        PerformanceTab.tsx    # 개발>성능 서브탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 확장형 개선 기회, 수동 갱신)
         ReferenceTab.tsx      # 개발>레퍼런스 서브탭 (의존성, TS/ESLint, 라우트, 인프라, Firestore, API/캐시 — 아코디언 UI)
         useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴, AbortController로 race condition 방지)
     login/
@@ -110,11 +110,11 @@ app/                          # Next.js App Router pages
       env-status/
         route.ts              # 환경변수 상태 API (GET, Admin 인증)
       pagespeed/
-        route.ts              # PageSpeed Insights API 프록시 (GET, Admin 인증, 6시간 캐시)
+        route.ts              # PageSpeed Insights API 프록시 (GET, Admin 인증, Firestore L2 캐시, ?force=true 수동 갱신)
     admin/
       _lib/
         auth.ts               # Admin API 인증 미들웨어 (Firebase Admin SDK)
-        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab/PSI 6h, 검색광고 24h, 좋아요 5m)
+        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab 6h, PSI/검색광고 24h, 좋아요 5m)
       analytics/
         route.ts              # GA4 트래픽 데이터 API (GET)
       search-console/
@@ -256,7 +256,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/admin/login` | Client-side | Google 로그인 페이지 (`"use client"`) |
 | `/api/admin/*` | Server-side | Admin API Routes (GA4, SC, blog-likes, blog-posts CRUD, site-config) |
 | `/api/dev/env-status` | Server-side | 환경변수 상태 API (Admin 인증) |
-| `/api/dev/pagespeed` | Server-side | PageSpeed Insights API 프록시 (Admin 인증, 6시간 캐시) |
+| `/api/dev/pagespeed` | Server-side | PageSpeed Insights API 프록시 (Admin 인증, L1 unstable_cache 24h + L2 Firestore 일별 캐시, `?force=true` 수동 갱신) |
 | `/sitemap.xml` | Force Static | `export const dynamic = "force-static"` |
 | `/robots.txt` | Force Static | `export const dynamic = "force-static"` |
 
@@ -311,7 +311,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
 - **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminPublishButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Firebase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Firebase SDK(~500KiB)를 제거
 - **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
-- **개발 탭** (`?tab=dev`): 서브탭 3개 — 현황(`sub=project`, 개선 진행률+환경변수+기술 스택), 성능(`sub=perf`, PageSpeed Insights), 레퍼런스(`sub=ref`, 아코디언 6섹션). 데이터 소스: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 `/api/dev/env-status`, PageSpeed는 `/api/dev/pagespeed` (`PAGESPEED_API_KEY` 필수, 6시간 캐시). 매니페스트는 `pnpm dev`/`pnpm build` 시 자동 생성
+- **개발 탭** (`?tab=dev`): 서브탭 3개 — 현황(`sub=project`, 개선 진행률+환경변수+기술 스택), 성능(`sub=perf`, PageSpeed Insights + 수동 갱신 + 확장형 개선 기회), 레퍼런스(`sub=ref`, 아코디언 6섹션). 데이터 소스: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 `/api/dev/env-status`, PageSpeed는 `/api/dev/pagespeed` (`PAGESPEED_API_KEY` 필수, L1 24h + L2 Firestore 일별 캐시). 매니페스트는 `pnpm dev`/`pnpm build` 시 자동 생성
 
 ## Common Tasks
 
