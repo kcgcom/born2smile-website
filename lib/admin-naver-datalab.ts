@@ -26,7 +26,7 @@ export interface NaverDatalabData {
 /**
  * 기간 문자열로부터 DataLab API 요청에 필요한 startDate, endDate, timeUnit을 계산한다.
  *
- * @param period - "7d" | "28d" | "90d" (SearchTab 호환) | "1m" | "3m" | "1y" | "3y" | "10y" (TrendTab)
+ * @param period - "7d" | "28d" | "90d" (SearchTab 호환) | "1m" | "3m" | "1y" | "3y" | "10y" (StrategySubTab)
  */
 function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;

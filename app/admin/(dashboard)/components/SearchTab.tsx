@@ -302,31 +302,6 @@ export function SearchTab() {
         </>
       )}
 
-      {/* ───────────── Naver DataLab → 트렌드 탭 ───────────── */}
-      <hr className="border-[var(--border)]" />
-      <section>
-        <div className="flex items-center justify-between rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-          <div>
-            <h3 className="text-sm font-semibold text-[var(--foreground)]">
-              네이버 검색 트렌드
-            </h3>
-            <p className="text-xs text-[var(--muted)]">
-              카테고리별 세부 키워드 트렌드 분석 및 블로그 주제 추천
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              const params = new URLSearchParams(window.location.search);
-              params.set("tab", "trend");
-              window.history.replaceState(null, "", `?${params.toString()}`);
-              window.location.reload();
-            }}
-            className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-          >
-            트렌드 탭에서 상세 분석 →
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

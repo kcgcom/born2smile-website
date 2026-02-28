@@ -4,11 +4,11 @@ import { useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { TrendingUp, TrendingDown, Minus, X, ChevronRight, AlertCircle } from "lucide-react";
-import { useAdminApi } from "./useAdminApi";
-import { PeriodSelector } from "./PeriodSelector";
-import { DataTable } from "./DataTable";
-import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
-import { AdminErrorState } from "./AdminErrorState";
+import { useAdminApi } from "../useAdminApi";
+import { PeriodSelector } from "../PeriodSelector";
+import { DataTable } from "../DataTable";
+import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
+import { AdminErrorState } from "../AdminErrorState";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
 
@@ -90,15 +90,8 @@ interface CategoryDetailData {
 // ---------------------------------------------------------------
 
 const SUB_GROUP_COLORS = [
-  "#2563EB",
-  "#C9962B",
-  "#16A34A",
-  "#9333EA",
-  "#0891B2",
-  "#DC2626",
-  "#EA580C",
-  "#D946EF",
-  "#65A30D",
+  "#2563EB", "#C9962B", "#16A34A", "#9333EA", "#0891B2",
+  "#DC2626", "#EA580C", "#D946EF", "#65A30D",
 ];
 
 interface SubGroupChartProps {
@@ -109,7 +102,6 @@ const SubGroupLineChart = dynamic(
   () =>
     import("recharts").then((mod) => {
       function Chart({ subGroups }: SubGroupChartProps) {
-        // Merge all sub-groups into single data array keyed by period
         const periodMap = new Map<string, Record<string, number | string>>();
         for (const sg of subGroups) {
           for (const d of sg.data) {
@@ -120,33 +112,18 @@ const SubGroupLineChart = dynamic(
         const chartData = Array.from(periodMap.values()).sort((a, b) =>
           String(a.period).localeCompare(String(b.period)),
         );
-
         const formatDate = (value: string) => {
           if (!value) return "";
           const parts = value.split("-");
-          // monthly: "2024-01" → "24.1", daily/weekly: "2024-01-15" → "1/15"
           if (parts.length === 2) return `${parts[0].slice(2)}.${Number(parts[1])}`;
           return `${Number(parts[1])}/${Number(parts[2])}`;
         };
-
         return (
           <mod.ResponsiveContainer width="100%" height={280}>
-            <mod.LineChart
-              data={chartData}
-              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-            >
+            <mod.LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <mod.XAxis
-                dataKey="period"
-                tickFormatter={formatDate}
-                tick={{ fontSize: 11, fill: "#6B7280" }}
-                interval="preserveStartEnd"
-              />
-              <mod.YAxis
-                tick={{ fontSize: 11, fill: "#6B7280" }}
-                width={36}
-                domain={[0, 100]}
-              />
+              <mod.XAxis dataKey="period" tickFormatter={formatDate} tick={{ fontSize: 11, fill: "#6B7280" }} interval="preserveStartEnd" />
+              <mod.YAxis tick={{ fontSize: 11, fill: "#6B7280" }} width={36} domain={[0, 100]} />
               <mod.Tooltip
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 labelFormatter={((label: string) => label) as any}
@@ -156,19 +133,115 @@ const SubGroupLineChart = dynamic(
               />
               <mod.Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
               {subGroups.map((sg, idx) => (
-                <mod.Line
-                  key={sg.name}
-                  type="monotone"
-                  dataKey={sg.name}
-                  name={sg.name}
-                  stroke={SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length]}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
+                <mod.Line key={sg.name} type="monotone" dataKey={sg.name} name={sg.name} stroke={SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               ))}
             </mod.LineChart>
           </mod.ResponsiveContainer>
+        );
+      }
+      return Chart;
+    }),
+  { ssr: false },
+);
+
+// ---------------------------------------------------------------
+// Opportunity Scatter Chart — new
+// ---------------------------------------------------------------
+
+const CATEGORY_SCATTER_COLORS: Record<string, string> = {
+  "임플란트": "#2563EB",
+  "치아교정": "#C9962B",
+  "보철치료": "#16A34A",
+  "보존치료": "#9333EA",
+  "예방관리": "#0891B2",
+  "소아치료": "#DC2626",
+  "건강상식": "#EA580C",
+  "치과선택": "#D946EF",
+};
+
+interface ScatterPoint {
+  subGroup: string;
+  category: string;
+  slug: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+const OpportunityScatter = dynamic(
+  () =>
+    import("recharts").then((mod) => {
+      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick: (slug: string) => void }) {
+        if (data.length === 0) {
+          return (
+            <p className="py-8 text-center text-sm text-[var(--muted)]">
+              검색량 데이터가 있는 항목이 없습니다
+            </p>
+          );
+        }
+
+        // Group by category for coloring
+        const categories = [...new Set(data.map((d) => d.category))];
+
+        return (
+          <div>
+            <mod.ResponsiveContainer width="100%" height={360}>
+              <mod.ScatterChart margin={{ top: 12, right: 20, bottom: 20, left: 4 }}>
+                <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <mod.XAxis
+                  type="number"
+                  dataKey="x"
+                  name="검색량"
+                  scale="log"
+                  domain={["auto", "auto"]}
+                  tick={{ fontSize: 11, fill: "#6B7280" }}
+                  label={{ value: "월 검색량", position: "bottom", offset: 4, fontSize: 11, fill: "#6B7280" }}
+                />
+                <mod.YAxis
+                  type="number"
+                  dataKey="y"
+                  name="포스트 수"
+                  tick={{ fontSize: 11, fill: "#6B7280" }}
+                  label={{ value: "포스트 수", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
+                />
+                <mod.ZAxis type="number" dataKey="z" range={[60, 400]} />
+                <mod.Tooltip
+                  cursor={{ strokeDasharray: "3 3" }}
+                  content={({ payload }) => {
+                    if (!payload || payload.length === 0) return null;
+                    const d = payload[0].payload as ScatterPoint;
+                    return (
+                      <div className="rounded-lg border border-[var(--border)] bg-white p-2 shadow text-xs">
+                        <p className="font-semibold">{d.subGroup}</p>
+                        <p className="text-[var(--muted)]">{d.category}</p>
+                        <p>검색량: {d.x.toLocaleString("ko-KR")}/월</p>
+                        <p>포스트: {d.y}개</p>
+                        <p>갭 점수: {d.z.toFixed(0)}</p>
+                      </div>
+                    );
+                  }}
+                />
+                {categories.map((cat) => (
+                  <mod.Scatter
+                    key={cat}
+                    name={cat}
+                    data={data.filter((d) => d.category === cat)}
+                    fill={CATEGORY_SCATTER_COLORS[cat] ?? "#6B7280"}
+                    fillOpacity={0.7}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={(point: any) => {
+                      if (point?.slug) onPointClick(point.slug);
+                    }}
+                    cursor="pointer"
+                  />
+                ))}
+                <mod.Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+              </mod.ScatterChart>
+            </mod.ResponsiveContainer>
+            <p className="mt-2 text-center text-xs text-[var(--muted)]">
+              좌상단(검색량 높음 + 포스트 적음) = 기회 영역 · 점 크기 = 갭 점수 · 클릭하면 새 포스트 작성
+            </p>
+          </div>
         );
       }
       return Chart;
@@ -200,11 +273,7 @@ function TrendIcon({ trend }: { trend: "rising" | "falling" | "stable" }) {
 
 function TrendText({ trend, changeRate }: { trend: "rising" | "falling" | "stable"; changeRate: number }) {
   const colorClass =
-    trend === "rising"
-      ? "text-green-600"
-      : trend === "falling"
-      ? "text-red-600"
-      : "text-gray-500";
+    trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500";
   const sign = changeRate > 0 ? "+" : "";
   return (
     <span className={`text-sm font-semibold tabular-nums ${colorClass}`}>
@@ -215,46 +284,22 @@ function TrendText({ trend, changeRate }: { trend: "rising" | "falling" | "stabl
 
 function GapScoreBadge({ score }: { score: number }) {
   if (score >= 70) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-        HIGH
-      </span>
-    );
+    return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
   }
   if (score >= 40) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
-        MED
-      </span>
-    );
+    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
-  return (
-    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-      LOW
-    </span>
-  );
+  return <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
 }
 
 function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
   if (priority === "high") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-        HIGH
-      </span>
-    );
+    return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
   }
   if (priority === "medium") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">
-        MED
-      </span>
-    );
+    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
-  return (
-    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-      LOW
-    </span>
-  );
+  return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
 }
 
 function CategoryBadge({ category }: { category: string }) {
@@ -268,7 +313,7 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 // ---------------------------------------------------------------
-// Section 1: Category overview cards
+// Category overview card
 // ---------------------------------------------------------------
 
 interface CategoryCardProps {
@@ -279,9 +324,7 @@ interface CategoryCardProps {
 }
 
 function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) {
-  const hasError = !!cat.error;
-
-  if (hasError) {
+  if (cat.error) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] p-4">
         <div className="mb-2 flex items-center gap-1.5">
@@ -303,7 +346,6 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
   const trend = cat.overallTrend ?? "stable";
   const changeRate = cat.changeRate ?? 0;
   const risingCount = cat.risingCount ?? 0;
-
   const borderClass = isSelected
     ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20"
     : "border-[var(--border)] hover:border-[var(--color-primary-light)]";
@@ -331,9 +373,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
         <>
           <div className="mt-1 flex items-center gap-1">
             <TrendIcon trend={trend} />
-            <span className={`text-xs tabular-nums ${
-              trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"
-            }`}>
+            <span className={`text-xs tabular-nums ${trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"}`}>
               {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
             </span>
           </div>
@@ -352,7 +392,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
 }
 
 // ---------------------------------------------------------------
-// Section 2: Category drilldown detail
+// Category drilldown detail
 // ---------------------------------------------------------------
 
 interface CategoryDetailProps {
@@ -369,34 +409,22 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
   );
 
   return (
-    <div
-      ref={detailRef}
-      className="rounded-xl border border-[var(--color-primary)]/30 bg-[var(--surface)] p-5 shadow-sm"
-    >
+    <div ref={detailRef} className="rounded-xl border border-[var(--color-primary)]/30 bg-[var(--surface)] p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--foreground)]">
           {data ? `${data.category} 상세 트렌드` : "상세 트렌드 로딩 중..."}
         </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors"
-          aria-label="상세 닫기"
-        >
+        <button type="button" onClick={onClose} className="rounded p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors" aria-label="상세 닫기">
           <X className="h-4 w-4" />
         </button>
       </div>
-
       {loading && <AdminLoadingSkeleton variant="chart" />}
       {error && <AdminErrorState message={error} onRetry={refetch} />}
-
       {!loading && !error && data && (
         <>
           <div className="mb-4 rounded-xl bg-[var(--background)] p-4">
             <SubGroupLineChart subGroups={data.subGroups} />
           </div>
-
-          {/* Sub-group summary bars */}
           <div className="space-y-2">
             {data.subGroups
               .slice()
@@ -411,20 +439,13 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
               .map((sg, idx) => {
                 const vol = volumeMap.get(sg.name);
                 const maxVol = Math.max(...data.subGroups.map((s) => volumeMap.get(s.name) ?? 0), 1);
-                const barWidth = vol != null
-                  ? `${Math.min(100, (vol / maxVol) * 100)}%`
-                  : `${Math.min(100, sg.currentAvg)}%`;
+                const barWidth = vol != null ? `${Math.min(100, (vol / maxVol) * 100)}%` : `${Math.min(100, sg.currentAvg)}%`;
                 const barColor = SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length];
                 return (
                   <div key={sg.name} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 truncate text-xs text-[var(--muted)]" title={sg.name}>
-                      {sg.name}
-                    </span>
+                    <span className="w-24 shrink-0 truncate text-xs text-[var(--muted)]" title={sg.name}>{sg.name}</span>
                     <div className="flex-1 overflow-hidden rounded-full bg-[var(--border)] h-2">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{ width: barWidth, backgroundColor: barColor }}
-                      />
+                      <div className="h-2 rounded-full transition-all" style={{ width: barWidth, backgroundColor: barColor }} />
                     </div>
                     <span className="w-16 shrink-0 text-right text-xs text-[var(--muted)] tabular-nums">
                       {vol != null ? vol.toLocaleString("ko-KR") : sg.currentAvg.toFixed(1)}
@@ -434,7 +455,6 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
                 );
               })}
           </div>
-
           <p className="mt-3 text-xs text-[var(--muted)]">
             * ratio 값은 이 카테고리 내에서의 상대적 검색 비율 (0~100). 검색량은 검색광고 API 연동 시 절대 검색량, 미연동 시 상대값 표시
           </p>
@@ -490,10 +510,10 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
 }
 
 // ---------------------------------------------------------------
-// Main TrendTab component
+// Main StrategySubTab component
 // ---------------------------------------------------------------
 
-export function TrendTab() {
+export function StrategySubTab() {
   const router = useRouter();
 
   const [period, setPeriod] = useState<"1m" | "3m" | "1y" | "3y" | "10y">("3m");
@@ -502,7 +522,6 @@ export function TrendTab() {
 
   const detailRef = useRef<HTMLDivElement | null>(null);
 
-  // volume 모드: period 미포함 (SWR 캐시 키 안정화), full 모드: period 포함
   const overviewEndpoint = includeTrend
     ? `/api/admin/naver-datalab/overview?period=${period}&mode=full`
     : `/api/admin/naver-datalab/overview?mode=volume`;
@@ -528,7 +547,6 @@ export function TrendTab() {
       return;
     }
     setSelectedCategory(slug);
-    // Scroll to detail section after state update
     setTimeout(() => {
       detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
@@ -544,13 +562,9 @@ export function TrendTab() {
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
         <p className="text-sm text-[var(--muted)]">
           네이버 DataLab API 키가 설정되지 않았습니다. 환경변수{" "}
-          <code className="rounded bg-[var(--background)] px-1 py-0.5 text-xs">
-            NAVER_DATALAB_CLIENT_ID
-          </code>{" "}
+          <code className="rounded bg-[var(--background)] px-1 py-0.5 text-xs">NAVER_DATALAB_CLIENT_ID</code>{" "}
           와{" "}
-          <code className="rounded bg-[var(--background)] px-1 py-0.5 text-xs">
-            NAVER_DATALAB_CLIENT_SECRET
-          </code>{" "}
+          <code className="rounded bg-[var(--background)] px-1 py-0.5 text-xs">NAVER_DATALAB_CLIENT_SECRET</code>{" "}
           을 설정해주세요.
         </p>
       </div>
@@ -590,6 +604,45 @@ export function TrendTab() {
 
   const suggestions = overviewData?.suggestions ?? [];
 
+  // ── Scatter data ─────────────────────────────────────────────
+  const scatterData: ScatterPoint[] = overviewData
+    ? overviewData.contentGap
+        .filter((g) => g.monthlyVolume != null)
+        .map((g) => ({
+          subGroup: g.subGroup,
+          category: g.category,
+          slug: g.slug,
+          x: (g.monthlyVolume ?? 0) + (g.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0),
+          y: g.existingPostCount,
+          z: g.gapScore,
+        }))
+        .filter((d) => d.x > 0)
+    : [];
+
+  // ── Cross-keyword analysis ───────────────────────────────────
+  const crossKeywords = (() => {
+    if (!overviewData) return [];
+    const kwCatMap = new Map<string, { categories: Set<string>; volume: number }>();
+    for (const gap of overviewData.contentGap) {
+      for (const kw of [...(gap.directKeywords ?? []), ...(gap.relatedKeywords ?? [])]) {
+        const entry = kwCatMap.get(kw.keyword) ?? { categories: new Set(), volume: 0 };
+        entry.categories.add(gap.category);
+        entry.volume = Math.max(entry.volume, kw.volume);
+        kwCatMap.set(kw.keyword, entry);
+      }
+    }
+    return [...kwCatMap.entries()]
+      .filter(([, v]) => v.categories.size >= 2)
+      .sort((a, b) => b[1].categories.size - a[1].categories.size || b[1].volume - a[1].volume)
+      .slice(0, 20)
+      .map(([keyword, v]) => ({
+        keyword,
+        categories: [...v.categories],
+        categoryCount: v.categories.size,
+        volume: v.volume,
+      }));
+  })();
+
   return (
     <div className="space-y-8">
       {/* ── Period selector + trend toggle ────────────── */}
@@ -617,56 +670,57 @@ export function TrendTab() {
         )}
       </div>
 
-      {/* ── Section 1: Category overview cards ───────── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-          카테고리별 검색 트렌드 개요
-        </h2>
-
-        {overviewLoading && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"
-              >
-                <div className="mb-2 h-4 w-20 rounded bg-[var(--border)]" />
-                <div className="h-5 w-16 rounded bg-[var(--border)]" />
-                <div className="mt-1.5 h-3 w-24 rounded bg-[var(--border)]" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {overviewError && (
-          <AdminErrorState message={overviewError} onRetry={refetchOverview} />
-        )}
-
-        {!overviewLoading && !overviewError && overviewData && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {overviewData.categories.map((cat) => (
-              <CategoryCard
-                key={cat.slug}
-                cat={cat}
-                isSelected={selectedCategory === cat.slug}
-                onClick={() => handleCategoryClick(cat.slug)}
-                onRetry={refetchOverview}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Section 2: Category drilldown ─────────────── */}
-      {selectedCategory && (
+      {/* ── Section 1: Opportunity scatter ─────────────── */}
+      {!overviewLoading && !overviewError && overviewData && scatterData.length > 0 && (
         <section>
-          <CategoryDetail
-            slug={selectedCategory}
-            period={period}
-            onClose={() => setSelectedCategory(null)}
-            detailRef={detailRef}
-            volumeMap={selectedVolumeMap}
-          />
+          <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+            기회 매트릭스 — 검색량 vs 포스트 수
+          </h2>
+          <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+            <OpportunityScatter data={scatterData} onPointClick={handleNewPost} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Section 2: Cross-keyword analysis ──────────── */}
+      {!overviewLoading && !overviewError && overviewData && crossKeywords.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+            교차 키워드 분석 — 2개 이상 카테고리에 걸친 키워드
+          </h2>
+          <div className="rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
+            <DataTable
+              columns={[
+                { key: "keyword", label: "키워드", align: "left" },
+                {
+                  key: "categories",
+                  label: "카테고리",
+                  align: "left",
+                  render: (row) => (
+                    <div className="flex flex-wrap gap-1">
+                      {(row.categories as string[]).map((c) => (
+                        <CategoryBadge key={c} category={c} />
+                      ))}
+                    </div>
+                  ),
+                },
+                { key: "categoryCount", label: "카테고리 수", align: "right" },
+                {
+                  key: "volume",
+                  label: "월 검색량",
+                  align: "right",
+                  render: (row) => (
+                    <span className="tabular-nums">
+                      {(row.volume as number).toLocaleString("ko-KR")}
+                    </span>
+                  ),
+                },
+              ]}
+              rows={crossKeywords as unknown as Record<string, unknown>[]}
+              keyField="keyword"
+              emptyMessage="교차 키워드가 없습니다"
+            />
+          </div>
         </section>
       )}
 
@@ -705,37 +759,19 @@ export function TrendTab() {
                     const hasKeywords = direct.length > 0 || related.length > 0;
                     return (
                       <div>
-                        <span className="font-medium text-[var(--foreground)]">
-                          {String(row.subGroup)}
-                        </span>
+                        <span className="font-medium text-[var(--foreground)]">{String(row.subGroup)}</span>
                         {hasKeywords && (
                           <div className="mt-1 flex flex-wrap gap-1">
                             {direct.map((dk) => (
-                              <span
-                                key={dk.keyword}
-                                className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
-                                title={`월 ${dk.volume.toLocaleString("ko-KR")}회`}
-                              >
+                              <span key={dk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700" title={`월 ${dk.volume.toLocaleString("ko-KR")}회`}>
                                 {dk.keyword}
-                                <span className="ml-0.5 text-blue-400 tabular-nums">
-                                  {dk.volume >= 1000
-                                    ? `${(dk.volume / 1000).toFixed(1)}k`
-                                    : dk.volume}
-                                </span>
+                                <span className="ml-0.5 text-blue-400 tabular-nums">{dk.volume >= 1000 ? `${(dk.volume / 1000).toFixed(1)}k` : dk.volume}</span>
                               </span>
                             ))}
                             {related.map((rk) => (
-                              <span
-                                key={rk.keyword}
-                                className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
-                                title={`월 ${rk.volume.toLocaleString("ko-KR")}회`}
-                              >
+                              <span key={rk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700" title={`월 ${rk.volume.toLocaleString("ko-KR")}회`}>
                                 {rk.keyword}
-                                <span className="ml-0.5 text-blue-400 tabular-nums">
-                                  {rk.volume >= 1000
-                                    ? `${(rk.volume / 1000).toFixed(1)}k`
-                                    : rk.volume}
-                                </span>
+                                <span className="ml-0.5 text-blue-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
                               </span>
                             ))}
                           </div>
@@ -779,10 +815,7 @@ export function TrendTab() {
                         </span>
                         {totalVolume != null && (
                           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
-                            <div
-                              className="h-1.5 rounded-full bg-blue-400"
-                              style={{ width: `${barPct}%` }}
-                            />
+                            <div className="h-1.5 rounded-full bg-blue-400" style={{ width: `${barPct}%` }} />
                           </div>
                         )}
                       </div>
@@ -794,11 +827,7 @@ export function TrendTab() {
                   label: "포스트 수",
                   align: "right",
                   sortable: true,
-                  render: (row) => (
-                    <span className="tabular-nums text-[var(--foreground)]">
-                      {Number(row.existingPostCount)}
-                    </span>
-                  ),
+                  render: (row) => <span className="tabular-nums text-[var(--foreground)]">{Number(row.existingPostCount)}</span>,
                 },
                 {
                   key: "gapScore",
@@ -807,9 +836,7 @@ export function TrendTab() {
                   sortable: true,
                   render: (row) => (
                     <div className="flex items-center justify-end gap-1.5">
-                      <span className="tabular-nums text-[var(--foreground)]">
-                        {Number(row.gapScore).toFixed(0)}
-                      </span>
+                      <span className="tabular-nums text-[var(--foreground)]">{Number(row.gapScore).toFixed(0)}</span>
                       <GapScoreBadge score={Number(row.gapScore)} />
                     </div>
                   ),
@@ -831,10 +858,7 @@ export function TrendTab() {
                     align: "right" as const,
                     sortable: true,
                     render: (row: Record<string, unknown>) => (
-                      <TrendText
-                        trend={row.trend as "rising" | "falling" | "stable"}
-                        changeRate={Number(row.changeRate)}
-                      />
+                      <TrendText trend={row.trend as "rising" | "falling" | "stable"} changeRate={Number(row.changeRate)} />
                     ),
                   },
                 ] : []),
@@ -850,7 +874,6 @@ export function TrendTab() {
 
           {/* Mobile: Card list (below sm) */}
           <div className="block sm:hidden space-y-2">
-            {/* Sort chips */}
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {([
                 { key: "monthlyVolume", label: "검색량" },
@@ -870,19 +893,13 @@ export function TrendTab() {
                     }`}
                   >
                     {chip.label}
-                    {isActive && (
-                      <span className="ml-0.5">{gapSortDir === "desc" ? "↓" : "↑"}</span>
-                    )}
+                    {isActive && <span className="ml-0.5">{gapSortDir === "desc" ? "↓" : "↑"}</span>}
                   </button>
                 );
               })}
             </div>
-
-            {/* Card items */}
             {gapRows.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[var(--muted)]">
-                콘텐츠 갭 데이터가 없습니다
-              </p>
+              <p className="py-8 text-center text-sm text-[var(--muted)]">콘텐츠 갭 데이터가 없습니다</p>
             ) : (
               gapRows.map((item) => {
                 const mv = item.monthlyVolume;
@@ -891,65 +908,35 @@ export function TrendTab() {
                 const direct = item.directKeywords ?? [];
                 const related = item.relatedKeywords ?? [];
                 const hasKeywords = direct.length > 0 || related.length > 0;
-
                 return (
-                  <div
-                    key={item.id}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
-                  >
-                    {/* Line 1: category + subgroup | volume + gap badge + change rate */}
+                  <div key={item.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="shrink-0"><CategoryBadge category={item.category} /></span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
-                        {item.subGroup}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">{item.subGroup}</span>
                       <span className="flex shrink-0 items-center gap-1">
                         <span className="text-xs tabular-nums text-[var(--foreground)]">
                           {totalVolume != null ? (
-                            <>
-                              {item.isEstimated ? "≈" : ""}
-                              {totalVolume.toLocaleString("ko-KR")}
-                              <span className="text-[var(--muted)]">/월</span>
-                            </>
+                            <>{item.isEstimated ? "≈" : ""}{totalVolume.toLocaleString("ko-KR")}<span className="text-[var(--muted)]">/월</span></>
                           ) : (
-                            <span className="text-[var(--muted)]">
-                              {item.currentAvg.toFixed(1)}
-                              <span className="text-[9px]">(상대)</span>
-                            </span>
+                            <span className="text-[var(--muted)]">{item.currentAvg.toFixed(1)}<span className="text-[9px]">(상대)</span></span>
                           )}
                         </span>
                         <GapScoreBadge score={item.gapScore} />
                         {isFullMode && <TrendText trend={item.trend} changeRate={item.changeRate} />}
                       </span>
                     </div>
-
-                    {/* Line 2: keyword tags */}
                     {hasKeywords && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {direct.map((dk) => (
-                          <span
-                            key={dk.keyword}
-                            className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
-                          >
+                          <span key={dk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">
                             {dk.keyword}
-                            <span className="ml-0.5 text-blue-400 tabular-nums">
-                              {dk.volume >= 1000
-                                ? `${(dk.volume / 1000).toFixed(1)}k`
-                                : dk.volume}
-                            </span>
+                            <span className="ml-0.5 text-blue-400 tabular-nums">{dk.volume >= 1000 ? `${(dk.volume / 1000).toFixed(1)}k` : dk.volume}</span>
                           </span>
                         ))}
                         {related.map((rk) => (
-                          <span
-                            key={rk.keyword}
-                            className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
-                          >
+                          <span key={rk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">
                             {rk.keyword}
-                            <span className="ml-0.5 text-blue-400 tabular-nums">
-                              {rk.volume >= 1000
-                                ? `${(rk.volume / 1000).toFixed(1)}k`
-                                : rk.volume}
-                            </span>
+                            <span className="ml-0.5 text-blue-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
                           </span>
                         ))}
                       </div>
@@ -970,14 +957,9 @@ export function TrendTab() {
           </h2>
           <div className="space-y-3">
             {suggestions.slice(0, 15).map((item) => (
-              <div
-                key={`${item.rank}-${item.slug}`}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"
-              >
+              <div key={`${item.rank}-${item.slug}`} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--background)] text-xs font-bold text-[var(--muted)]">
-                    {item.rank}
-                  </span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--background)] text-xs font-bold text-[var(--muted)]">{item.rank}</span>
                   <PriorityBadge priority={item.priority} />
                   <CategoryBadge category={item.category} />
                   {(() => {
@@ -997,26 +979,13 @@ export function TrendTab() {
                     </div>
                   )}
                 </div>
-
-                <p className="mb-1.5 text-sm font-semibold text-[var(--foreground)] leading-snug">
-                  {item.suggestedTitle}
-                </p>
-
-                <p className="mb-2 text-xs text-[var(--muted)] leading-relaxed">
-                  {item.reasoning}
-                </p>
-
+                <p className="mb-1.5 text-sm font-semibold text-[var(--foreground)] leading-snug">{item.suggestedTitle}</p>
+                <p className="mb-2 text-xs text-[var(--muted)] leading-relaxed">{item.reasoning}</p>
                 {item.keywords.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-1">
                     {item.keywords.slice(0, 5).map((kw) => (
-                      <span
-                        key={kw}
-                        className="rounded bg-[var(--background)] px-2 py-0.5 text-xs text-[var(--muted)]"
-                      >
-                        {kw}
-                      </span>
+                      <span key={kw} className="rounded bg-[var(--background)] px-2 py-0.5 text-xs text-[var(--muted)]">{kw}</span>
                     ))}
-                    {/* 연관 키워드 (콘텐츠 갭에서 조회) */}
                     {(() => {
                       const gap = overviewData?.contentGap.find(
                         (g) => g.slug === item.slug && g.keywords.some((k) => item.keywords.includes(k)),
@@ -1026,23 +995,14 @@ export function TrendTab() {
                       );
                       if (related.length === 0) return null;
                       return related.slice(0, 3).map((rk) => (
-                        <span
-                          key={rk.keyword}
-                          className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
-                          title={`연관 키워드 · 월 ${rk.volume.toLocaleString("ko-KR")}회`}
-                        >
+                        <span key={rk.keyword} className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700" title={`연관 키워드 · 월 ${rk.volume.toLocaleString("ko-KR")}회`}>
                           {rk.keyword}
-                          <span className="ml-0.5 text-blue-400 tabular-nums text-[10px]">
-                            {rk.volume >= 1000
-                              ? `${(rk.volume / 1000).toFixed(1)}k`
-                              : rk.volume}
-                          </span>
+                          <span className="ml-0.5 text-blue-400 tabular-nums text-[10px]">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
                         </span>
                       ));
                     })()}
                   </div>
                 )}
-
                 <div className="flex justify-end">
                   <button
                     type="button"
@@ -1059,7 +1019,51 @@ export function TrendTab() {
         </section>
       )}
 
-      {/* ── Empty state when data loaded but everything is null ─ */}
+      {/* ── Section 5: Category overview + drilldown (trend toggle) ── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
+          카테고리별 검색 트렌드 개요
+        </h2>
+        {overviewLoading && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+                <div className="mb-2 h-4 w-20 rounded bg-[var(--border)]" />
+                <div className="h-5 w-16 rounded bg-[var(--border)]" />
+                <div className="mt-1.5 h-3 w-24 rounded bg-[var(--border)]" />
+              </div>
+            ))}
+          </div>
+        )}
+        {overviewError && <AdminErrorState message={overviewError} onRetry={refetchOverview} />}
+        {!overviewLoading && !overviewError && overviewData && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {overviewData.categories.map((cat) => (
+              <CategoryCard
+                key={cat.slug}
+                cat={cat}
+                isSelected={selectedCategory === cat.slug}
+                onClick={() => handleCategoryClick(cat.slug)}
+                onRetry={refetchOverview}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {selectedCategory && (
+        <section>
+          <CategoryDetail
+            slug={selectedCategory}
+            period={period}
+            onClose={() => setSelectedCategory(null)}
+            detailRef={detailRef}
+            volumeMap={selectedVolumeMap}
+          />
+        </section>
+      )}
+
+      {/* ── Empty state ───────────────────────────────── */}
       {!overviewLoading && !overviewError && overviewData &&
         overviewData.contentGap.length === 0 &&
         suggestions.length === 0 && (

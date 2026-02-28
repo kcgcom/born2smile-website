@@ -19,7 +19,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Validation**: Zod v4 (`zod/v4`, 블로그 CRUD + 사이트 설정 API 입력 검증)
 - **Database**: Firebase Firestore (블로그 포스트 저장소 + 좋아요 + 사이트 설정)
 - **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용) + Firebase Admin SDK (서버 사이드 토큰 검증)
-- **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`), Naver DataLab API (검색 트렌드), Naver Search Ads API (절대 검색량)
+- **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`), Naver DataLab API (검색 트렌드), Naver Search Ads API (절대 검색량) — 인사이트 탭에서 통합 분석
 - **Package Manager**: pnpm
 - **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
 
@@ -84,10 +84,13 @@ app/                          # Next.js App Router pages
       layout.tsx              # AuthGuard wrapper
       page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
       components/
-        AdminTabs.tsx         # 탭 네비게이션 (개발/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
-        TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
-        SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
-        TrendTab.tsx          # 트렌드 분석 탭 (검색량 중심 기본 로드 + "트렌드 포함" 토글로 DataLab 온디맨드, 콘텐츠 갭 분석, 블로그 주제 추천, 기간: 1개월/3개월/1년/3년/10년, 모바일 2줄 카드 레이아웃)
+        AdminTabs.tsx         # 탭 네비게이션 (개발/인사이트/블로그/설정, 아이콘+반응형 텍스트)
+        InsightTab.tsx        # 인사이트 탭 컨테이너 (서브탭: 요약/트래픽/검색 성과/콘텐츠 전략)
+        insight/
+          SummarySubTab.tsx   # 인사이트>요약 서브탭 (KPI 카드, 액션 알림, 콘텐츠 갭 TOP 5, 추천 주제 TOP 3)
+          StrategySubTab.tsx  # 인사이트>콘텐츠 전략 서브탭 (기회 매트릭스 산점도, 교차 키워드, 갭 테이블, 주제 추천, 트렌드 토글)
+        TrafficTab.tsx        # 인사이트>트래픽 서브탭 (Recharts 바/파이/영역 차트, GA4 Data API)
+        SearchTab.tsx         # 인사이트>검색 성과 서브탭 (Recharts 바/라인 차트, Search Console API)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
         BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
         SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)
@@ -305,7 +308,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 트래픽(GA4), 검색/SEO(SC), 트렌드(검색량 기본+DataLab 온디맨드+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+**관리자 대시보드 (`/admin`)** — 4탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 인사이트(서브탭: 요약/트래픽/검색 성과/콘텐츠 전략), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크). 구 URL(`?tab=traffic`/`search`/`trend`)은 인사이트 서브탭으로 자동 리다이렉트.
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)

@@ -12,19 +12,21 @@ import { AdminLoadingSkeleton } from "./components/AdminLoadingSkeleton";
 import { preloadAdminApi } from "./components/useAdminApi";
 
 // -------------------------------------------------------------
+// 구탭 → 신탭 리다이렉트 매핑 (북마크 호환)
+// -------------------------------------------------------------
+
+const TAB_REDIRECT: Record<string, { tab: string; sub?: string }> = {
+  traffic: { tab: "insight", sub: "traffic" },
+  search: { tab: "insight", sub: "search" },
+  trend: { tab: "insight", sub: "strategy" },
+};
+
+// -------------------------------------------------------------
 // 탭 레벨 코드 스플리팅 (ssr: false — 모든 탭이 "use client" + Firebase)
 // -------------------------------------------------------------
 
-const TrafficTab = dynamic(
-  () => import("./components/TrafficTab").then((m) => m.TrafficTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const SearchTab = dynamic(
-  () => import("./components/SearchTab").then((m) => m.SearchTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const TrendTab = dynamic(
-  () => import("./components/TrendTab").then((m) => m.TrendTab),
+const InsightTab = dynamic(
+  () => import("./components/InsightTab").then((m) => m.InsightTab),
   { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
 );
 const BlogTab = dynamic(
@@ -45,9 +47,7 @@ const DevTab = dynamic(
 // -------------------------------------------------------------
 
 const TAB_PREFETCH_ENDPOINTS: Partial<Record<TabId, string>> = {
-  traffic: "/api/admin/analytics?period=7d",
-  search: "/api/admin/search-console?period=28d",
-  trend: "/api/admin/naver-datalab/overview?period=3m",
+  insight: "/api/admin/analytics?period=7d",
   blog: "/api/admin/blog-posts",
   settings: "/api/admin/site-config/links",
   dev: "/api/dev/env-status",
@@ -66,6 +66,18 @@ export default function AdminDashboardPage() {
   const rawTab = searchParams.get("tab");
   const editSlug = searchParams.get("edit");
   const newCategory = searchParams.get("newCategory");
+
+  // 구탭 리다이렉트
+  useEffect(() => {
+    if (rawTab && rawTab in TAB_REDIRECT) {
+      const redirect = TAB_REDIRECT[rawTab];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", redirect.tab);
+      if (redirect.sub) params.set("sub", redirect.sub);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [rawTab, pathname, router, searchParams]);
+
   const validTabIds = TABS.map((t) => t.id) as string[];
   const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "dev";
 
@@ -120,14 +132,8 @@ export default function AdminDashboardPage() {
         {visitedTabs.has("dev") && (
           <div hidden={activeTab !== "dev"}><DevTab /></div>
         )}
-        {visitedTabs.has("traffic") && (
-          <div hidden={activeTab !== "traffic"}><TrafficTab /></div>
-        )}
-        {visitedTabs.has("search") && (
-          <div hidden={activeTab !== "search"}><SearchTab /></div>
-        )}
-        {visitedTabs.has("trend") && (
-          <div hidden={activeTab !== "trend"}><TrendTab /></div>
+        {visitedTabs.has("insight") && (
+          <div hidden={activeTab !== "insight"}><InsightTab /></div>
         )}
         {visitedTabs.has("blog") && (
           <div hidden={activeTab !== "blog"}><BlogTab editSlug={editSlug} newCategory={newCategory} /></div>

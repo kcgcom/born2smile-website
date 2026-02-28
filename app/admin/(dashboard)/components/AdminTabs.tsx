@@ -1,12 +1,10 @@
 "use client";
 
-import { BarChart3, Search, FileText, Settings, TrendingUp, Code } from "lucide-react";
+import { Code, Lightbulb, FileText, Settings } from "lucide-react";
 
 export const TABS = [
   { id: "dev", label: "개발", icon: Code },
-  { id: "traffic", label: "트래픽", icon: BarChart3 },
-  { id: "search", label: "검색/SEO", icon: Search },
-  { id: "trend", label: "트렌드", icon: TrendingUp },
+  { id: "insight", label: "인사이트", icon: Lightbulb },
   { id: "blog", label: "블로그", icon: FileText },
   { id: "settings", label: "설정", icon: Settings },
 ] as const;
