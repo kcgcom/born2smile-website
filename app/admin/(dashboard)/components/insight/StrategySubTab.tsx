@@ -10,6 +10,7 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
+import { ApiSourceBadge } from "./ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // TypeScript interfaces
@@ -334,6 +335,8 @@ export function StrategySubTab() {
 
   return (
     <div className="space-y-8">
+      <ApiSourceBadge sources={["naverSearchAd", "naverDatalab"]} />
+
       {/* ── Section 1: Opportunity scatter ─────────────── */}
       {scatterData.length > 0 && (
         <section>

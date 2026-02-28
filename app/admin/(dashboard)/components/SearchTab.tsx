@@ -8,6 +8,7 @@ import { PeriodSelector } from "./PeriodSelector";
 import { DataTable } from "./DataTable";
 import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
+import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // Recharts keyword chart — loaded client-side only
@@ -154,6 +155,8 @@ export function SearchTab() {
 
   return (
     <div className="space-y-6">
+      <ApiSourceBadge sources={["searchConsole"]} />
+
       {/* Period selector */}
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />

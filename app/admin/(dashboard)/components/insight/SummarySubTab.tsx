@@ -8,6 +8,7 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryValue } from "@/lib/blog/types";
+import { ApiSourceBadge } from "./ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // Types (summary에 필요한 필드만)
@@ -176,6 +177,8 @@ export function SummarySubTab() {
 
   return (
     <div className="space-y-8">
+      <ApiSourceBadge sources={["ga4", "searchConsole", "naverSearchAd"]} />
+
       {/* ── Section 1: Traffic KPIs (GA4 7d) ──────────────── */}
       <section>
         <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">

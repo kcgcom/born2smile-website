@@ -7,6 +7,7 @@ import { useAdminApi } from "../useAdminApi";
 import { PeriodSelector } from "../PeriodSelector";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
+import { ApiSourceBadge } from "./ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // TypeScript interfaces
@@ -366,6 +367,8 @@ export function TrendSubTab() {
 
   return (
     <div className="space-y-8">
+      <ApiSourceBadge sources={["naverDatalab"]} />
+
       {/* ── Period selector ────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />

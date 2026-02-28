@@ -7,6 +7,7 @@ import { MetricCard } from "./MetricCard";
 import { PeriodSelector } from "./PeriodSelector";
 import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
+import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // Types
@@ -409,6 +410,8 @@ export function TrafficTab() {
 
   return (
     <div className="space-y-6">
+      <ApiSourceBadge sources={["ga4"]} />
+
       {/* Period selector */}
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector
