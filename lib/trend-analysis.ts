@@ -209,11 +209,14 @@ export interface VolumeDataEntry {
  *
  * v3 gapScore 공식 (절대 검색량 중심):
  *
- * 정규 공식 (검색광고 연동 시):
+ * 트렌드 포함 (full 모드):
  *   volumeScore = min(100, log10(monthlyTotal + 1) × 25)
  *   trendBonus = clamp(-4, 6, changeRate > 0 ? changeRate × 0.15 : changeRate × 0.08)
  *   contentLack = round(100 × exp(-existingPostCount / 2.5))
  *   gapScore = clamp(0, 100, volumeScore × 0.7 + trendBonus × 0.05 + contentLack × 0.25)
+ *
+ * 트렌드 미포함 (volume 모드):
+ *   gapScore = clamp(0, 100, volumeScore × 0.75 + contentLack × 0.25)
  *
  * 폴백 공식 (검색광고 미연동):
  *   volumeScore = normalizedTrendScore (카테고리 내 정규화)
