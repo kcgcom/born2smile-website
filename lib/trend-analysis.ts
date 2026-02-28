@@ -310,11 +310,15 @@ export function analyzeContentGap(
       const rawTrendBonus =
         g.changeRate > 0 ? g.changeRate * 0.15 : g.changeRate * 0.08;
       const trendBonus = Math.min(6, Math.max(-4, rawTrendBonus));
+      const hasTrend = g.changeRate !== 0 || g.trend !== "stable";
 
       const contentLack = calcContentLack(g.existingPostCount);
 
       // 최종 점수: clamp [0, 100]
-      const rawScore = volumeScore * 0.7 + trendBonus * 0.05 + contentLack * 0.25;
+      // 트렌드 데이터 없으면 가중치 재분배: volume 0.75 + content 0.25 (합계 1.0)
+      const rawScore = hasTrend
+        ? volumeScore * 0.7 + trendBonus * 0.05 + contentLack * 0.25
+        : volumeScore * 0.75 + contentLack * 0.25;
       const gapScore = Math.round(Math.min(100, Math.max(0, rawScore)));
 
       gaps.push({
