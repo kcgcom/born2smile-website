@@ -4,6 +4,9 @@ import {
   unauthorizedResponse,
 } from "@/app/api/admin/_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "@/app/api/admin/_lib/cache";
+import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getAdminApp } from "@/lib/firebase-admin";
+import { getTodayKST } from "@/lib/date";
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const TARGET_URL = "https://www.born2smile.co.kr";
@@ -28,11 +31,22 @@ interface CWVMetric {
   category: string;
 }
 
+interface PSIAuditItem {
+  url: string;
+  wastedMs?: number;
+  wastedBytes?: number;
+  totalBytes?: number;
+}
+
 interface PSIAudit {
   id: string;
   title: string;
   score: number | null;
   displayValue?: string;
+  description?: string;
+  savingsMs?: number;
+  savingsBytes?: number;
+  items?: PSIAuditItem[];
 }
 
 interface PSIResult {
@@ -93,12 +107,39 @@ function parsePSIResponse(
     )
     .sort((a: any, b: any) => (a.score ?? 0) - (b.score ?? 0))
     .slice(0, 10)
-    .map((a: any) => ({
-      id: a.id,
-      title: a.title,
-      score: a.score != null ? Math.round(a.score * 100) : null,
-      displayValue: a.displayValue,
-    }));
+    .map((a: any) => {
+      // description에서 Lighthouse 마크다운 링크 제거 (예: [Learn more](https://...))
+      const desc = (a.description as string | undefined)
+        ?.replace(/\s*\[.*?\]\(https?:\/\/[^)]+\)\.?/g, "")
+        .trim();
+
+      // details.items에서 리소스별 절감 정보 추출 (최대 5개)
+      const rawItems: any[] = a.details?.items ?? [];
+      const items: PSIAuditItem[] = rawItems
+        .filter((it: any) => it.url)
+        .slice(0, 5)
+        .map((it: any) => ({
+          url: it.url,
+          ...(it.wastedMs != null && { wastedMs: Math.round(it.wastedMs) }),
+          ...(it.wastedBytes != null && { wastedBytes: it.wastedBytes }),
+          ...(it.totalBytes != null && { totalBytes: it.totalBytes }),
+        }));
+
+      return {
+        id: a.id,
+        title: a.title,
+        score: a.score != null ? Math.round(a.score * 100) : null,
+        displayValue: a.displayValue,
+        ...(desc && { description: desc }),
+        ...(a.details?.overallSavingsMs != null && {
+          savingsMs: Math.round(a.details.overallSavingsMs),
+        }),
+        ...(a.details?.overallSavingsBytes != null && {
+          savingsBytes: a.details.overallSavingsBytes,
+        }),
+        ...(items.length > 0 && { items }),
+      };
+    });
 
   return {
     strategy,
@@ -140,19 +181,74 @@ async function fetchPSI(
   }
 }
 
-const getCachedPSI = createCachedFetcher<PSIResponseData>(
-  "psi-homepage",
-  async () => {
+/**
+ * Firestore L2 캐시 + PSI API 호출
+ * 일별 캐시 문서(`psi-homepage-YYYY-MM-DD`)로 저장.
+ * force=true 시 캐시 무시하고 재호출.
+ */
+async function fetchPSIWithFirestoreCache(
+  force: boolean,
+): Promise<PSIResponseData> {
+  try {
+    const db = getFirestore(getAdminApp());
+    const today = getTodayKST();
+    const docId = `psi-homepage-${today}`;
+    const docRef = db.collection("api-cache").doc(docId);
+
+    // force가 아니면 Firestore 캐시 확인
+    if (!force) {
+      const cached = await docRef.get();
+      if (cached.exists) {
+        const cachedData = cached.data();
+        if (cachedData?.mobile || cachedData?.desktop) {
+          return {
+            mobile: cachedData.mobile ?? null,
+            desktop: cachedData.desktop ?? null,
+          };
+        }
+      }
+    }
+
+    // 캐시 미스 또는 force → PSI API 호출
     const [mobile, desktop] = await Promise.all([
       fetchPSI("mobile"),
       fetchPSI("desktop"),
     ]);
-    // 두 전략 모두 실패 시 throw → unstable_cache가 실패 결과를 캐싱하지 않음
+
     if (!mobile && !desktop) {
       throw new Error("PSI_BOTH_FAILED");
     }
+
+    const result: PSIResponseData = { mobile, desktop };
+
+    // Firestore에 저장 (비동기, 실패해도 무시)
+    docRef
+      .set({
+        mobile,
+        desktop,
+        fetchedAt: Timestamp.now(),
+      })
+      .catch(() => {
+        /* Firestore 쓰기 실패 무시 */
+      });
+
+    return result;
+  } catch (e) {
+    // Firestore 접근 실패 → PSI API 직접 호출로 폴백
+    if (e instanceof Error && e.message === "PSI_BOTH_FAILED") throw e;
+
+    const [mobile, desktop] = await Promise.all([
+      fetchPSI("mobile"),
+      fetchPSI("desktop"),
+    ]);
+    if (!mobile && !desktop) throw new Error("PSI_BOTH_FAILED");
     return { mobile, desktop };
-  },
+  }
+}
+
+const getCachedPSI = createCachedFetcher<PSIResponseData>(
+  "psi-homepage",
+  () => fetchPSIWithFirestoreCache(false),
   CACHE_TTL.PSI,
 );
 
@@ -160,8 +256,14 @@ export async function GET(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
+  const { searchParams } = new URL(request.url);
+  const force = searchParams.get("force") === "true";
+
   try {
-    const data = await getCachedPSI();
+    // force=true: unstable_cache 우회, Firestore 캐시도 무시하고 PSI API 재호출
+    const data = force
+      ? await fetchPSIWithFirestoreCache(true)
+      : await getCachedPSI();
 
     return NextResponse.json(
       { data },

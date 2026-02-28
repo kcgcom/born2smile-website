@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Smartphone, Monitor, Info } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Smartphone, Monitor, Info, RefreshCw, ChevronDown } from "lucide-react";
+import { mutate as globalMutate } from "swr";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -22,11 +24,22 @@ interface CWVMetric {
   category: string;
 }
 
+interface PSIAuditItem {
+  url: string;
+  wastedMs?: number;
+  wastedBytes?: number;
+  totalBytes?: number;
+}
+
 interface PSIAudit {
   id: string;
   title: string;
   score: number | null;
   displayValue?: string;
+  description?: string;
+  savingsMs?: number;
+  savingsBytes?: number;
+  items?: PSIAuditItem[];
 }
 
 interface PSIResult {
@@ -79,6 +92,22 @@ function formatCWVValue(metric: CWVMetric): string {
   if (metric.percentile >= 1000)
     return `${(metric.percentile / 1000).toFixed(1)}s`;
   return `${metric.percentile}ms`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+function shortenUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname + u.search;
+    return path.length > 60 ? path.slice(0, 57) + "…" : path;
+  } catch {
+    return url.length > 60 ? url.slice(0, 57) + "…" : url;
+  }
 }
 
 // --- Inline Components ---
@@ -167,6 +196,27 @@ export function PerformanceTab() {
   const { data, loading, error, refetch } =
     useAdminApi<PSIResponseData>("/api/dev/pagespeed");
   const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedAudit, setExpandedAudit] = useState<string | null>(null);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const user = getFirebaseAuth().currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+      const res = await fetch("/api/dev/pagespeed?force=true", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        // SWR 캐시를 새 데이터로 갱신
+        await globalMutate("/api/dev/pagespeed", json.data, false);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -197,45 +247,71 @@ export function PerformanceTab() {
     );
   }
 
-  const fetchedTime = new Date(result.fetchedAt).toLocaleTimeString("ko-KR", {
+  const fetchedDate = new Date(result.fetchedAt);
+  const fetchedTime = fetchedDate.toLocaleDateString("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+  }) + " " + fetchedDate.toLocaleTimeString("ko-KR", {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const isStale =
+    Date.now() - fetchedDate.getTime() > 24 * 60 * 60 * 1000;
 
   const overallBadge = categoryBadge(result.overallCategory);
   const hasCWV = result.coreWebVitals.some((m) => m.percentile != null);
 
   return (
     <div className="space-y-6">
-      {/* 전략 토글 + 분석 시각 */}
+      {/* 전략 토글 + 새로 분석 + 분석 시각 */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 rounded-lg bg-[var(--background)] p-1">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-lg bg-[var(--background)] p-1">
+            <button
+              onClick={() => setStrategy("mobile")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                strategy === "mobile"
+                  ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <Smartphone size={14} />
+              모바일
+            </button>
+            <button
+              onClick={() => setStrategy("desktop")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                strategy === "desktop"
+                  ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <Monitor size={14} />
+              데스크톱
+            </button>
+          </div>
           <button
-            onClick={() => setStrategy("mobile")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              strategy === "mobile"
-                ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
-                : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors disabled:opacity-50"
           >
-            <Smartphone size={14} />
-            모바일
-          </button>
-          <button
-            onClick={() => setStrategy("desktop")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              strategy === "desktop"
-                ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
-                : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            <Monitor size={14} />
-            데스크톱
+            <RefreshCw
+              size={13}
+              className={refreshing ? "animate-spin" : ""}
+            />
+            새로 분석
           </button>
         </div>
-        <span className="text-xs text-[var(--muted)]">
-          분석 시각: {fetchedTime}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {isStale && (
+            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700">
+              오래된 데이터
+            </span>
+          )}
+          <span className="text-xs text-[var(--muted)]">
+            {fetchedTime}
+          </span>
+        </div>
       </div>
 
       {/* Lighthouse 카테고리 점수 */}
@@ -286,28 +362,109 @@ export function PerformanceTab() {
             개선 기회 ({result.audits.length}개)
           </h3>
           <div className="space-y-2">
-            {result.audits.map((audit) => (
-              <div
-                key={audit.id}
-                className="flex items-center justify-between rounded-lg bg-[var(--background)] px-4 py-2.5"
-              >
-                <span className="text-sm text-[var(--foreground)]">
-                  {audit.title}
-                </span>
-                <div className="ml-3 flex shrink-0 items-center gap-2">
-                  {audit.displayValue && (
-                    <span className="text-xs text-[var(--muted)]">
-                      {audit.displayValue}
-                    </span>
-                  )}
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${scoreBg(audit.score)}`}
+            {result.audits.map((audit) => {
+              const isExpanded = expandedAudit === audit.id;
+              const hasDetails =
+                audit.description || audit.savingsMs || audit.savingsBytes || audit.items?.length;
+
+              return (
+                <div key={audit.id} className="rounded-lg bg-[var(--background)] overflow-hidden">
+                  {/* 헤더 행 */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      hasDetails &&
+                      setExpandedAudit(isExpanded ? null : audit.id)
+                    }
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left ${
+                      hasDetails ? "cursor-pointer hover:bg-gray-50/50" : "cursor-default"
+                    }`}
                   >
-                    {audit.score ?? "—"}
-                  </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {hasDetails && (
+                        <ChevronDown
+                          size={14}
+                          className={`shrink-0 text-[var(--muted)] transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      )}
+                      <span className="text-sm text-[var(--foreground)] truncate">
+                        {audit.title}
+                      </span>
+                    </div>
+                    <div className="ml-3 flex shrink-0 items-center gap-2">
+                      {audit.savingsMs != null && audit.savingsMs > 0 && (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                          -{audit.savingsMs >= 1000
+                            ? `${(audit.savingsMs / 1000).toFixed(1)}s`
+                            : `${audit.savingsMs}ms`}
+                        </span>
+                      )}
+                      {audit.savingsBytes != null && audit.savingsBytes > 0 && (
+                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-700">
+                          -{formatBytes(audit.savingsBytes)}
+                        </span>
+                      )}
+                      {audit.displayValue && (
+                        <span className="text-xs text-[var(--muted)]">
+                          {audit.displayValue}
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${scoreBg(audit.score)}`}
+                      >
+                        {audit.score ?? "—"}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* 확장 상세 */}
+                  {isExpanded && hasDetails && (
+                    <div className="border-t border-gray-100 px-4 py-3 space-y-3">
+                      {audit.description && (
+                        <p className="text-xs leading-relaxed text-[var(--muted)]">
+                          {audit.description}
+                        </p>
+                      )}
+                      {audit.items && audit.items.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+                            관련 리소스
+                          </p>
+                          <div className="rounded-md border border-gray-100 divide-y divide-gray-100 text-xs">
+                            {audit.items.map((item, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between gap-2 px-3 py-1.5"
+                              >
+                                <span
+                                  className="truncate text-[var(--foreground)] font-mono text-[11px]"
+                                  title={item.url}
+                                >
+                                  {shortenUrl(item.url)}
+                                </span>
+                                <div className="flex shrink-0 items-center gap-2 text-[var(--muted)]">
+                                  {item.wastedMs != null && item.wastedMs > 0 && (
+                                    <span>{item.wastedMs >= 1000 ? `${(item.wastedMs / 1000).toFixed(1)}s` : `${item.wastedMs}ms`}</span>
+                                  )}
+                                  {item.wastedBytes != null && item.wastedBytes > 0 && (
+                                    <span>{formatBytes(item.wastedBytes)}</span>
+                                  )}
+                                  {item.totalBytes != null && !item.wastedBytes && (
+                                    <span>{formatBytes(item.totalBytes)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
