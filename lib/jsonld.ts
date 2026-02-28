@@ -276,6 +276,49 @@ export function getBlogCollectionJsonLd(
 }
 
 /**
+ * 블로그 카테고리 허브 페이지용 JSON-LD (CollectionPage + ItemList)
+ * 지역 SEO 강화: isPartOf(clinic), provider, about 포함
+ */
+export function getCategoryCollectionJsonLd(opts: {
+  title: string;
+  description: string;
+  categorySlug: string;
+  posts: { slug: string; title: string; category: BlogCategoryValue }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${opts.title} | ${CLINIC.name}`,
+    description: opts.description,
+    url: `${BASE_URL}/blog/${opts.categorySlug}`,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: Math.min(opts.posts.length, 10),
+      itemListElement: opts.posts.slice(0, 10).map((post, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
+        name: post.title,
+      })),
+    },
+    isPartOf: {
+      "@type": "Dentist",
+      name: CLINIC.name,
+      url: BASE_URL,
+    },
+    provider: {
+      "@type": "Dentist",
+      name: CLINIC.name,
+      telephone: CLINIC.phoneIntl,
+    },
+    about: {
+      "@type": "Thing",
+      name: opts.title,
+    },
+  };
+}
+
+/**
  * 빵 부스러기(BreadcrumbList) JSON-LD
  */
 export function getBreadcrumbJsonLd(

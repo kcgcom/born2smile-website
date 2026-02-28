@@ -4,10 +4,9 @@ import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
   getCategoryFromSlug,
-  getBlogPostUrl,
 } from "@/lib/blog";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
-import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getBreadcrumbJsonLd, getCategoryCollectionJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";
 
@@ -18,34 +17,41 @@ export function generateStaticParams() {
 }
 
 /** 카테고리별 SEO 메타데이터 */
-const CATEGORY_META: Record<string, { title: string; description: string }> = {
+const CATEGORY_META: Record<string, { title: string; description: string; keywords: string[] }> = {
   implant: {
     title: "임플란트 정보",
     description: "임플란트 수술 과정, 관리법, 비용, 주의사항 등 임플란트에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 임플란트", "장기동 임플란트", "한강신도시 임플란트", "임플란트 정보", "김포 임플란트 치과"],
   },
   orthodontics: {
     title: "치아교정 정보",
     description: "교정 종류, 기간, 관리법, 교정 전후 주의사항 등 치아교정에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 치아교정", "장기동 치아교정", "한강신도시 치아교정", "치아교정 정보", "김포 교정 치과"],
   },
   prosthetics: {
     title: "보철치료 정보",
     description: "크라운, 브릿지, 틀니 등 보철치료의 종류와 관리법에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 보철치료", "장기동 보철치료", "한강신도시 보철치료", "보철치료 정보", "김포 보철 치과"],
   },
   restorative: {
     title: "보존치료 정보",
     description: "충치 치료, 신경 치료, 레진 수복 등 보존치료에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 보존치료", "장기동 보존치료", "한강신도시 보존치료", "보존치료 정보", "김포 충치 치료"],
   },
   pediatric: {
     title: "소아치료 정보",
     description: "어린이 충치 예방, 불소 도포, 실란트, 소아 교정 등 소아치료에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 소아치과", "장기동 소아치과", "한강신도시 소아치과", "소아치료 정보", "김포 어린이 치과"],
   },
   prevention: {
     title: "예방관리 정보",
     description: "스케일링, 양치법, 잇몸 관리, 구강 위생 등 예방관리에 관한 전문 정보를 알려드립니다.",
+    keywords: ["김포 스케일링", "장기동 스케일링", "한강신도시 스케일링", "예방관리 정보", "김포 치과 검진"],
   },
   "health-tips": {
     title: "건강상식",
     description: "구강 건강과 전신 건강의 관계, 올바른 생활 습관 등 건강 상식을 알려드립니다.",
+    keywords: ["구강 건강", "치아 건강 상식", "치과 건강 정보"],
   },
 };
 
@@ -58,17 +64,23 @@ export async function generateMetadata({
   const categoryValue = getCategoryFromSlug(category);
   if (!categoryValue) return {};
 
-  const meta = CATEGORY_META[category] ?? { title: categoryValue, description: "" };
-  const fullTitle = `${meta.title} | ${CLINIC.name} 건강칼럼`;
+  const meta = CATEGORY_META[category] ?? { title: categoryValue, description: "", keywords: [] };
+  const isLocal = category !== "health-tips";
+  const localTitle = isLocal ? `김포 ${meta.title}` : meta.title;
+  const localDesc = isLocal
+    ? `김포 ${meta.title}, ${CLINIC.name}. ${meta.description}`
+    : `${CLINIC.name} ${meta.description}`;
+  const fullTitle = `${localTitle} | ${CLINIC.name} 건강칼럼`;
   const categoryUrl = `${BASE_URL}/blog/${category}`;
 
   return {
-    title: meta.title,
-    description: `${CLINIC.name} ${meta.description}`,
+    title: localTitle,
+    description: localDesc,
+    keywords: meta.keywords,
     alternates: { canonical: categoryUrl },
     openGraph: {
       title: fullTitle,
-      description: meta.description,
+      description: localDesc,
       siteName: CLINIC.name,
       locale: "ko_KR",
       url: categoryUrl,
@@ -80,6 +92,12 @@ export async function generateMetadata({
           alt: CLINIC.name,
         },
       ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: fullTitle,
+      description: localDesc,
+      images: ["/images/og-image.jpg"],
     },
   };
 }
@@ -103,23 +121,12 @@ export default async function BlogCategoryPage({
     { name: categoryValue, href: `/blog/${category}` },
   ]);
 
-  const collectionJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: `${meta?.title ?? categoryValue} | ${CLINIC.name}`,
+  const collectionJsonLd = getCategoryCollectionJsonLd({
+    title: meta?.title ?? categoryValue,
     description: meta?.description ?? "",
-    url: `${BASE_URL}/blog/${category}`,
-    mainEntity: {
-      "@type": "ItemList",
-      numberOfItems: Math.min(categoryPosts.length, 10),
-      itemListElement: categoryPosts.slice(0, 10).map((post, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
-        url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
-        name: post.title,
-      })),
-    },
-  };
+    categorySlug: category,
+    posts: categoryPosts,
+  });
 
   return (
     <>
