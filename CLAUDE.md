@@ -85,10 +85,11 @@ app/                          # Next.js App Router pages
       page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
       components/
         AdminTabs.tsx         # 탭 네비게이션 (개발/인사이트/블로그/설정, 아이콘+반응형 텍스트)
-        InsightTab.tsx        # 인사이트 탭 컨테이너 (서브탭: 요약/트래픽/검색 성과/콘텐츠 전략)
+        InsightTab.tsx        # 인사이트 탭 컨테이너 (서브탭: 요약/트래픽/검색 성과/콘텐츠 전략/트렌드)
         insight/
           SummarySubTab.tsx   # 인사이트>요약 서브탭 (KPI 카드, 액션 알림, 콘텐츠 갭 TOP 5, 추천 주제 TOP 3)
-          StrategySubTab.tsx  # 인사이트>콘텐츠 전략 서브탭 (기회 매트릭스 산점도, 교차 키워드, 갭 테이블, 주제 추천, 트렌드 토글)
+          StrategySubTab.tsx  # 인사이트>콘텐츠 전략 서브탭 (기회 매트릭스 산점도, 교차 키워드, 갭 테이블, 주제 추천)
+          TrendSubTab.tsx     # 인사이트>트렌드 서브탭 (기간 선택, 카테고리 개요 카드, 드릴다운 상세 차트)
         TrafficTab.tsx        # 인사이트>트래픽 서브탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 인사이트>검색 성과 서브탭 (Recharts 바/라인 차트, Search Console API)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
@@ -308,7 +309,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 4탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 인사이트(서브탭: 요약/트래픽/검색 성과/콘텐츠 전략), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크). 구 URL(`?tab=traffic`/`search`/`trend`)은 인사이트 서브탭으로 자동 리다이렉트.
+**관리자 대시보드 (`/admin`)** — 4탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 인사이트(서브탭: 요약/트래픽/검색 성과/콘텐츠 전략/트렌드), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크). 구 URL(`?tab=traffic`/`search`/`trend`)은 인사이트 서브탭으로 자동 리다이렉트.
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)

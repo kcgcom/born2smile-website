@@ -18,7 +18,7 @@ import { preloadAdminApi } from "./components/useAdminApi";
 const TAB_REDIRECT: Record<string, { tab: string; sub?: string }> = {
   traffic: { tab: "insight", sub: "traffic" },
   search: { tab: "insight", sub: "search" },
-  trend: { tab: "insight", sub: "strategy" },
+  trend: { tab: "insight", sub: "trend" },
 };
 
 // -------------------------------------------------------------
