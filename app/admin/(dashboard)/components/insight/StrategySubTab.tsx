@@ -335,7 +335,7 @@ export function StrategySubTab() {
 
   return (
     <div className="space-y-8">
-      <ApiSourceBadge sources={["naverSearchAd", "naverDatalab"]} />
+      <ApiSourceBadge sources={["naverSearchAd"]} />
 
       {/* ── Section 1: Opportunity scatter ─────────────── */}
       {scatterData.length > 0 && (
