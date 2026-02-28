@@ -72,6 +72,31 @@ export interface TopicSuggestion {
 }
 
 // =============================================================
+// buildSyntheticCategoryData — DataLab 없이 분류체계만으로 카테고리 데이터 생성
+// =============================================================
+
+/**
+ * DataLab API 호출 없이 키워드 분류체계만으로 CategoryTrendData[]를 생성한다.
+ * analyzeContentGap()이 이 데이터를 사용하면 trendBonus=0이 되어
+ * gapScore = volumeScore*0.7 + contentLack*0.25 로 산출된다.
+ */
+export function buildSyntheticCategoryData(
+  categoryKeywords: CategoryKeywords[],
+): CategoryTrendData[] {
+  return categoryKeywords.map((ck) => ({
+    category: ck.category,
+    slug: ck.slug,
+    subGroups: ck.subGroups.map((sg) => ({
+      name: sg.name,
+      trend: "stable" as TrendDirection,
+      changeRate: 0,
+      currentAvg: 0,
+      data: [],
+    })),
+  }));
+}
+
+// =============================================================
 // 공통 헬퍼
 // =============================================================
 
@@ -369,10 +394,15 @@ export function generateTopicSuggestions(
       volumePart = `${volumeLabel} 검색량(${gap.currentAvg.toFixed(0)})`;
     }
 
+    const hasTrendData = gap.changeRate !== 0 || gap.trend !== "stable";
+    const trendPart = hasTrendData
+      ? ` · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%)`
+      : "";
+
     const reasoning =
       gap.existingPostCount === 0
-        ? `'${gap.subGroup}' ${volumePart} · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%) · 관련 포스트 없음`
-        : `'${gap.subGroup}' ${volumePart} · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%) · 포스트 ${gap.existingPostCount}개`;
+        ? `'${gap.subGroup}' ${volumePart}${trendPart} · 관련 포스트 없음`
+        : `'${gap.subGroup}' ${volumePart}${trendPart} · 포스트 ${gap.existingPostCount}개`;
 
     const priority: TopicSuggestion["priority"] =
       gap.gapScore >= 70 ? "high" : gap.gapScore >= 40 ? "medium" : "low";

@@ -3,7 +3,7 @@ import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
-import { analyzeTrend, analyzeContentGap, generateTopicSuggestions } from "@/lib/trend-analysis";
+import { analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData } from "@/lib/trend-analysis";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
@@ -15,8 +15,10 @@ export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  // Graceful degradation: env vars not set → return null (not an error)
-  if (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET) {
+  const mode = request.nextUrl.searchParams.get("mode") ?? "volume";
+
+  // Graceful degradation: env vars not set → full mode needs DataLab, volume mode doesn't
+  if (mode === "full" && (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET)) {
     return Response.json({ data: null }, { headers: { "Cache-Control": "private, no-store" } });
   }
 
@@ -29,20 +31,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch DataLab trends, published posts, and search volume in parallel
-    const [results, publishedPosts, volumeResult] = await Promise.all([
-      // 1) DataLab: all 7 categories with partial failure tolerance
-      Promise.allSettled(
-        CATEGORY_KEYWORDS.map(async (ck) => {
-          const getData = createCachedFetcher(
-            `naver-trend-${ck.slug}-${period}`,
-            () => fetchNaverDatalabByCategory(ck.subGroups, period),
-            CACHE_TTL.NAVER_DATALAB,
-          );
-          const raw = await getData();
-          return { ck, raw };
-        }),
-      ),
+    const isFullMode = mode === "full";
+
+    // Fetch DataLab trends (full mode only), published posts, and search volume in parallel
+    const [datalabResults, publishedPosts, volumeResult] = await Promise.all([
+      // 1) DataLab: all 7 categories with partial failure tolerance (full mode only)
+      isFullMode
+        ? Promise.allSettled(
+            CATEGORY_KEYWORDS.map(async (ck) => {
+              const getData = createCachedFetcher(
+                `naver-trend-${ck.slug}-${period}`,
+                () => fetchNaverDatalabByCategory(ck.subGroups, period),
+                CACHE_TTL.NAVER_DATALAB,
+              );
+              const raw = await getData();
+              return { ck, raw };
+            }),
+          )
+        : Promise.resolve(null),
       // 2) Published posts for content gap analysis
       getAllPublishedPostMetas(),
       // 3) Search volume data (검색광고 API) — 24시간 캐시, graceful degradation
@@ -153,102 +159,148 @@ export async function GET(request: NextRequest) {
     const volumeCoverage = volumeResult && "coverage" in volumeResult ? volumeResult.coverage : null;
 
     // Separate fulfilled vs rejected, build categories summary
-    const successfulCategoryData: CategoryTrendData[] = [];
+    let successfulCategoryData: CategoryTrendData[];
+    let categories;
+    let periodDates: { start: string; end: string } | null = null;
 
-    const categories = results.map((result, i) => {
-      const ck = CATEGORY_KEYWORDS[i];
+    if (datalabResults) {
+      // FULL mode: enrich with DataLab trend analysis
+      successfulCategoryData = [];
 
-      if (result.status === "rejected") {
+      categories = datalabResults.map((result, i) => {
+        const ck = CATEGORY_KEYWORDS[i];
+
+        if (result.status === "rejected") {
+          return {
+            category: ck.category,
+            slug: ck.slug,
+            overallTrend: null,
+            changeRate: null,
+            topSubGroup: null,
+            subGroupCount: null,
+            risingCount: null,
+            fallingCount: null,
+            stableCount: null,
+            monthlyTotalVolume: undefined as number | null | undefined,
+            error: result.reason instanceof Error ? result.reason.message : "데이터를 불러올 수 없습니다",
+          };
+        }
+
+        const { raw } = result.value;
+
+        // Enrich sub-groups with trend analysis
+        const enrichedSubGroups = raw.groups.map((group) => {
+          const { direction, changeRate, currentAvg } = analyzeTrend(group.data);
+          return {
+            name: group.title,
+            trend: direction,
+            changeRate,
+            currentAvg,
+            data: group.data,
+          };
+        });
+
+        // overallTrend: majority vote among sub-groups; on tie, prefer "stable"
+        const risingCount = enrichedSubGroups.filter((sg) => sg.trend === "rising").length;
+        const fallingCount = enrichedSubGroups.filter((sg) => sg.trend === "falling").length;
+        const stableCount = enrichedSubGroups.filter((sg) => sg.trend === "stable").length;
+
+        let overallTrend: "rising" | "falling" | "stable";
+        if (risingCount > fallingCount && risingCount > stableCount) {
+          overallTrend = "rising";
+        } else if (fallingCount > risingCount && fallingCount > stableCount) {
+          overallTrend = "falling";
+        } else {
+          overallTrend = "stable";
+        }
+
+        // changeRate = highest absolute changeRate among sub-groups
+        const changeRate = enrichedSubGroups.reduce(
+          (max, sg) => (Math.abs(sg.changeRate) > Math.abs(max) ? sg.changeRate : max),
+          0,
+        );
+
+        // topSubGroup = sub-group with highest currentAvg within the category
+        const topSubGroup = enrichedSubGroups.reduce(
+          (top, sg) => (sg.currentAvg > top.currentAvg ? sg : top),
+          enrichedSubGroups[0],
+        );
+
+        // Collect for content gap analysis
+        successfulCategoryData.push({
+          category: ck.category,
+          slug: ck.slug,
+          subGroups: enrichedSubGroups,
+        });
+
+        // 카테고리 전체 월간 검색량 합산 (검색광고 연동 시)
+        let monthlyTotalVolume: number | null = null;
+        if (volumeData) {
+          let total = 0;
+          let hasAny = false;
+          for (const esg of enrichedSubGroups) {
+            const vol = volumeData[`${ck.category}:${esg.name}`];
+            if (vol) {
+              total += vol.monthlyTotalQcCnt;
+              hasAny = true;
+            }
+          }
+          if (hasAny) monthlyTotalVolume = total;
+        }
+
+        return {
+          category: ck.category,
+          slug: ck.slug,
+          overallTrend,
+          changeRate,
+          topSubGroup: topSubGroup?.name ?? null,
+          subGroupCount: enrichedSubGroups.length,
+          risingCount,
+          fallingCount,
+          stableCount,
+          monthlyTotalVolume,
+          error: null,
+        };
+      });
+
+      // Use period from first successful result
+      const firstSuccess = datalabResults.find((r) => r.status === "fulfilled");
+      if (firstSuccess && firstSuccess.status === "fulfilled") {
+        periodDates = firstSuccess.value.raw.period;
+      }
+    } else {
+      // VOLUME mode: build categories from keyword taxonomy + search volume only
+      successfulCategoryData = buildSyntheticCategoryData(CATEGORY_KEYWORDS);
+
+      categories = CATEGORY_KEYWORDS.map((ck) => {
+        let monthlyTotalVolume: number | null = null;
+        if (volumeData) {
+          let total = 0;
+          let hasAny = false;
+          for (const sg of ck.subGroups) {
+            const vol = volumeData[`${ck.category}:${sg.name}`];
+            if (vol) {
+              total += vol.monthlyTotalQcCnt;
+              hasAny = true;
+            }
+          }
+          if (hasAny) monthlyTotalVolume = total;
+        }
         return {
           category: ck.category,
           slug: ck.slug,
           overallTrend: null,
           changeRate: null,
           topSubGroup: null,
-          subGroupCount: null,
+          subGroupCount: ck.subGroups.length,
           risingCount: null,
           fallingCount: null,
           stableCount: null,
-          error: result.reason instanceof Error ? result.reason.message : "데이터를 불러올 수 없습니다",
-        };
-      }
-
-      const { raw } = result.value;
-
-      // Enrich sub-groups with trend analysis
-      const enrichedSubGroups = raw.groups.map((group) => {
-        const { direction, changeRate, currentAvg } = analyzeTrend(group.data);
-        return {
-          name: group.title,
-          trend: direction,
-          changeRate,
-          currentAvg,
-          data: group.data,
+          monthlyTotalVolume,
+          error: null,
         };
       });
-
-      // overallTrend: majority vote among sub-groups; on tie, prefer "stable"
-      const risingCount = enrichedSubGroups.filter((sg) => sg.trend === "rising").length;
-      const fallingCount = enrichedSubGroups.filter((sg) => sg.trend === "falling").length;
-      const stableCount = enrichedSubGroups.filter((sg) => sg.trend === "stable").length;
-
-      let overallTrend: "rising" | "falling" | "stable";
-      if (risingCount > fallingCount && risingCount > stableCount) {
-        overallTrend = "rising";
-      } else if (fallingCount > risingCount && fallingCount > stableCount) {
-        overallTrend = "falling";
-      } else {
-        overallTrend = "stable";
-      }
-
-      // changeRate = highest absolute changeRate among sub-groups
-      const changeRate = enrichedSubGroups.reduce(
-        (max, sg) => (Math.abs(sg.changeRate) > Math.abs(max) ? sg.changeRate : max),
-        0,
-      );
-
-      // topSubGroup = sub-group with highest currentAvg within the category
-      const topSubGroup = enrichedSubGroups.reduce(
-        (top, sg) => (sg.currentAvg > top.currentAvg ? sg : top),
-        enrichedSubGroups[0],
-      );
-
-      // Collect for content gap analysis
-      successfulCategoryData.push({
-        category: ck.category,
-        slug: ck.slug,
-        subGroups: enrichedSubGroups,
-      });
-
-      // 카테고리 전체 월간 검색량 합산 (검색광고 연동 시)
-      let monthlyTotalVolume: number | null = null;
-      if (volumeData) {
-        let total = 0;
-        let hasAny = false;
-        for (const esg of enrichedSubGroups) {
-          const vol = volumeData[`${ck.category}:${esg.name}`];
-          if (vol) {
-            total += vol.monthlyTotalQcCnt;
-            hasAny = true;
-          }
-        }
-        if (hasAny) monthlyTotalVolume = total;
-      }
-
-      return {
-        category: ck.category,
-        slug: ck.slug,
-        overallTrend,
-        changeRate,
-        topSubGroup: topSubGroup?.name ?? null,
-        subGroupCount: enrichedSubGroups.length,
-        risingCount,
-        fallingCount,
-        stableCount,
-        monthlyTotalVolume,
-        error: null,
-      };
-    });
+    }
 
     // 카테고리 개요 기본 정렬: 월간 절대 검색량 우선 (미연동 카테고리는 후순위)
     categories.sort((a, b) => {
@@ -270,16 +322,10 @@ export async function GET(request: NextRequest) {
     // Generate topic suggestions
     const suggestions = generateTopicSuggestions(contentGap, CATEGORY_KEYWORDS);
 
-    // Use period from first successful result, or calculate from period string
-    const firstSuccess = results.find((r) => r.status === "fulfilled");
-    const periodDates =
-      firstSuccess && firstSuccess.status === "fulfilled"
-        ? firstSuccess.value.raw.period
-        : null;
-
     return Response.json(
       {
         data: {
+          mode,
           period: periodDates,
           categories,
           contentGap,

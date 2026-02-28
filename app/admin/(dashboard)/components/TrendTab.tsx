@@ -60,7 +60,8 @@ interface TopicSuggestionItem {
 }
 
 interface OverviewData {
-  period: { start: string; end: string };
+  mode: "volume" | "full";
+  period: { start: string; end: string } | null;
   categories: OverviewCategory[];
   contentGap: ContentGapItem[];
   suggestions: TopicSuggestionItem[];
@@ -298,6 +299,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
     );
   }
 
+  const hasTrend = cat.overallTrend != null;
   const trend = cat.overallTrend ?? "stable";
   const changeRate = cat.changeRate ?? 0;
   const risingCount = cat.risingCount ?? 0;
@@ -325,18 +327,26 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
       ) : (
         <p className="text-sm text-[var(--muted)]">검색량 미연동</p>
       )}
-      <div className="mt-1 flex items-center gap-1">
-        <TrendIcon trend={trend} />
-        <span className={`text-xs tabular-nums ${
-          trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"
-        }`}>
-          {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
-        </span>
-      </div>
-      <p className="mt-1.5 text-xs text-[var(--muted)]">
-        상승 {risingCount}개
-        {cat.topSubGroup && <> · 톱: {cat.topSubGroup}</>}
-      </p>
+      {hasTrend ? (
+        <>
+          <div className="mt-1 flex items-center gap-1">
+            <TrendIcon trend={trend} />
+            <span className={`text-xs tabular-nums ${
+              trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"
+            }`}>
+              {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-[var(--muted)]">
+            상승 {risingCount}개
+            {cat.topSubGroup && <> · 톱: {cat.topSubGroup}</>}
+          </p>
+        </>
+      ) : (
+        <p className="mt-1.5 text-xs text-[var(--muted)]">
+          서브그룹 {cat.subGroupCount ?? 0}개
+        </p>
+      )}
     </button>
   );
 }
@@ -488,15 +498,21 @@ export function TrendTab() {
 
   const [period, setPeriod] = useState<"1m" | "3m" | "1y" | "3y" | "10y">("3m");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [includeTrend, setIncludeTrend] = useState(false);
 
   const detailRef = useRef<HTMLDivElement | null>(null);
+
+  // volume 모드: period 미포함 (SWR 캐시 키 안정화), full 모드: period 포함
+  const overviewEndpoint = includeTrend
+    ? `/api/admin/naver-datalab/overview?period=${period}&mode=full`
+    : `/api/admin/naver-datalab/overview?mode=volume`;
 
   const {
     data: overviewData,
     loading: overviewLoading,
     error: overviewError,
     refetch: refetchOverview,
-  } = useAdminApi<OverviewData>(`/api/admin/naver-datalab/overview?period=${period}`);
+  } = useAdminApi<OverviewData>(overviewEndpoint);
 
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
@@ -541,6 +557,8 @@ export function TrendTab() {
     );
   }
 
+  const isFullMode = overviewData?.mode === "full";
+
   const gapRows = overviewData
     ? sortGapRows(overviewData.contentGap).map((item) => ({
         ...item,
@@ -574,9 +592,24 @@ export function TrendTab() {
 
   return (
     <div className="space-y-8">
-      {/* ── Period selector ───────────────────────────── */}
+      {/* ── Period selector + trend toggle ────────────── */}
       <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
+        {includeTrend && (
+          <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
+        )}
+        <button
+          type="button"
+          onClick={() => setIncludeTrend((v) => !v)}
+          aria-pressed={includeTrend}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+            includeTrend
+              ? "bg-green-100 text-green-700"
+              : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+          }`}
+        >
+          <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+          트렌드 포함
+        </button>
         {overviewData?.period && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
             {overviewData.period.start} ~ {overviewData.period.end}
@@ -645,9 +678,11 @@ export function TrendTab() {
               콘텐츠 갭 분석 — 검색 수요 vs 콘텐츠 현황
             </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              {overviewData?.volumeSource === "searchad"
-                ? "갭 점수 = 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)"
-                : "갭 점수 = 상대 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)"}
+              {isFullMode
+                ? (overviewData?.volumeSource === "searchad"
+                  ? "갭 점수 = 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)"
+                  : "갭 점수 = 상대 검색량(70%) + 트렌드 보너스(5%) + 콘텐츠 부족도(25%)")
+                : "갭 점수 = 검색량(70%) + 콘텐츠 부족도(25%)"}
               &nbsp;·&nbsp;
               <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
               &nbsp;·&nbsp;
@@ -779,28 +814,30 @@ export function TrendTab() {
                     </div>
                   ),
                 },
-                {
-                  key: "trend",
-                  label: "트렌드",
-                  align: "center",
-                  render: (row) => (
-                    <span className="flex justify-center">
-                      <TrendIcon trend={row.trend as "rising" | "falling" | "stable"} />
-                    </span>
-                  ),
-                },
-                {
-                  key: "changeRate",
-                  label: "변화율",
-                  align: "right",
-                  sortable: true,
-                  render: (row) => (
-                    <TrendText
-                      trend={row.trend as "rising" | "falling" | "stable"}
-                      changeRate={Number(row.changeRate)}
-                    />
-                  ),
-                },
+                ...(isFullMode ? [
+                  {
+                    key: "trend",
+                    label: "트렌드",
+                    align: "center" as const,
+                    render: (row: Record<string, unknown>) => (
+                      <span className="flex justify-center">
+                        <TrendIcon trend={row.trend as "rising" | "falling" | "stable"} />
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "changeRate",
+                    label: "변화율",
+                    align: "right" as const,
+                    sortable: true,
+                    render: (row: Record<string, unknown>) => (
+                      <TrendText
+                        trend={row.trend as "rising" | "falling" | "stable"}
+                        changeRate={Number(row.changeRate)}
+                      />
+                    ),
+                  },
+                ] : []),
               ]}
               rows={gapRows as unknown as Record<string, unknown>[]}
               keyField="id"
@@ -818,7 +855,7 @@ export function TrendTab() {
               {([
                 { key: "monthlyVolume", label: "검색량" },
                 { key: "gapScore", label: "갭 점수" },
-                { key: "changeRate", label: "변화율" },
+                ...(isFullMode ? [{ key: "changeRate" as const, label: "변화율" }] : []),
               ] as const).map((chip) => {
                 const isActive = gapSortKey === chip.key;
                 return (
@@ -882,7 +919,7 @@ export function TrendTab() {
                           )}
                         </span>
                         <GapScoreBadge score={item.gapScore} />
-                        <TrendText trend={item.trend} changeRate={item.changeRate} />
+                        {isFullMode && <TrendText trend={item.trend} changeRate={item.changeRate} />}
                       </span>
                     </div>
 
@@ -954,9 +991,11 @@ export function TrendTab() {
                       </span>
                     );
                   })()}
-                  <div className="flex items-center gap-1">
-                    <TrendIcon trend={item.trend} />
-                  </div>
+                  {isFullMode && (
+                    <div className="flex items-center gap-1">
+                      <TrendIcon trend={item.trend} />
+                    </div>
+                  )}
                 </div>
 
                 <p className="mb-1.5 text-sm font-semibold text-[var(--foreground)] leading-snug">
