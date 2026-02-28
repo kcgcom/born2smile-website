@@ -16,9 +16,10 @@ export type TabId = (typeof TABS)[number]["id"];
 interface AdminTabsProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  onHover?: (tab: TabId) => void;
 }
 
-export function AdminTabs({ activeTab, onTabChange }: AdminTabsProps) {
+export function AdminTabs({ activeTab, onTabChange, onHover }: AdminTabsProps) {
   return (
     <nav
       className="flex flex-row gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -32,6 +33,7 @@ export function AdminTabs({ activeTab, onTabChange }: AdminTabsProps) {
             key={tab.id}
             title={tab.label}
             onClick={() => onTabChange(tab.id)}
+            onMouseEnter={() => onHover?.(tab.id)}
             className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-[var(--color-primary)] text-white"

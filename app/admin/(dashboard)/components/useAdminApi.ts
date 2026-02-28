@@ -1,52 +1,73 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import useSWR, { preload, mutate as globalMutate } from "swr";
 import { getFirebaseAuth } from "@/lib/firebase";
 
-export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// -------------------------------------------------------------
+// SWR fetcher — Firebase Auth 토큰 주입
+// -------------------------------------------------------------
 
-  const fetchData = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const user = getFirebaseAuth().currentUser;
-      if (!user) {
-        throw new Error("로그인이 필요합니다");
-      }
-      const token = await user.getIdToken();
-      const res = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: "데이터를 불러올 수 없습니다" }));
-        throw new Error(err.message ?? "데이터를 불러올 수 없습니다");
-      }
-      const json = await res.json();
-      setData(json.data ?? json);
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : "알 수 없는 오류");
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint]);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const controller = new AbortController();
-    fetchData(controller.signal);
-    return () => controller.abort();
-  }, [enabled, fetchData]);
-
-  // refetch를 인자 없이 호출하도록 래핑 (onClick 등에서 MouseEvent가 signal로 전달되는 것 방지)
-  const refetch = useCallback(() => fetchData(), [fetchData]);
-
-  return { data, loading, error, refetch };
+async function adminFetcher<T>(endpoint: string): Promise<T> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) throw new Error("로그인이 필요합니다");
+  const token = await user.getIdToken();
+  const res = await fetch(endpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "데이터를 불러올 수 없습니다" }));
+    throw new Error(err.message ?? "데이터를 불러올 수 없습니다");
+  }
+  const json = await res.json();
+  return (json.data ?? json) as T;
 }
+
+// PageSpeed 등 느린 엔드포인트 판별
+const SLOW_ENDPOINTS = ["/api/dev/pagespeed"];
+
+function isSlowEndpoint(endpoint: string): boolean {
+  return SLOW_ENDPOINTS.some((p) => endpoint.startsWith(p));
+}
+
+// -------------------------------------------------------------
+// useAdminApi — 기존 인터페이스 완전 보존
+// { data: T | null, loading: boolean, error: string | null, refetch: () => void }
+// -------------------------------------------------------------
+
+export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
+  const slow = isSlowEndpoint(endpoint);
+
+  const { data, error: swrError, isLoading, mutate } = useSWR<T>(
+    enabled ? endpoint : null,
+    adminFetcher<T>,
+    {
+      dedupingInterval: slow ? 6 * 60 * 60 * 1000 : 30_000,
+      revalidateOnFocus: !slow,
+    },
+  );
+
+  const refetch = useCallback(() => { mutate(); }, [mutate]);
+
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    error: swrError ? (swrError instanceof Error ? swrError.message : "알 수 없는 오류") : null,
+    refetch,
+  };
+}
+
+// -------------------------------------------------------------
+// preloadAdminApi — 호버 프리페치용
+// -------------------------------------------------------------
+
+export function preloadAdminApi(endpoint: string) {
+  preload(endpoint, adminFetcher);
+}
+
+// -------------------------------------------------------------
+// useAdminMutation — 뮤테이션 후 SWR 캐시 자동 무효화
+// -------------------------------------------------------------
 
 export function useAdminMutation<T = unknown>() {
   const [loading, setLoading] = useState(false);
@@ -77,6 +98,10 @@ export function useAdminMutation<T = unknown>() {
       }
       const json = await res.json();
       const data = (json.data ?? json) as T;
+
+      // 뮤테이션 성공 시 해당 엔드포인트의 SWR 캐시 무효화
+      await globalMutate(endpoint);
+
       return { data, error: null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
