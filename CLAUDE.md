@@ -87,7 +87,7 @@ app/                          # Next.js App Router pages
         AdminTabs.tsx         # 탭 네비게이션 (개발/트래픽/검색·SEO/트렌드/블로그/설정, 아이콘+반응형 텍스트)
         TrafficTab.tsx        # 트래픽 탭 (Recharts 바/파이/영역 차트, GA4 Data API)
         SearchTab.tsx         # 검색/SEO 탭 (Recharts 바/라인 차트, Search Console API + 네이버 DataLab 트렌드)
-        TrendTab.tsx          # 트렌드 분석 탭 (네이버 DataLab 트렌드 + 검색광고 절대 검색량, 콘텐츠 갭 분석, 블로그 주제 추천, 기간: 1개월/3개월/1년/3년/10년, 모바일 2줄 카드 레이아웃)
+        TrendTab.tsx          # 트렌드 분석 탭 (검색량 중심 기본 로드 + "트렌드 포함" 토글로 DataLab 온디맨드, 콘텐츠 갭 분석, 블로그 주제 추천, 기간: 1개월/3개월/1년/3년/10년, 모바일 2줄 카드 레이아웃)
         BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
         BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
         SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)
@@ -122,7 +122,7 @@ app/                          # Next.js App Router pages
       naver-datalab/
         route.ts              # 네이버 DataLab 검색 트렌드 API (GET)
         overview/
-          route.ts            # 트렌드 개요 API — 카테고리별 트렌드 + 콘텐츠 갭 + 주제 추천 (GET)
+          route.ts            # 트렌드 개요 API — mode=volume|full, volume: 검색량만(DataLab 스킵), full: 트렌드 포함 (GET)
         category/
           [slug]/route.ts     # 카테고리별 상세 트렌드 API (GET)
       naver-searchad/
@@ -173,7 +173,7 @@ lib/
   admin-naver-datalab.ts     # 네이버 DataLab 검색 트렌드 API 클라이언트 (5개 키워드 그룹)
   admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (8카테고리×5서브그룹, volumeKeywords, TopicAngles)
   admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출, 배치 간 중복 제거)
-  trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions)
+  trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData)
   blog-firestore.ts          # Firestore 블로그 CRUD (Admin SDK, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
   dev-data.ts                # 개발 대시보드 정적 데이터 (Next.js 설정, ESLint, Firestore, API, 캐시, 환경변수)
@@ -305,7 +305,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 트래픽(GA4), 검색/SEO(SC), 트렌드(DataLab+검색광고+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
+**관리자 대시보드 (`/admin`)** — 6탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 트래픽(GA4), 검색/SEO(SC), 트렌드(검색량 기본+DataLab 온디맨드+갭분석), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크).
 
 - **API 공통**: Firebase Admin ID 토큰 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
 - **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
