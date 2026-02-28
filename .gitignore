@@ -45,6 +45,10 @@ lib/blog/generated/
 # auto-generated dev manifest
 lib/dev/generated/
 
+# Playwright
+test-results/
+playwright-report/
+
 # oh-my-claudecode / oh-my-codex
 .omc/
 .omx/

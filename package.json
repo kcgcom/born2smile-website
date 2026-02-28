@@ -12,7 +12,9 @@
     "deploy": "firebase deploy --only apphosting",
     "review-status": "tsx scripts/review-status.ts",
     "submit-indexnow": "node scripts/submit-indexnow.mjs",
-    "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all"
+    "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
@@ -38,6 +40,7 @@
     "edge >= 88"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
