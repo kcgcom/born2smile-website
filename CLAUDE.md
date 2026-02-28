@@ -44,9 +44,14 @@ pnpm dev                      # http://localhost:3000
 - `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
 - `pnpm submit-indexnow:all` — 전체 사이트 URL을 IndexNow에 제출 (초기 설정 또는 전체 재인덱싱 시)
 
-## No Test Suite
+## Testing
 
-There is no testing framework configured. No test commands are available.
+Playwright 스모크 테스트 (Chromium 단일 프로젝트, 7개 정적 페이지 렌더링 검증). 배포 전 로컬에서 실행 권장.
+
+```bash
+pnpm test:e2e          # 스모크 테스트 실행
+pnpm test:e2e:ui       # UI 모드 디버깅
+```
 
 ## Project Structure
 
