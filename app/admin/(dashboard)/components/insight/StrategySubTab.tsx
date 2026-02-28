@@ -249,7 +249,7 @@ export function StrategySubTab() {
     data: overviewData,
     loading: overviewLoading,
     error: overviewError,
-  } = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview?mode=volume");
+  } = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview");
 
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");

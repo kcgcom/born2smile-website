@@ -150,7 +150,7 @@ export function SummarySubTab() {
 
   const traffic = useAdminApi<TrafficSummary>("/api/admin/analytics?period=7d");
   const search = useAdminApi<SearchSummary>("/api/admin/search-console?period=28d");
-  const overview = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview?mode=volume");
+  const overview = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview");
 
   const navigateToSub = (sub: string) => {
     router.replace(`/admin?tab=insight&sub=${sub}`);
