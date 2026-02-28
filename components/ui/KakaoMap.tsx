@@ -48,6 +48,7 @@ const hasKey = !!KAKAO_APP_KEY;
 export function KakaoMap({ className = "" }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(!hasKey);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (!KAKAO_APP_KEY || error || !mapRef.current) return;
@@ -107,6 +108,7 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
             createMarker(fallbackCoords);
           }
         });
+        setIsLoaded(true);
       } catch {
         queueMicrotask(() => setError(true));
       }
@@ -138,7 +140,17 @@ export function KakaoMap({ className = "" }: KakaoMapProps) {
       ref={mapRef}
       role="img"
       aria-label={`${CLINIC.name} 위치 지도 - ${CLINIC.address}`}
-      className={`rounded-2xl border border-gray-200 ${className}`}
-    />
+      className={`relative rounded-2xl border border-gray-200 ${className}`}
+    >
+      {!isLoaded && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-gray-50 text-gray-400">
+          <svg className="mb-2 size-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+          </svg>
+          <span className="text-sm">지도를 불러오는 중...</span>
+        </div>
+      )}
+    </div>
   );
 }

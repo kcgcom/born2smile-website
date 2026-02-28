@@ -33,7 +33,7 @@ export const notoSerifKR = localFont({
   ],
   variable: "--font-noto-serif",
   display: "swap",
-  preload: false, // 헤드라인 전용 — 초기 렌더링 크리티컬 패스에서 제외 (2MB 절약)
+  // preload: true (기본값) — 히어로 h1(font-bold=700)의 FOUT 방지
   fallback: ["Georgia", "serif"],
 });
 
@@ -46,7 +46,7 @@ export const gowunBatang = localFont({
     },
   ],
   variable: "--font-gowun-batang",
-  display: "optional", // 100ms 내 로드 실패 시 Georgia 폴백 영구 사용 — FOUT 방지, 대역폭 절약
+  display: "swap", // 폰트 로드까지 시스템 폰트 표시, 로드 후 전환 — optional은 느린 네트워크에서 영구 미표시
   preload: false, // 홈페이지 인사말에만 사용 — 비홈페이지에서 불필요한 프리로드 방지
   fallback: ["Georgia", "serif"],
 });

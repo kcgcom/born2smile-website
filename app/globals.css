@@ -148,6 +148,14 @@ body {
   animation: scrollBounce 1.8s ease-in-out infinite;
 }
 
+/* 뷰포트 내 초기 요소 — 애니메이션 없이 즉시 표시 */
+.fade-in-target.is-visible-immediate,
+[data-stagger-item].is-visible-immediate {
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+}
+
 /* 모션 감소 설정 시 즉시 표시 */
 @media (prefers-reduced-motion: reduce) {
   .fade-in-target,

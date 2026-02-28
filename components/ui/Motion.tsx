@@ -40,6 +40,13 @@ export function FadeIn({
     const el = ref.current;
     if (!el || reduced) return;
 
+    // 이미 뷰포트 안에 있으면 애니메이션 없이 즉시 표시
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      el.classList.add("is-visible-immediate");
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -95,6 +102,15 @@ export function StaggerContainer({
   useEffect(() => {
     const el = ref.current;
     if (!el || reduced) return;
+
+    // 이미 뷰포트 안에 있으면 애니메이션 없이 즉시 표시
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      el.querySelectorAll("[data-stagger-item]").forEach((item) => {
+        (item as HTMLElement).classList.add("is-visible-immediate");
+      });
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
