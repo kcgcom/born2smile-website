@@ -15,6 +15,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Icons**: Lucide React
 - **Maps**: Kakao Maps SDK (async loaded)
 - **Charts**: Recharts 2 (dynamic import, 트래픽/검색/블로그 탭 인터랙티브 차트)
+- **Data Fetching**: SWR 2 (관리자 대시보드 클라이언트 캐시, 중복 제거, 호버 프리페치)
 - **Validation**: Zod v4 (`zod/v4`, 블로그 CRUD + 사이트 설정 API 입력 검증)
 - **Database**: Firebase Firestore (블로그 포스트 저장소 + 좋아요 + 사이트 설정)
 - **Auth**: Firebase Auth (Google 로그인, 관리자 대시보드 전용) + Firebase Admin SDK (서버 사이드 토큰 검증)
