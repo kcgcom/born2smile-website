@@ -406,7 +406,7 @@ ESLint 9 flat config (`eslint.config.mjs`):
 Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
 
 - `apphosting.yaml` — Cloud Run 런타임 설정:
-  - `minInstances: 0` (scale to zero)
+  - `minInstances: 1` (cold start 제거, 항상 1개 인스턴스 유지)
   - `maxInstances: 4`
   - `concurrency: 80`
   - `cpu: 1`, `memoryMiB: 512`

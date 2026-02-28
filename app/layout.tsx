@@ -70,6 +70,7 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#2563EB" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         {/* 관리자 트래픽 GA 제외 — GA 스크립트 로드 전에 실행 */}
         {/* /admin 경로 또는 관리자 로그인 브라우저에서 GA 비활성화 */}
         <script
