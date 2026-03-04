@@ -536,9 +536,9 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         volumeKeywords: ["치아 시림", "잇몸 출혈"],
       },
       {
-        name: "사랑니/발치",
+        name: "사랑니",
         keywords: [
-          "사랑니 발치", "사랑니 통증", "매복 사랑니",
+          "사랑니", "사랑니 발치", "사랑니 통증", "매복 사랑니",
           "사랑니 발치 비용", "사랑니 발치 후 관리", "사랑니 부분 매복",
           "사랑니 염증", "사랑니 발치 기간",
         ],
@@ -578,7 +578,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 완벽 가이드: {aspect}",
-        subGroup: "사랑니/발치",
+        subGroup: "사랑니",
         aspect: "비용·통증·회복기간, 발치 전 꼭 알아야 할 것들",
       },
     ],

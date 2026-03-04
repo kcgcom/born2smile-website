@@ -236,8 +236,8 @@ export function analyzeContentGap(
   const hasVolumeData = volumeData && Object.keys(volumeData).length > 0;
 
   for (const catData of categoryData) {
-    // 동일 카테고리 포스트만 필터링
-    const categoryPosts = publishedPosts.filter((p) => p.category === catData.category);
+    // 전체 포스트 대상으로 키워드 매칭 (카테고리 무관하게 콘텐츠 커버리지 측정)
+    const categoryPosts = publishedPosts;
 
     // 이 카테고리의 원본 키워드 정의 조회 (있는 경우)
     const catKw = categoryKeywords?.find((ck) => ck.category === catData.category);
