@@ -191,14 +191,24 @@ export function StatsSubTab() {
   const { data: likesData, loading: likesLoading, error: likesError } =
     useAdminApi<BlogLikesData>("/api/admin/blog-likes");
 
-  // Category distribution
-  const byCategory = useMemo(() => {
+  // Category distribution — all posts
+  const byCategoryAll = useMemo(() => {
     const categories = BLOG_CATEGORIES.filter((c) => c !== "전체");
     return categories.map((cat) => ({
       category: cat,
       count: posts.filter((p) => p.category === cat).length,
     }));
   }, [posts]);
+
+  // Category distribution — published only
+  const byCategoryPublished = useMemo(() => {
+    const published = posts.filter((p) => p.published && p.date <= today);
+    const categories = BLOG_CATEGORIES.filter((c) => c !== "전체");
+    return categories.map((cat) => ({
+      category: cat,
+      count: published.filter((p) => p.category === cat).length,
+    }));
+  }, [posts, today]);
 
   // Top 10 by likes
   const top10Posts = useMemo(() => {
@@ -229,10 +239,23 @@ export function StatsSubTab() {
 
   return (
     <div className="space-y-6">
-      {/* Category distribution */}
+      {/* Category distribution — side by side */}
       <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
-        <CategoryPieChart data={byCategory} />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">
+              전체 ({posts.length}편)
+            </p>
+            <CategoryPieChart data={byCategoryAll} />
+          </div>
+          <div>
+            <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">
+              발행 ({posts.filter((p) => p.published && p.date <= today).length}편)
+            </p>
+            <CategoryPieChart data={byCategoryPublished} />
+          </div>
+        </div>
       </section>
 
       {/* Popular posts TOP 10 */}
