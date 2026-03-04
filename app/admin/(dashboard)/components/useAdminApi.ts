@@ -38,12 +38,13 @@ function isSlowEndpoint(endpoint: string): boolean {
 export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   const slow = isSlowEndpoint(endpoint);
 
-  const { data, error: swrError, isLoading, mutate } = useSWR<T>(
+  const { data, error: swrError, isLoading, isValidating, mutate } = useSWR<T>(
     enabled ? endpoint : null,
     adminFetcher<T>,
     {
       dedupingInterval: slow ? 6 * 60 * 60 * 1000 : 30_000,
       revalidateOnFocus: !slow,
+      ...(slow && { keepPreviousData: true }),
     },
   );
 
@@ -52,6 +53,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   return {
     data: data ?? null,
     loading: isLoading,
+    isValidating,
     error: swrError ? (swrError instanceof Error ? swrError.message : "알 수 없는 오류") : null,
     refetch,
   };

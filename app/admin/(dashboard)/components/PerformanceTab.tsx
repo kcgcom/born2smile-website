@@ -52,9 +52,9 @@ interface PSIResult {
   audits: PSIAudit[];
 }
 
-interface PSIResponseData {
-  mobile: PSIResult | null;
-  desktop: PSIResult | null;
+interface SinglePSIData {
+  result: PSIResult;
+  stale?: boolean;
 }
 
 // --- Helpers ---
@@ -193,11 +193,21 @@ function CWVCard({ metric }: { metric: CWVMetric }) {
 // --- Main Component ---
 
 export function PerformanceTab() {
-  const { data, loading, error, refetch } =
-    useAdminApi<PSIResponseData>("/api/dev/pagespeed");
   const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
   const [refreshing, setRefreshing] = useState(false);
   const [expandedAudit, setExpandedAudit] = useState<string | null>(null);
+
+  const { data: mobileData, loading: mobileLoading, error: mobileError } =
+    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=mobile");
+  const { data: desktopData, loading: desktopLoading, error: desktopError } =
+    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=desktop");
+
+  const currentData = strategy === "mobile" ? mobileData : desktopData;
+  const currentLoading = strategy === "mobile" ? mobileLoading : desktopLoading;
+  const currentError = strategy === "mobile" ? mobileError : desktopError;
+
+  const result = currentData?.result ?? null;
+  const isStaleResponse = currentData?.stale === true;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -205,20 +215,20 @@ export function PerformanceTab() {
       const user = getFirebaseAuth().currentUser;
       if (!user) return;
       const token = await user.getIdToken();
-      const res = await fetch("/api/dev/pagespeed?force=true", {
+      const res = await fetch(`/api/dev/pagespeed?strategy=${strategy}&force=true`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const json = await res.json();
         // SWR 캐시를 새 데이터로 갱신
-        await globalMutate("/api/dev/pagespeed", json.data, false);
+        await globalMutate(`/api/dev/pagespeed?strategy=${strategy}`, json.data, false);
       }
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [strategy]);
 
-  if (loading) {
+  if (currentLoading && !result) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
@@ -230,22 +240,11 @@ export function PerformanceTab() {
     );
   }
 
-  if (error) {
-    return <AdminErrorState message={error} onRetry={() => refetch()} />;
+  if (currentError && !result) {
+    return <AdminErrorState message={currentError} onRetry={handleRefresh} />;
   }
 
-  if (!data) return null;
-
-  const result = strategy === "mobile" ? data.mobile : data.desktop;
-
-  if (!result) {
-    return (
-      <AdminErrorState
-        message={`${strategy === "mobile" ? "모바일" : "데스크톱"} 분석 결과를 가져올 수 없습니다`}
-        onRetry={() => refetch()}
-      />
-    );
-  }
+  if (!result) return null;
 
   const fetchedDate = new Date(result.fetchedAt);
   const fetchedTime = fetchedDate.toLocaleDateString("ko-KR", {
@@ -255,8 +254,6 @@ export function PerformanceTab() {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const isStale =
-    Date.now() - fetchedDate.getTime() > 24 * 60 * 60 * 1000;
 
   const overallBadge = categoryBadge(result.overallCategory);
   const hasCWV = result.coreWebVitals.some((m) => m.percentile != null);
@@ -303,9 +300,9 @@ export function PerformanceTab() {
           </button>
         </div>
         <div className="flex items-center gap-1.5">
-          {isStale && (
-            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700">
-              오래된 데이터
+          {isStaleResponse && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              이전 데이터 · 갱신 중
             </span>
           )}
           <span className="text-xs text-[var(--muted)]">

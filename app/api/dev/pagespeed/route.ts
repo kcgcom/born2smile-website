@@ -4,7 +4,7 @@ import {
   unauthorizedResponse,
 } from "@/app/api/admin/_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "@/app/api/admin/_lib/cache";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, Timestamp, FieldPath } from "firebase-admin/firestore";
 import { getAdminApp } from "@/lib/firebase-admin";
 import { getTodayKST } from "@/lib/date";
 
@@ -252,15 +252,115 @@ const getCachedPSI = createCachedFetcher<PSIResponseData>(
   CACHE_TTL.PSI,
 );
 
+// --- 단일 전략 호출 (strategy 파라미터) ---
+
+interface SinglePSIResponse {
+  result: PSIResult;
+  stale?: boolean;
+}
+
+/**
+ * 단일 전략 PSI 호출 (Firestore L2 캐시 + 어제 폴백)
+ * unstable_cache 미사용 — stale 응답이 L1에 캐싱되는 문제 방지
+ */
+async function fetchSingleStrategyPSI(
+  strategy: "mobile" | "desktop",
+  force: boolean,
+): Promise<SinglePSIResponse> {
+  try {
+    const db = getFirestore(getAdminApp());
+    const today = getTodayKST();
+    const todayDocRef = db.collection("api-cache").doc(`psi-homepage-${today}`);
+
+    if (!force) {
+      // 1. 오늘 캐시 확인
+      const cached = await todayDocRef.get();
+      if (cached.exists) {
+        const cachedResult = cached.data()?.[strategy] as PSIResult | undefined;
+        if (cachedResult) return { result: cachedResult };
+      }
+
+      // 2. 과거 캐시 폴백 (가장 최근 데이터)
+      const pastDocs = await db
+        .collection("api-cache")
+        .where(FieldPath.documentId(), ">=", "psi-homepage-")
+        .where(FieldPath.documentId(), "<", `psi-homepage-${today}`)
+        .orderBy(FieldPath.documentId(), "desc")
+        .limit(1)
+        .get();
+      if (!pastDocs.empty) {
+        const staleResult = pastDocs.docs[0].data()?.[strategy] as
+          | PSIResult
+          | undefined;
+        if (staleResult) {
+          // 백그라운드에서 오늘 데이터 fetch → Firestore merge 저장
+          fetchPSI(strategy)
+            .then((fresh) => {
+              if (fresh) {
+                todayDocRef
+                  .set(
+                    { [strategy]: fresh, fetchedAt: Timestamp.now() },
+                    { merge: true },
+                  )
+                  .catch(() => {});
+              }
+            })
+            .catch(() => {});
+
+          return { result: staleResult, stale: true };
+        }
+      }
+    }
+
+    // 3. 캐시 없음 또는 force → PSI API 직접 호출
+    const fresh = await fetchPSI(strategy);
+    if (!fresh) throw new Error("PSI_FETCH_FAILED");
+
+    todayDocRef
+      .set(
+        { [strategy]: fresh, fetchedAt: Timestamp.now() },
+        { merge: true },
+      )
+      .catch(() => {});
+
+    return { result: fresh };
+  } catch (e) {
+    if (e instanceof Error && e.message === "PSI_FETCH_FAILED") throw e;
+
+    // Firestore 접근 실패 → PSI API 직접 호출
+    const fresh = await fetchPSI(strategy);
+    if (!fresh) throw new Error("PSI_FETCH_FAILED");
+    return { result: fresh };
+  }
+}
+
 export async function GET(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";
+  const strategy = searchParams.get("strategy") as
+    | "mobile"
+    | "desktop"
+    | null;
 
   try {
-    // force=true: unstable_cache 우회, Firestore 캐시도 무시하고 PSI API 재호출
+    // 단일 전략 호출
+    if (strategy === "mobile" || strategy === "desktop") {
+      const response = await fetchSingleStrategyPSI(strategy, force);
+      return NextResponse.json(
+        { data: response },
+        {
+          headers: {
+            "Cache-Control": "private, no-store",
+            Vary: "Authorization",
+          },
+        },
+      );
+    }
+
+    // 하위 호환: 양쪽 모두 호출
     const data = force
       ? await fetchPSIWithFirestoreCache(true)
       : await getCachedPSI();
