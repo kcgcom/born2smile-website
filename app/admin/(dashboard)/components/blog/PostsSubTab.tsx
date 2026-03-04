@@ -148,7 +148,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
       filtered = filtered.filter((p) => p.title.toLowerCase().includes(q));
     }
 
-    // Sort
+    // Sort within groups
     if (sortKey === "recommended") {
       filtered = calcDraftRecommendationOrder(filtered, posts, today);
     } else if (sortKey === "newest") {
@@ -161,6 +161,15 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
         const lb = likesData?.likes[b.slug] ?? 0;
         return lb - la;
       });
+    }
+
+    // 상태별 그룹 정렬: 초안 → 예약 → 발행 (전체 보기일 때만)
+    if (statusFilter === "all") {
+      const statusOrder = (p: AdminBlogPost) =>
+        !p.published ? 0 : p.date > today ? 1 : 2;
+      const sorted = [...filtered];
+      sorted.sort((a, b) => statusOrder(a) - statusOrder(b));
+      return sorted;
     }
 
     return filtered;
@@ -397,7 +406,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                   return (
                     <li
                       key={post.slug}
-                      className={`flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm${isDraft ? " border-l-4 border-l-amber-400" : ""}`}
+                      className={`flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm${isDraft ? " border-l-4 border-l-amber-400" : dDay !== null ? " border-l-4 border-l-blue-400" : ""}`}
                     >
                       {/* Row 1: Category + Title + Status */}
                       <div className="flex items-center gap-2">
