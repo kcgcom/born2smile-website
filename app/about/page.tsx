@@ -22,7 +22,7 @@ import { KakaoMap } from "@/components/ui/KakaoMap";
 
 export const metadata: Metadata = {
   title: "병원 소개",
-  description: `${CLINIC.name} - 김포한강신도시 장기동 치과의원. 김포한강신도시 장기동 치과. 서울대 출신 통합치의학전문의 김창균 원장이 정성을 다해 진료합니다.`,
+  description: `${CLINIC.name} 병원 소개 페이지입니다. 김포 한강신도시 장기동에서 진료 철학, 대표원장 학력·임상경험, 치과위생사 팀 역량, 첨단 장비, 진료시간, 주차와 오시는 길 정보를 한 번에 확인해 내원 전 필요한 내용을 미리 살펴보실 수 있습니다. 방문 전 궁금한 내용을 빨리 확인할 수 있습니다.`,
   alternates: { canonical: `${BASE_URL}/about` },
 };
 

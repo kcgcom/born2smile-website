@@ -11,7 +11,7 @@ import {
 
 export const metadata: Metadata = {
   title: "진료 안내",
-  description: `${CLINIC.name} 진료 안내 - 김포한강신도시 장기동 치과 임플란트, 치아교정, 틀니 및 심미보철, 소아치료, 보존치료, 스케일링`,
+  description: `${CLINIC.name} 진료 안내 페이지입니다. 김포 한강신도시 장기동에서 임플란트, 치아교정, 틀니·심미보철, 소아치료, 보존치료, 스케일링·예방치료까지 각 진료의 대상, 치료 과정, 기대 효과와 상담 포인트를 한눈에 비교해보실 수 있습니다. 개인 상태에 맞는 진료 선택 기준도 함께 제공합니다.`,
   alternates: { canonical: `${BASE_URL}/treatments` },
 };
 

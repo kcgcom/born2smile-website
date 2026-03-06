@@ -5,7 +5,7 @@ import { getSiteClinic, getSiteHours } from "@/lib/site-config-firestore";
 
 export const metadata: Metadata = {
   title: "상담 안내",
-  description: `${CLINIC.name} 전화 상담 안내. 대표전화 ${CLINIC.phone}. ${CLINIC.address}. 김포한강신도시 장기동 치과 예약.`,
+  description: `${CLINIC.name} 상담 안내 페이지입니다. 대표전화 ${CLINIC.phone}, ${CLINIC.address}. 요일별 진료시간과 점심시간, 카카오맵 길찾기, 첫 내원 전 준비사항과 예약 문의 방법을 빠르게 확인해 상담을 시작하실 수 있습니다. 체크포인트도 함께 안내합니다.`,
   keywords: ["김포치과 예약", "김포한강신도시 치과 상담", "장기동 치과 전화", "서울본치과 상담"],
   alternates: { canonical: `${BASE_URL}/contact` },
 };

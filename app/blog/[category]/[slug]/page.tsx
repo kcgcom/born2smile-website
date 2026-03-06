@@ -28,6 +28,38 @@ import TableOfContents from "@/components/blog/TableOfContents";
 
 export const revalidate = 3600;
 
+const META_DESCRIPTION_MIN = 150;
+const META_DESCRIPTION_MAX = 160;
+
+function fitMetaDescription(base: string): string {
+  const normalized = base.replace(/\s+/g, " ").trim();
+
+  if (normalized.length > META_DESCRIPTION_MAX) {
+    return `${normalized.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+
+  if (normalized.length >= META_DESCRIPTION_MIN) {
+    return normalized;
+  }
+
+  const expanded = `${normalized} 핵심 체크포인트와 예방 관리 기준, 내원 시점을 함께 확인해 보세요.`;
+
+  if (expanded.length > META_DESCRIPTION_MAX) {
+    return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+
+  return expanded;
+}
+
+function getPostMetaDescription(post: { excerpt: string; subtitle: string }): string {
+  const excerpt = post.excerpt.replace(/\s+/g, " ").trim();
+  const base = excerpt.length >= 120
+    ? excerpt
+    : `${excerpt} ${post.subtitle}. 원인, 치료 방법, 예방 관리와 내원 시점을 ${CLINIC.name} 건강칼럼에서 정리했습니다.`;
+
+  return fitMetaDescription(base);
+}
+
 export async function generateStaticParams() {
   const posts = await getAllPublishedPostMetas();
   return posts.map((post) => ({
@@ -51,14 +83,15 @@ export async function generateMetadata({
   const fullTitle = `${post.title} — ${post.subtitle}`;
   const ogTitle = `${fullTitle} | ${CLINIC.name} 건강칼럼`;
   const postUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
+  const metaDescription = getPostMetaDescription(post);
 
   return {
     title: fullTitle,
-    description: post.excerpt,
+    description: metaDescription,
     alternates: { canonical: postUrl },
     openGraph: {
       title: ogTitle,
-      description: post.excerpt,
+      description: metaDescription,
       siteName: CLINIC.name,
       locale: "ko_KR",
       type: "article",
@@ -80,7 +113,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
-      description: post.excerpt,
+      description: metaDescription,
       images: ["/images/og-image.jpg"],
     },
   };

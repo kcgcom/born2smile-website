@@ -9,7 +9,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "건강칼럼",
-  description: `${CLINIC.name} 건강칼럼 - 올바른 양치법, 잇몸 관리, 임플란트 관리, 충치 예방 등 일상에서 실천할 수 있는 구강관리 정보를 전해드립니다.`,
+  description: `${CLINIC.name} 건강칼럼에서는 올바른 양치법과 잇몸 관리, 임플란트·교정 후 관리, 충치·치주질환 예방, 소아 구강관리, 치과 상식 팩트체크까지 일상에서 바로 실천할 수 있는 구강건강 정보를 사례 중심으로 쉽게 알려드립니다. 치과 방문 전 궁금증을 줄일 수 있도록 핵심만 정확히 전달합니다.`,
   alternates: { canonical: `${BASE_URL}/blog` },
 };
 

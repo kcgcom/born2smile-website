@@ -9,7 +9,7 @@ import { CTABanner } from "@/components/ui/CTABanner";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문 (FAQ)",
-  description: `김포 치과 자주 묻는 질문 — 임플란트, 치아교정, 보철, 소아치료, 충치, 스케일링까지. ${CLINIC.name}이 궁금증을 해결해 드립니다.`,
+  description: `김포 치과 자주 묻는 질문을 진료과목별로 모았습니다. 임플란트·치아교정·보철·소아치료·충치치료·스케일링 상담에서 자주 묻는 비용, 통증, 치료기간, 보험 적용, 내원 주의사항과 관리법을 ${CLINIC.name} 기준으로 알기 쉽게 정리했습니다. 초진 환자와 보호자가 꼭 알아야 할 핵심만 담았습니다.`,
   keywords: [
     "치과 자주 묻는 질문",
     "임플란트 궁금한점",

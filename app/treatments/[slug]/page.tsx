@@ -16,6 +16,29 @@ export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
 }
 
+const META_DESCRIPTION_MIN = 150;
+const META_DESCRIPTION_MAX = 160;
+
+function fitMetaDescription(base: string): string {
+  const normalized = base.replace(/\s+/g, " ").trim();
+
+  if (normalized.length > META_DESCRIPTION_MAX) {
+    return `${normalized.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+
+  if (normalized.length >= META_DESCRIPTION_MIN) {
+    return normalized;
+  }
+
+  const expanded = `${normalized} 진료 전 체크포인트와 치료 후 관리 기준, 재내원 시점까지 함께 확인해 보세요.`;
+
+  if (expanded.length > META_DESCRIPTION_MAX) {
+    return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+
+  return expanded;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -30,11 +53,15 @@ export async function generateMetadata({
   // 스케일링 페이지는 타겟 키워드를 포함한 맞춤 메타데이터 사용
   if (slug === "scaling") {
     const scalingOgTitle = `안아픈 스케일링 | 에어플로우 스케일링 | ${CLINIC.name}`;
-    const scalingDesc = "에어플로우를 이용한 편안한 스케일링으로 시린 증상 없이 깨끗하게. 김포한강신도시 장기동 치과, 연 1회 건강보험 적용.";
+    const scalingDesc = fitMetaDescription(
+      "에어플로우를 활용해 시림과 통증 부담을 줄이고 착색·치태를 부드럽게 제거하는 스케일링 정보를 제공합니다. 김포 한강신도시 장기동 서울본치과에서 건강보험 적용 기준, 권장 주기, 시술 전후 주의사항과 홈케어 관리법까지 자세히 안내합니다. 정기 검진과 예방치료 계획 수립에 도움이 됩니다.",
+    );
+    const scalingPageDesc = fitMetaDescription(
+      `김포 스케일링 잘하는 치과, ${CLINIC.name}. ${scalingDesc}`,
+    );
     return {
       title: "안아픈 스케일링 | 에어플로우 스케일링",
-      description:
-        `김포 스케일링 잘하는 치과, 서울본치과. ${scalingDesc}`,
+      description: scalingPageDesc,
       keywords: ["안아픈 스케일링", "에어플로우 스케일링", "스케일링 잘하는 치과", "김포 스케일링", "장기동 스케일링"],
       alternates: { canonical: treatmentUrl },
       openGraph: {
@@ -61,7 +88,9 @@ export async function generateMetadata({
     };
   }
 
-  const description = `김포 ${detail.name} 잘하는 치과, ${CLINIC.name}. ${detail.subtitle}. ${detail.description.slice(0, 80)}`;
+  const description = fitMetaDescription(
+    `김포 ${detail.name} 잘하는 치과, ${CLINIC.name}. ${detail.subtitle}. ${detail.description.slice(0, 70)} 치료 대상과 과정, 통증 관리, 내원 전후 주의사항까지 자세히 안내합니다.`,
+  );
   const ogTitle = `김포 ${detail.name} | ${CLINIC.name}`;
 
   return {
