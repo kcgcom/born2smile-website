@@ -6,18 +6,13 @@ import { useAdminApi } from "../useAdminApi";
 import { MetricCard } from "../MetricCard";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
-import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategoryValue } from "@/lib/blog/types";
 import { ApiSourceBadge } from "./ApiSourceBadge";
+import { CategoryBadge, GapScoreBadge, PriorityBadge, calcTotalVolume } from "./shared";
+import type { MetricValue } from "./shared";
 
 // ---------------------------------------------------------------
 // Types (summary에 필요한 필드만)
 // ---------------------------------------------------------------
-
-interface MetricValue {
-  value: number;
-  change: number | null;
-}
 
 interface TrafficSummary {
   summary: {
@@ -61,64 +56,6 @@ interface TopicSuggestionItem {
 interface OverviewData {
   contentGap: ContentGapItem[];
   suggestions: TopicSuggestionItem[];
-}
-
-// ---------------------------------------------------------------
-// Helper components
-// ---------------------------------------------------------------
-
-function CategoryBadge({ category }: { category: string }) {
-  const colorClass =
-    categoryColors[category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
-  return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${colorClass}`}>
-      {category}
-    </span>
-  );
-}
-
-function GapScoreBadge({ score }: { score: number }) {
-  if (score >= 70) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-        HIGH
-      </span>
-    );
-  }
-  if (score >= 40) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
-        MED
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-      LOW
-    </span>
-  );
-}
-
-function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
-  if (priority === "high") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-        HIGH
-      </span>
-    );
-  }
-  if (priority === "medium") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">
-        MED
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-      LOW
-    </span>
-  );
 }
 
 function formatDuration(seconds: number): string {
@@ -287,8 +224,7 @@ export function SummarySubTab() {
           topGaps.length > 0 ? (
             <div className="space-y-2">
               {topGaps.map((gap) => {
-                const relatedSum = (gap.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
-                const totalVolume = gap.monthlyVolume != null ? gap.monthlyVolume + relatedSum : null;
+                const totalVolume = gap.monthlyVolume != null ? calcTotalVolume(gap) : null;
                 return (
                   <div
                     key={`${gap.slug}-${gap.subGroup}`}

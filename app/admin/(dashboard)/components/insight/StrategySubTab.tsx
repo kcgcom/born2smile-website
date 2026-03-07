@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -8,52 +8,9 @@ import { useAdminApi } from "../useAdminApi";
 import { DataTable } from "../DataTable";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
-import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategoryValue } from "@/lib/blog/types";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-
-// ---------------------------------------------------------------
-// TypeScript interfaces
-// ---------------------------------------------------------------
-
-interface ContentGapItem {
-  category: string;
-  slug: string;
-  subGroup: string;
-  keywords: string[];
-  trend: "rising" | "falling" | "stable";
-  changeRate: number;
-  currentAvg: number;
-  existingPostCount: number;
-  gapScore: number;
-  monthlyVolume: number | null;
-  volumeSource: "searchad" | "datalab-fallback";
-  isEstimated: boolean;
-  relatedKeywords?: Array<{ keyword: string; volume: number }>;
-  directKeywords?: Array<{ keyword: string; volume: number }>;
-}
-
-interface TopicSuggestionItem {
-  rank: number;
-  category: string;
-  slug: string;
-  suggestedTitle: string;
-  reasoning: string;
-  keywords: string[];
-  trend: "rising" | "falling" | "stable";
-  gapScore: number;
-  priority: "high" | "medium" | "low";
-}
-
-interface OverviewData {
-  mode: "volume" | "full";
-  period: { start: string; end: string } | null;
-  categories: unknown[];
-  contentGap: ContentGapItem[];
-  suggestions: TopicSuggestionItem[];
-  volumeSource: "searchad" | "datalab-fallback";
-  volumeCoverage: number | null;
-}
+import { CategoryBadge, GapScoreBadge, PriorityBadge, calcTotalVolume } from "./shared";
+import type { ContentGapItem, OverviewData } from "./shared";
 
 // ---------------------------------------------------------------
 // Opportunity Scatter Chart
@@ -160,40 +117,6 @@ const OpportunityScatter = dynamic(
 );
 
 // ---------------------------------------------------------------
-// Helper components
-// ---------------------------------------------------------------
-
-function GapScoreBadge({ score }: { score: number }) {
-  if (score >= 70) {
-    return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
-  }
-  if (score >= 40) {
-    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
-  }
-  return <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
-}
-
-function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
-  if (priority === "high") {
-    return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
-  }
-  if (priority === "medium") {
-    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
-  }
-  return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
-}
-
-function CategoryBadge({ category }: { category: string }) {
-  const colorClass =
-    categoryColors[category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
-  return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${colorClass}`}>
-      {category}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------
 // Sort state management for content gap table
 // ---------------------------------------------------------------
 
@@ -219,15 +142,13 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
   const sort = useCallback(
     (rows: ContentGapItem[]) =>
       [...rows].sort((a, b) => {
-        const totalVol = (r: ContentGapItem) =>
-          (r.monthlyVolume ?? 0) + (r.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
         const av =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (totalVol(a) || a.currentAvg)
+            ? (calcTotalVolume(a) || a.currentAvg)
             : (a[sortKey] as number);
         const bv =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (totalVol(b) || b.currentAvg)
+            ? (calcTotalVolume(b) || b.currentAvg)
             : (b[sortKey] as number);
         const dir = sortDirection === "asc" ? 1 : -1;
         return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
@@ -257,6 +178,47 @@ export function StrategySubTab() {
   const handleNewPost = (slug: string) => {
     router.push(`/admin?tab=blog&newCategory=${slug}`);
   };
+
+  // Pre-compute totalVolume per gap item once
+  const gapItemsWithVolume = useMemo(
+    () => (overviewData?.contentGap ?? []).map((item) => ({
+      ...item,
+      totalVolume: calcTotalVolume(item),
+      id: `${item.slug}-${item.subGroup}`,
+    })),
+    [overviewData?.contentGap],
+  );
+
+  const maxVolume = useMemo(
+    () => Math.max(...gapItemsWithVolume.map((g) => g.totalVolume), 1),
+    [gapItemsWithVolume],
+  );
+
+  // Scatter data
+  const scatterData: ScatterPoint[] = useMemo(
+    () => gapItemsWithVolume
+      .filter((g) => g.monthlyVolume != null && g.totalVolume > 0)
+      .map((g) => ({
+        subGroup: g.subGroup,
+        category: g.category,
+        slug: g.slug,
+        x: g.totalVolume,
+        y: g.existingPostCount,
+        z: g.gapScore,
+      })),
+    [gapItemsWithVolume],
+  );
+
+  // Gap lookup map for suggestions (avoids O(n*m) find in render)
+  const gapBySlug = useMemo(() => {
+    const map = new Map<string, ContentGapItem[]>();
+    for (const g of (overviewData?.contentGap ?? [])) {
+      const list = map.get(g.slug) ?? [];
+      list.push(g);
+      map.set(g.slug, list);
+    }
+    return map;
+  }, [overviewData?.contentGap]);
 
   // ── Graceful degradation ─────────────────────────────────────
   if (!overviewLoading && !overviewError && overviewData === null) {
@@ -288,27 +250,7 @@ export function StrategySubTab() {
     id: `${item.slug}-${item.subGroup}`,
   }));
 
-  const maxVolume = Math.max(
-    ...overviewData.contentGap.map(
-      (g) => (g.monthlyVolume ?? 0) + (g.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0),
-    ),
-    1,
-  );
-
   const suggestions = overviewData.suggestions;
-
-  // ── Scatter data ─────────────────────────────────────────────
-  const scatterData: ScatterPoint[] = overviewData.contentGap
-    .filter((g) => g.monthlyVolume != null)
-    .map((g) => ({
-      subGroup: g.subGroup,
-      category: g.category,
-      slug: g.slug,
-      x: (g.monthlyVolume ?? 0) + (g.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0),
-      y: g.existingPostCount,
-      z: g.gapScore,
-    }))
-    .filter((d) => d.x > 0);
 
   // ── Cross-keyword analysis ───────────────────────────────────
   const crossKeywords = (() => {
@@ -456,9 +398,7 @@ export function StrategySubTab() {
                   sortable: true,
                   render: (row) => {
                     const mv = row.monthlyVolume as number | null;
-                    const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
-                    const relatedSum = related.reduce((s, rk) => s + rk.volume, 0);
-                    const totalVolume = mv != null ? mv + relatedSum : null;
+                    const totalVolume = mv != null ? calcTotalVolume(row as unknown as ContentGapItem) : null;
                     const barPct = totalVolume != null ? Math.min(100, (totalVolume / maxVolume) * 100) : 0;
                     return (
                       <div>
@@ -543,9 +483,7 @@ export function StrategySubTab() {
               <p className="py-8 text-center text-sm text-[var(--muted)]">콘텐츠 갭 데이터가 없습니다</p>
             ) : (
               gapRows.map((item) => {
-                const mv = item.monthlyVolume;
-                const relatedSum = (item.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
-                const totalVolume = mv != null ? mv + relatedSum : null;
+                const totalVolume = item.monthlyVolume != null ? calcTotalVolume(item) : null;
                 const direct = item.directKeywords ?? [];
                 const related = item.relatedKeywords ?? [];
                 const hasKeywords = direct.length > 0 || related.length > 0;
@@ -603,8 +541,8 @@ export function StrategySubTab() {
                   <PriorityBadge priority={item.priority} />
                   <CategoryBadge category={item.category} />
                   {(() => {
-                    const gap = overviewData.contentGap.find(
-                      (g) => g.slug === item.slug && g.keywords.some((k) => item.keywords.includes(k)),
+                    const gap = (gapBySlug.get(item.slug) ?? []).find(
+                      (g) => g.keywords.some((k) => item.keywords.includes(k)),
                     );
                     if (!gap?.monthlyVolume) return null;
                     return (
@@ -622,8 +560,8 @@ export function StrategySubTab() {
                       <span key={kw} className="rounded bg-[var(--background)] px-2 py-0.5 text-xs text-[var(--muted)]">{kw}</span>
                     ))}
                     {(() => {
-                      const gap = overviewData.contentGap.find(
-                        (g) => g.slug === item.slug && g.keywords.some((k) => item.keywords.includes(k)),
+                      const gap = (gapBySlug.get(item.slug) ?? []).find(
+                        (g) => g.keywords.some((k) => item.keywords.includes(k)),
                       );
                       const related = (gap?.relatedKeywords ?? []).filter(
                         (rk) => !item.keywords.includes(rk.keyword),

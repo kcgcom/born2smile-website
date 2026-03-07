@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Minus, X, AlertCircle } from "lucide-react";
 import { useAdminApi } from "../useAdminApi";
@@ -263,7 +263,9 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
             <SubGroupLineChart subGroups={data.subGroups} />
           </div>
           <div className="space-y-2">
-            {data.subGroups
+            {(() => {
+              const maxVol = Math.max(...data.subGroups.map((s) => volumeMap.get(s.name) ?? 0), 1);
+              return data.subGroups
               .slice()
               .sort((a, b) => {
                 const aVol = volumeMap.get(a.name);
@@ -275,7 +277,6 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
               })
               .map((sg, idx) => {
                 const vol = volumeMap.get(sg.name);
-                const maxVol = Math.max(...data.subGroups.map((s) => volumeMap.get(s.name) ?? 0), 1);
                 const barWidth = vol != null ? `${Math.min(100, (vol / maxVol) * 100)}%` : `${Math.min(100, sg.currentAvg)}%`;
                 const barColor = SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length];
                 return (
@@ -290,7 +291,8 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
                     <TrendText trend={sg.trend} changeRate={sg.changeRate} />
                   </div>
                 );
-              })}
+              });
+            })()}
           </div>
           <p className="mt-3 text-xs text-[var(--muted)]">
             * ratio 값은 이 카테고리 내에서의 상대적 검색 비율 (0~100). 검색량은 검색광고 API 연동 시 절대 검색량, 미연동 시 상대값 표시
@@ -337,7 +339,7 @@ export function TrendSubTab() {
   };
 
   // Volume map for selected category drilldown
-  const selectedVolumeMap = (() => {
+  const selectedVolumeMap = useMemo(() => {
     const map = new Map<string, number>();
     if (overviewData && selectedCategory) {
       for (const gap of overviewData.contentGap) {
@@ -348,7 +350,7 @@ export function TrendSubTab() {
       }
     }
     return map;
-  })();
+  }, [overviewData, selectedCategory]);
 
   // ── Graceful degradation ─────────────────────────────────────
   if (!overviewLoading && !overviewError && overviewData === null) {
