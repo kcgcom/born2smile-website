@@ -116,13 +116,15 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
   }, [newCategory]);
 
-  // Computed blog stats from API data
+  // Computed blog stats from API data (single pass)
   const blogStats = useMemo(() => {
-    const total = posts.length;
-    const published = posts.filter((p) => p.published && p.date <= today).length;
-    const scheduled = posts.filter((p) => p.published && p.date > today).length;
-    const draft = posts.filter((p) => !p.published).length;
-    return { total, published, scheduled, draft };
+    let published = 0, scheduled = 0, draft = 0;
+    for (const p of posts) {
+      if (!p.published) draft++;
+      else if (p.date > today) scheduled++;
+      else published++;
+    }
+    return { total: posts.length, published, scheduled, draft };
   }, [posts, today]);
 
   const filteredPosts = useMemo(() => {
@@ -164,16 +166,26 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
 
     // 상태별 그룹 정렬: 초안 → 예약 → 발행 (전체 보기일 때만)
+    // stable sort preserves the sort key order within each group
     if (statusFilter === "all") {
       const statusOrder = (p: AdminBlogPost) =>
         !p.published ? 0 : p.date > today ? 1 : 2;
-      const sorted = [...filtered];
-      sorted.sort((a, b) => statusOrder(a) - statusOrder(b));
-      return sorted;
+      filtered.sort((a, b) => statusOrder(a) - statusOrder(b));
     }
 
     return filtered;
   }, [posts, debouncedQuery, categoryFilter, statusFilter, sortKey, today, likesData]);
+
+  // Pre-compute draft ranks to avoid O(n²) in render loop
+  const draftRankMap = useMemo(() => {
+    if (sortKey !== "recommended") return null;
+    const map = new Map<string, number>();
+    let rank = 0;
+    for (const p of filteredPosts) {
+      if (!p.published) map.set(p.slug, ++rank);
+    }
+    return map;
+  }, [filteredPosts, sortKey]);
 
   // CRUD handlers
   const handleCreate = () => {
@@ -399,9 +411,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                     : isPublished
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700";
-                  const draftRank = isDraft && sortKey === "recommended"
-                    ? filteredPosts.filter((p) => !p.published).indexOf(post) + 1
-                    : null;
+                  const draftRank = draftRankMap?.get(post.slug) ?? null;
 
                   return (
                     <li
