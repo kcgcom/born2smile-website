@@ -86,14 +86,11 @@ const KeywordBarChart = dynamic(
 );
 
 
+import type { MetricValue } from "./insight/shared";
+
 // ---------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------
-
-interface MetricValue {
-  value: number;
-  change: number | null;
-}
 
 interface SearchConsoleData {
   dataAsOf: string;

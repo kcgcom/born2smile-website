@@ -58,6 +58,16 @@ export function calcTotalVolume(item: Pick<ContentGapItem, "monthlyVolume" | "re
 }
 
 // ---------------------------------------------------------------
+// 공유 포맷 유틸리티
+// ---------------------------------------------------------------
+
+export function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------------------
 // 공유 뱃지 컴포넌트
 // ---------------------------------------------------------------
 

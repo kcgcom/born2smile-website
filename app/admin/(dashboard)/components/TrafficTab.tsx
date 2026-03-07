@@ -8,15 +8,12 @@ import { PeriodSelector } from "./PeriodSelector";
 import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { ApiSourceBadge } from "./insight/ApiSourceBadge";
+import { formatDuration } from "./insight/shared";
+import type { MetricValue } from "./insight/shared";
 
 // ---------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------
-
-interface MetricValue {
-  value: number;
-  change: number | null;
-}
 
 interface AnalyticsData {
   dataAsOf: string;
@@ -61,12 +58,6 @@ const CHART_COLORS = [
 // ---------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
 
 function formatDateLabel(date: string): string {
   if (date.length === 10) return date.slice(5).replace("-", ".");

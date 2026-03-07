@@ -7,7 +7,7 @@ import { MetricCard } from "../MetricCard";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import { CategoryBadge, GapScoreBadge, PriorityBadge, calcTotalVolume } from "./shared";
+import { CategoryBadge, GapScoreBadge, PriorityBadge, calcTotalVolume, formatDuration } from "./shared";
 import type { MetricValue } from "./shared";
 
 // ---------------------------------------------------------------
@@ -56,12 +56,6 @@ interface TopicSuggestionItem {
 interface OverviewData {
   contentGap: ContentGapItem[];
   suggestions: TopicSuggestionItem[];
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------------------
