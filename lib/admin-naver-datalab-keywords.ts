@@ -310,18 +310,32 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     slug: "prosthetics",
     subGroups: [
       {
-        name: "크라운/브릿지",
+        name: "크라운",
         keywords: [
           "크라운",
           "치아 크라운",
-          "브릿지",
-          "치아 브릿지",
           "크라운 수명",
           "크라운 비용",
-          "브릿지 비용",
+          "크라운 치료",
+          "크라운 과정",
+          "크라운 통증",
           "치관 보철",
         ],
-        volumeKeywords: ["치아 크라운", "브릿지"],
+        volumeKeywords: ["치아 크라운", "크라운 비용"],
+      },
+      {
+        name: "브릿지",
+        keywords: [
+          "브릿지",
+          "치아 브릿지",
+          "브릿지 비용",
+          "브릿지 수명",
+          "브릿지 치료",
+          "브릿지 종류",
+          "임플란트 브릿지 비교",
+          "앞니 브릿지",
+        ],
+        volumeKeywords: ["치아 브릿지", "브릿지 비용"],
       },
       {
         name: "틀니",
@@ -408,8 +422,13 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     ],
     topicAngles: [
       {
+        template: "{keyword} 완벽 가이드: {aspect}",
+        subGroup: "크라운",
+        aspect: "소재별 장단점부터 수명·비용까지",
+      },
+      {
         template: "{keyword} vs 임플란트: {aspect}",
-        subGroup: "크라운/브릿지",
+        subGroup: "브릿지",
         aspect: "상황별 최선의 치료 선택 가이드",
       },
       {
@@ -481,18 +500,32 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         volumeKeywords: ["신경치료", "신경치료 비용"],
       },
       {
-        name: "레진/인레이",
+        name: "레진",
         keywords: [
           "레진",
           "레진 치료",
-          "인레이",
-          "온레이",
           "레진 비용",
-          "인레이 비용",
           "레진 수명",
           "레진 변색",
+          "레진 탈락",
+          "앞니 레진",
+          "레진 충전",
         ],
-        volumeKeywords: ["레진 치료", "인레이 비용"],
+        volumeKeywords: ["레진 치료", "레진 비용"],
+      },
+      {
+        name: "인레이/온레이",
+        keywords: [
+          "인레이",
+          "온레이",
+          "인레이 비용",
+          "인레이 수명",
+          "세라믹 인레이",
+          "골드 인레이",
+          "인레이 탈락",
+          "인레이 치료",
+        ],
+        volumeKeywords: ["인레이 비용", "인레이"],
       },
       {
         name: "통증/관리",
@@ -557,9 +590,14 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         aspect: "과정과 통증 대처법 솔직 후기",
       },
       {
-        template: "{keyword} vs {aspect}",
-        subGroup: "레진/인레이",
-        aspect: "인레이, 내 치아엔 어떤 게 맞을까?",
+        template: "{keyword} 완벽 가이드: {aspect}",
+        subGroup: "레진",
+        aspect: "충전 치료의 장단점과 관리법",
+      },
+      {
+        template: "{keyword} vs 레진 비교: {aspect}",
+        subGroup: "인레이/온레이",
+        aspect: "내 치아엔 어떤 수복 치료가 맞을까?",
       },
       {
         template: "{keyword} 원인과 해결법 {count}가지",
