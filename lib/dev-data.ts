@@ -118,10 +118,46 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     description: "사이트 설정 (links|clinic|hours|schedule)",
   },
   {
+    path: "/api/admin/naver-datalab",
+    methods: ["GET"],
+    auth: true,
+    description: "네이버 DataLab 검색 트렌드",
+  },
+  {
+    path: "/api/admin/naver-datalab/overview",
+    methods: ["GET"],
+    auth: true,
+    description: "트렌드 개요 (검색량/트렌드)",
+  },
+  {
+    path: "/api/admin/naver-datalab/category/[slug]",
+    methods: ["GET"],
+    auth: true,
+    description: "카테고리별 상세 트렌드",
+  },
+  {
+    path: "/api/admin/naver-searchad/volume",
+    methods: ["GET"],
+    auth: true,
+    description: "네이버 검색광고 키워드 검색량",
+  },
+  {
     path: "/api/dev/env-status",
     methods: ["GET"],
     auth: true,
     description: "환경변수 설정 상태",
+  },
+  {
+    path: "/api/dev/pagespeed",
+    methods: ["GET"],
+    auth: true,
+    description: "PageSpeed Insights 성능 분석",
+  },
+  {
+    path: "/api/cron/rebuild",
+    methods: ["GET"],
+    auth: true,
+    description: "예약 발행 ISR 재검증 (Vercel Cron)",
   },
 ];
 
@@ -136,10 +172,13 @@ export interface CacheTtlEntry {
 }
 
 export const CACHE_TTLS: CacheTtlEntry[] = [
-  { key: "GA4_SUMMARY", seconds: 3600, label: "1시간" },
-  { key: "GA4_DAILY", seconds: 21600, label: "6시간" },
+  { key: "GA4", seconds: 3600, label: "1시간" },
   { key: "SEARCH_CONSOLE", seconds: 21600, label: "6시간" },
+  { key: "NAVER_DATALAB", seconds: 21600, label: "6시간" },
+  { key: "NAVER_SEARCHAD", seconds: 86400, label: "24시간" },
+  { key: "PAGESPEED", seconds: 86400, label: "24시간" },
   { key: "BLOG_LIKES", seconds: 300, label: "5분" },
+  { key: "BLOG_POSTS", seconds: 3600, label: "1시간" },
 ];
 
 // -------------------------------------------------------------
@@ -167,4 +206,6 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NAVER_SEARCHAD_SECRET_KEY", label: "네이버 검색광고 Secret Key", required: false, scope: "private" },
   { key: "NAVER_SEARCHAD_CUSTOMER_ID", label: "네이버 검색광고 Customer ID", required: false, scope: "private" },
   { key: "PAGESPEED_API_KEY", label: "PageSpeed Insights API Key", required: false, scope: "private" },
+  { key: "GOOGLE_SERVICE_ACCOUNT_KEY", label: "Google 서비스 계정 JSON", required: false, scope: "private" },
+  { key: "CRON_SECRET", label: "Vercel Cron 인증 토큰", required: true, scope: "private" },
 ];

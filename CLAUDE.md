@@ -212,9 +212,6 @@ vercel.json                  # Vercel 설정 (Cron Jobs)
 supabase/
   migrations/
     001_initial_schema.sql   # Supabase 초기 스키마 (4 테이블, RLS, RPC)
-.github/
-  workflows/
-    scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용) + IndexNow 제출
 postcss.config.mjs           # PostCSS with @tailwindcss/postcss
 pnpm-workspace.yaml          # pnpm workspace config
 ```
