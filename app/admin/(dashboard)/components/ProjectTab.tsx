@@ -408,11 +408,11 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
           </ul>
         </div>
 
-        {/* Firebase */}
+        {/* Supabase */}
         <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">Firebase</h4>
+          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">Supabase</h4>
           <ul className="space-y-2">
-            {config.firebase.map((item) => (
+            {config.supabase.map((item) => (
               <ConfigRow key={item.label} item={item} />
             ))}
           </ul>

@@ -199,7 +199,7 @@ export interface ConfigItem {
 
 export interface SiteConfigStatus {
   snsLinks: ConfigItem[];
-  firebase: ConfigItem[];
+  supabase: ConfigItem[];
   env: ConfigItem[];
 }
 
@@ -212,9 +212,10 @@ export function getSiteConfigStatus(): SiteConfigStatus {
     { label: "카카오맵", configured: !!LINKS.kakaoMap, value: LINKS.kakaoMap || "미설정" },
   ];
 
-  const firebase: ConfigItem[] = [
-    { label: "Firebase API Key", configured: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY },
-    { label: "Firebase Project ID", configured: true, value: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "seoul-born2smile (기본값)" },
+  const supabase: ConfigItem[] = [
+    { label: "Supabase URL", configured: !!process.env.NEXT_PUBLIC_SUPABASE_URL },
+    { label: "Supabase Anon Key", configured: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+    { label: "Supabase Service Role Key", configured: !!process.env.SUPABASE_SERVICE_ROLE_KEY },
   ];
 
   const env: ConfigItem[] = [
@@ -222,5 +223,5 @@ export function getSiteConfigStatus(): SiteConfigStatus {
     { label: "관리자 이메일", configured: !!process.env.ADMIN_EMAILS },
   ];
 
-  return { snsLinks, firebase, env };
+  return { snsLinks, supabase, env };
 }
