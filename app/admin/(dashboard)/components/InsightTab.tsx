@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { LayoutDashboard, BarChart3, Search, Target, TrendingUp } from "lucide-react";
+import { BarChart3, Search, Target, TrendingUp } from "lucide-react";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { SubTabNav, useSubTab } from "./SubTabNav";
 
@@ -10,7 +10,6 @@ import { SubTabNav, useSubTab } from "./SubTabNav";
 // -------------------------------------------------------------
 
 const SUB_TABS = [
-  { id: "summary", label: "요약", icon: LayoutDashboard },
   { id: "traffic", label: "트래픽", icon: BarChart3 },
   { id: "search", label: "검색 성과", icon: Search },
   { id: "strategy", label: "콘텐츠 전략", icon: Target },
@@ -21,10 +20,6 @@ const SUB_TABS = [
 // 서브탭별 코드 스플리팅
 // -------------------------------------------------------------
 
-const SummarySubTab = dynamic(
-  () => import("./insight/SummarySubTab").then((m) => m.SummarySubTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
 const TrafficTab = dynamic(
   () => import("./TrafficTab").then((m) => m.TrafficTab),
   { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
@@ -43,14 +38,13 @@ const TrendSubTab = dynamic(
 );
 
 export function InsightTab() {
-  const activeSub = useSubTab(SUB_TABS, "summary");
+  const activeSub = useSubTab(SUB_TABS, "traffic");
 
   return (
     <div>
-      <SubTabNav tabs={SUB_TABS} parentTab="insight" defaultSub="summary" ariaLabel="인사이트 서브탭" />
+      <SubTabNav tabs={SUB_TABS} parentTab="insight" defaultSub="traffic" ariaLabel="인사이트 서브탭" />
 
       {/* 서브탭 콘텐츠 */}
-      {activeSub === "summary" && <SummarySubTab />}
       {activeSub === "traffic" && <TrafficTab />}
       {activeSub === "search" && <SearchTab />}
       {activeSub === "strategy" && <StrategySubTab />}
