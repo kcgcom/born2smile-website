@@ -15,53 +15,53 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
+    let cancelled = false;
 
-    // PKCE 코드 교환 — OAuth 콜백에서 ?code= 파라미터 처리
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(() => {
-        // onAuthStateChange가 세션을 처리하므로 여기서는 URL 정리만
-        url.searchParams.delete("code");
-        window.history.replaceState({}, "", url.pathname);
-      });
+    async function handleAdminRedirect(email?: string) {
+      if (cancelled) return;
+      if (await verifyAdminUser()) {
+        try { localStorage.setItem("born2smile-admin", "1"); } catch { /* private browsing */ }
+        router.replace("/admin");
+      } else {
+        setError(`${email ?? "알 수 없는 계정"} 은(는) 관리자 계정이 아닙니다.`);
+        await signOutAdmin();
+      }
     }
 
-    // 초기 세션 확인 — 이미 로그인이면 /admin으로
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: AuthSession | null } }) => {
-      void (async () => {
-        if (session?.user && (await verifyAdminUser())) {
-          try {
-            localStorage.setItem("born2smile-admin", "1");
-          } catch {
-            /* private browsing */
-          }
-          router.replace("/admin");
-        }
-        setChecking(false);
-      })();
-    });
-
-    // 세션 변경 감지 (OAuth redirect 후 콜백)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
-      if (session?.user) {
-        if (await verifyAdminUser()) {
-          try {
-            localStorage.setItem("born2smile-admin", "1");
-          } catch {
-            /* private browsing */
-          }
-          router.replace("/admin");
-        } else {
-          setError(`${session.user.email} 은(는) 관리자 계정이 아닙니다.`);
-          await signOutAdmin();
+    async function init() {
+      // 1) PKCE 코드 교환 — OAuth 콜백에서 ?code= 파라미터 처리
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
+        window.history.replaceState({}, "", window.location.pathname);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && data.session?.user) {
+          await handleAdminRedirect(data.session.user.email ?? undefined);
+          return;
         }
       }
-    });
 
-    return () => subscription.unsubscribe();
+      // 2) 기존 세션 확인 — 이미 로그인이면 /admin으로
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await handleAdminRedirect(session.user.email ?? undefined);
+        return;
+      }
+
+      if (!cancelled) setChecking(false);
+    }
+
+    init();
+
+    // 세션 변경 감지 (백업)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event: string, session: AuthSession | null) => {
+        if (session?.user) {
+          await handleAdminRedirect(session.user.email ?? undefined);
+        }
+      },
+    );
+
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, [router]);
 
   const handleLogin = async () => {

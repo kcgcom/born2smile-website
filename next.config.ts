@@ -5,9 +5,9 @@ const CSP = [
   "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
-  "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com",
+  "connect-src 'self' https://*.supabase.co https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com",
   "font-src 'self'",
-  "frame-src 'self' https://accounts.google.com https://seoul-born2smile.firebaseapp.com",
+  "frame-src 'self' https://accounts.google.com",
   "frame-ancestors 'none'",
 ].join("; ");
 
