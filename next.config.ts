@@ -12,7 +12,6 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react"],

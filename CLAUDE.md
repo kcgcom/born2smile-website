@@ -2,10 +2,9 @@
 
 ## Project Overview
 
-Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo, South Korea. Full-stack Next.js app deployed to Firebase App Hosting (Cloud Build + Cloud Run + Cloud CDN).
+Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo, South Korea. Full-stack Next.js app deployed to Vercel (Edge Network + Serverless Functions).
 
 - **Site URL**: `https://www.born2smile.co.kr`
-- **Firebase Site**: `seoul-born2smile` (Firebase Hosting redirects to App Hosting)
 
 ## Tech Stack
 
@@ -21,7 +20,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Auth**: Supabase Auth (Google OAuth, redirect-based, 관리자 대시보드 전용) + Supabase Admin (service_role key, 서버 사이드 RLS 바이패스)
 - **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`), Naver DataLab API (검색 트렌드), Naver Search Ads API (절대 검색량) — 인사이트 탭에서 통합 분석
 - **Package Manager**: pnpm
-- **Deployment**: Firebase App Hosting (`output: "standalone"` in `next.config.ts`, Cloud Run 기반)
+- **Deployment**: Vercel (Edge Network + Serverless Functions)
 
 ## Getting Started
 
@@ -34,14 +33,14 @@ pnpm dev                      # http://localhost:3000
 ## Commands
 
 - `pnpm dev` — Start dev server (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 실행)
-- `pnpm build` — Production build (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 빌드, standalone output to `.next/`)
+- `pnpm build` — Production build (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 빌드)
 - `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm generate-dev-manifest` — 개발 대시보드 매니페스트 수동 재생성 (`lib/dev/generated/dev-manifest.ts`)
 - `pnpm test:e2e` — Playwright 스모크 테스트 실행 (Chromium, 7개 정적 페이지 렌더링 검증)
 - `pnpm test:e2e:ui` — Playwright UI 모드로 디버깅
 - `pnpm lint` — Run ESLint
-- `pnpm deploy` — Deploy to Firebase App Hosting (빌드는 Cloud Build에서 원격 실행)
+- `pnpm deploy` — Deploy to Vercel (GitHub push로 자동 배포, 또는 `vercel` CLI)
 - `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
 - `pnpm submit-indexnow:all` — 전체 사이트 URL을 IndexNow에 제출 (초기 설정 또는 전체 재인덱싱 시)
 
@@ -209,23 +208,20 @@ scripts/
   generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
   generate-dev-manifest.ts   # 빌드 시 개발 대시보드 매니페스트 생성 스크립트
   submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
-hosting-redirect/            # Firebase Hosting redirect (serves verification files)
+vercel.json                  # Vercel 설정 (Cron Jobs)
 supabase/
   migrations/
     001_initial_schema.sql   # Supabase 초기 스키마 (4 테이블, RLS, RPC)
 .github/
   workflows/
     scheduled-rebuild.yml    # 매일 KST 00:05 자동 재빌드 (예약 포스트 발행용) + IndexNow 제출
-.firebaserc                  # Firebase project alias config (default: seoul-born2smile)
-apphosting.yaml              # Firebase App Hosting runtime config (Supabase secrets 포함)
-firebase.json                # Firebase project config (Hosting redirect + App Hosting)
 postcss.config.mjs           # PostCSS with @tailwindcss/postcss
 pnpm-workspace.yaml          # pnpm workspace config
 ```
 
 ## Architecture
 
-- **Standalone mode**: `output: "standalone"` — Cloud Run에서 Node.js 서버로 실행. SSR, API Routes, Middleware, ISR, `next/image` 최적화 모두 사용 가능.
+- **Vercel Serverless**: SSR, API Routes, Middleware, ISR, `next/image` Edge 최적화 모두 사용 가능.
 - **Static + Dynamic**: `generateStaticParams()`로 빌드 시점 정적 생성 + 필요 시 SSR/ISR 혼용 가능.
 - **Data centralization**: `lib/constants.ts` is the single source of truth for clinic name, address, hours, doctor info, treatments, and SEO data. Nav items (`NAV_ITEMS`) are defined in `lib/constants.ts` and imported by `components/layout/Header.tsx`. Update data in these centralized locations, not in individual pages.
 - **Server/Client split**: Pages default to server components. Components needing interactivity (`"use client"`): Header, FloatingCTA, KakaoMap, BlogContent, BlogShareButton, LikeButton, Contact form, Motion wrappers, Admin convenience components (DashboardHeader, AdminFloatingButton, AdminEditButton, AdminEditIcon, AdminDraftBar, AdminSettingsLink). Footer는 서버 컴포넌트 (클라이언트 컴포넌트 AdminSettingsLink를 island로 포함). 루트 레이아웃의 Admin 컴포넌트(`AdminFloatingButton`, `AdminSettingsLink`)는 `localStorage` 게이트 + `import()` 동적 Supabase 로드로 비관리자 방문자에게 Supabase SDK 미전송.
@@ -400,24 +396,18 @@ ESLint 9 flat config (`eslint.config.mjs`):
 
 ## Deployment
 
-Firebase App Hosting으로 배포 (Cloud Build → Cloud Run + Cloud CDN):
+Vercel로 배포 (Edge Network + Serverless Functions):
 
-- `apphosting.yaml` — Cloud Run 런타임 설정:
-  - `minInstances: 1` (cold start 제거, 항상 1개 인스턴스 유지)
-  - `maxInstances: 4`
-  - `concurrency: 80`
-  - `cpu: 1`, `memoryMiB: 512`
-- `firebase.json` — Firebase Hosting이 301 redirect로 App Hosting URL로 전달
-- 빌드는 Cloud Build에서 원격 실행 → 로컬 `next build` 불필요
-- 정적 에셋(`.next/static`, `public/`)은 Cloud CDN에서 캐싱
-- SSR/API Routes는 Cloud Run에서 처리, scale-to-zero 지원
-- GitHub 연동 시 push → 자동 배포 가능
+- `vercel.json` — Cron Jobs 설정 (예약 발행용 daily revalidate)
+- GitHub 연동 — main push → 자동 배포, PR → Preview 배포
+- 정적 에셋은 Vercel Edge Network (서울 PoP 포함)에서 캐싱
+- SSR/API Routes는 Serverless Functions에서 처리
+- `next/image` Edge 최적화
+- 환경변수: Vercel Dashboard → Settings → Environment Variables
 
 ### 예약 발행 자동 재빌드
 
-GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매일 KST 00:05 (UTC 15:05)에 빈 커밋을 push하여 Firebase App Hosting 재빌드를 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `workflow_dispatch`로 수동 실행도 가능.
-
-재빌드 커밋 push 후, `scripts/submit-indexnow.mjs`가 실행되어 오늘 발행된 포스트 URL을 IndexNow API에 자동 제출.
+Vercel Cron Job (`vercel.json`)이 매일 KST 00:05 (UTC 15:05)에 `/api/cron/rebuild` 엔드포인트를 호출하여 블로그 경로 ISR 재검증을 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `CRON_SECRET` 환경변수로 인증.
 
 ### IndexNow
 
@@ -430,7 +420,7 @@ GitHub Actions 워크플로우(`.github/workflows/scheduled-rebuild.yml`)가 매
 
 ## Environment Variables
 
-상세 내용은 [`docs/environment-variables.md`](docs/environment-variables.md) 참조. 로컬 개발: `.env.example` → `.env.local`, 프로덕션: `apphosting.yaml` + Cloud Secret Manager. Supabase 관련: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+상세 내용은 [`docs/environment-variables.md`](docs/environment-variables.md) 참조. 로컬 개발: `.env.example` → `.env.local`, 프로덕션: Vercel Dashboard → Settings → Environment Variables. Supabase 관련: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Vercel 추가: `GOOGLE_SERVICE_ACCOUNT_KEY` (GA4/SC 인증), `CRON_SECRET` (Cron 인증).
 
 ## Known TODO Items
 
