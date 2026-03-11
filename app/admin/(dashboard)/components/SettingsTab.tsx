@@ -11,33 +11,38 @@ import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-supabas
 
 const QUICK_LINKS = [
   {
-    label: "Google Search Console",
-    href: "https://search.google.com/search-console?resource_id=sc-domain:born2smile.co.kr",
-    icon: "search" as const,
+    label: "네이버 플레이스 관리",
+    href: "https://new.smartplace.naver.com/",
+    icon: "map" as const,
   },
   {
-    label: "Google Analytics",
-    href: "https://analytics.google.com/",
-    icon: "chart" as const,
+    label: "Google 리뷰 관리",
+    href: "https://business.google.com/",
+    icon: "star" as const,
   },
   {
-    label: "Vercel Dashboard",
-    href: "https://vercel.com/born2smile/born2smile-website",
+    label: "네이버 리뷰 보기",
+    href: "https://m.place.naver.com/hospital/698879488/review/visitor",
+    icon: "star" as const,
+  },
+  {
+    label: "Supabase 대시보드",
+    href: "https://supabase.com/dashboard/project/wnxsrxqmzevboyoityyn",
     icon: "database" as const,
   },
   {
-    label: "GitHub Repository",
-    href: "https://github.com/kcgcom/born2smile-website",
-    icon: "code" as const,
+    label: "네이버 지도",
+    href: "https://naver.me/IMy2FmsZ",
+    icon: "map" as const,
   },
   {
-    label: "네이버 플레이스",
-    href: "https://new.smartplace.naver.com/",
+    label: "카카오맵",
+    href: "https://kko.to/nVk0hY6cH8",
     icon: "map" as const,
   },
 ] as const;
 
-type IconType = "search" | "chart" | "database" | "code" | "map";
+type IconType = "search" | "chart" | "database" | "code" | "map" | "star";
 
 // -------------------------------------------------------------
 // Shared UI components
@@ -544,6 +549,12 @@ function QuickLinkIcon({ icon }: { icon: IconType }) {
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
           <circle cx="12" cy="9" r="2.5" />
+        </svg>
+      );
+    case "star":
+      return (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
       );
   }
