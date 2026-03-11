@@ -24,7 +24,7 @@ export async function verifyAdminUser(): Promise<boolean> {
 export async function signInWithGoogle() {
   return getSupabaseBrowserClient().auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${window.location.origin}/admin` },
+    options: { redirectTo: `${window.location.origin}/admin/login` },
   });
 }
 
