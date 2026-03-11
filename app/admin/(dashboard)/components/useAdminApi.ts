@@ -2,16 +2,14 @@
 
 import { useState, useCallback } from "react";
 import useSWR, { preload, mutate as globalMutate } from "swr";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getAccessToken } from "@/lib/supabase";
 
 // -------------------------------------------------------------
 // SWR fetcher — Firebase Auth 토큰 주입
 // -------------------------------------------------------------
 
 async function adminFetcher<T>(endpoint: string): Promise<T> {
-  const user = getFirebaseAuth().currentUser;
-  if (!user) throw new Error("로그인이 필요합니다");
-  const token = await user.getIdToken();
+  const token = await getAccessToken();
   const res = await fetch(endpoint, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -83,9 +81,7 @@ export function useAdminMutation<T = unknown>() {
     setLoading(true);
     setError(null);
     try {
-      const user = getFirebaseAuth().currentUser;
-      if (!user) throw new Error("로그인이 필요합니다");
-      const token = await user.getIdToken();
+      const token = await getAccessToken();
       const res = await fetch(endpoint, {
         method,
         headers: {

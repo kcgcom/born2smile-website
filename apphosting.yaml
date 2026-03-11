@@ -14,10 +14,19 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: firebaseApiKey
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    secret: supabaseUrl
     availability:
       - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: supabaseAnonKey
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: supabaseServiceRoleKey
+    availability:
       - RUNTIME
   - variable: ADMIN_EMAILS
     value: kcgcom@gmail.com

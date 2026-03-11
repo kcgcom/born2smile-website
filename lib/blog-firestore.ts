@@ -1,27 +1,25 @@
 /**
- * Server-side Firestore helper for blog posts.
- * Uses Firebase Admin SDK — server components and API routes only.
+ * Server-side Supabase helper for blog posts.
+ * Uses Supabase Admin (service_role) — server components and API routes only.
+ *
+ * NOTE: Function names kept as-is (e.g. getPostBySlugFromFirestore) to
+ * minimise call-site changes across the codebase.
  */
 
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { unstable_cache, revalidateTag } from "next/cache";
-import { getAdminApp } from "./firebase-admin";
+import { getSupabaseAdmin } from "./supabase-admin";
 import type { BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
 import { getTodayKST } from "./date";
 import { BLOG_POSTS_META } from "./blog/generated/posts-meta";
 
-const COLLECTION = "blog-posts";
+const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-function getDb() {
-  return getFirestore(getAdminApp());
-}
 
 function calculateReadTime(content: BlogPostSection[]): string {
   const totalChars = content.reduce(
@@ -32,7 +30,9 @@ function calculateReadTime(content: BlogPostSection[]): string {
   return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
 }
 
-interface FirestoreDocData {
+// --- DB row <-> TypeScript object mapping ---
+
+interface DbRow {
   slug: string;
   title: string;
   subtitle: string;
@@ -40,56 +40,52 @@ interface FirestoreDocData {
   category: string;
   tags: string[];
   date: string;
-  dateModified: string | null;
+  date_modified: string | null;
   content: { heading: string; content: string }[];
-  readTime: string;
-  reviewedDate: string | null;
+  read_time: string;
+  reviewed_date: string | null;
   published: boolean;
-  createdAt: FirebaseFirestore.Timestamp;
-  updatedAt: FirebaseFirestore.Timestamp;
-  updatedBy: string;
+  created_at: string;
+  updated_at: string;
+  updated_by: string;
 }
 
-function docToMeta(
-  data: FirebaseFirestore.DocumentData,
+function rowToMeta(
+  row: DbRow,
 ): BlogPostMeta & { published: boolean; createdAt?: string } {
-  const createdAtTs = data.createdAt as FirebaseFirestore.Timestamp | undefined;
   return {
-    slug: data.slug as string,
-    title: data.title as string,
-    subtitle: data.subtitle as string,
-    excerpt: data.excerpt as string,
-    category: data.category as BlogCategoryValue,
-    tags: ((data.tags as string[] | undefined) ?? []) as BlogPostMeta["tags"],
-    date: data.date as string,
-    dateModified: (data.dateModified as string | null | undefined) ?? undefined,
-    readTime: (data.readTime as string | undefined) ?? "1분",
-    published: (data.published as boolean | undefined) ?? true,
-    createdAt: createdAtTs?.toDate().toISOString(),
+    slug: row.slug,
+    title: row.title,
+    subtitle: row.subtitle,
+    excerpt: row.excerpt,
+    category: row.category as BlogCategoryValue,
+    tags: (row.tags ?? []) as BlogPostMeta["tags"],
+    date: row.date,
+    dateModified: row.date_modified ?? undefined,
+    readTime: row.read_time ?? "1분",
+    published: row.published ?? true,
+    createdAt: row.created_at ?? undefined,
   };
 }
 
-function docToPost(data: FirebaseFirestore.DocumentData): BlogPost {
+function rowToPost(row: DbRow): BlogPost {
   return {
-    slug: data.slug as string,
-    title: data.title as string,
-    subtitle: data.subtitle as string,
-    excerpt: data.excerpt as string,
-    category: data.category as BlogCategoryValue,
-    tags: ((data.tags as string[] | undefined) ?? []) as BlogPostMeta["tags"],
-    date: data.date as string,
-    dateModified: (data.dateModified as string | null | undefined) ?? undefined,
-    content:
-      (data.content as { heading: string; content: string }[] | undefined) ??
-      [],
-    readTime: (data.readTime as string | undefined) ?? "1분",
-    reviewedDate:
-      (data.reviewedDate as string | null | undefined) ?? undefined,
+    slug: row.slug,
+    title: row.title,
+    subtitle: row.subtitle,
+    excerpt: row.excerpt,
+    category: row.category as BlogCategoryValue,
+    tags: (row.tags ?? []) as BlogPostMeta["tags"],
+    date: row.date,
+    dateModified: row.date_modified ?? undefined,
+    content: row.content ?? [],
+    readTime: row.read_time ?? "1분",
+    reviewedDate: row.reviewed_date ?? undefined,
   };
 }
 
 // ---------------------------------------------------------------------------
-// File-based fallback helpers (used when Firestore indexes are not yet deployed)
+// File-based fallback helpers (used when Supabase is unreachable)
 // ---------------------------------------------------------------------------
 
 function getFileBasedPublishedMetas(): BlogPostMeta[] {
@@ -108,14 +104,6 @@ async function getFileBasedPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-function isIndexError(e: unknown): boolean {
-  return (
-    e instanceof Error &&
-    (e.message.includes("FAILED_PRECONDITION") ||
-      e.message.includes("requires an index"))
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Read functions (cached)
 // ---------------------------------------------------------------------------
@@ -123,32 +111,31 @@ function isIndexError(e: unknown): boolean {
 /**
  * All published posts visible to site visitors (date <= today KST).
  * Ordered by date DESC.
- * Falls back to file-based data if Firestore composite index is missing.
+ * Falls back to file-based data if Supabase query fails.
  */
 export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
   unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
       try {
         const today = getTodayKST();
-        const snapshot = await getDb()
-          .collection(COLLECTION)
-          .where("published", "==", true)
-          .where("date", "<=", today)
-          .orderBy("date", "desc")
-          .get();
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
+          .eq("published", true)
+          .lte("date", today)
+          .order("date", { ascending: false });
 
-        return snapshot.docs.map((doc) => {
-          const meta = docToMeta(doc.data());
+        if (error) throw error;
+
+        return (data as DbRow[]).map((row) => {
+          const meta = rowToMeta(row);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { published, ...rest } = meta;
           return rest;
         });
       } catch (e) {
-        if (isIndexError(e)) {
-          console.warn("[blog-firestore] Composite index missing, using file-based fallback");
-          return getFileBasedPublishedMetas();
-        }
-        throw e;
+        console.warn("[blog-firestore] Supabase query failed, using file-based fallback", e);
+        return getFileBasedPublishedMetas();
       }
     },
     ["blog-posts-published"],
@@ -163,12 +150,14 @@ export const getAllPostMetas: () => Promise<
   (BlogPostMeta & { published: boolean; createdAt?: string })[]
 > = unstable_cache(
   async (): Promise<(BlogPostMeta & { published: boolean; createdAt?: string })[]> => {
-    const snapshot = await getDb()
-      .collection(COLLECTION)
-      .orderBy("date", "desc")
-      .get();
+    const { data, error } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
+      .order("date", { ascending: false });
 
-    return snapshot.docs.map((doc) => docToMeta(doc.data()));
+    if (error) throw error;
+
+    return (data as DbRow[]).map((row) => rowToMeta(row));
   },
   ["blog-posts-admin"],
   { revalidate: 300, tags: ["blog-posts-admin"] },
@@ -177,7 +166,7 @@ export const getAllPostMetas: () => Promise<
 /**
  * Single post by slug, including full content.
  * Returns null when not found.
- * Falls back to file-based import if Firestore fails.
+ * Falls back to file-based import if Supabase fails.
  */
 export function getPostBySlugFromFirestore(
   slug: string,
@@ -185,11 +174,21 @@ export function getPostBySlugFromFirestore(
   return unstable_cache(
     async (): Promise<BlogPost | null> => {
       try {
-        const doc = await getDb().collection(COLLECTION).doc(slug).get();
-        if (!doc.exists) return getFileBasedPost(slug);
-        return docToPost(doc.data()!);
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select("*")
+          .eq("slug", slug)
+          .single();
+
+        if (error) {
+          // PGRST116 = row not found
+          if (error.code === "PGRST116") return getFileBasedPost(slug);
+          throw error;
+        }
+
+        return rowToPost(data as DbRow);
       } catch {
-        console.warn(`[blog-firestore] Firestore read failed for ${slug}, using file-based fallback`);
+        console.warn(`[blog-firestore] Supabase read failed for ${slug}, using file-based fallback`);
         return getFileBasedPost(slug);
       }
     },
@@ -201,26 +200,24 @@ export function getPostBySlugFromFirestore(
 /**
  * Slug list for generateStaticParams().
  * Only published posts with date <= today KST.
- * Falls back to file-based data if Firestore composite index is missing.
+ * Falls back to file-based data if Supabase query fails.
  */
 export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
   async (): Promise<string[]> => {
     try {
       const today = getTodayKST();
-      const snapshot = await getDb()
-        .collection(COLLECTION)
-        .where("published", "==", true)
-        .where("date", "<=", today)
+      const { data, error } = await getSupabaseAdmin()
+        .from(TABLE)
         .select("slug")
-        .get();
+        .eq("published", true)
+        .lte("date", today);
 
-      return snapshot.docs.map((doc) => doc.data().slug as string);
+      if (error) throw error;
+
+      return (data as Pick<DbRow, "slug">[]).map((row) => row.slug);
     } catch (e) {
-      if (isIndexError(e)) {
-        console.warn("[blog-firestore] Composite index missing, using file-based fallback for slugs");
-        return getFileBasedPublishedMetas().map((p) => p.slug);
-      }
-      throw e;
+      console.warn("[blog-firestore] Supabase query failed, using file-based fallback for slugs", e);
+      return getFileBasedPublishedMetas().map((p) => p.slug);
     }
   },
   ["blog-slugs"],
@@ -230,7 +227,7 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
 /**
  * Related posts for a given category, excluding a specific slug.
  * Only published posts with date <= today KST.
- * Falls back to file-based data if Firestore composite index is missing.
+ * Falls back to file-based data if Supabase query fails.
  */
 export function getRelatedPostsFromFirestore(
   category: BlogCategoryValue,
@@ -241,17 +238,19 @@ export function getRelatedPostsFromFirestore(
     async (): Promise<BlogPostMeta[]> => {
       try {
         const today = getTodayKST();
-        const snapshot = await getDb()
-          .collection(COLLECTION)
-          .where("published", "==", true)
-          .where("category", "==", category)
-          .where("date", "<=", today)
-          .limit(limit + 1)
-          .get();
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
+          .eq("published", true)
+          .eq("category", category)
+          .lte("date", today)
+          .limit(limit + 1);
 
-        return snapshot.docs
-          .map((doc) => {
-            const meta = docToMeta(doc.data());
+        if (error) throw error;
+
+        return (data as DbRow[])
+          .map((row) => {
+            const meta = rowToMeta(row);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { published, ...rest } = meta;
             return rest;
@@ -259,13 +258,10 @@ export function getRelatedPostsFromFirestore(
           .filter((post) => post.slug !== excludeSlug)
           .slice(0, limit);
       } catch (e) {
-        if (isIndexError(e)) {
-          console.warn("[blog-firestore] Composite index missing, using file-based fallback for related posts");
-          return getFileBasedPublishedMetas()
-            .filter((p) => p.category === category && p.slug !== excludeSlug)
-            .slice(0, limit);
-        }
-        throw e;
+        console.warn("[blog-firestore] Supabase query failed, using file-based fallback for related posts", e);
+        return getFileBasedPublishedMetas()
+          .filter((p) => p.category === category && p.slug !== excludeSlug)
+          .slice(0, limit);
       }
     },
     [`blog-related-${category}-${excludeSlug}`],
@@ -286,18 +282,17 @@ export type CreateBlogPostData = Omit<BlogPost, "readTime"> & {
 };
 
 /**
- * Create a new blog post document.
+ * Create a new blog post row.
  * Calculates readTime from content automatically.
  */
 export async function createBlogPost(
   data: CreateBlogPostData,
   updatedBy: string,
 ): Promise<void> {
-  const db = getDb();
-  const now = Timestamp.now();
+  const now = new Date().toISOString();
   const readTime = calculateReadTime(data.content);
 
-  const doc: FirestoreDocData = {
+  const row = {
     slug: data.slug,
     title: data.title,
     subtitle: data.subtitle,
@@ -305,17 +300,18 @@ export async function createBlogPost(
     category: data.category,
     tags: data.tags,
     date: data.date,
-    dateModified: data.dateModified ?? null,
+    date_modified: data.dateModified ?? null,
     content: data.content,
-    readTime,
-    reviewedDate: null,
+    read_time: readTime,
+    reviewed_date: null,
     published: data.published ?? false,
-    createdAt: now,
-    updatedAt: now,
-    updatedBy,
+    created_at: now,
+    updated_at: now,
+    updated_by: updatedBy,
   };
 
-  await db.collection(COLLECTION).doc(data.slug).set(doc);
+  const { error } = await getSupabaseAdmin().from(TABLE).insert(row);
+  if (error) throw error;
 
   revalidateTag(CACHE_TAG, "max");
   revalidateTag("blog-slugs", "max");
@@ -327,7 +323,7 @@ export type UpdateBlogPostData = Partial<
 >;
 
 /**
- * Update an existing blog post document (partial update).
+ * Update an existing blog post row (partial update).
  * Recalculates readTime if content is provided.
  */
 export async function updateBlogPost(
@@ -335,11 +331,9 @@ export async function updateBlogPost(
   data: UpdateBlogPostData,
   updatedBy: string,
 ): Promise<void> {
-  const db = getDb();
-
   const update: Record<string, unknown> = {
-    updatedAt: Timestamp.now(),
-    updatedBy,
+    updated_at: new Date().toISOString(),
+    updated_by: updatedBy,
   };
 
   if (data.title !== undefined) update.title = data.title;
@@ -348,16 +342,21 @@ export async function updateBlogPost(
   if (data.category !== undefined) update.category = data.category;
   if (data.tags !== undefined) update.tags = data.tags;
   if (data.date !== undefined) update.date = data.date;
-  if ("dateModified" in data) update.dateModified = data.dateModified ?? null;
-  if ("reviewedDate" in data) update.reviewedDate = data.reviewedDate ?? null;
+  if ("dateModified" in data) update.date_modified = data.dateModified ?? null;
+  if ("reviewedDate" in data) update.reviewed_date = data.reviewedDate ?? null;
   if (data.published !== undefined) update.published = data.published;
 
   if (data.content !== undefined) {
     update.content = data.content;
-    update.readTime = calculateReadTime(data.content);
+    update.read_time = calculateReadTime(data.content);
   }
 
-  await db.collection(COLLECTION).doc(slug).update(update);
+  const { error } = await getSupabaseAdmin()
+    .from(TABLE)
+    .update(update)
+    .eq("slug", slug);
+
+  if (error) throw error;
 
   revalidateTag(CACHE_TAG, "max");
   revalidateTag(`blog-post-${slug}`, "max");
@@ -366,10 +365,15 @@ export async function updateBlogPost(
 }
 
 /**
- * Delete a blog post document by slug.
+ * Delete a blog post row by slug.
  */
 export async function deleteBlogPost(slug: string): Promise<void> {
-  await getDb().collection(COLLECTION).doc(slug).delete();
+  const { error } = await getSupabaseAdmin()
+    .from(TABLE)
+    .delete()
+    .eq("slug", slug);
+
+  if (error) throw error;
 
   revalidateTag(CACHE_TAG, "max");
   revalidateTag(`blog-post-${slug}`, "max");

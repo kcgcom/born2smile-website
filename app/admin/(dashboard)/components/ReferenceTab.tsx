@@ -5,7 +5,7 @@ import { DEV_MANIFEST } from "@/lib/dev/generated/dev-manifest";
 import {
   ESLINT_CONFIG,
   NEXTJS_CONFIG,
-  FIRESTORE_COLLECTIONS,
+  DATABASE_TABLES,
   API_ENDPOINTS,
   CACHE_TTLS,
 } from "@/lib/dev-data";
@@ -362,99 +362,29 @@ function InfraContent() {
 }
 
 // -------------------------------------------------------------
-// 5. Firestore 섹션
+// 5. 데이터베이스 섹션 (Supabase)
 // -------------------------------------------------------------
 
-function FirestoreContent() {
-  const { firestoreIndexes, firestoreRules } = DEV_MANIFEST;
-
-  const indexColumns = [
-    { key: "collectionGroup", label: "컬렉션" },
-    {
-      key: "fields",
-      label: "필드",
-      render: (row: Record<string, unknown>) => {
-        const fields = row.fields as { fieldPath: string; order: string }[];
-        return (
-          <span className="text-sm">
-            {fields.map((f) => `${f.fieldPath} (${f.order === "ASCENDING" ? "ASC" : "DESC"})`).join(" + ")}
-          </span>
-        );
-      },
-    },
-  ];
-
-  const indexRows = firestoreIndexes.map((idx, i) => ({
-    _id: `idx-${i}`,
-    collectionGroup: idx.collectionGroup,
-    fields: idx.fields,
-  }));
-
+function DatabaseContent() {
   return (
     <div className="space-y-4">
-      {/* Firestore 컬렉션 */}
       <div>
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-          컬렉션 ({FIRESTORE_COLLECTIONS.length}개)
+          테이블 ({DATABASE_TABLES.length}개) — Supabase PostgreSQL
         </h4>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {FIRESTORE_COLLECTIONS.map((col) => (
-            <div key={col.name} className="rounded-lg border border-[var(--border)] p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {DATABASE_TABLES.map((tbl) => (
+            <div key={tbl.name} className="rounded-lg border border-[var(--border)] p-3">
               <p className="font-mono text-sm font-semibold text-[var(--foreground)]">
-                {col.name}
+                {tbl.name}
               </p>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                문서 ID: <span className="font-mono">{col.docId}</span>
+                PK: <span className="font-mono">{tbl.primaryKey}</span>
               </p>
-              <p className="text-xs text-[var(--muted)]">접근: {col.access}</p>
-              <p className="mt-1 text-xs text-[var(--muted-light)]">{col.purpose}</p>
+              <p className="text-xs text-[var(--muted)]">접근: {tbl.access}</p>
+              <p className="mt-1 text-xs text-[var(--muted-light)]">{tbl.purpose}</p>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* 복합 인덱스 & 보안 규칙 */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            복합 인덱스 ({firestoreIndexes.length}개)
-          </h4>
-          <DataTable
-            columns={indexColumns}
-            rows={indexRows as unknown as Record<string, unknown>[]}
-            keyField="_id"
-          />
-        </div>
-
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            보안 규칙
-          </h4>
-          <div className="space-y-2">
-            {firestoreRules.map((rule) => (
-              <div
-                key={rule.collection}
-                className="flex items-center justify-between rounded-lg bg-[var(--background)] px-3 py-2 text-sm"
-              >
-                <div>
-                  <span className="font-mono text-[var(--foreground)]">
-                    {rule.collection}
-                  </span>
-                  {rule.note && (
-                    <p className="text-xs text-[var(--muted-light)]">{rule.note}</p>
-                  )}
-                </div>
-                <span className="flex items-center gap-2 text-xs">
-                  <span className={rule.read ? "text-green-600" : "text-red-500"}>
-                    R:{rule.read ? "O" : "X"}
-                  </span>
-                  <span className={rule.write ? "text-green-600" : "text-red-500"}>
-                    W:{rule.write ? "O" : "X"}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -549,7 +479,7 @@ function ApiCacheContent() {
 export function ReferenceTab() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { dependencies, routes, firestoreIndexes } = DEV_MANIFEST;
+  const { dependencies, routes } = DEV_MANIFEST;
 
   const toggle = (id: string) => {
     setExpanded((prev) => (prev === id ? null : id));
@@ -581,10 +511,10 @@ export function ReferenceTab() {
       content: <InfraContent />,
     },
     {
-      id: "firestore",
-      title: "Firestore",
-      summary: `${FIRESTORE_COLLECTIONS.length}개 컬렉션, ${firestoreIndexes.length}개 인덱스`,
-      content: <FirestoreContent />,
+      id: "database",
+      title: "데이터베이스",
+      summary: `Supabase ${DATABASE_TABLES.length}개 테이블`,
+      content: <DatabaseContent />,
     },
     {
       id: "api-cache",

@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Heart } from "lucide-react";
-import { db, isFirebaseConfigured } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  runTransaction,
-} from "firebase/firestore";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 
 const USER_ID_KEY = "born2smile_uid";
 
@@ -28,35 +23,34 @@ interface LikeButtonProps {
 export default function LikeButton({ slug }: LikeButtonProps) {
   const [count, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
-  const [loading, setLoading] = useState(isFirebaseConfigured);
-  const [unavailable, setUnavailable] = useState(!isFirebaseConfigured);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [unavailable, setUnavailable] = useState(!isSupabaseConfigured);
 
   // Firestore에서 좋아요 데이터 로드
   useEffect(() => {
-    if (!isFirebaseConfigured) {
+    if (!isSupabaseConfigured) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
-          "[LikeButton] NEXT_PUBLIC_FIREBASE_API_KEY가 설정되지 않았습니다. " +
-          ".env.local 파일에 Firebase API 키를 추가하세요."
+          "[LikeButton] NEXT_PUBLIC_SUPABASE_URL이 설정되지 않았습니다. " +
+          ".env.local 파일에 Supabase 설정을 추가하세요."
         );
       }
       return;
     }
 
     const uid = getUserId();
-    const docRef = doc(db, "blog-likes", slug);
+    const supabase = getSupabaseBrowserClient();
 
-    getDoc(docRef)
-      .then((snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setCount(data.count ?? 0);
-          setLiked((data.users as string[])?.includes(uid) ?? false);
+    supabase.rpc("get_like", { p_slug: slug })
+      .then(({ data, error }: { data: Array<{ like_count: number; like_users: string[] }> | null; error: unknown }) => {
+        if (!error && data && data.length > 0) {
+          setCount(data[0].like_count ?? 0);
+          setLiked((data[0].like_users as string[])?.includes(uid) ?? false);
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (process.env.NODE_ENV === "development") {
-          console.error("[LikeButton] Firestore 연결 실패:", error);
+          console.error("[LikeButton] Supabase 연결 실패:", error);
         }
         setUnavailable(true);
       })
@@ -75,27 +69,9 @@ export default function LikeButton({ slug }: LikeButtonProps) {
     setCount((prev) => prev + (wasLiked ? -1 : 1));
 
     try {
-      const docRef = doc(db, "blog-likes", slug);
-      await runTransaction(db, async (transaction) => {
-        const snap = await transaction.get(docRef);
-        const data = snap.exists()
-          ? snap.data()
-          : { count: 0, users: [] };
-        const users: string[] = data.users ?? [];
-        const currentCount: number = data.count ?? 0;
-
-        if (wasLiked) {
-          transaction.set(docRef, {
-            count: Math.max(0, currentCount - 1),
-            users: users.filter((u) => u !== uid),
-          });
-        } else {
-          transaction.set(docRef, {
-            count: currentCount + 1,
-            users: [...users, uid],
-          });
-        }
-      });
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase.rpc("toggle_like", { p_slug: slug, p_user_id: uid });
+      if (error) throw error;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[LikeButton] 좋아요 저장 실패:", error);

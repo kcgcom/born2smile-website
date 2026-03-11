@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { getFirebaseAuth } from "@/lib/firebase";
+import type { AuthSession } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signInWithGoogle, signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
 
@@ -14,37 +14,53 @@ export default function AdminLoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
+    const supabase = getSupabaseBrowserClient();
+
+    // 초기 세션 확인 — 이미 로그인이면 /admin으로
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: AuthSession | null } }) => {
       void (async () => {
-        if (await verifyAdminUser(user)) {
+        if (session?.user && (await verifyAdminUser())) {
+          try {
+            localStorage.setItem("born2smile-admin", "1");
+          } catch {
+            /* private browsing */
+          }
           router.replace("/admin");
         }
         setChecking(false);
       })();
     });
-    return unsubscribe;
+
+    // 세션 변경 감지 (OAuth redirect 후 콜백)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
+      if (session?.user) {
+        if (await verifyAdminUser()) {
+          try {
+            localStorage.setItem("born2smile-admin", "1");
+          } catch {
+            /* private browsing */
+          }
+          router.replace("/admin");
+        } else {
+          setError(`${session.user.email} 은(는) 관리자 계정이 아닙니다.`);
+          await signOutAdmin();
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   const handleLogin = async () => {
     setError(null);
     setLoading(true);
     try {
-      const result = await signInWithGoogle();
-      const email = result.user.email;
-      if (!(await verifyAdminUser(result.user))) {
-        setError(`${email} 은(는) 관리자 계정이 아닙니다.`);
-        await signOutAdmin();
-      } else {
-        router.replace("/admin");
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("popup-closed") || msg.includes("cancelled-popup-request")) {
-        setError(null);
-      } else {
-        setError("로그인에 실패했습니다. 다시 시도해 주세요.");
-      }
-    } finally {
+      await signInWithGoogle();
+      // redirect 방식이므로 여기서 반환되지 않을 수 있음
+    } catch {
+      setError("로그인에 실패했습니다. 다시 시도해 주세요.");
       setLoading(false);
     }
   };

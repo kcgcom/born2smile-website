@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getAccessToken } from "@/lib/supabase";
 import { getTodayKST } from "@/lib/date";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 
@@ -21,9 +21,7 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
 
   const fetchRecommendedDate = useCallback(async () => {
     try {
-      const user = getFirebaseAuth().currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
+      const token = await getAccessToken();
 
       // Fetch schedule
       const schedRes = await fetch("/api/admin/site-config/schedule", {
@@ -91,9 +89,7 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
     setPublishing(true);
     setError(null);
     try {
-      const user = getFirebaseAuth().currentUser;
-      if (!user) throw new Error("로그인이 필요합니다");
-      const token = await user.getIdToken();
+      const token = await getAccessToken();
       const res = await fetch(`/api/admin/blog-posts/${publishingSlug}`, {
         method: "PUT",
         headers: {

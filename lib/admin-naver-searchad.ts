@@ -4,8 +4,7 @@
 // =============================================================
 
 import crypto from "crypto";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { getAdminApp } from "@/lib/firebase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTodayKST } from "@/lib/date";
 
 // ── 환경변수 (lazy — Cloud Run 시크릿 주입 타이밍 보장) ─────
@@ -219,38 +218,45 @@ export async function fetchKeywordSearchVolumeWithCache(
   if (!isSearchAdConfigured()) return null;
   if (keywords.length === 0) return [];
 
-  // Firestore L2 캐시 시도 — 실패 시 직접 API 호출로 폴백
+  // Supabase L2 캐시 시도 — 실패 시 직접 API 호출로 폴백
   try {
-    const db = getFirestore(getAdminApp());
+    const admin = getSupabaseAdmin();
     const today = getTodayKST();
     const docId = `searchad-volume-${today}`;
-    const docRef = db.collection("api-cache").doc(docId);
 
-    // Firestore에서 오늘 캐시 확인
-    const cached = await docRef.get();
-    if (cached.exists) {
-      const cachedData = cached.data()?.data;
-      if (Array.isArray(cachedData) && cachedData.length > 0) {
-        return cachedData as SearchAdKeywordData[];
-      }
+    // 오늘 캐시 확인
+    const { data: cached } = await admin
+      .from("api_cache")
+      .select("data")
+      .eq("key", docId)
+      .single();
+
+    if (cached?.data?.data && Array.isArray(cached.data.data) && cached.data.data.length > 0) {
+      return cached.data.data as SearchAdKeywordData[];
     }
 
     // 캐시 미스 → API 호출
     const result = await fetchKeywordSearchVolume(keywords);
 
-    // API 결과를 Firestore에 저장 (비동기, 실패해도 무시)
+    // API 결과를 Supabase에 저장 (비동기, 실패해도 무시)
     if (result && result.length > 0) {
-      docRef.set({
-        data: result,
-        fetchedAt: Timestamp.now(),
-        keywordCount: result.length,
-        requestedKeywords: keywords.length,
-      }).catch(() => {/* Firestore 쓰기 실패 무시 */});
+      admin.from("api_cache").upsert({
+        key: docId,
+        data: {
+          data: result,
+          keywordCount: result.length,
+          requestedKeywords: keywords.length,
+        },
+        fetched_at: new Date().toISOString(),
+      }).then(
+        () => {},
+        () => {},
+      );
     }
 
     return result;
   } catch {
-    // Firestore 접근 실패 → API 직접 호출로 폴백
+    // Supabase 접근 실패 → API 직접 호출로 폴백
     return fetchKeywordSearchVolume(keywords);
   }
 }

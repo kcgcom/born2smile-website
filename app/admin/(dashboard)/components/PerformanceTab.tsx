@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Smartphone, Monitor, Info, RefreshCw, ChevronDown } from "lucide-react";
 import { mutate as globalMutate } from "swr";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getAccessToken } from "@/lib/supabase";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -212,9 +212,7 @@ export function PerformanceTab() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const user = getFirebaseAuth().currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
+      const token = await getAccessToken();
       const res = await fetch(`/api/dev/pagespeed?strategy=${strategy}&force=true`, {
         headers: { Authorization: `Bearer ${token}` },
       });

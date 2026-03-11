@@ -214,92 +214,19 @@ function collectTsConfig() {
 }
 
 // -------------------------------------------------------------
-// Firestore 인덱스
+// Supabase 데이터베이스 정보
 // -------------------------------------------------------------
 
-function collectFirestoreIndexes() {
-  try {
-    const indexPath = path.join(rootDir, "firestore.indexes.json");
-    const raw = fs.readFileSync(indexPath, "utf-8");
-    const parsed = JSON.parse(raw);
-    return (parsed.indexes ?? []).map((idx: { collectionGroup: string; fields: { fieldPath: string; order: string }[] }) => ({
-      collectionGroup: idx.collectionGroup,
-      fields: idx.fields.map((f: { fieldPath: string; order: string }) => ({
-        fieldPath: f.fieldPath,
-        order: f.order,
-      })),
-    }));
-  } catch {
-    return [];
-  }
-}
-
-// -------------------------------------------------------------
-// Firestore 보안 규칙 파싱
-// -------------------------------------------------------------
-
-function collectFirestoreRules() {
-  try {
-    const rulesPath = path.join(rootDir, "firestore.rules");
-    const content = fs.readFileSync(rulesPath, "utf-8");
-
-    const rules: { collection: string; read: boolean; write: boolean; note: string }[] = [];
-
-    // 중첩 브레이스를 올바르게 처리하는 brace-depth scanner
-    const matchStart = /match\s+\/([a-z-]+)\/\{[^}]+\}\s*\{/g;
-    let m;
-    while ((m = matchStart.exec(content)) !== null) {
-      const collection = m[1];
-      let depth = 1;
-      let i = matchStart.lastIndex;
-      const start = i;
-      while (i < content.length && depth > 0) {
-        if (content[i] === "{") depth++;
-        else if (content[i] === "}") depth--;
-        i++;
-      }
-      const block = content.slice(start, i - 1);
-
-      // /{document=**} 패턴은 "기타" 으로 처리
-      if (collection === "databases" || collection === "documents") continue;
-
-      const allowRead = /allow\s+read/.test(block) && !/allow\s+read[^;]*:\s*if\s+false/.test(block);
-      const allowWrite = /allow\s+write/.test(block) && !/allow\s+write[^;]*:\s*if\s+false/.test(block);
-
-      // allow read, write: if false 패턴 감지
-      const readWriteFalse = /allow\s+read,\s*write:\s*if\s+false/.test(block);
-
-      let note = "";
-      if (readWriteFalse) {
-        note = "Admin SDK 전용 (클라이언트 접근 차단)";
-      } else if (allowRead && allowWrite) {
-        note = "클라이언트 read/write 허용 (필드 검증)";
-      } else if (allowRead) {
-        note = "클라이언트 read만 허용";
-      }
-
-      rules.push({
-        collection,
-        read: allowRead && !readWriteFalse,
-        write: allowWrite && !readWriteFalse,
-        note,
-      });
-    }
-
-    // 기본 규칙 추가
-    if (content.includes("{document=**}")) {
-      rules.push({
-        collection: "기타 (전체)",
-        read: false,
-        write: false,
-        note: "전체 차단",
-      });
-    }
-
-    return rules;
-  } catch {
-    return [];
-  }
+function collectDatabaseInfo() {
+  return {
+    provider: "Supabase (PostgreSQL)",
+    tables: [
+      { name: "blog_posts", rls: true, access: "service_role 전용" },
+      { name: "blog_likes", rls: true, access: "anon SELECT + RPC toggle_like" },
+      { name: "site_config", rls: true, access: "service_role 전용" },
+      { name: "api_cache", rls: true, access: "service_role 전용" },
+    ],
+  };
 }
 
 // -------------------------------------------------------------
@@ -311,8 +238,7 @@ function main() {
   const { routes, stats: routeStats } = scanRoutes();
   const projectStats = collectProjectStats();
   const tsConfig = collectTsConfig();
-  const firestoreIndexes = collectFirestoreIndexes();
-  const firestoreRules = collectFirestoreRules();
+  const database = collectDatabaseInfo();
 
   const manifest = {
     generatedAt: new Date().toISOString(),
@@ -322,8 +248,7 @@ function main() {
     routeStats,
     projectStats,
     tsConfig,
-    firestoreIndexes,
-    firestoreRules,
+    database,
   };
 
   const json = JSON.stringify(manifest, null, 2);

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { getFirebaseAuth } from "@/lib/firebase";
+import type { AuthSession } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { verifyAdminUser } from "@/lib/admin-auth";
 
 interface AuthGuardProps {
@@ -11,21 +11,44 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ email?: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (firebaseUser) => {
+    const supabase = getSupabaseBrowserClient();
+
+    // 초기 세션 확인
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: AuthSession | null } }) => {
       void (async () => {
-        setUser(firebaseUser);
-        const admin = await verifyAdminUser(firebaseUser);
-        setIsAdmin(admin);
+        if (session?.user) {
+          setUser({ email: session.user.email ?? undefined });
+          const admin = await verifyAdminUser();
+          setIsAdmin(admin);
+        }
         setLoading(false);
       })();
     });
-    return unsubscribe;
+
+    // 세션 변경 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
+      void (async () => {
+        if (session?.user) {
+          setUser({ email: session.user.email ?? undefined });
+          const admin = await verifyAdminUser();
+          setIsAdmin(admin);
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+        }
+        setLoading(false);
+      })();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {

@@ -1,9 +1,8 @@
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { unstable_cache, revalidateTag } from "next/cache";
-import { getAdminApp } from "./firebase-admin";
+import { getSupabaseAdmin } from "./supabase-admin";
 import { CLINIC, LINKS, HOURS } from "./constants";
 
-const COLLECTION = "site-config";
+const TABLE = "site_config";
 const CACHE_TAG_LINKS = "site-config-links";
 const CACHE_TAG_CLINIC = "site-config-clinic";
 const CACHE_TAG_HOURS = "site-config-hours";
@@ -53,13 +52,14 @@ export type SiteSchedule = {
 
 export const getSiteLinks = unstable_cache(
   async (): Promise<SiteLinks> => {
-    const db = getFirestore(getAdminApp());
-    const doc = await db.collection(COLLECTION).doc("links").get();
     const defaults: SiteLinks = { ...LINKS };
-    if (!doc.exists) return defaults;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { updatedAt, updatedBy, ...fields } = doc.data() as Record<string, unknown> & { updatedAt?: Timestamp; updatedBy?: string };
-    return { ...defaults, ...(fields as Partial<SiteLinks>) };
+    const { data: row } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("data")
+      .eq("type", "links")
+      .single();
+    if (!row?.data) return defaults;
+    return { ...defaults, ...(row.data as Partial<SiteLinks>) };
   },
   [CACHE_TAG_LINKS],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS] },
@@ -67,13 +67,14 @@ export const getSiteLinks = unstable_cache(
 
 export const getSiteClinic = unstable_cache(
   async (): Promise<SiteClinic> => {
-    const db = getFirestore(getAdminApp());
-    const doc = await db.collection(COLLECTION).doc("clinic").get();
     const defaults: SiteClinic = { ...CLINIC };
-    if (!doc.exists) return defaults;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { updatedAt, updatedBy, ...fields } = doc.data() as Record<string, unknown> & { updatedAt?: Timestamp; updatedBy?: string };
-    return { ...defaults, ...(fields as Partial<SiteClinic>) };
+    const { data: row } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("data")
+      .eq("type", "clinic")
+      .single();
+    if (!row?.data) return defaults;
+    return { ...defaults, ...(row.data as Partial<SiteClinic>) };
   },
   [CACHE_TAG_CLINIC],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_CLINIC] },
@@ -81,18 +82,19 @@ export const getSiteClinic = unstable_cache(
 
 export const getSiteHours = unstable_cache(
   async (): Promise<SiteHours> => {
-    const db = getFirestore(getAdminApp());
-    const doc = await db.collection(COLLECTION).doc("hours").get();
     const defaults: SiteHours = {
       schedule: HOURS.schedule.map((s) => ({ ...s })),
       lunchTime: HOURS.lunchTime,
       closedDays: HOURS.closedDays,
       notice: HOURS.notice,
     };
-    if (!doc.exists) return defaults;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { updatedAt, updatedBy, ...fields } = doc.data() as Record<string, unknown> & { updatedAt?: Timestamp; updatedBy?: string };
-    return { ...defaults, ...(fields as Partial<SiteHours>) };
+    const { data: row } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("data")
+      .eq("type", "hours")
+      .single();
+    if (!row?.data) return defaults;
+    return { ...defaults, ...(row.data as Partial<SiteHours>) };
   },
   [CACHE_TAG_HOURS],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_HOURS] },
@@ -106,11 +108,21 @@ export async function updateSiteLinks(
   data: Partial<SiteLinks>,
   updatedBy: string,
 ): Promise<void> {
-  const db = getFirestore(getAdminApp());
-  await db
-    .collection(COLLECTION)
-    .doc("links")
-    .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
+  const admin = getSupabaseAdmin();
+  const { data: current } = await admin
+    .from(TABLE)
+    .select("data")
+    .eq("type", "links")
+    .single();
+  const merged = { ...(current?.data ?? {}), ...data };
+  await admin
+    .from(TABLE)
+    .upsert({
+      type: "links",
+      data: merged,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy,
+    }, { onConflict: "type" });
   revalidateTag(CACHE_TAG_LINKS, "max");
 }
 
@@ -118,11 +130,21 @@ export async function updateSiteClinic(
   data: Partial<SiteClinic>,
   updatedBy: string,
 ): Promise<void> {
-  const db = getFirestore(getAdminApp());
-  await db
-    .collection(COLLECTION)
-    .doc("clinic")
-    .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
+  const admin = getSupabaseAdmin();
+  const { data: current } = await admin
+    .from(TABLE)
+    .select("data")
+    .eq("type", "clinic")
+    .single();
+  const merged = { ...(current?.data ?? {}), ...data };
+  await admin
+    .from(TABLE)
+    .upsert({
+      type: "clinic",
+      data: merged,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy,
+    }, { onConflict: "type" });
   revalidateTag(CACHE_TAG_CLINIC, "max");
 }
 
@@ -130,11 +152,21 @@ export async function updateSiteHours(
   data: Partial<SiteHours>,
   updatedBy: string,
 ): Promise<void> {
-  const db = getFirestore(getAdminApp());
-  await db
-    .collection(COLLECTION)
-    .doc("hours")
-    .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
+  const admin = getSupabaseAdmin();
+  const { data: current } = await admin
+    .from(TABLE)
+    .select("data")
+    .eq("type", "hours")
+    .single();
+  const merged = { ...(current?.data ?? {}), ...data };
+  await admin
+    .from(TABLE)
+    .upsert({
+      type: "hours",
+      data: merged,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy,
+    }, { onConflict: "type" });
   revalidateTag(CACHE_TAG_HOURS, "max");
 }
 
@@ -146,12 +178,13 @@ const DEFAULT_SCHEDULE: SiteSchedule = { publishDays: [1, 3, 5] }; // 월, 수, 
 
 export const getSiteSchedule = unstable_cache(
   async (): Promise<SiteSchedule> => {
-    const db = getFirestore(getAdminApp());
-    const doc = await db.collection(COLLECTION).doc("schedule").get();
-    if (!doc.exists) return { ...DEFAULT_SCHEDULE };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { updatedAt, updatedBy, ...fields } = doc.data() as Record<string, unknown> & { updatedAt?: Timestamp; updatedBy?: string };
-    return { ...DEFAULT_SCHEDULE, ...(fields as Partial<SiteSchedule>) };
+    const { data: row } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("data")
+      .eq("type", "schedule")
+      .single();
+    if (!row?.data) return { ...DEFAULT_SCHEDULE };
+    return { ...DEFAULT_SCHEDULE, ...(row.data as Partial<SiteSchedule>) };
   },
   [CACHE_TAG_SCHEDULE],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_SCHEDULE] },
@@ -161,10 +194,20 @@ export async function updateSiteSchedule(
   data: SiteSchedule,
   updatedBy: string,
 ): Promise<void> {
-  const db = getFirestore(getAdminApp());
-  await db
-    .collection(COLLECTION)
-    .doc("schedule")
-    .set({ ...data, updatedAt: Timestamp.now(), updatedBy }, { merge: true });
+  const admin = getSupabaseAdmin();
+  const { data: current } = await admin
+    .from(TABLE)
+    .select("data")
+    .eq("type", "schedule")
+    .single();
+  const merged = { ...(current?.data ?? {}), ...data };
+  await admin
+    .from(TABLE)
+    .upsert({
+      type: "schedule",
+      data: merged,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy,
+    }, { onConflict: "type" });
   revalidateTag(CACHE_TAG_SCHEDULE, "max");
 }

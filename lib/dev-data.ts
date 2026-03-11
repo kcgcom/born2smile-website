@@ -39,34 +39,40 @@ export const ESLINT_CONFIG = {
 } as const;
 
 // -------------------------------------------------------------
-// Firestore 컬렉션 구조
+// Supabase 테이블 구조
 // -------------------------------------------------------------
 
-export interface FirestoreCollection {
+export interface DatabaseTable {
   name: string;
-  docId: string;
+  primaryKey: string;
   access: string;
   purpose: string;
 }
 
-export const FIRESTORE_COLLECTIONS: FirestoreCollection[] = [
+export const DATABASE_TABLES: DatabaseTable[] = [
   {
-    name: "blog-posts",
-    docId: "{slug}",
-    access: "Admin SDK 전용",
-    purpose: "블로그 포스트 (80개)",
+    name: "blog_posts",
+    primaryKey: "slug",
+    access: "service_role 전용 (RLS)",
+    purpose: "블로그 포스트",
   },
   {
-    name: "blog-likes",
-    docId: "{slug}",
-    access: "클라이언트 read/write",
+    name: "blog_likes",
+    primaryKey: "slug",
+    access: "anon SELECT + RPC toggle_like",
     purpose: "좋아요 카운트 + 사용자 UUID",
   },
   {
-    name: "site-config",
-    docId: "links | clinic | hours | schedule",
-    access: "Admin SDK 전용",
+    name: "site_config",
+    primaryKey: "type",
+    access: "service_role 전용 (RLS)",
     purpose: "사이트 설정 + 발행 스케줄",
+  },
+  {
+    name: "api_cache",
+    primaryKey: "key",
+    access: "service_role 전용 (RLS)",
+    purpose: "API 응답 캐시 (PSI, 검색광고)",
   },
 ];
 

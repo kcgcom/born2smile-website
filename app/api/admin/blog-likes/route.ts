@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
-import { getAdminApp } from "@/lib/firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 interface BlogLikesResponse {
   likes: Record<string, number>;
@@ -11,16 +10,17 @@ interface BlogLikesResponse {
 }
 
 async function fetchBlogLikes(): Promise<BlogLikesResponse> {
-  const db = getFirestore(getAdminApp());
-  const snapshot = await db.collection("blog-likes").get();
+  const { data: rows, error } = await getSupabaseAdmin()
+    .from("blog_likes")
+    .select("slug, count");
+
+  if (error) throw error;
 
   const likes: Record<string, number> = {};
   let totalLikes = 0;
-
-  for (const doc of snapshot.docs) {
-    const count = (doc.data().count as number) ?? 0;
-    likes[doc.id] = count;
-    totalLikes += count;
+  for (const row of rows ?? []) {
+    likes[row.slug] = row.count;
+    totalLikes += row.count;
   }
 
   const updatedAt = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace("Z", "+09:00");

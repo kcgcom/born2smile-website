@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Pencil, Calendar, Check, FileEdit } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getAccessToken } from "@/lib/supabase";
 import { usePublishPopup } from "@/hooks/usePublishPopup";
 import { PublishPopup } from "./PublishPopup";
 
@@ -34,9 +34,7 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
     if (!isAdmin) return;
     (async () => {
       try {
-        const user = getFirebaseAuth().currentUser;
-        if (!user) return;
-        const token = await user.getIdToken();
+        const token = await getAccessToken();
         const res = await fetch(`/api/admin/blog-posts/${slug}`, {
           headers: { Authorization: `Bearer ${token}` },
         });

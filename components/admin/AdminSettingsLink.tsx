@@ -12,8 +12,8 @@ interface AdminSettingsLinkProps {
  * 관리자에게만 보이는 설정 편집 링크.
  * Footer 등 서버 컴포넌트의 설정 영역에 삽입하여 사용.
  *
- * 성능 최적화: localStorage 게이트 + 동적 Firebase import로
- * 비관리자 방문자는 Firebase SDK를 로드하지 않음.
+ * 성능 최적화: localStorage 게이트 + 동적 Supabase import로
+ * 비관리자 방문자는 Supabase SDK를 로드하지 않음.
  */
 export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -25,21 +25,34 @@ export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) 
       return;
     }
 
-    let unsubscribe: (() => void) | undefined;
+    let subscription: { unsubscribe: () => void } | undefined;
 
     (async () => {
-      const [{ onAuthStateChanged }, { getFirebaseAuth, isFirebaseConfigured }, { verifyAdminUser }] =
+      const [{ getSupabaseBrowserClient }, { verifyAdminUser }] =
         await Promise.all([
-          import("firebase/auth"),
-          import("@/lib/firebase"),
+          import("@/lib/supabase"),
           import("@/lib/admin-auth"),
         ]);
 
-      if (!isFirebaseConfigured) return;
+      const supabase = getSupabaseBrowserClient();
 
-      unsubscribe = onAuthStateChanged(getFirebaseAuth(), (user) => {
+      // 초기 세션 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const admin = await verifyAdminUser();
+        setIsAdmin(admin);
+        try {
+          if (admin) localStorage.setItem("born2smile-admin", "1");
+          else localStorage.removeItem("born2smile-admin");
+        } catch {
+          /* private browsing */
+        }
+      }
+
+      // 세션 변경 감지
+      const { data } = supabase.auth.onAuthStateChange((_event: string, sess: { user: { email?: string | null } } | null) => {
         void (async () => {
-          const admin = await verifyAdminUser(user);
+          const admin = sess?.user ? await verifyAdminUser() : false;
           setIsAdmin(admin);
           try {
             if (admin) localStorage.setItem("born2smile-admin", "1");
@@ -49,9 +62,10 @@ export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) 
           }
         })();
       });
+      subscription = data.subscription;
     })();
 
-    return () => unsubscribe?.();
+    return () => subscription?.unsubscribe();
   }, []);
 
   if (!isAdmin) return null;

@@ -4,8 +4,7 @@ import {
   unauthorizedResponse,
 } from "@/app/api/admin/_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "@/app/api/admin/_lib/cache";
-import { getFirestore, Timestamp, FieldPath } from "firebase-admin/firestore";
-import { getAdminApp } from "@/lib/firebase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTodayKST } from "@/lib/date";
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
@@ -182,28 +181,32 @@ async function fetchPSI(
 }
 
 /**
- * Firestore L2 캐시 + PSI API 호출
- * 일별 캐시 문서(`psi-homepage-YYYY-MM-DD`)로 저장.
+ * Supabase L2 캐시 + PSI API 호출
+ * 일별 캐시 행(`psi-homepage-YYYY-MM-DD`)으로 저장.
  * force=true 시 캐시 무시하고 재호출.
  */
-async function fetchPSIWithFirestoreCache(
+async function fetchPSIWithCache(
   force: boolean,
 ): Promise<PSIResponseData> {
   try {
-    const db = getFirestore(getAdminApp());
+    const admin = getSupabaseAdmin();
     const today = getTodayKST();
     const docId = `psi-homepage-${today}`;
-    const docRef = db.collection("api-cache").doc(docId);
 
-    // force가 아니면 Firestore 캐시 확인
+    // force가 아니면 캐시 확인
     if (!force) {
-      const cached = await docRef.get();
-      if (cached.exists) {
-        const cachedData = cached.data();
-        if (cachedData?.mobile || cachedData?.desktop) {
+      const { data: cached } = await admin
+        .from("api_cache")
+        .select("data")
+        .eq("key", docId)
+        .single();
+
+      if (cached?.data) {
+        const cachedData = cached.data as Record<string, unknown>;
+        if (cachedData.mobile || cachedData.desktop) {
           return {
-            mobile: cachedData.mobile ?? null,
-            desktop: cachedData.desktop ?? null,
+            mobile: (cachedData.mobile as PSIResult) ?? null,
+            desktop: (cachedData.desktop as PSIResult) ?? null,
           };
         }
       }
@@ -221,20 +224,14 @@ async function fetchPSIWithFirestoreCache(
 
     const result: PSIResponseData = { mobile, desktop };
 
-    // Firestore에 저장 (비동기, 실패해도 무시)
-    docRef
-      .set({
-        mobile,
-        desktop,
-        fetchedAt: Timestamp.now(),
-      })
-      .catch(() => {
-        /* Firestore 쓰기 실패 무시 */
-      });
+    // Supabase에 저장 (비동기, 실패해도 무시)
+    void admin
+      .from("api_cache")
+      .upsert({ key: docId, data: { mobile, desktop }, fetched_at: new Date().toISOString() });
 
     return result;
   } catch (e) {
-    // Firestore 접근 실패 → PSI API 직접 호출로 폴백
+    // Supabase 접근 실패 → PSI API 직접 호출로 폴백
     if (e instanceof Error && e.message === "PSI_BOTH_FAILED") throw e;
 
     const [mobile, desktop] = await Promise.all([
@@ -248,7 +245,7 @@ async function fetchPSIWithFirestoreCache(
 
 const getCachedPSI = createCachedFetcher<PSIResponseData>(
   "psi-homepage",
-  () => fetchPSIWithFirestoreCache(false),
+  () => fetchPSIWithCache(false),
   CACHE_TTL.PSI,
 );
 
@@ -260,7 +257,7 @@ interface SinglePSIResponse {
 }
 
 /**
- * 단일 전략 PSI 호출 (Firestore L2 캐시 + 어제 폴백)
+ * 단일 전략 PSI 호출 (Supabase L2 캐시 + 어제 폴백)
  * unstable_cache 미사용 — stale 응답이 L1에 캐싱되는 문제 방지
  */
 async function fetchSingleStrategyPSI(
@@ -268,41 +265,51 @@ async function fetchSingleStrategyPSI(
   force: boolean,
 ): Promise<SinglePSIResponse> {
   try {
-    const db = getFirestore(getAdminApp());
+    const admin = getSupabaseAdmin();
     const today = getTodayKST();
-    const todayDocRef = db.collection("api-cache").doc(`psi-homepage-${today}`);
+    const todayKey = `psi-homepage-${today}`;
 
     if (!force) {
       // 1. 오늘 캐시 확인
-      const cached = await todayDocRef.get();
-      if (cached.exists) {
-        const cachedResult = cached.data()?.[strategy] as PSIResult | undefined;
+      const { data: cached } = await admin
+        .from("api_cache")
+        .select("data")
+        .eq("key", todayKey)
+        .single();
+
+      if (cached?.data) {
+        const cachedResult = (cached.data as Record<string, unknown>)[strategy] as PSIResult | undefined;
         if (cachedResult) return { result: cachedResult };
       }
 
       // 2. 과거 캐시 폴백 (가장 최근 데이터)
-      const pastDocs = await db
-        .collection("api-cache")
-        .where(FieldPath.documentId(), ">=", "psi-homepage-")
-        .where(FieldPath.documentId(), "<", `psi-homepage-${today}`)
-        .orderBy(FieldPath.documentId(), "desc")
-        .limit(1)
-        .get();
-      if (!pastDocs.empty) {
-        const staleResult = pastDocs.docs[0].data()?.[strategy] as
+      const { data: pastRows } = await admin
+        .from("api_cache")
+        .select("data")
+        .like("key", "psi-homepage-%")
+        .lt("key", `psi-homepage-${today}`)
+        .order("key", { ascending: false })
+        .limit(1);
+
+      if (pastRows && pastRows.length > 0) {
+        const staleResult = (pastRows[0].data as Record<string, unknown>)?.[strategy] as
           | PSIResult
           | undefined;
         if (staleResult) {
-          // 백그라운드에서 오늘 데이터 fetch → Firestore merge 저장
+          // 백그라운드에서 오늘 데이터 fetch → Supabase upsert 저장
           fetchPSI(strategy)
-            .then((fresh) => {
+            .then(async (fresh) => {
               if (fresh) {
-                todayDocRef
-                  .set(
-                    { [strategy]: fresh, fetchedAt: Timestamp.now() },
-                    { merge: true },
-                  )
-                  .catch(() => {});
+                // 기존 데이터와 merge
+                const { data: existing } = await admin
+                  .from("api_cache")
+                  .select("data")
+                  .eq("key", todayKey)
+                  .single();
+                const merged = { ...((existing?.data as Record<string, unknown>) ?? {}), [strategy]: fresh };
+                await admin
+                  .from("api_cache")
+                  .upsert({ key: todayKey, data: merged, fetched_at: new Date().toISOString() });
               }
             })
             .catch(() => {});
@@ -316,18 +323,22 @@ async function fetchSingleStrategyPSI(
     const fresh = await fetchPSI(strategy);
     if (!fresh) throw new Error("PSI_FETCH_FAILED");
 
-    todayDocRef
-      .set(
-        { [strategy]: fresh, fetchedAt: Timestamp.now() },
-        { merge: true },
-      )
-      .catch(() => {});
+    // 기존 데이터와 merge하여 저장
+    const { data: existing } = await admin
+      .from("api_cache")
+      .select("data")
+      .eq("key", todayKey)
+      .single();
+    const merged = { ...((existing?.data as Record<string, unknown>) ?? {}), [strategy]: fresh };
+    void admin
+      .from("api_cache")
+      .upsert({ key: todayKey, data: merged, fetched_at: new Date().toISOString() });
 
     return { result: fresh };
   } catch (e) {
     if (e instanceof Error && e.message === "PSI_FETCH_FAILED") throw e;
 
-    // Firestore 접근 실패 → PSI API 직접 호출
+    // Supabase 접근 실패 → PSI API 직접 호출
     const fresh = await fetchPSI(strategy);
     if (!fresh) throw new Error("PSI_FETCH_FAILED");
     return { result: fresh };
@@ -362,7 +373,7 @@ export async function GET(request: Request) {
 
     // 하위 호환: 양쪽 모두 호출
     const data = force
-      ? await fetchPSIWithFirestoreCache(true)
+      ? await fetchPSIWithCache(true)
       : await getCachedPSI();
 
     return NextResponse.json(

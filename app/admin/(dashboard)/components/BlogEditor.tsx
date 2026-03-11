@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { X, Plus, Trash2, Save } from "lucide-react";
 import { BLOG_CATEGORIES, BLOG_TAGS } from "@/lib/blog/types";
 import type { BlogCategoryValue, BlogTag } from "@/lib/blog/types";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getAccessToken } from "@/lib/supabase";
 
 // -------------------------------------------------------------
 // Types
@@ -124,9 +124,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     setFetchingContent(true);
     (async () => {
       try {
-        const user = getFirebaseAuth().currentUser;
-        if (!user) return;
-        const token = await user.getIdToken();
+        const token = await getAccessToken();
         const res = await fetch(`/api/admin/blog-posts/${initialData.slug}`, {
           headers: { Authorization: `Bearer ${token}` },
         });

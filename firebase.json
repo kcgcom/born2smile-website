@@ -10,8 +10,5 @@
       }
     ]
   },
-  "apphosting": {},
-  "firestore": {
-    "rules": "firestore.rules"
-  }
+  "apphosting": {}
 }

@@ -1,18 +1,17 @@
 // =============================================================
 // 관리자 인증 모듈
-// Google 로그인 기반 화이트리스트 인증
+// Google 로그인 기반 화이트리스트 인증 (Supabase Auth)
 // =============================================================
 
-import { signInWithPopup, signOut } from "firebase/auth";
-import { getFirebaseAuth, getGoogleProvider } from "./firebase";
+import { getSupabaseBrowserClient } from "./supabase";
 
 /** 서버 API를 통해 관리자 권한 검증 */
-export async function verifyAdminUser(user: { getIdToken: () => Promise<string> } | null | undefined): Promise<boolean> {
-  if (!user) return false;
+export async function verifyAdminUser(): Promise<boolean> {
   try {
-    const token = await user.getIdToken();
+    const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+    if (!session?.access_token) return false;
     const response = await fetch("/api/admin/auth-check", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${session.access_token}` },
       cache: "no-store",
     });
     return response.ok;
@@ -21,12 +20,15 @@ export async function verifyAdminUser(user: { getIdToken: () => Promise<string> 
   }
 }
 
-/** Google 팝업 로그인 */
+/** Google OAuth 로그인 */
 export async function signInWithGoogle() {
-  return signInWithPopup(getFirebaseAuth(), getGoogleProvider());
+  return getSupabaseBrowserClient().auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${window.location.origin}/admin` },
+  });
 }
 
 /** 로그아웃 */
 export async function signOutAdmin() {
-  return signOut(getFirebaseAuth());
+  return getSupabaseBrowserClient().auth.signOut();
 }

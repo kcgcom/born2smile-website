@@ -1,5 +1,4 @@
-import { getAuth } from "firebase-admin/auth";
-import { getAdminApp } from "@/lib/firebase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
@@ -36,17 +35,18 @@ export async function verifyAdminRequest(request: Request): Promise<AuthResult> 
   }
 
   try {
-    const decoded = await getAuth(getAdminApp()).verifyIdToken(token, true);
+    const { data: { user }, error } = await getSupabaseAdmin().auth.getUser(token);
 
-    if (!decoded.email_verified) {
-      return { ok: false, status: 403, error: "FORBIDDEN", message: "이메일 인증이 필요합니다" };
+    if (error || !user) {
+      return { ok: false, status: 401, error: "UNAUTHORIZED", message: "유효하지 않은 인증 토큰입니다" };
     }
 
-    if (!ADMIN_EMAILS.includes(decoded.email?.toLowerCase() ?? "")) {
+    const email = user.email;
+    if (!email || !ADMIN_EMAILS.includes(email.toLowerCase())) {
       return { ok: false, status: 403, error: "FORBIDDEN", message: "관리자 권한이 없습니다" };
     }
 
-    return { ok: true, email: decoded.email! };
+    return { ok: true, email };
   } catch {
     return { ok: false, status: 401, error: "UNAUTHORIZED", message: "유효하지 않은 인증 토큰입니다" };
   }

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
-import { getFirebaseAuth } from "@/lib/firebase";
+import type { AuthSession } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { AdminTabs, TABS, type TabId } from "./components/AdminTabs";
@@ -22,7 +22,7 @@ const TAB_REDIRECT: Record<string, { tab: string; sub?: string }> = {
 };
 
 // -------------------------------------------------------------
-// 탭 레벨 코드 스플리팅 (ssr: false — 모든 탭이 "use client" + Firebase)
+// 탭 레벨 코드 스플리팅 (ssr: false — 모든 탭이 "use client")
 // -------------------------------------------------------------
 
 const InsightTab = dynamic(
@@ -58,7 +58,7 @@ const TAB_PREFETCH_ENDPOINTS: Partial<Record<TabId, string>> = {
 // -------------------------------------------------------------
 
 export default function AdminDashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ email?: string } | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,8 +92,17 @@ export default function AdminDashboardPage() {
   }, [activeTab]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (u) => setUser(u));
-    return unsubscribe;
+    const supabase = getSupabaseBrowserClient();
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) setUser({ email: session.user.email ?? undefined });
+    })();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
+      setUser(session?.user ? { email: session.user.email ?? undefined } : null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
