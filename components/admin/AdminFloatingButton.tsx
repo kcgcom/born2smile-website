@@ -14,7 +14,10 @@ import { Settings } from "lucide-react";
  * 비관리자 방문자(99%+)는 Supabase SDK를 절대 다운로드하지 않음.
  */
 export function AdminFloatingButton() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    // localStorage 플래그가 있으면 즉시 표시 (검증은 백그라운드)
+    try { return localStorage.getItem("born2smile-admin") === "1"; } catch { return false; }
+  });
   const pathname = usePathname();
 
   useEffect(() => {
@@ -25,7 +28,7 @@ export function AdminFloatingButton() {
       return;
     }
 
-    // 관리자 플래그가 있을 때만 Supabase Auth를 동적 로드
+    // 백그라운드 검증: Supabase 세션이 유효한지 확인
     let subscription: { unsubscribe: () => void } | undefined;
 
     (async () => {
@@ -41,13 +44,14 @@ export function AdminFloatingButton() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const admin = await verifyAdminUser();
-        setIsAdmin(admin);
-        try {
-          if (admin) localStorage.setItem("born2smile-admin", "1");
-          else localStorage.removeItem("born2smile-admin");
-        } catch {
-          /* private browsing */
+        if (!admin) {
+          setIsAdmin(false);
+          try { localStorage.removeItem("born2smile-admin"); } catch { /* private browsing */ }
         }
+      } else {
+        // 세션 없으면 플래그 제거
+        setIsAdmin(false);
+        try { localStorage.removeItem("born2smile-admin"); } catch { /* private browsing */ }
       }
 
       // 세션 변경 감지
@@ -58,9 +62,7 @@ export function AdminFloatingButton() {
           try {
             if (admin) localStorage.setItem("born2smile-admin", "1");
             else localStorage.removeItem("born2smile-admin");
-          } catch {
-            /* private browsing */
-          }
+          } catch { /* private browsing */ }
         })();
       });
       subscription = data.subscription;
