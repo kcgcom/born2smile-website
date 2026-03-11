@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
-  getPostBySlugFromFirestore,
+  getPostBySlug,
   updateBlogPost,
   deleteBlogPost,
   type UpdateBlogPostData,
@@ -23,7 +23,7 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    const post = await getPostBySlugFromFirestore(slug);
+    const post = await getPostBySlug(slug);
     if (!post) {
       return Response.json(
         { error: "NOT_FOUND", message: `포스트를 찾을 수 없습니다: ${slug}` },
@@ -73,7 +73,7 @@ export async function PUT(
   }
 
   try {
-    const existing = await getPostBySlugFromFirestore(slug);
+    const existing = await getPostBySlug(slug);
     if (!existing) {
       return Response.json(
         { error: "NOT_FOUND", message: `포스트를 찾을 수 없습니다: ${slug}` },
@@ -113,7 +113,7 @@ export async function DELETE(
   const { slug } = await params;
 
   try {
-    const existing = await getPostBySlugFromFirestore(slug);
+    const existing = await getPostBySlug(slug);
     if (!existing) {
       return Response.json(
         { error: "NOT_FOUND", message: `포스트를 찾을 수 없습니다: ${slug}` },

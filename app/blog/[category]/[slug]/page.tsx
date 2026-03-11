@@ -18,9 +18,9 @@ import BlogShareButton from "@/components/blog/BlogShareButton";
 import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
 import {
-  getPostBySlugFromFirestore,
+  getPostBySlug,
   getAllPublishedPostMetas,
-  getRelatedPostsFromFirestore,
+  getRelatedPosts,
 } from "@/lib/blog-supabase";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
@@ -77,7 +77,7 @@ export async function generateMetadata({
   const categoryValue = getCategoryFromSlug(category);
   if (!categoryValue) return {};
 
-  const post = await getPostBySlugFromFirestore(slug);
+  const post = await getPostBySlug(slug);
   if (!post) return {};
 
   const fullTitle = `${post.title} — ${post.subtitle}`;
@@ -130,7 +130,7 @@ export default async function BlogPostPage({
   const categoryValue = getCategoryFromSlug(category);
   if (!categoryValue) notFound();
 
-  const post = await getPostBySlugFromFirestore(slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
   // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
@@ -139,7 +139,7 @@ export default async function BlogPostPage({
   }
 
   // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
-  const relatedPosts = await getRelatedPostsFromFirestore(post.category, post.slug, 3);
+  const relatedPosts = await getRelatedPosts(post.category, post.slug, 3);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([

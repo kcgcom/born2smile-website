@@ -6,7 +6,7 @@ import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl } from "@/lib/blog";
-import { getRelatedPostsFromFirestore } from "@/lib/blog-supabase";
+import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
@@ -133,7 +133,7 @@ export default async function TreatmentDetailPage({
 
   const blogCategory = TREATMENT_CATEGORY_MAP[slug];
   const relatedBlogPosts = blogCategory
-    ? await getRelatedPostsFromFirestore(blogCategory, slug, 4)
+    ? await getRelatedPosts(blogCategory, slug, 4)
     : [];
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);

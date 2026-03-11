@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import {
   getAllPostMetas,
-  getPostBySlugFromFirestore,
+  getPostBySlug,
   createBlogPost,
   type CreateBlogPostData,
 } from "@/lib/blog-supabase";
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const existing = await getPostBySlugFromFirestore(data.slug);
+    const existing = await getPostBySlug(data.slug);
     if (existing) {
       return Response.json(
         { error: "CONFLICT", message: `이미 존재하는 슬러그입니다: ${data.slug}` },

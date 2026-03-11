@@ -29,7 +29,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "c1", title: "CSP + HTTP 보안 헤더", priority: "CRITICAL", status: "done", description: "CSP, X-Frame-Options, HSTS, nosniff, Referrer-Policy, Permissions-Policy" },
   { id: "c2", title: "JSON-LD 이미지 URL 수정", priority: "CRITICAL", status: "done", description: "/opengraph-image → /images/og-image.jpg 경로 수정" },
   { id: "c3", title: "React 안티패턴 수정", priority: "CRITICAL", status: "done", description: "Header setState 렌더 중 호출 → useEffect, Share 버튼 setTimeout 누수 → useRef cleanup" },
-  { id: "c4", title: "Firestore 보안 규칙 기본 설정", priority: "CRITICAL", status: "done", description: "blog-likes 컬렉션만 read/write 허용, 나머지 전체 차단" },
+  { id: "c4", title: "Supabase RLS 보안 규칙 설정", priority: "CRITICAL", status: "done", description: "blog-likes 컬렉션만 read/write 허용, 나머지 전체 차단" },
 
   // =================================================================
   // HIGH — 16/18 완료
@@ -43,7 +43,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h7", title: "모바일 반응형 최적화", priority: "HIGH", status: "done", description: "모바일 퍼스트, 터치 타겟 44px, FloatingCTA 내비게이션" },
   { id: "h8", title: "Framer Motion / FAQ 최적화", priority: "HIGH", status: "done", description: "Header: CSS grid 애니메이션, FAQ: native details/summary 전환" },
   { id: "h9", title: "Firebase SDK 지연 로딩", priority: "HIGH", status: "done", description: "LikeButton dynamic import, Auth lazy getter 패턴" },
-  { id: "h10", title: "Firestore 규칙 강화", priority: "HIGH", status: "done", description: "users.size() ≤ 10000, count == users.size() 불변식, slug 정규식" },
+  { id: "h10", title: "Supabase RLS 규칙 강화", priority: "HIGH", status: "done", description: "users.size() ≤ 10000, count == users.size() 불변식, slug 정규식" },
   { id: "h11", title: "블로그 카드 인터랙티브 수정", priority: "HIGH", status: "done", description: "Link/button 중첩 → z-index 분리, 키보드 내비 정상화" },
   { id: "h12", title: "aria-live 영역 추가", priority: "HIGH", status: "done", description: "블로그 필터 결과 aria-live='polite', 빈 결과 role='status'" },
   { id: "h13", title: "스크롤 이벤트 스로틀링", priority: "HIGH", status: "done", description: "Header scroll: requestAnimationFrame + passive: true" },
@@ -56,7 +56,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // MEDIUM — 24/28 완료
   // =================================================================
-  { id: "m1", title: "블로그 좋아요 기능", priority: "MEDIUM", status: "done", description: "Firestore 기반, optimistic update, UUID 사용자 식별" },
+  { id: "m1", title: "블로그 좋아요 기능", priority: "MEDIUM", status: "done", description: "Supabase 기반, optimistic update, UUID 사용자 식별" },
   { id: "m2", title: "카카오맵 통합", priority: "MEDIUM", status: "done", description: "주소 기반 geocoding + 폴백 좌표, HTTPS 명시" },
   { id: "m3", title: "환자 후기 섹션", priority: "MEDIUM", status: "done", description: "네이버/구글 리뷰 6개 표시, JSON-LD Review 스키마" },
   { id: "m4", title: "블로그 공유 버튼 통합", priority: "MEDIUM", status: "done", description: "Web Share API + 클립보드 폴백, 코드 중복 제거" },
@@ -109,7 +109,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // 추가 개선 항목 — 2026-02-20 종합 분석
   // =================================================================
   { id: "h19", title: "error.tsx / not-found.tsx 페이지", priority: "HIGH", status: "done", description: "404/에러 페이지에 사이트 헤더/푸터/한국어 표시" },
-  { id: "h20", title: "JSON.parse 에러 처리", priority: "HIGH", status: "done", description: "firebase-admin, GA4, SC 환경변수 파싱 실패 시 서버 크래시 방지" },
+  { id: "h20", title: "JSON.parse 에러 처리", priority: "HIGH", status: "done", description: "Supabase Admin, GA4, SC 환경변수 파싱 실패 시 서버 크래시 방지" },
   { id: "h21", title: "UTC/KST 날짜 불일치 수정", priority: "HIGH", status: "done", description: "9곳 getTodayKST() 유틸리티 통일 — 예약 발행 시점 정확도 개선" },
   { id: "h22", title: "BlogContent Framer Motion 경량화", priority: "HIGH", status: "done", description: "블로그 목록에서 framer-motion 풀 번들 제거 — 클라이언트 번들 ~30KB 절감" },
   { id: "h23", title: "히어로 LCP 최적화", priority: "HIGH", status: "done", description: "h1/p 애니메이션 딜레이 제거 — LCP ~400ms 개선" },

@@ -26,7 +26,7 @@ export default function LikeButton({ slug }: LikeButtonProps) {
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [unavailable, setUnavailable] = useState(!isSupabaseConfigured);
 
-  // Firestore에서 좋아요 데이터 로드
+  // Supabase에서 좋아요 데이터 로드
   useEffect(() => {
     if (!isSupabaseConfigured) {
       if (process.env.NODE_ENV === "development") {

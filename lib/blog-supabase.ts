@@ -2,8 +2,7 @@
  * Server-side Supabase helper for blog posts.
  * Uses Supabase Admin (service_role) — server components and API routes only.
  *
- * NOTE: Function names kept as-is (e.g. getPostBySlugFromFirestore) to
- * minimise call-site changes across the codebase.
+ * Provides cached read helpers and uncached write helpers for blog posts.
  */
 
 import { unstable_cache, revalidateTag } from "next/cache";
@@ -134,7 +133,7 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
           return rest;
         });
       } catch (e) {
-        console.warn("[blog-firestore] Supabase query failed, using file-based fallback", e);
+        console.warn("[blog-supabase] Supabase query failed, using file-based fallback", e);
         return getFileBasedPublishedMetas();
       }
     },
@@ -168,7 +167,7 @@ export const getAllPostMetas: () => Promise<
  * Returns null when not found.
  * Falls back to file-based import if Supabase fails.
  */
-export function getPostBySlugFromFirestore(
+export function getPostBySlug(
   slug: string,
 ): Promise<BlogPost | null> {
   return unstable_cache(
@@ -188,7 +187,7 @@ export function getPostBySlugFromFirestore(
 
         return rowToPost(data as DbRow);
       } catch {
-        console.warn(`[blog-firestore] Supabase read failed for ${slug}, using file-based fallback`);
+        console.warn(`[blog-supabase] Supabase read failed for ${slug}, using file-based fallback`);
         return getFileBasedPost(slug);
       }
     },
@@ -216,7 +215,7 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
 
       return (data as Pick<DbRow, "slug">[]).map((row) => row.slug);
     } catch (e) {
-      console.warn("[blog-firestore] Supabase query failed, using file-based fallback for slugs", e);
+      console.warn("[blog-supabase] Supabase query failed, using file-based fallback for slugs", e);
       return getFileBasedPublishedMetas().map((p) => p.slug);
     }
   },
@@ -229,7 +228,7 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
  * Only published posts with date <= today KST.
  * Falls back to file-based data if Supabase query fails.
  */
-export function getRelatedPostsFromFirestore(
+export function getRelatedPosts(
   category: BlogCategoryValue,
   excludeSlug: string,
   limit = 3,
@@ -258,7 +257,7 @@ export function getRelatedPostsFromFirestore(
           .filter((post) => post.slug !== excludeSlug)
           .slice(0, limit);
       } catch (e) {
-        console.warn("[blog-firestore] Supabase query failed, using file-based fallback for related posts", e);
+        console.warn("[blog-supabase] Supabase query failed, using file-based fallback for related posts", e);
         return getFileBasedPublishedMetas()
           .filter((p) => p.category === category && p.slug !== excludeSlug)
           .slice(0, limit);

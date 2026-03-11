@@ -23,7 +23,7 @@ export function getSupabaseBrowserClient() {
 /**
  * 현재 세션의 access_token 반환.
  * API 호출 시 Bearer 토큰으로 사용.
- * 기존 `getFirebaseAuth().currentUser.getIdToken()` 대체.
+ * Supabase 세션 기반 인증 토큰 조회.
  */
 export async function getAccessToken(): Promise<string> {
   const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();

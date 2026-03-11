@@ -205,12 +205,12 @@ export async function fetchKeywordSearchVolume(
 }
 
 /**
- * Firestore 일별 캐시를 거쳐 키워드 검색량을 조회한다.
- * 오늘 날짜의 캐시 문서가 있으면 Firestore에서 반환하고,
- * 없으면 API를 호출한 뒤 Firestore에 저장한다.
+ * Supabase 일별 캐시를 거쳐 키워드 검색량을 조회한다.
+ * 오늘 날짜의 캐시 행이 있으면 Supabase에서 반환하고,
+ * 없으면 API를 호출한 뒤 Supabase에 저장한다.
  *
- * Firestore(일별 캐시) → API 순으로 fallback.
- * Firestore 접근 실패 시 API 직접 호출로 graceful degradation.
+ * Supabase(일별 캐시) → API 순으로 fallback.
+ * Supabase 접근 실패 시 API 직접 호출로 graceful degradation.
  */
 export async function fetchKeywordSearchVolumeWithCache(
   keywords: string[],
