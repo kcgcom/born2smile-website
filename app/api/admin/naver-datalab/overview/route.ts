@@ -5,7 +5,7 @@ import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData } from "@/lib/trend-analysis";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
-import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
 

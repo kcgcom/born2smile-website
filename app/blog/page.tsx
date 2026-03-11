@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
-import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { getBlogCollectionJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";

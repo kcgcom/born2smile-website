@@ -6,7 +6,7 @@ import {
   getPostBySlugFromFirestore,
   createBlogPost,
   type CreateBlogPostData,
-} from "@/lib/blog-firestore";
+} from "@/lib/blog-supabase";
 import { blogPostSchema } from "@/lib/blog-validation";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;

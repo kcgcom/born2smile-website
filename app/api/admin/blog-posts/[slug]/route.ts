@@ -6,7 +6,7 @@ import {
   updateBlogPost,
   deleteBlogPost,
   type UpdateBlogPostData,
-} from "@/lib/blog-firestore";
+} from "@/lib/blog-supabase";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
 import type { BlogCategoryValue } from "@/lib/blog/types";

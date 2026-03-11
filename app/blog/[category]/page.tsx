@@ -5,7 +5,7 @@ import {
   ALL_CATEGORY_SLUGS,
   getCategoryFromSlug,
 } from "@/lib/blog";
-import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { getBreadcrumbJsonLd, getCategoryCollectionJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import BlogContent from "@/components/blog/BlogContent";

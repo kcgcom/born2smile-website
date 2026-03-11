@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Save, Loader2, Check } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
-import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-firestore";
+import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-supabase";
 
 // -------------------------------------------------------------
 // Quick Links data

@@ -1,5 +1,5 @@
 import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
-import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-firestore";
+import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 

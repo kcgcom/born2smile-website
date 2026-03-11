@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
-import { getSiteClinic, getSiteHours } from "@/lib/site-config-firestore";
+import { getSiteClinic, getSiteHours } from "@/lib/site-config-supabase";
 
 export const metadata: Metadata = {
   title: "상담 안내",

@@ -10,7 +10,7 @@ import {
   updateSiteClinic,
   updateSiteHours,
   updateSiteSchedule,
-} from "@/lib/site-config-firestore";
+} from "@/lib/site-config-supabase";
 import {
   siteLinksSchema,
   siteClinicSchema,

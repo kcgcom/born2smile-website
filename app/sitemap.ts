@@ -2,7 +2,7 @@ export const revalidate = 86400;
 
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
-import { getAllPublishedPostMetas } from "@/lib/blog-firestore";
+import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)

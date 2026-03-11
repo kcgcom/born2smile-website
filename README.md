@@ -58,7 +58,7 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 |------|------|
 | [CLAUDE.md](CLAUDE.md) | 프로젝트 전체 지침 (AI 도구용, 아키텍처/컨벤션/태스크 상세) |
 | [docs/environment-variables.md](docs/environment-variables.md) | 환경변수 목록 및 설정 가이드 |
-| [docs/firestore-architecture.md](docs/firestore-architecture.md) | Firestore 컬렉션/인덱스/캐싱 구조 |
+| [docs/supabase-architecture.md](docs/supabase-architecture.md) | Firestore 컬렉션/인덱스/캐싱 구조 |
 | [docs/blog-workflow.md](docs/blog-workflow.md) | 블로그 발행 워크플로우 (초안→예약→발행) |
 | [docs/blog-writing-guide.md](docs/blog-writing-guide.md) | 블로그 작성 가이드 (브랜드 보이스, 용어 통일표) |
 | [docs/todo.md](docs/todo.md) | 미완료 항목 및 개선 과제 |

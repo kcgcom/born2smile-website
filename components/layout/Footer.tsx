@@ -1,6 +1,6 @@
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
-import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-firestore";
+import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { AdminSettingsLink } from "@/components/admin/AdminSettingsLink";
 
 export async function Footer() {

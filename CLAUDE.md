@@ -176,13 +176,13 @@ lib/
   admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (8카테고리×5서브그룹, volumeKeywords, TopicAngles)
   admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출, 배치 간 중복 제거)
   trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData)
-  blog-firestore.ts          # Supabase 블로그 CRUD (Admin client, unstable_cache, ISR revalidate)
+  blog-supabase.ts          # Supabase 블로그 CRUD (Admin client, unstable_cache, ISR revalidate)
   blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
   dev-data.ts                # 개발 대시보드 정적 데이터 (Next.js 설정, ESLint, Supabase, API, 캐시, 환경변수)
   dev/
     generated/               # 자동 생성 (gitignored) — pnpm generate-dev-manifest
       dev-manifest.ts         # DEV_MANIFEST (의존성, 라우트, 프로젝트 통계, TS/Supabase 설정)
-  site-config-firestore.ts   # Supabase 사이트 설정 CRUD (links, clinic, hours, schedule)
+  site-config-supabase.ts   # Supabase 사이트 설정 CRUD (links, clinic, hours, schedule)
   fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
   jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb, collection
   blog/
@@ -201,7 +201,7 @@ public/
   7d01a83d...*.txt           # IndexNow API 키 파일
 docs/
   blog-writing-guide.md      # 블로그 작성 가이드 (브랜드 보이스, 문체, 용어 통일표, SEO)
-  firestore-architecture.md   # Supabase 테이블/RLS/RPC/캐싱 구조
+  supabase-architecture.md   # Supabase 테이블/RLS/RPC/캐싱 구조
   blog-workflow.md           # 블로그 발행 워크플로우 (초안→예약→발행)
   environment-variables.md   # 환경변수 목록 및 설정 가이드
   todo.md                    # 미완료 항목 및 개선 과제
@@ -261,7 +261,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### Supabase 데이터 아키텍처
 
-상세 내용은 [`docs/firestore-architecture.md`](docs/firestore-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), Supabase→파일 자동 폴백, `unstable_cache` + 2-tier 캐싱.
+상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), Supabase→파일 자동 폴백, `unstable_cache` + 2-tier 캐싱.
 
 ### 블로그 발행 워크플로우
 

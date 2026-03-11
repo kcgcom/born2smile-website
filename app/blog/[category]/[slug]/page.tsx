@@ -21,7 +21,7 @@ import {
   getPostBySlugFromFirestore,
   getAllPublishedPostMetas,
   getRelatedPostsFromFirestore,
-} from "@/lib/blog-firestore";
+} from "@/lib/blog-supabase";
 import { AdminEditButton } from "@/components/admin/AdminEditButton";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
