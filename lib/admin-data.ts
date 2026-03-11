@@ -89,10 +89,10 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // LOW — 13/16 완료
   // =================================================================
   { id: "l1", title: "웹마스터 인증", priority: "LOW", status: "done", description: "Bing BingSiteAuth.xml + Naver naver*.html 인증 파일" },
-  { id: "l2", title: "Firebase Hosting redirect", priority: "LOW", status: "done", description: "인증 파일 서빙 + App Hosting redirect 설정" },
+  { id: "l2", title: "Vercel 마이그레이션", priority: "LOW", status: "done", description: "Firebase App Hosting → Vercel 전환 완료" },
   { id: "l3", title: "prefers-reduced-motion 지원", priority: "LOW", status: "done", description: "모션 감소 설정 시 애니메이션 비활성화" },
   { id: "l4", title: "ESLint + TypeScript strict", priority: "LOW", status: "done", description: "core-web-vitals 규칙, any 타입 0건" },
-  { id: "l5", title: "standalone 빌드 최적화", priority: "LOW", status: "done", description: "Cloud Run 배포용 standalone output" },
+  { id: "l5", title: "서울 리전 배포", priority: "LOW", status: "done", description: "Vercel Serverless Functions icn1(서울) 리전" },
   { id: "l6", title: "Permissions-Policy 헤더", priority: "LOW", status: "done", description: "camera, microphone, geolocation 비활성화" },
   { id: "l7", title: "키보드 접근성 스타일", priority: "LOW", status: "done", description: "focus-visible 2px solid primary, 탭 순서 정상" },
   { id: "l8", title: "Gowun Batang preload 최적화", priority: "LOW", status: "done", description: "홈페이지 전용 폰트 preload: false 설정" },

@@ -21,8 +21,8 @@ const QUICK_LINKS = [
     icon: "chart" as const,
   },
   {
-    label: "Firebase Console",
-    href: "https://console.firebase.google.com/project/seoul-born2smile",
+    label: "Vercel Dashboard",
+    href: "https://vercel.com/born2smile/born2smile-website",
     icon: "database" as const,
   },
   {

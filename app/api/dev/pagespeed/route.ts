@@ -11,7 +11,7 @@ const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const TARGET_URL = "https://www.born2smile.co.kr";
 const CATEGORIES = ["performance", "accessibility", "seo", "best-practices"];
 
-// Lazy getter — Cloud Run 시크릿 주입 타이밍 이슈 대응
+// Lazy getter — 환경변수 초기화 타이밍 보장
 function getApiKey(): string | undefined {
   return process.env.PAGESPEED_API_KEY?.trim() || undefined;
 }

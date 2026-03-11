@@ -7,7 +7,7 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTodayKST } from "@/lib/date";
 
-// ── 환경변수 (lazy — Cloud Run 시크릿 주입 타이밍 보장) ─────
+// ── 환경변수 (lazy — 런타임 초기화 타이밍 보장) ─────
 
 const BASE_URL = "https://api.searchad.naver.com";
 const URI = "/keywordstool";

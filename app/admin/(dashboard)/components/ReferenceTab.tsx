@@ -302,7 +302,7 @@ function RoutesContent() {
 function InfraContent() {
   return (
     <div className="space-y-4">
-      {/* Next.js & Cloud Run 설정 */}
+      {/* Next.js & Vercel 설정 */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-[var(--border)] p-4">
           <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
@@ -313,27 +313,10 @@ function InfraContent() {
               프레임워크: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.framework}</strong>
             </li>
             <li className="text-[var(--muted)]">
-              출력 모드: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.output}</strong>
-            </li>
-            <li className="text-[var(--muted)]">
               배포: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.deployment}</strong>
             </li>
-          </ul>
-        </div>
-
-        <div className="rounded-lg border border-[var(--border)] p-4">
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            Cloud Run 스펙
-          </h4>
-          <ul className="space-y-1.5 text-sm">
             <li className="text-[var(--muted)]">
-              인스턴스: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.cloudRun.minInstances}–{NEXTJS_CONFIG.cloudRun.maxInstances}</strong>
-            </li>
-            <li className="text-[var(--muted)]">
-              동시성: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.cloudRun.concurrency}</strong>
-            </li>
-            <li className="text-[var(--muted)]">
-              CPU: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.cloudRun.cpu}vCPU</strong> / 메모리: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.cloudRun.memoryMiB}MB</strong>
+              리전: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.region}</strong>
             </li>
           </ul>
         </div>
@@ -507,7 +490,7 @@ export function ReferenceTab() {
     {
       id: "infra",
       title: "인프라 설정",
-      summary: "Next.js / Cloud Run",
+      summary: "Next.js / Vercel",
       content: <InfraContent />,
     },
     {

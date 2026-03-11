@@ -8,16 +8,9 @@
 // -------------------------------------------------------------
 
 export const NEXTJS_CONFIG = {
-  output: "standalone",
   framework: "Next.js 16 (App Router)",
-  deployment: "Firebase App Hosting (Cloud Run + Cloud CDN)",
-  cloudRun: {
-    minInstances: 0,
-    maxInstances: 4,
-    concurrency: 80,
-    cpu: 1,
-    memoryMiB: 512,
-  },
+  deployment: "Vercel (Edge Network + Serverless Functions)",
+  region: "icn1 (Seoul)",
   securityHeaders: [
     "Content-Security-Policy",
     "X-Frame-Options: DENY",
