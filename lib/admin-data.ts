@@ -197,31 +197,14 @@ export interface ConfigItem {
   value?: string;
 }
 
-export interface SiteConfigStatus {
-  snsLinks: ConfigItem[];
-  supabase: ConfigItem[];
-  env: ConfigItem[];
-}
+export type SiteConfigStatus = ConfigItem[];
 
 export function getSiteConfigStatus(): SiteConfigStatus {
-  const snsLinks: ConfigItem[] = [
+  return [
     { label: "카카오톡 채널", configured: !!LINKS.kakaoChannel, value: LINKS.kakaoChannel || "미설정" },
     { label: "인스타그램", configured: !!LINKS.instagram, value: LINKS.instagram || "미설정" },
     { label: "네이버 블로그", configured: !!LINKS.naverBlog, value: LINKS.naverBlog || "미설정" },
     { label: "네이버 지도", configured: !!LINKS.naverMap, value: LINKS.naverMap || "미설정" },
     { label: "카카오맵", configured: !!LINKS.kakaoMap, value: LINKS.kakaoMap || "미설정" },
   ];
-
-  const supabase: ConfigItem[] = [
-    { label: "Supabase URL", configured: !!process.env.NEXT_PUBLIC_SUPABASE_URL },
-    { label: "Supabase Anon Key", configured: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
-    { label: "Supabase Service Role Key", configured: !!process.env.SUPABASE_SERVICE_ROLE_KEY },
-  ];
-
-  const env: ConfigItem[] = [
-    { label: "카카오맵 앱 키", configured: !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY },
-    { label: "관리자 이메일", configured: !!process.env.ADMIN_EMAILS },
-  ];
-
-  return { snsLinks, supabase, env };
 }

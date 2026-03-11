@@ -394,30 +394,13 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
   return (
     <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
       <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-        사이트 설정 상태
+        SNS 링크 상태
       </h3>
-
-      <div className="grid gap-6 sm:grid-cols-2">
-        {/* SNS 링크 */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">SNS 링크</h4>
-          <ul className="space-y-2">
-            {config.snsLinks.map((item) => (
-              <ConfigRow key={item.label} item={item} />
-            ))}
-          </ul>
-        </div>
-
-        {/* Supabase */}
-        <div>
-          <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">Supabase</h4>
-          <ul className="space-y-2">
-            {config.supabase.map((item) => (
-              <ConfigRow key={item.label} item={item} />
-            ))}
-          </ul>
-        </div>
-      </div>
+      <ul className="space-y-2">
+        {config.map((item) => (
+          <ConfigRow key={item.label} item={item} />
+        ))}
+      </ul>
     </div>
   );
 }

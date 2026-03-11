@@ -25,21 +25,6 @@ const QUICK_LINKS = [
     href: "https://m.place.naver.com/hospital/698879488/review/visitor",
     icon: "star" as const,
   },
-  {
-    label: "Supabase 대시보드",
-    href: "https://supabase.com/dashboard/project/wnxsrxqmzevboyoityyn",
-    icon: "database" as const,
-  },
-  {
-    label: "네이버 지도",
-    href: "https://naver.me/IMy2FmsZ",
-    icon: "map" as const,
-  },
-  {
-    label: "카카오맵",
-    href: "https://kko.to/nVk0hY6cH8",
-    icon: "map" as const,
-  },
 ] as const;
 
 type IconType = "search" | "chart" | "database" | "code" | "map" | "star";
@@ -483,7 +468,7 @@ function QuickLinksSection() {
       <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
         빠른 링크
       </h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {QUICK_LINKS.map((link) => (
           <QuickLinkCard key={link.label} link={link} />
         ))}
@@ -502,13 +487,14 @@ function QuickLinkCard({
       href={link.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex flex-col items-center gap-2 rounded-lg border border-[var(--border)] p-4 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-blue-50"
+      className="flex flex-col items-center gap-2 rounded-lg border border-[var(--border)] p-4 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted)]">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted)]" aria-hidden="true">
         <QuickLinkIcon icon={link.icon} />
       </span>
       <span className="text-xs font-medium text-[var(--foreground)] leading-tight">
         {link.label}
+        <span className="sr-only"> (새 창에서 열림)</span>
       </span>
     </a>
   );
