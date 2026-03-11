@@ -27,6 +27,7 @@ env:
   - variable: SUPABASE_SERVICE_ROLE_KEY
     secret: supabaseServiceRoleKey
     availability:
+      - BUILD
       - RUNTIME
   - variable: ADMIN_EMAILS
     value: kcgcom@gmail.com
