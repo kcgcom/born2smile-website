@@ -83,10 +83,19 @@ export function getClinicJsonLd() {
       description: t.shortDesc,
     })),
     employee: {
-      "@type": "Dentist",
+      "@type": ["Dentist", "Person"],
       name: doctor.name,
       jobTitle: doctor.position,
       description: `${doctor.education[0]}. ${doctor.credentials[0]}.`,
+      alumniOf: doctor.education.map((edu) => ({
+        "@type": edu.includes("고등학교") ? "HighSchool" : "CollegeOrUniversity",
+        name: edu.replace(/ (졸업|수료|박사 수료)$/, ""),
+      })),
+      hasCredential: doctor.credentials.map((c) => ({
+        "@type": "EducationalOccupationalCredential",
+        credentialCategory: "professional",
+        name: c,
+      })),
       qualifications: doctor.credentials.map((c) => c),
       memberOf: doctor.memberships.map((m) => ({
         "@type": "Organization",
