@@ -27,6 +27,12 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('h1')).toBeVisible();
   });
 
+  test('구형 블로그 URL 리다이렉트', async ({ page }) => {
+    const response = await page.goto('/blog/electric-vs-manual-toothbrush');
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/blog\/prevention\/electric-vs-manual-toothbrush$/);
+  });
+
   test('FAQ 페이지', async ({ page }) => {
     const response = await page.goto('/faq');
     expect(response?.status()).toBe(200);
