@@ -18,8 +18,9 @@ export default function AdminLoginPage() {
     let cancelled = false;
 
     async function handleAdminRedirect(email?: string) {
+      const isAdmin = await verifyAdminUser();
       if (cancelled) return;
-      if (await verifyAdminUser()) {
+      if (isAdmin) {
         try { localStorage.setItem("born2smile-admin", "1"); } catch { /* private browsing */ }
         router.replace("/admin");
       } else {
