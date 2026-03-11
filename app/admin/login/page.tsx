@@ -16,6 +16,17 @@ export default function AdminLoginPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
+    // PKCE 코드 교환 — OAuth 콜백에서 ?code= 파라미터 처리
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(() => {
+        // onAuthStateChange가 세션을 처리하므로 여기서는 URL 정리만
+        url.searchParams.delete("code");
+        window.history.replaceState({}, "", url.pathname);
+      });
+    }
+
     // 초기 세션 확인 — 이미 로그인이면 /admin으로
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: AuthSession | null } }) => {
       void (async () => {
