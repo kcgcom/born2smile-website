@@ -6,7 +6,7 @@
  */
 
 import { unstable_cache, revalidateTag } from "next/cache";
-import { getSupabaseAdmin } from "./supabase-admin";
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 import type { BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
 import { getTodayKST } from "./date";
@@ -115,6 +115,7 @@ async function getFileBasedPost(slug: string): Promise<BlogPost | null> {
 export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
   unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
+      if (!isSupabaseAdminConfigured) return getFileBasedPublishedMetas();
       try {
         const today = getTodayKST();
         const { data, error } = await getSupabaseAdmin()
@@ -172,6 +173,7 @@ export function getPostBySlug(
 ): Promise<BlogPost | null> {
   return unstable_cache(
     async (): Promise<BlogPost | null> => {
+      if (!isSupabaseAdminConfigured) return getFileBasedPost(slug);
       try {
         const { data, error } = await getSupabaseAdmin()
           .from(TABLE)
@@ -203,6 +205,7 @@ export function getPostBySlug(
  */
 export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
   async (): Promise<string[]> => {
+    if (!isSupabaseAdminConfigured) return getFileBasedPublishedMetas().map((p) => p.slug);
     try {
       const today = getTodayKST();
       const { data, error } = await getSupabaseAdmin()
@@ -235,6 +238,11 @@ export function getRelatedPosts(
 ): Promise<BlogPostMeta[]> {
   return unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
+      const fileFallback = () =>
+        getFileBasedPublishedMetas()
+          .filter((p) => p.category === category && p.slug !== excludeSlug)
+          .slice(0, limit);
+      if (!isSupabaseAdminConfigured) return fileFallback();
       try {
         const today = getTodayKST();
         const { data, error } = await getSupabaseAdmin()
@@ -258,9 +266,7 @@ export function getRelatedPosts(
           .slice(0, limit);
       } catch (e) {
         console.warn("[blog-supabase] Supabase query failed, using file-based fallback for related posts", e);
-        return getFileBasedPublishedMetas()
-          .filter((p) => p.category === category && p.slug !== excludeSlug)
-          .slice(0, limit);
+        return fileFallback();
       }
     },
     [`blog-related-${category}-${excludeSlug}`],
