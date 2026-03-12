@@ -4,10 +4,10 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Pencil, Trash2, Plus, Calendar } from "lucide-react";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
-import { BLOG_CATEGORIES } from "@/lib/blog/types";
+import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategoryValue } from "@/lib/blog/types";
-import { getBlogPostUrl, getCategoryFromSlug } from "@/lib/blog/category-slugs";
+import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
+import { getBlogPostUrl, getCategoryFromSlug, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { StatCard } from "../StatCard";
@@ -52,7 +52,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-  const [categoryFilter, setCategoryFilter] = useState<string>("전체");
+  const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
 
@@ -140,7 +140,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
 
     // Category filter
-    if (categoryFilter !== "전체") {
+    if (categoryFilter !== "all") {
       filtered = filtered.filter((p) => p.category === categoryFilter);
     }
 
@@ -338,11 +338,12 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
               {/* Category dropdown */}
               <select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => setCategoryFilter(e.target.value as BlogCategoryFilter)}
                 className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
               >
-                {BLOG_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="all">전체 카테고리</option>
+                {BLOG_CATEGORY_SLUGS.map((cat) => (
+                  <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
                 ))}
               </select>
 
@@ -398,7 +399,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                         )
                       : null;
                   const catColor =
-                    categoryColors[post.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
+                    categoryColors[post.category as BlogCategorySlug] ?? "bg-[var(--background)] text-[var(--muted)]";
 
                   const isDraft = !post.published;
                   const statusLabel = isDraft
@@ -421,7 +422,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                       {/* Row 1: Category + Title + Status */}
                       <div className="flex items-center gap-2">
                         <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                          {post.category}
+                          {getCategoryLabel(post.category)}
                         </span>
                         {isDraft ? (
                           <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
@@ -429,7 +430,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                           </span>
                         ) : (
                           <a
-                            href={getBlogPostUrl(post.slug, post.category as BlogCategoryValue)}
+                            href={getBlogPostUrl(post.slug, post.category)}
                             target="_blank"
                             rel="noopener"
                             className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"

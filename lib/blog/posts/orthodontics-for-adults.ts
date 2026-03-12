@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "orthodontics-for-adults",
   tags: ["팩트체크"],
-  category: "치아교정",
+  category: "orthodontics",
   title: "교정은 어릴 때만? 아닙니다",
   subtitle: "성인 교정의 종류와 궁금증 한번에 풀기",
   excerpt:

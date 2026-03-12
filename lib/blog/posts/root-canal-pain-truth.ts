@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "root-canal-pain-truth",
     tags: ["팩트체크"],
-    category: "보존치료",
+    category: "restorative",
     title: "신경치료, 정말 아플까요?",
     subtitle: "신경치료 과정과 통증에 대한 오해와 진실",
     excerpt:

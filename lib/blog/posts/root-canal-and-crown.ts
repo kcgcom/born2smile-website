@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "root-canal-and-crown",
     tags: ["비교가이드"],
-    category: "보존치료",
+    category: "restorative",
     title: "신경치료 후에는 꼭 크라운을 씌워야 하나요?",
     subtitle: "자연 치아를 오래 지키기 위한 크라운의 역할",
     excerpt:

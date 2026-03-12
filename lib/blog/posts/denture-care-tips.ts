@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "denture-care-tips",
     tags: ["시니어", "치료후관리"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "틀니, 올바르게 관리하고 계신가요?",
     subtitle: "틀니 사용 시 꼭 알아야 할 관리법",
     excerpt:

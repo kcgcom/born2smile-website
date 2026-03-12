@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "food-for-dental-health",
   tags: ["생활습관"],
-  category: "예방관리",
+  category: "prevention",
   title: "먹는 것이 치아를 결정합니다",
   subtitle: "치아 건강에 좋은 음식과 나쁜 음식 비교",
   excerpt:

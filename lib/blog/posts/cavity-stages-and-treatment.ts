@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "cavity-stages-and-treatment",
     tags: ["증상가이드"],
-    category: "보존치료",
+    category: "restorative",
     title: "충치도 단계가 있습니다",
     subtitle: "단계별로 달라지는 충치 증상과 치료법",
     excerpt:

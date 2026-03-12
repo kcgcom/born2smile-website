@@ -3,6 +3,10 @@
 import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Minus, X, AlertCircle } from "lucide-react";
+import {
+  getKeywordCategoryLabel,
+  type KeywordCategorySlug,
+} from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
 import { PeriodSelector } from "../PeriodSelector";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -14,8 +18,8 @@ import { ApiSourceBadge } from "./ApiSourceBadge";
 // ---------------------------------------------------------------
 
 interface OverviewCategory {
-  category: string;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   overallTrend?: "rising" | "falling" | "stable";
   changeRate?: number;
   topSubGroup?: string;
@@ -28,7 +32,7 @@ interface OverviewCategory {
 }
 
 interface ContentGapItem {
-  slug: string;
+  slug: KeywordCategorySlug;
   subGroup: string;
   monthlyVolume: number | null;
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
@@ -50,8 +54,8 @@ interface SubGroupDetail {
 }
 
 interface CategoryDetailData {
-  category: string;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   period: { start: string; end: string };
   timeUnit: string;
   subGroups: SubGroupDetail[];
@@ -166,7 +170,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
       <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] p-4">
         <div className="mb-2 flex items-center gap-1.5">
           <AlertCircle className="h-4 w-4 text-[var(--muted)]" aria-hidden="true" />
-          <span className="text-sm font-semibold text-[var(--muted)]">{cat.category}</span>
+          <span className="text-sm font-semibold text-[var(--muted)]">{getKeywordCategoryLabel(cat.category)}</span>
         </div>
         <p className="mb-3 text-xs text-[var(--muted)]">{cat.error}</p>
         <button
@@ -193,10 +197,10 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
       onClick={onClick}
       className={`rounded-xl border bg-[var(--surface)] p-4 shadow-sm text-left transition-all cursor-pointer w-full ${borderClass}`}
       aria-pressed={isSelected}
-      aria-label={`${cat.category} 트렌드 상세 보기`}
+      aria-label={`${getKeywordCategoryLabel(cat.category)} 트렌드 상세 보기`}
     >
       <div className="mb-1">
-        <span className="text-sm font-semibold text-[var(--foreground)]">{cat.category}</span>
+        <span className="text-sm font-semibold text-[var(--foreground)]">{getKeywordCategoryLabel(cat.category)}</span>
       </div>
       {cat.monthlyTotalVolume != null ? (
         <p className="text-lg font-bold text-[var(--foreground)] tabular-nums leading-tight">
@@ -233,7 +237,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
 // ---------------------------------------------------------------
 
 interface CategoryDetailProps {
-  slug: string;
+  slug: KeywordCategorySlug;
   period: string;
   onClose: () => void;
   detailRef: React.RefObject<HTMLDivElement | null>;
@@ -249,7 +253,7 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
     <div ref={detailRef} className="rounded-xl border border-[var(--color-primary)]/30 bg-[var(--surface)] p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--foreground)]">
-          {data ? `${data.category} 상세 트렌드` : "상세 트렌드 로딩 중..."}
+          {data ? `${getKeywordCategoryLabel(data.category)} 상세 트렌드` : "상세 트렌드 로딩 중..."}
         </h3>
         <button type="button" onClick={onClose} className="rounded p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors" aria-label="상세 닫기">
           <X className="h-4 w-4" />
@@ -309,7 +313,7 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
 
 export function TrendSubTab() {
   const [period, setPeriod] = useState<"1m" | "3m" | "1y" | "3y" | "10y">("3m");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<KeywordCategorySlug | null>(null);
 
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -327,7 +331,7 @@ export function TrendSubTab() {
     setSelectedCategory(null);
   };
 
-  const handleCategoryClick = (slug: string) => {
+  const handleCategoryClick = (slug: KeywordCategorySlug) => {
     if (selectedCategory === slug) {
       setSelectedCategory(null);
       return;

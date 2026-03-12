@@ -3,7 +3,24 @@
 // 8개 카테고리 × 최대 15개 서브그룹 (브릿지 배칭으로 5개 제한 해제)
 // =============================================================
 
-import type { BlogCategoryValue } from "./blog/types";
+import { BLOG_CATEGORY_LABELS } from "./blog";
+import type { BlogCategoryLabel, BlogCategorySlug } from "./blog/types";
+
+export type KeywordCategorySlug = BlogCategorySlug | "dental-choice";
+export type KeywordCategoryLabel = BlogCategoryLabel | "치과선택";
+
+export const KEYWORD_CATEGORY_LABELS: Record<KeywordCategorySlug, KeywordCategoryLabel> = {
+  ...BLOG_CATEGORY_LABELS,
+  "dental-choice": "치과선택",
+};
+
+export function isKeywordCategorySlug(value: string): value is KeywordCategorySlug {
+  return value in KEYWORD_CATEGORY_LABELS;
+}
+
+export function getKeywordCategoryLabel(category: KeywordCategorySlug): KeywordCategoryLabel {
+  return KEYWORD_CATEGORY_LABELS[category];
+}
 
 export interface KeywordSubGroup {
   name: string;             // 서브그룹명 (예: "비용/가격")
@@ -18,8 +35,8 @@ export interface TopicAngle {
 }
 
 export interface CategoryKeywords {
-  category: BlogCategoryValue; // 한국어 카테고리명
-  slug: string;                // 영어 URL 슬러그 (CATEGORY_SLUG_MAP과 동일)
+  category: KeywordCategorySlug; // canonical category slug
+  slug: KeywordCategorySlug;     // 영어 URL 슬러그
   subGroups: KeywordSubGroup[]; // 최대 15개 서브그룹 (브릿지 배칭 지원)
   topicAngles: TopicAngle[];   // 블로그 주제 템플릿
 }
@@ -33,7 +50,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 임플란트 (implant)
   // ─────────────────────────────────────────────────────────
   {
-    category: "임플란트",
+    category: "implant",
     slug: "implant",
     subGroups: [
       {
@@ -171,7 +188,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 치아교정 (orthodontics)
   // ─────────────────────────────────────────────────────────
   {
-    category: "치아교정",
+    category: "orthodontics",
     slug: "orthodontics",
     subGroups: [
       {
@@ -306,7 +323,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 보철치료 (prosthetics)
   // ─────────────────────────────────────────────────────────
   {
-    category: "보철치료",
+    category: "prosthetics",
     slug: "prosthetics",
     subGroups: [
       {
@@ -468,7 +485,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 보존치료 (restorative)
   // ─────────────────────────────────────────────────────────
   {
-    category: "보존치료",
+    category: "restorative",
     slug: "restorative",
     subGroups: [
       {
@@ -626,7 +643,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 소아치료 (pediatric)
   // ─────────────────────────────────────────────────────────
   {
-    category: "소아치료",
+    category: "pediatric",
     slug: "pediatric",
     subGroups: [
       {
@@ -766,7 +783,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 예방관리 (prevention)
   // ─────────────────────────────────────────────────────────
   {
-    category: "예방관리",
+    category: "prevention",
     slug: "prevention",
     subGroups: [
       {
@@ -924,7 +941,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 건강상식 (health-tips)
   // ─────────────────────────────────────────────────────────
   {
-    category: "건강상식",
+    category: "health-tips",
     slug: "health-tips",
     subGroups: [
       {
@@ -1076,7 +1093,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   // 치과선택 (dental-choice)
   // ─────────────────────────────────────────────────────────────
   {
-    category: "치과선택" as BlogCategoryValue,
+    category: "dental-choice",
     slug: "dental-choice",
     subGroups: [
       {
@@ -1328,22 +1345,23 @@ export function isRelevantRelatedKeyword(keyword: string): boolean {
 
 export function validateCategoryKeywords(): void {
   for (const cat of CATEGORY_KEYWORDS) {
+    const categoryLabel = getKeywordCategoryLabel(cat.category);
     if (cat.subGroups.length > 15) {
       throw new Error(
-        `[admin-naver-datalab-keywords] "${cat.category}" 카테고리의 서브그룹이 ${cat.subGroups.length}개입니다. ` +
+        `[admin-naver-datalab-keywords] "${categoryLabel}" 카테고리의 서브그룹이 ${cat.subGroups.length}개입니다. ` +
           "브릿지 배칭은 최대 15개 서브그룹까지 지원합니다.",
       );
     }
     for (const sg of cat.subGroups) {
       if (sg.keywords.length > 20) {
         throw new Error(
-          `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹의 키워드가 ${sg.keywords.length}개입니다. ` +
+          `[admin-naver-datalab-keywords] "${categoryLabel}" > "${sg.name}" 서브그룹의 키워드가 ${sg.keywords.length}개입니다. ` +
             "네이버 DataLab API는 그룹당 최대 20개 키워드만 허용합니다.",
         );
       }
       if (sg.volumeKeywords.length === 0 || sg.volumeKeywords.length > 3) {
         throw new Error(
-          `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹의 volumeKeywords가 ${sg.volumeKeywords.length}개입니다. ` +
+          `[admin-naver-datalab-keywords] "${categoryLabel}" > "${sg.name}" 서브그룹의 volumeKeywords가 ${sg.volumeKeywords.length}개입니다. ` +
             "검색광고 API 효율을 위해 1~3개가 필요합니다.",
         );
       }
@@ -1353,7 +1371,7 @@ export function validateCategoryKeywords(): void {
       const hasAngle = cat.topicAngles.some((ta) => ta.subGroup === sg.name);
       if (!hasAngle) {
         throw new Error(
-          `[admin-naver-datalab-keywords] "${cat.category}" > "${sg.name}" 서브그룹에 topicAngle이 없습니다.`,
+          `[admin-naver-datalab-keywords] "${categoryLabel}" > "${sg.name}" 서브그룹에 topicAngle이 없습니다.`,
         );
       }
     }

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "orthodontic-diet-guide",
     tags: ["생활습관", "치료후관리"],
-    category: "치아교정",
+    category: "orthodontics",
     title: "교정 중에 뭘 먹어야 하나요?",
     subtitle: "교정 기간 중 식사 요령과 피해야 할 음식",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "denture-adjustment-guide",
     tags: ["시니어"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "처음 틀니, 불편한 게 당연한가요?",
     subtitle: "틀니 적응 기간과 불편감 해결법 가이드",
     excerpt:

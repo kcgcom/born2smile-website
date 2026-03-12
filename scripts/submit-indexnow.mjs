@@ -15,7 +15,7 @@ const INDEXNOW_KEY = "7d01a83dddd13f9abf9186b937921369";
 const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow";
 const POSTS_DIR = join(process.cwd(), "lib/blog/posts");
 
-// 카테고리 → URL 슬러그 매핑 (lib/blog/category-slugs.ts와 동기화)
+// 레거시 카테고리 → URL 슬러그 매핑 (하위 호환)
 const CATEGORY_SLUG_MAP = {
   "임플란트": "implant",
   "치아교정": "orthodontics",
@@ -26,6 +26,8 @@ const CATEGORY_SLUG_MAP = {
   "건강상식": "health-tips",
 };
 
+const CATEGORY_SLUGS = new Set(Object.values(CATEGORY_SLUG_MAP));
+
 function getTodayKST() {
   return new Date()
     .toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })
@@ -33,6 +35,7 @@ function getTodayKST() {
 }
 
 function getCategorySlug(category) {
+  if (CATEGORY_SLUGS.has(category)) return category;
   return CATEGORY_SLUG_MAP[category] ?? "health-tips";
 }
 

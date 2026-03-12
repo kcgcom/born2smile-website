@@ -8,13 +8,30 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 import type { BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
-import type { BlogCategoryValue } from "./blog/types";
+import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
+import { getCategorySlug, normalizeBlogCategory } from "./blog";
 import { getTodayKST } from "./date";
 import { BLOG_POSTS_META } from "./blog/generated/posts-meta";
 
 const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
+
+function getBlogPostCacheTag(slug: string): string {
+  return `blog-post-${slug}`;
+}
+
+function getRelatedPostsCacheKey(
+  category: BlogCategoryValue,
+  excludeSlug: string,
+  limit: number,
+): string {
+  return `blog-related-${getCategorySlug(category)}-${excludeSlug}-${limit}`;
+}
+
+function getRelatedPostsCacheTag(category: BlogCategoryValue): string {
+  return `blog-related-${getCategorySlug(category)}`;
+}
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -49,6 +66,14 @@ interface DbRow {
   updated_by: string;
 }
 
+function normalizeCategoryOrThrow(category: string): BlogCategorySlug {
+  const normalized = normalizeBlogCategory(category);
+  if (!normalized) {
+    throw new Error(`[blog-supabase] Unknown category: ${category}`);
+  }
+  return normalized;
+}
+
 function rowToMeta(
   row: DbRow,
 ): BlogPostMeta & { published: boolean; createdAt?: string } {
@@ -57,7 +82,7 @@ function rowToMeta(
     title: row.title,
     subtitle: row.subtitle,
     excerpt: row.excerpt,
-    category: row.category as BlogCategoryValue,
+    category: normalizeCategoryOrThrow(row.category),
     tags: (row.tags ?? []) as BlogPostMeta["tags"],
     date: row.date,
     dateModified: row.date_modified ?? undefined,
@@ -73,7 +98,7 @@ function rowToPost(row: DbRow): BlogPost {
     title: row.title,
     subtitle: row.subtitle,
     excerpt: row.excerpt,
-    category: row.category as BlogCategoryValue,
+    category: normalizeCategoryOrThrow(row.category),
     tags: (row.tags ?? []) as BlogPostMeta["tags"],
     date: row.date,
     dateModified: row.date_modified ?? undefined,
@@ -89,15 +114,23 @@ function rowToPost(row: DbRow): BlogPost {
 
 function getFileBasedPublishedMetas(): BlogPostMeta[] {
   const today = getTodayKST();
-  return BLOG_POSTS_META.filter((p) => p.date <= today).sort(
-    (a, b) => b.date.localeCompare(a.date),
-  );
+  return BLOG_POSTS_META
+    .filter((p) => p.date <= today)
+    .map((post) => ({
+      ...post,
+      category: normalizeCategoryOrThrow(post.category),
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 async function getFileBasedPost(slug: string): Promise<BlogPost | null> {
   try {
     const mod = await import(`./blog/posts/${slug}.ts`);
-    return (mod.post ?? mod.default) as BlogPost;
+    const post = (mod.post ?? mod.default) as BlogPost;
+    return {
+      ...post,
+      category: normalizeCategoryOrThrow(post.category),
+    };
   } catch {
     return null;
   }
@@ -193,8 +226,8 @@ export function getPostBySlug(
         return getFileBasedPost(slug);
       }
     },
-    [`blog-post-${slug}`],
-    { revalidate: CACHE_TTL, tags: [`blog-post-${slug}`] },
+    [getBlogPostCacheTag(slug)],
+    { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
   )();
 }
 
@@ -269,10 +302,10 @@ export function getRelatedPosts(
         return fileFallback();
       }
     },
-    [`blog-related-${category}-${excludeSlug}`],
+    [getRelatedPostsCacheKey(category, excludeSlug, limit)],
     {
       revalidate: CACHE_TTL,
-      tags: [`blog-related-${category}`],
+      tags: [getRelatedPostsCacheTag(category)],
     },
   )();
 }
@@ -364,7 +397,7 @@ export async function updateBlogPost(
   if (error) throw error;
 
   revalidateTag(CACHE_TAG, "max");
-  revalidateTag(`blog-post-${slug}`, "max");
+  revalidateTag(getBlogPostCacheTag(slug), "max");
   revalidateTag("blog-slugs", "max");
   revalidateTag("blog-posts-admin", "max");
 }
@@ -381,7 +414,7 @@ export async function deleteBlogPost(slug: string): Promise<void> {
   if (error) throw error;
 
   revalidateTag(CACHE_TAG, "max");
-  revalidateTag(`blog-post-${slug}`, "max");
+  revalidateTag(getBlogPostCacheTag(slug), "max");
   revalidateTag("blog-slugs", "max");
   revalidateTag("blog-posts-admin", "max");
 }

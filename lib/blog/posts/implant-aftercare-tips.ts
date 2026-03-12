@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "implant-aftercare-tips",
   tags: ["치료후관리"],
-  category: "임플란트",
+  category: "implant",
   title: "임플란트, 심으면 끝일까요?",
   subtitle: "임플란트 수명을 결정하는 핵심 관리법",
   excerpt:

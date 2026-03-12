@@ -5,6 +5,7 @@ import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData } from "@/lib/trend-analysis";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
+import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache } from "@/lib/admin-naver-searchad";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
       (async (): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> => {
         if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
         try {
-          const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];
+          const allKeywords: Array<{ category: KeywordCategorySlug; subGroup: string; keywords: string[] }> = [];
           for (const ck of CATEGORY_KEYWORDS) {
             for (const sg of ck.subGroups) {
               allKeywords.push({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
@@ -83,15 +83,21 @@ const STATUS_STYLES: Record<ClinicStatusInfo["status"], { dot: string; text: str
   closed: { dot: "bg-gray-400", text: "text-gray-600" },
 };
 
-function DesktopPhoneButton() {
-  const [info, setInfo] = useState<ClinicStatusInfo | null>(null);
+function subscribeToClinicStatus(onStoreChange: () => void): () => void {
+  const id = window.setInterval(onStoreChange, 60_000);
+  return () => window.clearInterval(id);
+}
 
-  useEffect(() => {
-    setInfo(getClinicStatus());
-    // 1분마다 갱신
-    const id = setInterval(() => setInfo(getClinicStatus()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+function getClinicStatusServerSnapshot(): ClinicStatusInfo | null {
+  return null;
+}
+
+function DesktopPhoneButton() {
+  const info = useSyncExternalStore(
+    subscribeToClinicStatus,
+    getClinicStatus,
+    getClinicStatusServerSnapshot,
+  );
 
   const style = info ? STATUS_STYLES[info.status] : STATUS_STYLES.closed;
 

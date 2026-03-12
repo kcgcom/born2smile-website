@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-implant-surgery-care",
     tags: ["치료후관리"],
-    category: "임플란트",
+    category: "implant",
     title: "임플란트 수술 후, 어떻게 관리하나요?",
     subtitle: "임플란트 수술 후 단계별 관리법",
     excerpt:

@@ -1,5 +1,8 @@
 import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategoryValue } from "@/lib/blog/types";
+import {
+  getKeywordCategoryLabel,
+  type KeywordCategorySlug,
+} from "@/lib/admin-naver-datalab-keywords";
 
 // ---------------------------------------------------------------
 // 공유 타입 (insight 서브탭 간 공유)
@@ -11,8 +14,8 @@ export interface MetricValue {
 }
 
 export interface ContentGapItem {
-  category: string;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   subGroup: string;
   keywords: string[];
   trend: "rising" | "falling" | "stable";
@@ -29,8 +32,8 @@ export interface ContentGapItem {
 
 export interface TopicSuggestionItem {
   rank: number;
-  category: string;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   suggestedTitle: string;
   reasoning: string;
   keywords: string[];
@@ -48,6 +51,11 @@ export interface OverviewData {
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
 }
+
+const KEYWORD_CATEGORY_BADGE_COLORS: Record<KeywordCategorySlug, string> = {
+  ...categoryColors,
+  "dental-choice": "bg-fuchsia-100 text-fuchsia-700",
+};
 
 // ---------------------------------------------------------------
 // 공유 유틸리티
@@ -71,12 +79,12 @@ export function formatDuration(seconds: number): string {
 // 공유 뱃지 컴포넌트
 // ---------------------------------------------------------------
 
-export function CategoryBadge({ category }: { category: string }) {
+export function CategoryBadge({ category }: { category: KeywordCategorySlug }) {
   const colorClass =
-    categoryColors[category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
+    KEYWORD_CATEGORY_BADGE_COLORS[category] ?? "bg-[var(--background)] text-[var(--muted)]";
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${colorClass}`}>
-      {category}
+      {getKeywordCategoryLabel(category)}
     </span>
   );
 }

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "children-malocclusion-guide",
     tags: ["증상가이드"],
-    category: "소아치료",
+    category: "pediatric",
     title: "아이 이가 삐뚤게 나요",
     subtitle: "소아 부정교합의 원인과 교정 시기 판단 가이드",
     excerpt:

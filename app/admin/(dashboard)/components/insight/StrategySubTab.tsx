@@ -4,6 +4,8 @@ import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { isBlogCategorySlug } from "@/lib/blog";
+import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
 import { DataTable } from "../DataTable";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -16,21 +18,21 @@ import type { ContentGapItem, OverviewData } from "./shared";
 // Opportunity Scatter Chart
 // ---------------------------------------------------------------
 
-const CATEGORY_SCATTER_COLORS: Record<string, string> = {
-  "임플란트": "#2563EB",
-  "치아교정": "#C9962B",
-  "보철치료": "#16A34A",
-  "보존치료": "#9333EA",
-  "예방관리": "#0891B2",
-  "소아치료": "#DC2626",
-  "건강상식": "#EA580C",
-  "치과선택": "#D946EF",
+const CATEGORY_SCATTER_COLORS: Record<KeywordCategorySlug, string> = {
+  implant: "#2563EB",
+  orthodontics: "#C9962B",
+  prosthetics: "#16A34A",
+  restorative: "#9333EA",
+  prevention: "#0891B2",
+  pediatric: "#DC2626",
+  "health-tips": "#EA580C",
+  "dental-choice": "#D946EF",
 };
 
 interface ScatterPoint {
   subGroup: string;
-  category: string;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   x: number;
   y: number;
   z: number;
@@ -39,7 +41,7 @@ interface ScatterPoint {
 const OpportunityScatter = dynamic(
   () =>
     import("recharts").then((mod) => {
-      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick: (slug: string) => void }) {
+      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick: (slug: KeywordCategorySlug) => void }) {
         if (data.length === 0) {
           return (
             <p className="py-8 text-center text-sm text-[var(--muted)]">
@@ -48,7 +50,7 @@ const OpportunityScatter = dynamic(
           );
         }
 
-        const categories = [...new Set(data.map((d) => d.category))];
+        const categories = [...new Set(data.map((d) => d.category))] as KeywordCategorySlug[];
 
         return (
           <div>
@@ -175,7 +177,8 @@ export function StrategySubTab() {
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
 
-  const handleNewPost = (slug: string) => {
+  const handleNewPost = (slug: KeywordCategorySlug) => {
+    if (!isBlogCategorySlug(slug)) return;
     router.push(`/admin?tab=blog&newCategory=${slug}`);
   };
 
@@ -307,7 +310,7 @@ export function StrategySubTab() {
                   align: "left",
                   render: (row) => (
                     <div className="flex flex-wrap gap-1">
-                      {(row.categories as string[]).map((c) => (
+                      {(row.categories as KeywordCategorySlug[]).map((c) => (
                         <CategoryBadge key={c} category={c} />
                       ))}
                     </div>
@@ -389,7 +392,7 @@ export function StrategySubTab() {
                   key: "category",
                   label: "카테고리",
                   align: "left",
-                  render: (row) => <CategoryBadge category={String(row.category)} />,
+                  render: (row) => <CategoryBadge category={row.category as KeywordCategorySlug} />,
                 },
                 {
                   key: "monthlyVolume",
@@ -577,14 +580,18 @@ export function StrategySubTab() {
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleNewPost(item.slug)}
-                    className="flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
-                  >
-                    새 포스트 작성
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
+                  {isBlogCategorySlug(item.slug) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleNewPost(item.slug)}
+                      className="flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+                    >
+                      새 포스트 작성
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <span className="text-xs text-[var(--muted)]">키워드 전용 카테고리</span>
+                  )}
                 </div>
               </div>
             ))}

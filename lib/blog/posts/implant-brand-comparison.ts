@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "implant-brand-comparison",
     tags: ["비교가이드"],
-    category: "임플란트",
+    category: "implant",
     title: "임플란트 브랜드, 어떤 게 좋나요?",
     subtitle: "국산 vs 수입 임플란트 특징 비교와 선택 기준",
     excerpt:

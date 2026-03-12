@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-crown-prosthetic-care",
     tags: ["치료후관리", "증상가이드"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "크라운 씌웠는데 불편해요",
     subtitle: "크라운·브릿지 장착 후 주의사항 총정리",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
   slug: "children-dental-care",
   tags: ["생활습관"],
-  category: "소아치료",
+  category: "pediatric",
   title: "첫 치과, 타이밍이 중요합니다",
   subtitle: "우리 아이 첫 치과 방문 시기와 준비 가이드",
   excerpt:

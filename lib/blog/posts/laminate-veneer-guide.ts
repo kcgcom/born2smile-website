@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "laminate-veneer-guide",
     tags: ["비교가이드"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "라미네이트, 치아를 많이 깎나요?",
     subtitle: "라미네이트 시술 과정과 장단점 솔직 비교",
     excerpt:

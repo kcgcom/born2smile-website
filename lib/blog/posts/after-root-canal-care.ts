@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-root-canal-care",
     tags: ["치료후관리"],
-    category: "보존치료",
+    category: "restorative",
     title: "신경치료 받은 치아, 오래 쓰려면",
     subtitle: "치아를 오래 보존하는 신경치료 후 주의사항",
     excerpt:

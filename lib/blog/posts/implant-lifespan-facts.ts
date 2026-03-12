@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "implant-lifespan-facts",
     tags: ["팩트체크"],
-    category: "임플란트",
+    category: "implant",
     title: "임플란트 수명, 10년? 30년?",
     subtitle: "오래 쓰는 사람들의 공통점 3가지",
     excerpt:

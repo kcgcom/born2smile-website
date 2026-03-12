@@ -1,39 +1,58 @@
 // =============================================================
-// 카테고리 ↔ URL 슬러그 매핑
+// 블로그 카테고리 canonical slug ↔ 한글 label 매핑
 // =============================================================
 
-import type { BlogCategoryValue } from "./types";
+import {
+  BLOG_CATEGORY_SLUGS,
+  type BlogCategoryLabel,
+  type BlogCategorySlug,
+  type BlogCategoryValue,
+} from "./types";
 
-/** 한국어 카테고리 → URL 슬러그 */
-export const CATEGORY_SLUG_MAP: Record<BlogCategoryValue, string> = {
-  "임플란트": "implant",
-  "치아교정": "orthodontics",
-  "보철치료": "prosthetics",
-  "보존치료": "restorative",
-  "소아치료": "pediatric",
-  "예방관리": "prevention",
-  "건강상식": "health-tips",
+export const BLOG_CATEGORY_LABELS: Record<BlogCategorySlug, BlogCategoryLabel> = {
+  prevention: "예방관리",
+  restorative: "보존치료",
+  prosthetics: "보철치료",
+  implant: "임플란트",
+  orthodontics: "치아교정",
+  pediatric: "소아치료",
+  "health-tips": "건강상식",
 };
 
-/** URL 슬러그 → 한국어 카테고리 */
-export const SLUG_CATEGORY_MAP = Object.fromEntries(
-  Object.entries(CATEGORY_SLUG_MAP).map(([k, v]) => [v, k]),
-) as Record<string, BlogCategoryValue>;
+export const CATEGORY_LABEL_TO_SLUG = Object.fromEntries(
+  Object.entries(BLOG_CATEGORY_LABELS).map(([slug, label]) => [label, slug]),
+) as Record<BlogCategoryLabel, BlogCategorySlug>;
 
-/** 한국어 카테고리에서 URL 슬러그를 반환 */
-export function getCategorySlug(category: BlogCategoryValue): string {
-  return CATEGORY_SLUG_MAP[category];
+export const ALL_CATEGORY_SLUGS = [...BLOG_CATEGORY_SLUGS];
+
+export function isBlogCategorySlug(value: string): value is BlogCategorySlug {
+  return BLOG_CATEGORY_SLUGS.includes(value as BlogCategorySlug);
 }
 
-/** URL 슬러그에서 한국어 카테고리를 반환 (없으면 null) */
-export function getCategoryFromSlug(slug: string): BlogCategoryValue | null {
-  return SLUG_CATEGORY_MAP[slug] ?? null;
+export function isBlogCategoryLabel(value: string): value is BlogCategoryLabel {
+  return value in CATEGORY_LABEL_TO_SLUG;
 }
 
-/** 블로그 포스트의 전체 URL 경로를 생성 */
+export function getCategoryFromSlug(slug: string): BlogCategorySlug | null {
+  return isBlogCategorySlug(slug) ? slug : null;
+}
+
+export function getCategoryFromLabel(label: string): BlogCategorySlug | null {
+  return isBlogCategoryLabel(label) ? CATEGORY_LABEL_TO_SLUG[label] : null;
+}
+
+export function normalizeBlogCategory(value: string): BlogCategorySlug | null {
+  return getCategoryFromSlug(value) ?? getCategoryFromLabel(value);
+}
+
+export function getCategorySlug(category: BlogCategoryValue): BlogCategorySlug {
+  return category;
+}
+
+export function getCategoryLabel(category: BlogCategoryValue): BlogCategoryLabel {
+  return BLOG_CATEGORY_LABELS[category];
+}
+
 export function getBlogPostUrl(slug: string, category: BlogCategoryValue): string {
-  return `/blog/${getCategorySlug(category)}/${slug}`;
+  return `/blog/${category}/${slug}`;
 }
-
-/** 모든 카테고리 URL 슬러그 배열 */
-export const ALL_CATEGORY_SLUGS = Object.values(CATEGORY_SLUG_MAP);

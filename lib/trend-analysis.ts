@@ -3,8 +3,8 @@
 // analyzeTrend, analyzeContentGap, generateTopicSuggestions
 // =============================================================
 
-import type { BlogCategoryValue, BlogPostMeta } from "./blog/types";
-import type { CategoryKeywords } from "./admin-naver-datalab-keywords";
+import type { BlogPostMeta } from "./blog/types";
+import type { CategoryKeywords, KeywordCategorySlug } from "./admin-naver-datalab-keywords";
 
 export type TrendDirection = "rising" | "falling" | "stable";
 
@@ -17,8 +17,8 @@ export interface TrendResult {
 }
 
 export interface CategoryTrendData {
-  category: BlogCategoryValue;
-  slug: string;
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
   subGroups: Array<{
     name: string;
     trend: TrendDirection;
@@ -29,9 +29,9 @@ export interface CategoryTrendData {
 }
 
 export interface ContentGap {
-  category: BlogCategoryValue;
+  category: KeywordCategorySlug;
   /** 영어 카테고리 슬러그 */
-  slug: string;
+  slug: KeywordCategorySlug;
   subGroup: string;
   keywords: string[];
   trend: TrendDirection;
@@ -57,9 +57,9 @@ export interface ContentGap {
 
 export interface TopicSuggestion {
   rank: number;
-  category: BlogCategoryValue;
+  category: KeywordCategorySlug;
   /** 영어 카테고리 슬러그 */
-  slug: string;
+  slug: KeywordCategorySlug;
   /** topicAngle 템플릿 + 트렌드 키워드 조합으로 생성된 제목 */
   suggestedTitle: string;
   /** 추천 이유 (한국어) */

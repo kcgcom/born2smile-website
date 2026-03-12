@@ -1,11 +1,15 @@
 import { z } from "zod/v4";
-import { BLOG_CATEGORIES, BLOG_TAGS } from "./blog/types";
+import { BLOG_TAGS } from "./blog/types";
+import { normalizeBlogCategory } from "./blog/category-slugs";
 
 const slugRegex = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 
-const categoryValues = BLOG_CATEGORIES.filter(
-  (c): c is Exclude<typeof c, "전체"> => c !== "전체"
-);
+const categorySchema = z
+  .string()
+  .refine((value) => normalizeBlogCategory(value) !== null, {
+    message: "유효한 블로그 카테고리여야 합니다",
+  })
+  .transform((value) => normalizeBlogCategory(value)!);
 
 export const blogPostContentSchema = z.object({
   heading: z.string().min(2).max(100),
@@ -17,7 +21,7 @@ export const blogPostSchema = z.object({
   title: z.string().min(5).max(100),
   subtitle: z.string().min(5).max(150),
   excerpt: z.string().min(20).max(500),
-  category: z.enum(categoryValues as unknown as [string, ...string[]]),
+  category: categorySchema,
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),

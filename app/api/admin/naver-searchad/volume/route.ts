@@ -3,7 +3,7 @@ import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { createCachedFetcher } from "../../_lib/cache";
 import { isSearchAdConfigured, fetchKeywordSearchVolume } from "@/lib/admin-naver-searchad";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
-import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
+import { CATEGORY_KEYWORDS, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 
 /** 24시간 캐시 (월간 검색량은 자주 변하지 않음) */
 const CACHE_TTL_24H = 86400;
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       "searchad-volume-endpoint",
       async () => {
         // 모든 카테고리의 volumeKeywords 수집
-        const allKeywords: Array<{ category: string; subGroup: string; keywords: string[] }> = [];
+        const allKeywords: Array<{ category: KeywordCategorySlug; subGroup: string; keywords: string[] }> = [];
         for (const ck of CATEGORY_KEYWORDS) {
           for (const sg of ck.subGroups) {
             allKeywords.push({

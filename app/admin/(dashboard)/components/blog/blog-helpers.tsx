@@ -2,12 +2,14 @@
 // Shared types, constants, and utilities for Blog sub-tabs
 // -------------------------------------------------------------
 
+import type { BlogCategorySlug } from "@/lib/blog";
+
 export interface AdminBlogPost {
   slug: string;
   title: string;
   subtitle: string;
   excerpt: string;
-  category: string;
+  category: BlogCategorySlug;
   tags: string[];
   date: string;
   dateModified?: string;

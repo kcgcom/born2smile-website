@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "retainer-after-orthodontics",
     tags: ["치료후관리"],
-    category: "치아교정",
+    category: "orthodontics",
     title: "교정 끝났는데 유지장치 꼭 해야 하나요?",
     subtitle: "예쁘게 교정한 치아, 오래오래 유지하는 방법",
     excerpt:

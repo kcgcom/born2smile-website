@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "diabetes-and-implant",
     tags: ["생활습관", "시니어"],
-    category: "임플란트",
+    category: "implant",
     title: "당뇨가 있어도 임플란트 가능한가요?",
     subtitle: "전신 질환과 임플란트의 관계",
     excerpt:

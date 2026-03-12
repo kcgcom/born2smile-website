@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-filling-care",
     tags: ["치료후관리"],
-    category: "보존치료",
+    category: "restorative",
     title: "충치 치료 후 바로 밥 먹어도 될까?",
     subtitle: "레진·인레이 치료 후 주의사항 총정리",
     excerpt:

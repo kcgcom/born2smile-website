@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { AuthSession } from "@supabase/supabase-js";
@@ -82,14 +82,13 @@ export default function AdminDashboardPage() {
   const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "dev";
 
   // 방문한 탭 추적 — unmount 방지로 상태 보존
-  const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(() => new Set(["dev"]));
-
-  useEffect(() => {
-    setVisitedTabs((prev) => {
-      if (prev.has(activeTab)) return prev;
-      return new Set(prev).add(activeTab);
-    });
-  }, [activeTab]);
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(
+    () => new Set(["dev", activeTab]),
+  );
+  const renderedTabs = useMemo(() => {
+    if (visitedTabs.has(activeTab)) return visitedTabs;
+    return new Set(visitedTabs).add(activeTab);
+  }, [activeTab, visitedTabs]);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -111,6 +110,10 @@ export default function AdminDashboardPage() {
   };
 
   const handleTabChange = (tab: TabId) => {
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      return new Set(prev).add(tab);
+    });
     router.replace(`${pathname}?tab=${tab}`);
   };
 
@@ -138,16 +141,16 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 탭 콘텐츠 — hidden 패턴으로 방문 탭 DOM 유지 */}
-        {visitedTabs.has("dev") && (
+        {renderedTabs.has("dev") && (
           <div hidden={activeTab !== "dev"}><DevTab /></div>
         )}
-        {visitedTabs.has("insight") && (
+        {renderedTabs.has("insight") && (
           <div hidden={activeTab !== "insight"}><InsightTab /></div>
         )}
-        {visitedTabs.has("blog") && (
+        {renderedTabs.has("blog") && (
           <div hidden={activeTab !== "blog"}><BlogTab editSlug={editSlug} newCategory={newCategory} /></div>
         )}
-        {visitedTabs.has("settings") && (
+        {renderedTabs.has("settings") && (
           <div hidden={activeTab !== "settings"}><SettingsTab /></div>
         )}
       </div>

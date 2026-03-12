@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "clear-vs-bracket-orthodontics",
     tags: ["비교가이드"],
-    category: "치아교정",
+    category: "orthodontics",
     title: "투명교정 vs 브라켓, 뭐가 맞을까?",
     subtitle: "나에게 맞는 교정 방법 선택 가이드",
     excerpt:

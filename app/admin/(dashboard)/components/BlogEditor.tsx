@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { X, Plus, Trash2, Save } from "lucide-react";
-import { BLOG_CATEGORIES, BLOG_TAGS } from "@/lib/blog/types";
-import type { BlogCategoryValue, BlogTag } from "@/lib/blog/types";
+import { BLOG_CATEGORY_SLUGS, BLOG_TAGS } from "@/lib/blog/types";
+import type { BlogCategorySlug, BlogTag } from "@/lib/blog/types";
+import { getCategoryLabel, normalizeBlogCategory } from "@/lib/blog";
 import { getAccessToken } from "@/lib/supabase";
 
 // -------------------------------------------------------------
@@ -15,7 +16,7 @@ export interface BlogEditorData {
   title: string;
   subtitle: string;
   excerpt: string;
-  category: string;
+  category: BlogCategorySlug;
   tags: string[];
   date: string;
   content: { heading: string; content: string }[];
@@ -57,6 +58,7 @@ function validate(form: BlogEditorData): Record<string, string> {
   if (form.subtitle.length > 150) errors.subtitle = "부제는 150자 이하여야 합니다";
   if (form.excerpt.length < 20) errors.excerpt = "요약은 20자 이상이어야 합니다";
   if (form.excerpt.length > 500) errors.excerpt = "요약은 500자 이하여야 합니다";
+  if (!normalizeBlogCategory(form.category)) errors.category = "유효한 카테고리를 선택해 주세요";
   if (form.content.length === 0) errors.content = "섹션이 최소 1개 필요합니다";
   else {
     for (let i = 0; i < form.content.length; i++) {
@@ -97,13 +99,14 @@ function emptySection() {
 
 export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogEditorProps) {
   const today = new Date().toISOString().slice(0, 10);
+  const initialCategory = normalizeBlogCategory(initialData?.category ?? "") ?? BLOG_CATEGORY_SLUGS[0];
 
   const [form, setForm] = useState<BlogEditorData>({
     slug: initialData?.slug ?? "",
     title: initialData?.title ?? "",
     subtitle: initialData?.subtitle ?? "",
     excerpt: initialData?.excerpt ?? "",
-    category: initialData?.category ?? (BLOG_CATEGORIES.find((c) => c !== "전체") ?? ""),
+    category: initialCategory,
     tags: initialData?.tags ?? [],
     date: initialData?.date ?? today,
     content: initialData?.content?.length ? initialData.content : [emptySection()],
@@ -212,7 +215,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   };
 
   // ------ category options (exclude "전체") ------
-  const categoryOptions = BLOG_CATEGORIES.filter((c) => c !== "전체") as BlogCategoryValue[];
+  const categoryOptions = BLOG_CATEGORY_SLUGS;
 
   return (
     <div
@@ -287,14 +290,14 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
           </Field>
 
           {/* Category */}
-          <Field label="카테고리" required>
+          <Field label="카테고리" required error={fieldErrors.category}>
             <select
               value={form.category}
-              onChange={(e) => setField("category", e.target.value)}
-              className={inputClass(false)}
+              onChange={(e) => setField("category", e.target.value as BlogCategorySlug)}
+              className={inputClass(!!fieldErrors.category)}
             >
               {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
               ))}
             </select>
           </Field>

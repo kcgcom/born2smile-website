@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "clear-aligner-care-guide",
     tags: ["치료후관리"],
-    category: "치아교정",
+    category: "orthodontics",
     title: "투명교정, 끼기만 하면 될까?",
     subtitle: "교정 효과를 높이는 투명교정 관리법",
     excerpt:

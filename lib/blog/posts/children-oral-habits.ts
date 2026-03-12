@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "children-oral-habits",
     tags: ["생활습관"],
-    category: "소아치료",
+    category: "pediatric",
     title: "아이 손가락 빨기, 치아에 영향 있나요?",
     subtitle: "구강 악습관이 치열에 미치는 영향과 교정 시기",
     excerpt:

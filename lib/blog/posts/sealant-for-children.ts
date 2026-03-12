@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "sealant-for-children",
     tags: [],
-    category: "소아치료",
+    category: "pediatric",
     title: "실란트, 꼭 해야 하나요?",
     subtitle: "우리 아이 충치 예방의 첫 번째 방패",
     excerpt:

@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "old-amalgam-replacement",
     tags: ["팩트체크"],
-    category: "보존치료",
+    category: "restorative",
     title: "오래된 아말감, 교체해야 하나요?",
     subtitle: "아말감 안전성 논란과 교체 기준 총정리",
     excerpt:

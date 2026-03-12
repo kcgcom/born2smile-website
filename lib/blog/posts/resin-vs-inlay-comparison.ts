@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "resin-vs-inlay-comparison",
     tags: ["비교가이드"],
-    category: "보존치료",
+    category: "restorative",
     title: "레진 vs 인레이, 뭐가 다른가요?",
     subtitle: "충치 크기별 적합한 치료 재료 선택 가이드",
     excerpt:

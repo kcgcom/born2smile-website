@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-tooth-extraction-care",
     tags: ["치료후관리"],
-    category: "보존치료",
+    category: "restorative",
     title: "발치 후 이것만은 피하세요",
     subtitle: "빠른 회복을 위한 발치 후 핵심 주의사항",
     excerpt:

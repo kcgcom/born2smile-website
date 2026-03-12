@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "peri-implantitis-prevention",
     tags: ["증상가이드", "치료후관리"],
-    category: "임플란트",
+    category: "implant",
     title: "임플란트 주변 잇몸이 붓고 아파요",
     subtitle: "임플란트 주위염의 원인과 예방·치료법",
     excerpt:

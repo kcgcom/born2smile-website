@@ -2,7 +2,7 @@ import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS, REVIEWS } fro
 import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
-import { getBlogPostUrl } from "./blog/category-slugs";
+import { getBlogPostUrl, getCategoryLabel } from "./blog/category-slugs";
 
 /**
  * JSON-LD 문자열 직렬화 시 </script> 브레이크아웃을 막기 위한 이스케이프.
@@ -252,7 +252,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
       "@type": "WebPage",
       "@id": `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
     },
-    articleSection: post.category,
+    articleSection: getCategoryLabel(post.category),
     keywords: post.tags,
     inLanguage: "ko-KR",
   };

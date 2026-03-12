@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "orthodontic-treatment-duration",
     tags: [],
-    category: "치아교정",
+    category: "orthodontics",
     title: "교정, 얼마나 걸리나요?",
     subtitle: "케이스별로 알아보는 교정 기간 가이드",
     excerpt:

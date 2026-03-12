@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "senior-orthodontics",
     tags: ["시니어", "팩트체크"],
-    category: "치아교정",
+    category: "orthodontics",
     title: "70대에 교정치료, 정말 가능할까?",
     subtitle: "고령자 치아교정의 조건, 방법, 주의사항 총정리",
     excerpt:

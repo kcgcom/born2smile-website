@@ -39,8 +39,19 @@ export const BLOG_TAGS = [
   "시니어",
 ] as const;
 
-export const BLOG_CATEGORIES = [
-  "전체",
+export const BLOG_CATEGORY_SLUGS = [
+  "prevention",
+  "restorative",
+  "prosthetics",
+  "implant",
+  "orthodontics",
+  "pediatric",
+  "health-tips",
+] as const;
+
+export type BlogCategorySlug = (typeof BLOG_CATEGORY_SLUGS)[number];
+
+export const BLOG_CATEGORY_LABELS_LIST = [
   "예방관리",
   "보존치료",
   "보철치료",
@@ -50,9 +61,19 @@ export const BLOG_CATEGORIES = [
   "건강상식",
 ] as const;
 
+export type BlogCategoryLabel = (typeof BLOG_CATEGORY_LABELS_LIST)[number];
+
+export const BLOG_CATEGORIES = [
+  "전체",
+  ...BLOG_CATEGORY_LABELS_LIST,
+] as const;
+
 export type BlogCategory = (typeof BLOG_CATEGORIES)[number];
 
-/** 카테고리 중 "전체"를 제외한 실제 분류값 */
-export type BlogCategoryValue = Exclude<BlogCategory, "전체">;
+/** UI 필터용 category 값 */
+export type BlogCategoryFilter = "all" | BlogCategorySlug;
+
+/** canonical blog category 값 */
+export type BlogCategoryValue = BlogCategorySlug;
 
 export type BlogTag = (typeof BLOG_TAGS)[number];

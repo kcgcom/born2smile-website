@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "implant-vs-bridge-comparison",
     tags: ["비교가이드"],
-    category: "임플란트",
+    category: "implant",
     title: "임플란트 vs 브릿지, 뭐가 나을까?",
     subtitle: "빈 치아 수복 방법 비교 가이드",
     excerpt:

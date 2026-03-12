@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "children-dental-trauma",
     tags: ["증상가이드"],
-    category: "소아치료",
+    category: "pediatric",
     title: "아이가 이를 다쳤어요",
     subtitle: "소아 치아 외상 시 응급 대처법과 치과 방문 기준",
     excerpt:

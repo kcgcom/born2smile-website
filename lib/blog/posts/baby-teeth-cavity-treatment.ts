@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "baby-teeth-cavity-treatment",
     tags: ["팩트체크"],
-    category: "소아치료",
+    category: "pediatric",
     title: "유치는 어차피 빠지는데 치료해야 하나요?",
     subtitle: "유치 충치 방치의 위험성과 관리의 중요성",
     excerpt:

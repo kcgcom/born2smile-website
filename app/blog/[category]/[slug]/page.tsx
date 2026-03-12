@@ -6,8 +6,8 @@ import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   getRelatedTreatmentId,
   categoryColors,
+  getCategoryLabel,
   getCategoryFromSlug,
-  getCategorySlug,
   getBlogPostUrl,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
@@ -63,7 +63,7 @@ function getPostMetaDescription(post: { excerpt: string; subtitle: string }): st
 export async function generateStaticParams() {
   const posts = await getAllPublishedPostMetas();
   return posts.map((post) => ({
-    category: getCategorySlug(post.category),
+    category: post.category,
     slug: post.slug,
   }));
 }
@@ -74,8 +74,7 @@ export async function generateMetadata({
   params: Promise<{ category: string; slug: string }>;
 }): Promise<Metadata> {
   const { category, slug } = await params;
-  const categoryValue = getCategoryFromSlug(category);
-  if (!categoryValue) return {};
+  if (!getCategoryFromSlug(category)) return {};
 
   const post = await getPostBySlug(slug);
   if (!post) return {};
@@ -97,7 +96,7 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.date,
       ...(post.dateModified && { modifiedTime: post.dateModified }),
-      section: post.category,
+      section: getCategoryLabel(post.category),
       tags: post.tags,
       authors: [`${CLINIC.name}`],
       url: postUrl,
@@ -127,14 +126,15 @@ export default async function BlogPostPage({
   const { category, slug } = await params;
 
   // 카테고리 슬러그 유효성 검증
-  const categoryValue = getCategoryFromSlug(category);
-  if (!categoryValue) notFound();
+  const categorySlug = getCategoryFromSlug(category);
+  if (!categorySlug) notFound();
 
   const post = await getPostBySlug(slug);
   if (!post) notFound();
+  const categoryLabel = getCategoryLabel(post.category);
 
   // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
-  if (getCategorySlug(post.category) !== category) {
+  if (post.category !== category) {
     permanentRedirect(getBlogPostUrl(slug, post.category));
   }
 
@@ -145,7 +145,7 @@ export default async function BlogPostPage({
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
-    { name: post.category, href: `/blog/${category}` },
+    { name: categoryLabel, href: `/blog/${post.category}` },
     { name: post.title, href: getBlogPostUrl(slug, post.category) },
   ]);
 
@@ -167,19 +167,19 @@ export default async function BlogPostPage({
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <Link
-                href={`/blog/${category}`}
+                href={`/blog/${post.category}`}
                 className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={14} />
-                {post.category} 목록
+                {categoryLabel} 목록
               </Link>
 
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Link
-                  href={`/blog/${category}`}
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                  href={`/blog/${post.category}`}
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category as keyof typeof categoryColors] ?? "bg-gray-100 text-gray-600"}`}
                 >
-                  {post.category}
+                  {categoryLabel}
                 </Link>
                 <span className="text-sm text-gray-500">
                   {formatDate(post.date)}
@@ -260,11 +260,11 @@ export default async function BlogPostPage({
       <section className="bg-white px-4 pb-12">
         <div className="mx-auto flex max-w-3xl items-center justify-between border-t border-gray-100 pt-8">
           <Link
-            href={`/blog/${category}`}
+            href={`/blog/${post.category}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[var(--color-primary)]"
           >
             <ArrowLeft size={16} />
-            {post.category} 목록으로
+            {categoryLabel} 목록으로
           </Link>
           <div className="flex items-center gap-2">
             <LikeButtonLazy slug={post.slug} />
@@ -288,9 +288,9 @@ export default async function BlogPostPage({
                   <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-all hover:border-gray-200 hover:shadow-lg">
                       <span
-                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-gray-100 text-gray-600"}`}
                       >
-                        {rp.category}
+                        {getCategoryLabel(rp.category)}
                       </span>
                       <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
                         {rp.title}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CLINIC, BASE_URL } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
+  getCategoryLabel,
   getCategoryFromSlug,
 } from "@/lib/blog";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
@@ -84,10 +85,11 @@ export async function generateMetadata({
   params: Promise<{ category: string }>;
 }): Promise<Metadata> {
   const { category } = await params;
-  const categoryValue = getCategoryFromSlug(category);
-  if (!categoryValue) return {};
+  const categorySlug = getCategoryFromSlug(category);
+  if (!categorySlug) return {};
+  const categoryLabel = getCategoryLabel(categorySlug);
 
-  const meta = CATEGORY_META[category] ?? { title: categoryValue, description: "", keywords: [] };
+  const meta = CATEGORY_META[category] ?? { title: categoryLabel, description: "", keywords: [] };
   const isLocal = category !== "health-tips";
   const localTitle = isLocal ? `김포 ${meta.title}` : meta.title;
   const localDesc = fitMetaDescription(
@@ -133,21 +135,22 @@ export default async function BlogCategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
-  const categoryValue = getCategoryFromSlug(category);
-  if (!categoryValue) notFound();
+  const categorySlug = getCategoryFromSlug(category);
+  if (!categorySlug) notFound();
+  const categoryLabel = getCategoryLabel(categorySlug);
 
   const allPosts = await getAllPublishedPostMetas();
-  const categoryPosts = allPosts.filter((post) => post.category === categoryValue);
+  const categoryPosts = allPosts.filter((post) => post.category === categorySlug);
 
   const meta = CATEGORY_META[category];
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
-    { name: categoryValue, href: `/blog/${category}` },
+    { name: categoryLabel, href: `/blog/${category}` },
   ]);
 
   const collectionJsonLd = getCategoryCollectionJsonLd({
-    title: meta?.title ?? categoryValue,
+    title: meta?.title ?? categoryLabel,
     description: meta?.description ?? "",
     categorySlug: category,
     posts: categoryPosts,
@@ -170,16 +173,16 @@ export default async function BlogCategoryPage({
               Health Column
             </p>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-              {categoryValue}
+              {categoryLabel}
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-gray-600">
-              {meta?.description ?? `${categoryValue}에 관한 전문 정보를 알려드립니다.`}
+              {meta?.description ?? `${categoryLabel}에 관한 전문 정보를 알려드립니다.`}
             </p>
           </FadeIn>
         </div>
       </section>
 
-      <BlogContent initialPosts={categoryPosts} activeDefaultCategory={categoryValue} />
+      <BlogContent initialPosts={categoryPosts} activeDefaultCategory={categorySlug} />
 
       <div className="h-16 md:hidden" />
     </>

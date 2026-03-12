@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "crown-material-comparison",
     tags: ["비교가이드"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "크라운, 어떤 재료가 오래 갈까?",
     subtitle: "지르코니아·골드·PFM 크라운 재료별 수명과 특징 비교",
     excerpt:

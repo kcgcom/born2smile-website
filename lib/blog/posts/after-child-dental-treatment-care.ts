@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "after-child-dental-treatment-care",
     tags: ["치료후관리"],
-    category: "소아치료",
+    category: "pediatric",
     title: "아이가 치과 치료 받고 왔다면",
     subtitle: "보호자가 꼭 알아야 할 치료 후 주의사항",
     excerpt:

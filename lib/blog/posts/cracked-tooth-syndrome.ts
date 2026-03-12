@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "cracked-tooth-syndrome",
     tags: ["증상가이드"],
-    category: "보존치료",
+    category: "restorative",
     title: "씹을 때 이가 시큰거려요",
     subtitle: "눈에 보이지 않는 치아 크랙의 원인과 치료",
     excerpt:

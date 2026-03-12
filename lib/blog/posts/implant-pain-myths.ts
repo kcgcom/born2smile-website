@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "implant-pain-myths",
     tags: ["팩트체크"],
-    category: "임플란트",
+    category: "implant",
     title: "\"임플란트 아프다\"는 말, 진짜일까?",
     subtitle: "임플란트 통증에 대한 오해와 진실",
     excerpt:

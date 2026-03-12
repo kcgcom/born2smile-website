@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../../../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../../../_lib/cache";
-import { getCategoryFromSlug } from "@/lib/blog/category-slugs";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
-import { CATEGORY_KEYWORDS } from "@/lib/admin-naver-datalab-keywords";
+import {
+  CATEGORY_KEYWORDS,
+  isKeywordCategorySlug,
+} from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend } from "@/lib/trend-analysis";
 
 const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"];
@@ -21,11 +23,15 @@ export async function GET(
   }
 
   const { slug } = await params;
+  if (!isKeywordCategorySlug(slug)) {
+    return Response.json(
+      { error: "BAD_REQUEST", message: "유효하지 않은 카테고리입니다" },
+      { status: 400, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
 
   // Find category keywords from CATEGORY_KEYWORDS by slug
-  // (블로그 카테고리가 아닌 키워드 전용 카테고리(예: dental-choice)도 허용)
   const categoryKw = CATEGORY_KEYWORDS.find((ck) => ck.slug === slug);
-  const category = getCategoryFromSlug(slug) ?? categoryKw?.category ?? null;
   if (!categoryKw) {
     return Response.json(
       { error: "BAD_REQUEST", message: "해당 카테고리의 키워드 설정이 없습니다" },
@@ -65,7 +71,7 @@ export async function GET(
     return Response.json(
       {
         data: {
-          category,
+          category: categoryKw.category,
           slug,
           period: raw.period,
           timeUnit: raw.timeUnit,

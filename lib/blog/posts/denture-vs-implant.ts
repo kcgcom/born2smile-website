@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "denture-vs-implant",
     tags: ["시니어", "비교가이드"],
-    category: "보철치료",
+    category: "prosthetics",
     title: "틀니와 임플란트, 뭐가 나을까?",
     subtitle: "상황별로 달라지는 치아 보철 선택 가이드",
     excerpt:

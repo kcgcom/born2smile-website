@@ -4,12 +4,13 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Share2, Check, Clock, ArrowRight, Tag, Search, X } from "lucide-react";
 import {
-  BLOG_CATEGORIES,
+  BLOG_CATEGORY_SLUGS,
   BLOG_TAGS,
   categoryColors,
   getBlogPostUrl,
+  getCategoryLabel,
 } from "@/lib/blog";
-import type { BlogCategory, BlogCategoryValue, BlogTag } from "@/lib/blog";
+import type { BlogCategoryFilter, BlogCategorySlug, BlogTag } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
@@ -22,11 +23,11 @@ const POSTS_PER_PAGE = 12;
 
 interface BlogContentProps {
   initialPosts: BlogPostMeta[];
-  activeDefaultCategory?: BlogCategoryValue;
+  activeDefaultCategory?: BlogCategorySlug;
 }
 
 export default function BlogContent({ initialPosts, activeDefaultCategory }: BlogContentProps) {
-  const [activeCategory, setActiveCategory] = useState<BlogCategory>(activeDefaultCategory ?? "전체");
+  const [activeCategory, setActiveCategory] = useState<BlogCategoryFilter>(activeDefaultCategory ?? "all");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -95,7 +96,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
   const filteredPosts = useMemo(() => shuffledPosts.filter((post) => {
     const categoryMatch =
-      activeCategory === "전체" || post.category === activeCategory;
+      activeCategory === "all" || post.category === activeCategory;
     const tagMatch = !activeTag || post.tags.includes(activeTag);
     if (!categoryMatch || !tagMatch) return false;
     if (!debouncedQuery.trim()) return true;
@@ -110,7 +111,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
 
-  const handleCategoryClick = (cat: BlogCategory) => {
+  const handleCategoryClick = (cat: BlogCategoryFilter) => {
     setActiveCategory(cat);
     setActiveTag(null);
     setVisibleCount(POSTS_PER_PAGE);
@@ -122,7 +123,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
       e.stopPropagation();
     }
     setActiveTag((prev) => (prev === tag ? null : tag));
-    setActiveCategory("전체");
+    setActiveCategory("all");
     setVisibleCount(POSTS_PER_PAGE);
   };
 
@@ -142,7 +143,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
       e: React.MouseEvent,
       slug: string,
       title: string,
-      category: BlogCategoryValue,
+      category: BlogCategorySlug,
     ) => {
       e.preventDefault();
       e.stopPropagation();
@@ -190,7 +191,18 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
         {/* 카테고리 필터 */}
         <div className="mb-4 flex flex-wrap justify-center gap-2">
-          {BLOG_CATEGORIES.map((cat) => (
+          <button
+            onClick={() => handleCategoryClick("all")}
+            aria-pressed={activeCategory === "all" && !activeTag}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeCategory === "all" && !activeTag
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            전체
+          </button>
+          {BLOG_CATEGORY_SLUGS.map((cat) => (
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
@@ -201,7 +213,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {cat}
+              {getCategoryLabel(cat)}
             </button>
           ))}
         </div>
@@ -233,15 +245,17 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               : null}
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visiblePosts.map((post) => (
+            {visiblePosts.map((post) => {
+              const categorySlug = post.category as BlogCategorySlug;
+              return (
               <div key={post.slug}>
                 <article className="group relative flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 공유 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}
+                      className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[categorySlug] ?? "bg-gray-100 text-gray-600"}`}
                     >
-                      {post.category}
+                      {getCategoryLabel(categorySlug)}
                     </span>
                     <div className="flex items-center gap-1.5">
                     <AdminEditIcon
@@ -251,7 +265,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     />
                     <button
                       onClick={(e) =>
-                        handleShare(e, post.slug, post.title, post.category)
+                        handleShare(e, post.slug, post.title, categorySlug)
                       }
                       className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
                       aria-label={`"${post.title}" 공유하기`}
@@ -328,7 +342,8 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   />
                 </article>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

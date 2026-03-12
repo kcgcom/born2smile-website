@@ -4,9 +4,9 @@ import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Loader2, Check, Save } from "lucide-react";
 import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategoryValue } from "@/lib/blog/types";
-import { BLOG_CATEGORIES } from "@/lib/blog/types";
-import { getBlogPostUrl } from "@/lib/blog/category-slugs";
+import type { BlogCategorySlug } from "@/lib/blog/types";
+import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
+import { getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { DataTable } from "../DataTable";
@@ -18,6 +18,7 @@ import type { AdminBlogPost, BlogLikesData } from "./blog-helpers";
 // ---------------------------------------------------------------
 
 type CategoryData = { category: string; count: number };
+const EMPTY_POSTS: AdminBlogPost[] = [];
 
 const CategoryPieChart = dynamic(
   () =>
@@ -186,16 +187,15 @@ export function StatsSubTab() {
 
   const { data: postsData, loading: postsLoading, error: postsError } =
     useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
-  const posts = postsData ?? [];
+  const posts = postsData ?? EMPTY_POSTS;
 
   const { data: likesData, loading: likesLoading, error: likesError } =
     useAdminApi<BlogLikesData>("/api/admin/blog-likes");
 
   // Category distribution — all posts
   const byCategoryAll = useMemo(() => {
-    const categories = BLOG_CATEGORIES.filter((c) => c !== "전체");
-    return categories.map((cat) => ({
-      category: cat,
+    return BLOG_CATEGORY_SLUGS.map((cat) => ({
+      category: getCategoryLabel(cat),
       count: posts.filter((p) => p.category === cat).length,
     }));
   }, [posts]);
@@ -203,9 +203,8 @@ export function StatsSubTab() {
   // Category distribution — published only
   const byCategoryPublished = useMemo(() => {
     const published = posts.filter((p) => p.published && p.date <= today);
-    const categories = BLOG_CATEGORIES.filter((c) => c !== "전체");
-    return categories.map((cat) => ({
-      category: cat,
+    return BLOG_CATEGORY_SLUGS.map((cat) => ({
+      category: getCategoryLabel(cat),
       count: published.filter((p) => p.category === cat).length,
     }));
   }, [posts, today]);
@@ -296,26 +295,30 @@ export function StatsSubTab() {
               {
                 key: "title",
                 label: "제목",
-                render: (row) => (
+                render: (row) => {
+                  const category = String(row.category) as BlogCategorySlug;
+                  return (
                   <a
-                    href={getBlogPostUrl(String(row.slug), String(row.category) as BlogCategoryValue)}
+                    href={getBlogPostUrl(String(row.slug), category)}
                     target="_blank"
                     rel="noopener"
                     className="hover:text-[var(--color-primary)] hover:underline"
                   >
                     {String(row.title)}
                   </a>
-                ),
+                  );
+                },
               },
               {
                 key: "category",
                 label: "카테고리",
                 render: (row) => {
+                  const category = String(row.category) as BlogCategorySlug;
                   const catColor =
-                    categoryColors[row.category as BlogCategoryValue] ?? "bg-[var(--background)] text-[var(--muted)]";
+                    categoryColors[category] ?? "bg-[var(--background)] text-[var(--muted)]";
                   return (
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                      {String(row.category)}
+                      {getCategoryLabel(category)}
                     </span>
                   );
                 },

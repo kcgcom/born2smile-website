@@ -3,7 +3,7 @@ import type { BlogPost } from "../types";
 export const post: BlogPost = {
     slug: "bone-graft-for-implant",
     tags: ["팩트체크"],
-    category: "임플란트",
+    category: "implant",
     title: "뼈가 부족하면 임플란트 못 하나요?",
     subtitle: "골이식술의 종류와 과정, 성공률 안내",
     excerpt:
