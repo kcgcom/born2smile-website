@@ -13,15 +13,6 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 페이지 전환 시 모바일 메뉴 닫기 (React "adjust state during rendering" 패턴)
-  const [prevPathname, setPrevPathname] = useState(pathname);
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    if (isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
-    }
-  }
-
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
@@ -83,21 +83,24 @@ const STATUS_STYLES: Record<ClinicStatusInfo["status"], { dot: string; text: str
   closed: { dot: "bg-gray-400", text: "text-gray-600" },
 };
 
-function subscribeToClinicStatus(onStoreChange: () => void): () => void {
-  const id = window.setInterval(onStoreChange, 60_000);
-  return () => window.clearInterval(id);
-}
-
-function getClinicStatusServerSnapshot(): ClinicStatusInfo | null {
-  return null;
-}
-
 function DesktopPhoneButton() {
-  const info = useSyncExternalStore(
-    subscribeToClinicStatus,
-    getClinicStatus,
-    getClinicStatusServerSnapshot,
-  );
+  const [info, setInfo] = useState<ClinicStatusInfo | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      setInfo(getClinicStatus());
+    };
+
+    const rafId = window.requestAnimationFrame(update);
+    const id = window.setInterval(() => {
+      update();
+    }, 60_000);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearInterval(id);
+    };
+  }, []);
 
   const style = info ? STATUS_STYLES[info.status] : STATUS_STYLES.closed;
 

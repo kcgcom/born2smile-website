@@ -9,10 +9,17 @@ interface TableOfContentsProps {
 
 export default function TableOfContents({ headings }: TableOfContentsProps) {
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [isOpen, setIsOpen] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false
-  );
+  const [isOpen, setIsOpen] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const rafId = window.requestAnimationFrame(() => {
+      setIsOpen(mediaQuery.matches);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, []);
 
   // 스크롤 스파이: IntersectionObserver로 현재 보이는 섹션 추적
   useEffect(() => {
