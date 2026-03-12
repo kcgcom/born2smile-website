@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -112,7 +111,6 @@ export default function RootLayout({
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-3ZDMMFGP6Z')`}
         </Script>
         <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
