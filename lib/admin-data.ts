@@ -21,7 +21,7 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-02-20
+// 마지막 동기화: 2026-03-19
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // CRITICAL — 4/4 완료
@@ -154,9 +154,10 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m41", title: "시간대별 CTA 차별화", priority: "MEDIUM", status: "done", description: "데스크톱 플로팅 버튼에 진료 상태 표시 — 진료 중(초록)/점심(노랑)/종료(회색), 1분 갱신" },
   { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "done", description: "BlogPostSection[] 제목으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
   { id: "m43", title: "카테고리 허브 페이지 지역 SEO", priority: "MEDIUM", status: "done", description: "/blog/[category] 허브 페이지 title/desc/keywords에 '김포' 지역 키워드 포함" },
-  { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "pending", description: "트렌드 탭 키워드에 의도 태그(정보형/비교형/전환형) 추가. 전환형 키워드 우선순위 상향" },
+  { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "done", description: "57개 키워드 서브그룹에 SearchIntent 태깅(정보형/비교검토/전환형/탐색형). 콘텐츠 전략 탭에 의도별 필터·컬럼·산점도 툴팁 추가" },
   { id: "m45", title: "SC 쿼리 × 트렌드 키워드 교차 분석", priority: "MEDIUM", status: "pending", description: "Search Console 유입 쿼리와 DataLab 시장 수요 교차 비교. '수요 높지만 유입 없는' 기회 키워드 식별" },
   { id: "l20", title: "계절성 트렌드 패턴 감지", priority: "LOW", status: "pending", description: "키워드 시계열 데이터로 연간 패턴 분석. 계절별 콘텐츠 발행 타이밍 추천" },
+  { id: "l22", title: "RSS 피드 + 네이버 서치어드바이저 제출", priority: "LOW", status: "done", description: "/feed.xml RSS 2.0 피드 (최신 50개 블로그, 카테고리 태그, 1시간 ISR). layout.tsx RSS 자동 발견 link 태그 추가" },
   { id: "l21", title: "전체 FAQ 독립 페이지", priority: "LOW", status: "done", description: "6개 진료 과목 FAQ를 모은 /faq 독립 페이지. '치과 자주 묻는 질문' 키워드 타겟" },
 ];
 
