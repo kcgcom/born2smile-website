@@ -4,7 +4,7 @@
 // =============================================================
 
 import type { BlogPostMeta } from "./blog/types";
-import type { CategoryKeywords, KeywordCategorySlug } from "./admin-naver-datalab-keywords";
+import type { CategoryKeywords, KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-keywords";
 
 export type TrendDirection = "rising" | "falling" | "stable";
 
@@ -53,6 +53,8 @@ export interface ContentGap {
   relatedKeywords: Array<{ keyword: string; volume: number }>;
   /** volumeKeywords 개별 검색량 (직접 조회 키워드) */
   directKeywords: Array<{ keyword: string; volume: number }>;
+  /** 검색 의도 분류 */
+  searchIntent: SearchIntent;
 }
 
 export interface TopicSuggestion {
@@ -255,6 +257,7 @@ export function analyzeContentGap(
       isEstimated: boolean;
       relatedKeywords: Array<{ keyword: string; volume: number }>;
       directKeywords: Array<{ keyword: string; volume: number }>;
+      searchIntent: SearchIntent;
     }> = [];
 
     for (const sg of catData.subGroups) {
@@ -292,6 +295,7 @@ export function analyzeContentGap(
         isEstimated: vol?.isEstimated ?? false,
         relatedKeywords: vol?.relatedKeywords ?? [],
         directKeywords: vol?.directKeywords ?? [],
+        searchIntent: subGroupDef?.searchIntent ?? "informational",
       });
     }
 
@@ -339,6 +343,7 @@ export function analyzeContentGap(
         isEstimated: g.isEstimated,
         relatedKeywords: g.relatedKeywords,
         directKeywords: g.directKeywords,
+        searchIntent: g.searchIntent,
       });
     }
   }

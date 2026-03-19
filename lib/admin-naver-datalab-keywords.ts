@@ -22,10 +22,13 @@ export function getKeywordCategoryLabel(category: KeywordCategorySlug): KeywordC
   return KEYWORD_CATEGORY_LABELS[category];
 }
 
+export type SearchIntent = "informational" | "commercial" | "transactional" | "navigational";
+
 export interface KeywordSubGroup {
   name: string;             // 서브그룹명 (예: "비용/가격")
   keywords: string[];       // 최대 20개 키워드 (네이버 DataLab API 그룹당 최대 20개)
   volumeKeywords: string[]; // 검색광고 API 검색량 조회용 (2-3개, 대표성 높은 키워드)
+  searchIntent: SearchIntent; // 검색 의도 분류
 }
 
 export interface TopicAngle {
@@ -66,6 +69,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "노인 임플란트 비용",
         ],
         volumeKeywords: ["임플란트 비용", "임플란트 가격"],
+        searchIntent: "commercial",
       },
       {
         name: "과정/기간",
@@ -80,6 +84,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 완성까지",
         ],
         volumeKeywords: ["임플란트 과정", "임플란트 기간"],
+        searchIntent: "informational",
       },
       {
         name: "부작용/관리",
@@ -94,6 +99,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 주의사항",
         ],
         volumeKeywords: ["임플란트 부작용", "임플란트 관리"],
+        searchIntent: "informational",
       },
       {
         name: "종류/브랜드",
@@ -111,6 +117,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "전치부 임플란트",
         ],
         volumeKeywords: ["임플란트 종류", "오스템 임플란트"],
+        searchIntent: "commercial",
       },
       {
         name: "대상/조건",
@@ -125,6 +132,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 가능 여부",
         ],
         volumeKeywords: ["당뇨 임플란트", "임플란트 조건"],
+        searchIntent: "informational",
       },
       {
         name: "첨단/디지털",
@@ -134,6 +142,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "가이드 임플란트", "즉시 식립",
         ],
         volumeKeywords: ["원데이 임플란트", "즉시 임플란트"],
+        searchIntent: "commercial",
       },
       {
         name: "임플란트 잇몸",
@@ -143,6 +152,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임플란트 잇몸 퇴축", "임플란트 점막염",
         ],
         volumeKeywords: ["임플란트 주위염", "잇몸재생주사"],
+        searchIntent: "informational",
       },
     ],
     topicAngles: [
@@ -204,6 +214,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아교정 종류",
         ],
         volumeKeywords: ["투명교정", "치아교정 종류"],
+        searchIntent: "informational",
       },
       {
         name: "비용/기간",
@@ -218,6 +229,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 치료 기간",
         ],
         volumeKeywords: ["치아교정 비용", "교정 기간"],
+        searchIntent: "commercial",
       },
       {
         name: "부작용/관리",
@@ -232,6 +244,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "유지장치",
         ],
         volumeKeywords: ["교정 통증", "교정 부작용"],
+        searchIntent: "informational",
       },
       {
         name: "대상/나이",
@@ -246,6 +259,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 적합 나이",
         ],
         volumeKeywords: ["성인 교정", "교정 나이"],
+        searchIntent: "informational",
       },
       {
         name: "생활/관리",
@@ -260,6 +274,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 리테이너",
         ],
         volumeKeywords: ["교정 칫솔질", "교정 중 관리"],
+        searchIntent: "informational",
       },
       {
         name: "심미/고민",
@@ -269,6 +284,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "비대칭 교정", "교정 얼굴 변화",
         ],
         volumeKeywords: ["돌출입 교정", "덧니 교정"],
+        searchIntent: "commercial",
       },
       {
         name: "교정비교/선택",
@@ -278,6 +294,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "교정 잘하는 치과", "교정 상담",
         ],
         volumeKeywords: ["인비절라인 가격", "투명교정 후기"],
+        searchIntent: "transactional",
       },
     ],
     topicAngles: [
@@ -339,6 +356,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치관 보철",
         ],
         volumeKeywords: ["치아 크라운", "크라운 비용"],
+        searchIntent: "informational",
       },
       {
         name: "브릿지",
@@ -353,6 +371,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "앞니 브릿지",
         ],
         volumeKeywords: ["치아 브릿지", "브릿지 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "틀니",
@@ -367,6 +386,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "틀니 적응",
         ],
         volumeKeywords: ["틀니", "틀니 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "라미네이트",
@@ -381,6 +401,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "심미 보철",
         ],
         volumeKeywords: ["라미네이트", "라미네이트 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "치아미백",
@@ -398,6 +419,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 누런색",
         ],
         volumeKeywords: ["치아 미백", "치아미백 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "비용",
@@ -412,6 +434,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "보철 본인부담",
         ],
         volumeKeywords: ["보철 비용", "크라운 가격"],
+        searchIntent: "commercial",
       },
       {
         name: "소재/종류",
@@ -426,6 +449,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "세라믹 크라운",
         ],
         volumeKeywords: ["지르코니아", "골드 크라운"],
+        searchIntent: "commercial",
       },
       {
         name: "앞니치료",
@@ -435,6 +459,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "앞니 브릿지", "앞니 성형",
         ],
         volumeKeywords: ["앞니 크라운", "앞니 깨짐"],
+        searchIntent: "transactional",
       },
     ],
     topicAngles: [
@@ -501,6 +526,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "충치 예방",
         ],
         volumeKeywords: ["충치치료", "충치 비용"],
+        searchIntent: "informational",
       },
       {
         name: "신경치료",
@@ -515,6 +541,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "신경치료 후 관리",
         ],
         volumeKeywords: ["신경치료", "신경치료 비용"],
+        searchIntent: "informational",
       },
       {
         name: "레진",
@@ -529,6 +556,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "레진 충전",
         ],
         volumeKeywords: ["레진 치료", "레진 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "인레이/온레이",
@@ -543,6 +571,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "인레이 치료",
         ],
         volumeKeywords: ["인레이 비용", "인레이"],
+        searchIntent: "commercial",
       },
       {
         name: "통증/관리",
@@ -561,6 +590,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "이 시림 치약",
         ],
         volumeKeywords: ["이갈이", "치아 시림"],
+        searchIntent: "informational",
       },
       {
         name: "예방",
@@ -575,6 +605,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "에나멜 보호",
         ],
         volumeKeywords: ["충치 예방", "치아 관리"],
+        searchIntent: "informational",
       },
       {
         name: "증상/자가진단",
@@ -584,6 +615,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸이 부었어요", "이가 욱신거려요",
         ],
         volumeKeywords: ["치아 시림", "잇몸 출혈"],
+        searchIntent: "informational",
       },
       {
         name: "사랑니",
@@ -593,6 +625,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "사랑니 염증", "사랑니 발치 기간",
         ],
         volumeKeywords: ["사랑니 발치", "사랑니 통증"],
+        searchIntent: "informational",
       },
     ],
     topicAngles: [
@@ -659,6 +692,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "어린이 치과 비용",
         ],
         volumeKeywords: ["소아치과", "어린이 충치"],
+        searchIntent: "transactional",
       },
       {
         name: "유치관리",
@@ -673,6 +707,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "유치 치료 필요성",
         ],
         volumeKeywords: ["유치 충치", "유치 관리"],
+        searchIntent: "informational",
       },
       {
         name: "교정시기",
@@ -687,6 +722,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "성장기 교정",
         ],
         volumeKeywords: ["소아 교정", "교정 시작 나이"],
+        searchIntent: "informational",
       },
       {
         name: "습관/예방",
@@ -701,6 +737,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 발육",
         ],
         volumeKeywords: ["손가락 빨기", "어린이 칫솔질"],
+        searchIntent: "informational",
       },
       {
         name: "불소도포",
@@ -715,6 +752,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "불소 치약 어린이",
         ],
         volumeKeywords: ["불소 도포", "어린이 불소"],
+        searchIntent: "commercial",
       },
       {
         name: "홈메우기",
@@ -729,6 +767,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "실란트 비용",
         ],
         volumeKeywords: ["홈메우기", "실란트 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "소아응급/외상",
@@ -738,6 +777,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "아이 입 부딪힘", "유치 깨짐",
         ],
         volumeKeywords: ["아이 치통", "유치 빠짐"],
+        searchIntent: "informational",
       },
     ],
     topicAngles: [
@@ -799,6 +839,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치석 제거",
         ],
         volumeKeywords: ["스케일링", "스케일링 비용"],
+        searchIntent: "commercial",
       },
       {
         name: "잇몸질환",
@@ -817,6 +858,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸 영양제",
         ],
         volumeKeywords: ["잇몸질환", "치주염"],
+        searchIntent: "informational",
       },
       {
         name: "구강위생",
@@ -831,6 +873,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "구강 관리 루틴",
         ],
         volumeKeywords: ["치실 사용법", "전동칫솔"],
+        searchIntent: "informational",
       },
       {
         name: "구취",
@@ -845,6 +888,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "아침 입냄새",
         ],
         volumeKeywords: ["구취", "입냄새 원인"],
+        searchIntent: "informational",
       },
       {
         name: "정기검진",
@@ -859,6 +903,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "정기 스케일링",
         ],
         volumeKeywords: ["치과 정기검진", "치과 검진 주기"],
+        searchIntent: "transactional",
       },
       {
         name: "에어플로우",
@@ -873,6 +918,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "에어플로우 치석",
         ],
         volumeKeywords: ["스케일링 종류", "파우더 스케일링"],
+        searchIntent: "commercial",
       },
       {
         name: "잇몸재생/치료",
@@ -882,6 +928,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸재생 비용", "잇몸 퇴축 원인",
         ],
         volumeKeywords: ["잇몸재생주사", "잇몸재생술"],
+        searchIntent: "transactional",
       },
       {
         name: "구강건조/타액",
@@ -891,6 +938,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "구강건조 예방", "침 분비 촉진",
         ],
         volumeKeywords: ["구강건조증", "입 마름"],
+        searchIntent: "informational",
       },
     ],
     topicAngles: [
@@ -957,6 +1005,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "구강 건강 비결",
         ],
         volumeKeywords: ["구강건강", "치아 건강"],
+        searchIntent: "informational",
       },
       {
         name: "영양/음식",
@@ -971,6 +1020,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "구강 건강 식단",
         ],
         volumeKeywords: ["치아에 좋은 음식", "치아에 나쁜 음식"],
+        searchIntent: "informational",
       },
       {
         name: "전신건강",
@@ -985,6 +1035,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 건강 관계",
         ],
         volumeKeywords: ["당뇨와 치과", "구강 전신건강"],
+        searchIntent: "informational",
       },
       {
         name: "임산부",
@@ -999,6 +1050,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "임산부 마취",
         ],
         volumeKeywords: ["임산부 치과", "임신 중 치과"],
+        searchIntent: "informational",
       },
       {
         name: "시니어",
@@ -1016,6 +1068,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "노인 잇몸 관리",
         ],
         volumeKeywords: ["노인 구강관리", "어르신 치과"],
+        searchIntent: "informational",
       },
       {
         name: "치과공포/심리",
@@ -1025,6 +1078,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 불안", "치과 두려움 극복",
         ],
         volumeKeywords: ["치과 공포증", "수면 치료"],
+        searchIntent: "informational",
       },
       {
         name: "약/부작용",
@@ -1034,6 +1088,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "당뇨약 치과", "스테로이드 치과",
         ],
         volumeKeywords: ["치과 항생제", "치과 진통제"],
+        searchIntent: "informational",
       },
       {
         name: "구강케어제품",
@@ -1043,6 +1098,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "잇몸 치약", "시린이 치약",
         ],
         volumeKeywords: ["전동칫솔 추천", "치약 추천"],
+        searchIntent: "commercial",
       },
     ],
     topicAngles: [
@@ -1116,6 +1172,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "김포 한강신도시 치과",
         ],
         volumeKeywords: ["김포치과 추천", "김포 임플란트"],
+        searchIntent: "navigational",
       },
       {
         name: "신뢰/비교",
@@ -1134,6 +1191,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "세컨드오피니언 치과",
         ],
         volumeKeywords: ["치과 고르는 법", "치과 추천"],
+        searchIntent: "commercial",
       },
       {
         name: "긴급/증상",
@@ -1152,6 +1210,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "이 시림",
         ],
         volumeKeywords: ["치통 응급", "이가 아플때"],
+        searchIntent: "transactional",
       },
       {
         name: "비용/보험",
@@ -1166,6 +1225,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 실비",
         ],
         volumeKeywords: ["치과 비용", "치과 건강보험"],
+        searchIntent: "commercial",
       },
       {
         name: "후기/평판",
@@ -1180,6 +1240,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치과 경험",
         ],
         volumeKeywords: ["치과 후기", "치과 리뷰"],
+        searchIntent: "commercial",
       },
       {
         name: "김포지역세분화",
@@ -1189,6 +1250,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "김포 양촌 치과", "김포 걸포동 치과",
         ],
         volumeKeywords: ["김포 치과", "김포 장기동 치과"],
+        searchIntent: "navigational",
       },
       {
         name: "김포진료별",
@@ -1198,6 +1260,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "김포 틀니", "김포 소아치과",
         ],
         volumeKeywords: ["김포 임플란트", "김포 교정"],
+        searchIntent: "navigational",
       },
       {
         name: "양심/신뢰",
@@ -1207,6 +1270,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "투명 치과", "치과 진단 차이",
         ],
         volumeKeywords: ["양심치과", "과잉진료 치과"],
+        searchIntent: "commercial",
       },
       {
         name: "야간/주말/편의",
@@ -1216,6 +1280,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "김포 일요일 치과", "김포 늦게까지 치과",
         ],
         volumeKeywords: ["야간 치과", "주말 치과"],
+        searchIntent: "transactional",
       },
       {
         name: "보험/실비활용",
@@ -1225,6 +1290,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "크라운 실비", "치과 의료비 공제",
         ],
         volumeKeywords: ["치과 실비보험", "임플란트 실비"],
+        searchIntent: "commercial",
       },
       {
         name: "브랜드검색",
@@ -1234,6 +1300,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "born2smile", "본투스마일",
         ],
         volumeKeywords: ["서울본치과", "본치과"],
+        searchIntent: "navigational",
       },
     ],
     topicAngles: [

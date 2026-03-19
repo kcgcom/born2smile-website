@@ -2,6 +2,7 @@ import { categoryColors } from "@/lib/blog/category-colors";
 import {
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
+  type SearchIntent,
 } from "@/lib/admin-naver-datalab-keywords";
 
 // ---------------------------------------------------------------
@@ -28,6 +29,7 @@ export interface ContentGapItem {
   isEstimated: boolean;
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
   directKeywords?: Array<{ keyword: string; volume: number }>;
+  searchIntent?: SearchIntent;
 }
 
 export interface TopicSuggestionItem {
@@ -97,6 +99,22 @@ export function GapScoreBadge({ score }: { score: number }) {
     return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
   return <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
+}
+
+const SEARCH_INTENT_STYLES: Record<SearchIntent, { label: string; className: string }> = {
+  informational: { label: "정보형", className: "bg-blue-100 text-blue-700" },
+  commercial:    { label: "비교/검토", className: "bg-orange-100 text-orange-700" },
+  transactional: { label: "전환형", className: "bg-green-100 text-green-700" },
+  navigational:  { label: "탐색형", className: "bg-gray-100 text-gray-600" },
+};
+
+export function SearchIntentBadge({ intent }: { intent: SearchIntent }) {
+  const { label, className } = SEARCH_INTENT_STYLES[intent];
+  return (
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${className}`}>
+      {label}
+    </span>
+  );
 }
 
 export function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {

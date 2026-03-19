@@ -11,8 +11,9 @@ import { DataTable } from "../DataTable";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import { CategoryBadge, GapScoreBadge, PriorityBadge, calcTotalVolume } from "./shared";
+import { CategoryBadge, GapScoreBadge, PriorityBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { ContentGapItem, OverviewData } from "./shared";
+import type { SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 
 // ---------------------------------------------------------------
 // Opportunity Scatter Chart
@@ -36,6 +37,7 @@ interface ScatterPoint {
   x: number;
   y: number;
   z: number;
+  searchIntent?: SearchIntent;
 }
 
 const OpportunityScatter = dynamic(
@@ -79,10 +81,22 @@ const OpportunityScatter = dynamic(
                   content={({ payload }) => {
                     if (!payload || payload.length === 0) return null;
                     const d = payload[0].payload as ScatterPoint;
+                    const intentStyles: Record<SearchIntent, { label: string; className: string }> = {
+                      informational: { label: "정보형", className: "bg-blue-100 text-blue-700" },
+                      commercial:    { label: "비교/검토", className: "bg-orange-100 text-orange-700" },
+                      transactional: { label: "전환형", className: "bg-green-100 text-green-700" },
+                      navigational:  { label: "탐색형", className: "bg-gray-100 text-gray-600" },
+                    };
+                    const intentStyle = d.searchIntent ? intentStyles[d.searchIntent] : null;
                     return (
                       <div className="rounded-lg border border-[var(--border)] bg-white p-2 shadow text-xs">
                         <p className="font-semibold">{d.subGroup}</p>
                         <p className="text-[var(--muted)]">{d.category}</p>
+                        {intentStyle && (
+                          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${intentStyle.className}`}>
+                            {intentStyle.label}
+                          </span>
+                        )}
                         <p>검색량: {d.x.toLocaleString("ko-KR")}/월</p>
                         <p>포스트: {d.y}개</p>
                         <p>갭 점수: {d.z.toFixed(0)}</p>
@@ -165,8 +179,17 @@ function useGapTableSort(initial: GapSortKey = "gapScore") {
 // Main StrategySubTab component
 // ---------------------------------------------------------------
 
+const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: string }> = [
+  { value: "all", label: "전체" },
+  { value: "informational", label: "정보형" },
+  { value: "commercial", label: "비교/검토" },
+  { value: "transactional", label: "전환형" },
+  { value: "navigational", label: "탐색형" },
+];
+
 export function StrategySubTab() {
   const router = useRouter();
+  const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
 
   const {
     data: overviewData,
@@ -208,6 +231,7 @@ export function StrategySubTab() {
         x: g.totalVolume,
         y: g.existingPostCount,
         z: g.gapScore,
+        searchIntent: g.searchIntent,
       })),
     [gapItemsWithVolume],
   );
@@ -248,7 +272,11 @@ export function StrategySubTab() {
 
   if (!overviewData) return null;
 
-  const gapRows = sortGapRows(overviewData.contentGap).map((item) => ({
+  const filteredGap = intentFilter === "all"
+    ? overviewData.contentGap
+    : overviewData.contentGap.filter((item) => item.searchIntent === intentFilter);
+
+  const gapRows = sortGapRows(filteredGap).map((item) => ({
     ...item,
     id: `${item.slug}-${item.subGroup}`,
   }));
@@ -352,6 +380,29 @@ export function StrategySubTab() {
               &nbsp;·&nbsp;
               <span className="text-green-600 font-medium">LOW(&lt;40)</span>
             </p>
+            {/* Intent filter chips */}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {INTENT_FILTER_OPTIONS.map((opt) => {
+                const isActive = intentFilter === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setIntentFilter(opt.value)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+                    }`}
+                  >
+                    {opt.label}
+                    {isActive && intentFilter !== "all" && (
+                      <span className="ml-1 opacity-70">({filteredGap.length})</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           {/* Desktop: DataTable (sm and above) */}
           <div className="hidden sm:block rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
@@ -393,6 +444,14 @@ export function StrategySubTab() {
                   label: "카테고리",
                   align: "left",
                   render: (row) => <CategoryBadge category={row.category as KeywordCategorySlug} />,
+                },
+                {
+                  key: "searchIntent",
+                  label: "검색 의도",
+                  align: "left",
+                  render: (row) => row.searchIntent
+                    ? <SearchIntentBadge intent={row.searchIntent as SearchIntent} />
+                    : null,
                 },
                 {
                   key: "monthlyVolume",
@@ -494,6 +553,7 @@ export function StrategySubTab() {
                   <div key={item.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="shrink-0"><CategoryBadge category={item.category} /></span>
+                      {item.searchIntent && <span className="shrink-0"><SearchIntentBadge intent={item.searchIntent} /></span>}
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">{item.subGroup}</span>
                       <span className="flex shrink-0 items-center gap-1">
                         <span className="text-xs tabular-nums text-[var(--foreground)]">
