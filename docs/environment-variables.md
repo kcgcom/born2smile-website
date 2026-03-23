@@ -13,6 +13,8 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key (RLS 바이패스, 서버 전용) | 필수 |
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`) | 필수 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Google 서비스 계정 JSON key (GA4/Search Console API 인증) | GA4/SC 탭 필수 |
+| `GOOGLE_CLOUD_PROJECT` | Google Analytics Data API 호출에 사용할 활성 Google Cloud 프로젝트 ID | 선택 |
+| `GOOGLE_CLOUD_QUOTA_PROJECT` | GA4 요청에 사용할 Quota Project override (삭제된 프로젝트 우회용) | 선택 |
 | `GA4_PROPERTY_ID` | Google Analytics 4 속성 ID (숫자만, 예: `525397980`) | 트래픽 탭 필수 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`) | 검색/SEO 탭 필수 |
 | `NAVER_DATALAB_CLIENT_ID` | 네이버 DataLab API Client ID (미설정 시 섹션 숨김) | 선택 |
