@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
-import { fetchGA4Data, getGA4ErrorMessage } from "@/lib/admin-analytics";
+import { fetchGA4Data } from "@/lib/admin-analytics";
 
 const VALID_PERIODS = ["7d", "30d", "90d"];
 
@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (e) {
-    console.error("[admin/analytics]", e);
+    const message =
+      e instanceof Error ? e.message : "Google Analytics 데이터를 불러올 수 없습니다";
     return Response.json(
-      { error: "API_ERROR", message: getGA4ErrorMessage(e) },
+      { error: "API_ERROR", message },
       { status: 500, headers: { "Cache-Control": "private, no-store" } },
     );
   }

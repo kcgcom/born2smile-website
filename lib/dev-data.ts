@@ -207,7 +207,5 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NAVER_SEARCHAD_CUSTOMER_ID", label: "네이버 검색광고 Customer ID", required: false, scope: "private" },
   { key: "PAGESPEED_API_KEY", label: "PageSpeed Insights API Key", required: false, scope: "private" },
   { key: "GOOGLE_SERVICE_ACCOUNT_KEY", label: "Google 서비스 계정 JSON", required: false, scope: "private" },
-  { key: "GOOGLE_CLOUD_PROJECT", label: "Google Cloud Project ID", required: false, scope: "private" },
-  { key: "GOOGLE_CLOUD_QUOTA_PROJECT", label: "Google Cloud Quota Project", required: false, scope: "private" },
   { key: "CRON_SECRET", label: "Vercel Cron 인증 토큰", required: true, scope: "private" },
 ];

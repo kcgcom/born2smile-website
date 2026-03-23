@@ -1,62 +1,21 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { calcChange } from "./admin-utils";
 
-interface GoogleServiceAccountKey {
-  client_email?: string;
-  private_key?: string;
-  project_id?: string;
-  quota_project_id?: string;
-}
-
-const DELETED_PROJECT_PATTERN = /Project #?(\d+) has been deleted/i;
-
-function getGa4PropertyId(): string {
-  return process.env.GA4_PROPERTY_ID?.trim() ?? "";
-}
-
-function parseServiceAccountKey(): GoogleServiceAccountKey | null {
-  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!keyJson) return null;
-
-  try {
-    return JSON.parse(keyJson) as GoogleServiceAccountKey;
-  } catch {
-    console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
-    return null;
-  }
-}
-
-function getGoogleProjectId(key: GoogleServiceAccountKey | null): string | undefined {
-  return (
-    process.env.GOOGLE_CLOUD_PROJECT?.trim() ||
-    process.env.GCLOUD_PROJECT?.trim() ||
-    key?.project_id?.trim() ||
-    undefined
-  );
-}
-
-function getGoogleQuotaProjectId(key: GoogleServiceAccountKey | null): string | undefined {
-  return process.env.GOOGLE_CLOUD_QUOTA_PROJECT?.trim() || key?.quota_project_id?.trim() || undefined;
-}
+const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID ?? "";
 
 function getClient(): BetaAnalyticsDataClient {
-  const key = parseServiceAccountKey();
-  const projectId = getGoogleProjectId(key);
-  const quotaProjectId = getGoogleQuotaProjectId(key);
-
-  if (key?.client_email && key.private_key) {
-    return new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: key.client_email,
-        private_key: key.private_key,
-        ...(projectId ? { project_id: projectId } : {}),
-        ...(quotaProjectId ? { quota_project_id: quotaProjectId } : {}),
-      },
-      ...(projectId ? { projectId } : {}),
-    });
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (keyJson) {
+    try {
+      const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
+      return new BetaAnalyticsDataClient({
+        credentials: { client_email: key.client_email, private_key: key.private_key },
+      });
+    } catch {
+      console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
+    }
   }
-
-  return new BetaAnalyticsDataClient(projectId ? { projectId } : undefined); // ADC
+  return new BetaAnalyticsDataClient(); // ADC
 }
 
 function getPeriodDates(period: string): {
@@ -90,37 +49,8 @@ function getPeriodDates(period: string): {
   };
 }
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof (error as { message?: unknown }).message === "string"
-  ) {
-    return (error as { message: string }).message;
-  }
-  return "";
-}
-
-export function getGA4ErrorMessage(error: unknown): string {
-  const rawMessage = getErrorMessage(error);
-  const deletedProjectMatch = rawMessage.match(DELETED_PROJECT_PATTERN);
-
-  if (deletedProjectMatch) {
-    return `GA4 인증용 Google Cloud 프로젝트(${deletedProjectMatch[1]})가 삭제되었습니다. Vercel의 GOOGLE_SERVICE_ACCOUNT_KEY를 활성 프로젝트의 서비스 계정 키로 교체하고, 필요하면 GOOGLE_CLOUD_PROJECT/GOOGLE_CLOUD_QUOTA_PROJECT도 함께 갱신하세요.`;
-  }
-
-  if (/permission[\s_-]*denied/i.test(rawMessage)) {
-    return "GA4 데이터 조회 권한이 없습니다. 서비스 계정에 해당 GA4 속성 조회 권한(Viewer 또는 Analyst)이 있는지 확인하세요.";
-  }
-
-  return rawMessage || "Google Analytics 데이터를 불러올 수 없습니다";
-}
-
 export async function fetchGA4Data(period: string) {
-  const ga4PropertyId = getGa4PropertyId();
-  if (!ga4PropertyId) {
+  if (!GA4_PROPERTY_ID) {
     throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
   }
 
@@ -131,7 +61,7 @@ export async function fetchGA4Data(period: string) {
     await Promise.all([
       // Summary metrics - current period
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         metrics: [
           { name: "sessions" },
@@ -143,7 +73,7 @@ export async function fetchGA4Data(period: string) {
       }),
       // Summary metrics - compare period
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: compareStart, endDate: compareEnd }],
         metrics: [
           { name: "sessions" },
@@ -155,7 +85,7 @@ export async function fetchGA4Data(period: string) {
       }),
       // Top pages
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "pagePath" }],
         metrics: [{ name: "screenPageViews" }, { name: "sessions" }],
@@ -164,7 +94,7 @@ export async function fetchGA4Data(period: string) {
       }),
       // Traffic sources
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "sessionSource" }],
         metrics: [{ name: "sessions" }],
@@ -173,7 +103,7 @@ export async function fetchGA4Data(period: string) {
       }),
       // Device categories
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "deviceCategory" }],
         metrics: [{ name: "sessions" }],
@@ -181,7 +111,7 @@ export async function fetchGA4Data(period: string) {
       }),
       // Daily trend
       client.runReport({
-        property: `properties/${ga4PropertyId}`,
+        property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "date" }],
         metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
