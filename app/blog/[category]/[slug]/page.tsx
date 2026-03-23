@@ -11,7 +11,7 @@ import {
   getBlogPostUrl,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
-import { getBlogPostJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getBlogPostJsonLd, getBreadcrumbJsonLd, getFaqJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
@@ -142,6 +142,13 @@ export default async function BlogPostPage({
   const relatedPosts = await getRelatedPosts(post.category, post.slug, 3);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
+
+  // 질문형 헤딩(? 로 끝나는)을 FAQPage 스키마로 자동 변환
+  const faqSections = post.content.filter((s) => s.heading.trimEnd().endsWith("?"));
+  const faqJsonLd = faqSections.length >= 2
+    ? getFaqJsonLd(faqSections.map((s) => ({ q: s.heading, a: s.content })))
+    : null;
+
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
@@ -159,6 +166,12 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+        />
+      )}
 
       {/* 블로그 포스트 */}
       <article>
