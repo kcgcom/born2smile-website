@@ -10,7 +10,7 @@ export interface TreatmentDetail {
   description: string;
   steps: { title: string; desc: string }[];
   advantages: string[];
-  faq: { q: string; a: string }[];
+  faq: { q: string; a: string; link?: { href: string; label: string } }[];
 }
 
 export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
@@ -134,6 +134,7 @@ export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
     faq: [
       { q: "신경치료는 아프나요?", a: "마취 후 진행하므로 치료 중 통증은 거의 없습니다. 치료 후 일시적인 불편감은 약물로 관리 가능합니다." },
       { q: "신경치료 후에는 꼭 크라운을 씌워야 하나요?", a: "신경치료 후 치아가 약해지므로 크라운으로 보호하는 것이 일반적으로 권장됩니다." },
+      { q: "충치 치료 후 식사는 언제부터 가능한가요?", a: "재료에 따라 다릅니다. 레진은 치료 직후 식사가 가능하지만 마취한 경우 감각이 돌아올 때까지 2~3시간 기다리세요. 인레이는 접착 후 약 2시간 식사를 피하고, 하루 정도는 부드러운 음식을 드시는 게 좋아요. 커피·술은 당일은 피하는 것이 좋습니다.", link: { href: "/blog/restorative/after-filling-care", label: "치료 후 주의사항 자세히 보기" } },
       { q: "충치 치료 치과, 어떤 곳이 좋은가요?", a: "최소 삭제 원칙을 지키는지, 레진·인레이 등 다양한 수복 옵션을 제안하는지 확인하세요. 자연치아 보존을 최우선으로 하는 치과를 선택하시길 권합니다." },
     ],
   },

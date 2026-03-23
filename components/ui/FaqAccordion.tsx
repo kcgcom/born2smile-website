@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 interface FaqItem {
   q: string;
   a: string;
+  link?: { href: string; label: string };
 }
 
 interface FaqAccordionProps {
@@ -23,9 +25,17 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
               className="shrink-0 text-[var(--color-muted)] transition-transform duration-300 group-open:rotate-180"
             />
           </summary>
-          <p className="px-6 pb-5 text-base leading-relaxed text-gray-600">
-            {item.a}
-          </p>
+          <div className="px-6 pb-5">
+            <p className="text-base leading-relaxed text-gray-600">{item.a}</p>
+            {item.link && (
+              <Link
+                href={item.link.href}
+                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+              >
+                {item.link.label} →
+              </Link>
+            )}
+          </div>
         </details>
       ))}
     </div>

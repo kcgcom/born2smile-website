@@ -198,7 +198,7 @@ export function getHowToJsonLd(treatmentId: string) {
 /**
  * FAQ 페이지용 JSON-LD (FAQPage)
  */
-export function getFaqJsonLd(faq: { q: string; a: string }[]) {
+export function getFaqJsonLd(faq: { q: string; a: string; link?: unknown }[]) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
