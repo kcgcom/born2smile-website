@@ -256,14 +256,19 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
           )}
 
           {/* Slug */}
-          <Field label="슬러그 (URL)" required error={fieldErrors.slug}>
+          <Field
+            label="슬러그 (URL)"
+            required
+            error={fieldErrors.slug}
+            hint={mode === "edit" && initialData?.published ? "발행된 포스트의 슬러그는 SEO 보호를 위해 변경할 수 없습니다" : undefined}
+          >
             <input
               type="text"
               value={form.slug}
-              readOnly={mode === "edit"}
+              readOnly={mode === "edit" && !!initialData?.published}
               onChange={(e) => setField("slug", e.target.value.toLowerCase())}
               placeholder="my-post-slug"
-              className={inputClass(!!fieldErrors.slug, mode === "edit")}
+              className={inputClass(!!fieldErrors.slug, mode === "edit" && !!initialData?.published)}
             />
           </Field>
 
