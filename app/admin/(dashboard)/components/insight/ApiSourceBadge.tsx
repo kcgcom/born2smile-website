@@ -24,6 +24,10 @@ const API_SOURCES: Record<string, ApiSource> = {
     name: "Naver 검색광고",
     url: "https://searchad.naver.com/",
   },
+  pagespeedInsights: {
+    name: "PageSpeed Insights",
+    url: "https://pagespeed.web.dev/",
+  },
 };
 
 type ApiSourceKey = keyof typeof API_SOURCES;

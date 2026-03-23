@@ -21,11 +21,6 @@ export const pretendard = localFont({
 export const notoSerifKR = localFont({
   src: [
     {
-      path: "../public/fonts/noto-serif-kr-korean-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
       path: "../public/fonts/noto-serif-kr-korean-700-normal.woff2",
       weight: "700",
       style: "normal",
@@ -34,6 +29,7 @@ export const notoSerifKR = localFont({
   variable: "--font-noto-serif",
   display: "swap",
   // preload: true (기본값) — 히어로 h1(font-bold=700)의 FOUT 방지
+  // 400 weight 제거: font-headline은 font-bold(700)만 사용하므로 불필요 (322KB 절약)
   fallback: ["Georgia", "serif"],
 });
 

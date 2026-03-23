@@ -7,6 +7,7 @@ import { getAccessToken } from "@/lib/supabase";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
+import { ApiSourceBadge } from "@/app/admin/(dashboard)/components/insight/ApiSourceBadge";
 
 // --- Types ---
 
@@ -308,6 +309,8 @@ export function PerformanceTab() {
           </span>
         </div>
       </div>
+
+      <ApiSourceBadge sources={["pagespeedInsights"]} />
 
       {/* Lighthouse 카테고리 점수 */}
       <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">

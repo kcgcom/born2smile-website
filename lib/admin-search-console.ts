@@ -116,13 +116,15 @@ export async function fetchSearchConsoleData(period: string) {
     },
   };
 
-  const topQueries = (queriesRes.data.rows ?? []).map((row) => ({
-    query: row.keys?.[0] ?? "",
-    impressions: Math.round(row.impressions ?? 0),
-    clicks: Math.round(row.clicks ?? 0),
-    ctr: Math.round((row.ctr ?? 0) * 1000) / 10,
-    position: Math.round((row.position ?? 0) * 10) / 10,
-  }));
+  const topQueries = (queriesRes.data.rows ?? [])
+    .filter((row) => !/^[a-zA-Z\s]+$/.test(row.keys?.[0] ?? ""))
+    .map((row) => ({
+      query: row.keys?.[0] ?? "",
+      impressions: Math.round(row.impressions ?? 0),
+      clicks: Math.round(row.clicks ?? 0),
+      ctr: Math.round((row.ctr ?? 0) * 1000) / 10,
+      position: Math.round((row.position ?? 0) * 10) / 10,
+    }));
 
   const allPages = (pagesRes.data.rows ?? []).map((row) => {
     const fullUrl = row.keys?.[0] ?? "";
