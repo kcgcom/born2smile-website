@@ -122,7 +122,7 @@ const OpportunityScatter = dynamic(
               </mod.ScatterChart>
             </mod.ResponsiveContainer>
             <p className="mt-2 text-center text-xs text-[var(--muted)]">
-              좌상단(검색량 높음 + 포스트 적음) = 기회 영역 · 점 크기 = 갭 점수 · 클릭하면 새 포스트 작성
+              우측 하단(검색량 높음 + 포스트 적음) = 기회 영역 · 점 크기 = 갭 점수 · 클릭하면 새 포스트 작성
             </p>
           </div>
         );
