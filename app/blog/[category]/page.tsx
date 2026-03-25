@@ -192,7 +192,7 @@ export default async function BlogCategoryPage({
               <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
                 {hub.heroTitle}
               </h1>
-              <p className="mt-5 text-pretty text-base leading-relaxed text-gray-700 md:text-lg">
+              <p className="mt-5 text-base leading-relaxed text-gray-700 md:text-lg">
                 {hub.heroDescription}
               </p>
             </div>
@@ -222,7 +222,7 @@ export default async function BlogCategoryPage({
               </Link>
             </div>
 
-            <p className="mt-8 max-w-4xl text-pretty text-base leading-relaxed text-gray-600 md:text-lg">
+            <p className="mt-8 max-w-4xl text-base leading-relaxed text-gray-600 md:text-lg">
               {hub.intro}
             </p>
           </FadeIn>
@@ -329,7 +329,7 @@ export default async function BlogCategoryPage({
                       <h3 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                         {question}
                       </h3>
-                      <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">
                         {answer}
                       </p>
                       <p className="mt-2.5 text-sm font-medium text-gray-700 line-clamp-1">
@@ -375,8 +375,8 @@ export default async function BlogCategoryPage({
                   <h3 className="mt-4 line-clamp-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                     {post.title}
                   </h3>
-                  <p className="mt-2 line-clamp-2 text-pretty text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
-                  <p className="mt-3 text-pretty text-sm leading-relaxed text-gray-700 line-clamp-2 md:line-clamp-3">{post.excerpt}</p>
+                  <p className="mt-2 line-clamp-2 text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-700 line-clamp-2 md:line-clamp-3">{post.excerpt}</p>
                 </Link>
               ))}
             </div>
@@ -400,7 +400,7 @@ export default async function BlogCategoryPage({
                 <div key={section.title} className="rounded-3xl border border-gray-100 bg-white p-5 md:p-8">
                   <div className="mb-4 max-w-2xl md:mb-5">
                     <h3 className="text-xl font-bold text-gray-900 md:text-2xl">{section.title}</h3>
-                    <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
                       {section.description}
                     </p>
                   </div>
@@ -415,7 +415,7 @@ export default async function BlogCategoryPage({
                         <h4 className="mt-2 line-clamp-3 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                           {post.title}
                         </h4>
-                        <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">{post.excerpt}</p>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">{post.excerpt}</p>
                       </Link>
                     ))}
                   </div>
@@ -436,7 +436,7 @@ export default async function BlogCategoryPage({
               <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
                 읽은 내용을 진료 안내와 함께 정리해 보세요
               </h2>
-              <p className="mt-3 text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 md:text-base">
                 {relatedTreatment
                   ? `${relatedTreatment.name} 진료 페이지에서 치료 과정과 상담 포인트를 함께 확인할 수 있습니다.`
                   : "상담 안내 페이지에서 내원 전 준비사항과 연락 방법을 바로 확인할 수 있습니다."}

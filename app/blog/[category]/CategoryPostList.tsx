@@ -20,7 +20,7 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
             <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
               카테고리 전체 글
             </h2>
-            <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 md:text-base">
               최신 글부터 읽으며 필요한 주제를 차근차근 확인해 보세요.
             </p>
           </div>
@@ -48,8 +48,8 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
                   {post.title}
                 </Link>
               </h3>
-              <p className="mt-2 line-clamp-2 text-pretty text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
-              <p className="mt-3 flex-1 text-pretty text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
+              <p className="mt-2 line-clamp-2 text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
 
               {post.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
