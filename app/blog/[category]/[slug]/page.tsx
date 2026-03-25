@@ -96,6 +96,10 @@ function renderLegacySections(sections: BlogPostSection[]) {
   ));
 }
 
+function isExternalHref(href: string): boolean {
+  return /^https?:\/\//.test(href);
+}
+
 function renderBlocks(blocks: BlogBlock[]) {
   let headingIndex = -1;
 
@@ -144,28 +148,37 @@ function renderBlocks(blocks: BlogBlock[]) {
             </p>
           </div>
         );
-      case "relatedLinks":
+      case "relatedLinks": {
+        const allExternal = block.items.every((item) => isExternalHref(item.href));
+        const sectionTitle = allExternal ? "참고 자료" : "함께 읽으면 좋은 글";
+
         return (
           <div key={`block-${index}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
             <h2 className="font-headline mb-4 text-lg font-bold text-gray-900 md:text-xl">
-              함께 읽으면 좋은 글
+              {sectionTitle}
             </h2>
             <div className="space-y-3">
-              {block.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-xl bg-white p-4 transition-shadow hover:shadow-sm"
-                >
-                  <p className="font-semibold text-gray-900">{item.title}</p>
-                  {item.description && (
-                    <p className="mt-1 text-sm leading-relaxed text-gray-600">{item.description}</p>
-                  )}
-                </Link>
-              ))}
+              {block.items.map((item) => {
+                const external = isExternalHref(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
+                    className="block rounded-xl bg-white p-4 transition-shadow hover:shadow-sm"
+                  >
+                    <p className="font-semibold text-gray-900">{item.title}</p>
+                    {item.description && (
+                      <p className="mt-1 text-sm leading-relaxed text-gray-600">{item.description}</p>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         );
+      }
       default:
         return null;
     }
