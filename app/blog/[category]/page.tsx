@@ -1,15 +1,28 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CLINIC, BASE_URL } from "@/lib/constants";
+import { ArrowRight, CircleHelp, FileText, Stethoscope } from "lucide-react";
+import { BASE_URL, CLINIC, TREATMENTS } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
-  getCategoryLabel,
+  categoryColors,
+  getBlogPostUrl,
   getCategoryFromSlug,
+  getCategoryLabel,
+  getRelatedTreatmentId,
 } from "@/lib/blog";
+import type { BlogPostMeta } from "@/lib/blog";
+import { getCategoryHub } from "@/lib/blog/category-hubs";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
-import { getBreadcrumbJsonLd, getCategoryCollectionJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import {
+  getBreadcrumbJsonLd,
+  getCategoryCollectionJsonLd,
+  getFaqJsonLd,
+  serializeJsonLd,
+} from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
-import BlogContent from "@/components/blog/BlogContent";
+import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { CategoryPostList } from "./CategoryPostList";
 
 export const revalidate = 3600;
 
@@ -19,6 +32,16 @@ export function generateStaticParams() {
 
 const META_DESCRIPTION_MIN = 150;
 const META_DESCRIPTION_MAX = 160;
+
+const CATEGORY_SEO_KEYWORDS: Record<string, string[]> = {
+  implant: ["김포 임플란트", "장기동 임플란트", "한강신도시 임플란트", "임플란트 정보", "김포 임플란트 치과"],
+  orthodontics: ["김포 치아교정", "장기동 치아교정", "한강신도시 치아교정", "치아교정 정보", "김포 교정 치과"],
+  prosthetics: ["김포 보철치료", "장기동 보철치료", "한강신도시 보철치료", "보철치료 정보", "김포 보철 치과"],
+  restorative: ["김포 보존치료", "장기동 보존치료", "한강신도시 보존치료", "보존치료 정보", "김포 충치 치료"],
+  pediatric: ["김포 소아치과", "장기동 소아치과", "한강신도시 소아치과", "소아치료 정보", "김포 어린이 치과"],
+  prevention: ["김포 스케일링", "장기동 스케일링", "한강신도시 스케일링", "예방관리 정보", "김포 치과 검진"],
+  "health-tips": ["구강 건강", "치아 건강 상식", "치과 건강 정보"],
+};
 
 function fitMetaDescription(base: string): string {
   const normalized = base.replace(/\s+/g, " ").trim();
@@ -31,7 +54,7 @@ function fitMetaDescription(base: string): string {
     return normalized;
   }
 
-  const expanded = `${normalized} 핵심 내용과 실천 팁을 함께 확인해 보세요.`;
+  const expanded = `${normalized} 증상별 글과 치료 전후 체크포인트를 함께 확인해 보세요.`;
 
   if (expanded.length > META_DESCRIPTION_MAX) {
     return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
@@ -40,44 +63,12 @@ function fitMetaDescription(base: string): string {
   return expanded;
 }
 
-/** 카테고리별 SEO 메타데이터 */
-const CATEGORY_META: Record<string, { title: string; description: string; keywords: string[] }> = {
-  implant: {
-    title: "임플란트 정보",
-    description: "임플란트 수술을 앞두고 궁금한 검사 과정, 뼈이식이 필요한 경우, 마취와 통증 관리, 회복 기간별 주의사항, 오래 쓰기 위한 사후관리와 정기검진 포인트까지 실제 진료 흐름에 맞춰 자세히 설명합니다. 치아 상실 원인별 치료 선택 기준과 상담 준비 팁도 확인할 수 있습니다.",
-    keywords: ["김포 임플란트", "장기동 임플란트", "한강신도시 임플란트", "임플란트 정보", "김포 임플란트 치과"],
-  },
-  orthodontics: {
-    title: "치아교정 정보",
-    description: "치아교정 장치별 특징과 선택 기준, 발치 여부 판단, 연령대별 교정 계획, 치료 기간과 내원 주기, 교정 중 통증·위생관리, 유지장치 착용 기간까지 교정 전후에 꼭 알아야 할 정보를 체계적으로 안내합니다. 성인·청소년 교정 상담 전 준비사항까지 한 번에 확인할 수 있습니다.",
-    keywords: ["김포 치아교정", "장기동 치아교정", "한강신도시 치아교정", "치아교정 정보", "김포 교정 치과"],
-  },
-  prosthetics: {
-    title: "보철치료 정보",
-    description: "크라운·브릿지·틀니·심미보철의 차이와 적응증, 재료 선택 기준, 치료 단계와 예상 기간, 파절·탈락을 줄이는 관리법, 식사·세척 요령, 재치료가 필요한 신호까지 보철치료 핵심을 알기 쉽게 정리했습니다. 노년기 기능 회복과 심미 개선을 함께 고려한 선택 가이드도 제공합니다.",
-    keywords: ["김포 보철치료", "장기동 보철치료", "한강신도시 보철치료", "보철치료 정보", "김포 보철 치과"],
-  },
-  restorative: {
-    title: "보존치료 정보",
-    description: "충치치료, 레진수복, 인레이, 신경치료가 필요한 시점과 진단 기준, 통증·마취 관리, 치료 횟수와 예후, 재감염을 줄이는 생활습관, 자연치아를 오래 보존하기 위한 사후관리 방법까지 자세히 알려드립니다. 치료 후 시림·통증이 지속될 때 점검할 체크리스트도 함께 제공합니다.",
-    keywords: ["김포 보존치료", "장기동 보존치료", "한강신도시 보존치료", "보존치료 정보", "김포 충치 치료"],
-  },
-  pediatric: {
-    title: "소아치료 정보",
-    description: "어린이 충치 예방을 위한 불소도포·실란트 적정 시기, 유치·영구치 관리 차이, 첫 내원 준비와 치과 공포 줄이는 방법, 성장기 교정 체크포인트, 보호자 칫솔질 지도 팁까지 소아치과 핵심 정보를 꼼꼼히 안내합니다. 가정에서 실천할 식습관·구강위생 교육 팁도 함께 제공합니다.",
-    keywords: ["김포 소아치과", "장기동 소아치과", "한강신도시 소아치과", "소아치료 정보", "김포 어린이 치과"],
-  },
-  prevention: {
-    title: "예방관리 정보",
-    description: "스케일링 주기와 잇몸 상태별 관리법, 올바른 칫솔질·치실·치간칫솔 사용 순서, 구취·치석·잇몸출혈을 줄이는 생활습관, 정기검진에서 확인하는 항목과 예방치료의 필요성까지 일상 실천 중심으로 설명합니다. 치주질환을 예방하는 맞춤 홈케어 루틴과 내원 주기도 함께 제안합니다.",
-    keywords: ["김포 스케일링", "장기동 스케일링", "한강신도시 스케일링", "예방관리 정보", "김포 치과 검진"],
-  },
-  "health-tips": {
-    title: "건강상식",
-    description: "구강 건강과 전신 건강의 연관성, 음식·수면·스트레스가 치아와 잇몸에 미치는 영향, 연령별 관리 습관, 자주 묻는 치과 상식 팩트체크, 집에서 실천 가능한 예방법까지 가족 모두를 위한 건강 정보를 제공합니다. 증상별로 언제 치과에 내원해야 하는지도 쉽고 명확히 안내합니다.",
-    keywords: ["구강 건강", "치아 건강 상식", "치과 건강 정보"],
-  },
-};
+function pickPostsBySlugs(posts: BlogPostMeta[], slugs: string[]) {
+  const postMap = new Map(posts.map((post) => [post.slug, post]));
+  return slugs
+    .map((slug) => postMap.get(slug) ?? null)
+    .filter((post): post is BlogPostMeta => post !== null);
+}
 
 export async function generateMetadata({
   params,
@@ -87,23 +78,22 @@ export async function generateMetadata({
   const { category } = await params;
   const categorySlug = getCategoryFromSlug(category);
   if (!categorySlug) return {};
-  const categoryLabel = getCategoryLabel(categorySlug);
 
-  const meta = CATEGORY_META[category] ?? { title: categoryLabel, description: "", keywords: [] };
+  const hub = getCategoryHub(categorySlug);
+  const categoryUrl = `${BASE_URL}/blog/${category}`;
   const isLocal = category !== "health-tips";
-  const localTitle = isLocal ? `김포 ${meta.title}` : meta.title;
+  const localTitle = isLocal ? `김포 ${hub.heroTitle}` : hub.heroTitle;
   const localDesc = fitMetaDescription(
     isLocal
-      ? `김포 ${meta.title}, ${CLINIC.name}. ${meta.description}`
-      : `${CLINIC.name} ${meta.description}`,
+      ? `김포 ${hub.heroTitle}, ${CLINIC.name}. ${hub.heroDescription}`
+      : `${CLINIC.name} ${hub.heroDescription}`,
   );
   const fullTitle = `${localTitle} | ${CLINIC.name} 건강칼럼`;
-  const categoryUrl = `${BASE_URL}/blog/${category}`;
 
   return {
     title: localTitle,
     description: localDesc,
-    keywords: meta.keywords,
+    keywords: CATEGORY_SEO_KEYWORDS[category] ?? [],
     alternates: { canonical: categoryUrl },
     openGraph: {
       title: fullTitle,
@@ -137,24 +127,42 @@ export default async function BlogCategoryPage({
   const { category } = await params;
   const categorySlug = getCategoryFromSlug(category);
   if (!categorySlug) notFound();
-  const categoryLabel = getCategoryLabel(categorySlug);
 
+  const categoryLabel = getCategoryLabel(categorySlug);
+  const hub = getCategoryHub(categorySlug);
   const allPosts = await getAllPublishedPostMetas();
   const categoryPosts = allPosts.filter((post) => post.category === categorySlug);
+  const featuredPosts = pickPostsBySlugs(categoryPosts, hub.featuredSlugs);
+  const questionCards = hub.questions
+    .map((item) => {
+      const post = categoryPosts.find((candidate) => candidate.slug === item.slug);
+      return post ? { ...item, post } : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const groupedSections = hub.sections
+    .map((section) => ({
+      ...section,
+      posts: pickPostsBySlugs(categoryPosts, section.slugs),
+    }))
+    .filter((section) => section.posts.length > 0);
 
-  const meta = CATEGORY_META[category];
+  const treatmentId = getRelatedTreatmentId(categorySlug);
+  const relatedTreatment = treatmentId
+    ? TREATMENTS.find((treatment) => treatment.id === treatmentId) ?? null
+    : null;
+
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "건강칼럼", href: "/blog" },
     { name: categoryLabel, href: `/blog/${category}` },
   ]);
-
   const collectionJsonLd = getCategoryCollectionJsonLd({
-    title: meta?.title ?? categoryLabel,
-    description: meta?.description ?? "",
+    title: hub.heroTitle,
+    description: hub.heroDescription,
     categorySlug: category,
     posts: categoryPosts,
   });
+  const faqJsonLd = hub.faq.length > 0 ? getFaqJsonLd(hub.faq) : null;
 
   return (
     <>
@@ -166,23 +174,312 @@ export default async function BlogCategoryPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
-        <div className="mx-auto max-w-2xl px-4">
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+        />
+      )}
+
+      <section className="bg-gradient-to-b from-blue-50 via-white to-white pt-32 pb-16">
+        <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
-              Health Column
-            </p>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
-              {categoryLabel}
-            </h1>
-            <p className="mx-auto mt-4 max-w-xl text-gray-600">
-              {meta?.description ?? `${categoryLabel}에 관한 전문 정보를 알려드립니다.`}
+            <div className="max-w-3xl">
+              <p className="mb-3 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+                Health Column Hub
+              </p>
+              <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+                {hub.heroTitle}
+              </h1>
+              <p className="mt-5 text-base leading-relaxed text-gray-700 md:text-lg">
+                {hub.heroDescription}
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3 text-sm">
+              <span className={`inline-flex rounded-full px-4 py-2 font-medium ${categoryColors[categorySlug] ?? "bg-gray-100 text-gray-600"}`}>
+                {categoryLabel}
+              </span>
+              <span className="inline-flex rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-600">
+                총 {categoryPosts.length}개 글
+              </span>
+              {relatedTreatment && (
+                <Link
+                  href={relatedTreatment.href}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/20 bg-white px-4 py-2 font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
+                >
+                  <Stethoscope size={16} />
+                  {relatedTreatment.name} 진료 안내
+                </Link>
+              )}
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-4 py-2 font-medium text-white transition-colors hover:bg-[var(--color-primary)]/90"
+              >
+                상담 안내 보기
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <p className="mt-8 max-w-4xl text-base leading-relaxed text-gray-600 md:text-lg">
+              {hub.intro}
             </p>
           </FadeIn>
         </div>
       </section>
 
-      <BlogContent initialPosts={categoryPosts} activeDefaultCategory={categorySlug} />
+      <section className="bg-white px-4 pb-10 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-3xl border border-gray-100 bg-gray-50 p-6 md:p-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                  Browse Topics
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  다른 카테고리도 함께 살펴보세요
+                </h2>
+              </div>
+              <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
+                건강칼럼 전체 보기 →
+              </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {ALL_CATEGORY_SLUGS.map((slug) => {
+                const isActive = slug === categorySlug;
+                return (
+                  <Link
+                    key={slug}
+                    href={`/blog/${slug}`}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {getCategoryLabel(slug)}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-10 md:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+              Who It Helps
+            </p>
+            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              이런 분께 도움이 됩니다
+            </h2>
+            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-gray-700 md:text-base">
+              {hub.audience.map((item) => (
+                <li key={item} className="flex gap-3">
+                  <span className="mt-0.5 text-[var(--color-primary)]">•</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 md:p-8">
+            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+              Reading Guide
+            </p>
+            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              처음 읽는다면 이렇게 보세요
+            </h2>
+            <ol className="mt-5 space-y-4 text-sm leading-relaxed text-gray-700 md:text-base">
+              <li><strong className="text-gray-900">1.</strong> 먼저 읽을 글에서 기본 개념을 잡습니다.</li>
+              <li><strong className="text-gray-900">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
+              <li><strong className="text-gray-900">3.</strong> FAQ와 진료 안내 링크로 상담 전 체크포인트를 정리합니다.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {questionCards.length > 0 && (
+        <section className="bg-white px-4 py-10 md:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-6">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                Common Questions
+              </p>
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                자주 찾는 질문부터 읽어보세요
+              </h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {questionCards.map(({ question, post }) => (
+                <Link
+                  key={question}
+                  href={getBlogPostUrl(post.slug, post.category)}
+                  className="group rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-primary)] ring-1 ring-blue-100">
+                      <CircleHelp size={18} />
+                    </span>
+                    <div>
+                      <h3 className="text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                        {question}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-2">
+                        {post.title}
+                      </p>
+                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
+                        글 바로 읽기
+                        <ArrowRight size={14} />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {featuredPosts.length > 0 && (
+        <section className="bg-white px-4 py-10 md:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                  Featured Reads
+                </p>
+                <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                  가장 먼저 읽으면 좋은 글
+                </h2>
+              </div>
+              <p className="text-sm text-gray-500">입문 · 비교 · 관리 중심으로 골랐습니다.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {featuredPosts.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={getBlogPostUrl(post.slug, post.category)}
+                  className="group rounded-2xl border border-gray-100 bg-white p-5 transition-all hover:border-gray-200 hover:shadow-md"
+                >
+                  <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}>
+                    {getCategoryLabel(post.category)}
+                  </span>
+                  <h3 className="mt-4 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                    {post.title}
+                  </h3>
+                  <p className="mt-2 text-sm font-medium text-gray-600">{post.subtitle}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {groupedSections.length > 0 && (
+        <section className="bg-gray-50 px-4 py-14 md:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                Curated Paths
+              </p>
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                상황별로 읽기
+              </h2>
+            </div>
+            <div className="space-y-8">
+              {groupedSections.map((section) => (
+                <div key={section.title} className="rounded-3xl border border-gray-100 bg-white p-6 md:p-8">
+                  <div className="mb-5 max-w-2xl">
+                    <h3 className="text-xl font-bold text-gray-900 md:text-2xl">{section.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
+                      {section.description}
+                    </p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {section.posts.map((post) => (
+                      <Link
+                        key={post.slug}
+                        href={getBlogPostUrl(post.slug, post.category)}
+                        className="group rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-gray-200 hover:bg-white"
+                      >
+                        <p className="text-sm font-medium text-gray-500">{post.readTime} 읽기</p>
+                        <h4 className="mt-2 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                          {post.title}
+                        </h4>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-3">{post.excerpt}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {hub.faq.length > 0 && (
+        <section className="bg-white px-4 py-14 md:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-6 max-w-3xl">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                FAQ
+              </p>
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                자주 묻는 질문
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
+                글을 읽기 전후에 가장 많이 확인하는 질문만 먼저 정리했습니다.
+              </p>
+            </div>
+            <FaqAccordion items={hub.faq} />
+          </div>
+        </section>
+      )}
+
+      <section className="bg-white px-4 pb-6 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-gray-100 bg-gradient-to-r from-blue-50 to-white p-6 md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                Next Step
+              </p>
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                읽은 내용을 진료 안내와 함께 정리해 보세요
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 md:text-base">
+                {relatedTreatment
+                  ? `${relatedTreatment.name} 진료 페이지에서 치료 과정과 상담 포인트를 함께 확인할 수 있습니다.`
+                  : "상담 안내 페이지에서 내원 전 준비사항과 연락 방법을 바로 확인할 수 있습니다."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {relatedTreatment && (
+                <Link
+                  href={relatedTreatment.href}
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary)]/90"
+                >
+                  <FileText size={16} />
+                  {relatedTreatment.name} 진료 안내
+                </Link>
+              )}
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                상담 안내
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <CategoryPostList posts={categoryPosts} />
 
       <div className="h-16 md:hidden" />
     </>

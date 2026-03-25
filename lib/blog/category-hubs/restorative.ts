@@ -1,0 +1,28 @@
+import { defineCategoryHub, question, section } from "./shared";
+
+export const restorativeHub = defineCategoryHub({
+  heroTitle: "보존치료 정보 허브",
+  heroDescription: "충치 단계별 치료, 레진·인레이 비교, 신경치료와 크라운까지 자연치아를 최대한 살리는 보존치료의 기준을 정리했습니다.",
+  intro: "보존치료는 언제 치료해야 하는지, 어느 단계에서 어떤 재료를 쓰는지가 중요합니다. 충치 초기부터 신경치료 후 관리까지 자연치아를 오래 지키는 흐름으로 글을 묶었습니다.",
+  audience: [
+    "충치가 어느 정도면 치료가 필요한지 기준이 궁금한 분",
+    "레진과 인레이, 신경치료와 크라운의 차이를 이해하고 싶은 분",
+    "치아가 깨지거나 시릴 때 어떤 치료가 필요한지 먼저 알고 싶은 분",
+  ],
+  questions: [
+    question("충치는 어느 단계부터 치료가 필요할까요?", "cavity-stages-and-treatment"),
+    question("레진과 인레이는 어떤 차이가 있나요?", "resin-vs-inlay-comparison"),
+    question("신경치료 후 왜 크라운을 권하는 걸까요?", "root-canal-and-crown"),
+  ],
+  featuredSlugs: ["cavity-stages-and-treatment", "resin-vs-inlay-comparison", "root-canal-and-crown"],
+  sections: [
+    section("충치와 초기 손상", "자연치아를 살릴 수 있는 시점을 이해하는 데 도움이 됩니다.", ["cavity-stages-and-treatment", "after-filling-care", "cracked-tooth-syndrome"]),
+    section("재료 선택과 비교", "치료 범위와 재료 선택 기준을 비교해 보세요.", ["resin-vs-inlay-comparison", "old-amalgam-replacement", "cracked-tooth-syndrome"]),
+    section("신경치료와 응급상황", "통증과 파절 상황에서 무엇을 확인해야 하는지 정리했습니다.", ["root-canal-and-crown", "root-canal-pain-truth", "after-root-canal-care", "resin-vs-inlay-comparison"]),
+  ],
+  faq: [
+    { q: "충치는 통증이 없으면 지켜봐도 되나요?", a: "초기 충치는 증상이 거의 없을 수 있습니다. 통증이 없더라도 진행 정도에 따라 조기 치료가 필요한 경우가 많습니다." },
+    { q: "레진과 인레이는 비용만 다른가요?", a: "아닙니다. 손상 범위, 강도, 제작 방식, 심미성, 수복 위치까지 함께 고려해야 합니다." },
+    { q: "신경치료 후 크라운을 꼭 해야 하나요?", a: "모든 경우가 동일하지는 않지만, 신경치료 후 치아는 약해질 수 있어 파절 예방과 장기 사용을 위해 크라운이 권장되는 경우가 많습니다." },
+  ],
+});

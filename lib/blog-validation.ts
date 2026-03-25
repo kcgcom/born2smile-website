@@ -16,7 +16,39 @@ export const blogPostContentSchema = z.object({
   content: z.string().min(50).max(3000),
 });
 
-export const blogPostSchema = z.object({
+const relatedLinkSchema = z.object({
+  title: z.string().min(2).max(120),
+  href: z.string().min(1).max(300),
+  description: z.string().max(300).optional(),
+});
+
+const blogBlockSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("heading"),
+    level: z.union([z.literal(2), z.literal(3)]),
+    text: z.string().min(2).max(120),
+  }),
+  z.object({
+    type: z.literal("paragraph"),
+    text: z.string().min(20).max(3000),
+  }),
+  z.object({
+    type: z.literal("list"),
+    style: z.union([z.literal("bullet"), z.literal("number")]),
+    items: z.array(z.string().min(2).max(300)).min(2).max(10),
+  }),
+  z.object({
+    type: z.literal("faq"),
+    question: z.string().min(5).max(150),
+    answer: z.string().min(20).max(3000),
+  }),
+  z.object({
+    type: z.literal("relatedLinks"),
+    items: z.array(relatedLinkSchema).min(1).max(6),
+  }),
+]);
+
+const blogPostBaseSchema = z.object({
   slug: z.string().regex(slugRegex, "slug은 소문자, 숫자, 하이픈만 허용 (2자 이상)"),
   title: z.string().min(5).max(100),
   subtitle: z.string().min(5).max(150),
@@ -25,11 +57,37 @@ export const blogPostSchema = z.object({
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  content: z.array(blogPostContentSchema).min(1).max(10),
+  content: z.array(blogPostContentSchema).min(1).max(10).optional(),
+  blocks: z.array(blogBlockSchema).min(1).max(30).optional(),
   published: z.boolean(),
 });
 
-export const blogPostUpdateSchema = blogPostSchema.partial().omit({ slug: true });
+export const blogPostSchema = blogPostBaseSchema.superRefine((data, ctx) => {
+  if ((!data.content || data.content.length === 0) && (!data.blocks || data.blocks.length === 0)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["content"],
+      message: "content 또는 blocks 중 하나는 반드시 필요합니다",
+    });
+  }
+});
+
+export const blogPostUpdateSchema = blogPostBaseSchema
+  .partial()
+  .omit({ slug: true })
+  .superRefine((data, ctx) => {
+    const hasContent = data.content && data.content.length > 0;
+    const hasBlocks = data.blocks && data.blocks.length > 0;
+    if (data.content !== undefined || data.blocks !== undefined) {
+      if (!hasContent && !hasBlocks) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["content"],
+          message: "content 또는 blocks 중 하나는 반드시 필요합니다",
+        });
+      }
+    }
+  });
 
 // ---------------------------------------------------------------------------
 // Site Config Schemas

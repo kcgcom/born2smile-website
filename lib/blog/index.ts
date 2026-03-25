@@ -6,6 +6,8 @@ export type {
   BlogPost,
   BlogPostMeta,
   BlogPostSection,
+  BlogBlock,
+  BlogRelatedLinkItem,
   BlogCategory,
   BlogCategoryFilter,
   BlogCategoryLabel,

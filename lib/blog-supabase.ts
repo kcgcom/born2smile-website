@@ -7,7 +7,7 @@
 
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
-import type { BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
+import type { BlogBlock, BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
 import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
 import { getCategorySlug, normalizeBlogCategory } from "./blog";
 import { getTodayKST } from "./date";
@@ -37,13 +37,59 @@ function getRelatedPostsCacheTag(category: BlogCategoryValue): string {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function calculateReadTime(content: BlogPostSection[]): string {
+function isBlogBlockArray(value: unknown): value is BlogBlock[] {
+  return Array.isArray(value) && value.every((item) => (
+    item &&
+    typeof item === "object" &&
+    "type" in item &&
+    typeof item.type === "string"
+  ));
+}
+
+function isLegacySectionArray(value: unknown): value is BlogPostSection[] {
+  return Array.isArray(value) && value.every((item) => (
+    item &&
+    typeof item === "object" &&
+    "heading" in item &&
+    "content" in item
+  ));
+}
+
+function calculateReadTimeFromSections(content: BlogPostSection[]): string {
   const totalChars = content.reduce(
-    (sum, section) =>
-      sum + (section.heading?.length ?? 0) + (section.content?.length ?? 0),
+    (sum, section) => sum + (section.heading?.length ?? 0) + (section.content?.length ?? 0),
     0,
   );
   return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
+}
+
+function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
+  const totalChars = blocks.reduce((sum, block) => {
+    switch (block.type) {
+      case "heading":
+      case "paragraph":
+        return sum + block.text.length;
+      case "list":
+        return sum + block.items.reduce((acc, item) => acc + item.length, 0);
+      case "faq":
+        return sum + block.question.length + block.answer.length;
+      case "relatedLinks":
+        return sum + block.items.reduce(
+          (acc, item) => acc + item.title.length + item.href.length + (item.description?.length ?? 0),
+          0,
+        );
+      default:
+        return sum;
+    }
+  }, 0);
+  return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
+}
+
+function calculateReadTime(data: Pick<BlogPost, "content" | "blocks">): string {
+  if (data.blocks && data.blocks.length > 0) {
+    return calculateReadTimeFromBlocks(data.blocks);
+  }
+  return calculateReadTimeFromSections(data.content ?? []);
 }
 
 // --- DB row <-> TypeScript object mapping ---
@@ -57,7 +103,7 @@ interface DbRow {
   tags: string[];
   date: string;
   date_modified: string | null;
-  content: { heading: string; content: string }[];
+  content: unknown[];
   read_time: string;
   reviewed_date: string | null;
   published: boolean;
@@ -93,6 +139,9 @@ function rowToMeta(
 }
 
 function rowToPost(row: DbRow): BlogPost {
+  const blocks = isBlogBlockArray(row.content) ? row.content : undefined;
+  const content = isLegacySectionArray(row.content) ? row.content : undefined;
+
   return {
     slug: row.slug,
     title: row.title,
@@ -102,7 +151,8 @@ function rowToPost(row: DbRow): BlogPost {
     tags: (row.tags ?? []) as BlogPostMeta["tags"],
     date: row.date,
     dateModified: row.date_modified ?? undefined,
-    content: row.content ?? [],
+    ...(content ? { content } : {}),
+    ...(blocks ? { blocks } : {}),
     readTime: row.read_time ?? "1분",
     reviewedDate: row.reviewed_date ?? undefined,
   };
@@ -162,9 +212,17 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
 
         return (data as DbRow[]).map((row) => {
           const meta = rowToMeta(row);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { published, ...rest } = meta;
-          return rest;
+          return {
+            slug: meta.slug,
+            title: meta.title,
+            subtitle: meta.subtitle,
+            excerpt: meta.excerpt,
+            category: meta.category,
+            tags: meta.tags,
+            date: meta.date,
+            dateModified: meta.dateModified,
+            readTime: meta.readTime,
+          };
         });
       } catch (e) {
         console.warn("[blog-supabase] Supabase query failed, using file-based fallback", e);
@@ -283,20 +341,27 @@ export function getRelatedPosts(
           .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
           .eq("published", true)
           .eq("category", category)
+          .neq("slug", excludeSlug)
           .lte("date", today)
-          .limit(limit + 1);
+          .order("date", { ascending: false })
+          .limit(limit);
 
         if (error) throw error;
 
-        return (data as DbRow[])
-          .map((row) => {
-            const meta = rowToMeta(row);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { published, ...rest } = meta;
-            return rest;
-          })
-          .filter((post) => post.slug !== excludeSlug)
-          .slice(0, limit);
+        return (data as DbRow[]).map((row) => {
+          const meta = rowToMeta(row);
+          return {
+            slug: meta.slug,
+            title: meta.title,
+            subtitle: meta.subtitle,
+            excerpt: meta.excerpt,
+            category: meta.category,
+            tags: meta.tags,
+            date: meta.date,
+            dateModified: meta.dateModified,
+            readTime: meta.readTime,
+          };
+        });
       } catch (e) {
         console.warn("[blog-supabase] Supabase query failed, using file-based fallback for related posts", e);
         return fileFallback();
@@ -328,7 +393,7 @@ export async function createBlogPost(
   updatedBy: string,
 ): Promise<void> {
   const now = new Date().toISOString();
-  const readTime = calculateReadTime(data.content);
+  const readTime = calculateReadTime(data);
 
   const row = {
     slug: data.slug,
@@ -339,7 +404,7 @@ export async function createBlogPost(
     tags: data.tags,
     date: data.date,
     date_modified: data.dateModified ?? null,
-    content: data.content,
+    content: data.blocks ?? data.content ?? [],
     read_time: readTime,
     reviewed_date: null,
     published: data.published ?? false,
@@ -384,9 +449,12 @@ export async function updateBlogPost(
   if ("reviewedDate" in data) update.reviewed_date = data.reviewedDate ?? null;
   if (data.published !== undefined) update.published = data.published;
 
-  if (data.content !== undefined) {
+  if (data.blocks !== undefined) {
+    update.content = data.blocks;
+    update.read_time = calculateReadTime({ blocks: data.blocks });
+  } else if (data.content !== undefined) {
     update.content = data.content;
-    update.read_time = calculateReadTime(data.content);
+    update.read_time = calculateReadTime({ content: data.content });
   }
 
   const { error } = await getSupabaseAdmin()

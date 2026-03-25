@@ -294,7 +294,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   <p className="mb-3 text-sm font-medium text-gray-600">
                     {post.subtitle}
                   </p>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-3">
                     {post.excerpt}
                   </p>
 
@@ -305,7 +305,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                         <button
                           key={tag}
                           onClick={(e) => handleTagClick(tag, e)}
-                          className={`relative z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm transition-colors ${
+                          className={`relative z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
                             activeTag === tag
                               ? "bg-[var(--color-gold)] text-white"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"

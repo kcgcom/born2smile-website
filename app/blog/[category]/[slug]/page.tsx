@@ -22,9 +22,10 @@ import {
   getAllPublishedPostMetas,
   getRelatedPosts,
 } from "@/lib/blog-supabase";
-import { AdminEditButton } from "@/components/admin/AdminEditButton";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
+import type { BlogBlock, BlogPostSection } from "@/lib/blog";
+import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
 
 export const revalidate = 3600;
 
@@ -58,6 +59,182 @@ function getPostMetaDescription(post: { excerpt: string; subtitle: string }): st
     : `${excerpt} ${post.subtitle}. 원인, 치료 방법, 예방 관리와 내원 시점을 ${CLINIC.name} 건강칼럼에서 정리했습니다.`;
 
   return fitMetaDescription(base);
+}
+
+function getHeadingList(post: { content?: BlogPostSection[]; blocks?: BlogBlock[] }): string[] {
+  if (post.blocks && post.blocks.length > 0) {
+    return post.blocks
+      .filter((block): block is Extract<BlogBlock, { type: "heading" }> => block.type === "heading")
+      .map((block) => block.text);
+  }
+
+  return (post.content ?? []).map((section) => section.heading);
+}
+
+function getFaqEntries(post: { content?: BlogPostSection[]; blocks?: BlogBlock[] }) {
+  if (post.blocks && post.blocks.length > 0) {
+    return post.blocks
+      .filter((block): block is Extract<BlogBlock, { type: "faq" }> => block.type === "faq")
+      .map((block) => ({ q: block.question, a: block.answer }));
+  }
+
+  return (post.content ?? [])
+    .filter((section) => section.heading.trimEnd().endsWith("?"))
+    .map((section) => ({ q: section.heading, a: section.content }));
+}
+
+function renderLegacySections(sections: BlogPostSection[]) {
+  return sections.map((section, index) => (
+    <div key={section.heading} id={`section-${index}`}>
+      <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-3xl">
+        {section.heading}
+      </h2>
+      <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+        {section.content}
+      </p>
+    </div>
+  ));
+}
+
+function renderBlocks(blocks: BlogBlock[]) {
+  let headingIndex = -1;
+
+  return blocks.map((block, index) => {
+    switch (block.type) {
+      case "heading": {
+        headingIndex += 1;
+        const HeadingTag = block.level === 3 ? "h3" : "h2";
+        return (
+          <div key={`block-${index}`} id={`section-${headingIndex}`} className="pt-4">
+            <HeadingTag className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-3xl">
+              {block.text}
+            </HeadingTag>
+          </div>
+        );
+      }
+      case "paragraph":
+        return (
+          <p key={`block-${index}`} className="text-base leading-relaxed text-gray-700 md:text-lg">
+            {block.text}
+          </p>
+        );
+      case "list": {
+        const ListTag = block.style === "number" ? "ol" : "ul";
+        return (
+          <ListTag
+            key={`block-${index}`}
+            className={`space-y-2 pl-5 text-base leading-relaxed text-gray-700 md:text-lg ${
+              block.style === "number" ? "list-decimal" : "list-disc"
+            }`}
+          >
+            {block.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ListTag>
+        );
+      }
+      case "faq":
+        return (
+          <div key={`block-${index}`} className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
+            <h2 className="font-headline mb-3 text-lg font-bold text-gray-900 md:text-xl">
+              {block.question}
+            </h2>
+            <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+              {block.answer}
+            </p>
+          </div>
+        );
+      case "relatedLinks":
+        return (
+          <div key={`block-${index}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <h2 className="font-headline mb-4 text-lg font-bold text-gray-900 md:text-xl">
+              함께 읽으면 좋은 글
+            </h2>
+            <div className="space-y-3">
+              {block.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-xl bg-white p-4 transition-shadow hover:shadow-sm"
+                >
+                  <p className="font-semibold text-gray-900">{item.title}</p>
+                  {item.description && (
+                    <p className="mt-1 text-sm leading-relaxed text-gray-600">{item.description}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  });
+}
+
+function getBlogCtaCopy(slug: string, category: string, relatedTreatmentName?: string | null) {
+  const slugMap: Record<string, { heading: string; description: string }> = {
+    "gimpo-implant-clinic-checklist": {
+      heading: "김포 임플란트 상담이 필요하신가요?",
+      description: "서울본치과에서 현재 치아와 잇몸 상태를 바탕으로 꼭 필요한 치료인지부터 차분히 안내해드립니다.",
+    },
+    "loose-tooth-does-it-need-extraction": {
+      heading: "흔들리는 치아, 지금 상태를 확인해보세요",
+      description: "발치가 필요한지, 살릴 수 있는지 원인부터 정확히 확인하는 것이 중요합니다.",
+    },
+    "broken-tooth-emergency": {
+      heading: "깨진 치아, 빠르게 확인이 필요하신가요?",
+      description: "응급처럼 보여도 손상 범위에 따라 치료 방향이 달라질 수 있습니다. 서울본치과에서 차분히 안내해드립니다.",
+    },
+    "implant-eligibility-checklist": {
+      heading: "건강 상태 때문에 임플란트가 고민되시나요?",
+      description: "당뇨·고혈압·골다공증이 있어도 현재 상태에 따라 가능한 치료 방향은 달라질 수 있습니다.",
+    },
+    "how-to-choose-a-trustworthy-dentist": {
+      heading: "믿고 상담받을 치과를 찾고 계시나요?",
+      description: "서울본치과에서 현재 상태와 꼭 필요한 치료 범위를 편하게 상담받아보세요.",
+    },
+  };
+
+  if (slugMap[slug]) return slugMap[slug];
+
+  const categoryMap: Record<string, { heading: string; description: string }> = {
+    implant: {
+      heading: "임플란트 상담이 필요하신가요?",
+      description: "서울본치과에서 현재 잇몸과 치아 상태를 바탕으로 맞춤 치료 방향을 안내해드립니다.",
+    },
+    pediatric: {
+      heading: "아이 치아 상태가 걱정되시나요?",
+      description: "서울본치과에서 성장기 치아와 생활 습관을 함께 살펴보고 편하게 안내해드립니다.",
+    },
+    "health-tips": {
+      heading: "지금 상태를 확인해보는 것이 좋을까요?",
+      description: "증상이 반복되거나 걱정된다면 서울본치과에서 현재 상태를 차분히 확인해보세요.",
+    },
+    prevention: {
+      heading: "잇몸과 치아 관리, 지금 점검해보세요",
+      description: "서울본치과에서 현재 구강 상태와 필요한 관리 방법을 정확히 안내해드립니다.",
+    },
+    restorative: {
+      heading: "치아를 살릴 수 있는지 먼저 확인해보세요",
+      description: "서울본치과에서 현재 손상 정도와 적절한 치료 방향을 차분히 설명해드립니다.",
+    },
+    prosthetics: {
+      heading: "내게 맞는 보철 치료가 궁금하신가요?",
+      description: "서울본치과에서 치아 상태와 생활 편의를 함께 고려해 맞춤 치료를 안내해드립니다.",
+    },
+    orthodontics: {
+      heading: "교정이 필요한 상태인지 궁금하신가요?",
+      description: "서울본치과에서 현재 물림과 치열 상태를 바탕으로 적절한 시기를 안내해드립니다.",
+    },
+  };
+
+  return categoryMap[category] ?? {
+    heading: relatedTreatmentName ? `${relatedTreatmentName}, 자세한 상담이 필요하신가요?` : "구강 건강이 궁금하신가요?",
+    description: relatedTreatmentName
+      ? `${CLINIC.name}에서 1:1 맞춤 ${relatedTreatmentName} 상담을 받으세요.`
+      : `${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`,
+  };
 }
 
 export async function generateStaticParams() {
@@ -143,11 +320,13 @@ export default async function BlogPostPage({
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
 
-  // 질문형 헤딩(? 로 끝나는)을 FAQPage 스키마로 자동 변환
-  const faqSections = post.content.filter((s) => s.heading.trimEnd().endsWith("?"));
-  const faqJsonLd = faqSections.length >= 2
-    ? getFaqJsonLd(faqSections.map((s) => ({ q: s.heading, a: s.content })))
+  const faqEntries = getFaqEntries(post);
+  const faqJsonLd = faqEntries.length >= 2
+    ? getFaqJsonLd(faqEntries)
     : null;
+  const headings = getHeadingList(post);
+  const hasManualRelatedLinks =
+    !!post.blocks?.some((block) => block.type === "relatedLinks");
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -155,6 +334,10 @@ export default async function BlogPostPage({
     { name: categoryLabel, href: `/blog/${post.category}` },
     { name: post.title, href: getBlogPostUrl(slug, post.category) },
   ]);
+
+  const relatedTreatmentId = getRelatedTreatmentId(post.category);
+  const relatedTreatment = relatedTreatmentId ? TREATMENTS.find((t) => t.id === relatedTreatmentId) ?? null : null;
+  const globalCta = getBlogCtaCopy(slug, post.category, relatedTreatment?.name ?? null);
 
   return (
     <>
@@ -201,13 +384,25 @@ export default async function BlogPostPage({
                   <Clock size={13} />
                   {post.readTime ?? "1분"} 읽기
                 </span>
-                <AdminEditButton href={`/admin?tab=blog&edit=${slug}`} />
+                <InlineBlogEditButton
+                  post={{
+                    slug,
+                    title: post.title,
+                    subtitle: post.subtitle,
+                    excerpt: post.excerpt,
+                    category: post.category,
+                    tags: post.tags,
+                    date: post.date,
+                    content: post.content,
+                    blocks: post.blocks,
+                  }}
+                />
               </div>
 
               <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
                 {post.title}
               </h1>
-              <p className="mt-3 text-lg text-gray-500 md:text-xl">
+              <p className="mt-3 text-lg text-gray-600 md:text-xl">
                 {post.subtitle}
               </p>
             </FadeIn>
@@ -215,62 +410,49 @@ export default async function BlogPostPage({
         </header>
 
         {/* 본문 */}
-        <section className="section-padding bg-white">
+        <section className="bg-white px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
           <FadeIn className="mx-auto max-w-3xl">
-            {post.content.length >= 3 && (
-              <TableOfContents headings={post.content.map((s) => s.heading)} />
+            {headings.length >= 3 && (
+              <TableOfContents headings={headings} />
             )}
             <div className="space-y-10">
-              {post.content.map((section, index) => (
-                <div key={section.heading} id={`section-${index}`}>
-                  <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-2xl">
-                    {section.heading}
-                  </h2>
-                  <p className="text-base leading-relaxed text-gray-700 md:text-lg">
-                    {section.content}
-                  </p>
-                </div>
-              ))}
+              {post.blocks && post.blocks.length > 0
+                ? renderBlocks(post.blocks)
+                : renderLegacySections(post.content ?? [])}
             </div>
           </FadeIn>
         </section>
       </article>
 
       {/* 관련 진료 배너 */}
-      {(() => {
-        const treatmentId = getRelatedTreatmentId(post.category);
-        if (!treatmentId) return null;
-        const treatment = TREATMENTS.find((t) => t.id === treatmentId);
-        if (!treatment) return null;
-        return (
-          <section className="bg-white px-4 pb-4">
-            <FadeIn className="mx-auto max-w-3xl">
-              <Link
-                href={treatment.href}
-                className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-5 transition-all hover:border-blue-200 hover:shadow-md"
-              >
-                <div>
-                  <span className="mb-1 block text-sm font-medium text-[var(--color-gold)]">
-                    관련 진료
-                  </span>
-                  <span className="text-base font-bold text-gray-900">
-                    {treatment.name}
-                  </span>
-                  <span className="ml-2 text-sm text-gray-500">
-                    {treatment.shortDesc}
-                  </span>
-                </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white transition-transform group-hover:translate-x-0.5">
-                  <ArrowRight size={16} />
+      {relatedTreatment && (
+        <section className="bg-white px-4 py-4">
+          <FadeIn className="mx-auto max-w-3xl">
+            <Link
+              href={relatedTreatment.href}
+              className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-5 transition-all hover:border-blue-200 hover:shadow-md"
+            >
+              <div>
+                <span className="mb-1 block text-sm font-medium text-[var(--color-gold)]">
+                  관련 진료
                 </span>
-              </Link>
-            </FadeIn>
-          </section>
-        );
-      })()}
+                <span className="text-base font-bold text-gray-900">
+                  {relatedTreatment.name}
+                </span>
+                <span className="ml-2 text-sm text-gray-500">
+                  {relatedTreatment.shortDesc}
+                </span>
+              </div>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white transition-transform group-hover:translate-x-0.5">
+                <ArrowRight size={16} />
+              </span>
+            </Link>
+          </FadeIn>
+        </section>
+      )}
 
       {/* 좋아요 + 공유 + 목록 돌아가기 */}
-      <section className="bg-white px-4 pb-12">
+      <section className="bg-white px-4 pt-6 pb-12">
         <div className="mx-auto flex max-w-3xl items-center justify-between border-t border-gray-100 pt-8">
           <Link
             href={`/blog/${post.category}`}
@@ -287,7 +469,7 @@ export default async function BlogPostPage({
       </section>
 
       {/* 관련 포스트 */}
-      {relatedPosts.length > 0 && (
+      {!hasManualRelatedLinks && relatedPosts.length > 0 && (
         <section className="section-padding bg-gray-50">
           <div className="container-narrow">
             <FadeIn>
@@ -331,18 +513,10 @@ export default async function BlogPostPage({
       )}
 
       {/* CTA */}
-      {(() => {
-        const ctaTreatmentId = getRelatedTreatmentId(post.category);
-        const ctaTreatment = ctaTreatmentId ? TREATMENTS.find((t) => t.id === ctaTreatmentId) : null;
-        return (
-          <CTABanner
-            heading={ctaTreatment ? `${ctaTreatment.name}, 자세한 상담이 필요하신가요?` : "구강 건강이 궁금하신가요?"}
-            description={ctaTreatment
-              ? `${CLINIC.name}에서 1:1 맞춤 ${ctaTreatment.name} 상담을 받으세요.`
-              : `${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
-          />
-        );
-      })()}
+      <CTABanner
+        heading={globalCta.heading}
+        description={globalCta.description}
+      />
 
       <AdminDraftBar slug={slug} />
 
