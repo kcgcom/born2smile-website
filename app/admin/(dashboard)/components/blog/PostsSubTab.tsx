@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Pencil, Trash2, Plus, Calendar } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, RefreshCw } from "lucide-react";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
@@ -79,6 +79,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
   const [scheduledDate, setScheduledDate] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { mutate } = useAdminMutation();
 
   useEffect(() => {
@@ -287,18 +288,36 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
   };
 
+  const handleRefreshCache = async () => {
+    setRefreshing(true);
+    await mutate("/api/admin/revalidate", "POST");
+    await refetchPosts();
+    setRefreshing(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top action bar */}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-[var(--foreground)]">블로그 관리</h2>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          새 포스트 작성
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefreshCache}
+            disabled={refreshing}
+            title="캐시 새로고침 (Supabase 직접 수정 후 사용)"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "새로고침 중..." : "캐시 갱신"}
+          </button>
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            새 포스트 작성
+          </button>
+        </div>
       </div>
 
       {/* Posts loading / error */}
