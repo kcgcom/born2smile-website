@@ -161,8 +161,8 @@ export default async function BlogCategoryPage({
     categorySlug: category,
     posts: categoryPosts,
   });
-  const faqJsonLd = hub.questions.length > 0
-    ? getFaqJsonLd(hub.questions.map((item) => ({ q: item.question, a: item.answer })))
+  const faqJsonLd = questionCards.length > 0
+    ? getFaqJsonLd(questionCards.map((item) => ({ q: item.question, a: item.answer })))
     : null;
 
   return (
