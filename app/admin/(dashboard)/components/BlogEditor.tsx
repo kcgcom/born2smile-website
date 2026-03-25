@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { X, Plus, Trash2, Save, Copy } from "lucide-react";
+import { X, Trash2, Save, Copy } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS, BLOG_TAGS } from "@/lib/blog/types";
 import type {
   BlogBlock,
@@ -52,16 +52,8 @@ interface BlogEditorProps {
 // -------------------------------------------------------------
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
-type EditorMode = "sections" | "blocks";
 
-function getActiveContentState(form: BlogEditorData, editorMode: EditorMode): Pick<BlogEditorData, "content" | "blocks"> {
-  return editorMode === "blocks"
-    ? { blocks: form.blocks ?? [] }
-    : { content: form.content ?? [] };
-}
-
-function validate(form: BlogEditorData, editorMode: EditorMode): Record<string, string> {
-  const active = getActiveContentState(form, editorMode);
+function validate(form: BlogEditorData): Record<string, string> {
   const errors: Record<string, string> = {};
 
   if (!SLUG_RE.test(form.slug)) {
@@ -74,9 +66,10 @@ function validate(form: BlogEditorData, editorMode: EditorMode): Record<string, 
   if (form.excerpt.length < 20) errors.excerpt = "요약은 20자 이상이어야 합니다";
   if (form.excerpt.length > 500) errors.excerpt = "요약은 500자 이하여야 합니다";
   if (!normalizeBlogCategory(form.category)) errors.category = "유효한 카테고리를 선택해 주세요";
-  if (active.blocks && active.blocks.length > 0) {
-    for (let i = 0; i < active.blocks.length; i++) {
-      const block = active.blocks[i];
+  const blocks = form.blocks ?? [];
+  if (blocks.length > 0) {
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
       if (block.type === "heading" && !block.text.trim()) {
         errors[`block_${i}`] = `블록 ${i + 1} 제목이 비어 있습니다`;
       }
@@ -93,18 +86,8 @@ function validate(form: BlogEditorData, editorMode: EditorMode): Record<string, 
         errors[`block_${i}`] = `블록 ${i + 1} 관련 링크 정보를 확인해 주세요`;
       }
     }
-  } else if (active.content && active.content.length > 0) {
-    for (let i = 0; i < active.content.length; i++) {
-      const sec = active.content[i];
-      if (!sec.heading.trim()) {
-        errors[`content_heading_${i}`] = `섹션 ${i + 1} 제목이 비어 있습니다`;
-      }
-      if (sec.content.length < 50) {
-        errors[`content_body_${i}`] = `섹션 ${i + 1} 내용은 50자 이상이어야 합니다`;
-      }
-    }
   } else {
-    errors.content = "섹션 또는 블록이 최소 1개 필요합니다";
+    errors.content = "블록이 최소 1개 필요합니다";
   }
 
   return errors;
@@ -140,13 +123,6 @@ function calcReadTime(sections: { heading: string; content: string }[] = [], blo
 }
 
 // -------------------------------------------------------------
-// Default empty section
-// -------------------------------------------------------------
-
-function emptySection() {
-  return { heading: "", content: "" };
-}
-
 function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
   switch (type) {
     case "heading":
@@ -200,12 +176,6 @@ function convertSectionsToBlocks(
 export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogEditorProps) {
   const today = new Date().toISOString().slice(0, 10);
   const initialCategory = normalizeBlogCategory(initialData?.category ?? "") ?? BLOG_CATEGORY_SLUGS[0];
-  const initialEditorMode: EditorMode =
-    mode === "create"
-      ? "blocks"
-      : initialData?.blocks && initialData.blocks.length > 0
-      ? "blocks"
-      : "sections";
 
   const [form, setForm] = useState<BlogEditorData>({
     slug: initialData?.slug ?? "",
@@ -215,16 +185,12 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     category: initialCategory,
     tags: initialData?.tags ?? [],
     date: initialData?.date ?? today,
-    content: initialData?.content?.length ? initialData.content : [emptySection()],
-    blocks:
-      mode === "create"
-        ? initialData?.blocks?.length
-          ? initialData.blocks
-          : [emptyBlock("paragraph")]
-        : initialData?.blocks ?? [],
+    content: undefined,
+    blocks: initialData?.blocks?.length
+      ? initialData.blocks
+      : convertSectionsToBlocks(initialData?.content),
     published: initialData?.published ?? false,
   });
-  const [editorMode, setEditorMode] = useState<EditorMode>(initialEditorMode);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -250,12 +216,11 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
         const post = json.data ?? json;
         setForm((prev) => ({
           ...prev,
-          content: Array.isArray(post.content) ? post.content : prev.content,
-          blocks: Array.isArray(post.blocks) ? post.blocks : prev.blocks,
+          blocks:
+            Array.isArray(post.blocks) && post.blocks.length > 0
+              ? post.blocks
+              : convertSectionsToBlocks(Array.isArray(post.content) ? post.content : undefined),
         }));
-        if (Array.isArray(post.blocks) && post.blocks.length > 0) {
-          setEditorMode("blocks");
-        }
       } catch {
         // silently ignore; user can fill content manually
       } finally {
@@ -265,10 +230,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const readTime = useMemo(() => {
-    const active = getActiveContentState(form, editorMode);
-    return calcReadTime(active.content, active.blocks);
-  }, [form, editorMode]);
+  const readTime = useMemo(() => calcReadTime(undefined, form.blocks), [form.blocks]);
 
   // ------ field updaters ------
 
@@ -278,32 +240,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
       const next = { ...prev };
       delete next[key as string];
       return next;
-    });
-  }, []);
-
-  const setSectionField = useCallback(
-    (idx: number, field: "heading" | "content", value: string) => {
-      setForm((prev) => {
-        const currentContent = prev.content ?? [];
-        const content = currentContent.map((s, i) => (i === idx ? { ...s, [field]: value } : s));
-        return { ...prev, content };
-      });
-      setFieldErrors((prev) => {
-        const next = { ...prev };
-        delete next[`content_heading_${idx}`];
-        delete next[`content_body_${idx}`];
-        delete next.content;
-        return next;
-      });
-    },
-    [],
-  );
-
-  const addSection = useCallback(() => {
-    setForm((prev) => {
-      const currentContent = prev.content ?? [];
-      if (currentContent.length >= 10) return prev;
-      return { ...prev, content: [...currentContent, emptySection()] };
     });
   }, []);
 
@@ -355,14 +291,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     });
   }, []);
 
-  const removeSection = useCallback((idx: number) => {
-    setForm((prev) => {
-      const currentContent = prev.content ?? [];
-      if (currentContent.length <= 1) return prev;
-      return { ...prev, content: currentContent.filter((_, i) => i !== idx) };
-    });
-  }, []);
-
   const toggleTag = useCallback((tag: BlogTag) => {
     setForm((prev) => {
       const has = prev.tags.includes(tag);
@@ -372,35 +300,17 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     });
   }, []);
 
-  const handleConvertSectionsToBlocks = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      blocks: convertSectionsToBlocks(prev.content),
-    }));
-    setEditorMode("blocks");
-    setFieldErrors((prev) => {
-      const next: Record<string, string> = {};
-      for (const [key, value] of Object.entries(prev)) {
-        if (!key.startsWith("content_") && key !== "content") next[key] = value;
-      }
-      return next;
-    });
-  }, []);
-
   // ------ submit ------
 
   const handleSubmit = async () => {
-    const errors = validate(form, editorMode);
+    const errors = validate(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
     setSaving(true);
     setSaveError(null);
-    const payload =
-      editorMode === "blocks"
-        ? { ...form, content: undefined, blocks: form.blocks ?? [], published: form.published }
-        : { ...form, content: form.content ?? [], blocks: undefined, published: form.published };
+    const payload = { ...form, content: undefined, blocks: form.blocks ?? [], published: form.published };
     const { error } = await onSave(payload);
     setSaving(false);
     if (error) setSaveError(error);
@@ -552,153 +462,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             </div>
           </Field>
 
-          <Field
-            label="본문 작성 방식"
-            hint={mode === "create" ? "신규 포스트는 BlogBlock으로 작성합니다" : "기존 섹션 또는 BlogBlock 선택"}
-          >
-            <div className="flex gap-2">
-              {mode === "edit" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditorMode("sections");
-                    setForm((prev) => ({
-                      ...prev,
-                      content: prev.content?.length ? prev.content : [emptySection()],
-                    }));
-                    setFieldErrors((prev) => {
-                      const next: Record<string, string> = {};
-                      for (const [key, value] of Object.entries(prev)) {
-                        if (!key.startsWith("block_")) next[key] = value;
-                      }
-                      return next;
-                    });
-                  }}
-                  className={`rounded-lg px-3 py-2 text-sm ${
-                    editorMode === "sections"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "border border-[var(--border)] bg-white text-[var(--muted)]"
-                  }`}
-                >
-                  섹션
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setEditorMode("blocks");
-                  setForm((prev) => ({ ...prev, blocks: prev.blocks?.length ? prev.blocks : [emptyBlock("paragraph")] }));
-                  setFieldErrors((prev) => {
-                    const next: Record<string, string> = {};
-                    for (const [key, value] of Object.entries(prev)) {
-                      if (!key.startsWith("content_") && key !== "content") next[key] = value;
-                    }
-                    return next;
-                  });
-                }}
-                className={`rounded-lg px-3 py-2 text-sm ${
-                  editorMode === "blocks"
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "border border-[var(--border)] bg-white text-[var(--muted)]"
-                }`}
-              >
-                BlogBlock
-              </button>
-            </div>
-          </Field>
-
-          {/* Content sections */}
-          {editorMode === "sections" ? (
-          <div>
-            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <p className="font-medium">레거시 섹션 포스트입니다.</p>
-              <p className="mt-1 text-xs text-amber-700">
-                단계적으로 BlogBlock으로 전환 중입니다. 필요하면 아래 버튼으로 바로 변환할 수 있습니다.
-              </p>
-              <button
-                type="button"
-                onClick={handleConvertSectionsToBlocks}
-                className="mt-3 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700"
-              >
-                BlogBlock으로 변환
-              </button>
-            </div>
-            <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-semibold text-[var(--foreground)]">
-                본문 섹션 <span className="text-red-500">*</span>
-                <span className="ml-1 font-normal text-[var(--muted)]">({form.content?.length ?? 0}/10)</span>
-              </label>
-            </div>
-            {fieldErrors.content && (
-              <p className="mb-2 text-xs text-red-500">{fieldErrors.content}</p>
-            )}
-
-            <div className="space-y-4">
-              {(form.content ?? []).map((sec, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[var(--muted)]">섹션 {idx + 1}</span>
-                    {(form.content?.length ?? 0) > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSection(idx)}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        삭제
-                      </button>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">섹션 제목</label>
-                    <input
-                      type="text"
-                      value={sec.heading}
-                      onChange={(e) => setSectionField(idx, "heading", e.target.value)}
-                      placeholder="섹션 제목을 입력하세요"
-                      className={inputClass(!!fieldErrors[`content_heading_${idx}`])}
-                    />
-                    {fieldErrors[`content_heading_${idx}`] && (
-                      <p className="mt-1 text-xs text-red-500">{fieldErrors[`content_heading_${idx}`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-[var(--muted)]">
-                      섹션 내용
-                      <span className="ml-1 font-normal">({sec.content.length}자)</span>
-                    </label>
-                    <textarea
-                      value={sec.content}
-                      onChange={(e) => setSectionField(idx, "content", e.target.value)}
-                      placeholder="섹션 본문을 입력하세요 (최소 50자)"
-                      rows={5}
-                      className={`${inputClass(!!fieldErrors[`content_body_${idx}`])} resize-y`}
-                    />
-                    {fieldErrors[`content_body_${idx}`] && (
-                      <p className="mt-1 text-xs text-red-500">{fieldErrors[`content_body_${idx}`]}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {(form.content?.length ?? 0) < 10 && (
-              <button
-                type="button"
-                onClick={addSection}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--border)] py-2.5 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                섹션 추가
-              </button>
-            )}
-          </div>
-          ) : (
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-semibold text-[var(--foreground)]">
@@ -762,7 +525,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
               </div>
             )}
           </div>
-          )}
 
           {/* Save error */}
           {saveError && (
@@ -814,9 +576,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
                 {form.subtitle || "부제 미리보기"}
               </p>
               <div className="mt-8 space-y-6">
-                {editorMode === "blocks"
-                  ? renderBlockPreview(form.blocks ?? [])
-                  : renderSectionPreview(form.content ?? [])}
+                {renderBlockPreview(form.blocks ?? [])}
               </div>
             </div>
           </div>
@@ -864,19 +624,6 @@ function Field({ label, required, error, hint, children }: FieldProps) {
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
-}
-
-function renderSectionPreview(sections: { heading: string; content: string }[]) {
-  return sections.map((section, idx) => (
-    <div key={`${section.heading}-${idx}`} className="space-y-2">
-      <h2 className="font-headline text-xl font-bold text-[var(--foreground)]">
-        {section.heading || `섹션 ${idx + 1}`}
-      </h2>
-      <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
-        {section.content || "본문 미리보기"}
-      </p>
-    </div>
-  ));
 }
 
 function renderBlockPreview(blocks: BlogBlock[]) {
