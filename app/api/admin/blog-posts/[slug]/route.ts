@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
   getPostBySlug,
@@ -101,6 +101,7 @@ export async function PUT(
       revalidatePath(`/blog/${getCategorySlug(existing.category)}`);
     }
     revalidatePath("/sitemap.xml");
+    revalidateTag("blog-posts-admin");
     const previousPublished = existingMeta?.published === true;
     const effectivePublished = data.published ?? previousPublished;
     const effectiveDate = data.date ?? existingMeta?.date ?? existing.date;
@@ -144,6 +145,7 @@ export async function DELETE(
 
     revalidatePath("/blog");
     revalidatePath("/sitemap.xml");
+    revalidateTag("blog-posts-admin");
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
   } catch {

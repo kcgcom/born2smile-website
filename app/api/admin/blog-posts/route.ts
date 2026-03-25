@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import {
   getAllPostMetas,
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/blog");
     revalidatePath("/sitemap.xml");
+    revalidateTag("blog-posts-admin");
     if (data.published) {
       void submitBlogPostToIndexNow(data.slug, data.category).catch((error) => {
         console.error("[indexnow] blog post submit failed:", error);
