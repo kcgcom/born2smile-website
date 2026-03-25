@@ -17,7 +17,7 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               All Posts
             </p>
-            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
               카테고리 전체 글
             </h2>
             <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
@@ -43,7 +43,7 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
                 </span>
               </div>
 
-              <h3 className="line-clamp-3 text-pretty text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
+              <h3 className="line-clamp-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                 <Link href={getBlogPostUrl(post.slug, post.category)}>
                   {post.title}
                 </Link>

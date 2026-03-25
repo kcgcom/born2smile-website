@@ -189,7 +189,7 @@ export default async function BlogCategoryPage({
               <p className="mb-3 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
                 Health Column Hub
               </p>
-              <h1 className="text-pretty font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+              <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
                 {hub.heroTitle}
               </h1>
               <p className="mt-5 text-pretty text-base leading-relaxed text-gray-700 md:text-lg">
@@ -237,7 +237,7 @@ export default async function BlogCategoryPage({
                 <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                   Browse Topics
                 </p>
-                <h2 className="mt-2 text-pretty text-xl font-bold text-gray-900 md:text-2xl">
+                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
                   다른 카테고리도 함께 살펴보세요
                 </h2>
               </div>
@@ -274,7 +274,7 @@ export default async function BlogCategoryPage({
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               Who It Helps
             </p>
-            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
               이런 분께 도움이 됩니다
             </h2>
             <ul className="mt-5 space-y-3 text-sm leading-relaxed text-gray-700 md:text-base">
@@ -291,7 +291,7 @@ export default async function BlogCategoryPage({
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               Reading Guide
             </p>
-            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
               처음 읽는다면 이렇게 보세요
             </h2>
             <ol className="mt-5 space-y-4 text-sm leading-relaxed text-gray-700 md:text-base">
@@ -310,7 +310,7 @@ export default async function BlogCategoryPage({
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                 Common Questions
               </p>
-              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
                 자주 찾는 질문부터 읽어보세요
               </h2>
             </div>
@@ -326,7 +326,7 @@ export default async function BlogCategoryPage({
                       <CircleHelp size={18} />
                     </span>
                     <div>
-                      <h3 className="line-clamp-2 text-pretty text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
+                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                         {question}
                       </h3>
                       <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">
@@ -356,7 +356,7 @@ export default async function BlogCategoryPage({
                 <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                   Featured Reads
                 </p>
-                <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
                   가장 먼저 읽으면 좋은 글
                 </h2>
               </div>
@@ -372,7 +372,7 @@ export default async function BlogCategoryPage({
                   <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}>
                     {getCategoryLabel(post.category)}
                   </span>
-                  <h3 className="mt-4 line-clamp-3 text-pretty text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
+                  <h3 className="mt-4 line-clamp-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                     {post.title}
                   </h3>
                   <p className="mt-2 line-clamp-2 text-pretty text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
@@ -391,7 +391,7 @@ export default async function BlogCategoryPage({
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                 Curated Paths
               </p>
-              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
                 상황별로 읽기
               </h2>
             </div>
@@ -399,7 +399,7 @@ export default async function BlogCategoryPage({
               {groupedSections.map((section) => (
                 <div key={section.title} className="rounded-3xl border border-gray-100 bg-white p-5 md:p-8">
                   <div className="mb-4 max-w-2xl md:mb-5">
-                    <h3 className="text-pretty text-xl font-bold text-gray-900 md:text-2xl">{section.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 md:text-2xl">{section.title}</h3>
                     <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
                       {section.description}
                     </p>
@@ -412,7 +412,7 @@ export default async function BlogCategoryPage({
                         className="group rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-gray-200 hover:bg-white"
                       >
                         <p className="text-sm font-medium text-gray-500">{post.readTime} 읽기</p>
-                        <h4 className="mt-2 line-clamp-3 text-pretty text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
+                        <h4 className="mt-2 line-clamp-3 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                           {post.title}
                         </h4>
                         <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-600 line-clamp-2 md:line-clamp-3">{post.excerpt}</p>
@@ -433,7 +433,7 @@ export default async function BlogCategoryPage({
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                 Next Step
               </p>
-              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
                 읽은 내용을 진료 안내와 함께 정리해 보세요
               </h2>
               <p className="mt-3 text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
