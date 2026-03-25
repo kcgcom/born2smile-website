@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  revalidateTag("blog-posts-admin");
-  revalidateTag("blog-posts");
-  revalidateTag("blog-slugs");
+  revalidateTag("blog-posts-admin", "max");
+  revalidateTag("blog-posts", "max");
+  revalidateTag("blog-slugs", "max");
   revalidatePath("/blog");
   revalidatePath("/sitemap.xml");
 

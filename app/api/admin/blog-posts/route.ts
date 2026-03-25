@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/blog");
     revalidatePath("/sitemap.xml");
-    revalidateTag("blog-posts-admin");
+    revalidateTag("blog-posts-admin", "max");
     if (data.published) {
       void submitBlogPostToIndexNow(data.slug, data.category).catch((error) => {
         console.error("[indexnow] blog post submit failed:", error);
