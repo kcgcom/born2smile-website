@@ -32,10 +32,11 @@ pnpm dev                      # http://localhost:3000
 
 ## Commands
 
-- `pnpm dev` — Start dev server (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 실행)
-- `pnpm build` — Production build (블로그 메타데이터 + 개발 매니페스트 자동 생성 후 빌드)
+- `pnpm dev` — Start dev server (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 실행)
+- `pnpm build` — Production build (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 빌드)
 - `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
+- `pnpm generate-blog-snapshot` — Supabase 블로그 snapshot 수동 재생성 (`lib/blog/generated/posts-snapshot.ts`)
 - `pnpm generate-dev-manifest` — 개발 대시보드 매니페스트 수동 재생성 (`lib/dev/generated/dev-manifest.ts`)
 - `pnpm test:e2e` — Playwright 스모크 테스트 실행 (Chromium, 7개 정적 페이지 렌더링 검증)
 - `pnpm test:e2e:ui` — Playwright UI 모드로 디버깅
@@ -189,9 +190,9 @@ lib/
     category-slugs.ts        # 카테고리 ↔ URL 슬러그 매핑 (single source of truth)
     category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
     index.ts                 # re-export + 진료↔블로그 매핑 (TREATMENT_CATEGORY_MAP)
-    generated/               # 자동 생성 (gitignored) — pnpm generate-blog-meta
-      posts-meta.ts          # BLOG_POSTS_META 배열 (포스트 파일에서 자동 추출, 폴백용)
-    posts/                   # 개별 포스트 파일 (80개, slug.ts 형식) — 파일 기반 폴백
+    generated/               # 자동 생성 (gitignored) — pnpm generate-blog-snapshot / generate-blog-meta
+      posts-meta.ts          # BLOG_POSTS_META 배열 (snapshot 기반 메타데이터)
+      posts-snapshot.ts      # BLOG_POSTS_SNAPSHOT 배열 (Supabase 공개 fallback)
 public/
   fonts/                     # Local font files (woff2)
   images/                    # Clinic and doctor images
@@ -205,7 +206,8 @@ docs/
   environment-variables.md   # 환경변수 목록 및 설정 가이드
   todo.md                    # 미완료 항목 및 개선 과제
 scripts/
-  generate-blog-meta.ts      # 빌드 시 포스트 파일에서 메타데이터 자동 추출 스크립트
+  generate-blog-meta.ts      # 빌드 시 snapshot에서 메타데이터 자동 추출 스크립트
+  generate-blog-snapshot.ts  # 빌드 시 Supabase blog_posts snapshot 생성 스크립트
   generate-dev-manifest.ts   # 빌드 시 개발 대시보드 매니페스트 생성 스크립트
   submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
 vercel.json                  # Vercel 설정 (Cron Jobs)
@@ -239,7 +241,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | SSG | Static (metadata from Supabase, 파일 폴백) |
+| `/blog` | SSG | Static (metadata from Supabase snapshot fallback) |
 | `/blog/[category]` | SSG + ISR | 카테고리 허브 페이지 (7개), `generateStaticParams()` + `revalidate: 3600` |
 | `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
 | `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
@@ -254,11 +256,11 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### Supabase 데이터 아키텍처
 
-상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), Supabase→파일 자동 폴백, `unstable_cache` + 2-tier 캐싱.
+상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), Supabase→snapshot 자동 폴백, `unstable_cache` + 2-tier 캐싱.
 
 ### 블로그 발행 워크플로우
 
-상세 내용은 [`docs/blog-workflow.md`](docs/blog-workflow.md) 참조. 초안→발행 예약 2단계, 스케줄 기반 날짜 추천, `date <= today` 필터링, 일별 시드 셔플, `BlogPostSection[]` 콘텐츠 구조.
+상세 내용은 [`docs/blog-workflow.md`](docs/blog-workflow.md) 참조. 초안→발행 예약 2단계, 스케줄 기반 날짜 추천, `date <= today` 필터링, 일별 시드 셔플, BlogBlock 중심 콘텐츠 구조.
 
 ### 블로그 작성 가이드라인
 
@@ -324,13 +326,6 @@ pnpm-workspace.yaml          # pnpm workspace config
 5. PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭
 6. `published: true` + 선택한 날짜로 업데이트, ISR revalidate로 사이트 반영
 
-**방법 2: 파일 생성 (폴백/대량 추가용)**
-
-1. `lib/blog/posts/` → 새 파일 생성 (`slug-name.ts`, `BlogPost` 인터페이스 준수)
-   - `import type { BlogPost } from "../types";` + `export const post: BlogPost = { ... };`
-   - `title`: 훅(호기심 유발) 문구, `subtitle`: 설명적 부제 — 2줄 구조로 표시
-2. `pnpm dev` 또는 `pnpm build` 실행 시 메타데이터가 자동 생성됨
-   - 수동 재생성: `pnpm generate-blog-meta`
 **공통 사항:**
 - 카테고리(1개 선택): `"예방관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "건강상식"`
 - 태그(복수 선택): `BLOG_TAGS` 배열(`lib/blog/types.ts`)에 정의된 7개 태그 중 선택

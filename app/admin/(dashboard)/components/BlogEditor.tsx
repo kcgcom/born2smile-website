@@ -54,7 +54,14 @@ interface BlogEditorProps {
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 type EditorMode = "sections" | "blocks";
 
-function validate(form: BlogEditorData): Record<string, string> {
+function getActiveContentState(form: BlogEditorData, editorMode: EditorMode): Pick<BlogEditorData, "content" | "blocks"> {
+  return editorMode === "blocks"
+    ? { blocks: form.blocks ?? [] }
+    : { content: form.content ?? [] };
+}
+
+function validate(form: BlogEditorData, editorMode: EditorMode): Record<string, string> {
+  const active = getActiveContentState(form, editorMode);
   const errors: Record<string, string> = {};
 
   if (!SLUG_RE.test(form.slug)) {
@@ -67,9 +74,9 @@ function validate(form: BlogEditorData): Record<string, string> {
   if (form.excerpt.length < 20) errors.excerpt = "요약은 20자 이상이어야 합니다";
   if (form.excerpt.length > 500) errors.excerpt = "요약은 500자 이하여야 합니다";
   if (!normalizeBlogCategory(form.category)) errors.category = "유효한 카테고리를 선택해 주세요";
-  if (form.blocks && form.blocks.length > 0) {
-    for (let i = 0; i < form.blocks.length; i++) {
-      const block = form.blocks[i];
+  if (active.blocks && active.blocks.length > 0) {
+    for (let i = 0; i < active.blocks.length; i++) {
+      const block = active.blocks[i];
       if (block.type === "heading" && !block.text.trim()) {
         errors[`block_${i}`] = `블록 ${i + 1} 제목이 비어 있습니다`;
       }
@@ -86,9 +93,9 @@ function validate(form: BlogEditorData): Record<string, string> {
         errors[`block_${i}`] = `블록 ${i + 1} 관련 링크 정보를 확인해 주세요`;
       }
     }
-  } else if (form.content && form.content.length > 0) {
-    for (let i = 0; i < form.content.length; i++) {
-      const sec = form.content[i];
+  } else if (active.content && active.content.length > 0) {
+    for (let i = 0; i < active.content.length; i++) {
+      const sec = active.content[i];
       if (!sec.heading.trim()) {
         errors[`content_heading_${i}`] = `섹션 ${i + 1} 제목이 비어 있습니다`;
       }
@@ -164,6 +171,28 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
   relatedLinks: "관련 링크",
 };
 
+function convertSectionsToBlocks(
+  sections: { heading: string; content: string }[] = [],
+): BlogBlock[] {
+  const blocks = sections.flatMap((section) => {
+    const heading = section.heading.trim();
+    const content = section.content.trim();
+    const nextBlocks: BlogBlock[] = [];
+
+    if (heading) {
+      nextBlocks.push({ type: "heading", level: 2, text: heading });
+    }
+
+    if (content) {
+      nextBlocks.push({ type: "paragraph", text: content });
+    }
+
+    return nextBlocks;
+  });
+
+  return blocks.length > 0 ? blocks : [emptyBlock("paragraph")];
+}
+
 // -------------------------------------------------------------
 // BlogEditor component
 // -------------------------------------------------------------
@@ -172,7 +201,11 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   const today = new Date().toISOString().slice(0, 10);
   const initialCategory = normalizeBlogCategory(initialData?.category ?? "") ?? BLOG_CATEGORY_SLUGS[0];
   const initialEditorMode: EditorMode =
-    initialData?.blocks && initialData.blocks.length > 0 ? "blocks" : "sections";
+    mode === "create"
+      ? "blocks"
+      : initialData?.blocks && initialData.blocks.length > 0
+      ? "blocks"
+      : "sections";
 
   const [form, setForm] = useState<BlogEditorData>({
     slug: initialData?.slug ?? "",
@@ -183,7 +216,12 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     tags: initialData?.tags ?? [],
     date: initialData?.date ?? today,
     content: initialData?.content?.length ? initialData.content : [emptySection()],
-    blocks: initialData?.blocks ?? [],
+    blocks:
+      mode === "create"
+        ? initialData?.blocks?.length
+          ? initialData.blocks
+          : [emptyBlock("paragraph")]
+        : initialData?.blocks ?? [],
     published: initialData?.published ?? false,
   });
   const [editorMode, setEditorMode] = useState<EditorMode>(initialEditorMode);
@@ -227,7 +265,10 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const readTime = useMemo(() => calcReadTime(form.content, form.blocks), [form.content, form.blocks]);
+  const readTime = useMemo(() => {
+    const active = getActiveContentState(form, editorMode);
+    return calcReadTime(active.content, active.blocks);
+  }, [form, editorMode]);
 
   // ------ field updaters ------
 
@@ -331,10 +372,25 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     });
   }, []);
 
+  const handleConvertSectionsToBlocks = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      blocks: convertSectionsToBlocks(prev.content),
+    }));
+    setEditorMode("blocks");
+    setFieldErrors((prev) => {
+      const next: Record<string, string> = {};
+      for (const [key, value] of Object.entries(prev)) {
+        if (!key.startsWith("content_") && key !== "content") next[key] = value;
+      }
+      return next;
+    });
+  }, []);
+
   // ------ submit ------
 
   const handleSubmit = async () => {
-    const errors = validate(form);
+    const errors = validate(form, editorMode);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -496,24 +552,49 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             </div>
           </Field>
 
-          <Field label="본문 작성 방식" hint="기존 섹션 또는 BlogBlock 선택">
+          <Field
+            label="본문 작성 방식"
+            hint={mode === "create" ? "신규 포스트는 BlogBlock으로 작성합니다" : "기존 섹션 또는 BlogBlock 선택"}
+          >
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEditorMode("sections")}
-                className={`rounded-lg px-3 py-2 text-sm ${
-                  editorMode === "sections"
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "border border-[var(--border)] bg-white text-[var(--muted)]"
-                }`}
-              >
-                섹션
-              </button>
+              {mode === "edit" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditorMode("sections");
+                    setForm((prev) => ({
+                      ...prev,
+                      content: prev.content?.length ? prev.content : [emptySection()],
+                    }));
+                    setFieldErrors((prev) => {
+                      const next: Record<string, string> = {};
+                      for (const [key, value] of Object.entries(prev)) {
+                        if (!key.startsWith("block_")) next[key] = value;
+                      }
+                      return next;
+                    });
+                  }}
+                  className={`rounded-lg px-3 py-2 text-sm ${
+                    editorMode === "sections"
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "border border-[var(--border)] bg-white text-[var(--muted)]"
+                  }`}
+                >
+                  섹션
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setEditorMode("blocks");
                   setForm((prev) => ({ ...prev, blocks: prev.blocks?.length ? prev.blocks : [emptyBlock("paragraph")] }));
+                  setFieldErrors((prev) => {
+                    const next: Record<string, string> = {};
+                    for (const [key, value] of Object.entries(prev)) {
+                      if (!key.startsWith("content_") && key !== "content") next[key] = value;
+                    }
+                    return next;
+                  });
                 }}
                 className={`rounded-lg px-3 py-2 text-sm ${
                   editorMode === "blocks"
@@ -529,6 +610,19 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
           {/* Content sections */}
           {editorMode === "sections" ? (
           <div>
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-medium">레거시 섹션 포스트입니다.</p>
+              <p className="mt-1 text-xs text-amber-700">
+                단계적으로 BlogBlock으로 전환 중입니다. 필요하면 아래 버튼으로 바로 변환할 수 있습니다.
+              </p>
+              <button
+                type="button"
+                onClick={handleConvertSectionsToBlocks}
+                className="mt-3 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700"
+              >
+                BlogBlock으로 변환
+              </button>
+            </div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-semibold text-[var(--foreground)]">
                 본문 섹션 <span className="text-red-500">*</span>

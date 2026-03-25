@@ -31,7 +31,6 @@
 
 추천 확인 방법:
 - `lib/blog/generated/posts-meta.ts` 검색
-- 또는 `lib/blog/posts/*.ts` 확인
 - 또는 관리자에서 발행된 slug 확인
 
 ### 3) 질문/추천/섹션은 역할을 나눠서 구성

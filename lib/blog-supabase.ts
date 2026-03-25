@@ -11,7 +11,7 @@ import type { BlogBlock, BlogPost, BlogPostMeta, BlogPostSection } from "./blog/
 import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
 import { getCategorySlug, normalizeBlogCategory } from "./blog";
 import { getTodayKST } from "./date";
-import { BLOG_POSTS_META } from "./blog/generated/posts-meta";
+import { BLOG_POSTS_SNAPSHOT } from "./blog/generated/posts-snapshot";
 
 const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
@@ -159,31 +159,51 @@ function rowToPost(row: DbRow): BlogPost {
 }
 
 // ---------------------------------------------------------------------------
-// File-based fallback helpers (used when Supabase is unreachable)
+// Snapshot fallback helpers (used when Supabase is unreachable)
 // ---------------------------------------------------------------------------
 
-function getFileBasedPublishedMetas(): BlogPostMeta[] {
+function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
+  return BLOG_POSTS_SNAPSHOT.map((post) => ({
+    slug: post.slug,
+    title: post.title,
+    subtitle: post.subtitle,
+    excerpt: post.excerpt,
+    category: normalizeCategoryOrThrow(post.category),
+    tags: post.tags as BlogPost["tags"],
+    date: post.date,
+    dateModified: post.dateModified,
+    ...(isBlogBlockArray(post.content) ? { blocks: post.content } : {}),
+    ...(isLegacySectionArray(post.content) ? { content: post.content } : {}),
+    readTime: post.readTime,
+    reviewedDate: post.reviewedDate,
+    published: post.published,
+  }));
+}
+
+function getSnapshotPublishedMetas(): BlogPostMeta[] {
   const today = getTodayKST();
-  return BLOG_POSTS_META
-    .filter((p) => p.date <= today)
+  return getSnapshotPosts()
+    .filter((post) => post.published && post.date <= today)
     .map((post) => ({
-      ...post,
-      category: normalizeCategoryOrThrow(post.category),
+      slug: post.slug,
+      title: post.title,
+      subtitle: post.subtitle,
+      excerpt: post.excerpt,
+      category: post.category,
+      tags: post.tags,
+      date: post.date,
+      dateModified: post.dateModified,
+      readTime: post.readTime ?? calculateReadTime(post),
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-async function getFileBasedPost(slug: string): Promise<BlogPost | null> {
-  try {
-    const mod = await import(`./blog/posts/${slug}.ts`);
-    const post = (mod.post ?? mod.default) as BlogPost;
-    return {
-      ...post,
-      category: normalizeCategoryOrThrow(post.category),
-    };
-  } catch {
-    return null;
-  }
+function getSnapshotPost(slug: string): BlogPost | null {
+  const post = getSnapshotPosts().find((entry) => entry.slug === slug);
+  if (!post) return null;
+  const { published: _published, ...rest } = post;
+  void _published;
+  return rest;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,12 +213,12 @@ async function getFileBasedPost(slug: string): Promise<BlogPost | null> {
 /**
  * All published posts visible to site visitors (date <= today KST).
  * Ordered by date DESC.
- * Falls back to file-based data if Supabase query fails.
+ * Falls back to snapshot data if Supabase query fails.
  */
 export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
   unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
-      if (!isSupabaseAdminConfigured) return getFileBasedPublishedMetas();
+      if (!isSupabaseAdminConfigured) return getSnapshotPublishedMetas();
       try {
         const today = getTodayKST();
         const { data, error } = await getSupabaseAdmin()
@@ -225,8 +245,8 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
           };
         });
       } catch (e) {
-        console.warn("[blog-supabase] Supabase query failed, using file-based fallback", e);
-        return getFileBasedPublishedMetas();
+        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback", e);
+        return getSnapshotPublishedMetas();
       }
     },
     ["blog-posts-published"],
@@ -257,14 +277,14 @@ export const getAllPostMetas: () => Promise<
 /**
  * Single post by slug, including full content.
  * Returns null when not found.
- * Falls back to file-based import if Supabase fails.
+ * Falls back to snapshot data if Supabase fails.
  */
 export function getPostBySlug(
   slug: string,
 ): Promise<BlogPost | null> {
   return unstable_cache(
     async (): Promise<BlogPost | null> => {
-      if (!isSupabaseAdminConfigured) return getFileBasedPost(slug);
+      if (!isSupabaseAdminConfigured) return getSnapshotPost(slug);
       try {
         const { data, error } = await getSupabaseAdmin()
           .from(TABLE)
@@ -274,14 +294,14 @@ export function getPostBySlug(
 
         if (error) {
           // PGRST116 = row not found
-          if (error.code === "PGRST116") return getFileBasedPost(slug);
+          if (error.code === "PGRST116") return getSnapshotPost(slug);
           throw error;
         }
 
         return rowToPost(data as DbRow);
       } catch {
-        console.warn(`[blog-supabase] Supabase read failed for ${slug}, using file-based fallback`);
-        return getFileBasedPost(slug);
+        console.warn(`[blog-supabase] Supabase read failed for ${slug}, using snapshot fallback`);
+        return getSnapshotPost(slug);
       }
     },
     [getBlogPostCacheTag(slug)],
@@ -292,11 +312,11 @@ export function getPostBySlug(
 /**
  * Slug list for generateStaticParams().
  * Only published posts with date <= today KST.
- * Falls back to file-based data if Supabase query fails.
+ * Falls back to snapshot data if Supabase query fails.
  */
 export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
   async (): Promise<string[]> => {
-    if (!isSupabaseAdminConfigured) return getFileBasedPublishedMetas().map((p) => p.slug);
+    if (!isSupabaseAdminConfigured) return getSnapshotPublishedMetas().map((p) => p.slug);
     try {
       const today = getTodayKST();
       const { data, error } = await getSupabaseAdmin()
@@ -309,8 +329,8 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
 
       return (data as Pick<DbRow, "slug">[]).map((row) => row.slug);
     } catch (e) {
-      console.warn("[blog-supabase] Supabase query failed, using file-based fallback for slugs", e);
-      return getFileBasedPublishedMetas().map((p) => p.slug);
+      console.warn("[blog-supabase] Supabase query failed, using snapshot fallback for slugs", e);
+      return getSnapshotPublishedMetas().map((p) => p.slug);
     }
   },
   ["blog-slugs"],
@@ -320,7 +340,7 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
 /**
  * Related posts for a given category, excluding a specific slug.
  * Only published posts with date <= today KST.
- * Falls back to file-based data if Supabase query fails.
+ * Falls back to snapshot data if Supabase query fails.
  */
 export function getRelatedPosts(
   category: BlogCategoryValue,
@@ -329,11 +349,11 @@ export function getRelatedPosts(
 ): Promise<BlogPostMeta[]> {
   return unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
-      const fileFallback = () =>
-        getFileBasedPublishedMetas()
+      const snapshotFallback = () =>
+        getSnapshotPublishedMetas()
           .filter((p) => p.category === category && p.slug !== excludeSlug)
           .slice(0, limit);
-      if (!isSupabaseAdminConfigured) return fileFallback();
+      if (!isSupabaseAdminConfigured) return snapshotFallback();
       try {
         const today = getTodayKST();
         const { data, error } = await getSupabaseAdmin()
@@ -363,8 +383,8 @@ export function getRelatedPosts(
           };
         });
       } catch (e) {
-        console.warn("[blog-supabase] Supabase query failed, using file-based fallback for related posts", e);
-        return fileFallback();
+        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback for related posts", e);
+        return snapshotFallback();
       }
     },
     [getRelatedPostsCacheKey(category, excludeSlug, limit)],

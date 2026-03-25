@@ -3,34 +3,26 @@
 // 실행: pnpm review-status
 // =============================================================
 
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const postsDir = path.resolve(__dirname, "../lib/blog/posts");
+import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
+import { getCategoryLabel } from "../lib/blog/category-slugs";
+import type { BlogCategorySlug } from "../lib/blog/types";
 
 interface PostReviewInfo {
   slug: string;
-  category: string;
+  category: BlogCategorySlug;
   date: string;
   title: string;
   reviewedDate?: string;
 }
 
 async function main() {
-  const files = fs
-    .readdirSync(postsDir)
-    .filter((f) => f.endsWith(".ts") && f !== "index.ts");
-
-  const posts: PostReviewInfo[] = [];
-
-  for (const file of files) {
-    const mod = await import(path.join(postsDir, file));
-    if (!mod.post) continue;
-    const { slug, category, date, title, reviewedDate } = mod.post;
-    posts.push({ slug, category, date, title, reviewedDate });
-  }
+  const posts: PostReviewInfo[] = BLOG_POSTS_SNAPSHOT.map((post) => ({
+    slug: post.slug,
+    category: post.category as BlogCategorySlug,
+    date: post.date,
+    title: post.title,
+    reviewedDate: post.reviewedDate,
+  }));
 
   const reviewed = posts.filter((p) => p.reviewedDate);
   const unreviewed = posts.filter((p) => !p.reviewedDate);
@@ -42,14 +34,14 @@ async function main() {
   console.log(`\n블로그 검수 현황: ${doneCount}/${total} 완료 (${pct}%)\n`);
 
   // 카테고리별 그룹핑
-  const categories = [
-    "예방관리",
-    "보존치료",
-    "보철치료",
-    "임플란트",
-    "치아교정",
-    "소아치료",
-    "건강상식",
+  const categories: BlogCategorySlug[] = [
+    "prevention",
+    "restorative",
+    "prosthetics",
+    "implant",
+    "orthodontics",
+    "pediatric",
+    "health-tips",
   ];
 
   if (unreviewed.length > 0) {
@@ -59,7 +51,7 @@ async function main() {
         .filter((p) => p.category === cat)
         .sort((a, b) => a.date.localeCompare(b.date));
       if (catPosts.length === 0) continue;
-      console.log(`\n  [${cat}] ${catPosts.length}건`);
+      console.log(`\n  [${getCategoryLabel(cat)}] ${catPosts.length}건`);
       for (const p of catPosts) {
         console.log(`    ${p.slug}  (${p.date})  ${p.title}`);
       }
@@ -73,7 +65,7 @@ async function main() {
         .filter((p) => p.category === cat)
         .sort((a, b) => a.date.localeCompare(b.date));
       if (catPosts.length === 0) continue;
-      console.log(`\n  [${cat}] ${catPosts.length}건`);
+      console.log(`\n  [${getCategoryLabel(cat)}] ${catPosts.length}건`);
       for (const p of catPosts) {
         console.log(`    ${p.slug}  (검수: ${p.reviewedDate})  ${p.title}`);
       }

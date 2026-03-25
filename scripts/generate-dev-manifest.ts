@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -188,7 +189,7 @@ function collectProjectStats() {
     components: countFiles(path.join(rootDir, "components"), [".tsx"]),
     libModules: countFiles(path.join(rootDir, "lib"), [".ts"]),
     hooks: countFiles(path.join(rootDir, "hooks"), [".ts"]),
-    blogPosts: countFiles(path.join(rootDir, "lib/blog/posts"), [".ts"]),
+    blogPosts: BLOG_POSTS_SNAPSHOT.length,
   };
 }
 

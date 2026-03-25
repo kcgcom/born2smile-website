@@ -1,19 +1,32 @@
 #!/usr/bin/env node
 // IndexNow URL 제출 스크립트
 // 새로 발행된 블로그 포스트 URL을 IndexNow API에 제출합니다.
-// Node.js 내장 모듈만 사용하여 의존성 설치 없이 실행 가능합니다.
 //
 // 사용법:
 //   node scripts/submit-indexnow.mjs          # 오늘 발행된 포스트만 제출
 //   node scripts/submit-indexnow.mjs --all    # 전체 사이트 URL 제출
 
-import { readdir, readFile } from "fs/promises";
-import { join, basename } from "path";
+import { readFile } from "fs/promises";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
 const BASE_URL = "https://www.born2smile.co.kr";
 const INDEXNOW_KEY = "7d01a83dddd13f9abf9186b937921369";
 const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow";
-const POSTS_DIR = join(process.cwd(), "lib/blog/posts");
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) return;
+  const content = readFileSync(filePath, "utf8");
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIndex = trimmed.indexOf("=");
+    if (eqIndex <= 0) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const rawValue = trimmed.slice(eqIndex + 1).trim();
+    const value = rawValue.replace(/^['"]|['"]$/g, "");
+    if (!(key in process.env)) process.env[key] = value;
+  }
+}
 
 // 레거시 카테고리 → URL 슬러그 매핑 (하위 호환)
 const CATEGORY_SLUG_MAP = {
@@ -39,46 +52,36 @@ function getCategorySlug(category) {
   return CATEGORY_SLUG_MAP[category] ?? "health-tips";
 }
 
-function parseCategoryFromContent(content) {
-  const match = content.match(/category:\s*["']([^"']+)["']/);
-  return match ? match[1] : null;
+function loadLocalEnv() {
+  loadEnvFile(join(process.cwd(), ".env"));
+  loadEnvFile(join(process.cwd(), ".env.local"));
 }
 
-async function findPostsByDate(targetDate) {
-  const files = await readdir(POSTS_DIR);
-  const tsFiles = files.filter((f) => f.endsWith(".ts"));
-  const posts = [];
-
-  for (const file of tsFiles) {
-    const content = await readFile(join(POSTS_DIR, file), "utf-8");
-    const dateMatch = content.match(/date:\s*["'](\d{4}-\d{2}-\d{2})["']/);
-    if (dateMatch && dateMatch[1] === targetDate) {
-      const slug = basename(file, ".ts");
-      const category = parseCategoryFromContent(content);
-      posts.push({ slug, category });
-    }
+async function fetchPublishedPosts() {
+  loadLocalEnv();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase 환경변수 미설정 (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)");
   }
 
-  return posts;
-}
+  const endpoint = new URL("/rest/v1/blog_posts", url);
+  endpoint.searchParams.set("select", "slug,category,date,published");
+  endpoint.searchParams.set("published", "eq.true");
+  endpoint.searchParams.set("order", "date.desc");
 
-async function getAllPublishedPosts() {
-  const today = getTodayKST();
-  const files = await readdir(POSTS_DIR);
-  const tsFiles = files.filter((f) => f.endsWith(".ts"));
-  const posts = [];
+  const response = await fetch(endpoint, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+  });
 
-  for (const file of tsFiles) {
-    const content = await readFile(join(POSTS_DIR, file), "utf-8");
-    const dateMatch = content.match(/date:\s*["'](\d{4}-\d{2}-\d{2})["']/);
-    if (dateMatch && dateMatch[1] <= today) {
-      const slug = basename(file, ".ts");
-      const category = parseCategoryFromContent(content);
-      posts.push({ slug, category });
-    }
+  if (!response.ok) {
+    throw new Error(`Supabase blog_posts 조회 실패: HTTP ${response.status}`);
   }
 
-  return posts;
+  return response.json();
 }
 
 // lib/constants.ts에서 진료 과목 ID 추출
@@ -113,14 +116,15 @@ async function submitToIndexNow(urls) {
 
 async function main() {
   const isAll = process.argv.includes("--all");
+  const today = getTodayKST();
+  const publishedPosts = await fetchPublishedPosts();
 
   let urls;
 
   if (isAll) {
     console.log("[IndexNow] --all 모드: 전체 사이트 URL 제출");
 
-    const [blogPosts, treatmentIds] = await Promise.all([
-      getAllPublishedPosts(),
+    const [treatmentIds] = await Promise.all([
       getTreatmentIds(),
     ]);
 
@@ -135,16 +139,17 @@ async function main() {
       ...treatmentIds.map((id) => `${BASE_URL}/treatments/${id}`),
       `${BASE_URL}/blog`,
       ...categoryHubUrls,
-      ...blogPosts.map(({ slug, category }) =>
+      ...publishedPosts
+        .filter(({ date }) => date <= today)
+        .map(({ slug, category }) =>
         `${BASE_URL}/blog/${getCategorySlug(category)}/${slug}`,
       ),
       `${BASE_URL}/contact`,
     ];
   } else {
-    const today = getTodayKST();
     console.log(`[IndexNow] ${today} 발행 포스트 확인 중...`);
 
-    const newPosts = await findPostsByDate(today);
+    const newPosts = publishedPosts.filter(({ date }) => date === today);
 
     if (newPosts.length === 0) {
       console.log("[IndexNow] 오늘 발행된 포스트가 없습니다. 제출 생략.");

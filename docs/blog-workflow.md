@@ -26,16 +26,9 @@
 
 ## 블로그 포스트 콘텐츠 구조
 
-각 포스트 파일은 `BlogPost` 인터페이스를 따르며, 본문은 `BlogPostSection[]` 배열:
+블로그 포스트의 Single Source of Truth는 Supabase `blog_posts` 테이블입니다. 본문은 레거시 `content`(섹션 배열) 또는 `blocks`(BlogBlock 배열) 구조를 사용할 수 있지만, 신규 작성은 BlogBlock 기준으로 관리합니다.
 
-```typescript
-content: [
-  { heading: "섹션 제목", content: "섹션 본문 텍스트" },
-  { heading: "다음 섹션", content: "..." },
-]
-```
-
-빌드 시 `generate-blog-meta.ts` 스크립트가 포스트 파일에서 메타데이터만 추출하고 `content` 필드는 제거하여 `posts-meta.ts`를 생성. 이를 통해 목록 페이지 번들에 본문이 포함되지 않아 번들 크기 최적화. `readTime`은 content 글자 수 기반으로 자동 계산 (한국어 분당 ~500자, 최소 1분, 올림 적용). 포스트 파일에 `readTime`을 수동 입력해도 빌드 시 자동 계산 값으로 덮어씌움.
+빌드 시 `generate-blog-snapshot.ts`가 Supabase 데이터를 snapshot으로 저장하고, `generate-blog-meta.ts`가 snapshot에서 `posts-meta.ts`를 생성합니다. 이를 통해 목록 페이지 번들에 본문이 포함되지 않아 번들 크기를 줄이고, Supabase 장애 시에도 snapshot으로 공개 블로그를 유지할 수 있습니다.
 
 ## 블로그 작성 가이드라인
 

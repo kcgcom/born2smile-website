@@ -1,6 +1,6 @@
 # Supabase 데이터 아키텍처
 
-블로그 포스트의 Single Source of Truth가 파일(`lib/blog/posts/*.ts`)에서 **Supabase**(`blog_posts` 테이블)로 이전됨. 파일 기반 데이터는 폴백으로 유지.
+블로그 포스트의 Single Source of Truth는 **Supabase**(`blog_posts` 테이블)다. 공개 블로그는 Supabase 조회 실패 시 빌드 시점에 생성한 snapshot(`lib/blog/generated/posts-snapshot.ts`)으로 폴백한다.
 
 ## 테이블 구조
 
@@ -29,9 +29,9 @@ Row Level Security로 보안:
 
 ## 폴백 전략
 
-Supabase 쿼리 실패 시 파일 기반 `BLOG_POSTS_META`로 자동 폴백. 빌드 안정성 보장.
+Supabase 쿼리 실패 시 snapshot(`BLOG_POSTS_SNAPSHOT`)으로 자동 폴백한다. snapshot은 `pnpm generate-blog-snapshot`으로 생성되며 `pnpm dev`, `pnpm build`에서 자동 갱신된다.
 
-관련 코드: `lib/blog-supabase.ts`의 `getPublishedBlogPosts()` catch 블록.
+관련 코드: `lib/blog-supabase.ts`
 
 ## 캐싱
 
