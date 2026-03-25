@@ -10,28 +10,28 @@ interface CategoryPostListProps {
 
 export function CategoryPostList({ posts }: CategoryPostListProps) {
   return (
-    <section className="bg-white px-4 py-14 md:px-6 lg:px-8">
+    <section className="bg-white px-4 py-10 md:px-6 md:py-14 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="mb-6 flex flex-col gap-3 md:mb-8 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               All Posts
             </p>
-            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
               카테고리 전체 글
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
-              최신 글부터 차례로 읽어보면서 필요한 주제를 깊게 확인해 보세요.
+            <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-gray-600 md:text-base">
+              최신 글부터 읽으며 필요한 주제를 차근차근 확인해 보세요.
             </p>
           </div>
           <p className="text-sm text-gray-500">총 {posts.length}개 글</p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
           {posts.map((post) => (
             <article
               key={post.slug}
-              className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md"
+              className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md md:p-6"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}>
@@ -43,13 +43,13 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
                 </span>
               </div>
 
-              <h3 className="text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+              <h3 className="line-clamp-3 text-pretty text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
                 <Link href={getBlogPostUrl(post.slug, post.category)}>
                   {post.title}
                 </Link>
               </h3>
-              <p className="mt-2 text-sm font-medium text-gray-600">{post.subtitle}</p>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
+              <p className="mt-2 line-clamp-2 text-pretty text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
+              <p className="mt-3 flex-1 text-pretty text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
 
               {post.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
