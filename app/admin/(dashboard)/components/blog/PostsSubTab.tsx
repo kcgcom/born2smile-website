@@ -80,6 +80,9 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   const [scheduledDate, setScheduledDate] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingDateSlug, setEditingDateSlug] = useState<string | null>(null);
+  const [editingDateValue, setEditingDateValue] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
   const { mutate } = useAdminMutation();
 
   useEffect(() => {
@@ -288,6 +291,15 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
   };
 
+  const handleReschedule = async (slug: string, newDate: string) => {
+    if (!newDate) return;
+    setRescheduling(true);
+    const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "PUT", { date: newDate });
+    setRescheduling(false);
+    setEditingDateSlug(null);
+    if (!error) refetchPosts();
+  };
+
   const handleRefreshCache = async () => {
     setRefreshing(true);
     await mutate("/api/admin/revalidate", "POST");
@@ -470,7 +482,28 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                           {draftRank !== null && (
                             <span className="font-semibold text-amber-600">#{draftRank}</span>
                           )}
-                          <span>{isDraft ? "미정" : post.date}</span>
+                          {dDay !== null && editingDateSlug === post.slug ? (
+                            <input
+                              type="date"
+                              value={editingDateValue}
+                              min={today}
+                              onChange={(e) => setEditingDateValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void handleReschedule(post.slug, editingDateValue);
+                                if (e.key === "Escape") setEditingDateSlug(null);
+                              }}
+                              autoFocus
+                              className="rounded border border-blue-300 px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            />
+                          ) : (
+                            <span
+                              className={dDay !== null ? "cursor-pointer underline decoration-dotted hover:text-blue-500" : ""}
+                              onClick={dDay !== null ? () => { setEditingDateSlug(post.slug); setEditingDateValue(post.date); } : undefined}
+                              title={dDay !== null ? "클릭하여 발행일 변경" : undefined}
+                            >
+                              {isDraft ? "미정" : post.date}
+                            </span>
+                          )}
                           {dDay !== null && (
                             <span className="font-medium text-amber-600">D-{dDay}</span>
                           )}
@@ -480,32 +513,52 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                           </span>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
-                          {isDraft && (
-                            <button
-                              onClick={() => handlePublishOpen(post.slug)}
-                              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
-                              aria-label={`${post.title} 발행`}
-                            >
-                              <Calendar className="h-3.5 w-3.5" />
-                              발행
-                            </button>
+                          {editingDateSlug === post.slug ? (
+                            <>
+                              <button
+                                onClick={() => void handleReschedule(post.slug, editingDateValue)}
+                                disabled={rescheduling}
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                              >
+                                저장
+                              </button>
+                              <button
+                                onClick={() => setEditingDateSlug(null)}
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)] transition-colors"
+                              >
+                                취소
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {isDraft && (
+                                <button
+                                  onClick={() => handlePublishOpen(post.slug)}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                                  aria-label={`${post.title} 발행`}
+                                >
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  발행
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleEdit(post)}
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                                aria-label={`${post.title} 수정`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDelete(post.slug)}
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                                aria-label={`${post.title} 삭제`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                삭제
+                              </button>
+                            </>
                           )}
-                          <button
-                            onClick={() => handleEdit(post)}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
-                            aria-label={`${post.title} 수정`}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            수정
-                          </button>
-                          <button
-                            onClick={() => handleDelete(post.slug)}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
-                            aria-label={`${post.title} 삭제`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            삭제
-                          </button>
                         </div>
                       </div>
                     </li>
