@@ -274,9 +274,9 @@ export default async function BlogCategoryPage({
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               Who It Helps
             </p>
-              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
-                이런 분께 도움이 됩니다
-              </h2>
+            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              이런 분께 도움이 됩니다
+            </h2>
             <ul className="mt-5 space-y-3 text-sm leading-relaxed text-gray-700 md:text-base">
               {hub.audience.map((item) => (
                 <li key={item} className="flex gap-3">
@@ -291,9 +291,9 @@ export default async function BlogCategoryPage({
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
               Reading Guide
             </p>
-              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
-                처음 읽는다면 이렇게 보세요
-              </h2>
+            <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              처음 읽는다면 이렇게 보세요
+            </h2>
             <ol className="mt-5 space-y-4 text-sm leading-relaxed text-gray-700 md:text-base">
               <li><strong className="text-gray-900">1.</strong> 먼저 읽을 글에서 기본 개념을 잡습니다.</li>
               <li><strong className="text-gray-900">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
@@ -323,7 +323,7 @@ export default async function BlogCategoryPage({
                 >
                   <div className="flex items-start gap-3">
                     <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-primary)] ring-1 ring-blue-100 md:h-9 md:w-9">
-                      <CircleHelp size={16} />
+                      <CircleHelp size={18} />
                     </span>
                     <div>
                       <h3 className="line-clamp-2 text-pretty text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
@@ -391,9 +391,9 @@ export default async function BlogCategoryPage({
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
                 Curated Paths
               </p>
-                <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
-                  상황별로 읽기
-                </h2>
+              <h2 className="mt-2 text-pretty font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                상황별로 읽기
+              </h2>
             </div>
             <div className="space-y-6 md:space-y-8">
               {groupedSections.map((section) => (
@@ -426,7 +426,7 @@ export default async function BlogCategoryPage({
         </section>
       )}
 
-      <section className="bg-white px-4 pb-8 md:px-6 md:pb-6 lg:px-8">
+      <section className="bg-white px-4 pb-6 md:px-6 md:pb-8 lg:px-8">
         <div className="mx-auto max-w-6xl rounded-3xl border border-gray-100 bg-gradient-to-r from-blue-50 to-white p-5 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
