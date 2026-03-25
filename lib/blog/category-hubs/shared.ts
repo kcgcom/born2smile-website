@@ -1,5 +1,6 @@
 export interface CategoryHubQuestion {
   question: string;
+  answer: string;
   slug: string;
 }
 
@@ -7,11 +8,6 @@ export interface CategoryHubSection {
   title: string;
   description: string;
   slugs: string[];
-}
-
-export interface CategoryHubFaqItem {
-  q: string;
-  a: string;
 }
 
 export interface CategoryHubConfig {
@@ -22,11 +18,10 @@ export interface CategoryHubConfig {
   questions: CategoryHubQuestion[];
   featuredSlugs: string[];
   sections: CategoryHubSection[];
-  faq: CategoryHubFaqItem[];
 }
 
-export function question(questionText: string, slug: string): CategoryHubQuestion {
-  return { question: questionText, slug };
+export function question(questionText: string, slug: string, answer: string): CategoryHubQuestion {
+  return { question: questionText, slug, answer };
 }
 
 export function section(title: string, description: string, slugs: string[]): CategoryHubSection {

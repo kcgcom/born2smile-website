@@ -11,7 +11,6 @@ import type { CategoryHubConfig } from "./shared";
 
 export type {
   CategoryHubConfig,
-  CategoryHubFaqItem,
   CategoryHubQuestion,
   CategoryHubSection,
 } from "./shared";

@@ -10,19 +10,15 @@ export const implantHub = defineCategoryHub({
     "브릿지와 임플란트 중 어떤 선택이 더 맞을지 비교하고 싶은 분",
   ],
   questions: [
-    question("내 건강 상태로 임플란트가 가능한지 먼저 확인하고 싶어요.", "implant-eligibility-checklist"),
-    question("뼈이식이 왜 필요한지, 꼭 해야 하는지 궁금해요.", "bone-graft-for-implant"),
-    question("임플란트와 브릿지 중 어떤 선택이 더 맞는지 비교해 보고 싶어요.", "implant-vs-bridge-comparison"),
+    question("내 건강 상태로 임플란트가 가능한지 먼저 확인하고 싶어요.", "implant-eligibility-checklist", "잇몸뼈 상태, 전신질환, 복용 약물, 흡연 여부에 따라 계획이 달라지므로 검사 항목부터 확인하는 것이 좋습니다."),
+    question("뼈이식이 왜 필요한지, 꼭 해야 하는지 궁금해요.", "bone-graft-for-implant", "모든 경우에 필요한 것은 아니며, 잇몸뼈의 높이와 폭이 부족할 때 고려됩니다."),
+    question("임플란트와 브릿지 중 어떤 선택이 더 맞는지 비교해 보고 싶어요.", "implant-vs-bridge-comparison", "남아 있는 치아 상태, 잇몸뼈, 관리 가능성에 따라 더 적합한 선택이 달라집니다."),
+    question("임플란트 후 오래 쓰려면 무엇이 가장 중요한가요?", "peri-implantitis-prevention", "정기검진과 정확한 치간 관리, 흡연·이갈이 같은 위험요인 조절이 장기 유지에 가장 중요합니다."),
   ],
   featuredSlugs: ["implant-eligibility-checklist", "implant-vs-bridge-comparison", "implant-aftercare-tips"],
   sections: [
     section("치료 전 판단", "시술 가능 여부와 선택 기준을 먼저 이해하면 상담이 훨씬 쉬워집니다.", ["implant-eligibility-checklist", "diabetes-and-implant", "implant-pain-myths"]),
     section("시술과 회복", "뼈이식, 수술 후 통증, 회복 과정에서 자주 묻는 질문을 모았습니다.", ["bone-graft-for-implant", "after-implant-surgery-care", "implant-aftercare-tips"]),
     section("오래 쓰는 관리와 비교", "수명, 주의사항, 다른 치료와의 차이를 함께 확인하세요.", ["implant-lifespan-facts", "peri-implantitis-prevention", "implant-vs-bridge-comparison", "implant-brand-comparison"]),
-  ],
-  faq: [
-    { q: "임플란트는 누구나 바로 할 수 있나요?", a: "잇몸뼈 상태, 전신질환, 복용 약물, 흡연 여부 등에 따라 계획이 달라집니다. 허브의 입문 글을 먼저 읽고 상담 시 검사 항목을 확인하는 것이 좋습니다." },
-    { q: "뼈이식은 꼭 필요한가요?", a: "모든 환자에게 필요한 것은 아니며, 잇몸뼈의 높이와 폭이 부족할 때 고려됩니다. 방사선 검사와 구강 상태 평가 후 결정됩니다." },
-    { q: "임플란트 후 오래 쓰려면 무엇이 가장 중요한가요?", a: "정기검진, 정확한 칫솔질과 치간 관리, 이갈이·흡연 같은 위험요인을 줄이는 것이 핵심입니다. 시술 직후 관리만큼 장기 유지관리도 중요합니다." },
   ],
 });

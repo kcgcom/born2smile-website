@@ -21,7 +21,6 @@ import {
   serializeJsonLd,
 } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
-import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { CategoryPostList } from "./CategoryPostList";
 
 export const revalidate = 3600;
@@ -162,7 +161,9 @@ export default async function BlogCategoryPage({
     categorySlug: category,
     posts: categoryPosts,
   });
-  const faqJsonLd = hub.faq.length > 0 ? getFaqJsonLd(hub.faq) : null;
+  const faqJsonLd = hub.questions.length > 0
+    ? getFaqJsonLd(hub.questions.map((item) => ({ q: item.question, a: item.answer })))
+    : null;
 
   return (
     <>
@@ -296,7 +297,7 @@ export default async function BlogCategoryPage({
             <ol className="mt-5 space-y-4 text-sm leading-relaxed text-gray-700 md:text-base">
               <li><strong className="text-gray-900">1.</strong> 먼저 읽을 글에서 기본 개념을 잡습니다.</li>
               <li><strong className="text-gray-900">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
-              <li><strong className="text-gray-900">3.</strong> FAQ와 진료 안내 링크로 상담 전 체크포인트를 정리합니다.</li>
+              <li><strong className="text-gray-900">3.</strong> Common Questions에서 핵심 답을 먼저 읽고 관련 글로 더 깊게 들어갑니다.</li>
             </ol>
           </div>
         </div>
@@ -314,7 +315,7 @@ export default async function BlogCategoryPage({
               </h2>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              {questionCards.map(({ question, post }) => (
+              {questionCards.map(({ question, answer, post }) => (
                 <Link
                   key={question}
                   href={getBlogPostUrl(post.slug, post.category)}
@@ -328,10 +329,13 @@ export default async function BlogCategoryPage({
                       <h3 className="text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
                         {question}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-2">
-                        {post.title}
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-3">
+                        {answer}
                       </p>
-                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
+                      <p className="mt-3 text-sm font-medium text-gray-700 line-clamp-1">
+                        관련 글: {post.title}
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
                         글 바로 읽기
                         <ArrowRight size={14} />
                       </span>
@@ -418,25 +422,6 @@ export default async function BlogCategoryPage({
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-      )}
-
-      {hub.faq.length > 0 && (
-        <section className="bg-white px-4 py-14 md:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-6 max-w-3xl">
-              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
-                FAQ
-              </p>
-              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
-                자주 묻는 질문
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
-                글을 읽기 전후에 가장 많이 확인하는 질문만 먼저 정리했습니다.
-              </p>
-            </div>
-            <FaqAccordion items={hub.faq} />
           </div>
         </section>
       )}

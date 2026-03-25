@@ -10,19 +10,15 @@ export const healthTipsHub = defineCategoryHub({
     "임신·출산·만성질환 같은 상황에서 구강관리를 더 신경 쓰고 싶은 분",
   ],
   questions: [
-    question("스트레스와 이갈이는 치아에 어떤 영향을 줄까요?", "stress-and-teeth-grinding"),
-    question("치과 치료가 무서울 때 불안을 줄이는 방법이 있을까요?", "dental-anxiety-tips"),
-    question("당뇨병 같은 전신질환은 구강 건강과 어떻게 연결될까요?", "diabetes-and-dental-health"),
+    question("스트레스와 이갈이는 치아에 어떤 영향을 줄까요?", "stress-and-teeth-grinding", "스트레스는 이갈이, 턱관절 불편, 구강건조처럼 간접적인 구강 문제로 이어질 수 있습니다."),
+    question("치과 치료가 무서울 때 불안을 줄이는 방법이 있을까요?", "dental-anxiety-tips", "불안을 줄이려면 치료 과정을 미리 이해하고 진료 전에 통증과 마취 계획을 충분히 상의하는 것이 도움이 됩니다."),
+    question("당뇨병 같은 전신질환은 구강 건강과 어떻게 연결될까요?", "diabetes-and-dental-health", "당뇨병과 약물 복용, 면역 상태는 잇몸 염증과 회복 양상에 영향을 줄 수 있어 관리 방식도 달라집니다."),
+    question("임신 중에도 치과 치료가 가능한가요?", "pregnancy-dental-treatment-safety", "필요한 처치는 가능하지만 시기와 치료 종류에 따라 조정이 필요하므로 통증이나 염증이 있으면 미루지 말고 상담받는 것이 좋습니다."),
   ],
   featuredSlugs: ["dental-anxiety-tips", "stress-and-teeth-grinding", "diabetes-and-dental-health"],
   sections: [
     section("생활습관과 증상", "일상 습관이 치아와 잇몸에 주는 영향을 먼저 읽어보세요.", ["stress-and-teeth-grinding", "dry-mouth-syndrome", "mouth-breathing-dental-effects", "smoking-oral-health"]),
     section("가족과 생애주기별 관리", "임신·출산 등 생애주기에 따라 달라지는 관리 포인트입니다.", ["pregnancy-dental-treatment-safety", "postpartum-dental-health", "dental-anxiety-tips", "coffee-teeth-staining"]),
     section("질환과 전신 건강 연결", "구강과 전신 건강의 연결성을 쉽게 이해할 수 있는 글들입니다.", ["diabetes-and-dental-health", "medication-oral-side-effects", "tongue-health-signs", "gum-color-changes"]),
-  ],
-  faq: [
-    { q: "스트레스가 정말 치아 문제를 만들 수 있나요?", a: "가능합니다. 이갈이, 턱관절 불편, 구강건조, 통증 민감도 증가처럼 간접적인 문제로 이어질 수 있습니다." },
-    { q: "임신 중에도 치과 치료가 가능한가요?", a: "필요한 처치는 가능하지만 시기와 치료 종류에 따라 조정이 필요합니다. 통증이나 염증이 있으면 미루지 말고 상담받는 것이 좋습니다." },
-    { q: "전신질환이 있으면 구강관리도 달라져야 하나요?", a: "네. 당뇨병, 약물 복용, 면역 상태 등에 따라 잇몸 염증과 회복 양상이 달라질 수 있어 더 세심한 관리가 필요합니다." },
   ],
 });
