@@ -9,6 +9,8 @@ import {
 } from "@/lib/blog-supabase";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
+import { submitBlogPostToIndexNow } from "@/lib/indexnow";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -80,6 +82,13 @@ export async function PUT(
       );
     }
 
+    const { data: existingMeta, error: existingMetaError } = await getSupabaseAdmin()
+      .from("blog_posts")
+      .select("published, date")
+      .eq("slug", slug)
+      .single();
+    if (existingMetaError) throw existingMetaError;
+
     await updateBlogPost(slug, data, auth.email);
 
     // 카테고리 결정: 업데이트된 카테고리 또는 기존 카테고리
@@ -92,6 +101,17 @@ export async function PUT(
       revalidatePath(`/blog/${getCategorySlug(existing.category)}`);
     }
     revalidatePath("/sitemap.xml");
+    const previousPublished = existingMeta?.published === true;
+    const effectivePublished = data.published ?? previousPublished;
+    const effectiveDate = data.date ?? existingMeta?.date ?? existing.date;
+    const becamePublished = !previousPublished && data.published === true;
+    const publishedAndDatedTodayOrPast = effectivePublished === true
+      && effectiveDate <= new Date().toISOString().slice(0, 10);
+    if (becamePublished || publishedAndDatedTodayOrPast) {
+      void submitBlogPostToIndexNow(slug, category).catch((error) => {
+        console.error("[indexnow] blog post submit failed:", error);
+      });
+    }
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
   } catch {

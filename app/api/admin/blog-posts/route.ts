@@ -8,6 +8,7 @@ import {
   type CreateBlogPostData,
 } from "@/lib/blog-supabase";
 import { blogPostSchema } from "@/lib/blog-validation";
+import { submitBlogPostToIndexNow } from "@/lib/indexnow";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -67,6 +68,11 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/blog");
     revalidatePath("/sitemap.xml");
+    if (data.published) {
+      void submitBlogPostToIndexNow(data.slug, data.category).catch((error) => {
+        console.error("[indexnow] blog post submit failed:", error);
+      });
+    }
 
     return Response.json(
       { data: { slug: data.slug } },
