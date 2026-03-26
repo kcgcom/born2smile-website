@@ -100,25 +100,25 @@ function isExternalHref(href: string): boolean {
   return /^https?:\/\//.test(href);
 }
 
-function getReferenceSource(href: string): { label: string; host: string } | null {
+function getReferenceSource(href: string): { label: string; host: string; isOfficial: boolean } | null {
   try {
     const { hostname } = new URL(href);
     const normalized = hostname.replace(/^www\./, "");
 
     if (normalized.includes("nhs.uk")) {
-      return { label: "NHS", host: normalized };
+      return { label: "NHS", host: normalized, isOfficial: true };
     }
     if (normalized.includes("fda.gov")) {
-      return { label: "FDA", host: normalized };
+      return { label: "FDA", host: normalized, isOfficial: true };
     }
     if (normalized.includes("mouthhealthy.org") || normalized.includes("ada.org")) {
-      return { label: "ADA", host: normalized };
+      return { label: "ADA", host: normalized, isOfficial: true };
     }
     if (normalized.includes("diabetes.org")) {
-      return { label: "미국당뇨병학회", host: normalized };
+      return { label: "미국당뇨병학회", host: normalized, isOfficial: true };
     }
 
-    return { label: "외부 자료", host: normalized };
+    return { label: "외부 자료", host: normalized, isOfficial: false };
   } catch {
     return null;
   }
@@ -220,7 +220,7 @@ function renderBlocks(blocks: BlogBlock[]) {
                     {item.description && (
                       <p className="mt-1 text-sm leading-relaxed text-gray-600">{item.description}</p>
                     )}
-                    {source && source.label !== "외부 자료" && (
+                    {source?.isOfficial && (
                       <p className="mt-2 text-xs text-gray-500">새 창에서 열리는 공식 환자 안내 자료입니다.</p>
                     )}
                   </Link>

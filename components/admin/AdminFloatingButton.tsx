@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
+import type { AuthSession } from "@supabase/supabase-js";
 
 /**
  * 관리자 로그인 시 모든 공개 페이지에 표시되는 플로팅 버튼.
@@ -40,30 +41,18 @@ export function AdminFloatingButton() {
 
       const supabase = getSupabaseBrowserClient();
 
-      // 초기 세션 확인
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const admin = await verifyAdminUser();
-        if (!admin) {
-          setIsAdmin(false);
-          try { localStorage.removeItem("born2smile-admin"); } catch { /* private browsing */ }
-        }
-      } else {
-        // 세션 없으면 플래그 제거
-        setIsAdmin(false);
-        try { localStorage.removeItem("born2smile-admin"); } catch { /* private browsing */ }
-      }
+      const setAdminFlag = (value: boolean) => {
+        try {
+          if (value) localStorage.setItem("born2smile-admin", "1");
+          else localStorage.removeItem("born2smile-admin");
+        } catch { /* private browsing */ }
+      };
 
-      // 세션 변경 감지
-      const { data } = supabase.auth.onAuthStateChange((_event: string, sess: { user: { email?: string | null } } | null) => {
-        void (async () => {
-          const admin = sess?.user ? await verifyAdminUser() : false;
-          setIsAdmin(admin);
-          try {
-            if (admin) localStorage.setItem("born2smile-admin", "1");
-            else localStorage.removeItem("born2smile-admin");
-          } catch { /* private browsing */ }
-        })();
+      // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
+      const { data } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
+        const admin = session ? await verifyAdminUser(session.access_token) : false;
+        setIsAdmin(admin);
+        setAdminFlag(admin);
       });
       subscription = data.subscription;
     })();
