@@ -207,7 +207,7 @@ export default async function TreatmentDetailPage({
                 {detail.highlights.map((h) => (
                   <div
                     key={h.label}
-                    className="rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-4 text-center"
+                    className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-center"
                   >
                     <p className="mb-1 text-xs font-medium text-blue-500">{h.label}</p>
                     <p className="text-base font-bold text-gray-900">{h.value}</p>
