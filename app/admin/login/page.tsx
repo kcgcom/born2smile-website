@@ -16,9 +16,13 @@ export default function AdminLoginPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     let cancelled = false;
+    let handled = false;
 
-    async function handleAdminRedirect(email?: string) {
-      const isAdmin = await verifyAdminUser();
+    async function handleAdminRedirect(email?: string, accessToken?: string) {
+      // PKCE 코드 교환 후 SIGNED_IN 이벤트와 init() 양쪽에서 동시에 호출되는 것을 방지
+      if (handled) return;
+      handled = true;
+      const isAdmin = await verifyAdminUser(accessToken);
       if (cancelled) return;
       if (isAdmin) {
         try { localStorage.setItem("born2smile-admin", "1"); } catch { /* private browsing */ }
@@ -36,7 +40,7 @@ export default function AdminLoginPage() {
         window.history.replaceState({}, "", window.location.pathname);
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error && data.session?.user) {
-          await handleAdminRedirect(data.session.user.email ?? undefined);
+          await handleAdminRedirect(data.session.user.email ?? undefined, data.session.access_token);
           return;
         }
       }
@@ -44,7 +48,7 @@ export default function AdminLoginPage() {
       // 2) 기존 세션 확인 — 이미 로그인이면 /admin으로
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        await handleAdminRedirect(session.user.email ?? undefined);
+        await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
         return;
       }
 
@@ -57,7 +61,7 @@ export default function AdminLoginPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: string, session: AuthSession | null) => {
         if (session?.user) {
-          await handleAdminRedirect(session.user.email ?? undefined);
+          await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
         }
       },
     );

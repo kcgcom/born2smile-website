@@ -16,29 +16,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // 미인증 시 로그인으로 리다이렉트 — render 중 side effect 방지
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/admin/login");
+    }
+  }, [loading, user, router]);
+
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    // 초기 세션 확인
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: AuthSession | null } }) => {
-      void (async () => {
-        if (session?.user) {
-          setUser({ email: session.user.email ?? undefined });
-          const admin = await verifyAdminUser();
-          setIsAdmin(admin);
-        }
-        setLoading(false);
-      })();
-    });
-
-    // 세션 변경 감지
+    // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
+    // getSession() 병행 시 verifyAdminUser가 이중 호출됨
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
       void (async () => {
         if (session?.user) {
           setUser({ email: session.user.email ?? undefined });
-          const admin = await verifyAdminUser();
+          const admin = await verifyAdminUser(session.access_token);
           setIsAdmin(admin);
         } else {
           setUser(null);
@@ -63,7 +59,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   if (!user) {
-    router.replace("/admin/login");
     return null;
   }
 

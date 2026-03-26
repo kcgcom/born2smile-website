@@ -294,8 +294,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 - **클라이언트** (`lib/supabase.ts`): 싱글톤, `isSupabaseConfigured`로 graceful degradation, `getAccessToken()` 함수
 - **Admin** (`lib/supabase-admin.ts`): service_role key로 RLS 바이패스
-- **관리자 인증** (`lib/admin-auth.ts`): Supabase Google OAuth (redirect), 이메일 화이트리스트 (`NEXT_PUBLIC_ADMIN_EMAILS`)
-- **AuthGuard** (`components/admin/AuthGuard.tsx`): Supabase `getSession()` + `onAuthStateChange` → 미로그인 리다이렉트, 비관리자 차단
+- **관리자 인증** (`lib/admin-auth.ts`): Supabase Google OAuth (redirect), 이메일 화이트리스트 (`ADMIN_EMAILS`)
+- **AuthGuard** (`components/admin/AuthGuard.tsx`): `onAuthStateChange` (INITIAL_SESSION 포함) → 미로그인 리다이렉트, 비관리자 차단
 
 ### 관리자 대시보드
 

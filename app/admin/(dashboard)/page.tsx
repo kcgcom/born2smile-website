@@ -12,6 +12,13 @@ import { AdminLoadingSkeleton } from "./components/AdminLoadingSkeleton";
 import { preloadAdminApi } from "./components/useAdminApi";
 
 // -------------------------------------------------------------
+// 기본 탭(dev) 청크를 auth 검증과 병렬로 프리로드
+// dynamic() lazy import와 달리 이 import()는 auth 전에 즉시 시작됨
+// -------------------------------------------------------------
+
+void import("./components/DevTab");
+
+// -------------------------------------------------------------
 // 구탭 → 신탭 리다이렉트 매핑 (북마크 호환)
 // -------------------------------------------------------------
 
@@ -91,17 +98,12 @@ export default function AdminDashboardPage() {
   }, [activeTab, visitedTabs]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) setUser({ email: session.user.email ?? undefined });
-    })();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
-      setUser(session?.user ? { email: session.user.email ?? undefined } : null);
-    });
-    return () => subscription.unsubscribe();
+    // 이메일 표시용 단순 조회 — AuthGuard가 세션 변경/리다이렉트를 처리하므로 구독 불필요
+    void getSupabaseBrowserClient().auth.getSession().then(
+      ({ data: { session } }: { data: { session: AuthSession | null } }) => {
+        if (session?.user) setUser({ email: session.user.email ?? undefined });
+      },
+    );
   }, []);
 
   const handleLogout = async () => {

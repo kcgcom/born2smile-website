@@ -198,6 +198,28 @@ export default async function TreatmentDetailPage({
         </FadeIn>
       </section>
 
+      {/* 핵심 정보 카드 */}
+      {detail.highlights && (
+        <section className="bg-white pb-2 pt-0">
+          <div className="mx-auto max-w-3xl px-4">
+            <FadeIn>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {detail.highlights.map((h) => (
+                  <div
+                    key={h.label}
+                    className="rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-4 text-center"
+                  >
+                    <p className="mb-1 text-xs font-medium text-blue-500">{h.label}</p>
+                    <p className="text-base font-bold text-gray-900">{h.value}</p>
+                    {h.note && <p className="mt-0.5 text-xs text-gray-500">{h.note}</p>}
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+      )}
+
       {/* 치료 과정 */}
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">

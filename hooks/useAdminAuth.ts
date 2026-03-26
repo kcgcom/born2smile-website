@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { AuthSession } from "@supabase/supabase-js";
 
 /**
  * 현재 사용자가 관리자인지 감지하는 훅.
@@ -31,26 +32,23 @@ export function useAdminAuth(): boolean {
 
       const supabase = getSupabaseBrowserClient();
 
-      // 초기 확인
-      const admin = await verifyAdminUser();
-      setIsAdmin(admin);
-      if (!admin) {
-        try { localStorage.removeItem("born2smile-admin"); } catch {}
-        return;
-      }
+      const setAdminFlag = (value: boolean) => {
+        try {
+          if (value) localStorage.setItem("born2smile-admin", "1");
+          else localStorage.removeItem("born2smile-admin");
+        } catch {}
+      };
 
-      // 세션 변경 감지
-      const { data } = supabase.auth.onAuthStateChange(async (_event: string, session: { user: { email?: string | null } } | null) => {
+      // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
+      // getSession() 병행 시 verifyAdminUser가 이중 호출됨 (AuthGuard와 동일한 패턴)
+      const { data } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
         if (session) {
-          const stillAdmin = await verifyAdminUser();
+          const stillAdmin = await verifyAdminUser(session.access_token);
           setIsAdmin(stillAdmin);
-          try {
-            if (stillAdmin) localStorage.setItem("born2smile-admin", "1");
-            else localStorage.removeItem("born2smile-admin");
-          } catch {}
+          setAdminFlag(stillAdmin);
         } else {
           setIsAdmin(false);
-          try { localStorage.removeItem("born2smile-admin"); } catch {}
+          setAdminFlag(false);
         }
       });
       subscription = data.subscription;

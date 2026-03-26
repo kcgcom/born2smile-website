@@ -5,13 +5,13 @@
 
 import { getSupabaseBrowserClient } from "./supabase";
 
-/** 서버 API를 통해 관리자 권한 검증 */
-export async function verifyAdminUser(): Promise<boolean> {
+/** 서버 API를 통해 관리자 권한 검증 — accessToken을 넘기면 getSession() 재호출 생략 */
+export async function verifyAdminUser(accessToken?: string): Promise<boolean> {
   try {
-    const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
-    if (!session?.access_token) return false;
+    const token = accessToken ?? (await getSupabaseBrowserClient().auth.getSession()).data.session?.access_token;
+    if (!token) return false;
     const response = await fetch("/api/admin/auth-check", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     return response.ok;
