@@ -183,12 +183,7 @@ export default async function BlogCategoryPage({
       <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
-            <div className="mb-4 flex justify-end">
-              <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
-                건강칼럼 전체 보기 →
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-2 md:gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 md:gap-2.5">
               {ALL_CATEGORY_SLUGS.map((slug) => {
                 const isActive = slug === categorySlug;
                 return (
@@ -206,6 +201,9 @@ export default async function BlogCategoryPage({
                   </Link>
                 );
               })}
+              <Link href="/blog" className="ml-auto shrink-0 text-sm font-medium text-[var(--color-primary)] hover:underline">
+                전체 보기 →
+              </Link>
             </div>
           </div>
         </div>
