@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpenText, Clock } from "lucide-react";
-import { CLINIC, BASE_URL } from "@/lib/constants";
+import { CLINIC, DOCTORS, BASE_URL } from "@/lib/constants";
 import {
   getRelatedTreatmentId,
   categoryColors,
@@ -446,8 +446,18 @@ export default async function BlogPostPage({
               <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
                 {post.title}
               </h1>
-              <p className="mt-3 text-lg text-gray-600 md:text-xl">
+              <p className="blog-post-excerpt mt-3 text-lg text-gray-600 md:text-xl">
                 {post.subtitle}
+              </p>
+              <p className="mt-4 text-sm text-gray-500">
+                <Link
+                  href="/about"
+                  className="font-medium text-gray-700 hover:text-[var(--color-primary)]"
+                >
+                  {CLINIC.name} 원장 {DOCTORS[0].name}
+                </Link>
+                <span className="mx-1.5">·</span>
+                {DOCTORS[0].position}
               </p>
             </FadeIn>
           </div>

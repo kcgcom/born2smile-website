@@ -26,6 +26,7 @@ export function getClinicJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": ["Dentist", "MedicalBusiness"],
+    "@id": `${BASE_URL}/#organization`,
     name: CLINIC.name,
     alternateName: CLINIC.nameEn,
     description: `김포한강신도시 장기동 ${CLINIC.name}. 김포한강신도시 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
@@ -108,18 +109,18 @@ export function getClinicJsonLd() {
     ...(REVIEWS.length > 0 && {
       aggregateRating: {
         "@type": "AggregateRating",
-        ratingValue: String(
+        ratingValue: parseFloat(
           (REVIEWS.reduce((sum, r) => sum + r.rating, 0) / REVIEWS.length).toFixed(1)
         ),
-        reviewCount: String(REVIEWS.length),
-        bestRating: "5",
-        worstRating: "1",
+        reviewCount: REVIEWS.length,
+        bestRating: 5,
+        worstRating: 1,
       },
       review: REVIEWS.map((r) => ({
         "@type": "Review",
         reviewRating: {
           "@type": "Rating",
-          ratingValue: String(r.rating),
+          ratingValue: r.rating,
         },
         author: { "@type": "Person", name: r.name },
         datePublished: r.date.length === 7 ? `${r.date}-01` : r.date,
@@ -230,8 +231,14 @@ export function getBlogPostJsonLd(post: BlogPost) {
     url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
     author: {
       "@type": "Person",
+      "@id": `${BASE_URL}/about#doctor-kim-changgyun`,
       name: doctor.name,
       jobTitle: doctor.position,
+      url: `${BASE_URL}/about`,
+    },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", ".blog-post-excerpt", "article > p:first-of-type"],
     },
     publisher: {
       "@type": "Organization",
@@ -342,5 +349,62 @@ export function getBreadcrumbJsonLd(
       name: item.name,
       item: `${BASE_URL}${item.href}`,
     })),
+  };
+}
+
+/**
+ * 의사 개인 JSON-LD (Physician)
+ * /about 페이지에 삽입하여 의사를 독립 엔티티로 인식시킵니다.
+ */
+export function getDoctorJsonLd() {
+  const doctor = DOCTORS[0];
+  return {
+    "@context": "https://schema.org",
+    "@type": "Physician",
+    "@id": `${BASE_URL}/about#doctor-kim-changgyun`,
+    name: doctor.name,
+    jobTitle: doctor.position,
+    url: `${BASE_URL}/about`,
+    worksFor: {
+      "@type": "Dentist",
+      "@id": `${BASE_URL}/#organization`,
+      name: CLINIC.name,
+    },
+    alumniOf: doctor.education
+      .filter((e) => !e.includes("고등학교"))
+      .map((e) => ({
+        "@type": "CollegeOrUniversity",
+        name: e.replace(/ (졸업|수료|박사 수료|석사 졸업)$/, ""),
+      })),
+    hasCredential: doctor.credentials.map((c) => ({
+      "@type": "EducationalOccupationalCredential",
+      credentialCategory: "professional",
+      name: c,
+    })),
+    memberOf: doctor.memberships.map((m) => ({
+      "@type": "Organization",
+      name: m,
+    })),
+    knowsAbout: ["임플란트", "치아교정", "심미보철", "통합치의학", "소아치과", "보존치료"],
+    image: `${BASE_URL}${doctor.image}`,
+  };
+}
+
+/**
+ * WebSite + SearchAction JSON-LD
+ * 홈페이지에 삽입하여 사이트를 named entity로 등록합니다.
+ */
+export function getWebSiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${BASE_URL}/#website`,
+    url: BASE_URL,
+    name: CLINIC.name,
+    description: `김포 한강신도시 장기동 치과 — 서울대 출신 통합치의학전문의 운영`,
+    inLanguage: "ko-KR",
+    publisher: {
+      "@id": `${BASE_URL}/#organization`,
+    },
   };
 }

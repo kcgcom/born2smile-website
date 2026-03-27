@@ -240,6 +240,8 @@ export const LINKS = {
   naverBlog: "", // 네이버 블로그 URL → Footer 아이콘
   naverMap: "https://naver.me/IMy2FmsZ", // 네이버 지도 링크 → Footer 아이콘
   kakaoMap: "https://kko.to/nVk0hY6cH8", // 카카오맵 링크
+  googleBusiness: "https://www.google.com/maps/place/?q=place_id:ChIJv6ztq7eGfDURXB0HJQ3ZpQg", // Google Business Profile → sameAs
+  naverPlace: "https://m.place.naver.com/hospital/698879488", // 네이버 플레이스 → sameAs
 } as const;
 
 // -------------------------------------------------------------

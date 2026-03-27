@@ -7,10 +7,10 @@ import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
 
 // 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
 const PAGE_MODIFIED = {
-  home: new Date("2026-02-20"),
-  about: new Date("2026-02-20"),
-  treatments: new Date("2026-02-20"),
-  blog: new Date("2026-02-20"),
+  home: new Date("2026-03-27"),
+  about: new Date("2026-03-27"),
+  treatments: new Date("2026-03-27"),
+  blog: new Date("2026-03-27"),
   contact: new Date("2026-02-20"),
 } as const;
 
@@ -23,6 +23,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const publishedPosts = await getAllPublishedPostMetas();
+
+  // 블로그 허브 및 카테고리 페이지 lastmod를 최신 포스트 날짜로 자동 계산
+  const latestPostDate = publishedPosts.reduce<Date>((max, p) => {
+    const d = new Date(p.dateModified ?? p.date);
+    return d > max ? d : max;
+  }, PAGE_MODIFIED.blog);
+
+  const latestDateByCategory = new Map<string, Date>();
+  for (const p of publishedPosts) {
+    const d = new Date(p.dateModified ?? p.date);
+    const prev = latestDateByCategory.get(p.category);
+    if (!prev || d > prev) latestDateByCategory.set(p.category, d);
+  }
 
   return [
     {
@@ -46,13 +59,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...treatmentPages,
     {
       url: `${BASE_URL}/blog`,
-      lastModified: PAGE_MODIFIED.blog,
+      lastModified: latestPostDate,
       changeFrequency: "weekly",
       priority: 0.7,
     },
     ...ALL_CATEGORY_SLUGS.map((categorySlug) => ({
       url: `${BASE_URL}/blog/${categorySlug}`,
-      lastModified: PAGE_MODIFIED.blog,
+      lastModified: latestDateByCategory.get(categorySlug) ?? latestPostDate,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
