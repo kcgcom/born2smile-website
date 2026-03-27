@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CircleHelp, FileText, Stethoscope } from "lucide-react";
+import { ArrowRight, CircleHelp, FileText } from "lucide-react";
 import { BASE_URL, CLINIC, TREATMENTS } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
@@ -185,67 +185,19 @@ export default async function BlogCategoryPage({
               <span className="inline-flex rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-600">
                 총 {categoryPosts.length}개 글
               </span>
-              {relatedTreatment && (
-                <Link
-                  href={relatedTreatment.href}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/20 bg-white px-4 py-2 font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)] hover:text-white"
-                >
-                  <Stethoscope size={16} />
-                  {relatedTreatment.name} 진료 안내
-                </Link>
-              )}
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-4 py-2 font-medium text-white transition-colors hover:bg-[var(--color-primary)]/90"
-              >
-                상담 안내 보기
-                <ArrowRight size={16} />
-              </Link>
             </div>
 
-            <p className="mt-8 max-w-none text-base leading-relaxed text-gray-600 md:text-lg lg:max-w-[58rem] xl:max-w-[62rem]">
+            <p className="mt-6 max-w-none text-base leading-relaxed text-gray-600 md:text-lg lg:max-w-[58rem] xl:max-w-[62rem]">
               {hub.intro}
             </p>
+            <Link
+              href="/contact"
+              className="mt-3 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
+            >
+              바로 상담하기
+              <ArrowRight size={14} />
+            </Link>
           </FadeIn>
-        </div>
-      </section>
-
-      <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
-                  Browse Topics
-                </p>
-                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
-                  다른 카테고리도 함께 살펴보세요
-                </h2>
-              </div>
-              <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
-                건강칼럼 전체 보기 →
-              </Link>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2 md:gap-2.5">
-              {ALL_CATEGORY_SLUGS.map((slug) => {
-                const isActive = slug === categorySlug;
-                return (
-                  <Link
-                    key={slug}
-                    href={`/blog/${slug}`}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100"
-                    }`}
-                  >
-                    {getCategoryLabel(slug)}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -408,6 +360,45 @@ export default async function BlogCategoryPage({
                 상담 안내
                 <ArrowRight size={16} />
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                  Browse Topics
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  다른 카테고리도 함께 살펴보세요
+                </h2>
+              </div>
+              <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
+                건강칼럼 전체 보기 →
+              </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 md:gap-2.5">
+              {ALL_CATEGORY_SLUGS.map((slug) => {
+                const isActive = slug === categorySlug;
+                return (
+                  <Link
+                    key={slug}
+                    href={`/blog/${slug}`}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {getCategoryLabel(slug)}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
