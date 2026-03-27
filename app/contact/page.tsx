@@ -51,7 +51,7 @@ export default async function ContactPage() {
                   <Phone size={28} aria-hidden="true" />
                 </div>
                 <div>
-                  <div className="text-base text-blue-50">대표전화</div>
+                  <div className="text-sm text-blue-50">대표전화</div>
                   <div className="text-2xl font-bold">{clinic.phone}</div>
                 </div>
               </a>
@@ -72,8 +72,8 @@ export default async function ContactPage() {
                     />
                   </div>
                   <div>
-                    <div className="text-base text-gray-700">카카오톡 상담</div>
-                    <div className="text-base font-bold">채널 바로가기</div>
+                    <div className="text-sm text-gray-700">카카오톡 상담</div>
+                    <div className="text-sm font-bold">채널 바로가기</div>
                   </div>
                 </a>
               ) : (
@@ -86,8 +86,8 @@ export default async function ContactPage() {
                     />
                   </div>
                   <div>
-                    <div className="text-base text-gray-500">카카오톡 상담</div>
-                    <div className="text-base font-medium">채널 준비 중</div>
+                    <div className="text-sm text-gray-500">카카오톡 상담</div>
+                    <div className="text-sm font-medium">채널 준비 중</div>
                   </div>
                 </div>
               )}
@@ -102,7 +102,7 @@ export default async function ContactPage() {
                   />
                   진료시간
                 </h3>
-                <ul className="space-y-2 text-base">
+                <ul className="space-y-2 text-sm">
                   {hours.schedule.map((item) => (
                     <li
                       key={item.day}
@@ -111,7 +111,7 @@ export default async function ContactPage() {
                       <span>
                         {item.day}
                         {"note" in item && item.note && (
-                          <span className="ml-1 text-base text-[var(--color-gold)]">
+                          <span className="ml-1 text-sm text-[var(--color-gold)]">
                             ({item.note})
                           </span>
                         )}
@@ -124,11 +124,11 @@ export default async function ContactPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-sm text-gray-500">
                   점심시간: {hours.lunchTime} | {hours.closedDays}
                 </p>
                 {hours.notice && (
-                  <p className="mt-1 text-base text-gray-500">{hours.notice}</p>
+                  <p className="mt-1 text-sm text-gray-500">{hours.notice}</p>
                 )}
               </div>
             </FadeIn>
@@ -146,10 +146,10 @@ export default async function ContactPage() {
               <KakaoMap className="aspect-square md:aspect-[4/3]" />
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
                 <p className="font-medium text-gray-900">{clinic.name}</p>
-                <p className="mt-1 text-base text-gray-600">{clinic.address}</p>
+                <p className="mt-1 text-sm text-gray-600">{clinic.address}</p>
                 <a
                   href={clinic.phoneHref}
-                  className="mt-2 inline-block text-base font-medium text-[var(--color-primary)]"
+                  className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
                 >
                   {clinic.phone}
                 </a>

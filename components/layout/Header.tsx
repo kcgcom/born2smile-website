@@ -146,10 +146,11 @@ export function Header() {
           <div className="flex items-center gap-2 md:hidden">
             <a
               href={CLINIC.phoneHref}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-primary)] text-white"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white"
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              <Phone size={20} aria-hidden="true" />
+              <Phone size={14} aria-hidden="true" />
+              {CLINIC.phone}
             </a>
             <button
               className="flex h-11 w-11 items-center justify-center rounded-lg"
