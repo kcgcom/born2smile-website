@@ -15,7 +15,6 @@ export const pediatricHub = defineCategoryHub({
     question("손가락 빨기 같은 구강 습관은 왜 문제일까요?", "children-oral-habits", "반복되는 습관은 치열과 턱 성장 방향에 영향을 줄 수 있어 조기 파악이 중요합니다."),
     question("불소도포와 실란트는 어떻게 다른가요?", "fluoride-vs-sealant-children", "불소는 치아 표면을 강화하고, 실란트는 어금니 홈을 메워 충치를 예방하는 서로 다른 예방 처치입니다."),
   ],
-  featuredSlugs: ["children-dental-care", "children-malocclusion-guide", "children-oral-habits"],
   sections: [
     section("첫 내원과 기본 관리", "처음 치과에 올 때 보호자가 알면 좋은 기본 정보입니다.", ["children-dental-care", "baby-teeth-cavity-treatment", "sealant-for-children"]),
     section("성장기 체크포인트", "치열 변화와 구강 습관을 조기에 확인할수록 도움이 됩니다.", ["children-malocclusion-guide", "children-oral-habits", "fluoride-treatment-children"]),

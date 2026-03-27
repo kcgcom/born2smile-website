@@ -15,7 +15,6 @@ export const healthTipsHub = defineCategoryHub({
     question("당뇨병 같은 전신질환은 구강 건강과 어떻게 연결될까요?", "diabetes-and-dental-health", "당뇨병, 약물 복용, 면역 상태는 잇몸 염증과 회복 양상에 영향을 줄 수 있어 관리 방식도 달라집니다."),
     question("임신 중에도 치과 치료가 가능한가요?", "pregnancy-dental-treatment-safety", "필요한 처치는 가능하지만 시기와 치료 종류에 따라 조정이 필요하므로 통증이나 염증이 있으면 미루지 말고 상담받는 것이 좋습니다."),
   ],
-  featuredSlugs: ["dental-anxiety-tips", "stress-and-teeth-grinding", "diabetes-and-dental-health"],
   sections: [
     section("생활습관과 증상", "일상 습관이 치아와 잇몸에 주는 영향을 먼저 읽어보세요.", ["stress-and-teeth-grinding", "dry-mouth-syndrome", "mouth-breathing-dental-effects", "smoking-oral-health"]),
     section("가족과 생애주기별 관리", "임신·출산 등 생애주기에 따라 달라지는 관리 포인트입니다.", ["pregnancy-dental-treatment-safety", "postpartum-dental-health", "dental-anxiety-tips", "coffee-teeth-staining"]),

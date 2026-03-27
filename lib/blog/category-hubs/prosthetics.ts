@@ -15,7 +15,6 @@ export const prostheticsHub = defineCategoryHub({
     question("틀니가 아프거나 헐거울 때는 어떻게 해야 하나요?", "denture-adjustment-guide", "새 보철은 적응 기간이 필요하지만 통증이 심하거나 씹기 어려우면 조정이 필요한 신호일 수 있습니다."),
     question("보철 후 이물감은 얼마나 가나요?", "prosthetic-adjustment-period-guide", "새 보철에 적응하는 데 시간이 필요하지만 통증이 심하거나 발음·저작이 계속 불편하면 진료실 조정이 필요합니다."),
   ],
-  featuredSlugs: ["denture-vs-implant", "crown-material-comparison", "denture-adjustment-guide"],
   sections: [
     section("무엇을 선택할지 비교", "대표적인 보철 옵션의 차이를 먼저 비교해 보세요.", ["denture-vs-implant", "laminate-veneer-guide", "crown-material-comparison"]),
     section("치료 후 적응과 관리", "보철이 자리 잡는 과정에서 자주 겪는 불편과 관리법입니다.", ["denture-adjustment-guide", "denture-care-tips", "after-crown-prosthetic-care"]),

@@ -27,7 +27,6 @@ export const CATEGORY_HUBS = {
 
 function flattenHubSlugs(config: CategoryHubConfig): string[] {
   return [
-    ...config.featuredSlugs,
     ...config.questions.map((item) => item.slug),
     ...config.sections.flatMap((item) => item.slugs),
   ];

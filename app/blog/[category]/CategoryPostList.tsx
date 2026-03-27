@@ -27,11 +27,11 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
           <p className="text-sm text-gray-500">총 {posts.length}개 글</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
           {posts.map((post) => (
             <article
               key={post.slug}
-              className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-5 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md md:p-6"
+              className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md md:p-6"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category] ?? "bg-gray-100 text-gray-600"}`}>
@@ -43,13 +43,13 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
                 </span>
               </div>
 
-              <h3 className="line-clamp-3 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-none">
+              <h3 className="line-clamp-2 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-3">
                 <Link href={getBlogPostUrl(post.slug, post.category)}>
                   {post.title}
                 </Link>
               </h3>
-              <p className="mt-2 line-clamp-2 text-sm font-medium text-gray-600 md:line-clamp-none">{post.subtitle}</p>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-3">{post.excerpt}</p>
+              <p className="mt-2 hidden line-clamp-2 text-sm font-medium text-gray-600 md:block">{post.subtitle}</p>
+              <p className="mt-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-2 md:mt-3 md:line-clamp-3">{post.excerpt}</p>
 
               {post.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">

@@ -16,7 +16,6 @@ export interface CategoryHubConfig {
   intro: string;
   audience: string[];
   questions: CategoryHubQuestion[];
-  featuredSlugs: string[];
   sections: CategoryHubSection[];
 }
 

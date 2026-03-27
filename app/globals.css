@@ -83,9 +83,9 @@ body {
   @apply mx-auto max-w-6xl;
 }
 
-/* 제목 줄바꿈 균등 분배 */
+/* 제목 줄바꿈 자연스럽게 유지 */
 h1, h2, h3, h4 {
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 /* 헤드라인 세리프 폰트 */

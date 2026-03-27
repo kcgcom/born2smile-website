@@ -14,7 +14,6 @@ export const preventionHub = defineCategoryHub({
     question("양치할 때 피가 나면 무엇을 먼저 확인해야 할까요?", "gum-disease-prevention", "출혈이 있다고 양치를 멈추기보다 잇몸 염증 여부를 점검하고 더 부드럽고 꼼꼼하게 관리하는 것이 중요합니다."),
     question("치실과 치간칫솔은 어떻게 다르게 써야 하나요?", "interdental-brush-waterpik-guide", "치아 사이 공간과 보철물 유무에 따라 적합한 도구가 달라지므로 상황에 맞게 병행하는 것이 효과적입니다."),
   ],
-  featuredSlugs: ["scaling-frequency-guide", "correct-brushing-method", "gum-disease-prevention"],
   sections: [
     section("홈케어 기본기", "매일 하는 관리 습관부터 다시 잡아보세요.", ["correct-brushing-method", "dental-floss-guide", "interdental-brush-waterpik-guide", "mouthwash-effectiveness"]),
     section("정기검진과 스케일링", "내원 주기와 스케일링에 대한 오해를 정리했습니다.", ["scaling-frequency-guide", "airflow-scaling-benefits", "scaling-myths-and-facts", "after-scaling-care"]),

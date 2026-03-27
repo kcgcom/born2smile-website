@@ -15,7 +15,6 @@ export const implantHub = defineCategoryHub({
     question("임플란트와 브릿지·틀니 중 어떤 선택이 더 맞는지 비교해 보고 싶어요.", "implant-vs-bridge-comparison", "남아 있는 치아 상태, 잇몸뼈, 관리 가능성에 따라 더 적합한 선택이 달라집니다."),
     question("임플란트 후 오래 쓰려면 무엇이 가장 중요한가요?", "peri-implantitis-prevention", "정기검진과 정확한 치간 관리, 흡연·이갈이 같은 위험요인 조절이 장기 유지에 가장 중요합니다."),
   ],
-  featuredSlugs: ["implant-eligibility-checklist", "implant-vs-bridge-comparison", "implant-aftercare-tips"],
   sections: [
     section("대상 판단 · 상담 준비", "시술 가능 여부와 선택 기준을 먼저 이해하면 상담이 훨씬 쉬워집니다.", ["implant-eligibility-checklist", "diabetes-and-implant", "implant-pain-myths"]),
     section("수술과 회복", "뼈이식, 수술 후 통증, 회복 과정에서 자주 묻는 질문을 모았습니다.", ["bone-graft-for-implant", "after-implant-surgery-care", "implant-aftercare-tips"]),

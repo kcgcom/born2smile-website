@@ -14,7 +14,6 @@ export const restorativeHub = defineCategoryHub({
     question("레진과 인레이는 어떤 차이가 있나요?", "resin-vs-inlay-comparison", "비용만이 아니라 손상 범위, 강도, 제작 방식, 심미성까지 함께 고려해야 합니다."),
     question("신경치료 후 왜 크라운을 권하는 걸까요?", "root-canal-and-crown", "신경치료 후 치아는 약해질 수 있어 파절 예방과 장기 사용을 위해 크라운이 권장되는 경우가 많습니다."),
   ],
-  featuredSlugs: ["cavity-stages-and-treatment", "resin-vs-inlay-comparison", "root-canal-and-crown"],
   sections: [
     section("충치와 초기 손상", "자연치아를 살릴 수 있는 시점을 이해하는 데 도움이 됩니다.", ["cavity-stages-and-treatment", "after-filling-care", "cracked-tooth-syndrome"]),
     section("재료 선택과 비교", "치료 범위와 재료 선택 기준을 비교해 보세요.", ["resin-vs-inlay-comparison", "old-amalgam-replacement", "cracked-tooth-syndrome"]),
