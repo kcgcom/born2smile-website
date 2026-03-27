@@ -5,7 +5,6 @@ import { ArrowRight, CircleHelp, FileText } from "lucide-react";
 import { BASE_URL, CLINIC, TREATMENTS } from "@/lib/constants";
 import {
   ALL_CATEGORY_SLUGS,
-  categoryColors,
   getBlogPostUrl,
   getCategoryFromSlug,
   getCategoryLabel,
@@ -178,25 +177,6 @@ export default async function BlogCategoryPage({
               </p>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-2.5 text-sm md:gap-3">
-              <span className={`inline-flex rounded-full px-4 py-2 font-medium ${categoryColors[categorySlug] ?? "bg-gray-100 text-gray-600"}`}>
-                {categoryLabel}
-              </span>
-              <span className="inline-flex rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-600">
-                총 {categoryPosts.length}개 글
-              </span>
-            </div>
-
-            <p className="mt-6 max-w-none text-base leading-relaxed text-gray-600 md:text-lg lg:max-w-[58rem] xl:max-w-[62rem]">
-              {hub.intro}
-            </p>
-            <Link
-              href="/contact"
-              className="mt-3 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
-            >
-              바로 상담하기
-              <ArrowRight size={14} />
-            </Link>
           </FadeIn>
         </div>
       </section>

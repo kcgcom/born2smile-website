@@ -2,7 +2,7 @@ import { defineCategoryHub, question, section } from "./shared";
 
 export const healthTipsHub = defineCategoryHub({
   heroTitle: "구강 건강 상식 허브",
-  heroDescription: "생활습관, 전신질환, 스트레스, 임신·출산처럼 자주 헷갈리는 구강 건강 상식을 가족이 함께 읽기 좋게 정리했습니다.",
+  heroDescription: "치과 질환은 생활 습관, 스트레스, 수면, 전신질환과 생각보다 깊이 연결되어 있습니다. 언제 치과에 바로 가야 하는지, 스트레스와 이갈이가 치아에 어떤 영향을 주는지, 임신 중 치과 치료가 가능한지처럼 실생활에서 자주 헷갈리는 구강 건강 상식을 정리했습니다.",
   intro: "치과 치료보다 생활 습관과 증상 이해가 먼저인 분들을 위해, 일상 상황별로 바로 찾아 읽을 수 있게 구성했습니다.",
   audience: [
     "치과에 바로 가야 할 증상인지 생활 습관으로 먼저 점검할지 판단하고 싶은 분",

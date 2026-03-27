@@ -2,7 +2,7 @@ import { defineCategoryHub, question, section } from "./shared";
 
 export const pediatricHub = defineCategoryHub({
   heroTitle: "소아치료 정보 허브",
-  heroDescription: "첫 치과 방문 시기, 유치 관리, 성장기 교정 체크포인트, 아이 구강 습관까지 보호자가 먼저 알아두면 좋은 내용을 정리했습니다.",
+  heroDescription: "아이의 첫 치과 경험이 평생 구강 관리 습관을 결정하기도 합니다. 첫 내원 시기와 준비물, 유치 충치가 영구치에 미치는 영향, 구강 습관의 교정 시점, 성장기 치열 변화 체크포인트까지 — 보호자가 미리 알면 아이의 치아 건강이 달라집니다.",
   intro: "성장 단계마다 달라지는 치아 관리, 보호자가 미리 알면 도움이 되는 내용을 상황별로 모았습니다.",
   audience: [
     "아이의 첫 치과 방문 시기와 준비물을 알고 싶은 보호자",

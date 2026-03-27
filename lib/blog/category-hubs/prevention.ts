@@ -2,7 +2,7 @@ import { defineCategoryHub, question, section } from "./shared";
 
 export const preventionHub = defineCategoryHub({
   heroTitle: "예방관리 정보 허브",
-  heroDescription: "스케일링 주기, 올바른 양치법, 치실·치간칫솔 사용, 잇몸 출혈과 구취 관리까지 매일 실천하는 예방관리 루틴을 정리했습니다.",
+  heroDescription: "치과를 자주 가지 않아도 되는 가장 확실한 방법은 예방입니다. 올바른 양치법과 치실 순서부터 스케일링 적절한 주기, 잇몸 출혈과 구취가 반복될 때 점검할 사항까지 — 집에서 매일 실천하는 홈케어와 정기검진을 함께 갖추는 방법을 정리했습니다.",
   intro: "매일의 홈케어와 치과 정기검진, 두 가지를 함께 갖추는 것이 예방관리의 핵심입니다.",
   audience: [
     "스케일링과 정기검진 주기를 어떻게 잡아야 할지 궁금한 분",
