@@ -163,39 +163,6 @@ export default async function BlogCategoryPage({
         />
       )}
 
-      <nav aria-label="카테고리 탐색" className="border-b border-gray-100 bg-white">
-        <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto py-2.5 scrollbar-none">
-            <Link
-              href="/blog"
-              className="shrink-0 text-sm text-gray-400 hover:text-gray-600"
-            >
-              전체
-            </Link>
-            <span className="shrink-0 text-gray-200 mx-1">·</span>
-            {ALL_CATEGORY_SLUGS.map((slug, i) => {
-              const isActive = slug === categorySlug;
-              return (
-                <span key={slug} className="flex items-center shrink-0">
-                  {i > 0 && <span className="text-gray-200 mx-1">·</span>}
-                  <Link
-                    href={`/blog/${slug}`}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`text-sm transition-colors ${
-                      isActive
-                        ? "font-semibold text-[var(--color-primary)]"
-                        : "text-gray-500 hover:text-gray-800"
-                    }`}
-                  >
-                    {getCategoryLabel(slug)}
-                  </Link>
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </nav>
-
       <section className="bg-gradient-to-b from-blue-50 via-white to-white pt-28 pb-14 md:pt-32 md:pb-16">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
           <FadeIn>
@@ -231,6 +198,45 @@ export default async function BlogCategoryPage({
               <ArrowRight size={14} />
             </Link>
           </FadeIn>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                  Browse Topics
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  다른 카테고리도 함께 살펴보세요
+                </h2>
+              </div>
+              <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
+                건강칼럼 전체 보기 →
+              </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 md:gap-2.5">
+              {ALL_CATEGORY_SLUGS.map((slug) => {
+                const isActive = slug === categorySlug;
+                return (
+                  <Link
+                    key={slug}
+                    href={`/blog/${slug}`}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {getCategoryLabel(slug)}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
