@@ -10,33 +10,13 @@ import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
+import { fitMetaDescription } from "@/lib/seo";
 
 export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
 }
 
-const META_DESCRIPTION_MIN = 150;
-const META_DESCRIPTION_MAX = 160;
-
-function fitMetaDescription(base: string): string {
-  const normalized = base.replace(/\s+/g, " ").trim();
-
-  if (normalized.length > META_DESCRIPTION_MAX) {
-    return `${normalized.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  if (normalized.length >= META_DESCRIPTION_MIN) {
-    return normalized;
-  }
-
-  const expanded = `${normalized} 진료 전 체크포인트와 치료 후 관리 기준, 재내원 시점까지 함께 확인해 보세요.`;
-
-  if (expanded.length > META_DESCRIPTION_MAX) {
-    return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  return expanded;
-}
+const TREATMENT_META_PAD = "진료 전 체크포인트와 치료 후 관리 기준, 재내원 시점까지 함께 확인해 보세요.";
 
 export async function generateMetadata({
   params,
@@ -54,9 +34,11 @@ export async function generateMetadata({
     const scalingOgTitle = `안아픈 스케일링 | 에어플로우 스케일링 | ${CLINIC.name}`;
     const scalingDesc = fitMetaDescription(
       "에어플로우를 활용해 시림과 통증 부담을 줄이고 착색·치태를 부드럽게 제거하는 스케일링 정보를 제공합니다. 김포 한강신도시 장기동 서울본치과에서 건강보험 적용 기준, 권장 주기, 시술 전후 주의사항과 홈케어 관리법까지 자세히 안내합니다. 정기 검진과 예방치료 계획 수립에 도움이 됩니다.",
+      TREATMENT_META_PAD,
     );
     const scalingPageDesc = fitMetaDescription(
       `김포 스케일링 잘하는 치과, ${CLINIC.name}. ${scalingDesc}`,
+      TREATMENT_META_PAD,
     );
     return {
       title: "안아픈 스케일링 | 에어플로우 스케일링",
@@ -89,6 +71,7 @@ export async function generateMetadata({
 
   const description = fitMetaDescription(
     `김포 ${detail.name} 잘하는 치과, ${CLINIC.name}. ${detail.subtitle}. ${detail.description.slice(0, 70)} 치료 대상과 과정, 통증 관리, 내원 전후 주의사항까지 자세히 안내합니다.`,
+    TREATMENT_META_PAD,
   );
   const ogTitle = `김포 ${detail.name} | ${CLINIC.name}`;
 

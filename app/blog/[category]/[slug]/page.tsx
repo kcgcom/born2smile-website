@@ -26,31 +26,11 @@ import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
 import type { BlogBlock, BlogPostSection } from "@/lib/blog";
 import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
+import { fitMetaDescription } from "@/lib/seo";
 
 export const revalidate = 3600;
 
-const META_DESCRIPTION_MIN = 150;
-const META_DESCRIPTION_MAX = 160;
-
-function fitMetaDescription(base: string): string {
-  const normalized = base.replace(/\s+/g, " ").trim();
-
-  if (normalized.length > META_DESCRIPTION_MAX) {
-    return `${normalized.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  if (normalized.length >= META_DESCRIPTION_MIN) {
-    return normalized;
-  }
-
-  const expanded = `${normalized} 핵심 체크포인트와 예방 관리 기준, 내원 시점을 함께 확인해 보세요.`;
-
-  if (expanded.length > META_DESCRIPTION_MAX) {
-    return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  return expanded;
-}
+const POST_META_PAD = "핵심 체크포인트와 예방 관리 기준, 내원 시점을 함께 확인해 보세요.";
 
 function getPostMetaDescription(post: { excerpt: string; subtitle: string }): string {
   const excerpt = post.excerpt.replace(/\s+/g, " ").trim();
@@ -58,7 +38,7 @@ function getPostMetaDescription(post: { excerpt: string; subtitle: string }): st
     ? excerpt
     : `${excerpt} ${post.subtitle}. 원인, 치료 방법, 예방 관리와 내원 시점을 ${CLINIC.name} 건강칼럼에서 정리했습니다.`;
 
-  return fitMetaDescription(base);
+  return fitMetaDescription(base, POST_META_PAD);
 }
 
 function getHeadingList(post: { content?: BlogPostSection[]; blocks?: BlogBlock[] }): string[] {

@@ -22,17 +22,16 @@ import {
 } from "@/lib/jsonld";
 import { FadeIn } from "@/components/ui/Motion";
 import { CategoryPostList } from "./CategoryPostList";
+import { fitMetaDescription } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const CATEGORY_META_PAD = "증상별 글과 치료 전후 체크포인트를 함께 확인해 보세요.";
 const prettyTextWrap = { textWrap: "pretty" as const };
 
 export function generateStaticParams() {
   return ALL_CATEGORY_SLUGS.map((category) => ({ category }));
 }
-
-const META_DESCRIPTION_MIN = 150;
-const META_DESCRIPTION_MAX = 160;
 
 const CATEGORY_SEO_KEYWORDS: Record<string, string[]> = {
   implant: ["김포 임플란트", "장기동 임플란트", "한강신도시 임플란트", "임플란트 정보", "김포 임플란트 치과"],
@@ -43,26 +42,6 @@ const CATEGORY_SEO_KEYWORDS: Record<string, string[]> = {
   prevention: ["김포 스케일링", "장기동 스케일링", "한강신도시 스케일링", "예방관리 정보", "김포 치과 검진"],
   "health-tips": ["구강 건강", "치아 건강 상식", "치과 건강 정보"],
 };
-
-function fitMetaDescription(base: string): string {
-  const normalized = base.replace(/\s+/g, " ").trim();
-
-  if (normalized.length > META_DESCRIPTION_MAX) {
-    return `${normalized.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  if (normalized.length >= META_DESCRIPTION_MIN) {
-    return normalized;
-  }
-
-  const expanded = `${normalized} 증상별 글과 치료 전후 체크포인트를 함께 확인해 보세요.`;
-
-  if (expanded.length > META_DESCRIPTION_MAX) {
-    return `${expanded.slice(0, META_DESCRIPTION_MAX - 1).trimEnd()}…`;
-  }
-
-  return expanded;
-}
 
 function pickPostsBySlugs(posts: BlogPostMeta[], slugs: string[]) {
   const postMap = new Map(posts.map((post) => [post.slug, post]));
@@ -88,6 +67,7 @@ export async function generateMetadata({
     isLocal
       ? `김포 ${hub.heroTitle}, ${CLINIC.name}. ${hub.heroDescription}`
       : `${CLINIC.name} ${hub.heroDescription}`,
+    CATEGORY_META_PAD,
   );
   const fullTitle = `${localTitle} | ${CLINIC.name} 건강칼럼`;
 
