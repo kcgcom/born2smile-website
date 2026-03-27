@@ -83,6 +83,11 @@ body {
   @apply mx-auto max-w-6xl;
 }
 
+/* 제목 줄바꿈 균등 분배 */
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
 /* 헤드라인 세리프 폰트 */
 .font-headline {
   font-family: var(--font-noto-serif), serif;
