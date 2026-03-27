@@ -15,16 +15,14 @@ import type { AuthSession } from "@supabase/supabase-js";
  * 비관리자 방문자(99%+)는 Supabase SDK를 절대 다운로드하지 않음.
  */
 export function AdminFloatingButton() {
-  const [isAdmin, setIsAdmin] = useState(() => {
-    // localStorage 플래그가 있으면 즉시 표시 (검증은 백그라운드)
-    try { return localStorage.getItem("born2smile-admin") === "1"; } catch { return false; }
-  });
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     // Fast path: 관리자 플래그 없으면 Supabase 로드 없이 즉시 리턴
     try {
       if (localStorage.getItem("born2smile-admin") !== "1") return;
+      setIsAdmin(true); // 플래그 있으면 즉시 표시 (검증은 백그라운드)
     } catch {
       return;
     }
@@ -49,10 +47,16 @@ export function AdminFloatingButton() {
       };
 
       // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
+      // SIGNED_OUT 외의 null 세션(INITIAL_SESSION 등)은 일시적일 수 있으므로 플래그 유지
       const { data } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
-        const admin = session ? await verifyAdminUser(session.access_token) : false;
-        setIsAdmin(admin);
-        setAdminFlag(admin);
+        if (session) {
+          const admin = await verifyAdminUser(session.access_token);
+          setIsAdmin(admin);
+          setAdminFlag(admin);
+        } else if (_event === "SIGNED_OUT") {
+          setIsAdmin(false);
+          setAdminFlag(false);
+        }
       });
       subscription = data.subscription;
     })();

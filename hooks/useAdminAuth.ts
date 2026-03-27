@@ -15,6 +15,7 @@ export function useAdminAuth(): boolean {
     // Fast path: localStorage 게이트 — 비관리자는 Supabase 미로드
     try {
       if (localStorage.getItem("born2smile-admin") !== "1") return;
+      setIsAdmin(true); // 플래그 있으면 즉시 표시 (검증은 백그라운드)
     } catch {
       return;
     }
@@ -46,7 +47,9 @@ export function useAdminAuth(): boolean {
           const stillAdmin = await verifyAdminUser(session.access_token);
           setIsAdmin(stillAdmin);
           setAdminFlag(stillAdmin);
-        } else {
+        } else if (_event === "SIGNED_OUT") {
+          // 명시적 로그아웃 시에만 플래그 제거
+          // INITIAL_SESSION null은 일시적일 수 있으므로 플래그 유지
           setIsAdmin(false);
           setAdminFlag(false);
         }
