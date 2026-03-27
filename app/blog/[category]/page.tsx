@@ -26,7 +26,6 @@ import { fitMetaDescription } from "@/lib/seo";
 export const revalidate = 3600;
 
 const CATEGORY_META_PAD = "증상별 글과 치료 전후 체크포인트를 함께 확인해 보세요.";
-const prettyTextWrap = { textWrap: "pretty" as const };
 
 export function generateStaticParams() {
   return ALL_CATEGORY_SLUGS.map((category) => ({ category }));
@@ -172,7 +171,7 @@ export default async function BlogCategoryPage({
               <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
                 {hub.heroTitle}
               </h1>
-              <p className="mt-5 text-base leading-relaxed text-gray-700 md:text-lg" style={prettyTextWrap}>
+              <p className="mt-5 text-base leading-relaxed text-gray-700 md:text-lg">
                 {hub.heroDescription}
               </p>
             </div>
