@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
 import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -10,7 +10,6 @@ import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
-import { Clock } from "lucide-react";
 
 export function generateStaticParams() {
   return TREATMENTS.map((t) => ({ slug: t.id }));
@@ -221,7 +220,7 @@ export default async function TreatmentDetailPage({
       )}
 
       {/* 이런 분께 */}
-      {detail.audience && detail.audience.length > 0 && (
+      {!!detail.audience?.length && (
         <section className="bg-white pb-8 pt-0">
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
