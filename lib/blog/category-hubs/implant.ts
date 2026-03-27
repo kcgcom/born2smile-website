@@ -3,7 +3,7 @@ import { defineCategoryHub, question, section } from "./shared";
 export const implantHub = defineCategoryHub({
   heroTitle: "임플란트 정보 허브",
   heroDescription: "가능 여부 판단, 비용·보험, 수술과 회복, 장기 관리까지 — 상담 전에 알아두면 좋은 임플란트 정보를 순서대로 정리했습니다.",
-  intro: "'나는 임플란트가 가능한가?'라는 질문에서 시작해 비용, 수술 후 회복, 오래 쓰는 관리법까지 상담실에서 자주 나오는 순서대로 읽을 수 있게 구성했습니다.",
+  intro: "상담 전 가장 많이 묻는 질문 순서로, 필요한 내용을 바로 찾아 읽을 수 있게 구성했습니다.",
   audience: [
     "임플란트가 가능한지, 비용은 얼마인지 먼저 가늠해 보고 싶은 분",
     "뼈이식·통증·회복 기간이 걱정되어 치료 전후 흐름을 알고 싶은 분",

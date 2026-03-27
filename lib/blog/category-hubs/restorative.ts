@@ -3,7 +3,7 @@ import { defineCategoryHub, question, section } from "./shared";
 export const restorativeHub = defineCategoryHub({
   heroTitle: "보존치료 정보 허브",
   heroDescription: "충치 단계별 치료, 레진·인레이 비교, 신경치료와 크라운까지 자연치아를 최대한 살리는 보존치료의 기준을 정리했습니다.",
-  intro: "보존치료는 언제 치료해야 하는지, 어느 단계에서 어떤 재료를 쓰는지가 중요합니다. 충치 초기부터 신경치료 후 관리까지 자연치아를 오래 지키는 흐름으로 글을 묶었습니다.",
+  intro: "언제 치료하고 어떤 재료를 쓸지 — 자연치아를 지키는 판단 기준을 단계별로 정리했습니다.",
   audience: [
     "충치가 어느 정도면 치료가 필요한지 기준이 궁금한 분",
     "레진과 인레이, 신경치료와 크라운의 차이를 이해하고 싶은 분",

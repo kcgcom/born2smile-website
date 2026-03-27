@@ -3,7 +3,7 @@ import { defineCategoryHub, question, section } from "./shared";
 export const orthodonticsHub = defineCategoryHub({
   heroTitle: "치아교정 정보 허브",
   heroDescription: "교정 시기, 장치 선택, 통증과 식사, 유지장치 관리까지 치아교정 전후에 자주 묻는 질문을 상황별로 정리했습니다.",
-  intro: "교정은 장치만 고르는 치료가 아니라 시작 시기, 기간, 관리 습관까지 함께 결정해야 하는 장기 계획입니다. 처음 상담받는 분이 순서대로 읽기 좋게 입문·비교·관리 흐름으로 구성했습니다.",
+  intro: "시작 시기부터 장치 선택, 치료 후 유지관리까지 처음 상담받는 분이 순서대로 읽기 좋게 구성했습니다.",
   audience: [
     "성인 교정이 가능한지, 시기를 놓친 건 아닌지 궁금한 분",
     "투명교정과 브라켓 교정 중 어떤 장치가 맞을지 비교하고 싶은 분",

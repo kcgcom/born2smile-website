@@ -3,7 +3,7 @@ import { defineCategoryHub, question, section } from "./shared";
 export const prostheticsHub = defineCategoryHub({
   heroTitle: "보철치료 정보 허브",
   heroDescription: "크라운, 브릿지, 틀니, 심미보철의 차이와 적응 기간, 재치료 신호까지 보철치료의 핵심 의사결정을 모아봤습니다.",
-  intro: "보철치료는 씹는 기능과 심미를 함께 고려해야 해 선택지가 많아 보일 수 있습니다. 어떤 보철이 내 상황에 맞는지, 치료 후 불편하면 무엇을 확인해야 하는지 중심으로 정리했습니다.",
+  intro: "어떤 보철이 내 상황에 맞는지 비교 기준과, 치료 후 불편할 때 확인할 포인트를 중심으로 모았습니다.",
   audience: [
     "크라운·브릿지·틀니·임플란트 차이를 먼저 정리하고 싶은 분",
     "보철 재료와 관리법이 결과에 어떤 영향을 주는지 알고 싶은 분",

@@ -203,10 +203,7 @@ export default async function BlogCategoryPage({
               </Link>
             </div>
 
-            <p
-              className="mt-8 max-w-none text-base leading-relaxed text-gray-600 md:text-lg lg:max-w-[58rem] xl:max-w-[62rem]"
-              style={prettyTextWrap}
-            >
+            <p className="mt-8 max-w-none text-base leading-relaxed text-gray-600 md:text-lg lg:max-w-[58rem] xl:max-w-[62rem]">
               {hub.intro}
             </p>
           </FadeIn>
