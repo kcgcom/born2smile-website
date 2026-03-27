@@ -220,6 +220,32 @@ export default async function TreatmentDetailPage({
         </section>
       )}
 
+      {/* 이런 분께 */}
+      {detail.audience && detail.audience.length > 0 && (
+        <section className="bg-white pb-8 pt-0">
+          <div className="mx-auto max-w-3xl px-4">
+            <FadeIn>
+              <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 md:p-8">
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                  Who It Helps
+                </p>
+                <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                  이런 분께 도움이 됩니다
+                </h2>
+                <ul className="mt-5 space-y-3">
+                  {detail.audience.map((item) => (
+                    <li key={item} className="flex gap-3 text-sm leading-relaxed text-gray-700 md:text-base">
+                      <span className="mt-0.5 shrink-0 text-[var(--color-primary)]">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+      )}
+
       {/* 치료 과정 */}
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
