@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import type { AuthSession } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signInWithGoogle, signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
@@ -11,7 +10,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -26,7 +24,9 @@ export default function AdminLoginPage() {
       if (cancelled) return;
       if (isAdmin) {
         try { localStorage.setItem("born2smile-admin", "1"); } catch { /* private browsing */ }
-        router.replace("/admin");
+        // Full reload: Provider의 useEffect는 앱 시작 시 1회만 실행되므로
+        // SPA 네비게이션으로는 새 localStorage 플래그를 감지할 수 없음
+        window.location.replace("/admin");
       } else {
         setError(`${email ?? "알 수 없는 계정"} 은(는) 관리자 계정이 아닙니다.`);
         await signOutAdmin();
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
     );
 
     return () => { cancelled = true; subscription.unsubscribe(); };
-  }, [router]);
+  }, []);
 
   const handleLogin = async () => {
     setError(null);

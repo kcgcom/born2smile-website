@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
 import { AdminFloatingButton } from "@/components/admin/AdminFloatingButton";
+import { AdminAuthProvider } from "@/components/admin/AdminAuthProvider";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -104,11 +105,13 @@ export default function RootLayout({
             __html: serializeJsonLd(getClinicJsonLd()),
           }}
         />
-        <Header />
-        <main id="main-content">{children}</main>
-        <Footer />
-        <FloatingCTA />
-        <AdminFloatingButton />
+        <AdminAuthProvider>
+          <Header />
+          <main id="main-content">{children}</main>
+          <Footer />
+          <FloatingCTA />
+          <AdminFloatingButton />
+        </AdminAuthProvider>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-3ZDMMFGP6Z"
           strategy="lazyOnload"

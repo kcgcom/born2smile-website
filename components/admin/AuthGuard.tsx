@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { AuthSession } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
-import { verifyAdminUser } from "@/lib/admin-auth";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [user, setUser] = useState<{ email?: string } | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { isAdmin, loading, user } = useAdminAuthState();
   const router = useRouter();
 
   // 미인증 시 로그인으로 리다이렉트 — render 중 side effect 방지
@@ -22,30 +18,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       router.replace("/admin/login");
     }
   }, [loading, user, router]);
-
-  useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-
-    // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
-    // getSession() 병행 시 verifyAdminUser가 이중 호출됨
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
-      void (async () => {
-        if (session?.user) {
-          setUser({ email: session.user.email ?? undefined });
-          const admin = await verifyAdminUser(session.access_token);
-          setIsAdmin(admin);
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-        }
-        setLoading(false);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   if (loading) {
     return (
