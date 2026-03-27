@@ -183,20 +183,12 @@ export default async function BlogCategoryPage({
       <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
-                  Browse Topics
-                </p>
-                <h2 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">
-                  다른 카테고리도 함께 살펴보세요
-                </h2>
-              </div>
+            <div className="mb-4 flex justify-end">
               <Link href="/blog" className="text-sm font-medium text-[var(--color-primary)] hover:underline">
                 건강칼럼 전체 보기 →
               </Link>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2 md:gap-2.5">
+            <div className="flex flex-wrap gap-2 md:gap-2.5">
               {ALL_CATEGORY_SLUGS.map((slug) => {
                 const isActive = slug === categorySlug;
                 return (
