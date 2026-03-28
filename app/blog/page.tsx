@@ -7,10 +7,27 @@ import BlogContent from "@/components/blog/BlogContent";
 
 export const revalidate = 3600;
 
+const blogDescription = `${CLINIC.name} 건강칼럼에서는 올바른 양치법과 잇몸 관리, 임플란트·교정 후 관리, 충치·치주질환 예방, 소아 구강관리, 치과 상식 팩트체크까지 일상에서 바로 실천할 수 있는 구강건강 정보를 사례 중심으로 쉽게 알려드립니다. 치과 방문 전 궁금증을 줄일 수 있도록 핵심만 정확히 전달합니다.`;
+
 export const metadata: Metadata = {
   title: "건강칼럼",
-  description: `${CLINIC.name} 건강칼럼에서는 올바른 양치법과 잇몸 관리, 임플란트·교정 후 관리, 충치·치주질환 예방, 소아 구강관리, 치과 상식 팩트체크까지 일상에서 바로 실천할 수 있는 구강건강 정보를 사례 중심으로 쉽게 알려드립니다. 치과 방문 전 궁금증을 줄일 수 있도록 핵심만 정확히 전달합니다.`,
+  description: blogDescription,
   alternates: { canonical: `${BASE_URL}/blog` },
+  openGraph: {
+    title: `건강칼럼 | ${CLINIC.name}`,
+    description: blogDescription,
+    url: `${BASE_URL}/blog`,
+    siteName: CLINIC.name,
+    locale: "ko_KR",
+    type: "website",
+    images: [{ url: "/images/og-image.jpg", width: 1200, height: 630, alt: `${CLINIC.name} 건강칼럼` }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `건강칼럼 | ${CLINIC.name}`,
+    description: blogDescription,
+    images: ["/images/og-image.jpg"],
+  },
 };
 
 export default async function BlogPage() {

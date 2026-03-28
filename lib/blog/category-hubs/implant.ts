@@ -3,7 +3,6 @@ import { defineCategoryHub, question, section } from "./shared";
 export const implantHub = defineCategoryHub({
   heroTitle: "임플란트 정보 허브",
   heroDescription: "임플란트는 '내 상태로 가능한가'라는 첫 질문부터 비용과 보험 적용, 뼈이식 여부, 수술 후 회복 과정, 10년 이상 오래 쓰는 관리법까지 단계마다 궁금한 것이 달라집니다. 상담 전에 알아두면 진료가 훨씬 수월해지는 내용을 상담실에서 가장 자주 나오는 순서대로 정리했습니다.",
-  intro: "상담 전 가장 많이 묻는 질문 순서로, 필요한 내용을 바로 찾아 읽을 수 있게 구성했습니다.",
   audience: [
     "임플란트가 가능한지, 비용은 얼마인지 먼저 가늠해 보고 싶은 분",
     "뼈이식·통증·회복 기간이 걱정되어 치료 전후 흐름을 알고 싶은 분",

@@ -49,7 +49,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h13", title: "스크롤 이벤트 스로틀링", priority: "HIGH", status: "done", description: "Header scroll: requestAnimationFrame + passive: true" },
   { id: "h14", title: "별점/전화 버튼 접근성", priority: "HIGH", status: "done", description: "별점 aria-label, 전화 버튼 min-h-[44px] 터치 타겟" },
   { id: "h15", title: "관리자 대시보드", priority: "HIGH", status: "done", description: "Firebase Auth Google 로그인, 이메일 화이트리스트, 개선 현황/블로그 통계" },
-  { id: "h16", title: "페이지별 OG 이미지 차별화", priority: "HIGH", status: "pending", description: "모든 페이지 동일 OG 이미지 → 카테고리/진료별 구분 이미지 또는 동적 생성" },
+  { id: "h16", title: "페이지별 OG 이미지 차별화", priority: "HIGH", status: "done", description: "opengraph-image.tsx로 동적 OG 이미지 생성 — 진료 과목별(6종) + 블로그 카테고리별(7종) + 블로그 포스트별 제목 표시" },
   { id: "h17", title: "모바일 메뉴 포커스 트랩", priority: "HIGH", status: "done", description: "메뉴 오픈 시 Tab 키 이탈 방지 + Escape 키 닫기" },
   { id: "h18", title: "온라인 예약 시스템", priority: "HIGH", status: "owner-decision", description: "온라인 예약 폼 도입 여부 — 현재 전화 상담 안내" },
 

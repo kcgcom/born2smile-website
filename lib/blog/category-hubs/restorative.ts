@@ -3,7 +3,6 @@ import { defineCategoryHub, question, section } from "./shared";
 export const restorativeHub = defineCategoryHub({
   heroTitle: "보존치료 정보 허브",
   heroDescription: "충치를 발견했을 때 '얼마나 심각한가', '지금 당장 치료해야 하는가'를 알기 어렵습니다. 충치 단계별 치료 기준, 레진과 인레이의 선택 차이, 신경치료가 필요한 시점과 그 이후 크라운 관리까지 — 자연치아를 최대한 오래 살리는 판단 기준을 정리했습니다.",
-  intro: "언제 치료하고 어떤 재료를 쓸지 — 자연치아를 지키는 판단 기준을 단계별로 정리했습니다.",
   audience: [
     "충치가 어느 정도면 치료가 필요한지 기준이 궁금한 분",
     "레진과 인레이, 신경치료와 크라운의 차이를 이해하고 싶은 분",

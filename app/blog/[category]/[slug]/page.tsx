@@ -321,20 +321,11 @@ export async function generateMetadata({
       tags: post.tags,
       authors: [`${CLINIC.name}`],
       url: postUrl,
-      images: [
-        {
-          url: "/images/og-image.jpg",
-          width: 1200,
-          height: 630,
-          alt: CLINIC.name,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description: metaDescription,
-      images: ["/images/og-image.jpg"],
     },
   };
 }

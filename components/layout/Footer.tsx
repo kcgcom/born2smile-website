@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
@@ -222,6 +223,11 @@ export async function Footer() {
           <p className="mt-1">
             &copy; 2017–{new Date().getFullYear()} {clinic.name}. All rights
             reserved.
+          </p>
+          <p className="mt-2">
+            <Link href="/privacy" className="hover:text-gray-200 underline underline-offset-2">
+              개인정보처리방침
+            </Link>
           </p>
         </div>
       </div>

@@ -3,7 +3,6 @@ import { defineCategoryHub, question, section } from "./shared";
 export const prostheticsHub = defineCategoryHub({
   heroTitle: "보철치료 정보 허브",
   heroDescription: "보철은 단순히 빠진 치아를 채우는 치료가 아닙니다. 크라운·브릿지·틀니·임플란트 중 어느 것이 내 상황에 맞는지, 재료마다 수명과 관리법이 어떻게 다른지, 치료 후 불편할 때 무엇을 확인해야 하는지 — 씹는 기능과 심미를 오래 유지하는 핵심 판단 기준을 모았습니다.",
-  intro: "어떤 보철이 내 상황에 맞는지 비교 기준과, 치료 후 불편할 때 확인할 포인트를 중심으로 모았습니다.",
   audience: [
     "크라운·브릿지·틀니·임플란트 차이를 먼저 정리하고 싶은 분",
     "보철 재료와 관리법이 결과에 어떤 영향을 주는지 알고 싶은 분",

@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 export const CLINIC = {
   name: "서울본치과",
-  nameEn: "Seoul Born Dental Clinic",
+  nameEn: "Seoul Born2smile Dental Clinic",
   slogan: "꼭 필요한 치료만, 오래오래 편안하게",
   phone: "1833-7552",
   phoneIntl: "+82-1833-7552",

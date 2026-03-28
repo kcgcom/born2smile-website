@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
-import { getFaqJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getFaqJsonLd, getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { CTABanner } from "@/components/ui/CTABanner";
@@ -53,8 +53,19 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const websiteJsonLd = getWebSiteJsonLd();
+  const breadcrumbJsonLd = getBreadcrumbJsonLd([{ name: "홈", href: "/" }]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
         <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-blue-50 to-white">

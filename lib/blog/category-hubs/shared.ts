@@ -13,7 +13,6 @@ export interface CategoryHubSection {
 export interface CategoryHubConfig {
   heroTitle: string;
   heroDescription: string;
-  intro: string;
   audience: string[];
   questions: CategoryHubQuestion[];
   sections: CategoryHubSection[];

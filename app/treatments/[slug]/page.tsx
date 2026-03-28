@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
-import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, getHowToJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl, getCategoryLabel } from "@/lib/blog";
 import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -51,20 +51,11 @@ export async function generateMetadata({
         siteName: CLINIC.name,
         locale: "ko_KR",
         url: treatmentUrl,
-        images: [
-          {
-            url: "/images/og-image.jpg",
-            width: 1200,
-            height: 630,
-            alt: CLINIC.name,
-          },
-        ],
       },
       twitter: {
         card: "summary_large_image",
         title: scalingOgTitle,
         description: scalingDesc,
-        images: ["/images/og-image.jpg"],
       },
     };
   }
@@ -86,20 +77,11 @@ export async function generateMetadata({
       siteName: CLINIC.name,
       locale: "ko_KR",
       url: treatmentUrl,
-      images: [
-        {
-          url: "/images/og-image.jpg",
-          width: 1200,
-          height: 630,
-          alt: CLINIC.name,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description,
-      images: ["/images/og-image.jpg"],
     },
   };
 }
@@ -120,7 +102,6 @@ export default async function TreatmentDetailPage({
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);
   const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
-  const howToJsonLd = getHowToJsonLd(slug);
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
     { name: "진료 안내", href: "/treatments" },
@@ -139,12 +120,6 @@ export default async function TreatmentDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
-        />
-      )}
-      {howToJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(howToJsonLd) }}
         />
       )}
       <script

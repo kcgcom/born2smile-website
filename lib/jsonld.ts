@@ -28,7 +28,7 @@ export function getClinicJsonLd() {
     "@type": ["Dentist", "MedicalBusiness"],
     "@id": `${BASE_URL}/#organization`,
     name: CLINIC.name,
-    alternateName: CLINIC.nameEn,
+    alternateName: ["서울 본치과", "본치과", CLINIC.nameEn],
     description: `김포한강신도시 장기동 ${CLINIC.name}. 김포한강신도시 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
     url: BASE_URL,
     telephone: CLINIC.phoneIntl,

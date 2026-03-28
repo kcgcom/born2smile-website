@@ -80,20 +80,11 @@ export async function generateMetadata({
       siteName: CLINIC.name,
       locale: "ko_KR",
       url: categoryUrl,
-      images: [
-        {
-          url: "/images/og-image.jpg",
-          width: 1200,
-          height: 630,
-          alt: CLINIC.name,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title: fullTitle,
       description: localDesc,
-      images: ["/images/og-image.jpg"],
     },
   };
 }
@@ -175,7 +166,6 @@ export default async function BlogCategoryPage({
                 {hub.heroDescription}
               </p>
             </div>
-
           </FadeIn>
         </div>
       </section>
@@ -255,7 +245,7 @@ export default async function BlogCategoryPage({
                 자주 찾는 질문부터 읽어보세요
               </h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-3 md:gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
               {questionCards.map(({ question, answer, post }) => (
                 <Link
                   key={question}
@@ -309,7 +299,7 @@ export default async function BlogCategoryPage({
                       {section.description}
                     </p>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2 md:gap-4 xl:grid-cols-4">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     {section.posts.map((post) => (
                       <Link
                         key={post.slug}

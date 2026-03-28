@@ -15,7 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CLINIC, DOCTORS, HOURS, STAFF, BASE_URL } from "@/lib/constants";
-import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getBreadcrumbJsonLd, getDoctorJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -33,12 +33,17 @@ export default function AboutPage() {
     { name: "홈", href: "/" },
     { name: "병원 소개", href: "/about" },
   ]);
+  const doctorJsonLd = getDoctorJsonLd();
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(doctorJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
