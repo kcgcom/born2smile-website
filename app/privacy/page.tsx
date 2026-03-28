@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           <div className="prose prose-gray max-w-none space-y-10 text-base leading-relaxed text-gray-700">
 
             <p className="text-sm text-gray-500">
-              시행일: 2024년 1월 1일 &nbsp;|&nbsp; 최종 수정일: 2026년 3월 27일
+              시행일: 2017 년 3 월 1 일 &nbsp;|&nbsp; 최종 수정일: 2026 년 3 월 27 일
             </p>
 
             {/* 1 */}
