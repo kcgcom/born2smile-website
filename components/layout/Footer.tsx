@@ -221,10 +221,8 @@ export async function Footer() {
             대표 {clinic.representative} · 사업자등록번호 {clinic.businessNumber}
           </p>
           <p className="mt-1">
-            &copy; 2017–{new Date().getFullYear()} {clinic.name}. All rights
-            reserved.
-          </p>
-          <p className="mt-2">
+            &copy; 2017–{new Date().getFullYear()} {clinic.name}. All rights reserved.
+            {" · "}
             <Link href="/privacy" className="hover:text-gray-200 underline underline-offset-2">
               개인정보처리방침
             </Link>

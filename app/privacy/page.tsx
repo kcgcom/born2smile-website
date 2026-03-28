@@ -28,7 +28,7 @@ export default function PrivacyPage() {
             개인정보처리방침
           </h1>
           <p className="mt-4 text-gray-600">
-            {CLINIC.name}은 이용자의 개인정보를 소중히 여기며 관련 법령을 준수합니다.
+            {CLINIC.name}는 이용자의 개인정보를 소중히 여기며 관련 법령을 준수합니다.
           </p>
         </div>
       </section>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           <div className="prose prose-gray max-w-none space-y-10 text-base leading-relaxed text-gray-700">
 
             <p className="text-sm text-gray-500">
-              시행일: 2017 년 3 월 1 일 &nbsp;|&nbsp; 최종 수정일: 2026 년 3 월 27 일
+              시행일: 2017년 3월 1일 &nbsp;|&nbsp; 최종 수정일: 2026년 3월 27일
             </p>
 
             {/* 1 */}
@@ -47,15 +47,15 @@ export default function PrivacyPage() {
                 1. 개인정보의 수집 항목 및 수집 방법
               </h2>
               <p className="mb-3">
-                {CLINIC.name}은 서비스 제공을 위해 아래와 같은 개인정보를 수집합니다.
+                {CLINIC.name}는 서비스 제공을 위해 아래와 같은 개인정보를 수집합니다.
               </p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700">수집 경로</th>
+                      <th className="w-28 px-4 py-3 text-left font-semibold text-gray-700">수집 경로</th>
                       <th className="px-4 py-3 text-left font-semibold text-gray-700">수집 항목</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700">필수 여부</th>
+                      <th className="w-24 px-4 py-3 text-left font-semibold text-gray-700">필수 여부</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -130,7 +130,7 @@ export default function PrivacyPage() {
                 4. 개인정보의 제3자 제공
               </h2>
               <p>
-                {CLINIC.name}은 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다.
+                {CLINIC.name}는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다.
                 다만, 이용자의 동의가 있거나 법령의 규정에 의한 경우에는 예외로 합니다.
               </p>
             </div>
