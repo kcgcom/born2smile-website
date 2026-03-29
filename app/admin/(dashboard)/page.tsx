@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
 
   const handleLogout = async () => {
     await signOutAdmin();
-    router.replace("/admin/login");
+    router.replace("/");
   };
 
   const handleTabChange = (tab: TabId) => {

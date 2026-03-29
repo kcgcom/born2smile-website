@@ -383,14 +383,6 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                       <RotateCcw size={14} />
                       초기화
                     </AdminActionButton>
-                    <AdminActionLink
-                      href={`/admin?tab=blog&edit=${slug}`}
-                      tone="dark"
-                      className="px-4 py-3 font-semibold"
-                    >
-                      <LayoutDashboard size={14} />
-                      관리자에서 열기
-                    </AdminActionLink>
                     <AdminActionButton
                       type="submit"
                       disabled={saving}

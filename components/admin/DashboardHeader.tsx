@@ -23,15 +23,15 @@ export function DashboardHeader({ userEmail, onLogout }: DashboardHeaderProps) {
       <header className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Image
                 src="/images/Logo_SNU.png"
                 alt="서울대학교 엠블럼"
-                width={32}
-                height={32}
-                className="h-8 w-8 brightness-0 invert"
+                width={40}
+                height={40}
+                className="h-8 w-8 md:h-10 md:w-10 brightness-0 invert"
               />
-              <span className="text-base font-semibold leading-tight text-white">{CLINIC.name}</span>
+              <span className="text-2xl font-bold tracking-tight text-white">{CLINIC.name}</span>
             </Link>
             <div className="hidden flex-col gap-1 sm:flex">
               <AdminPill tone="amber" className="w-fit text-xs">관리자 콘솔</AdminPill>
