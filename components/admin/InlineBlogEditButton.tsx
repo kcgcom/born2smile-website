@@ -103,7 +103,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
         title="글 정보 및 블록 수정"
       >
         <Pencil size={14} aria-hidden="true" />
-        글 정보 수정
+        편집 모드
       </button>
     );
   }
