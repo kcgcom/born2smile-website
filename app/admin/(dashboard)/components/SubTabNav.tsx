@@ -1,7 +1,9 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { TABS } from "./AdminTabs";
 
 // -------------------------------------------------------------
 // 공유 서브탭 네비게이션 컴포넌트
@@ -44,11 +46,18 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
     router.replace(`${pathname}?tab=${parentTab}&sub=${sub}`);
   };
 
+  const parentLabel = TABS.find((t) => t.id === parentTab)?.label ?? parentTab;
+
   return (
-    <nav
-      className="mb-6 flex flex-row gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      aria-label={ariaLabel}
-    >
+    <div className="mb-6">
+      <div className="mb-2 flex items-center gap-1 px-1">
+        <span className="text-xs font-medium text-slate-400">{parentLabel}</span>
+        <ChevronRight size={12} className="text-slate-300" aria-hidden="true" />
+      </div>
+      <nav
+        className="flex flex-row gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label={ariaLabel}
+      >
       {tabs.map((tab) => {
         const isActive = tab.id === activeSub;
         const Icon = tab.icon;
@@ -68,6 +77,7 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
           </button>
         );
       })}
-    </nav>
+      </nav>
+    </div>
   );
 }
