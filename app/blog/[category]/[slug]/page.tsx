@@ -32,6 +32,7 @@ import {
   renderLegacySections,
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
+import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
 
 export const revalidate = 3600;
 
@@ -234,6 +235,7 @@ export default async function BlogPostPage({
       )}
 
       {/* 블로그 포스트 */}
+      <BlogEditProvider initialBlocks={post.blocks ?? []}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
@@ -270,8 +272,6 @@ export default async function BlogPostPage({
                     category: post.category,
                     tags: post.tags,
                     date: post.date,
-                    content: post.content,
-                    blocks: post.blocks,
                   }}
                 />
               </div>
@@ -315,7 +315,6 @@ export default async function BlogPostPage({
                       tags: post.tags,
                       date: post.date,
                     }}
-                    initialBlocks={post.blocks}
                   />
                 )
                 : renderLegacySections(post.content ?? [])}
@@ -323,6 +322,7 @@ export default async function BlogPostPage({
           </FadeIn>
         </section>
       </article>
+      </BlogEditProvider>
 
       {/* 관련 진료 배너 */}
       {relatedTreatment && (

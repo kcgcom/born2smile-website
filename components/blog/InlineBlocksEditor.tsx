@@ -15,6 +15,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { getAccessToken } from "@/lib/supabase";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog";
 import { renderSingleBlock, computeHeadingIds } from "./BlogPostRenderer";
+import { useBlogEditContext } from "./BlogEditProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,16 +41,10 @@ const BLOCK_OPTIONS: { type: BlogBlock["type"]; label: string; desc: string }[] 
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function InlineBlocksEditor({
-  post,
-  initialBlocks,
-}: {
-  post: PostMeta;
-  initialBlocks: BlogBlock[];
-}) {
+export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
   const isAdmin = useAdminAuth();
   const router = useRouter();
-  const [blocks, setBlocks] = useState<BlogBlock[]>(initialBlocks);
+  const { isEditMode, blocks, setBlocks } = useBlogEditContext();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -104,8 +99,8 @@ export default function InlineBlocksEditor({
 
   const headingIds = computeHeadingIds(blocks);
 
-  // Non-admin: plain read view
-  if (!isAdmin) {
+  // Non-admin or not in edit mode: plain read view
+  if (!isAdmin || !isEditMode) {
     return (
       <div className="space-y-10">
         {blocks.map((block, i) => (
