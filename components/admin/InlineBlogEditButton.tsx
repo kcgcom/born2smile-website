@@ -96,7 +96,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   return (
     <>
       {/* 고정 관리자 바 — 사이트 헤더 바로 아래 연결 */}
-      <div className="fixed left-0 right-0 top-[72px] z-40 border-b border-gray-100 bg-white/95 px-4 py-1.5 shadow-sm backdrop-blur-sm">
+      <div className="fixed left-0 right-0 top-[72px] z-40 border-b border-[var(--color-gold-light)]/30 bg-white/95 px-4 py-1.5 shadow-sm backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs text-gray-400">
             <Pencil size={11} aria-hidden="true" />
