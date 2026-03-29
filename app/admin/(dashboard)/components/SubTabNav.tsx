@@ -50,13 +50,13 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
 
   return (
     <nav
-      className="mb-6 flex flex-row items-center gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mb-3 flex flex-row items-center gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       aria-label={ariaLabel}
     >
       {/* 브레드크럼 레이블 */}
-      <div className="flex shrink-0 items-center gap-0.5 px-2">
-        <span className="text-xs font-medium text-slate-400">{parentLabel}</span>
-        <ChevronRight size={11} className="text-slate-300" aria-hidden="true" />
+      <div className="flex shrink-0 items-center gap-0.5 px-3">
+        <span className="text-xs font-medium text-slate-500">{parentLabel}</span>
+        <ChevronRight size={11} className="text-slate-400" aria-hidden="true" />
       </div>
       {tabs.map((tab) => {
         const isActive = tab.id === activeSub;
@@ -65,14 +65,14 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
           <button
             key={tab.id}
             onClick={() => handleSubChange(tab.id)}
-            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm transition-all ${
+            className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition-all ${
               isActive
                 ? "bg-white font-semibold text-amber-600 shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon size={16} aria-hidden="true" />
+            <Icon size={13} aria-hidden="true" />
             <span>{tab.label}</span>
           </button>
         );
