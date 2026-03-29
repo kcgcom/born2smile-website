@@ -93,135 +93,128 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   if (!isAdmin) return null;
 
-  if (!isEditMode) {
-    return (
-      <div className="flex justify-end py-1.5">
-        <button
-          type="button"
-          onClick={enter}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-          aria-label="글 편집 모드 시작"
-          title="글 정보 및 블록 수정"
-        >
-          <Pencil size={14} aria-hidden="true" />
-          편집 모드
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="py-3">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">글 정보 수정</span>
-        <button
-          type="button"
-          onClick={handleExit}
-          className="flex items-center gap-1.5 rounded-full bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
-        >
-          <X size={13} />
-          편집 종료
-        </button>
-      </div>
-
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-2xl border border-blue-200 bg-blue-50/50 p-5"
+    <>
+      {/* 고정 플로팅 버튼 (우하단) */}
+      <button
+        type="button"
+        onClick={isEditMode ? handleExit : enter}
+        className={`fixed bottom-6 right-6 z-40 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-colors ${
+          isEditMode
+            ? "bg-gray-700 text-white hover:bg-gray-600"
+            : "bg-gray-800 text-white hover:bg-gray-700"
+        }`}
+        aria-label={isEditMode ? "편집 모드 종료" : "편집 모드 시작"}
       >
-        {saveError && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {saveError}
-          </p>
-        )}
+        {isEditMode ? <X size={14} /> : <Pencil size={14} />}
+        {isEditMode ? "편집 종료" : "편집 모드"}
+      </button>
 
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">제목</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold focus:border-blue-400 focus:outline-none"
-            required
-          />
-        </div>
+      {/* 편집 모드일 때: 인라인 메타 폼 (일반 문서 흐름) */}
+      {isEditMode && (
+        <div className="border-b border-blue-100 bg-blue-50/60 px-4 py-5">
+          <div className="mx-auto max-w-3xl">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-blue-600">
+              글 정보 수정
+            </p>
+            <form onSubmit={handleSave} className="space-y-4">
+              {saveError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {saveError}
+                </p>
+              )}
 
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">부제</label>
-          <input
-            type="text"
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-            required
-          />
-        </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-gray-500">제목</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold focus:border-blue-400 focus:outline-none"
+                    required
+                  />
+                </div>
 
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">요약</label>
-          <textarea
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            rows={3}
-            className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed focus:border-blue-400 focus:outline-none"
-            required
-          />
-        </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-gray-500">부제</label>
+                  <input
+                    type="text"
+                    value={subtitle}
+                    onChange={(e) => setSubtitle(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                    required
+                  />
+                </div>
 
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-gray-500">카테고리</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as BlogCategorySlug)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-            >
-              {ALL_CATEGORY_SLUGS.map((s) => (
-                <option key={s} value={s}>
-                  {BLOG_CATEGORY_LABELS[s]}
-                </option>
-              ))}
-            </select>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-gray-500">요약</label>
+                  <textarea
+                    value={excerpt}
+                    onChange={(e) => setExcerpt(e.target.value)}
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed focus:border-blue-400 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">카테고리</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as BlogCategorySlug)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                  >
+                    {ALL_CATEGORY_SLUGS.map((s) => (
+                      <option key={s} value={s}>
+                        {BLOG_CATEGORY_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">날짜</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-xs font-medium text-gray-500">태그</label>
+                  <div className="flex flex-wrap gap-3">
+                    {BLOG_TAGS.map((tag) => (
+                      <label key={tag} className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={tags.includes(tag)}
+                          onChange={(e) =>
+                            setTags(e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag))
+                          }
+                          className="rounded"
+                        />
+                        {tag}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Check size={14} />
+                {saving ? "저장 중..." : "저장"}
+              </button>
+            </form>
           </div>
-
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-gray-500">날짜</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-            />
-          </div>
         </div>
-
-        <div>
-          <label className="mb-2 block text-xs font-medium text-gray-500">태그</label>
-          <div className="flex flex-wrap gap-3">
-            {BLOG_TAGS.map((tag) => (
-              <label key={tag} className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={tags.includes(tag)}
-                  onChange={(e) =>
-                    setTags(e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag))
-                  }
-                  className="rounded"
-                />
-                {tag}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          <Check size={14} />
-          {saving ? "저장 중..." : "저장"}
-        </button>
-      </form>
-    </div>
+      )}
+    </>
   );
 }
