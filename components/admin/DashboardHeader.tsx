@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { CLINIC } from "@/lib/constants";
 
@@ -20,7 +21,14 @@ export function DashboardHeader({ userEmail, onLogout }: DashboardHeaderProps) {
     >
       <header className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Image
+              src="/images/Logo_SNU.png"
+              alt="서울대학교 엠블럼"
+              width={32}
+              height={32}
+              className="h-7 w-7 brightness-0 invert"
+            />
             <span className="text-base font-semibold text-white">{CLINIC.name}</span>
             <AdminPill tone="amber" className="text-xs">관리자 콘솔</AdminPill>
           </div>
