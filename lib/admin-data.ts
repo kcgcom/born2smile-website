@@ -21,7 +21,7 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-03-19
+// 마지막 동기화: 2026-03-29
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // CRITICAL — 4/4 완료
@@ -32,7 +32,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "c4", title: "Supabase RLS 보안 규칙 설정", priority: "CRITICAL", status: "done", description: "blog-likes 컬렉션만 read/write 허용, 나머지 전체 차단" },
 
   // =================================================================
-  // HIGH — 16/18 완료
+  // HIGH — 17/18 완료
   // =================================================================
   { id: "h1", title: "이미지 최적화 (next/image)", priority: "HIGH", status: "done", description: "모든 이미지를 next/image로 변환, lazy loading" },
   { id: "h2", title: "시맨틱 HTML + ARIA", priority: "HIGH", status: "done", description: "시맨틱 태그, ARIA 라벨, skip link, 키보드 접근성" },
@@ -86,7 +86,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m28", title: "인스타그램 연동", priority: "MEDIUM", status: "owner-decision", description: "인스타그램 URL 입력 시 Footer 아이콘 활성화" },
 
   // =================================================================
-  // LOW — 13/16 완료
+  // LOW — 15/16 완료
   // =================================================================
   { id: "l1", title: "웹마스터 인증", priority: "LOW", status: "done", description: "Bing BingSiteAuth.xml + Naver naver*.html 인증 파일" },
   { id: "l2", title: "Vercel 마이그레이션", priority: "LOW", status: "done", description: "Firebase App Hosting → Vercel 전환 완료" },
@@ -159,6 +159,13 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "l20", title: "계절성 트렌드 패턴 감지", priority: "LOW", status: "pending", description: "키워드 시계열 데이터로 연간 패턴 분석. 계절별 콘텐츠 발행 타이밍 추천" },
   { id: "l22", title: "RSS 피드 + 네이버 서치어드바이저 제출", priority: "LOW", status: "done", description: "/feed.xml RSS 2.0 피드 (최신 50개 블로그, 카테고리 태그, 1시간 ISR). layout.tsx RSS 자동 발견 link 태그 추가" },
   { id: "l21", title: "전체 FAQ 독립 페이지", priority: "LOW", status: "done", description: "6개 진료 과목 FAQ를 모은 /faq 독립 페이지. '치과 자주 묻는 질문' 키워드 타겟" },
+
+  // =================================================================
+  // 추가 개선 항목 — 2026-03-29 GEO/SEO + 법적 대응
+  // =================================================================
+  { id: "h28", title: "GEO JSON-LD 엔티티 그래프 강화", priority: "HIGH", status: "done", description: "Clinic @id(/#organization) 추가 → WebSite·Physician 엔티티 연결. Physician image 추가. sameAs 2→4개 (googleBusiness, naverPlace). sitemap 블로그 lastmod 최신 포스트 날짜 자동 계산" },
+  { id: "m46", title: "개인정보처리방침 페이지", priority: "MEDIUM", status: "done", description: "개인정보보호법 대응 — /privacy 독립 페이지. Footer 링크 추가. 수집 항목, 보유 기간, 위탁 현황, 열람 청구 절차 포함" },
+  { id: "l23", title: "llms.txt AI 모델 가이드", priority: "LOW", status: "done", description: "public/llms.txt 구조화 — AI 크롤러 대상 진료 철학, 카테고리별 블로그 링크, 콘텐츠 구조 안내 (GEO 대응)" },
 ];
 
 export interface ImprovementStats {

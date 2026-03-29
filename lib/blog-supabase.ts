@@ -310,6 +310,31 @@ export function getPostBySlug(
 }
 
 /**
+ * Fetch a single post by slug without any caching — always fresh from Supabase.
+ * Use this for admin preview pages where stale data is unacceptable.
+ */
+export async function getPostBySlugFresh(slug: string): Promise<BlogPost | null> {
+  if (!isSupabaseAdminConfigured) return getSnapshotPost(slug);
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("*")
+      .eq("slug", slug)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return getSnapshotPost(slug);
+      throw error;
+    }
+
+    return rowToPost(data as DbRow);
+  } catch {
+    console.warn(`[blog-supabase] Supabase read failed for ${slug}, using snapshot fallback`);
+    return getSnapshotPost(slug);
+  }
+}
+
+/**
  * Slug list for generateStaticParams().
  * Only published posts with date <= today KST.
  * Falls back to snapshot data if Supabase query fails.

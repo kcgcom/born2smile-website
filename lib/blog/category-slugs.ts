@@ -56,3 +56,7 @@ export function getCategoryLabel(category: BlogCategoryValue): BlogCategoryLabel
 export function getBlogPostUrl(slug: string, category: BlogCategoryValue): string {
   return `/blog/${category}/${slug}`;
 }
+
+export function getAdminPreviewUrl(slug: string, category: BlogCategoryValue): string {
+  return `/admin/preview/${category}/${slug}`;
+}

@@ -7,7 +7,7 @@ import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
-import { getBlogPostUrl, getCategoryFromSlug, getCategoryLabel } from "@/lib/blog/category-slugs";
+import { getAdminPreviewUrl, getBlogPostUrl, getCategoryFromSlug, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { StatCard } from "../StatCard";
@@ -456,9 +456,15 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                           {getCategoryLabel(post.category)}
                         </span>
                         {isDraft ? (
-                          <span className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)]">
+                          <a
+                            href={getAdminPreviewUrl(post.slug, post.category)}
+                            target="_blank"
+                            rel="noopener"
+                            className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-amber-600 hover:underline"
+                            title="초안 미리보기"
+                          >
                             {post.title}
-                          </span>
+                          </a>
                         ) : (
                           <a
                             href={getBlogPostUrl(post.slug, post.category)}
