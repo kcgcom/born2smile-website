@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, X, Check, LayoutDashboard, RotateCcw } from "lucide-react";
+import { ArrowUpRight, Check, Eye, LayoutDashboard, Pencil, RotateCcw, X } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
@@ -20,6 +20,7 @@ interface PostMeta {
   tags: string[];
   date: string;
   published?: boolean;
+  publicUrl?: string;
 }
 
 export function InlineBlogEditButton({ post }: { post: PostMeta }) {
@@ -172,9 +173,10 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
       {/* 고정 관리자 바 — 사이트 헤더 바로 아래 연결 */}
       <AdminSurface
         tone="dark"
-        className={`fixed ${post.published === false ? "top-0" : "top-[76px]"} right-0 left-0 z-40 px-4 py-2`}
+        className={`fixed ${post.published === false ? "top-0" : "top-[76px]"} right-0 left-0 z-40`}
         ref={toolbarRef}
       >
+        <div className="px-4 py-2">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -232,6 +234,23 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
             </AdminActionButton>
           </div>
         </div>
+        </div>
+        {post.published === false && (
+          <div className="flex items-center gap-2 border-t border-amber-400/20 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200">
+            <Eye size={13} aria-hidden="true" />
+            <span>초안 미리보기 — 발행 전 내용입니다</span>
+            {post.publicUrl && (
+              <a
+                href={post.publicUrl}
+                target="_blank"
+                rel="noopener"
+                className="ml-auto flex items-center gap-1 text-amber-300 underline hover:no-underline"
+              >
+                공개 페이지 <ArrowUpRight size={11} />
+              </a>
+            )}
+          </div>
+        )}
       </AdminSurface>
       <div
         aria-hidden="true"

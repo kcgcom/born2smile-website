@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Clock, Eye } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, DOCTORS, BASE_URL } from "@/lib/constants";
 import {
   categoryColors,
@@ -68,21 +68,9 @@ export default async function BlogPreviewPage({
               tags: post.tags,
               date: post.date,
               published: false,
+              publicUrl,
             }}
           />
-          {/* 초안 표시 배너 */}
-          <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
-            <Eye size={14} aria-hidden="true" />
-            <span>초안 미리보기 — 발행 전 내용입니다</span>
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener"
-              className="ml-auto flex items-center gap-1 text-xs text-amber-600 underline hover:no-underline"
-            >
-              공개 페이지 <ArrowUpRight size={12} />
-            </a>
-          </div>
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <Link
