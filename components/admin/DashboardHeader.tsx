@@ -22,19 +22,22 @@ export function DashboardHeader({ userEmail, onLogout }: DashboardHeaderProps) {
     >
       <header className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image
-              src="/images/Logo_SNU.png"
-              alt="서울대학교 엠블럼"
-              width={32}
-              height={32}
-              className="h-8 w-8 brightness-0 invert"
-            />
-            <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <Image
+                src="/images/Logo_SNU.png"
+                alt="서울대학교 엠블럼"
+                width={32}
+                height={32}
+                className="h-8 w-8 brightness-0 invert"
+              />
               <span className="text-base font-semibold leading-tight text-white">{CLINIC.name}</span>
+            </Link>
+            <div className="hidden flex-col gap-1 sm:flex">
               <AdminPill tone="amber" className="w-fit text-xs">관리자 콘솔</AdminPill>
+              <p className="text-xs text-slate-400">운영 지표, 블로그, 사이트 설정</p>
             </div>
-          </Link>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           {userEmail && (

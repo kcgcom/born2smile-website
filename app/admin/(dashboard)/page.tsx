@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
       {/* 콘텐츠 */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* 탭 네비게이션 */}
-        <div className="mb-6">
+        <div className="mb-2">
           <AdminTabs activeTab={activeTab} onTabChange={handleTabChange} onHover={handleTabHover} />
         </div>
 

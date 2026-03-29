@@ -50,7 +50,7 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
 
   return (
     <nav
-      className="mb-3 flex flex-row items-center gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mb-6 flex flex-row items-center gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       aria-label={ariaLabel}
     >
       {/* 브레드크럼 레이블 */}
