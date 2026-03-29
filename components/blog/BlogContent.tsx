@@ -13,7 +13,6 @@ import {
 import type { BlogCategoryFilter, BlogCategorySlug, BlogTag } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
-import { formatDate } from "@/lib/format";
 import { shareUrl } from "@/lib/share";
 import { getTodayKST } from "@/lib/date";
 
@@ -248,30 +247,17 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               return (
               <div key={post.slug}>
                 <article className="group relative flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
-                  {/* 상단: 카테고리 + 공유 */}
+                  {/* 상단: 카테고리 + 읽기 시간 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
                       className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[categorySlug] ?? "bg-gray-100 text-gray-600"}`}
                     >
                       {getCategoryLabel(categorySlug)}
                     </span>
-                    <button
-                        onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
-                        className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                        aria-label={`"${post.title}" 공유하기`}
-                      >
-                        {copiedSlug === post.slug ? (
-                          <>
-                            <Check size={14} className="text-green-500" />
-                            <span className="text-green-600">복사됨</span>
-                          </>
-                        ) : (
-                          <>
-                            <Share2 size={14} />
-                            <span>공유</span>
-                          </>
-                        )}
-                      </button>
+                    <span className="flex items-center gap-1 text-sm text-gray-400">
+                      <Clock size={14} />
+                      {post.readTime}
+                    </span>
                   </div>
 
                   {/* 제목 + 부제 */}
@@ -307,19 +293,29 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     </div>
                   )}
 
-                  {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
+                  {/* 하단: 자세히 읽기 + 공유 */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                      <span>{formatDate(post.date)}</span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} />
-                        {post.readTime} 읽기
-                      </span>
-                    </div>
                     <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
                       <ArrowRight size={14} />
                     </span>
+                    <button
+                      onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
+                      className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                      aria-label={`"${post.title}" 공유하기`}
+                    >
+                      {copiedSlug === post.slug ? (
+                        <>
+                          <Check size={14} className="text-green-500" />
+                          <span className="text-green-600">복사됨</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 size={14} />
+                          <span>공유</span>
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* 카드 전체 링크 (인터랙티브 요소 뒤에 배치) */}
