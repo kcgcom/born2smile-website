@@ -65,11 +65,11 @@ export function InlineBlogEditButton({ post }: InlineBlogEditButtonProps) {
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-        aria-label="이 글 수정"
-        title="이 글 수정"
+        aria-label="제목·요약·카테고리 등 글 정보 수정"
+        title="제목·요약·카테고리 등 글 정보 수정"
       >
         <Pencil size={14} aria-hidden="true" />
-        수정
+        글 정보 수정
       </button>
 
       {open && (
