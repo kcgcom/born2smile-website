@@ -95,20 +95,20 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   return (
     <>
-      {/* 관리자 전용 sticky 상단 바 */}
-      <div className="sticky top-[72px] z-40 border-b border-gray-700 bg-gray-900 px-4 py-2">
+      {/* 고정 관리자 바 — 사이트 헤더 바로 아래 연결 */}
+      <div className="fixed left-0 right-0 top-[72px] z-40 border-b border-gray-100 bg-white/95 px-4 py-1.5 shadow-sm backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <Pencil size={12} aria-hidden="true" />
-            <span>관리자 편집</span>
-          </div>
+          <span className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Pencil size={11} aria-hidden="true" />
+            관리자
+          </span>
           <button
             type="button"
             onClick={isEditMode ? handleExit : enter}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               isEditMode
-                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                : "bg-blue-600 text-white hover:bg-blue-500"
+                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-[var(--color-primary)] text-white hover:opacity-90"
             }`}
           >
             {isEditMode ? <X size={11} /> : <Pencil size={11} />}
@@ -117,9 +117,9 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
         </div>
       </div>
 
-      {/* 편집 모드: 메타 폼 (일반 문서 흐름, sticky 아님) */}
+      {/* 편집 모드: 메타 폼 (일반 문서 흐름) */}
       {isEditMode && (
-        <div className="border-b border-gray-200 bg-gray-50 px-4 py-5">
+        <div className="border-b border-gray-100 bg-gray-50/80 px-4 py-5">
           <div className="mx-auto max-w-3xl">
             <form onSubmit={handleSave} className="space-y-4">
               {saveError && (
@@ -210,7 +210,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 <Check size={14} />
                 {saving ? "저장 중..." : "저장"}
