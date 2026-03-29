@@ -95,28 +95,32 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   return (
     <>
-      {/* 고정 플로팅 버튼 (우하단) */}
-      <button
-        type="button"
-        onClick={isEditMode ? handleExit : enter}
-        className={`fixed bottom-6 right-6 z-40 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg transition-colors ${
-          isEditMode
-            ? "bg-gray-700 text-white hover:bg-gray-600"
-            : "bg-gray-800 text-white hover:bg-gray-700"
-        }`}
-        aria-label={isEditMode ? "편집 모드 종료" : "편집 모드 시작"}
-      >
-        {isEditMode ? <X size={14} /> : <Pencil size={14} />}
-        {isEditMode ? "편집 종료" : "편집 모드"}
-      </button>
+      {/* 관리자 전용 sticky 상단 바 */}
+      <div className="sticky top-20 z-30 border-b border-gray-700 bg-gray-900 px-4 py-2">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Pencil size={12} aria-hidden="true" />
+            <span>관리자 편집</span>
+          </div>
+          <button
+            type="button"
+            onClick={isEditMode ? handleExit : enter}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              isEditMode
+                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                : "bg-blue-600 text-white hover:bg-blue-500"
+            }`}
+          >
+            {isEditMode ? <X size={11} /> : <Pencil size={11} />}
+            {isEditMode ? "편집 종료" : "편집 모드"}
+          </button>
+        </div>
+      </div>
 
-      {/* 편집 모드일 때: 인라인 메타 폼 (일반 문서 흐름) */}
+      {/* 편집 모드: 메타 폼 (일반 문서 흐름, sticky 아님) */}
       {isEditMode && (
-        <div className="border-b border-blue-100 bg-blue-50/60 px-4 py-5">
+        <div className="border-b border-gray-200 bg-gray-50 px-4 py-5">
           <div className="mx-auto max-w-3xl">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-blue-600">
-              글 정보 수정
-            </p>
             <form onSubmit={handleSave} className="space-y-4">
               {saveError && (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
