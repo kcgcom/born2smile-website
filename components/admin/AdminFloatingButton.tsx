@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Home, Settings } from "lucide-react";
 import { AdminActionLink } from "@/components/admin/AdminChrome";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 /**
- * 관리자 로그인 시 모든 공개 페이지에 표시되는 플로팅 버튼.
- * 클릭하면 /admin 대시보드로 이동.
- * /admin 경로에서는 자동 숨김.
+ * 관리자 로그인 시 모든 페이지에 표시되는 플로팅 버튼.
+ * - 공개 페이지: Settings 아이콘 → /admin 대시보드로 이동
+ * - 관리자 페이지: Home 아이콘 → / 홈으로 이동
  *
  * 성능 최적화: useAdminAuth가 localStorage 게이트 + 동적 import로 비관리자에게 Supabase SDK 미전송.
  */
@@ -33,17 +33,19 @@ export function AdminFloatingButton() {
     return () => window.removeEventListener("born2smile:blog-edit-mode", handleModeChange);
   }, []);
 
-  if (!isAdmin || pathname.startsWith("/admin") || isBlogEditMode) return null;
+  if (!isAdmin || isBlogEditMode) return null;
+
+  const isAdminPage = pathname.startsWith("/admin");
 
   return (
     <AdminActionLink
-      href="/admin"
+      href={isAdminPage ? "/" : "/admin"}
       tone="ghost"
-      className="fixed bottom-20 left-4 z-50 h-11 w-11 rounded-full !border-slate-700/50 !bg-slate-950/88 p-0 !text-white shadow-lg shadow-slate-950/20 backdrop-blur-md transition-transform hover:scale-110 hover:!bg-slate-900/92 md:bottom-6 md:left-6 md:h-12 md:w-12"
-      aria-label="관리자 대시보드"
-      title="관리자 대시보드"
+      className="fixed bottom-20 left-4 z-50 h-14 w-14 rounded-full !border-slate-600/40 !bg-slate-700/85 p-0 !text-white shadow-lg shadow-slate-950/20 backdrop-blur-md transition-transform hover:scale-110 hover:!bg-slate-600/90 md:bottom-6 md:left-6"
+      aria-label={isAdminPage ? "홈으로" : "관리자 대시보드"}
+      title={isAdminPage ? "홈으로" : "관리자 대시보드"}
     >
-      <Settings size={20} aria-hidden="true" />
+      {isAdminPage ? <Home size={24} aria-hidden="true" /> : <Settings size={24} aria-hidden="true" />}
     </AdminActionLink>
   );
 }
