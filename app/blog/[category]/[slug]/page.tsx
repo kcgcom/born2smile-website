@@ -29,9 +29,9 @@ import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
 import { fitMetaDescription } from "@/lib/seo";
 import {
   getHeadingList,
-  renderBlocks,
   renderLegacySections,
 } from "@/components/blog/BlogPostRenderer";
+import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 
 export const revalidate = 3600;
 
@@ -304,7 +304,20 @@ export default async function BlogPostPage({
             )}
             <div className="space-y-10">
               {post.blocks && post.blocks.length > 0
-                ? renderBlocks(post.blocks)
+                ? (
+                  <InlineBlocksEditor
+                    post={{
+                      slug,
+                      title: post.title,
+                      subtitle: post.subtitle,
+                      excerpt: post.excerpt,
+                      category: post.category,
+                      tags: post.tags,
+                      date: post.date,
+                    }}
+                    initialBlocks={post.blocks}
+                  />
+                )
                 : renderLegacySections(post.content ?? [])}
             </div>
           </FadeIn>
