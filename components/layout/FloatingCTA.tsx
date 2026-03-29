@@ -114,7 +114,7 @@ function DesktopPhoneButton() {
       )}
       <a
         href={CLINIC.phoneHref}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg transition-transform hover:scale-110 hover:bg-[var(--color-primary-dark)]"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg ring-2 ring-blue-200/60 transition-transform hover:scale-110 hover:bg-[var(--color-primary-dark)]"
         aria-label={`전화 상담${info ? ` — ${info.message}` : ""}`}
       >
         <Phone size={24} aria-hidden="true" />
