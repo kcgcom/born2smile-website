@@ -324,26 +324,41 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     >
                       {getCategoryLabel(categorySlug)}
                     </span>
-                    <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={(e) =>
-                        handleShare(e, post.slug, post.title, categorySlug)
-                      }
-                      className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                      aria-label={`"${post.title}" 공유하기`}
-                    >
-                      {copiedSlug === post.slug ? (
-                        <>
-                          <Check size={14} className="text-green-500" />
-                          <span className="text-green-600">복사됨</span>
-                        </>
-                      ) : (
-                        <>
-                          <Share2 size={14} />
-                          <span className="hidden sm:inline">공유</span>
-                        </>
+                    <div className="flex items-center gap-1">
+                      {isSupabaseConfigured && (
+                        <button
+                          onClick={(e) => handleLike(e, post.slug)}
+                          disabled={likingSlug === post.slug}
+                          className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
+                            localLiked.has(post.slug)
+                              ? "text-rose-500 hover:bg-rose-50"
+                              : "text-gray-400 hover:bg-gray-100 hover:text-rose-400"
+                          }`}
+                          aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
+                        >
+                          <Heart size={14} className={localLiked.has(post.slug) ? "fill-rose-500" : ""} />
+                          {(likeCounts[post.slug] ?? 0) > 0 && (
+                            <span className="text-xs">{likeCounts[post.slug]}</span>
+                          )}
+                        </button>
                       )}
-                    </button>
+                      <button
+                        onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
+                        className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                        aria-label={`"${post.title}" 공유하기`}
+                      >
+                        {copiedSlug === post.slug ? (
+                          <>
+                            <Check size={14} className="text-green-500" />
+                            <span className="text-green-600">복사됨</span>
+                          </>
+                        ) : (
+                          <>
+                            <Share2 size={14} />
+                            <span>공유</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -380,7 +395,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     </div>
                   )}
 
-                  {/* 하단: 날짜 + 읽기 시간 + 좋아요 + 자세히 읽기 */}
+                  {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-4">
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       <span>{formatDate(post.date)}</span>
@@ -388,26 +403,6 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                         <Clock size={14} />
                         {post.readTime} 읽기
                       </span>
-                      {isSupabaseConfigured && (
-                        <button
-                          onClick={(e) => handleLike(e, post.slug)}
-                          disabled={likingSlug === post.slug}
-                          className={`relative z-10 flex items-center gap-1 transition-colors ${
-                            localLiked.has(post.slug)
-                              ? "text-rose-500"
-                              : "text-gray-400 hover:text-rose-400"
-                          }`}
-                          aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
-                        >
-                          <Heart
-                            size={14}
-                            className={localLiked.has(post.slug) ? "fill-rose-500" : ""}
-                          />
-                          {(likeCounts[post.slug] ?? 0) > 0 && (
-                            <span className="text-xs">{likeCounts[post.slug]}</span>
-                          )}
-                        </button>
-                      )}
                     </div>
                     <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
