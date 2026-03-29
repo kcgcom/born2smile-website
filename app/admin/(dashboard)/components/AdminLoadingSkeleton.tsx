@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminSurface } from "@/components/admin/AdminChrome";
+
 interface AdminLoadingSkeletonProps {
   variant: "metrics" | "chart" | "table" | "full";
 }
@@ -12,10 +14,10 @@ function MetricsSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="rounded-lg bg-[var(--background)] p-3 text-center">
+        <AdminSurface key={i} tone="white" className="rounded-2xl p-4 text-center">
           <Bone className="mx-auto h-8 w-16" />
           <Bone className="mx-auto mt-2 h-3 w-20" />
-        </div>
+        </AdminSurface>
       ))}
     </div>
   );
@@ -23,23 +25,23 @@ function MetricsSkeleton() {
 
 function ChartSkeleton() {
   return (
-    <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl p-5">
       <Bone className="mb-4 h-5 w-32" />
       <Bone className="h-32 w-full" />
-    </div>
+    </AdminSurface>
   );
 }
 
 function TableSkeleton() {
   return (
-    <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl p-5">
       <Bone className="mb-4 h-5 w-32" />
       <div className="space-y-2">
         {(["w-full", "w-[85%]", "w-[70%]", "w-[90%]", "w-[60%]"] as const).map((w, i) => (
           <Bone key={i} className={`h-8 ${w}`} />
         ))}
       </div>
-    </div>
+    </AdminSurface>
   );
 }
 
@@ -54,14 +56,14 @@ export function AdminLoadingSkeleton({ variant }: AdminLoadingSkeletonProps) {
       <MetricsSkeleton />
       <div className="grid gap-6 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+          <AdminSurface key={i} tone="white" className="rounded-2xl p-5">
             <Bone className="mb-4 h-5 w-32" />
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, j) => (
                 <Bone key={j} className="h-8 w-full" />
               ))}
             </div>
-          </div>
+          </AdminSurface>
         ))}
       </div>
     </div>

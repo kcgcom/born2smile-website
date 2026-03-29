@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, X, Check } from "lucide-react";
+import { Pencil, X, Check, LayoutDashboard, RotateCcw } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
 import { useBlogEditContext } from "@/components/blog/BlogEditProvider";
 import { ALL_CATEGORY_SLUGS, BLOG_CATEGORY_LABELS } from "@/lib/blog/category-slugs";
@@ -33,11 +34,79 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   const [category, setCategory] = useState<BlogCategorySlug>(post.category);
   const [tags, setTags] = useState<string[]>(post.tags);
   const [date, setDate] = useState(post.date);
+  const [toolbarHeight, setToolbarHeight] = useState<number | null>(null);
 
   const inflightRef = useRef(false);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const { slug } = post;
+  const normalizeTags = (value: string[]) => [...value].sort().join("|");
+  const hasMetaChanges =
+    title !== post.title ||
+    subtitle !== post.subtitle ||
+    excerpt !== post.excerpt ||
+    category !== post.category ||
+    date !== post.date ||
+    normalizeTags(tags) !== normalizeTags(post.tags);
+  const toolbarStatus = isEditMode
+    ? hasMetaChanges
+      ? {
+        label: "메타 변경사항 있음",
+        tone: "amber" as const,
+      }
+      : {
+        label: "편집 중",
+        tone: "sky" as const,
+      }
+    : {
+      label: "읽기 모드",
+      tone: "slate" as const,
+    };
 
-  const handleExit = () => {
+  useEffect(() => {
+    document.documentElement.dataset.blogEditMode = isEditMode ? "1" : "0";
+    window.dispatchEvent(
+      new CustomEvent("born2smile:blog-edit-mode", {
+        detail: { active: isEditMode },
+      }),
+    );
+  }, [isEditMode]);
+
+  useEffect(() => {
+    return () => {
+      delete document.documentElement.dataset.blogEditMode;
+      window.dispatchEvent(
+        new CustomEvent("born2smile:blog-edit-mode", {
+          detail: { active: false },
+        }),
+      );
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const element = toolbarRef.current;
+    if (!element) return;
+
+    const syncToolbarHeight = () => {
+      setToolbarHeight(Math.ceil(element.getBoundingClientRect().height));
+    };
+
+    syncToolbarHeight();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(syncToolbarHeight);
+      observer.observe(element);
+      window.addEventListener("resize", syncToolbarHeight);
+      return () => {
+        observer.disconnect();
+        window.removeEventListener("resize", syncToolbarHeight);
+      };
+    }
+
+    window.addEventListener("resize", syncToolbarHeight);
+    return () => window.removeEventListener("resize", syncToolbarHeight);
+  }, [isEditMode, hasMetaChanges]);
+
+  const handleResetMeta = () => {
     setTitle(post.title);
     setSubtitle(post.subtitle);
     setExcerpt(post.excerpt);
@@ -45,6 +114,10 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
     setTags(post.tags);
     setDate(post.date);
     setSaveError(null);
+  };
+
+  const handleExit = () => {
+    handleResetMeta();
     exit();
   };
 
@@ -96,126 +169,218 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   return (
     <>
       {/* 고정 관리자 바 — 사이트 헤더 바로 아래 연결 */}
-      <div className="fixed left-0 right-0 top-[72px] z-40 border-b border-[var(--color-gold-light)]/30 bg-white/95 px-4 py-1.5 shadow-sm backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Pencil size={11} aria-hidden="true" />
-            관리자
-          </span>
-          <button
-            type="button"
-            onClick={isEditMode ? handleExit : enter}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              isEditMode
-                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                : "bg-[var(--color-primary)] text-white hover:opacity-90"
-            }`}
-          >
-            {isEditMode ? <X size={11} /> : <Pencil size={11} />}
-            {isEditMode ? "편집 종료" : "편집 모드"}
-          </button>
+      <AdminSurface
+        tone="dark"
+        className="fixed top-[76px] right-0 left-0 z-40 px-4 py-2"
+        ref={toolbarRef}
+      >
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <AdminPill tone="amber" className="shrink-0 gap-1.5 tracking-[0.02em]">
+                <Pencil size={11} aria-hidden="true" />
+                관리자 전용
+              </AdminPill>
+              <p className="truncate text-sm font-medium text-slate-100">
+                블로그 편집 도구
+              </p>
+            </div>
+            <div className="mt-1 flex items-center gap-2 md:hidden">
+              <AdminPill tone={toolbarStatus.tone} className="shrink-0">
+                {toolbarStatus.label}
+              </AdminPill>
+              <span className="truncate text-[11px] text-slate-300">
+                제목, 요약, 카테고리를 빠르게 수정할 수 있습니다.
+              </span>
+            </div>
+            <p className="mt-1 hidden text-xs text-slate-300 md:block">
+              현재 페이지의 제목, 요약, 카테고리 정보를 바로 수정할 수 있습니다.
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-2 md:justify-end">
+            <span
+              className={`hidden shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold lg:inline-flex ${
+                toolbarStatus.tone === "amber"
+                  ? "border-amber-300/25 bg-amber-400/10 text-amber-100"
+                  : toolbarStatus.tone === "sky"
+                    ? "border-sky-300/25 bg-sky-400/10 text-sky-100"
+                    : "border-white/10 bg-white/6 text-slate-200"
+              }`}
+            >
+              {toolbarStatus.label}
+            </span>
+            <AdminActionLink
+              href={`/admin?tab=blog&edit=${slug}`}
+              tone="ghost"
+              className="rounded-full border-white/12 bg-white/6 text-slate-100"
+            >
+              <LayoutDashboard size={14} aria-hidden="true" />
+              <span className="hidden sm:inline">대시보드</span>
+            </AdminActionLink>
+            <AdminActionButton
+              type="button"
+              onClick={isEditMode ? handleExit : enter}
+              tone={isEditMode ? "ghost" : "primary"}
+              className={isEditMode ? "rounded-full bg-white/10 px-4 text-white hover:bg-white/15" : "rounded-full px-4"}
+            >
+              {isEditMode ? <X size={14} /> : <Pencil size={14} />}
+              {isEditMode ? "편집 종료" : "편집 모드"}
+            </AdminActionButton>
+          </div>
         </div>
-      </div>
+      </AdminSurface>
+      <div
+        aria-hidden="true"
+        className="h-[119px] md:h-[65px]"
+        style={toolbarHeight ? { height: `${toolbarHeight}px` } : undefined}
+      />
 
       {/* 편집 모드: 메타 폼 (일반 문서 흐름) */}
       {isEditMode && (
-        <div className="border-b border-gray-100 bg-gray-50/80 px-4 py-5">
-          <div className="mx-auto max-w-3xl">
-            <form onSubmit={handleSave} className="space-y-4">
-              {saveError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {saveError}
+        <div className="border-b border-slate-200 bg-slate-50/90 px-4 py-6 md:py-8">
+          <div className="mx-auto max-w-4xl">
+            <AdminSurface tone="white" className="mb-5 rounded-2xl px-4 py-4 md:px-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">포스트 메타 편집</p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">
+                    slug · {slug}
+                  </p>
+                </div>
+                <AdminPill tone={hasMetaChanges ? "warning" : "white"} className="w-fit text-xs">
+                  {hasMetaChanges ? "저장 전 변경사항" : "저장된 상태"}
+                </AdminPill>
+              </div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                제목, 요약, 카테고리, 날짜와 태그를 빠르게 점검하고 저장하세요.
+              </p>
+              {hasMetaChanges && (
+                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                  아직 저장되지 않은 메타 변경사항이 있습니다.
                 </p>
               )}
+            </AdminSurface>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-gray-500">제목</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold focus:border-blue-400 focus:outline-none"
-                    required
-                  />
-                </div>
+            <AdminSurface tone="white" className="rounded-2xl p-4 md:p-6">
+              <form onSubmit={handleSave} className="space-y-4">
+                {saveError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {saveError}
+                  </p>
+                )}
 
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-gray-500">부제</label>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-                    required
-                  />
-                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">제목</label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2.5 text-sm font-bold text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                      required
+                    />
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-gray-500">요약</label>
-                  <textarea
-                    value={excerpt}
-                    onChange={(e) => setExcerpt(e.target.value)}
-                    rows={2}
-                    className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed focus:border-blue-400 focus:outline-none"
-                    required
-                  />
-                </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">부제</label>
+                    <input
+                      type="text"
+                      value={subtitle}
+                      onChange={(e) => setSubtitle(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2.5 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">카테고리</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as BlogCategorySlug)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-                  >
-                    {ALL_CATEGORY_SLUGS.map((s) => (
-                      <option key={s} value={s}>
-                        {BLOG_CATEGORY_LABELS[s]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">요약</label>
+                    <textarea
+                      value={excerpt}
+                      onChange={(e) => setExcerpt(e.target.value)}
+                      rows={2}
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2.5 text-sm leading-relaxed text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">날짜</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">카테고리</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value as BlogCategorySlug)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2.5 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                    >
+                      {ALL_CATEGORY_SLUGS.map((s) => (
+                        <option key={s} value={s}>
+                          {BLOG_CATEGORY_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label className="mb-2 block text-xs font-medium text-gray-500">태그</label>
-                  <div className="flex flex-wrap gap-3">
-                    {BLOG_TAGS.map((tag) => (
-                      <label key={tag} className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={tags.includes(tag)}
-                          onChange={(e) =>
-                            setTags(e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag))
-                          }
-                          className="rounded"
-                        />
-                        {tag}
-                      </label>
-                    ))}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">날짜</label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2.5 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">태그</label>
+                    <div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-3">
+                      {BLOG_TAGS.map((tag) => (
+                        <label key={tag} className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={tags.includes(tag)}
+                            onChange={(e) =>
+                              setTags(e.target.checked ? [...tags, tag] : tags.filter((t) => t !== tag))
+                            }
+                            className="rounded"
+                          />
+                          {tag}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                <Check size={14} />
-                {saving ? "저장 중..." : "저장"}
-              </button>
-            </form>
+                <div className="flex justify-end">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                    <AdminActionButton
+                      type="button"
+                      onClick={handleResetMeta}
+                      disabled={!hasMetaChanges || saving}
+                      tone="dark"
+                      className="px-4 py-3"
+                    >
+                      <RotateCcw size={14} />
+                      초기화
+                    </AdminActionButton>
+                    <AdminActionLink
+                      href={`/admin?tab=blog&edit=${slug}`}
+                      tone="dark"
+                      className="px-4 py-3 font-semibold"
+                    >
+                      <LayoutDashboard size={14} />
+                      관리자에서 열기
+                    </AdminActionLink>
+                    <AdminActionButton
+                      type="submit"
+                      disabled={saving}
+                      tone="primary"
+                      className="px-4 py-3"
+                    >
+                      <Check size={14} />
+                      {saving ? "저장 중..." : hasMetaChanges ? "변경사항 저장" : "저장"}
+                    </AdminActionButton>
+                  </div>
+                </div>
+              </form>
+            </AdminSurface>
           </div>
         </div>
       )}

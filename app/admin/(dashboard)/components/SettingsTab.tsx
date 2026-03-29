@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { Save, Loader2, Check } from "lucide-react";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
 import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-supabase";
 
@@ -47,7 +48,7 @@ function FormField({
   type?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+    <div className="flex flex-col gap-2 rounded-xl bg-[var(--background)]/85 px-3 py-3 sm:flex-row sm:items-center sm:gap-3">
       <label className="w-28 shrink-0 text-sm font-medium text-[var(--muted)]">
         {label}
       </label>
@@ -64,12 +65,12 @@ function FormField({
 
 function LoadingPlaceholder() {
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl p-6">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>불러오는 중...</span>
       </div>
-    </section>
+    </AdminSurface>
   );
 }
 
@@ -83,10 +84,11 @@ function SaveButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <AdminActionButton
       onClick={onClick}
       disabled={saving}
-      className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+      tone="primary"
+      className="px-4"
     >
       {saving ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -96,7 +98,48 @@ function SaveButton({
         <Save className="h-4 w-4" />
       )}
       {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
-    </button>
+    </AdminActionButton>
+  );
+}
+
+function SectionShell({
+  title,
+  description,
+  saving,
+  saved,
+  onSave,
+  saveError,
+  children,
+}: {
+  title: string;
+  description: string;
+  saving: boolean;
+  saved: boolean;
+  onSave: () => void;
+  saveError: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <AdminSurface tone="white" className="rounded-2xl p-6">
+      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-bold text-[var(--foreground)]">{title}</h3>
+            <AdminPill tone={saved ? "sky" : "white"} className="text-[10px]">
+              {saved ? "저장 완료" : "편집 가능"}
+            </AdminPill>
+          </div>
+          <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+        </div>
+        <SaveButton saving={saving} saved={saved} onClick={onSave} />
+      </div>
+      {saveError && (
+        <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          저장 실패: {saveError}
+        </p>
+      )}
+      {children}
+    </AdminSurface>
   );
 }
 
@@ -134,16 +177,14 @@ function SnsLinksEditor() {
   if (loading || !form) return <LoadingPlaceholder />;
 
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[var(--foreground)]">SNS 링크</h3>
-        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
-      </div>
-      {saveError && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
-          저장 실패: {saveError}
-        </p>
-      )}
+    <SectionShell
+      title="SNS 링크"
+      description="외부 채널, 지도, 블로그 링크를 최신 상태로 유지합니다."
+      saving={saving}
+      saved={saved}
+      onSave={handleSave}
+      saveError={saveError}
+    >
       <div className="space-y-3">
         <FormField
           label="카카오 채널"
@@ -176,7 +217,7 @@ function SnsLinksEditor() {
           placeholder="https://kko.to/..."
         />
       </div>
-    </section>
+    </SectionShell>
   );
 }
 
@@ -218,16 +259,14 @@ function ClinicInfoEditor() {
   if (loading || !form) return <LoadingPlaceholder />;
 
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[var(--foreground)]">병원 정보</h3>
-        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
-      </div>
-      {saveError && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
-          저장 실패: {saveError}
-        </p>
-      )}
+    <SectionShell
+      title="병원 정보"
+      description="사이트 전반에 쓰이는 기본 병원 정보를 관리합니다."
+      saving={saving}
+      saved={saved}
+      onSave={handleSave}
+      saveError={saveError}
+    >
       <div className="grid gap-3 md:grid-cols-2">
         <FormField
           label="병원명"
@@ -302,7 +341,7 @@ function ClinicInfoEditor() {
           placeholder="홍길동"
         />
       </div>
-    </section>
+    </SectionShell>
   );
 }
 
@@ -359,19 +398,16 @@ function HoursEditor() {
   if (loading || !form) return <LoadingPlaceholder />;
 
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[var(--foreground)]">진료시간</h3>
-        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
-      </div>
-
-      {saveError && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
-          저장 실패: {saveError}
-        </p>
-      )}
+    <SectionShell
+      title="진료시간"
+      description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
+      saving={saving}
+      saved={saved}
+      onSave={handleSave}
+      saveError={saveError}
+    >
       {/* Schedule table */}
-      <div className="mb-4 overflow-x-auto rounded-lg border border-[var(--border)]">
+      <div className="mb-4 overflow-x-auto rounded-2xl border border-[var(--border)] bg-white/70">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[var(--background)] text-[var(--muted)]">
@@ -439,7 +475,7 @@ function HoursEditor() {
           placeholder="토요일 점심시간 없이 진료"
         />
       </div>
-    </section>
+    </SectionShell>
   );
 }
 
@@ -464,16 +500,20 @@ export function SettingsTab() {
 
 function QuickLinksSection() {
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-        빠른 링크
-      </h3>
+    <AdminSurface tone="white" className="rounded-2xl p-6">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <h3 className="text-lg font-bold text-[var(--foreground)]">빠른 링크</h3>
+        <AdminPill tone="white" className="text-[10px]">외부 도구</AdminPill>
+      </div>
+      <p className="mb-4 text-sm text-[var(--muted)]">
+        자주 여는 외부 운영 도구로 바로 이동할 수 있습니다.
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {QUICK_LINKS.map((link) => (
           <QuickLinkCard key={link.label} link={link} />
         ))}
       </div>
-    </section>
+    </AdminSurface>
   );
 }
 
@@ -487,7 +527,7 @@ function QuickLinkCard({
       href={link.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex flex-col items-center gap-2 rounded-lg border border-[var(--border)] p-4 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+      className="flex flex-col items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--background)]/85 p-4 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
     >
       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)] text-[var(--muted)]" aria-hidden="true">
         <QuickLinkIcon icon={link.icon} />

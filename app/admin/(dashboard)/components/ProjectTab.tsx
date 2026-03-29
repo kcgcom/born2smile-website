@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AdminSurface } from "@/components/admin/AdminChrome";
 import {
   IMPROVEMENT_ITEMS,
   getImprovementStats,
@@ -100,23 +101,23 @@ function EnvHealthSection() {
 
   if (envLoading) {
     return (
-      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <AdminSurface tone="white" className="rounded-2xl p-6">
         <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           환경변수 상태
         </h3>
         <AdminLoadingSkeleton variant="table" />
-      </div>
+      </AdminSurface>
     );
   }
 
   if (envError) {
     return (
-      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <AdminSurface tone="white" className="rounded-2xl p-6">
         <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           환경변수 상태
         </h3>
         <AdminErrorState message={envError} onRetry={envRefetch} />
-      </div>
+      </AdminSurface>
     );
   }
 
@@ -127,7 +128,7 @@ function EnvHealthSection() {
   const missingVars = envData.variables.filter((v) => !v.configured);
 
   return (
-    <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl p-5">
       <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
         환경변수 상태
       </h3>
@@ -137,7 +138,7 @@ function EnvHealthSection() {
         onClick={() => setExpanded((prev) => !prev)}
         aria-expanded={expanded}
         aria-label={`환경변수 상세 목록 ${expanded ? "접기" : "펼치기"}`}
-        className="mb-3 flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]"
+                className="mb-3 flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]/80"
       >
         <span
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
@@ -241,7 +242,7 @@ function EnvHealthSection() {
           </p>
         </div>
       )}
-    </div>
+    </AdminSurface>
   );
 }
 
@@ -264,7 +265,7 @@ export function ProjectTab() {
   return (
     <div className="space-y-6">
       {/* 개선 항목 현황 */}
-      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <AdminSurface tone="white" className="rounded-2xl p-6">
         <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
           개선 항목 현황
         </h3>
@@ -296,7 +297,7 @@ export function ProjectTab() {
                   onClick={() => togglePriority(bp.priority)}
                   aria-expanded={isExpanded}
                   aria-label={`${bp.priority} 우선순위 항목 ${isExpanded ? "접기" : "펼치기"}`}
-                  className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]"
+                  className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:bg-[var(--background)]/80"
                 >
                   <PriorityBadge priority={bp.priority} />
                   <div className="flex-1">
@@ -375,7 +376,7 @@ export function ProjectTab() {
             </ul>
           </div>
         )}
-      </div>
+      </AdminSurface>
 
       {/* 환경변수 건강 상태 */}
       <EnvHealthSection />
@@ -392,7 +393,7 @@ export function ProjectTab() {
 
 function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
   return (
-    <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl p-6">
       <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
         SNS 링크 상태
       </h3>
@@ -401,6 +402,6 @@ function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
           <ConfigRow key={item.label} item={item} />
         ))}
       </ul>
-    </div>
+    </AdminSurface>
   );
 }

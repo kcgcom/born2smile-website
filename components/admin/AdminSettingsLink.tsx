@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Pencil } from "lucide-react";
 import type { AuthSession } from "@supabase/supabase-js";
+import { AdminActionLink } from "@/components/admin/AdminChrome";
 
 interface AdminSettingsLinkProps {
   tab?: string;
@@ -59,13 +59,14 @@ export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) 
   if (!isAdmin) return null;
 
   return (
-    <Link
+    <AdminActionLink
       href={`/admin?tab=${tab}`}
-      className="inline-flex items-center gap-1 rounded-full bg-gray-700 px-2.5 py-1 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-600 hover:text-white"
+      tone="dark"
+      className="rounded-full px-2.5 py-1 text-xs font-medium"
       title="설정 편집"
     >
       <Pencil size={11} aria-hidden="true" />
       편집
-    </Link>
+    </AdminActionLink>
   );
 }

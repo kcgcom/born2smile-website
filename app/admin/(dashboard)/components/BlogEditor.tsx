@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { X, Trash2, Save, Copy } from "lucide-react";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { BLOG_CATEGORY_SLUGS, BLOG_TAGS } from "@/lib/blog/types";
 import type {
   BlogBlock,
@@ -334,23 +335,37 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
       />
 
       {/* Panel */}
-      <div className="relative z-10 flex h-full w-full max-w-2xl flex-col bg-[var(--surface)] shadow-2xl">
+      <AdminSurface
+        tone="white"
+        className="relative z-10 flex h-full w-full max-w-2xl flex-col rounded-none border-y-0 border-r-0 shadow-2xl"
+      >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-6 py-4">
-          <h2 className="text-lg font-bold text-[var(--foreground)]">
-            {mode === "create" ? "새 포스트 작성" : "포스트 수정"}
-          </h2>
-          <button
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))] px-6 py-4 text-white">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold">
+                {mode === "create" ? "새 포스트 작성" : "포스트 수정"}
+              </h2>
+              <AdminPill tone="amber" className="text-[10px]">
+                {mode === "create" ? "작성" : "편집"}
+              </AdminPill>
+            </div>
+            <p className="mt-1 text-sm text-slate-300">
+              블로그 메타 정보와 본문 블록을 한 번에 관리합니다.
+            </p>
+          </div>
+          <AdminActionButton
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+            tone="ghost"
+            className="rounded-full border-white/10 bg-white/6 p-2 text-white"
             aria-label="닫기"
           >
             <X className="h-5 w-5" />
-          </button>
+          </AdminActionButton>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] px-6 py-5">
           {fetchingContent && (
             <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
               포스트 본문을 불러오는 중...
@@ -474,12 +489,12 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             )}
             <div className="space-y-4">
               {(form.blocks ?? []).map((block, idx) => (
-                <div key={idx} className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-4 space-y-3">
+                <div key={idx} className="space-y-3 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-[var(--muted)]">블록 {idx + 1}</span>
                     <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => moveBlock(idx, -1)} className="text-xs text-[var(--muted)]">↑</button>
-                      <button type="button" onClick={() => moveBlock(idx, 1)} className="text-xs text-[var(--muted)]">↓</button>
+                      <button type="button" onClick={() => moveBlock(idx, -1)} className="rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--background)]">↑</button>
+                      <button type="button" onClick={() => moveBlock(idx, 1)} className="rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--background)]">↓</button>
                       <button
                         type="button"
                         onClick={() => duplicateBlock(idx)}
@@ -517,7 +532,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
                     key={type}
                     type="button"
                     onClick={() => addBlock(type)}
-                    className="rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    className="rounded-xl border border-dashed border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   >
                     + {BLOCK_LABELS[type]}
                   </button>
@@ -535,37 +550,40 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
         </div>
 
         {/* Footer buttons */}
-        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-[var(--border)] px-6 py-4">
-          <button
+        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-[var(--border)] bg-white/90 px-6 py-4">
+          <AdminActionButton
             type="button"
             onClick={() => setShowPreview((prev) => !prev)}
             disabled={saving}
-            className="rounded-lg border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--background)] disabled:opacity-50"
+            tone="dark"
+            className="px-5"
           >
             {showPreview ? "미리보기 닫기" : "미리보기"}
-          </button>
-          <button
+          </AdminActionButton>
+          <AdminActionButton
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-lg border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--background)] disabled:opacity-50"
+            tone="dark"
+            className="px-5"
           >
             취소
-          </button>
-          <button
+          </AdminActionButton>
+          <AdminActionButton
             type="button"
             onClick={handleSubmit}
             disabled={saving || fetchingContent}
-            className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-50 transition-colors"
+            tone="primary"
+            className="px-5"
           >
             <Save className="h-4 w-4" />
             {saving ? "저장 중..." : "임시저장"}
-          </button>
+          </AdminActionButton>
         </div>
 
         {showPreview && (
           <div className="border-t border-[var(--border)] bg-[var(--background)] px-6 py-5">
-            <div className="mx-auto max-w-3xl rounded-xl bg-white p-5 shadow-sm">
+            <div className="mx-auto max-w-3xl rounded-2xl bg-white p-5 shadow-sm">
               <p className="mb-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase">
                 Preview
               </p>
@@ -581,7 +599,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             </div>
           </div>
         )}
-      </div>
+      </AdminSurface>
     </div>
   );
 }

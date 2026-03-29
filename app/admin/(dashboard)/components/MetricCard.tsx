@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminSurface } from "@/components/admin/AdminChrome";
+
 interface MetricCardProps {
   label: string;
   value: string | number;
@@ -18,7 +20,7 @@ export function MetricCard({
   invertChange = false,
 }: MetricCardProps) {
   return (
-    <div className="rounded-lg bg-[var(--background)] p-3 text-center">
+    <AdminSurface tone="white" className="rounded-2xl bg-white/85 p-4 text-center">
       {loading ? (
         <div className="mx-auto h-8 w-16 animate-pulse rounded bg-[var(--border)]" />
       ) : (
@@ -44,6 +46,6 @@ export function MetricCard({
           )}
         </p>
       )}
-    </div>
+    </AdminSurface>
   );
 }

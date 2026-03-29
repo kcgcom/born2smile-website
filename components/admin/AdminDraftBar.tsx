@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Pencil, Calendar, Check, FileEdit } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
 import { usePublishPopup } from "@/hooks/usePublishPopup";
 import { PublishPopup } from "./PublishPopup";
@@ -53,11 +53,14 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
   // 발행 완료 후 확인 메시지
   if (publishedDate) {
     return (
-      <div className="fixed bottom-16 left-0 right-0 z-50 border-t border-green-200 bg-green-50 px-4 py-3 md:bottom-0">
-        <div className="mx-auto flex max-w-3xl items-center justify-center gap-2 text-sm font-medium text-green-700">
+      <div className="fixed right-0 bottom-16 left-0 z-50 px-3 py-3 md:px-4 md:bottom-4">
+        <AdminSurface
+          tone="success"
+          className="mx-auto flex max-w-5xl items-center justify-center gap-2 rounded-[1.25rem] px-4 py-3 text-sm font-semibold"
+        >
           <Check size={16} />
           발행 예약됨 ({publishedDate})
-        </div>
+        </AdminSurface>
       </div>
     );
   }
@@ -65,29 +68,53 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
   return (
     <>
       {/* 플로팅 바 */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 border-t border-amber-200 bg-amber-50/95 px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] backdrop-blur-sm md:bottom-0">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileEdit size={16} className="text-amber-600" aria-hidden="true" />
-            <span className="text-sm font-semibold text-amber-800">초안</span>
+      <div className="fixed right-0 bottom-16 left-0 z-50 px-3 py-3 md:px-4 md:bottom-4">
+        <AdminSurface
+          tone="dark"
+          className="mx-auto flex max-w-5xl flex-col items-stretch gap-3 rounded-[1.35rem] border-amber-300/25 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.92))] px-4 py-3"
+        >
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <AdminPill tone="amber" className="gap-2 text-xs">
+                  <FileEdit size={14} className="text-amber-200" aria-hidden="true" />
+                  초안 관리
+                </AdminPill>
+                <AdminPill tone="slate" className="hidden sm:inline-flex">
+                  비공개 상태
+                </AdminPill>
+              </div>
+              <p className="mt-2 text-sm font-medium text-slate-100">
+                이 포스트는 아직 공개되지 않았습니다.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                수정 후 발행 버튼으로 즉시 공개하거나 예약 발행을 설정할 수 있습니다.
+              </p>
+            </div>
+            <AdminPill tone="slate" className="shrink-0 sm:hidden">
+              비공개
+            </AdminPill>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
+
+          <div className="grid shrink-0 grid-cols-2 gap-2">
+            <AdminActionLink
               href={`/admin?tab=blog&edit=${slug}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              tone="ghost"
+              className="min-h-11"
             >
               <Pencil size={14} aria-hidden="true" />
               수정
-            </Link>
-            <button
+            </AdminActionLink>
+            <AdminActionButton
               onClick={() => popup.open(slug)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+              tone="primary"
+              className="min-h-11"
             >
               <Calendar size={14} aria-hidden="true" />
               발행
-            </button>
+            </AdminActionButton>
           </div>
-        </div>
+        </AdminSurface>
       </div>
 
       {/* 발행 팝업 */}

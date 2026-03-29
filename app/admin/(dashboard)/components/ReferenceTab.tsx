@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DEV_MANIFEST } from "@/lib/dev/generated/dev-manifest";
 import {
   ESLINT_CONFIG,
@@ -53,11 +54,11 @@ function AccordionSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-[var(--surface)] shadow-sm">
+    <AdminSurface tone="white" className="rounded-2xl px-0 py-0">
       <button
         onClick={onToggle}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--background)] rounded-xl"
+        className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-colors hover:bg-[var(--background)]"
       >
         <span className="text-sm font-semibold text-[var(--foreground)]">
           {title}
@@ -80,7 +81,7 @@ function AccordionSection({
           {children}
         </div>
       )}
-    </div>
+    </AdminSurface>
   );
 }
 
@@ -124,7 +125,7 @@ function DependenciesContent() {
       {/* 주요 기술 스택 */}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {keyDeps.map((d) => (
-          <div key={d.name} className="rounded-lg bg-[var(--background)] p-2.5 text-center">
+          <div key={d.name} className="rounded-xl bg-[var(--background)] p-2.5 text-center">
             <p className="text-sm font-medium text-[var(--foreground)]">{d.name}</p>
             <p className="text-xs text-[var(--muted)]">{d.version}</p>
           </div>
@@ -158,7 +159,7 @@ function TsEslintContent() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {/* TypeScript 설정 */}
-      <div className="rounded-lg border border-[var(--border)] p-4">
+      <AdminSurface tone="white" className="rounded-2xl p-4">
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           TypeScript 설정
         </h4>
@@ -193,10 +194,10 @@ function TsEslintContent() {
             </li>
           ))}
         </ul>
-      </div>
+      </AdminSurface>
 
       {/* ESLint 설정 */}
-      <div className="rounded-lg border border-[var(--border)] p-4">
+      <AdminSurface tone="white" className="rounded-2xl p-4">
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           ESLint 설정
         </h4>
@@ -223,7 +224,7 @@ function TsEslintContent() {
             무시 패턴: {ESLINT_CONFIG.ignorePatterns.join(", ")}
           </li>
         </ul>
-      </div>
+      </AdminSurface>
     </div>
   );
 }
@@ -304,7 +305,7 @@ function InfraContent() {
     <div className="space-y-4">
       {/* Next.js & Vercel 설정 */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-[var(--border)] p-4">
+        <AdminSurface tone="white" className="rounded-2xl p-4">
           <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
             Next.js 설정
           </h4>
@@ -319,11 +320,11 @@ function InfraContent() {
               리전: <strong className="text-[var(--foreground)]">{NEXTJS_CONFIG.region}</strong>
             </li>
           </ul>
-        </div>
+        </AdminSurface>
       </div>
 
       {/* 보안 헤더 */}
-      <div className="rounded-lg border border-[var(--border)] p-4">
+      <AdminSurface tone="white" className="rounded-2xl p-4">
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           보안 헤더 ({NEXTJS_CONFIG.securityHeaders.length}개)
         </h4>
@@ -339,7 +340,7 @@ function InfraContent() {
             </li>
           ))}
         </ul>
-      </div>
+      </AdminSurface>
     </div>
   );
 }
@@ -523,7 +524,7 @@ export function ReferenceTab() {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
           >
             {link.label}
             <svg className="h-3 w-3 text-[var(--muted)]" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

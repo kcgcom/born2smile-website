@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { Pencil } from "lucide-react";
+import { AdminActionLink } from "@/components/admin/AdminChrome";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface AdminEditButtonProps {
@@ -18,14 +18,15 @@ export function AdminEditButton({ href, label = "수정" }: AdminEditButtonProps
   if (!isAdmin) return null;
 
   return (
-    <Link
+    <AdminActionLink
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+      tone="dark"
+      className="rounded-full px-3 py-1.5"
       aria-label={label}
       title={label}
     >
       <Pencil size={14} aria-hidden="true" />
       {label}
-    </Link>
+    </AdminActionLink>
   );
 }

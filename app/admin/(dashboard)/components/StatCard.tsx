@@ -1,5 +1,7 @@
 // Shared component used by BlogTab, ReferenceTab, etc.
 
+import { AdminSurface } from "@/components/admin/AdminChrome";
+
 export interface StatCardProps {
   label: string;
   value: number;
@@ -26,8 +28,8 @@ export function StatCard({
 }: StatCardProps) {
   const base =
     variant === "elevated"
-      ? "rounded-xl bg-[var(--surface)] p-4 text-center shadow-sm"
-      : "rounded-lg bg-[var(--background)] p-3 text-center";
+      ? "rounded-2xl p-4 text-center"
+      : "rounded-xl bg-[var(--background)] p-3 text-center";
 
   const interactive = onClick
     ? "cursor-pointer transition-all hover:ring-2 hover:ring-[var(--color-primary)]/30"
@@ -40,8 +42,9 @@ export function StatCard({
   const containerClass = `${base} ${interactive} ${activeRing}`.trim();
 
   return (
-    <div
-      className={containerClass}
+    <AdminSurface
+      tone="white"
+      className={`${containerClass} ${variant === "compact" ? "border-[var(--border)] bg-white/80 shadow-none" : ""}`}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -49,6 +52,6 @@ export function StatCard({
     >
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
       <p className="mt-0.5 text-xs text-[var(--muted)]">{label}</p>
-    </div>
+    </AdminSurface>
   );
 }

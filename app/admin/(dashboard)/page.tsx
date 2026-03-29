@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { AuthSession } from "@supabase/supabase-js";
+import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
@@ -130,12 +131,41 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
       <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
 
       {/* 콘텐츠 */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <h2 className="mb-6 text-2xl font-bold text-[var(--foreground)]">대시보드</h2>
+        <AdminSurface tone="white" className="mb-6 rounded-3xl px-5 py-5 md:px-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <AdminPill tone="white">운영 대시보드</AdminPill>
+                <AdminPill tone="warning">실시간 관리</AdminPill>
+              </div>
+              <h2 className="mt-3 text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+                서울본치과 관리자 화면
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--muted)] md:text-base">
+                인사이트, 블로그 발행, 사이트 설정을 같은 작업 흐름 안에서 빠르게 관리하세요.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 self-start md:self-auto">
+              <div className="rounded-2xl bg-[var(--background)] px-4 py-3">
+                <p className="text-xs font-medium text-[var(--muted)]">활성 탭</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">
+                  {TABS.find((tab) => tab.id === activeTab)?.label ?? "개발"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[var(--background)] px-4 py-3">
+                <p className="text-xs font-medium text-[var(--muted)]">편집 대상</p>
+                <p className="mt-1 truncate text-sm font-semibold text-[var(--foreground)]">
+                  {editSlug ?? "선택 안 됨"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </AdminSurface>
 
         {/* 탭 네비게이션 */}
         <div className="mb-6">

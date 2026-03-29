@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import type { AuthSession } from "@supabase/supabase-js";
+import { ShieldCheck } from "lucide-react";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signInWithGoogle, signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
@@ -83,32 +85,47 @@ export default function AdminLoginPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)]">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--border)] border-t-[var(--color-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4">
-      <div className="w-full max-w-sm rounded-xl bg-[var(--surface)] p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)] px-4">
+      <AdminSurface
+        tone="white"
+        className="w-full max-w-md rounded-[1.75rem] border-white/70 bg-white/92 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur-sm"
+      >
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">
+          <div className="mb-4 flex justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.14),rgba(245,158,11,0.12))] text-[var(--color-primary)]">
+              <ShieldCheck className="h-7 w-7" />
+            </span>
+          </div>
+          <div className="flex justify-center">
+            <AdminPill tone="white" className="text-[11px]">관리자 전용</AdminPill>
+          </div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[var(--foreground)]">
             {CLINIC.name}
           </h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">관리자 대시보드</p>
+          <p className="mt-2 text-base font-medium text-slate-600">관리자 대시보드 로그인</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            블로그 관리, 인사이트, 사이트 설정을 안전하게 관리합니다.
+          </p>
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
             {error}
           </div>
         )}
 
-        <button
+        <AdminActionButton
           onClick={handleLogin}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[var(--border)] bg-white px-4 py-3 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-gray-50 disabled:opacity-50"
+          tone="primary"
+          className="w-full justify-center rounded-2xl px-4 py-3.5 text-base shadow-md shadow-blue-950/15"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -129,12 +146,12 @@ export default function AdminLoginPage() {
             />
           </svg>
           {loading ? "로그인 중..." : "Google 계정으로 로그인"}
-        </button>
+        </AdminActionButton>
 
-        <p className="mt-6 text-center text-xs text-[var(--muted-light)]">
+        <p className="mt-6 text-center text-sm leading-6 text-slate-500">
           등록된 관리자 계정만 접근 가능합니다
         </p>
-      </div>
+      </AdminSurface>
     </div>
   );
 }

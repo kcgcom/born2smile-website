@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { AdminSurface } from "@/components/admin/AdminChrome";
 
 interface Column<T> {
   key: string;
@@ -37,7 +38,7 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-[var(--background)] px-4 py-10 text-center">
+      <AdminSurface tone="white" className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 px-4 py-10 text-center">
         <svg
           className="h-8 w-8 text-[var(--border)]"
           fill="none"
@@ -53,15 +54,16 @@ export function DataTable<T extends Record<string, unknown>>({
           />
         </svg>
         <span className="text-sm text-[var(--muted)]">{emptyMessage}</span>
-      </div>
+      </AdminSurface>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <AdminSurface tone="white" className="overflow-hidden rounded-2xl px-0 py-0">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[var(--border)]">
+          <tr className="border-b border-[var(--border)] bg-[var(--background)]/80">
             {columns.map((col) => {
               const isSorted = sortKey === col.key;
               const direction = isSorted ? (sortDirection ?? null) : null;
@@ -101,11 +103,11 @@ export function DataTable<T extends Record<string, unknown>>({
             })}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white/90">
           {rows.map((row) => (
             <tr
               key={String(row[keyField])}
-              className="border-b border-[var(--background)] transition-colors hover:bg-[var(--background)]"
+              className="border-b border-[var(--background)] transition-colors hover:bg-[var(--background)]/70"
             >
               {columns.map((col) => (
                 <td
@@ -124,7 +126,8 @@ export function DataTable<T extends Record<string, unknown>>({
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+    </AdminSurface>
   );
 }

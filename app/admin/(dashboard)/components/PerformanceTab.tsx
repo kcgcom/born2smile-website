@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Smartphone, Monitor, Info, RefreshCw, ChevronDown } from "lucide-react";
 import { mutate as globalMutate } from "swr";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -175,7 +176,7 @@ function ScoreGauge({
 function CWVCard({ metric }: { metric: CWVMetric }) {
   const badge = categoryBadge(metric.category);
   return (
-    <div className="flex flex-col items-center gap-1 rounded-lg bg-[var(--background)] p-3 text-center">
+    <AdminSurface tone="white" className="flex flex-col items-center gap-1 rounded-2xl bg-white/85 p-3 text-center">
       <span className="text-lg font-bold text-[var(--foreground)]">
         {formatCWVValue(metric)}
       </span>
@@ -187,7 +188,7 @@ function CWVCard({ metric }: { metric: CWVMetric }) {
       >
         {badge.label}
       </span>
-    </div>
+    </AdminSurface>
   );
 }
 
@@ -260,7 +261,7 @@ export function PerformanceTab() {
   return (
     <div className="space-y-6">
       {/* 전략 토글 + 새로 분석 + 분석 시각 */}
-      <div className="flex items-center justify-between">
+      <AdminSurface tone="white" className="flex items-center justify-between rounded-2xl p-4">
         <div className="flex items-center gap-2">
           <div className="flex gap-1 rounded-lg bg-[var(--background)] p-1">
             <button
@@ -286,34 +287,35 @@ export function PerformanceTab() {
               데스크톱
             </button>
           </div>
-          <button
+          <AdminActionButton
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] transition-colors disabled:opacity-50"
+            tone="dark"
+            className="px-2.5 py-1.5 text-xs"
           >
             <RefreshCw
               size={13}
               className={refreshing ? "animate-spin" : ""}
             />
             새로 분석
-          </button>
+          </AdminActionButton>
         </div>
         <div className="flex items-center gap-1.5">
           {isStaleResponse && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+            <AdminPill tone="warning" className="text-[10px]">
               이전 데이터 · 갱신 중
-            </span>
+            </AdminPill>
           )}
           <span className="text-xs text-[var(--muted)]">
             {fetchedTime}
           </span>
         </div>
-      </div>
+      </AdminSurface>
 
       <ApiSourceBadge sources={["pagespeedInsights"]} />
 
       {/* Lighthouse 카테고리 점수 */}
-      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <AdminSurface tone="white" className="rounded-2xl p-6">
         <h3 className="mb-4 text-sm font-semibold text-[var(--foreground)]">
           Lighthouse 점수
         </h3>
@@ -322,18 +324,16 @@ export function PerformanceTab() {
             <ScoreGauge key={cat.id} score={cat.score} label={cat.title} />
           ))}
         </div>
-      </div>
+      </AdminSurface>
 
       {/* Core Web Vitals */}
-      <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+      <AdminSurface tone="white" className="rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--foreground)]">
             Core Web Vitals (필드 데이터)
           </h3>
           {hasCWV && (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${overallBadge.className}`}
-            >
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${overallBadge.className}`}>
               전체: {overallBadge.label}
             </span>
           )}
@@ -345,17 +345,17 @@ export function PerformanceTab() {
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-2 rounded-lg bg-[var(--background)] px-4 py-3 text-sm text-[var(--muted)]">
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--background)] px-4 py-3 text-sm text-[var(--muted)]">
             <Info size={16} className="shrink-0" />
             CrUX 필드 데이터가 아직 수집되지 않았습니다. 트래픽이 충분히 쌓이면
             표시됩니다.
           </div>
         )}
-      </div>
+      </AdminSurface>
 
       {/* 개선 기회 */}
       {result.audits.length > 0 && (
-        <div className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
+        <AdminSurface tone="white" className="rounded-2xl p-6">
           <h3 className="mb-4 text-sm font-semibold text-[var(--foreground)]">
             개선 기회 ({result.audits.length}개)
           </h3>
@@ -366,7 +366,7 @@ export function PerformanceTab() {
                 audit.description || audit.savingsMs || audit.savingsBytes || audit.items?.length;
 
               return (
-                <div key={audit.id} className="rounded-lg bg-[var(--background)] overflow-hidden">
+                <div key={audit.id} className="overflow-hidden rounded-xl bg-[var(--background)]">
                   {/* 헤더 행 */}
                   <button
                     type="button"
@@ -375,8 +375,8 @@ export function PerformanceTab() {
                       setExpandedAudit(isExpanded ? null : audit.id)
                     }
                     className={`flex w-full items-center justify-between px-4 py-2.5 text-left ${
-                      hasDetails ? "cursor-pointer hover:bg-gray-50/50" : "cursor-default"
-                    }`}
+                        hasDetails ? "cursor-pointer hover:bg-gray-50/50" : "cursor-default"
+                      }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {hasDetails && (
@@ -464,7 +464,7 @@ export function PerformanceTab() {
               );
             })}
           </div>
-        </div>
+        </AdminSurface>
       )}
 
       {/* 테스트 URL */}

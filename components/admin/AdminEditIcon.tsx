@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { Pencil } from "lucide-react";
+import { AdminActionLink } from "@/components/admin/AdminChrome";
 
 interface AdminEditIconProps {
   href: string;
@@ -17,14 +17,15 @@ export function AdminEditIcon({ href, label, isAdmin }: AdminEditIconProps) {
   if (!isAdmin) return null;
 
   return (
-    <Link
+    <AdminActionLink
       href={href}
       onClick={(e) => e.stopPropagation()}
-      className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white transition-colors hover:bg-gray-700"
+      tone="dark"
+      className="relative z-10 h-8 w-8 rounded-full p-0"
       aria-label={label}
       title={label}
     >
       <Pencil size={12} aria-hidden="true" />
-    </Link>
+    </AdminActionLink>
   );
 }
