@@ -1,6 +1,4 @@
-import { NextRequest } from "next/server";
-import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
-import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
+import { createCachedFetcher, CACHE_TTL } from "@/app/api/admin/_lib/cache";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 interface BlogLikesResponse {
@@ -28,10 +26,7 @@ async function fetchBlogLikes(): Promise<BlogLikesResponse> {
   return { likes, totalLikes, updatedAt };
 }
 
-export async function GET(request: NextRequest) {
-  const auth = await verifyAdminRequest(request);
-  if (!auth.ok) return unauthorizedResponse(auth);
-
+export async function GET() {
   try {
     const getData = createCachedFetcher(
       "blog-likes",
@@ -39,11 +34,11 @@ export async function GET(request: NextRequest) {
       CACHE_TTL.BLOG_LIKES,
     );
     const data = await getData();
-    return Response.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
+    return Response.json({ data }, { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60" } });
   } catch {
     return Response.json(
       { error: "API_ERROR", message: "좋아요 데이터를 불러올 수 없습니다" },
-      { status: 500, headers: { "Cache-Control": "private, no-store" } },
+      { status: 500 },
     );
   }
 }

@@ -190,7 +190,7 @@ export function StatsSubTab() {
   const posts = postsData ?? EMPTY_POSTS;
 
   const { data: likesData, loading: likesLoading, error: likesError } =
-    useAdminApi<BlogLikesData>("/api/admin/blog-likes");
+    useAdminApi<BlogLikesData>("/api/blog-likes");
 
   // Category distribution — all posts
   const byCategoryAll = useMemo(() => {

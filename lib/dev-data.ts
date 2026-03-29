@@ -94,9 +94,9 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     description: "Search Console 검색 성과",
   },
   {
-    path: "/api/admin/blog-likes",
+    path: "/api/blog-likes",
     methods: ["GET"],
-    auth: true,
+    auth: false,
     description: "블로그 좋아요 집계",
   },
   {

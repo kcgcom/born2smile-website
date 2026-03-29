@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Share2, Check, Clock, ArrowRight, Tag, Search, X } from "lucide-react";
+import { Share2, Check, Clock, ArrowRight, Tag, Search, X, Heart } from "lucide-react";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   BLOG_CATEGORY_SLUGS,
   BLOG_TAGS,
@@ -19,6 +20,19 @@ import { getTodayKST } from "@/lib/date";
 
 const POSTS_PER_PAGE = 12;
 
+const USER_ID_KEY = "born2smile_uid";
+const LIKED_SLUGS_KEY = "born2smile_liked_slugs";
+
+function getUserId(): string {
+  if (typeof window === "undefined") return "";
+  let uid = localStorage.getItem(USER_ID_KEY);
+  if (!uid) {
+    uid = crypto.randomUUID();
+    localStorage.setItem(USER_ID_KEY, uid);
+  }
+  return uid;
+}
+
 interface BlogContentProps {
   initialPosts: BlogPostMeta[];
   activeDefaultCategory?: BlogCategorySlug;
@@ -31,6 +45,9 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [localLiked, setLocalLiked] = useState<Set<string>>(new Set());
+  const [likingSlug, setLikingSlug] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,6 +57,24 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
+  }, []);
+
+  // 좋아요 수 일괄 fetch (마운트 시 1회)
+  useEffect(() => {
+    fetch("/api/blog-likes")
+      .then((r) => r.json())
+      .then((json: { data?: { likes?: Record<string, number> } }) => {
+        if (json.data?.likes) setLikeCounts(json.data.likes);
+      })
+      .catch(() => {});
+  }, []);
+
+  // liked 슬러그 localStorage에서 복원
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LIKED_SLUGS_KEY);
+      if (stored) setLocalLiked(new Set(JSON.parse(stored) as string[]));
+    } catch {}
   }, []);
 
   // 검색어 debounce (250ms)
@@ -134,6 +169,41 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     setVisibleCount(POSTS_PER_PAGE);
     searchInputRef.current?.focus();
   };
+
+  const handleLike = useCallback(async (e: React.MouseEvent, slug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isSupabaseConfigured || likingSlug) return;
+
+    const uid = getUserId();
+    const wasLiked = localLiked.has(slug);
+
+    // 낙관적 업데이트
+    setLocalLiked((prev) => {
+      const next = new Set(prev);
+      wasLiked ? next.delete(slug) : next.add(slug);
+      try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    setLikeCounts((prev) => ({ ...prev, [slug]: (prev[slug] ?? 0) + (wasLiked ? -1 : 1) }));
+    setLikingSlug(slug);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.rpc("toggle_like", { p_slug: slug, p_user_id: uid });
+    } catch {
+      // 롤백
+      setLocalLiked((prev) => {
+        const next = new Set(prev);
+        wasLiked ? next.add(slug) : next.delete(slug);
+        try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
+        return next;
+      });
+      setLikeCounts((prev) => ({ ...prev, [slug]: (prev[slug] ?? 0) + (wasLiked ? 1 : -1) }));
+    } finally {
+      setLikingSlug(null);
+    }
+  }, [localLiked, likingSlug]);
 
   const handleShare = useCallback(
     async (
@@ -310,7 +380,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     </div>
                   )}
 
-                  {/* 하단: 날짜 + 읽기 시간 + 자세히 읽기 */}
+                  {/* 하단: 날짜 + 읽기 시간 + 좋아요 + 자세히 읽기 */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-4">
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       <span>{formatDate(post.date)}</span>
@@ -318,6 +388,26 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                         <Clock size={14} />
                         {post.readTime} 읽기
                       </span>
+                      {isSupabaseConfigured && (
+                        <button
+                          onClick={(e) => handleLike(e, post.slug)}
+                          disabled={likingSlug === post.slug}
+                          className={`relative z-10 flex items-center gap-1 transition-colors ${
+                            localLiked.has(post.slug)
+                              ? "text-rose-500"
+                              : "text-gray-400 hover:text-rose-400"
+                          }`}
+                          aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
+                        >
+                          <Heart
+                            size={14}
+                            className={localLiked.has(post.slug) ? "fill-rose-500" : ""}
+                          />
+                          {(likeCounts[post.slug] ?? 0) > 0 && (
+                            <span className="text-xs">{likeCounts[post.slug]}</span>
+                          )}
+                        </button>
+                      )}
                     </div>
                     <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
