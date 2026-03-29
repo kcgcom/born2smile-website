@@ -95,21 +95,23 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   if (!isEditMode) {
     return (
-      <button
-        type="button"
-        onClick={enter}
-        className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-        aria-label="글 편집 모드 시작"
-        title="글 정보 및 블록 수정"
-      >
-        <Pencil size={14} aria-hidden="true" />
-        편집 모드
-      </button>
+      <div className="flex justify-end py-1.5">
+        <button
+          type="button"
+          onClick={enter}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          aria-label="글 편집 모드 시작"
+          title="글 정보 및 블록 수정"
+        >
+          <Pencil size={14} aria-hidden="true" />
+          편집 모드
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="mt-3 w-full">
+    <div className="py-3">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-gray-700">글 정보 수정</span>
         <button

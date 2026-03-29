@@ -236,6 +236,21 @@ export default async function BlogPostPage({
 
       {/* 블로그 포스트 */}
       <BlogEditProvider initialBlocks={post.blocks ?? []}>
+      <div className="sticky top-16 z-30 border-b border-gray-100 bg-white">
+        <div className="mx-auto max-w-3xl px-4">
+          <InlineBlogEditButton
+            post={{
+              slug,
+              title: post.title,
+              subtitle: post.subtitle,
+              excerpt: post.excerpt,
+              category: post.category,
+              tags: post.tags,
+              date: post.date,
+            }}
+          />
+        </div>
+      </div>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
@@ -263,17 +278,6 @@ export default async function BlogPostPage({
                   <Clock size={13} />
                   {post.readTime ?? "1분"} 읽기
                 </span>
-                <InlineBlogEditButton
-                  post={{
-                    slug,
-                    title: post.title,
-                    subtitle: post.subtitle,
-                    excerpt: post.excerpt,
-                    category: post.category,
-                    tags: post.tags,
-                    date: post.date,
-                  }}
-                />
               </div>
 
               <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
