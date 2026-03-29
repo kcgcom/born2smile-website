@@ -48,7 +48,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   }, [postsData, publishedSlugs]);
 
   const { data: likesData, loading: likesLoading } =
-    useAdminApi<BlogLikesData>("/api/blog-likes");
+    useAdminApi<BlogLikesData>("/api/admin/blog-likes");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
