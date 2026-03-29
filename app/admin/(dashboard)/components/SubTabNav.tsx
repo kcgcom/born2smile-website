@@ -49,15 +49,15 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
   const parentLabel = TABS.find((t) => t.id === parentTab)?.label ?? parentTab;
 
   return (
-    <div className="mb-6">
-      <div className="mb-2 flex items-center gap-1 px-1">
+    <nav
+      className="mb-6 flex flex-row items-center gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      aria-label={ariaLabel}
+    >
+      {/* 브레드크럼 레이블 */}
+      <div className="flex shrink-0 items-center gap-0.5 px-2">
         <span className="text-xs font-medium text-slate-400">{parentLabel}</span>
-        <ChevronRight size={12} className="text-slate-300" aria-hidden="true" />
+        <ChevronRight size={11} className="text-slate-300" aria-hidden="true" />
       </div>
-      <nav
-        className="flex flex-row gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-label={ariaLabel}
-      >
       {tabs.map((tab) => {
         const isActive = tab.id === activeSub;
         const Icon = tab.icon;
@@ -77,7 +77,6 @@ export function SubTabNav<T extends readonly SubTabDef[]>({
           </button>
         );
       })}
-      </nav>
-    </div>
+    </nav>
   );
 }
