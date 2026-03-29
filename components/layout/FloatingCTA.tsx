@@ -107,7 +107,7 @@ function DesktopPhoneButton() {
   return (
     <div className="flex flex-col items-end gap-2">
       {info && (
-        <div className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/95 px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm">
           <span className={`inline-block h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
           <span className={style.text}>{info.message}</span>
         </div>
