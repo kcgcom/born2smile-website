@@ -19,6 +19,7 @@ interface PostMeta {
   category: BlogCategorySlug;
   tags: string[];
   date: string;
+  published?: boolean;
 }
 
 export function InlineBlogEditButton({ post }: { post: PostMeta }) {
@@ -145,7 +146,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
             tags,
             date,
             blocks,
-            published: true,
+            published: post.published ?? true,
           }),
         });
         if (!res.ok) {
@@ -171,7 +172,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
       {/* 고정 관리자 바 — 사이트 헤더 바로 아래 연결 */}
       <AdminSurface
         tone="dark"
-        className="fixed top-[76px] right-0 left-0 z-40 px-4 py-2"
+        className={`fixed ${post.published === false ? "top-0" : "top-[76px]"} right-0 left-0 z-40 px-4 py-2`}
         ref={toolbarRef}
       >
         <div className="mx-auto flex max-w-7xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -181,6 +182,9 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                 <Pencil size={11} aria-hidden="true" />
                 관리자 전용
               </AdminPill>
+              {post.published === false && (
+                <AdminPill tone="sky" className="shrink-0">초안</AdminPill>
+              )}
               <p className="truncate text-sm font-medium text-slate-100">
                 블로그 편집 도구
               </p>
