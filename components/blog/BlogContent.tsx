@@ -337,9 +337,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                           aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
                         >
                           <Heart size={14} className={localLiked.has(post.slug) ? "fill-rose-500" : ""} />
-                          {(likeCounts[post.slug] ?? 0) > 0 && (
-                            <span className="text-xs">{likeCounts[post.slug]}</span>
-                          )}
+                          <span>좋아요</span>
                         </button>
                       )}
                       <button
