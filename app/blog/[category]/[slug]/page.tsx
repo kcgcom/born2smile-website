@@ -236,20 +236,20 @@ export default async function BlogPostPage({
 
       {/* 블로그 포스트 */}
       <BlogEditProvider initialBlocks={post.blocks ?? []}>
-      <InlineBlogEditButton
-        post={{
-          slug,
-          title: post.title,
-          subtitle: post.subtitle,
-          excerpt: post.excerpt,
-          category: post.category,
-          tags: post.tags,
-          date: post.date,
-        }}
-      />
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
+          <InlineBlogEditButton
+            post={{
+              slug,
+              title: post.title,
+              subtitle: post.subtitle,
+              excerpt: post.excerpt,
+              category: post.category,
+              tags: post.tags,
+              date: post.date,
+            }}
+          />
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <Link

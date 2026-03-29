@@ -96,7 +96,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   return (
     <>
       {/* 관리자 전용 sticky 상단 바 */}
-      <div className="sticky top-20 z-30 border-b border-gray-700 bg-gray-900 px-4 py-2">
+      <div className="sticky top-[72px] z-40 border-b border-gray-700 bg-gray-900 px-4 py-2">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <Pencil size={12} aria-hidden="true" />
