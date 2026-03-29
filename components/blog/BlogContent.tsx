@@ -168,7 +168,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
     setLocalLiked((prev) => {
       const next = new Set(prev);
-      wasLiked ? next.delete(slug) : next.add(slug);
+      if (wasLiked) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
       try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
       return next;
     });
@@ -179,7 +183,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     } catch {
       setLocalLiked((prev) => {
         const next = new Set(prev);
-        wasLiked ? next.add(slug) : next.delete(slug);
+        if (wasLiked) {
+          next.add(slug);
+        } else {
+          next.delete(slug);
+        }
         try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
         return next;
       });

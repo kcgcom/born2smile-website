@@ -94,7 +94,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
         inflightRef.current = false;
       }
     },
-    [slug, title, subtitle, excerpt, category, tags, date, router],
+    [slug, title, subtitle, excerpt, category, tags, date, router, setBlocks],
   );
 
   const headingIds = computeHeadingIds(blocks);
@@ -401,7 +401,7 @@ function HeadingEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
         onChange={(e) => setText(e.target.value)}
         className="w-full rounded-lg border border-gray-200 px-3 py-2 text-base font-bold focus:border-blue-400 focus:outline-none"
         placeholder="소제목 텍스트"
-        autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+        autoFocus
       />
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
@@ -426,7 +426,7 @@ function ParagraphEditForm({ block, saving, onSave, onCancel }: BlockFormProps) 
         rows={6}
         className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-base leading-relaxed focus:border-blue-400 focus:outline-none"
         placeholder="문단 내용"
-        autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+        autoFocus
       />
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
@@ -475,7 +475,7 @@ function ListEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
               onChange={(e) => updateItem(idx, e.target.value)}
               className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
               placeholder={`항목 ${idx + 1}`}
-              autoFocus={idx === 0} // eslint-disable-line jsx-a11y/no-autofocus
+              autoFocus={idx === 0}
             />
             {items.length > 1 && (
               <button
@@ -522,7 +522,7 @@ function FaqEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
         onChange={(e) => setQuestion(e.target.value)}
         className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold focus:border-blue-400 focus:outline-none"
         placeholder="질문을 입력하세요"
-        autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+        autoFocus
       />
       <label className="mb-1 block text-sm font-medium text-gray-600">답변</label>
       <textarea

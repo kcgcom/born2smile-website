@@ -163,7 +163,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
         inflightRef.current = false;
       }
     },
-    [slug, title, subtitle, excerpt, category, tags, date, blocks, exit, router],
+    [slug, title, subtitle, excerpt, category, tags, date, blocks, post.published, exit, router],
   );
 
   if (!isAdmin) return null;
