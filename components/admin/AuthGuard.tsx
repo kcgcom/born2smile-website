@@ -21,7 +21,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [loading, user, router]);
 
-  if (loading) {
+  // isAdmin이 이미 확인된 경우(localStorage 플래그) 세션 로딩 완료를 기다리지 않음.
+  // admin API가 서버 측에서 토큰을 독립적으로 검증하므로 즉시 표시해도 무해.
+  if (loading && !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)]">
         <div className="flex flex-col items-center gap-4">
@@ -32,7 +34,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!user) {
+  if (!loading && !user) {
     return null;
   }
 
