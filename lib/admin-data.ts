@@ -21,7 +21,7 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-03-29
+// 마지막 동기화: 2026-03-30
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // CRITICAL — 4/4 완료
@@ -166,6 +166,8 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h28", title: "GEO JSON-LD 엔티티 그래프 강화", priority: "HIGH", status: "done", description: "Clinic @id(/#organization) 추가 → WebSite·Physician 엔티티 연결. Physician image 추가. sameAs 2→4개 (googleBusiness, naverPlace). sitemap 블로그 lastmod 최신 포스트 날짜 자동 계산" },
   { id: "m46", title: "개인정보처리방침 페이지", priority: "MEDIUM", status: "done", description: "개인정보보호법 대응 — /privacy 독립 페이지. Footer 링크 추가. 수집 항목, 보유 기간, 위탁 현황, 열람 청구 절차 포함" },
   { id: "l23", title: "llms.txt AI 모델 가이드", priority: "LOW", status: "done", description: "public/llms.txt 구조화 — AI 크롤러 대상 진료 철학, 카테고리별 블로그 링크, 콘텐츠 구조 안내 (GEO 대응)" },
+  { id: "l24", title: "관리자 인증 스피너 최적화", priority: "LOW", status: "done", description: "localStorage 플래그 선확인으로 인증 완료 시 스피너 스킵 — 관리자 페이지 진입 체감 속도 개선" },
+  { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin?tab=blog 직접 이동 — 블로그 관리 동선 단축" },
 ];
 
 export interface ImprovementStats {
