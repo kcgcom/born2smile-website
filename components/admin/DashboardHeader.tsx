@@ -10,11 +10,10 @@ import { CLINIC } from "@/lib/constants";
 // -------------------------------------------------------------
 
 interface DashboardHeaderProps {
-  userEmail?: string | null;
   onLogout: () => void;
 }
 
-export function DashboardHeader({ userEmail, onLogout }: DashboardHeaderProps) {
+export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
   return (
     <AdminSurface
       tone="dark"
@@ -40,11 +39,6 @@ export function DashboardHeader({ userEmail, onLogout }: DashboardHeaderProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          {userEmail && (
-            <AdminPill tone="slate" className="max-w-full truncate text-xs">
-              {userEmail}
-            </AdminPill>
-          )}
           <AdminActionButton
             onClick={onLogout}
             tone="ghost"

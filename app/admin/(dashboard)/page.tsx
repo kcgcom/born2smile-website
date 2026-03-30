@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
-import type { AuthSession } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { AdminTabs, TABS, type TabId } from "./components/AdminTabs";
@@ -65,7 +63,6 @@ const TAB_PREFETCH_ENDPOINTS: Partial<Record<TabId, string>> = {
 // -------------------------------------------------------------
 
 export default function AdminDashboardPage() {
-  const [user, setUser] = useState<{ email?: string } | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -97,15 +94,6 @@ export default function AdminDashboardPage() {
     return new Set(visitedTabs).add(activeTab);
   }, [activeTab, visitedTabs]);
 
-  useEffect(() => {
-    // 이메일 표시용 단순 조회 — AuthGuard가 세션 변경/리다이렉트를 처리하므로 구독 불필요
-    void getSupabaseBrowserClient().auth.getSession().then(
-      ({ data: { session } }: { data: { session: AuthSession | null } }) => {
-        if (session?.user) setUser({ email: session.user.email ?? undefined });
-      },
-    );
-  }, []);
-
   const handleLogout = async () => {
     await signOutAdmin();
     router.replace("/");
@@ -131,7 +119,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
-      <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
+      <DashboardHeader onLogout={handleLogout} />
 
       {/* 콘텐츠 */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
