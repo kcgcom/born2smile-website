@@ -55,7 +55,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
             관리자 계정이 아닙니다.
           </p>
           <p className="mb-6 text-sm leading-6 text-slate-500">
-            현재 로그인 계정: {user.email}
+            현재 로그인 계정: {user?.email}
           </p>
           <AdminActionButton
             onClick={() => {
