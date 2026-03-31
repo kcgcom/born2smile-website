@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   Star,
@@ -70,56 +69,40 @@ export default function Home() {
       />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        <div className="relative flex min-h-[100dvh] items-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white">
-          <div className="mx-auto w-full max-w-6xl px-4 py-20">
-            <div className="flex flex-col items-center gap-10 md:flex-row md:items-center md:gap-12">
-              {/* 텍스트 */}
-              <div className="flex-1 text-center md:text-left">
-                <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
-                  우리가족 평생주치의
-                </p>
-                <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
-                  꼭! 필요한 치료만
-                  <br />
-                  오래오래 편안하게
-                </h1>
-                <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:mx-0 md:text-xl">
-                  서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
-                  <br className="hidden sm:inline" />
-                  자연치아를 지키는 치료, 서울본치과에서 시작하세요.
-                </p>
-                <FadeIn delay={0.3}>
-                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row md:justify-start">
-                    <Link
-                      href="/contact"
-                      className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-                    >
-                      상담 안내
-                      <ArrowRight size={18} />
-                    </Link>
-                    <a
-                      href={CLINIC.phoneHref}
-                      className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
-                      aria-label={`전화 상담 ${CLINIC.phone}`}
-                    >
-                      <Phone size={18} aria-hidden="true" />
-                      {CLINIC.phone}
-                    </a>
-                  </div>
-                </FadeIn>
+        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white">
+          <div className="mx-auto max-w-4xl px-4 text-center">
+            <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
+              우리가족 평생주치의
+            </p>
+            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+              꼭! 필요한 치료만
+              <br />
+              오래오래 편안하게
+            </h1>
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
+              서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
+              <br className="hidden sm:inline" />
+              자연치아를 지키는 치료, 서울본치과에서 시작하세요.
+            </p>
+            <FadeIn delay={0.3}>
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                >
+                  상담 안내
+                  <ArrowRight size={18} />
+                </Link>
+                <a
+                  href={CLINIC.phoneHref}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+                  aria-label={`전화 상담 ${CLINIC.phone}`}
+                >
+                  <Phone size={18} aria-hidden="true" />
+                  {CLINIC.phone}
+                </a>
               </div>
-              {/* 외관 이미지 */}
-              <div className="w-full max-w-sm shrink-0 md:max-w-none md:w-[45%]">
-                <Image
-                  src="/images/facility/exterior.jpg"
-                  alt={`${CLINIC.name} 외관`}
-                  width={600}
-                  height={450}
-                  className="w-full rounded-2xl object-cover shadow-lg"
-                  priority
-                />
-              </div>
-            </div>
+            </FadeIn>
           </div>
 
           {/* 스크롤 인디케이터 */}
