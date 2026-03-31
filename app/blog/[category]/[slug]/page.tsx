@@ -204,8 +204,7 @@ export default async function BlogPostPage({
     : null;
   const headings = getHeadingList(post);
   const hasManualRelatedLinks =
-    !!(post.blocks?.some((block) => block.type === "relatedLinks") ||
-      post.content?.some((block) => block.type === "relatedLinks"));
+    !!post.blocks?.some((block) => block.type === "relatedLinks");
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
