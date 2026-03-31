@@ -17,18 +17,18 @@ export function CTABanner({ heading, description }: CTABannerProps) {
           <h2 className="font-headline mb-4 text-3xl font-bold md:text-4xl">
             {heading}
           </h2>
-          <p className="mb-8 text-blue-50">{description}</p>
+          <p className="mb-8 text-white/80">{description}</p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-white/90"
             >
               상담 문의
               <ArrowRight size={18} />
             </Link>
             <a
               href={CLINIC.phoneHref}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-blue-50"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-white/90"
             >
               <Phone size={18} />
               전화 상담 {CLINIC.phone}

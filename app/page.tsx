@@ -6,6 +6,7 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronDown,
+  Phone,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
 import { TREATMENT_DETAILS } from "@/lib/treatments";
@@ -68,7 +69,7 @@ export default function Home() {
       />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
               우리가족 평생주치의
@@ -80,17 +81,27 @@ export default function Home() {
             </h1>
             <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
               서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
-              <br />
+              <br className="hidden sm:inline" />
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
             <FadeIn delay={0.3}>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-              >
-                상담 안내
-                <ArrowRight size={18} />
-              </Link>
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                >
+                  상담 안내
+                  <ArrowRight size={18} />
+                </Link>
+                <a
+                  href={CLINIC.phoneHref}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+                  aria-label={`전화 상담 ${CLINIC.phone}`}
+                >
+                  <Phone size={18} aria-hidden="true" />
+                  {CLINIC.phone}
+                </a>
+              </div>
             </FadeIn>
           </div>
 
