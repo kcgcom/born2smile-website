@@ -85,20 +85,20 @@ export default function Home() {
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
             <FadeIn delay={0.3}>
-              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="flex items-center justify-center gap-2 sm:gap-3">
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] sm:px-8 sm:py-4 sm:text-base"
                 >
                   상담 안내
-                  <ArrowRight size={18} />
+                  <ArrowRight size={16} />
                 </Link>
                 <a
                   href={CLINIC.phoneHref}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-5 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5 sm:px-8 sm:py-4 sm:text-base"
                   aria-label={`전화 상담 ${CLINIC.phone}`}
                 >
-                  <Phone size={18} aria-hidden="true" />
+                  <Phone size={16} aria-hidden="true" />
                   {CLINIC.phone}
                 </a>
               </div>
