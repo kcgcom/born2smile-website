@@ -177,63 +177,54 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
         ref={toolbarRef}
       >
         <div className="px-4 py-2">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div className="mx-auto flex max-w-7xl items-center gap-2">
+            {/* 좌측: pills + 제목 */}
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <AdminPill tone="amber" className="shrink-0 gap-1.5 tracking-[0.02em]">
                 <Pencil size={11} aria-hidden="true" />
-                관리자 전용
+                <span className="hidden sm:inline">관리자 전용</span>
+                <span className="sm:hidden">관리자</span>
               </AdminPill>
               {post.published === false && (
                 <AdminPill tone="sky" className="shrink-0">초안</AdminPill>
               )}
-              <p className="truncate text-sm font-medium text-slate-100">
+              <p className="hidden truncate text-sm font-medium text-slate-100 md:block">
                 블로그 편집 도구
               </p>
-            </div>
-            <div className="mt-1 flex items-center gap-2 md:hidden">
-              <AdminPill tone={toolbarStatus.tone} className="shrink-0">
+              {/* 상태 배지 (md 이상) */}
+              <span
+                className={`hidden shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold lg:inline-flex ${
+                  toolbarStatus.tone === "amber"
+                    ? "border-amber-300/25 bg-amber-400/10 text-amber-100"
+                    : toolbarStatus.tone === "sky"
+                      ? "border-sky-300/25 bg-sky-400/10 text-sky-100"
+                      : "border-white/10 bg-white/6 text-slate-200"
+                }`}
+              >
                 {toolbarStatus.label}
-              </AdminPill>
-              <span className="truncate text-[11px] text-slate-300">
-                제목, 요약, 카테고리를 빠르게 수정할 수 있습니다.
               </span>
             </div>
-            <p className="mt-1 hidden text-xs text-slate-300 md:block">
-              현재 페이지의 제목, 요약, 카테고리 정보를 바로 수정할 수 있습니다.
-            </p>
+            {/* 우측: 버튼 */}
+            <div className="flex shrink-0 items-center gap-2">
+              <AdminActionLink
+                href={`/admin?tab=blog&edit=${slug}`}
+                tone="ghost"
+                className="rounded-full border-white/12 bg-white/6 text-slate-100"
+              >
+                <LayoutDashboard size={14} aria-hidden="true" />
+                <span className="hidden sm:inline">대시보드</span>
+              </AdminActionLink>
+              <AdminActionButton
+                type="button"
+                onClick={isEditMode ? handleExit : enter}
+                tone={isEditMode ? "ghost" : "primary"}
+                className={isEditMode ? "rounded-full bg-white/10 px-4 text-white hover:bg-white/15" : "rounded-full px-4"}
+              >
+                {isEditMode ? <X size={14} /> : <Pencil size={14} />}
+                {isEditMode ? "편집 종료" : "편집 모드"}
+              </AdminActionButton>
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-2 md:justify-end">
-            <span
-              className={`hidden shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold lg:inline-flex ${
-                toolbarStatus.tone === "amber"
-                  ? "border-amber-300/25 bg-amber-400/10 text-amber-100"
-                  : toolbarStatus.tone === "sky"
-                    ? "border-sky-300/25 bg-sky-400/10 text-sky-100"
-                    : "border-white/10 bg-white/6 text-slate-200"
-              }`}
-            >
-              {toolbarStatus.label}
-            </span>
-            <AdminActionLink
-              href={`/admin?tab=blog&edit=${slug}`}
-              tone="ghost"
-              className="rounded-full border-white/12 bg-white/6 text-slate-100"
-            >
-              <LayoutDashboard size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">대시보드</span>
-            </AdminActionLink>
-            <AdminActionButton
-              type="button"
-              onClick={isEditMode ? handleExit : enter}
-              tone={isEditMode ? "ghost" : "primary"}
-              className={isEditMode ? "rounded-full bg-white/10 px-4 text-white hover:bg-white/15" : "rounded-full px-4"}
-            >
-              {isEditMode ? <X size={14} /> : <Pencil size={14} />}
-              {isEditMode ? "편집 종료" : "편집 모드"}
-            </AdminActionButton>
-          </div>
-        </div>
         </div>
         {post.published === false && (
           <div className="flex items-center gap-2 border-t border-amber-400/20 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200">
@@ -254,7 +245,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
       </AdminSurface>
       <div
         aria-hidden="true"
-        className="h-[119px] md:h-[65px]"
+        className="h-[52px]"
         style={toolbarHeight ? { height: `${toolbarHeight}px` } : undefined}
       />
 

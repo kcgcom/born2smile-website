@@ -71,37 +71,36 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
       <div className="fixed right-0 bottom-16 left-0 z-50 px-3 py-3 md:px-4 md:bottom-4">
         <AdminSurface
           tone="dark"
-          className="mx-auto flex max-w-5xl items-center gap-3 rounded-[1.35rem] border-amber-300/25 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.92))] px-4 py-2.5 md:py-3"
+          className="mx-auto flex max-w-5xl flex-col items-stretch gap-3 rounded-[1.35rem] border-amber-300/25 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.92))] px-4 py-3"
         >
-          {/* 좌측: 아이콘 + 텍스트 (md 이상에서만) */}
-          <div className="hidden min-w-0 flex-1 md:block">
-            <div className="flex items-center gap-2">
-              <AdminPill tone="amber" className="gap-2 text-xs">
-                <FileEdit size={14} className="text-amber-200" aria-hidden="true" />
-                초안 관리
-              </AdminPill>
-              <AdminPill tone="slate">비공개 상태</AdminPill>
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <AdminPill tone="amber" className="gap-2 text-xs">
+                  <FileEdit size={14} className="text-amber-200" aria-hidden="true" />
+                  초안 관리
+                </AdminPill>
+                <AdminPill tone="slate" className="hidden sm:inline-flex">
+                  비공개 상태
+                </AdminPill>
+              </div>
+              <p className="mt-2 text-sm font-medium text-slate-100">
+                이 포스트는 아직 공개되지 않았습니다.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                수정 후 발행 버튼으로 즉시 공개하거나 예약 발행을 설정할 수 있습니다.
+              </p>
             </div>
-            <p className="mt-1.5 text-sm font-medium text-slate-100">
-              이 포스트는 아직 공개되지 않았습니다.
-            </p>
-            <p className="mt-0.5 text-xs leading-relaxed text-slate-300">
-              수정 후 발행 버튼으로 즉시 공개하거나 예약 발행을 설정할 수 있습니다.
-            </p>
+            <AdminPill tone="slate" className="shrink-0 sm:hidden">
+              비공개
+            </AdminPill>
           </div>
 
-          {/* 모바일: 아이콘 pill만 표시 */}
-          <AdminPill tone="amber" className="gap-1.5 text-xs md:hidden">
-            <FileEdit size={13} className="text-amber-200" aria-hidden="true" />
-            초안
-          </AdminPill>
-
-          {/* 버튼 (항상 표시) */}
-          <div className="flex shrink-0 gap-2">
+          <div className="grid shrink-0 grid-cols-2 gap-2">
             <AdminActionLink
               href={`/admin?tab=blog&edit=${slug}`}
               tone="ghost"
-              className="min-h-9 px-3 text-sm md:min-h-11 md:px-4"
+              className="min-h-11"
             >
               <Pencil size={14} aria-hidden="true" />
               수정
@@ -109,7 +108,7 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
             <AdminActionButton
               onClick={() => popup.open(slug)}
               tone="primary"
-              className="min-h-9 px-3 text-sm md:min-h-11 md:px-4"
+              className="min-h-11"
             >
               <Calendar size={14} aria-hidden="true" />
               발행
