@@ -166,6 +166,10 @@ export function getTreatmentJsonLd(treatmentId: string) {
       name: CLINIC.name,
       telephone: CLINIC.phoneIntl,
     },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", ".treatment-description", ".treatment-advantages", "h2"],
+    },
   };
 }
 
@@ -235,6 +239,10 @@ export function getBlogPostJsonLd(post: BlogPost) {
       name: doctor.name,
       jobTitle: doctor.position,
       url: `${BASE_URL}/about`,
+      sameAs: [
+        `${BASE_URL}/about`,
+        LINKS.naverPlace,
+      ].filter(Boolean),
     },
     speakable: {
       "@type": "SpeakableSpecification",

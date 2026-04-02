@@ -319,6 +319,9 @@ export default async function BlogPostPage({
                 )
                 : renderLegacySections(post.content ?? [])}
             </div>
+            <p className="mt-10 border-t border-gray-100 pt-6 text-xs text-gray-400">
+              이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.
+            </p>
           </FadeIn>
         </section>
       </article>
@@ -416,6 +419,8 @@ export default async function BlogPostPage({
       <CTABanner
         heading={globalCta.heading}
         description={globalCta.description}
+        pageType="blog_post"
+        slug={slug}
       />
 
       <AdminDraftBar slug={slug} />
