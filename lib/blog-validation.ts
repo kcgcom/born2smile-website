@@ -46,6 +46,11 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     type: z.literal("relatedLinks"),
     items: z.array(relatedLinkSchema).min(1).max(6),
   }),
+  z.object({
+    type: z.literal("table"),
+    headers: z.array(z.string().min(1).max(60)).min(2).max(8),
+    rows: z.array(z.array(z.string().max(200)).min(2).max(8)).min(1).max(20),
+  }),
 ]);
 
 const blogPostBaseSchema = z.object({

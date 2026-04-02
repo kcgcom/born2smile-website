@@ -36,6 +36,11 @@ export type BlogBlock =
   | {
       type: "relatedLinks";
       items: BlogRelatedLinkItem[];
+    }
+  | {
+      type: "table";
+      headers: string[];
+      rows: string[][];
     };
 
 /** 목록 페이지용 메타데이터 (본문 미포함) */

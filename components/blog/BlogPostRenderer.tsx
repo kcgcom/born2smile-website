@@ -186,6 +186,33 @@ export function renderSingleBlock(
         </div>
       );
     }
+    case "table":
+      return (
+        <div className="overflow-x-auto rounded-2xl border border-gray-200">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-blue-50 text-gray-700">
+              <tr>
+                {block.headers.map((header, i) => (
+                  <th key={i} className="px-4 py-3 font-semibold whitespace-nowrap">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {block.rows.map((row, ri) => (
+                <tr key={ri} className="hover:bg-gray-50">
+                  {row.map((cell, ci) => (
+                    <td key={ci} className={`px-4 py-3 text-gray-700 leading-relaxed ${ci === 0 ? "font-medium text-gray-900 whitespace-nowrap" : ""}`}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     default:
       return null;
   }
