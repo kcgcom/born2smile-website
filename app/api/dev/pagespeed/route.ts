@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import {
   verifyAdminRequest,
   unauthorizedResponse,
@@ -385,7 +386,8 @@ export async function GET(request: Request) {
         },
       },
     );
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     const hasKey = !!getApiKey();
     const message = hasKey
       ? "PageSpeed API 호출에 실패했습니다. 잠시 후 다시 시도해주세요."

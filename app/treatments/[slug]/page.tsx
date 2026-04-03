@@ -387,6 +387,8 @@ export default async function TreatmentDetailPage({
       <CTABanner
         heading={`${detail.name} 상담이 필요하신가요?`}
         description={`${CLINIC.name}에서 정확한 진단과 맞춤 치료를 받으세요.`}
+        pageType="treatment"
+        slug={slug}
       />
 
       <div className="h-16 md:hidden" />

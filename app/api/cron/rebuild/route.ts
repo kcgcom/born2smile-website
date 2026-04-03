@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { submitIndexNowUrls } from "@/lib/indexnow";
 import { BASE_URL } from "@/lib/constants";
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
 
     await submitIndexNowUrls(urls);
   } catch (error) {
+    Sentry.captureException(error);
     console.error("[indexnow] cron submit failed:", error);
   }
 

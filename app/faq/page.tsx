@@ -128,6 +128,7 @@ export default function FaqPage() {
       <CTABanner
         heading="더 궁금한 점이 있으신가요?"
         description={`${CLINIC.name}에서 1:1 맞춤 상담을 받으세요.`}
+        pageType="faq"
       />
 
       <div className="h-16 md:hidden" />

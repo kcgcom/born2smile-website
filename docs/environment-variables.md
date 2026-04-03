@@ -14,7 +14,7 @@
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`) | 필수 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Google 서비스 계정 JSON key (GA4/Search Console API 인증) | GA4/SC 탭 필수 |
 | `GA4_PROPERTY_ID` | Google Analytics 4 속성 ID (숫자만, 예: `525397980`) | 트래픽 탭 필수 |
-| `SEARCH_CONSOLE_SITE_URL` | Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`) | 검색/SEO 탭 필수 |
+| `SEARCH_CONSOLE_SITE_URL` | Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, `https://www.born2smile.co.kr/`) | 검색/SEO 탭 필수 |
 | `NAVER_DATALAB_CLIENT_ID` | 네이버 DataLab API Client ID (미설정 시 섹션 숨김) | 선택 |
 | `NAVER_DATALAB_CLIENT_SECRET` | 네이버 DataLab API Client Secret | DATALAB 사용 시 필수 |
 | `NAVER_SEARCHAD_API_KEY` | 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백) | 선택 |

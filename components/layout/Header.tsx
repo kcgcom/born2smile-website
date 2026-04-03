@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
@@ -132,26 +133,30 @@ export function Header() {
                 </Link>
               );
             })}
-            <a
+            <TrackedAnchor
               href={CLINIC.phoneHref}
+              event="header_phone_click"
+              properties={{ cta_location: "header_desktop", page_type: "global" }}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] md:text-base"
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
               <Phone size={16} aria-hidden="true" />
               {CLINIC.phone}
-            </a>
+            </TrackedAnchor>
           </nav>
 
           {/* 모바일: 전화번호 + 햄버거 버튼 */}
           <div className="flex items-center gap-2 md:hidden">
-            <a
+            <TrackedAnchor
               href={CLINIC.phoneHref}
+              event="header_phone_click"
+              properties={{ cta_location: "header_mobile", page_type: "global" }}
               className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white"
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
               <Phone size={14} aria-hidden="true" />
               {CLINIC.phone}
-            </a>
+            </TrackedAnchor>
             <button
               className="flex h-11 w-11 items-center justify-center rounded-lg"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -198,14 +203,16 @@ export function Header() {
                   </Link>
                 );
               })}
-              <a
+              <TrackedAnchor
                 href={CLINIC.phoneHref}
+                event="header_phone_click"
+                properties={{ cta_location: "mobile_menu_phone", page_type: "global" }}
                 className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
                 aria-label={`전화 상담 ${CLINIC.phone}`}
               >
                 <Phone size={18} aria-hidden="true" />
                 전화 상담 {CLINIC.phone}
-              </a>
+              </TrackedAnchor>
             </nav>
           </div>
         )}

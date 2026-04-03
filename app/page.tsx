@@ -13,6 +13,8 @@ import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getFaqJsonLd, getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { FaqAccordion } from "@/components/ui/FaqAccordion";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CTABanner } from "@/components/ui/CTABanner";
 
 // 홈페이지에 노출할 자주 묻는 질문 (각 진료 분야에서 선별)
@@ -86,21 +88,25 @@ export default function Home() {
             </p>
             <FadeIn delay={0.3}>
               <div className="flex items-center justify-center gap-2 sm:gap-3">
-                <Link
+                <TrackedLink
                   href="/contact"
+                  event="hero_contact_click"
+                  properties={{ cta_location: "hero", page_type: "home" }}
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] sm:px-8 sm:py-4 sm:text-base"
                 >
                   상담 안내
                   <ArrowRight size={16} />
-                </Link>
-                <a
+                </TrackedLink>
+                <TrackedAnchor
                   href={CLINIC.phoneHref}
+                  event="hero_phone_click"
+                  properties={{ cta_location: "hero", page_type: "home" }}
                   className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-5 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5 sm:px-8 sm:py-4 sm:text-base"
                   aria-label={`전화 상담 ${CLINIC.phone}`}
                 >
                   <Phone size={16} aria-hidden="true" />
                   {CLINIC.phone}
-                </a>
+                </TrackedAnchor>
               </div>
             </FadeIn>
           </div>
@@ -427,6 +433,7 @@ export default function Home() {
       <CTABanner
         heading="지금 바로 상담하세요"
         description={`건강한 미소를 위한 첫걸음, ${CLINIC.name}가 함께합니다.`}
+        pageType="home"
       />
 
       {/* 모바일 하단 바 공간 확보 */}

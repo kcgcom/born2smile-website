@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
@@ -46,6 +48,32 @@ export function FloatingCTA() {
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const isContact = item.href === "/contact";
             const Icon = NAV_ICONS[item.href] ?? Home;
+            const className = `flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
+              isActive
+                ? "font-medium text-[var(--color-primary)]"
+                : isContact
+                  ? "font-medium text-[var(--color-gold-dark)]"
+                  : "text-gray-600 hover:text-[var(--color-primary)]"
+            }`;
+
+            if (isContact) {
+              return (
+                <TrackedLink
+                  key={item.href}
+                  href={item.href}
+                  event="floating_contact_nav_click"
+                  properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
+                  aria-label={item.shortLabel}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => handleNavClick(item.href)}
+                  className={className}
+                >
+                  <Icon size={22} aria-hidden="true" />
+                  {item.shortLabel}
+                </TrackedLink>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -53,13 +81,7 @@ export function FloatingCTA() {
                 aria-label={item.shortLabel}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => handleNavClick(item.href)}
-                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
-                  isActive
-                    ? "font-medium text-[var(--color-primary)]"
-                    : isContact
-                      ? "font-medium text-[var(--color-gold-dark)]"
-                      : "text-gray-600 hover:text-[var(--color-primary)]"
-                }`}
+                className={className}
               >
                 <Icon size={22} aria-hidden="true" />
                 {item.shortLabel}
@@ -112,13 +134,15 @@ function DesktopPhoneButton() {
           <span className={style.text}>{info.message}</span>
         </div>
       )}
-      <a
+      <TrackedAnchor
         href={CLINIC.phoneHref}
+        event="floating_phone_click"
+        properties={{ cta_location: "floating_desktop_phone", page_type: "global" }}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg ring-2 ring-blue-200/60 transition-transform hover:scale-110 hover:bg-[var(--color-primary-dark)]"
         aria-label={`전화 상담${info ? ` — ${info.message}` : ""}`}
       >
         <Phone size={24} aria-hidden="true" />
-      </a>
+      </TrackedAnchor>
     </div>
   );
 }

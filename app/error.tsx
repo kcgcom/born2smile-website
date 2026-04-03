@@ -1,13 +1,20 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
 import { CLINIC } from "@/lib/constants";
 
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <h1 className="font-headline text-4xl font-bold text-gray-900">

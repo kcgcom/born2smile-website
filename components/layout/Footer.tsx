@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 
 export async function Footer() {
@@ -16,14 +17,16 @@ export async function Footer() {
         {/* 병원명 + 전화번호 */}
         <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <span className="text-xl font-bold text-white">{clinic.name}</span>
-          <a
+          <TrackedAnchor
             href={clinic.phoneHref}
+            event="footer_phone_click"
+            properties={{ cta_location: "footer_phone", page_type: "global" }}
             className="inline-flex items-center gap-2 text-lg font-medium text-[var(--color-gold-light)] transition-colors hover:text-[var(--color-gold)]"
             aria-label={`전화 상담 ${clinic.phone}`}
           >
             <Phone size={18} aria-hidden="true" />
             {clinic.phone}
-          </a>
+          </TrackedAnchor>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
@@ -36,15 +39,17 @@ export async function Footer() {
             <ul className="space-y-2 text-lg md:text-base">
               <li>
                 {links.naverMap ? (
-                  <a
+                  <TrackedAnchor
                     href={links.naverMap}
+                    event="footer_naver_map_click"
+                    properties={{ cta_location: "footer_address", page_type: "global" }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white hover:underline"
                   >
                     {clinic.address}
                     <span className="sr-only"> (새 창)</span>
-                  </a>
+                  </TrackedAnchor>
                 ) : (
                   <span>{clinic.address}</span>
                 )}
@@ -53,8 +58,10 @@ export async function Footer() {
               <li className="text-gray-400 text-base md:text-sm">커피빈(김포장기DT점) 맞은편</li>
               {links.naverMap && (
                 <li className="pt-1">
-                  <a
+                  <TrackedAnchor
                     href={links.naverMap}
+                    event="footer_naver_map_click"
+                    properties={{ cta_location: "footer_naver_map", page_type: "global" }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
@@ -63,13 +70,15 @@ export async function Footer() {
                     네이버 지도에서 보기
                     <span className="sr-only"> (새 창)</span>
                     <ExternalLink size={12} className="shrink-0" />
-                  </a>
+                  </TrackedAnchor>
                 </li>
               )}
               {links.kakaoMap && (
                 <li>
-                  <a
+                  <TrackedAnchor
                     href={links.kakaoMap}
+                    event="footer_kakao_map_click"
+                    properties={{ cta_location: "footer_kakao_map", page_type: "global" }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-[var(--color-gold-light)] hover:underline"
@@ -78,7 +87,7 @@ export async function Footer() {
                     카카오맵에서 보기
                     <span className="sr-only"> (새 창)</span>
                     <ExternalLink size={12} className="shrink-0" />
-                  </a>
+                  </TrackedAnchor>
                 </li>
               )}
             </ul>
@@ -124,8 +133,10 @@ export async function Footer() {
               </p>
               <div className="space-y-3">
                 {GOOGLE_REVIEW.writeReviewUrl && (
-                  <a
+                  <TrackedAnchor
                     href={GOOGLE_REVIEW.writeReviewUrl}
+                    event="footer_google_review_click"
+                    properties={{ cta_location: "footer_google_review", page_type: "global" }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-xl bg-gray-800 p-4 transition-colors hover:bg-gray-700"
@@ -138,11 +149,13 @@ export async function Footer() {
                       <div className="text-lg md:text-base font-medium text-white">Google 리뷰 남기기 <span className="sr-only">(새 창)</span></div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
-                  </a>
+                  </TrackedAnchor>
                 )}
                 {NAVER_REVIEW.writeReviewUrl && (
-                  <a
+                  <TrackedAnchor
                     href={NAVER_REVIEW.writeReviewUrl}
+                    event="footer_naver_review_click"
+                    properties={{ cta_location: "footer_naver_review", page_type: "global" }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-xl bg-gray-800 p-4 transition-colors hover:bg-gray-700"
@@ -155,7 +168,7 @@ export async function Footer() {
                       <div className="text-lg md:text-base font-medium text-white">Naver 리뷰 남기기 <span className="sr-only">(새 창)</span></div>
                     </div>
                     <ExternalLink size={14} className="shrink-0 text-gray-500" />
-                  </a>
+                  </TrackedAnchor>
                 )}
               </div>
             </div>
@@ -166,15 +179,17 @@ export async function Footer() {
         {(links.kakaoChannel || links.instagram || links.naverBlog) && (
           <div className="mt-8 flex items-center justify-center gap-4">
             {links.kakaoChannel && (
-              <a
+              <TrackedAnchor
                 href={links.kakaoChannel}
+                event="footer_kakao_channel_click"
+                properties={{ cta_location: "footer_kakao_channel", page_type: "global" }}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="카카오톡 채널 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#FEE500] hover:text-gray-900"
               >
                 <MessageCircle size={18} />
-              </a>
+              </TrackedAnchor>
             )}
             {links.instagram && (
               <a
@@ -199,15 +214,17 @@ export async function Footer() {
               </a>
             )}
             {links.naverMap && (
-              <a
+              <TrackedAnchor
                 href={links.naverMap}
+                event="footer_naver_map_click"
+                properties={{ cta_location: "footer_naver_map_icon", page_type: "global" }}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="네이버 지도 (새 창)"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-colors hover:bg-[#03C75A] hover:text-white"
               >
                 <MapPin size={18} />
-              </a>
+              </TrackedAnchor>
             )}
           </div>
         )}

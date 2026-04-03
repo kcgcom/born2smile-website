@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
   getPostBySlug,
@@ -32,7 +33,8 @@ export async function GET(
       );
     }
     return Response.json({ data: post }, { headers: HEADERS });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "블로그 포스트를 불러올 수 없습니다" },
       { status: 500, headers: HEADERS },
@@ -115,7 +117,8 @@ export async function PUT(
     }
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "블로그 포스트를 수정할 수 없습니다" },
       { status: 500, headers: HEADERS },
@@ -148,7 +151,8 @@ export async function DELETE(
     revalidateTag("blog-posts-admin", "max");
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "블로그 포스트를 삭제할 수 없습니다" },
       { status: 500, headers: HEADERS },

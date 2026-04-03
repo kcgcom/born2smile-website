@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
   getSiteLinks,
@@ -51,6 +52,7 @@ export async function GET(
 
     return Response.json({ data: config }, { headers: CACHE_HEADERS });
   } catch (e) {
+    Sentry.captureException(e);
     const message = e instanceof Error ? e.message : "사이트 설정을 불러올 수 없습니다";
     return Response.json(
       { error: "API_ERROR", message },
@@ -117,6 +119,7 @@ export async function PUT(
         { status: 400, headers: CACHE_HEADERS },
       );
     }
+    Sentry.captureException(e);
     const message = e instanceof Error ? e.message : "사이트 설정을 업데이트할 수 없습니다";
     return Response.json(
       { error: "API_ERROR", message },

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { fetchSearchConsoleData } from "@/lib/admin-search-console";
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
     const data = await getData();
     return Response.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
+    Sentry.captureException(e);
     const message = e instanceof Error ? e.message : "Search Console 데이터를 불러올 수 없습니다";
     return Response.json(
       { error: "API_ERROR", message },

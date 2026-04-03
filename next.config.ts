@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -7,10 +8,10 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
-  "connect-src 'self' https://*.supabase.co https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com",
+  "connect-src 'self' https://*.supabase.co https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com https://*.i.posthog.com",
   "font-src 'self'",
   "frame-src 'self' https://accounts.google.com",
   "frame-ancestors 'none'",
@@ -47,4 +48,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default withSentryConfig(
+  withBundleAnalyzer(nextConfig),
+  {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    silent: !process.env.CI,
+    sourcemaps: {
+      disable: !process.env.SENTRY_AUTH_TOKEN,
+    },
+    webpack: {
+      treeshake: {
+        removeDebugLogging: true,
+      },
+      automaticVercelMonitors: Boolean(process.env.SENTRY_AUTH_TOKEN),
+    },
+  },
+);

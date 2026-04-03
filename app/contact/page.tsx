@@ -1,5 +1,6 @@
 import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
+import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 
@@ -42,8 +43,10 @@ export default async function ContactPage() {
                 궁금하신 점이 있으시면 언제든 연락주세요.
               </p>
 
-              <a
+              <TrackedAnchor
                 href={clinic.phoneHref}
+                event="contact_phone_click"
+                properties={{ cta_location: "contact_main", page_type: "contact" }}
                 aria-label={`대표전화 ${clinic.phone}`}
                 className="flex items-center gap-4 rounded-2xl bg-[var(--color-primary)] p-6 text-white transition-colors hover:bg-[var(--color-primary-dark)]"
               >
@@ -54,11 +57,13 @@ export default async function ContactPage() {
                   <div className="text-sm text-blue-50">대표전화</div>
                   <div className="text-2xl font-bold">{clinic.phone}</div>
                 </div>
-              </a>
+              </TrackedAnchor>
 
               {links.kakaoChannel ? (
-                <a
+                <TrackedAnchor
                   href={links.kakaoChannel}
+                  event="contact_kakao_click"
+                  properties={{ cta_location: "contact_kakao", page_type: "contact" }}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="카카오톡 채널로 상담하기 (새 창)"
@@ -75,7 +80,7 @@ export default async function ContactPage() {
                     <div className="text-sm text-gray-700">카카오톡 상담</div>
                     <div className="text-sm font-bold">채널 바로가기</div>
                   </div>
-                </a>
+                </TrackedAnchor>
               ) : (
                 <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
@@ -147,12 +152,14 @@ export default async function ContactPage() {
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
                 <p className="font-medium text-gray-900">{clinic.name}</p>
                 <p className="mt-1 text-sm text-gray-600">{clinic.address}</p>
-                <a
+                <TrackedAnchor
                   href={clinic.phoneHref}
+                  event="contact_phone_click"
+                  properties={{ cta_location: "contact_bottom", page_type: "contact" }}
                   className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
                 >
                   {clinic.phone}
-                </a>
+                </TrackedAnchor>
               </div>
             </FadeIn>
           </div>

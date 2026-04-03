@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest) {
     );
     const data = await getData();
     return Response.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "좋아요 데이터를 불러올 수 없습니다" },
       { status: 500 },
