@@ -5,7 +5,6 @@ import {
   Star,
   ExternalLink,
   ShieldCheck,
-  ChevronDown,
   Phone,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
@@ -16,6 +15,7 @@ import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CTABanner } from "@/components/ui/CTABanner";
+import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 
 // 홈페이지에 노출할 자주 묻는 질문 (각 진료 분야에서 선별)
 const HOMEPAGE_FAQ = [
@@ -105,20 +105,14 @@ export default function Home() {
                   aria-label={`전화 상담 ${CLINIC.phone}`}
                 >
                   <Phone size={16} aria-hidden="true" />
-                  {CLINIC.phone}
+                  <span className="sm:hidden">전화 상담</span>
+                  <span className="hidden sm:inline">{CLINIC.phone}</span>
                 </TrackedAnchor>
               </div>
             </FadeIn>
           </div>
 
-          {/* 스크롤 인디케이터 */}
-          <a
-            href="#greeting"
-            aria-label="아래로 스크롤"
-            className="scroll-indicator absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-400 transition-colors hover:text-[var(--color-primary)]"
-          >
-            <ChevronDown size={28} strokeWidth={1.5} />
-          </a>
+          <ScrollIndicator href="#greeting" />
         </div>
       </section>
 
