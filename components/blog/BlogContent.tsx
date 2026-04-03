@@ -21,6 +21,7 @@ const POSTS_PER_PAGE = 12;
 
 const USER_ID_KEY = "born2smile_uid";
 const LIKED_SLUGS_KEY = "born2smile_liked_slugs";
+const LIKE_COOLDOWN_MS = 1000;
 
 function getUserId(): string {
   if (typeof window === "undefined") return "";
@@ -46,14 +47,19 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
   const [localLiked, setLocalLiked] = useState<Set<string>>(new Set());
   const [likingSlug, setLikingSlug] = useState<string | null>(null);
+  const [coolingSlugs, setCoolingSlugs] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const likeCooldownTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   // setTimeout 정리
   useEffect(() => {
+    const likeCooldownTimers = likeCooldownTimersRef.current;
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      likeCooldownTimers.forEach((timer) => clearTimeout(timer));
+      likeCooldownTimers.clear();
     };
   }, []);
 
@@ -161,10 +167,29 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const handleLike = useCallback(async (e: React.MouseEvent, slug: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isSupabaseConfigured || likingSlug) return;
+    if (!isSupabaseConfigured || likingSlug || coolingSlugs.has(slug)) return;
 
     const uid = getUserId();
     const wasLiked = localLiked.has(slug);
+
+    const prevTimer = likeCooldownTimersRef.current.get(slug);
+    if (prevTimer) clearTimeout(prevTimer);
+    setCoolingSlugs((prev) => {
+      const next = new Set(prev);
+      next.add(slug);
+      return next;
+    });
+    likeCooldownTimersRef.current.set(
+      slug,
+      setTimeout(() => {
+        setCoolingSlugs((prev) => {
+          const next = new Set(prev);
+          next.delete(slug);
+          return next;
+        });
+        likeCooldownTimersRef.current.delete(slug);
+      }, LIKE_COOLDOWN_MS),
+    );
 
     setLocalLiked((prev) => {
       const next = new Set(prev);
@@ -194,7 +219,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     } finally {
       setLikingSlug(null);
     }
-  }, [localLiked, likingSlug]);
+  }, [localLiked, likingSlug, coolingSlugs]);
 
   const handleShare = useCallback(
     async (
@@ -305,6 +330,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visiblePosts.map((post) => {
               const categorySlug = post.category as BlogCategorySlug;
+              const isLikeDisabled = likingSlug === post.slug || coolingSlugs.has(post.slug);
               return (
               <div key={post.slug}>
                 <article className="group relative flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
@@ -364,12 +390,12 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                       {isSupabaseConfigured && (
                         <button
                           onClick={(e) => handleLike(e, post.slug)}
-                          disabled={likingSlug === post.slug}
+                          disabled={isLikeDisabled}
                           className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
                             localLiked.has(post.slug)
                               ? "text-rose-500 hover:bg-rose-50"
                               : "text-gray-400 hover:bg-gray-100 hover:text-rose-400"
-                          }`}
+                          } ${isLikeDisabled ? "opacity-50" : ""}`}
                           aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
                         >
                           <Heart size={14} className={localLiked.has(post.slug) ? "fill-rose-500" : ""} />

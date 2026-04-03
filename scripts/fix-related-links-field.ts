@@ -4,10 +4,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function loadEnvFile(p: string) {
   if (!fs.existsSync(p)) return;
   for (const line of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
@@ -28,6 +26,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface RelatedLinksBlock {
+  type?: string;
+  links?: unknown;
+  items?: unknown;
+  [key: string]: unknown;
+}
+
 async function run() {
   // relatedLinks 블록 있는 모든 발행 포스트 조회
   const { data: posts, error } = await supabase
@@ -41,16 +46,18 @@ async function run() {
   let skipped = 0;
 
   for (const post of posts) {
-    const content: any[] = Array.isArray(post.content) ? post.content : [];
-    const needsFix = content.some(b => b.type === "relatedLinks" && b.links && !b.items);
+    const content: RelatedLinksBlock[] = Array.isArray(post.content) ? post.content : [];
+    const needsFix = content.some(
+      (block) => block.type === "relatedLinks" && block.links && !block.items,
+    );
     if (!needsFix) { skipped++; continue; }
 
-    const newContent = content.map(b => {
-      if (b.type === "relatedLinks" && b.links && !b.items) {
-        const { links, ...rest } = b;
+    const newContent = content.map((block) => {
+      if (block.type === "relatedLinks" && block.links && !block.items) {
+        const { links, ...rest } = block;
         return { ...rest, items: links };
       }
-      return b;
+      return block;
     });
 
     const { error: updateError } = await supabase
@@ -69,4 +76,4 @@ async function run() {
   console.log(`\n완료: ✅ ${fixed}개 수정, ⏭️ ${skipped}개 이미 정상`);
 }
 
-run().catch(e => { console.error(e); process.exit(1); });
+run().catch((error) => { console.error(error); process.exit(1); });

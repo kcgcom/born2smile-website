@@ -5,10 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function loadEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) return;
