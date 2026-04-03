@@ -19,6 +19,8 @@ interface DataTableProps<T> {
   sortKey?: string;
   sortDirection?: "asc" | "desc";
   onSort?: (key: string) => void;
+  scrollClassName?: string;
+  stickyHeader?: boolean;
 }
 
 function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
@@ -35,6 +37,8 @@ export function DataTable<T extends Record<string, unknown>>({
   sortKey,
   sortDirection,
   onSort,
+  scrollClassName,
+  stickyHeader = false,
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return (
@@ -60,7 +64,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <AdminSurface tone="white" className="overflow-hidden rounded-2xl px-0 py-0">
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto ${scrollClassName ?? ""}`}>
         <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--border)] bg-[var(--background)]/80">
@@ -77,6 +81,8 @@ export function DataTable<T extends Record<string, unknown>>({
                 <th
                   key={col.key}
                   className={`px-3 py-2 font-medium text-[var(--muted)] ${alignClass} ${
+                    stickyHeader ? "sticky top-0 z-10 bg-[var(--background)]/95 backdrop-blur" : ""
+                  } ${
                     col.sortable && onSort
                       ? "cursor-pointer select-none hover:text-[var(--foreground)]"
                       : ""

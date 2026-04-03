@@ -134,6 +134,8 @@ function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
       return { type: "faq", question: "", answer: "" };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "", href: "", description: "" }] };
+    case "table":
+      return { type: "table", headers: ["", ""], rows: [["", ""]] };
     case "paragraph":
     default:
       return { type: "paragraph", text: "" };
@@ -146,6 +148,7 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
   list: "목록",
   faq: "FAQ",
   relatedLinks: "관련 링크",
+  table: "표",
 };
 
 function convertSectionsToBlocks(

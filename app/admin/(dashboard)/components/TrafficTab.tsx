@@ -16,6 +16,8 @@ import type { MetricValue } from "./insight/shared";
 // ---------------------------------------------------------------
 
 interface AnalyticsData {
+  propertyId: string;
+  analyticsUrl: string;
   dataAsOf: string;
   period: { start: string; end: string };
   comparePeriod: { start: string; end: string };
@@ -401,7 +403,10 @@ export function TrafficTab() {
 
   return (
     <div className="space-y-6">
-      <ApiSourceBadge sources={["ga4"]} />
+      <ApiSourceBadge
+        sources={["ga4"]}
+        urlOverrides={data?.analyticsUrl ? { ga4: data.analyticsUrl } : undefined}
+      />
 
       {/* Period selector */}
       <div className="flex flex-wrap items-center gap-3">

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { AuthSession } from "@supabase/supabase-js";
 import { ShieldCheck } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
-import { signInWithGoogle, signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
+import { signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 
 export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +19,17 @@ export default function AdminLoginPage() {
     let handled = false;
 
     async function handleAdminRedirect(email?: string, accessToken?: string) {
-      // PKCE 코드 교환 후 SIGNED_IN 이벤트와 init() 양쪽에서 동시에 호출되는 것을 방지
       if (handled) return;
       handled = true;
       const isAdmin = await verifyAdminUser(accessToken);
       if (cancelled) return;
+
       if (isAdmin) {
-        try { localStorage.setItem("born2smile-admin", "1"); } catch { /* private browsing */ }
-        // Full reload: Provider의 useEffect는 앱 시작 시 1회만 실행되므로
-        // SPA 네비게이션으로는 새 localStorage 플래그를 감지할 수 없음
+        try {
+          localStorage.setItem("born2smile-admin", "1");
+        } catch {
+          // ignore private browsing failures
+        }
         window.location.replace("/admin");
       } else {
         setError(`${email ?? "알 수 없는 계정"} 은(는) 관리자 계정이 아닙니다.`);
@@ -36,19 +38,19 @@ export default function AdminLoginPage() {
     }
 
     async function init() {
-      // 1) PKCE 코드 교환 — OAuth 콜백에서 ?code= 파라미터 처리
       const code = new URLSearchParams(window.location.search).get("code");
       if (code) {
         window.history.replaceState({}, "", window.location.pathname);
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error && data.session?.user) {
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (!exchangeError && data.session?.user) {
           await handleAdminRedirect(data.session.user.email ?? undefined, data.session.access_token);
           return;
         }
       }
 
-      // 2) 기존 세션 확인 — 이미 로그인이면 /admin으로
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
         return;
@@ -57,26 +59,35 @@ export default function AdminLoginPage() {
       if (!cancelled) setChecking(false);
     }
 
-    init();
+    void init();
 
-    // 세션 변경 감지 (백업)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event: string, session: AuthSession | null) => {
-        if (session?.user) {
-          await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
-        }
-      },
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
+      if (session?.user) {
+        await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
+      }
+    });
 
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async () => {
     setError(null);
     setLoading(true);
+
     try {
-      await signInWithGoogle();
-      // redirect 방식이므로 여기서 반환되지 않을 수 있음
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/admin/login`,
+          queryParams: { prompt: "select_account" },
+        },
+      });
     } catch {
       setError("로그인에 실패했습니다. 다시 시도해 주세요.");
       setLoading(false);
@@ -106,12 +117,10 @@ export default function AdminLoginPage() {
           <div className="flex justify-center">
             <AdminPill tone="white" className="text-[11px]">관리자 전용</AdminPill>
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[var(--foreground)]">
-            {CLINIC.name}
-          </h1>
-          <p className="mt-2 text-base font-medium text-slate-600">관리자 대시보드 로그인</p>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[var(--foreground)]">{CLINIC.name}</h1>
+          <p className="mt-2 text-base font-medium text-slate-600">운영 중심 관리자 콘솔 로그인</p>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            블로그 관리, 인사이트, 사이트 설정을 안전하게 관리합니다.
+            블로그 관리, 인사이트, 전환, 설정을 한 흐름으로 운영할 수 있습니다.
           </p>
         </div>
 
@@ -148,9 +157,9 @@ export default function AdminLoginPage() {
           {loading ? "로그인 중..." : "Google 계정으로 로그인"}
         </AdminActionButton>
 
-        <p className="mt-6 text-center text-sm leading-6 text-slate-500">
+        <div className="mt-4 text-center text-sm text-slate-500">
           등록된 관리자 계정만 접근 가능합니다
-        </p>
+        </div>
       </AdminSurface>
     </div>
   );

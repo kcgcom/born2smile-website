@@ -28,24 +28,30 @@ const API_SOURCES: Record<string, ApiSource> = {
     name: "PageSpeed Insights",
     url: "https://pagespeed.web.dev/",
   },
+  posthog: {
+    name: "PostHog",
+    url: "https://us.posthog.com/",
+  },
 };
 
 type ApiSourceKey = keyof typeof API_SOURCES;
 
 interface ApiSourceBadgeProps {
   sources: ApiSourceKey[];
+  urlOverrides?: Partial<Record<ApiSourceKey, string>>;
 }
 
-export function ApiSourceBadge({ sources }: ApiSourceBadgeProps) {
+export function ApiSourceBadge({ sources, urlOverrides }: ApiSourceBadgeProps) {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
       <span className="shrink-0 font-medium">데이터 소스:</span>
       {sources.map((key) => {
         const src = API_SOURCES[key];
+        const href = urlOverrides?.[key] ?? src.url;
         return (
           <a
             key={key}
-            href={src.url}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)] hover:border-[var(--color-primary-light)] hover:text-[var(--color-primary)] transition-colors"

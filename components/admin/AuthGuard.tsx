@@ -6,23 +6,20 @@ import { ShieldAlert } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
-interface AuthGuardProps {
+export function AuthGuard({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export function AuthGuard({ children }: AuthGuardProps) {
+}) {
   const { isAdmin, loading, user } = useAdminAuthState();
   const router = useRouter();
 
-  // 미인증 시 로그인으로 리다이렉트 — render 중 side effect 방지
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/admin/login");
     }
-  }, [loading, user, router]);
+  }, [loading, router, user]);
 
-  // isAdmin이 이미 확인된 경우(localStorage 플래그) 세션 로딩 완료를 기다리지 않음.
-  // admin API가 서버 측에서 토큰을 독립적으로 검증하므로 즉시 표시해도 무해.
   if (loading && !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)]">
@@ -51,12 +48,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
             <AdminPill tone="warning" className="text-[11px]">접근 제한</AdminPill>
           </div>
           <h1 className="mb-2 text-2xl font-bold text-[var(--foreground)]">접근 권한 없음</h1>
-          <p className="mb-2 text-base font-medium text-slate-600">
-            관리자 계정이 아닙니다.
-          </p>
-          <p className="mb-6 text-sm leading-6 text-slate-500">
-            현재 로그인 계정: {user?.email}
-          </p>
+          <p className="mb-2 text-base font-medium text-slate-600">관리자 계정이 아닙니다.</p>
+          <p className="mb-6 text-sm leading-6 text-slate-500">현재 로그인 계정: {user?.email}</p>
           <AdminActionButton
             onClick={() => {
               import("@/lib/admin-auth").then(({ signOutAdmin }) => signOutAdmin());

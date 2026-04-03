@@ -101,7 +101,7 @@ export function useAdminAuth(): boolean {
   return useContext(AdminAuthContext).isAdmin;
 }
 
-/** 전체 인증 상태가 필요한 컴포넌트용 (AuthGuard) */
+/** 전체 인증 상태가 필요한 컴포넌트용 */
 export function useAdminAuthState(): AdminAuthState {
   return useContext(AdminAuthContext);
 }

@@ -193,6 +193,8 @@ export async function fetchGA4Data(period: string) {
   });
 
   return {
+    propertyId: GA4_PROPERTY_ID,
+    analyticsUrl: `https://analytics.google.com/analytics/web/#/p${GA4_PROPERTY_ID}/reports/intelligenthome`,
     dataAsOf: end,
     period: { start, end },
     comparePeriod: { start: compareStart, end: compareEnd },

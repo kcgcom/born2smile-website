@@ -98,7 +98,7 @@ export function AdminDraftBar({ slug }: AdminDraftBarProps) {
 
           <div className="grid shrink-0 grid-cols-2 gap-2">
             <AdminActionLink
-              href={`/admin?tab=blog&edit=${slug}`}
+              href={`/admin?tab=content&sub=posts&edit=${slug}`}
               tone="ghost"
               className="min-h-11"
             >

@@ -1,42 +1,44 @@
 "use client";
 
-import { Code, Lightbulb, FileText, Settings } from "lucide-react";
+import { BarChart3, FileText, Gauge, LayoutDashboard, MousePointerClick, Settings } from "lucide-react";
 
-export const TABS = [
-  { id: "dev", label: "개발", icon: Code },
-  { id: "insight", label: "인사이트", icon: Lightbulb },
-  { id: "blog", label: "블로그", icon: FileText },
-  { id: "settings", label: "설정", icon: Settings },
+export const ADMIN_TABS = [
+  { id: "dashboard", label: "대시보드", icon: LayoutDashboard },
+  { id: "content", label: "콘텐츠", icon: FileText },
+  { id: "seo", label: "유입·SEO", icon: BarChart3 },
+  { id: "conversion", label: "전환", icon: MousePointerClick },
+  { id: "settings", label: "사이트 설정", icon: Settings },
+  { id: "devtools", label: "개발도구", icon: Gauge },
 ] as const;
 
-export type TabId = (typeof TABS)[number]["id"];
+export type AdminTabId = (typeof ADMIN_TABS)[number]["id"];
 
-interface AdminTabsProps {
-  activeTab: TabId;
-  onTabChange: (tab: TabId) => void;
-  onHover?: (tab: TabId) => void;
-}
-
-export function AdminTabs({ activeTab, onTabChange, onHover }: AdminTabsProps) {
+export function AdminTabs({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: AdminTabId;
+  onTabChange: (tab: AdminTabId) => void;
+}) {
   return (
     <nav
       className="flex flex-row gap-1 overflow-x-auto rounded-2xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      aria-label="대시보드 탭"
+      aria-label="관리자 콘솔 탭"
     >
-      {TABS.map((tab) => {
-        const isActive = tab.id === activeTab;
+      {ADMIN_TABS.map((tab) => {
         const Icon = tab.icon;
+        const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
+            type="button"
             onClick={() => onTabChange(tab.id)}
-            onMouseEnter={() => onHover?.(tab.id)}
+            aria-current={isActive ? "page" : undefined}
             className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm transition-all ${
               isActive
                 ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
-            aria-current={isActive ? "page" : undefined}
           >
             <Icon size={16} aria-hidden="true" />
             <span>{tab.label}</span>

@@ -21,7 +21,8 @@ export function proxy(request: NextRequest) {
       .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
 
     if (!hasAuthCookie) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 

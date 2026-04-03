@@ -37,6 +37,7 @@ const BLOCK_OPTIONS: { type: BlogBlock["type"]; label: string; desc: string }[] 
   { type: "list", label: "목록", desc: "불릿/번호" },
   { type: "faq", label: "FAQ", desc: "Q&A" },
   { type: "relatedLinks", label: "관련 링크", desc: "링크 모음" },
+  { type: "table", label: "표", desc: "비교/정리" },
 ];
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -629,6 +630,8 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
       return { type: "faq", question: "자주 묻는 질문을 입력하세요", answer: "답변을 입력하세요" };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "관련 링크", href: "/" }] };
+    case "table":
+      return { type: "table", headers: ["항목", "내용"], rows: [["예시", "내용을 입력하세요"]] };
   }
 }
 

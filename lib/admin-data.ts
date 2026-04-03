@@ -21,7 +21,7 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-03-30
+// 마지막 동기화: 2026-04-02
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // CRITICAL — 4/4 완료
@@ -29,7 +29,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "c1", title: "CSP + HTTP 보안 헤더", priority: "CRITICAL", status: "done", description: "CSP, X-Frame-Options, HSTS, nosniff, Referrer-Policy, Permissions-Policy" },
   { id: "c2", title: "JSON-LD 이미지 URL 수정", priority: "CRITICAL", status: "done", description: "/opengraph-image → /images/og-image.jpg 경로 수정" },
   { id: "c3", title: "React 안티패턴 수정", priority: "CRITICAL", status: "done", description: "Header setState 렌더 중 호출 → useEffect, Share 버튼 setTimeout 누수 → useRef cleanup" },
-  { id: "c4", title: "Supabase RLS 보안 규칙 설정", priority: "CRITICAL", status: "done", description: "blog-likes 컬렉션만 read/write 허용, 나머지 전체 차단" },
+  { id: "c4", title: "Supabase RLS 보안 규칙 설정", priority: "CRITICAL", status: "done", description: "blog_likes 테이블만 read/write 허용, 나머지 테이블 차단" },
 
   // =================================================================
   // HIGH — 17/18 완료
@@ -39,28 +39,28 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h3", title: "JSON-LD 구조화 데이터", priority: "HIGH", status: "done", description: "Dentist, BlogPosting, FAQ, Breadcrumb, AggregateRating, CollectionPage" },
   { id: "h4", title: "색상 대비 WCAG AA", priority: "HIGH", status: "done", description: "text-gray-400→500, text-size-adjust: 100%, 모든 텍스트/배경 4.5:1 이상" },
   { id: "h5", title: "Sitemap + robots.txt", priority: "HIGH", status: "done", description: "동적 sitemap (개별 lastModified), 블로그 포스트 포함, /admin disallow" },
-  { id: "h6", title: "블로그 시스템 구축", priority: "HIGH", status: "done", description: "78개 포스트, 카테고리/태그, 예약 발행, 무한 스크롤" },
+  { id: "h6", title: "블로그 시스템 구축", priority: "HIGH", status: "done", description: "포스트 발행, 카테고리/태그, 예약 발행, 무한 스크롤" },
   { id: "h7", title: "모바일 반응형 최적화", priority: "HIGH", status: "done", description: "모바일 퍼스트, 터치 타겟 44px, FloatingCTA 내비게이션" },
   { id: "h8", title: "Framer Motion / FAQ 최적화", priority: "HIGH", status: "done", description: "Header: CSS grid 애니메이션, FAQ: native details/summary 전환" },
-  { id: "h9", title: "Firebase SDK 지연 로딩", priority: "HIGH", status: "done", description: "LikeButton dynamic import, Auth lazy getter 패턴" },
+  { id: "h9", title: "Supabase SDK 지연 로딩", priority: "HIGH", status: "done", description: "LikeButton dynamic import, Auth lazy getter 패턴" },
   { id: "h10", title: "Supabase RLS 규칙 강화", priority: "HIGH", status: "done", description: "users.size() ≤ 10000, count == users.size() 불변식, slug 정규식" },
   { id: "h11", title: "블로그 카드 인터랙티브 수정", priority: "HIGH", status: "done", description: "Link/button 중첩 → z-index 분리, 키보드 내비 정상화" },
   { id: "h12", title: "aria-live 영역 추가", priority: "HIGH", status: "done", description: "블로그 필터 결과 aria-live='polite', 빈 결과 role='status'" },
   { id: "h13", title: "스크롤 이벤트 스로틀링", priority: "HIGH", status: "done", description: "Header scroll: requestAnimationFrame + passive: true" },
   { id: "h14", title: "별점/전화 버튼 접근성", priority: "HIGH", status: "done", description: "별점 aria-label, 전화 버튼 min-h-[44px] 터치 타겟" },
-  { id: "h15", title: "관리자 대시보드", priority: "HIGH", status: "done", description: "Firebase Auth Google 로그인, 이메일 화이트리스트, 개선 현황/블로그 통계" },
+  { id: "h15", title: "관리자 대시보드", priority: "HIGH", status: "done", description: "Supabase Auth Google 로그인, 이메일 화이트리스트, 개선 현황/블로그 통계" },
   { id: "h16", title: "페이지별 OG 이미지 차별화", priority: "HIGH", status: "done", description: "opengraph-image.tsx로 동적 OG 이미지 생성 — 진료 과목별(6종) + 블로그 카테고리별(7종) + 블로그 포스트별 제목 표시" },
   { id: "h17", title: "모바일 메뉴 포커스 트랩", priority: "HIGH", status: "done", description: "메뉴 오픈 시 Tab 키 이탈 방지 + Escape 키 닫기" },
   { id: "h18", title: "온라인 예약 시스템", priority: "HIGH", status: "owner-decision", description: "온라인 예약 폼 도입 여부 — 현재 전화 상담 안내" },
 
   // =================================================================
-  // MEDIUM — 24/28 완료
+  // MEDIUM — 25/28 완료
   // =================================================================
   { id: "m1", title: "블로그 좋아요 기능", priority: "MEDIUM", status: "done", description: "Supabase 기반, optimistic update, UUID 사용자 식별" },
   { id: "m2", title: "카카오맵 통합", priority: "MEDIUM", status: "done", description: "주소 기반 geocoding + 폴백 좌표, HTTPS 명시" },
   { id: "m3", title: "환자 후기 섹션", priority: "MEDIUM", status: "done", description: "네이버/구글 리뷰 6개 표시, JSON-LD Review 스키마" },
   { id: "m4", title: "블로그 공유 버튼 통합", priority: "MEDIUM", status: "done", description: "Web Share API + 클립보드 폴백, 코드 중복 제거" },
-  { id: "m5", title: "예약 발행 + IndexNow", priority: "MEDIUM", status: "done", description: "GitHub Actions 매일 재빌드 + 새 포스트 자동 검색엔진 알림" },
+  { id: "m5", title: "예약 발행 + IndexNow", priority: "MEDIUM", status: "done", description: "Vercel Cron 기반 예약 발행 재검증 + 새 포스트 자동 검색엔진 알림" },
   { id: "m6", title: "로컬 폰트 최적화", priority: "MEDIUM", status: "done", description: "Pretendard, Noto Serif KR woff2, Gowun Batang preload: false" },
   { id: "m7", title: "진료↔블로그 교차 참조", priority: "MEDIUM", status: "done", description: "진료 상세에 관련 블로그 포스트 표시, 날짜순 정렬" },
   { id: "m8", title: "코드 중복 제거", priority: "MEDIUM", status: "done", description: "formatDate → lib/format.ts, NAV_ITEMS → lib/constants.ts 중앙화" },
@@ -77,12 +77,12 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m19", title: "console.error/warn 가드", priority: "MEDIUM", status: "done", description: "LikeButton: NODE_ENV === 'development' 조건부 로깅" },
   { id: "m20", title: "Framer Motion 페이지 애니메이션", priority: "MEDIUM", status: "done", description: "FadeIn, StaggerContainer, StaggerItem 컴포넌트" },
   { id: "m21", title: "FloatingCTA 모바일 내비", priority: "MEDIUM", status: "done", description: "하단 고정 5버튼 네비게이션 바, 골드 색상 상담 버튼" },
-  { id: "m22", title: "관리자 인증 시스템", priority: "MEDIUM", status: "done", description: "Firebase Auth Google 로그인, 이메일 화이트리스트, AuthGuard" },
+  { id: "m22", title: "관리자 인증 시스템", priority: "MEDIUM", status: "done", description: "Supabase Auth Google 로그인, 이메일 화이트리스트, 관리자 콘솔 보호 레이어" },
   { id: "m23", title: "GitHub Actions SHA 해시 고정", priority: "MEDIUM", status: "done", description: "actions/checkout@v4 태그 → SHA 해시로 공급망 보안 강화" },
   { id: "m24", title: "poweredByHeader: false", priority: "MEDIUM", status: "done", description: "next.config.ts에 X-Powered-By 헤더 비활성화" },
   { id: "m25", title: "SNS 링크 설정", priority: "MEDIUM", status: "owner-decision", description: "카카오, 인스타, 네이버 블로그/지도 URL 입력 필요" },
   { id: "m26", title: "카카오톡 채널 상담", priority: "MEDIUM", status: "owner-decision", description: "카카오톡 채널 URL 입력 시 상담 버튼 활성화" },
-  { id: "m27", title: "네이버 지도 링크", priority: "MEDIUM", status: "owner-decision", description: "네이버 지도 URL 입력 시 Footer 아이콘 활성화" },
+  { id: "m27", title: "네이버 지도 링크", priority: "MEDIUM", status: "done", description: "네이버 지도 URL 반영 완료 — Footer 아이콘 활성화" },
   { id: "m28", title: "인스타그램 연동", priority: "MEDIUM", status: "owner-decision", description: "인스타그램 URL 입력 시 Footer 아이콘 활성화" },
 
   // =================================================================
@@ -133,8 +133,8 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h25", title: "진료 과목 페이지 지역 SEO 메타데이터", priority: "HIGH", status: "done", description: "각 진료 과목 페이지(/treatments/[slug])의 title·description·OG에 '김포' 지역명 포함. 예: '김포 임플란트 | 서울본치과' → 검색엔진에서 '김포 임플란트' 검색 시 진료 페이지 직접 노출. JSON-LD MedicalProcedure에 availableIn(김포한강신도시) 추가" },
 
   // ── MEDIUM: 콘텐츠 전략 + 신뢰 강화 ──
-  { id: "m36", title: "증상별 블로그 콘텐츠 + 응급 CTA", priority: "MEDIUM", status: "pending", description: "긴급 키워드 타겟 블로그 포스트 시리즈: '이가 흔들릴 때 대처법', '잇몸에서 피가 날 때', '치아가 깨졌을 때 응급 처치'. 포스트 상단에 '지금 전화 상담' CTA 배너 강조. 높은 전환 의도 키워드 → 즉시 방문/전화 유도" },
-  { id: "m37", title: "치과 선택 가이드 블로그 시리즈", priority: "MEDIUM", status: "pending", description: "의사결정 단계 키워드 타겟: '좋은 치과 고르는 5가지 기준', '치과 후기 제대로 보는 법', '동네치과 vs 대학병원 언제 어디로', '김포 임플란트 치과 비교 가이드'. 건강상식 카테고리 또는 신규 카테고리로 발행" },
+  { id: "m36", title: "증상별 블로그 콘텐츠 + 응급 CTA", priority: "MEDIUM", status: "done", description: "증상형 블로그 포스트 발행 완료 — 흔들리는 치아, 잇몸 출혈, 치아 파절/외상 응급 대처 콘텐츠 구축. 블로그 공통 CTA와 연계해 상담 동선 제공" },
+  { id: "m37", title: "치과 선택 가이드 블로그 시리즈", priority: "MEDIUM", status: "done", description: "치과 선택 의사결정형 콘텐츠 발행 완료 — 과잉진료가 걱정될 때 치과 선택 기준, 치과 후기 보는 법, 동네치과 vs 대학병원, 김포 임플란트 치과 선택 가이드" },
   { id: "m38", title: "의료진 소개 페이지 상세화", priority: "MEDIUM", status: "pending", description: "현재 간략한 약력 나열 → 치료 철학 스토리텔링, 전문 분야별 상세 설명, 학회 활동, 보수교육 이력 추가. '치과 고르는 법' 검색 시 신뢰 신호로 작용. 프로필 사진(l16)과 함께 진행 시 시너지 극대화" },
   { id: "m39", title: "리뷰/후기 섹션 강화", priority: "MEDIUM", status: "pending", description: "현재 정적 6개 후기 → Google 리뷰 작성 링크 + 네이버 플레이스 리뷰 링크 노출, 총 리뷰 수/평균 별점 실시간 표시(JSON-LD AggregateRating 연동). 진료 과목 페이지에도 해당 치료 관련 후기 발췌 표시" },
 
@@ -167,7 +167,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m46", title: "개인정보처리방침 페이지", priority: "MEDIUM", status: "done", description: "개인정보보호법 대응 — /privacy 독립 페이지. Footer 링크 추가. 수집 항목, 보유 기간, 위탁 현황, 열람 청구 절차 포함" },
   { id: "l23", title: "llms.txt AI 모델 가이드", priority: "LOW", status: "done", description: "public/llms.txt 구조화 — AI 크롤러 대상 진료 철학, 카테고리별 블로그 링크, 콘텐츠 구조 안내 (GEO 대응)" },
   { id: "l24", title: "관리자 인증 스피너 최적화", priority: "LOW", status: "done", description: "localStorage 플래그 선확인으로 인증 완료 시 스피너 스킵 — 관리자 페이지 진입 체감 속도 개선" },
-  { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin?tab=blog 직접 이동 — 블로그 관리 동선 단축" },
+  { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin?tab=content&sub=posts 직접 이동 — 블로그 관리 동선 단축" },
 ];
 
 export interface ImprovementStats {

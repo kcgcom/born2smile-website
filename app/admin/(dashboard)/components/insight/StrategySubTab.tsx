@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
@@ -189,6 +189,7 @@ const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: string 
 
 export function StrategySubTab() {
   const router = useRouter();
+  const pathname = usePathname();
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
 
   const {
@@ -202,7 +203,7 @@ export function StrategySubTab() {
 
   const handleNewPost = (slug: KeywordCategorySlug) => {
     if (!isBlogCategorySlug(slug)) return;
-    router.push(`/admin?tab=blog&newCategory=${slug}`);
+    router.push(`${pathname}?tab=blog&newCategory=${slug}`);
   };
 
   // Pre-compute totalVolume per gap item once

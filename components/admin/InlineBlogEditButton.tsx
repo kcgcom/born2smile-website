@@ -207,7 +207,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
             {/* 우측: 버튼 */}
             <div className="flex shrink-0 items-center gap-2">
               <AdminActionLink
-                href={`/admin?tab=blog&edit=${slug}`}
+                href={`/admin?tab=content&sub=posts&edit=${slug}`}
                 tone="ghost"
                 className="rounded-full border-white/12 bg-white/6 text-slate-100"
               >

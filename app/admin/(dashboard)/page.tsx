@@ -1,66 +1,48 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { signOutAdmin } from "@/lib/admin-auth";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { BarChart3 } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
-import { AdminTabs, TABS, type TabId } from "./components/AdminTabs";
+import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { signOutAdmin } from "@/lib/admin-auth";
 import { AdminLoadingSkeleton } from "./components/AdminLoadingSkeleton";
-import { preloadAdminApi } from "./components/useAdminApi";
+import { AdminTabs, ADMIN_TABS, type AdminTabId } from "./components/AdminTabs";
 
-// -------------------------------------------------------------
-// 기본 탭(dev) 청크를 auth 검증과 병렬로 프리로드
-// dynamic() lazy import와 달리 이 import()는 auth 전에 즉시 시작됨
-// -------------------------------------------------------------
+const OverviewTab = dynamic(
+  () => import("./components/DashboardTab").then((m) => m.DashboardTab),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
+const ContentTabView = dynamic(
+  () => import("./components/ContentTab").then((m) => m.ContentTab),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
+const SeoTabView = dynamic(
+  () => import("./components/SeoTab").then((m) => m.SeoTab),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
+const ConversionTabView = dynamic(
+  () => import("./components/ConversionTab").then((m) => m.ConversionReportTab),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
+const SettingsTabView = dynamic(
+  () => import("./components/AdminSettingsTab").then((m) => m.SettingsTabShell),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
+const DevtoolsTabView = dynamic(
+  () => import("./components/DevtoolsTab").then((m) => m.DevtoolsShell),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
 
-void import("./components/DevTab");
-
-// -------------------------------------------------------------
-// 구탭 → 신탭 리다이렉트 매핑 (북마크 호환)
-// -------------------------------------------------------------
-
-const TAB_REDIRECT: Record<string, { tab: string; sub?: string }> = {
-  traffic: { tab: "insight", sub: "traffic" },
-  search: { tab: "insight", sub: "search" },
-  trend: { tab: "insight", sub: "trend" },
+const TAB_REDIRECT: Record<string, { tab: AdminTabId; sub?: string }> = {
+  dev: { tab: "devtools" },
+  insight: { tab: "seo", sub: "search" },
+  traffic: { tab: "seo", sub: "traffic" },
+  search: { tab: "seo", sub: "search" },
+  trend: { tab: "seo", sub: "trend" },
+  blog: { tab: "content", sub: "posts" },
 };
-
-// -------------------------------------------------------------
-// 탭 레벨 코드 스플리팅 (ssr: false — 모든 탭이 "use client")
-// -------------------------------------------------------------
-
-const InsightTab = dynamic(
-  () => import("./components/InsightTab").then((m) => m.InsightTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const BlogTab = dynamic(
-  () => import("./components/BlogTab").then((m) => m.BlogTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const SettingsTab = dynamic(
-  () => import("./components/SettingsTab").then((m) => m.SettingsTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const DevTab = dynamic(
-  () => import("./components/DevTab").then((m) => m.DevTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-
-// -------------------------------------------------------------
-// 호버 프리페치 — 탭별 주요 엔드포인트
-// -------------------------------------------------------------
-
-const TAB_PREFETCH_ENDPOINTS: Partial<Record<TabId, string>> = {
-  insight: "/api/admin/analytics?period=7d",
-  blog: "/api/admin/blog-posts",
-  settings: "/api/admin/site-config/links",
-  dev: "/api/dev/env-status",
-};
-
-// -------------------------------------------------------------
-// 대시보드 메인 페이지
-// -------------------------------------------------------------
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -71,7 +53,6 @@ export default function AdminDashboardPage() {
   const editSlug = searchParams.get("edit");
   const newCategory = searchParams.get("newCategory");
 
-  // 구탭 리다이렉트
   useEffect(() => {
     if (rawTab && rawTab in TAB_REDIRECT) {
       const redirect = TAB_REDIRECT[rawTab];
@@ -80,66 +61,94 @@ export default function AdminDashboardPage() {
       if (redirect.sub) params.set("sub", redirect.sub);
       router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [rawTab, pathname, router, searchParams]);
+  }, [pathname, rawTab, router, searchParams]);
 
-  const validTabIds = TABS.map((t) => t.id) as string[];
-  const activeTab: TabId = validTabIds.includes(rawTab ?? "") ? (rawTab as TabId) : "dev";
+  const validTabIds = ADMIN_TABS.map((tab) => tab.id) as string[];
+  const activeTab: AdminTabId = validTabIds.includes(rawTab ?? "") ? (rawTab as AdminTabId) : "dashboard";
 
-  // 방문한 탭 추적 — unmount 방지로 상태 보존
-  const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(
-    () => new Set(["dev", activeTab]),
-  );
+  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTabId>>(() => new Set(["dashboard", activeTab]));
   const renderedTabs = useMemo(() => {
     if (visitedTabs.has(activeTab)) return visitedTabs;
     return new Set(visitedTabs).add(activeTab);
   }, [activeTab, visitedTabs]);
 
-  const handleLogout = async () => {
-    await signOutAdmin();
-    router.replace("/");
-  };
+  const replaceParams = useCallback((tab: string, sub?: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    if (sub) params.set("sub", sub);
+    else params.delete("sub");
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [pathname, router, searchParams]);
 
-  const handleTabChange = (tab: TabId) => {
+  const handleTabChange = (tab: AdminTabId) => {
     setVisitedTabs((prev) => {
       if (prev.has(tab)) return prev;
       return new Set(prev).add(tab);
     });
-    router.replace(`${pathname}?tab=${tab}`);
+    replaceParams(tab);
   };
 
-  // 호버 프리페치 — 미방문 탭만 프리페치
-  const handleTabHover = useCallback(
-    (tab: TabId) => {
-      if (visitedTabs.has(tab)) return;
-      const endpoint = TAB_PREFETCH_ENDPOINTS[tab];
-      if (endpoint) preloadAdminApi(endpoint);
-    },
-    [visitedTabs],
-  );
+  const handleLogout = async () => {
+    await signOutAdmin();
+    router.replace("/admin/login");
+  };
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
       <DashboardHeader onLogout={handleLogout} />
 
-      {/* 콘텐츠 */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {/* 탭 네비게이션 */}
+        <AdminSurface tone="white" className="mb-4 rounded-3xl px-5 py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <AdminPill tone="white">/admin 운영 콘솔</AdminPill>
+                <AdminPill tone="warning">운영 중심 기본 경로</AdminPill>
+              </div>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                관리자 기본 경로는 `/admin`입니다. 블로그, SEO, 전환, 설정을 한 흐름으로 운영할 수 있습니다.
+              </p>
+            </div>
+            <AdminActionLink tone="dark" href="/admin?tab=content&sub=posts" className="shrink-0">
+              <BarChart3 className="h-4 w-4" />
+              콘텐츠 관리 열기
+            </AdminActionLink>
+          </div>
+        </AdminSurface>
+
         <div className="mb-2">
-          <AdminTabs activeTab={activeTab} onTabChange={handleTabChange} onHover={handleTabHover} />
+          <AdminTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
-        {/* 탭 콘텐츠 — hidden 패턴으로 방문 탭 DOM 유지 */}
-        {renderedTabs.has("dev") && (
-          <div hidden={activeTab !== "dev"}><DevTab /></div>
+        {renderedTabs.has("dashboard") && (
+          <div hidden={activeTab !== "dashboard"}>
+            <OverviewTab navigateTo={replaceParams} />
+          </div>
         )}
-        {renderedTabs.has("insight") && (
-          <div hidden={activeTab !== "insight"}><InsightTab /></div>
+        {renderedTabs.has("content") && (
+          <div hidden={activeTab !== "content"}>
+            <ContentTabView editSlug={editSlug} newCategory={newCategory} />
+          </div>
         )}
-        {renderedTabs.has("blog") && (
-          <div hidden={activeTab !== "blog"}><BlogTab editSlug={editSlug} newCategory={newCategory} /></div>
+        {renderedTabs.has("seo") && (
+          <div hidden={activeTab !== "seo"}>
+            <SeoTabView />
+          </div>
+        )}
+        {renderedTabs.has("conversion") && (
+          <div hidden={activeTab !== "conversion"}>
+            <ConversionTabView />
+          </div>
         )}
         {renderedTabs.has("settings") && (
-          <div hidden={activeTab !== "settings"}><SettingsTab /></div>
+          <div hidden={activeTab !== "settings"}>
+            <SettingsTabView />
+          </div>
+        )}
+        {renderedTabs.has("devtools") && (
+          <div hidden={activeTab !== "devtools"}>
+            <DevtoolsTabView />
+          </div>
         )}
       </div>
     </div>

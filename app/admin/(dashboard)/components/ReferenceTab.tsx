@@ -89,7 +89,7 @@ function AccordionSection({
 // 1. 의존성 섹션
 // -------------------------------------------------------------
 
-const KEY_PACKAGES = ["next", "react", "typescript", "tailwindcss", "firebase", "zod"];
+const KEY_PACKAGES = ["next", "react", "typescript", "tailwindcss", "@supabase/supabase-js", "zod"];
 
 function DependenciesContent() {
   const { dependencies, dependencyStats } = DEV_MANIFEST;

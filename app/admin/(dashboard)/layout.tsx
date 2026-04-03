@@ -1,6 +1,6 @@
 import { AuthGuard } from "@/components/admin/AuthGuard";
 
-export default function DashboardLayout({
+export default function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;

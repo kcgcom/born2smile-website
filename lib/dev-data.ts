@@ -154,6 +154,12 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     description: "PageSpeed Insights 성능 분석",
   },
   {
+    path: "/api/dev/sentry-test",
+    methods: ["POST"],
+    auth: true,
+    description: "Sentry 서버 테스트 이벤트 전송",
+  },
+  {
     path: "/api/cron/rebuild",
     methods: ["GET"],
     auth: true,
@@ -193,9 +199,14 @@ export interface EnvVariable {
 }
 
 export const ENV_VARIABLES: EnvVariable[] = [
+  { key: "NEXT_PUBLIC_POSTHOG_TOKEN", label: "PostHog 공개 토큰", required: false, scope: "public" },
+  { key: "NEXT_PUBLIC_POSTHOG_HOST", label: "PostHog 수집 호스트", required: false, scope: "public" },
   { key: "NEXT_PUBLIC_KAKAO_MAP_APP_KEY", label: "카카오맵 앱 키", required: true, scope: "public" },
   { key: "NEXT_PUBLIC_SUPABASE_URL", label: "Supabase URL", required: true, scope: "public" },
   { key: "NEXT_PUBLIC_SUPABASE_ANON_KEY", label: "Supabase Anon Key", required: true, scope: "public" },
+  { key: "POSTHOG_PROJECT_ID", label: "PostHog Project ID", required: false, scope: "private" },
+  { key: "POSTHOG_API_KEY", label: "PostHog API Key", required: false, scope: "private" },
+  { key: "POSTHOG_BASE_URL", label: "PostHog App URL", required: false, scope: "private" },
   { key: "SUPABASE_SERVICE_ROLE_KEY", label: "Supabase Service Role Key", required: true, scope: "private" },
   { key: "ADMIN_EMAILS", label: "관리자 이메일", required: true, scope: "private" },
   { key: "GA4_PROPERTY_ID", label: "GA4 속성 ID", required: false, scope: "private" },
@@ -206,6 +217,13 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NAVER_SEARCHAD_SECRET_KEY", label: "네이버 검색광고 Secret Key", required: false, scope: "private" },
   { key: "NAVER_SEARCHAD_CUSTOMER_ID", label: "네이버 검색광고 Customer ID", required: false, scope: "private" },
   { key: "PAGESPEED_API_KEY", label: "PageSpeed Insights API Key", required: false, scope: "private" },
+  { key: "NEXT_PUBLIC_SENTRY_DSN", label: "Sentry DSN", required: true, scope: "public" },
+  { key: "NEXT_PUBLIC_SENTRY_ENVIRONMENT", label: "Sentry 공개 환경명", required: false, scope: "public" },
+  { key: "NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE", label: "Sentry Trace Sample Rate", required: false, scope: "public" },
+  { key: "SENTRY_ENVIRONMENT", label: "Sentry 서버 환경명", required: false, scope: "private" },
+  { key: "SENTRY_ORG", label: "Sentry Org Slug", required: true, scope: "private" },
+  { key: "SENTRY_PROJECT", label: "Sentry Project Slug", required: true, scope: "private" },
+  { key: "SENTRY_AUTH_TOKEN", label: "Sentry Auth Token", required: true, scope: "private" },
   { key: "GOOGLE_SERVICE_ACCOUNT_KEY", label: "Google 서비스 계정 JSON", required: false, scope: "private" },
   { key: "CRON_SECRET", label: "Vercel Cron 인증 토큰", required: true, scope: "private" },
 ];

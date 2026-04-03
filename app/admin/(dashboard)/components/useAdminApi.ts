@@ -5,7 +5,7 @@ import useSWR, { preload, mutate as globalMutate } from "swr";
 import { getAccessToken } from "@/lib/supabase";
 
 // -------------------------------------------------------------
-// SWR fetcher — Firebase Auth 토큰 주입
+// SWR fetcher — Supabase Auth 토큰 주입
 // -------------------------------------------------------------
 
 async function adminFetcher<T>(endpoint: string): Promise<T> {

@@ -46,6 +46,16 @@ test.describe('Smoke Tests', () => {
     await expect(page.getByRole('link', { name: '홈으로 돌아가기' })).toBeVisible();
   });
 
+  test('관리자 기본 진입은 admin 로그인으로 수렴', async ({ page }) => {
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
+  test('관리자 로그인 경로 유지', async ({ page }) => {
+    await page.goto('/admin/login');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
   test('sitemap.xml', async ({ page }) => {
     const response = await page.goto('/sitemap.xml');
     expect(response?.status()).toBe(200);

@@ -20,7 +20,7 @@
 
 ## 중기 과제
 
-- 롤백 절차 문서화
+- 관리자 운영 점검 루틴 문서 최신화 (`docs/admin-ux-checklist.md`)
 - 에러 처리 패턴 표준화
 - `docs/blog-writing-guide.md`에 이미지 가이드라인 + 발행 전 체크리스트 추가
 

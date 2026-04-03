@@ -20,17 +20,6 @@ export async function verifyAdminUser(accessToken?: string): Promise<boolean> {
   }
 }
 
-/** Google OAuth 로그인 */
-export async function signInWithGoogle() {
-  return getSupabaseBrowserClient().auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/admin/login`,
-      queryParams: { prompt: "select_account" },
-    },
-  });
-}
-
 /** 로그아웃 */
 export async function signOutAdmin() {
   return getSupabaseBrowserClient().auth.signOut();
