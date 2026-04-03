@@ -31,7 +31,7 @@ export default function TreatmentsPage() {
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Treatments
             </p>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -49,7 +49,7 @@ export default function TreatmentsPage() {
         <div className="container-narrow">
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
-              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Philosophy
               </p>
               <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
@@ -89,7 +89,7 @@ export default function TreatmentsPage() {
                   <div
                     className={`mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full ${
                       "gold" in item && item.gold
-                        ? "bg-[#FDF3E0] text-[var(--color-gold)]"
+                        ? "bg-[var(--color-gold-bg)] text-[var(--color-gold)]"
                         : "bg-blue-50 text-[var(--color-primary)]"
                     }`}
                   >
@@ -112,7 +112,7 @@ export default function TreatmentsPage() {
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Treatments
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">

@@ -47,8 +47,9 @@ export function CTABanner({
               event="cta_phone_click"
               properties={properties}
               className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[var(--color-primary)] transition-colors hover:bg-white/90"
+              aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              <Phone size={18} />
+              <Phone size={18} aria-hidden="true" />
               전화 상담 {CLINIC.phone}
             </TrackedAnchor>
           </div>

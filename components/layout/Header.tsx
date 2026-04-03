@@ -175,10 +175,8 @@ export function Header() {
             id="mobile-menu"
             ref={menuRef}
             className="border-t border-gray-100 bg-white md:hidden"
-            role="navigation"
-            aria-label="모바일 메뉴"
           >
-            <nav className="flex flex-col px-4 py-4">
+            <nav className="flex flex-col px-4 py-4" aria-label="모바일 메뉴">
               {NAV_ITEMS.map((item) => {
                 const isActive =
                   item.href === "/"

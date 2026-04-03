@@ -155,8 +155,8 @@ export default async function BlogCategoryPage({
       <section className="bg-gradient-to-b from-blue-50 via-white to-white pt-28 pb-14 md:pt-32 md:pb-16">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
           <FadeIn>
-            <div className="max-w-none lg:max-w-[60rem] xl:max-w-[66rem]">
-              <p className="mb-3 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <div className="lg:max-w-5xl xl:max-w-6xl">
+              <p className="mb-3 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Health Column Hub
               </p>
               <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -171,7 +171,7 @@ export default async function BlogCategoryPage({
       </section>
 
       <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="container-narrow">
           <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
             <div className="flex flex-wrap items-center gap-2 md:gap-2.5">
               {ALL_CATEGORY_SLUGS.map((slug) => {
@@ -202,7 +202,7 @@ export default async function BlogCategoryPage({
       <section className="bg-white px-4 py-8 md:px-6 md:py-10 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm md:p-8">
-            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Who It Helps
             </p>
             <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
@@ -219,7 +219,7 @@ export default async function BlogCategoryPage({
           </div>
 
           <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-5 md:p-8">
-            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Reading Guide
             </p>
             <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
@@ -236,9 +236,9 @@ export default async function BlogCategoryPage({
 
       {questionCards.length > 0 && (
         <section className="bg-white px-4 py-8 md:px-6 md:py-10 lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="container-narrow">
             <div className="mb-5 md:mb-6">
-              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Common Questions
               </p>
               <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
@@ -281,9 +281,9 @@ export default async function BlogCategoryPage({
 
       {groupedSections.length > 0 && (
         <section className="bg-gray-50 px-4 py-10 md:px-6 md:py-14 lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="container-narrow">
             <div className="mb-6 md:mb-8">
-              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Curated Paths
               </p>
               <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
@@ -329,7 +329,7 @@ export default async function BlogCategoryPage({
         <div className="mx-auto max-w-6xl rounded-3xl border border-gray-100 bg-gradient-to-r from-blue-50 to-white p-5 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="max-w-none lg:max-w-3xl xl:max-w-4xl">
-              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+              <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Next Step
               </p>
               <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">

@@ -63,7 +63,6 @@ export function FloatingCTA() {
                   href={item.href}
                   event="floating_contact_nav_click"
                   properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
-                  aria-label={item.shortLabel}
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => handleNavClick(item.href)}
                   className={className}

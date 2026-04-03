@@ -16,7 +16,7 @@ export default async function ContactPage() {
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Contact
             </p>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -83,7 +83,7 @@ export default async function ContactPage() {
                 </TrackedAnchor>
               ) : (
                 <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF3E0]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-gold-bg)]">
                     <MessageCircle
                       size={28}
                       aria-hidden="true"
@@ -116,7 +116,7 @@ export default async function ContactPage() {
                       <span>
                         {item.day}
                         {"note" in item && item.note && (
-                          <span className="ml-1 text-sm text-[var(--color-gold)]">
+                          <span className="ml-1 text-sm text-[var(--color-gold-dark)]">
                             ({item.note})
                           </span>
                         )}
@@ -157,6 +157,7 @@ export default async function ContactPage() {
                   event="contact_phone_click"
                   properties={{ cta_location: "contact_bottom", page_type: "contact" }}
                   className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
+                  aria-label={`전화 상담 ${clinic.phone}`}
                 >
                   {clinic.phone}
                 </TrackedAnchor>

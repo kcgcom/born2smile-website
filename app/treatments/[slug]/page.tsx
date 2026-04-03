@@ -183,7 +183,7 @@ export default async function TreatmentDetailPage({
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 md:p-8">
-                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+                <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                   Who It Helps
                 </p>
                 <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
@@ -243,7 +243,7 @@ export default async function TreatmentDetailPage({
                 key={adv}
                 className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0] text-sm text-[var(--color-gold)]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-gold-bg)] text-sm text-[var(--color-gold)]">
                   ✓
                 </span>
                 <span className="text-base font-medium text-gray-800">

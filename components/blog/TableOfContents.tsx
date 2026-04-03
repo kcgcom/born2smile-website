@@ -60,6 +60,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex w-full items-center justify-between md:cursor-default"
         aria-expanded={isOpen}
+        aria-controls="toc-list"
       >
         <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
           <List size={16} className="text-[var(--color-primary)]" />
@@ -73,7 +74,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
 
       {/* 목록 */}
       {isOpen && (
-        <ol className="mt-3 space-y-1">
+        <ol id="toc-list" className="mt-3 space-y-1">
           {headings.map((heading, i) => {
             const isActive = activeIndex === i;
             return (

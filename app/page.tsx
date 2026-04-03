@@ -73,7 +73,7 @@ export default function Home() {
       <section id="hero">
         <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white">
           <div className="mx-auto max-w-4xl px-4 text-center">
-            <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold)] uppercase md:text-lg">
+            <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
             </p>
             <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
@@ -126,7 +126,7 @@ export default function Home() {
       <section id="greeting" className="section-padding bg-white">
         <div className="mx-auto max-w-2xl">
           <FadeIn>
-            <p className="mb-2 text-center text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-center text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Greeting
             </p>
             <h2 className="mb-6 text-center font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -192,7 +192,7 @@ export default function Home() {
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Our Promise
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -283,7 +283,7 @@ export default function Home() {
         <section id="reviews" className="section-padding bg-white">
           <div className="container-narrow">
             <FadeIn className="mb-12 text-center">
-              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+              <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Testimonials
               </p>
               <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -299,7 +299,7 @@ export default function Home() {
                 <StaggerItem key={index}>
                   <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md">
                     {/* 별점 */}
-                    <div className="mb-3 flex items-center gap-1" role="img" aria-label={`${review.rating}점 만점에 5점`}>
+                    <div className="mb-3 flex items-center gap-1" role="img" aria-label={`5점 만점에 ${review.rating}점`}>
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
@@ -358,6 +358,7 @@ export default function Home() {
                       href={GOOGLE_REVIEW.writeReviewUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label="Google 리뷰 남기기 (새 창)"
                       className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#3367D6] hover:shadow-md"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -376,6 +377,7 @@ export default function Home() {
                       href={NAVER_REVIEW.writeReviewUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label="Naver 리뷰 남기기 (새 창)"
                       className="inline-flex items-center gap-2 rounded-full bg-[#03C75A] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#02b351] hover:shadow-md"
                     >
                       <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -398,7 +400,7 @@ export default function Home() {
       <section id="faq" className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               FAQ
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">

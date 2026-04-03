@@ -336,7 +336,7 @@ export default async function BlogPostPage({
               className="group flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-5 transition-all hover:border-blue-200 hover:shadow-md"
             >
               <div>
-                <span className="mb-1 block text-sm font-medium text-[var(--color-gold)]">
+                <span className="mb-1 block text-sm font-medium text-[var(--color-gold-text)]">
                   관련 진료
                 </span>
                 <span className="text-base font-bold text-gray-900">

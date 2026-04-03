@@ -446,7 +446,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
         {/* 무한 스크롤 감지 센티넬 + 로딩 표시 */}
         {hasMore && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-8" aria-label="추가 글 로딩 중">
+          <div ref={sentinelRef} className="flex items-center justify-center py-8" role="status" aria-label="추가 글 로딩 중">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--color-primary)]" />
           </div>
         )}

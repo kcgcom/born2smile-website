@@ -141,7 +141,7 @@ export async function Footer() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-xl bg-gray-800 p-4 transition-colors hover:bg-gray-700"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FDF3E0]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-gold-bg)]">
                       <Star size={18} className="fill-[var(--color-gold)] text-[var(--color-gold)]" />
                     </div>
                     <div className="flex-1 min-w-0">

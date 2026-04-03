@@ -49,7 +49,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               About Us
             </p>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -66,7 +66,7 @@ export default function AboutPage() {
       <section className="section-padding bg-white">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Doctor
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -174,7 +174,7 @@ export default function AboutPage() {
       <section id="our-team" className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Our Team
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -220,7 +220,7 @@ export default function AboutPage() {
       <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Facility
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -262,7 +262,7 @@ export default function AboutPage() {
       <section className="section-padding bg-white">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Equipment
             </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
@@ -374,7 +374,7 @@ export default function AboutPage() {
                         <td className="px-5 py-3 font-medium text-gray-700">
                           {item.day}
                           {"note" in item && item.note && (
-                            <span className="ml-2 rounded-full bg-[#FDF3E0] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
+                            <span className="ml-2 rounded-full bg-[var(--color-gold-bg)] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
                               {item.note}
                             </span>
                           )}

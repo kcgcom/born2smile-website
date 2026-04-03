@@ -51,7 +51,7 @@ export default async function BlogPage() {
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold)] uppercase">
+            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Health Column
             </p>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">

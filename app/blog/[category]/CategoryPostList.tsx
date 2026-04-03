@@ -13,7 +13,7 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-end justify-between md:mb-8">
           <div>
-            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold)] uppercase">
+            <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               All Posts
             </p>
             <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
