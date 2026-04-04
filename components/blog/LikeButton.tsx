@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Heart } from "lucide-react";
+import { captureEvent } from "@/lib/posthog";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 
 const USER_ID_KEY = "born2smile_uid";
@@ -19,9 +20,10 @@ function getUserId(): string {
 
 interface LikeButtonProps {
   slug: string;
+  source?: string;
 }
 
-export default function LikeButton({ slug }: LikeButtonProps) {
+export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps) {
   const [count, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -88,6 +90,12 @@ export default function LikeButton({ slug }: LikeButtonProps) {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.rpc("toggle_like", { p_slug: slug, p_user_id: uid });
       if (error) throw error;
+
+      captureEvent("blog_post_like_toggled", {
+        blog_slug: slug,
+        source,
+        action: wasLiked ? "unlike" : "like",
+      });
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[LikeButton] 좋아요 저장 실패:", error);
@@ -96,18 +104,18 @@ export default function LikeButton({ slug }: LikeButtonProps) {
       setLiked(wasLiked);
       setCount((prev) => prev + (wasLiked ? 1 : -1));
     }
-  }, [slug, liked, loading, unavailable, coolingDown]);
+  }, [slug, liked, loading, unavailable, coolingDown, source]);
 
   if (unavailable) {
     return (
       <button
         disabled
-        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium bg-gray-50 text-gray-300 cursor-not-allowed"
+        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-300 shadow-sm cursor-not-allowed"
         aria-label="좋아요 기능을 사용할 수 없습니다"
         title="좋아요 기능 준비 중"
       >
-        <Heart size={16} />
-        <span>좋아요</span>
+        <Heart size={17} />
+        <span>공감해요</span>
       </button>
     );
   }
@@ -116,18 +124,18 @@ export default function LikeButton({ slug }: LikeButtonProps) {
     <button
       onClick={handleToggle}
       disabled={loading || coolingDown}
-      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/25 ${
         liked
-          ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
-          : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+          : "border-gray-200 bg-white text-gray-700 hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-600"
       } ${(loading || coolingDown) ? "opacity-50" : ""}`}
       aria-label={liked ? "좋아요 취소" : "좋아요"}
     >
       <Heart
-        size={16}
+        size={17}
         className={`transition-all ${liked ? "fill-rose-500 text-rose-500" : ""}`}
       />
-      <span>{count > 0 ? count : "좋아요"}</span>
+      <span>{count > 0 ? `${count}명 공감` : "공감해요"}</span>
     </button>
   );
 }

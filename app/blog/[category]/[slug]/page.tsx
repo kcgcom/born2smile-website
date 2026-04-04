@@ -292,6 +292,23 @@ export default async function BlogPostPage({
                 <span className="mx-1.5">·</span>
                 {DOCTORS[0].position}
               </p>
+
+              <div className="mt-8 rounded-3xl border border-blue-100 bg-white/85 p-5 shadow-sm backdrop-blur">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-primary)]">
+                      이 글이 도움이 되셨다면 반응을 남겨주세요
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      공감이나 공유는 더 많은 분들이 필요한 정보를 찾는 데 도움이 됩니다.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <LikeButtonLazy slug={post.slug} source="header_cta" />
+                    <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="header_cta" />
+                  </div>
+                </div>
+              </div>
             </FadeIn>
           </div>
         </header>
@@ -356,17 +373,31 @@ export default async function BlogPostPage({
 
       {/* 좋아요 + 공유 + 목록 돌아가기 */}
       <section className="bg-white px-4 pt-6 pb-12">
-        <div className="mx-auto flex max-w-3xl items-center justify-between border-t border-gray-100 pt-8">
-          <Link
-            href={`/blog/${post.category}`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[var(--color-primary)]"
-          >
-            <ArrowLeft size={16} />
-            {categoryLabel} 목록으로
-          </Link>
-          <div className="flex items-center gap-2">
-            <LikeButtonLazy slug={post.slug} />
-            <BlogShareButton slug={post.slug} title={post.title} category={post.category} />
+        <div className="mx-auto max-w-3xl border-t border-gray-100 pt-8">
+          <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-rose-50/50 p-5 shadow-sm">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-base font-bold text-gray-900">
+                  도움이 되셨다면 공감 또는 공유를 남겨주세요
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-gray-600">
+                  반응이 쌓일수록 다른 환자분들도 필요한 건강 정보를 더 쉽게 발견할 수 있습니다.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <LikeButtonLazy slug={post.slug} source="footer_cta" />
+                <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" />
+              </div>
+            </div>
+            <div className="mt-5 border-t border-white/70 pt-4">
+              <Link
+                href={`/blog/${post.category}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[var(--color-primary)]"
+              >
+                <ArrowLeft size={16} />
+                {categoryLabel} 목록으로
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -425,7 +456,24 @@ export default async function BlogPostPage({
 
       <AdminDraftBar slug={slug} />
 
-      <div className="h-16 md:hidden" />
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
+        <div className="mx-auto max-w-3xl">
+          <div>
+            <p className="text-xs font-semibold text-gray-900">
+              이 글이 도움됐다면 반응을 남겨주세요
+            </p>
+            <p className="mt-0.5 text-[11px] text-gray-500">
+              공감과 공유가 더 많은 분들께 닿게 합니다
+            </p>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <LikeButtonLazy slug={post.slug} source="mobile_sticky_cta" />
+            <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="mobile_sticky_cta" />
+          </div>
+        </div>
+      </div>
+
+      <div className="h-32 md:hidden" />
     </>
   );
 }
