@@ -24,5 +24,6 @@ pub async fn list(State(_state): State<AppState>, Query(query): Query<ActivityQu
         suggestion_type: "title".to_string(),
         target_type: "post".to_string(),
         target_id: format!("target-{}", index + 1),
+        target_label: "샘플 블로그 포스트".to_string(),
     }).collect())
 }
