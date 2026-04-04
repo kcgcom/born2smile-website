@@ -1,44 +1,87 @@
 # Environment Variables
 
-로컬 개발: `.env.example` → `.env.local`로 복사하여 사용.
-프로덕션: Vercel Dashboard → Settings → Environment Variables로 관리.
+로컬 개발은 `.env.example`를 `.env.local`로 복사해서 사용합니다.
+프로덕션/프리뷰는 Vercel Dashboard → Settings → Environment Variables에서 관리합니다.
+
+## 빠른 기준
+
+- **필수 코어**: Supabase, 관리자 이메일
+- **기능별 선택**: GA4 / Search Console / Naver / PageSpeed / PostHog / Sentry / LLM gateway
+- **운영 자동화**: `CRON_SECRET`, `INDEXNOW_KEY`
 
 ## 변수 목록
 
-| 변수 | 설명 | 필수 여부 |
-|------|------|----------|
-| `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` | Kakao Maps JavaScript App Key | 지도 컴포넌트 필수 |
+| 변수 | 용도 | 필요 시점 |
+|------|------|-----------|
+| `NEXT_PUBLIC_KAKAO_MAP_APP_KEY` | Kakao Maps SDK | 연락처/지도 노출 시 |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 필수 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (RLS 적용) | 필수 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key (RLS 바이패스, 서버 전용) | 필수 |
-| `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 (쉼표 구분, default: `kcgcom@gmail.com`) | 필수 |
-| `GOOGLE_SERVICE_ACCOUNT_KEY` | Google 서비스 계정 JSON key (GA4/Search Console API 인증) | GA4/SC 탭 필수 |
-| `GA4_PROPERTY_ID` | Google Analytics 4 속성 ID (숫자만, 예: `525397980`) | 트래픽 탭 필수 |
-| `SEARCH_CONSOLE_SITE_URL` | Search Console 사이트 URL (예: `sc-domain:born2smile.co.kr`, `https://www.born2smile.co.kr/`) | 검색/SEO 탭 필수 |
-| `NAVER_DATALAB_CLIENT_ID` | 네이버 DataLab API Client ID (미설정 시 섹션 숨김) | 선택 |
-| `NAVER_DATALAB_CLIENT_SECRET` | 네이버 DataLab API Client Secret | DATALAB 사용 시 필수 |
-| `NAVER_SEARCHAD_API_KEY` | 네이버 검색광고 API Key (절대 검색량 조회, 미설정 시 DataLab 상대값으로 폴백) | 선택 |
-| `NAVER_SEARCHAD_SECRET_KEY` | 네이버 검색광고 API Secret Key (HMAC-SHA256 서명) | SEARCHAD 사용 시 필수 |
-| `NAVER_SEARCHAD_CUSTOMER_ID` | 네이버 검색광고 고객 ID | SEARCHAD 사용 시 필수 |
-| `PAGESPEED_API_KEY` | Google PageSpeed Insights API 키 (Cloud Console에서 API 키 생성 + PSI API 활성화) | 성능 탭 필수 |
-| `CRON_SECRET` | Vercel Cron Job 인증 토큰 (임의 문자열) | 예약 발행 필수 |
-| `LLM_BASE_URL` | AI 작성 도우미가 호출할 LLM gateway URL (`https://llm.born2smile.co.kr` 권장) | AI 작성 도우미 필수 |
-| `LLM_MODEL` | gateway에 전달할 기본 모델 이름 (예: `fast`) | AI 작성 도우미 필수 |
-| `CLOUDFLARE_ACCESS_CLIENT_ID` | Cloudflare Access Service Token Client ID (Vercel 서버 -> gateway 인증) | Access 보호 사용 시 필수 |
-| `CLOUDFLARE_ACCESS_CLIENT_SECRET` | Cloudflare Access Service Token Client Secret | Access 보호 사용 시 필수 |
-| `LLM_UPSTREAM_TIMEOUT_MS` | Vercel 서버가 gateway 응답을 기다리는 최대 시간(ms) | 선택 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | 필수 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Admin key | 필수 |
+| `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 필수 |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | GA4/SC 사용 시 |
+| `GA4_PROPERTY_ID` | GA4 속성 ID | 유입·SEO > 트래픽 사용 시 |
+| `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | 유입·SEO > 검색 성과 사용 시 |
+| `NAVER_DATALAB_CLIENT_ID` | DataLab Client ID | 트렌드 사용 시 |
+| `NAVER_DATALAB_CLIENT_SECRET` | DataLab Client Secret | 트렌드 사용 시 |
+| `NAVER_SEARCHAD_API_KEY` | 검색광고 API Key | 절대 검색량 사용 시 |
+| `NAVER_SEARCHAD_SECRET_KEY` | 검색광고 Secret Key | 절대 검색량 사용 시 |
+| `NAVER_SEARCHAD_CUSTOMER_ID` | 검색광고 고객 ID | 절대 검색량 사용 시 |
+| `PAGESPEED_API_KEY` | PageSpeed Insights API 키 | 개발도구 > 성능 사용 시 |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry 클라이언트 DSN | 에러 모니터링 사용 시 |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | 공개 환경명 | Sentry 사용 시 |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | 클라이언트 trace 샘플링 | Sentry 사용 시 |
+| `SENTRY_ENVIRONMENT` | 서버 환경명 | Sentry 사용 시 |
+| `SENTRY_ORG` | Sentry org slug | 릴리즈/모니터링 연동 시 |
+| `SENTRY_PROJECT` | Sentry project slug | 릴리즈/모니터링 연동 시 |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token | 릴리즈/모니터링 연동 시 |
+| `NEXT_PUBLIC_POSTHOG_TOKEN` | PostHog 웹 SDK 토큰 | 전환 측정 사용 시 |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host | 전환 측정 사용 시 |
+| `NEXT_PUBLIC_POSTHOG_UI_HOST` | PostHog UI host | 전환 리포트 링크 생성 시 |
+| `POSTHOG_PROJECT_ID` | PostHog 프로젝트 ID | 전환 리포트 API 사용 시 |
+| `POSTHOG_API_KEY` | PostHog query API key | 전환 리포트 API 사용 시 |
+| `POSTHOG_BASE_URL` | PostHog API base URL | 전환 리포트 API 사용 시 |
+| `LLM_BASE_URL` | AI 작성 도우미 gateway URL | AI 작성 도우미 사용 시 |
+| `LLM_MODEL` | gateway에 전달할 기본 모델명 | AI 작성 도우미 사용 시 |
+| `CLOUDFLARE_ACCESS_CLIENT_ID` | Cloudflare Access service token ID | 외부 gateway 보호 시 |
+| `CLOUDFLARE_ACCESS_CLIENT_SECRET` | Cloudflare Access service token secret | 외부 gateway 보호 시 |
+| `LLM_UPSTREAM_TIMEOUT_MS` | gateway 업스트림 타임아웃(ms) | 선택 |
+| `CRON_SECRET` | `/api/cron/rebuild` 인증 토큰 | 예약 발행 자동화 시 필수 |
+| `INDEXNOW_KEY` | IndexNow 제출 키 | 자동/수동 IndexNow 제출 시 권장 |
 
-## 네이버 검색광고 API 주의사항
+## 운영 자동화 메모
 
-- **키워드 공백 불가**: `hintKeywords` 파라미터는 공백 없는 키워드만 허용 (예: `임플란트비용`, NOT `임플란트 비용`). `admin-naver-searchad.ts`의 `normalizeKeyword()`가 자동 처리.
-- **시간당 호출 제한**: API 레이트 리밋 있음. 순차 배치 호출(200ms 간격) + 24시간 `unstable_cache`로 보호.
-- **환경변수 lazy 읽기**: 런타임 초기화 타이밍 보장을 위해 모듈 레벨 상수 대신 `getApiKey()` 등 lazy getter 사용. 시크릿에 trailing newline이 있을 수 있어 `.trim()` 필수.
-- **HMAC 서명**: `{timestamp}.GET./keywordstool` 형식, SHA-256, Base64 인코딩.
+### Vercel Cron
 
-## AI 블로그 작성 도우미 / Cloudflare Access 메모
+- `vercel.json`의 스케줄이 매일 KST 00:05에 `/api/cron/rebuild`를 호출합니다.
+- 요청 헤더의 `Authorization: Bearer <CRON_SECRET>`가 일치해야 동작합니다.
 
-- `LLM_BASE_URL`은 브라우저가 아니라 **서버 라우트**(`app/api/admin/ai-write/route.ts`)에서만 사용합니다.
-- Vercel을 유지하면서 로컬 LLM gateway를 외부에 안전하게 노출하려면 `Cloudflare Tunnel + Access Service Token` 조합을 권장합니다.
-- 이때 Vercel 환경변수에 `CLOUDFLARE_ACCESS_CLIENT_ID`, `CLOUDFLARE_ACCESS_CLIENT_SECRET`를 넣고, 서버 라우트가 `CF-Access-Client-Id`, `CF-Access-Client-Secret` 헤더로 gateway를 호출합니다.
-- 로컬/LAN에서는 `192.168.1.201:<gateway-port>`로 직접 접근하고, 외부 경로는 Access 정책이 붙은 tunnel hostname으로만 사용하세요.
-- `LLM_UPSTREAM_TIMEOUT_MS`는 Vercel 함수 시간 제한보다 짧게 유지해야 합니다. 현재 예시는 `55000ms`입니다.
+### IndexNow
+
+- 서버 라우트(`lib/indexnow.ts`)는 `INDEXNOW_KEY`가 있을 때만 제출합니다.
+- 공개 키 파일은 `public/<INDEXNOW_KEY>.txt` 형식으로 함께 존재해야 합니다.
+- 수동 제출 스크립트는 `pnpm submit-indexnow`, `pnpm submit-indexnow:all`입니다.
+
+## 기능별 메모
+
+### 네이버 검색광고 API
+
+- `hintKeywords`는 공백 없는 형태로 요청합니다. (`normalizeKeyword()`가 자동 처리)
+- 일별/월간 성격의 데이터라 `24h` 캐시를 사용합니다.
+- 시크릿 문자열에 trailing newline이 섞일 수 있어 `.trim()` 처리합니다.
+
+### PostHog
+
+- 브라우저 추적에는 `NEXT_PUBLIC_POSTHOG_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`가 필요합니다.
+- 관리자 전환 리포트 API에는 `POSTHOG_PROJECT_ID`, `POSTHOG_API_KEY`, `POSTHOG_BASE_URL`이 추가로 필요합니다.
+- `POSTHOG_BASE_URL`이 없으면 `NEXT_PUBLIC_POSTHOG_UI_HOST` 또는 `NEXT_PUBLIC_POSTHOG_HOST`에서 유도합니다.
+
+### Sentry
+
+- `next.config.ts`, `instrumentation.ts`, `app/error.tsx`, `app/global-error.tsx`가 Sentry 설정을 사용합니다.
+- 개발도구 > 모니터링에서 클라이언트/서버 테스트 이벤트를 보낼 수 있습니다.
+
+### LLM Gateway / Cloudflare Access
+
+- `LLM_BASE_URL`은 브라우저가 아니라 서버 라우트(`app/api/admin/ai-write/route.ts`)에서만 사용합니다.
+- 외부 공개 경로는 `Cloudflare Tunnel + Access Service Token` 조합을 권장합니다.
+- 자세한 운영 절차는 `docs/llm-gateway-cloudflare-setup.md`를 참고하세요.

@@ -21,6 +21,7 @@ Dental clinic website for "서울본치과" (Seoul Born Dental Clinic) in Gimpo,
 - **Analytics**: Google Analytics 4 Data API (`@google-analytics/data`), Google Search Console API (`googleapis`), Naver DataLab API (검색 트렌드), Naver Search Ads API (절대 검색량) — 인사이트 탭에서 통합 분석
 - **Package Manager**: pnpm
 - **Deployment**: Vercel (Edge Network + Serverless Functions)
+- **Production deploy policy**: `pnpm deploy` / `vercel --prod` 사용 금지. production은 `main` push로만 배포
 
 ## Getting Started
 
@@ -38,16 +39,17 @@ pnpm dev                      # http://localhost:3000
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm generate-blog-snapshot` — Supabase 블로그 snapshot 수동 재생성 (`lib/blog/generated/posts-snapshot.ts`)
 - `pnpm generate-dev-manifest` — 개발 대시보드 매니페스트 수동 재생성 (`lib/dev/generated/dev-manifest.ts`)
-- `pnpm test:e2e` — Playwright 스모크 테스트 실행 (Chromium, 7개 정적 페이지 렌더링 검증)
+- `pnpm test:e2e` — Playwright 스모크 테스트 실행 (홈/진료/블로그/FAQ/404/admin/sitemap 포함)
 - `pnpm test:e2e:ui` — Playwright UI 모드로 디버깅
 - `pnpm lint` — Run ESLint
-- `pnpm deploy` — Deploy to Vercel (GitHub push로 자동 배포, 또는 `vercel` CLI)
+- `pnpm deploy` — package.json에 legacy script가 남아 있어도 사용 금지. production은 `main` push 기반 자동 배포만 허용
+- `pnpm review-status` — 현재 구현 상태 요약 리포트 생성
 - `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
 - `pnpm submit-indexnow:all` — 전체 사이트 URL을 IndexNow에 제출 (초기 설정 또는 전체 재인덱싱 시)
 
 ## Testing
 
-Playwright 스모크 테스트 (Chromium 단일 프로젝트, 7개 정적 페이지 렌더링 검증). 배포 전 로컬에서 실행 권장.
+Playwright 스모크 테스트는 Chromium 단일 프로젝트로 홈, 진료, 블로그, FAQ, 404, 관리자 진입, `sitemap.xml`까지 확인합니다. 배포 전 로컬에서 실행 권장.
 
 ```bash
 pnpm test:e2e          # 스모크 테스트 실행
@@ -56,166 +58,48 @@ pnpm test:e2e:ui       # UI 모드 디버깅
 
 ## Project Structure
 
-```
+```text
 app/                          # Next.js App Router pages
-  layout.tsx                  # Root layout (header, footer, floating CTA, admin floating button, JSON-LD, GA 관리자 트래픽 제외)
-  page.tsx                    # Homepage (hero, values, treatments, doctor, map, CTA)
-  globals.css                 # Design tokens, @theme inline, utility classes
-  favicon.ico                 # Favicon
-  robots.ts                   # robots.txt generation (force-static)
-  sitemap.ts                  # Sitemap XML generation (force-static, includes blog posts)
-  error.tsx                   # 에러 페이지 (한국어, 다시 시도 + 전화 상담)
-  not-found.tsx               # 404 페이지 (한국어, 홈으로 + 전화 상담)
-  about/page.tsx              # Clinic info, doctor bio, facility, hours
-  treatments/
-    page.tsx                  # Treatment listing (6 cards)
-    [slug]/page.tsx           # Individual treatment detail (generateStaticParams, 지역 SEO 메타데이터, HowTo 스키마, 관련 진료 교차 링크)
-    [slug]/loading.tsx        # Suspense loading boundary
-  blog/
-    page.tsx                  # Blog hub (delegates to BlogContent)
-    [category]/page.tsx       # Category hub landing page (7 categories, generateStaticParams)
-    [category]/[slug]/page.tsx # Blog post detail (generateStaticParams, category consistency guard, 맥락형 CTA, 목차 TOC)
-    [category]/[slug]/loading.tsx # Suspense loading boundary
-  faq/page.tsx                # 전체 FAQ 통합 페이지 (6개 진료 과목 FAQ, FAQPage JSON-LD)
+  layout.tsx                  # Root layout (header, footer, floating CTA, admin entry, 공통 JSON-LD)
+  page.tsx                    # Homepage
+  about/                      # 병원 소개
+  treatments/                 # 진료 과목 목록 + 상세
+  blog/                       # 블로그 허브 / 카테고리 허브 / 포스트 상세
+  faq/                        # 전체 FAQ 페이지
   admin/
-    layout.tsx                # Admin layout (noindex, Header/Footer CSS 숨김)
+    login/page.tsx            # Google OAuth 로그인
+    preview/[category]/[slug] # 초안 미리보기
     (dashboard)/
-      layout.tsx              # AuthGuard wrapper
-      page.tsx                # Dashboard main — 6탭 컨테이너 ("use client")
+      page.tsx                # 6탭 관리자 콘솔 컨테이너
       components/
-        AdminTabs.tsx         # 탭 네비게이션 (개발/인사이트/블로그/설정, 아이콘+반응형 텍스트)
-        InsightTab.tsx        # 인사이트 탭 컨테이너 (서브탭: 요약/트래픽/검색 성과/콘텐츠 전략/트렌드)
-        insight/
-          SummarySubTab.tsx   # 인사이트>요약 서브탭 (KPI 카드, 액션 알림, 콘텐츠 갭 TOP 5, 추천 주제 TOP 3)
-          StrategySubTab.tsx  # 인사이트>콘텐츠 전략 서브탭 (기회 매트릭스 산점도, 교차 키워드, 갭 테이블, 주제 추천)
-          TrendSubTab.tsx     # 인사이트>트렌드 서브탭 (기간 선택, 카테고리 개요 카드, 드릴다운 상세 차트)
-        TrafficTab.tsx        # 인사이트>트래픽 서브탭 (Recharts 바/파이/영역 차트, GA4 Data API)
-        SearchTab.tsx         # 인사이트>검색 성과 서브탭 (Recharts 바/라인 차트, Search Console API)
-        BlogTab.tsx           # 블로그 관리 탭 (CRUD, 발행 예약, 검색/필터/정렬, 좋아요 집계, 카테고리 파이차트, 발행 스케줄)
-        BlogEditor.tsx        # 블로그 포스트 편집기 (임시저장/발행 유지, Zod 검증)
-        SettingsTab.tsx       # 설정 탭 (SNS 링크/병원 정보/진료시간/빠른 링크)
-        StatCard.tsx          # 통계 카드 (아이콘 + 값 + 라벨)
-        ConfigRow.tsx         # 설정 행 (라벨 + 값 표시)
-        MetricCard.tsx        # 지표 카드 (값 + 증감률)
-        DataTable.tsx         # 범용 데이터 테이블 (정렬/검색 기능)
-        AdminErrorState.tsx   # 공통 에러 상태 UI
-        AdminLoadingSkeleton.tsx # 공통 로딩 스켈레톤 UI
-        PeriodSelector.tsx    # 기간 선택 버튼 그룹
-        DevTab.tsx            # 개발 탭 컨테이너 (서브탭: 현황/성능/레퍼런스)
-        ProjectTab.tsx        # 개발>현황 서브탭 (개선 항목 진행률, 환경변수 상태, 기술 스택, 사이트 설정 상태)
-        PerformanceTab.tsx    # 개발>성능 서브탭 (PageSpeed Insights — Lighthouse 점수, Core Web Vitals, 확장형 개선 기회, 수동 갱신)
-        ReferenceTab.tsx      # 개발>레퍼런스 서브탭 (의존성, TS/ESLint, 라우트, 인프라, Supabase, API/캐시 — 아코디언 UI)
-        useAdminApi.ts        # Admin API 데이터 페칭 훅 (SWR 패턴, AbortController로 race condition 방지)
-    login/
-      page.tsx                # Google OAuth 리다이렉트 + PKCE code exchange ("use client")
+        DashboardTab.tsx      # 운영 요약 탭
+        ContentTab.tsx        # 콘텐츠/포스트/발행 일정/성과 탭
+        SeoTab.tsx            # 트래픽/검색 성과/콘텐츠 전략/트렌드 탭
+        ConversionTab.tsx     # PostHog 전환 리포트 탭
+        AdminSettingsTab.tsx  # 사이트 설정 탭
+        DevtoolsTab.tsx       # 현황/성능/레퍼런스/모니터링/AI 로그 탭
+        blog/                 # 콘텐츠 서브탭(PostsSubTab, StatsSubTab, AI 작성 모달)
+        insight/              # SEO/전환 세부 서브탭
   api/
-    dev/
-      env-status/
-        route.ts              # 환경변수 상태 API (GET, Admin 인증)
-      pagespeed/
-        route.ts              # PageSpeed Insights API 프록시 (GET, Admin 인증, Supabase L2 캐시, ?force=true 수동 갱신)
-    admin/
-      _lib/
-        auth.ts               # Admin API 인증 미들웨어 (Supabase Admin access_token 검증)
-        cache.ts              # unstable_cache 래퍼 + TTL 상수 (GA4 1h, SC/DataLab 6h, PSI/검색광고 24h, 좋아요 5m)
-      analytics/
-        route.ts              # GA4 트래픽 데이터 API (GET)
-      search-console/
-        route.ts              # Search Console 검색 성과 API (GET)
-      naver-datalab/
-        route.ts              # 네이버 DataLab 검색 트렌드 API (GET)
-        overview/
-          route.ts            # 트렌드 개요 API — mode=volume|full, volume: 검색량만(DataLab 스킵), full: 트렌드 포함 (GET)
-        category/
-          [slug]/route.ts     # 카테고리별 상세 트렌드 API (GET)
-      naver-searchad/
-        volume/
-          route.ts            # 네이버 검색광고 키워드 검색량 API (GET, 24시간 캐시)
-      blog-likes/
-        route.ts              # Supabase 좋아요 집계 API (GET)
-      blog-posts/
-        route.ts              # 블로그 포스트 목록/생성 API (GET/POST, Zod 검증)
-        [slug]/route.ts       # 블로그 포스트 상세/수정/삭제 API (GET/PUT/DELETE)
-      site-config/
-        [type]/route.ts       # 사이트 설정 조회/수정 API (GET/PUT, type: links|clinic|hours)
-  contact/
-    layout.tsx                # Contact layout wrapper with metadata
-    page.tsx                  # 전화 상담 안내 + 오시는 길 ("use client")
+    admin/                    # 관리자용 데이터/API 엔드포인트
+    dev/                      # 개발도구 엔드포인트
+    cron/rebuild/route.ts     # 예약 발행 ISR 재검증 + IndexNow 자동 제출
 components/
-  blog/
-    BlogContent.tsx           # Blog listing/display component ("use client")
-    BlogShareButton.tsx       # Share button with Web Share API + clipboard fallback ("use client")
-    TableOfContents.tsx       # 블로그 목차 자동 생성 ("use client", IntersectionObserver 스크롤 스파이, 모바일 접기/펼치기)
-    LikeButton.tsx            # Supabase RPC 좋아요 버튼 (toggle_like, get_like) ("use client")
-  admin/
-    AuthGuard.tsx             # Supabase Auth guard ("use client")
-    DashboardHeader.tsx       # 관리자 대시보드 헤더 ("use client")
-    AdminFloatingButton.tsx   # 관리자 플로팅 대시보드 버튼 ("use client", localStorage 게이트 + 동적 Supabase import)
-    AdminEditButton.tsx       # 관리자 인라인 편집 버튼 — 라벨 포함 ("use client")
-    AdminEditIcon.tsx         # 관리자 인라인 편집 아이콘 — 아이콘만 ("use client")
-    AdminSettingsLink.tsx     # 관리자 설정 편집 링크 ("use client", localStorage 게이트 + 동적 Supabase import)
-    PublishPopup.tsx          # 발행 팝업 공유 컴포넌트 — BlogTab/AdminDraftBar 공유 ("use client")
+  admin/                      # 관리자 진입/편집 보조 컴포넌트
+  blog/                       # 블로그 UI
   layout/                     # Header, Footer, FloatingCTA
-  ui/                         # Motion (animations), KakaoMap, CTABanner, FaqAccordion
-hooks/
-  useAdminAuth.ts            # 공유 관리자 인증 훅 (Supabase onAuthStateChange + isAdminEmail + GA 관리자 제외 플래그)
-  usePublishPopup.ts         # 발행 팝업 상태 관리 + 추천 날짜 계산 훅 (AdminDraftBar 공유)
+  ui/                         # 공용 UI / Motion / Map / Accordion
+hooks/                        # useAdminAuth, usePublishPopup
 lib/
-  constants.ts               # Single source of truth: clinic info, hours, treatments, nav, SEO
-  treatments.ts              # Treatment detail descriptions, steps, advantages, FAQ (치과 선택 FAQ 포함), RELATED_TREATMENTS 교차 링크 매핑
-  date.ts                    # KST 날짜 유틸리티 (getTodayKST)
-  format.ts                  # 날짜 포맷 유틸리티 (formatDate)
-  supabase.ts                # Supabase 브라우저 클라이언트 (싱글톤, isSupabaseConfigured, getAccessToken)
-  admin-auth.ts              # 관리자 인증 모듈 (Supabase Google OAuth, 리다이렉트 방식, 이메일 화이트리스트)
-  admin-data.ts              # 관리자 대시보드 데이터 (개선 항목, 블로그 통계, 사이트 설정)
-  admin-utils.ts             # 관리자 공통 유틸리티 (calcChange)
-  supabase-admin.ts          # Supabase Admin 클라이언트 (service_role key, RLS 바이패스)
-  admin-analytics.ts         # GA4 Data API 클라이언트 (KST 기간 계산, 기간 비교)
-  admin-search-console.ts    # Search Console API 클라이언트 (3일 지연 오프셋, dynamic import)
-  admin-naver-datalab.ts     # 네이버 DataLab 검색 트렌드 API 클라이언트 (5개 키워드 그룹)
-  admin-naver-datalab-keywords.ts # 카테고리별 키워드 정의 (8카테고리×5서브그룹, volumeKeywords, TopicAngles)
-  admin-naver-searchad.ts    # 네이버 검색광고 API 클라이언트 (HMAC-SHA256, lazy env getter, 공백 정규화, 순차 배치 호출, 배치 간 중복 제거)
-  trend-analysis.ts          # 트렌드 분석 엔진 (analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData)
-  blog-supabase.ts          # Supabase 블로그 CRUD (Admin client, unstable_cache, ISR revalidate)
-  blog-validation.ts         # Zod 검증 스키마 (블로그 포스트 + 사이트 설정 + 발행 스케줄)
-  dev-data.ts                # 개발 대시보드 정적 데이터 (Next.js 설정, ESLint, Supabase, API, 캐시, 환경변수)
-  dev/
-    generated/               # 자동 생성 (gitignored) — pnpm generate-dev-manifest
-      dev-manifest.ts         # DEV_MANIFEST (의존성, 라우트, 프로젝트 통계, TS/Supabase 설정)
-  site-config-supabase.ts   # Supabase 사이트 설정 CRUD (links, clinic, hours, schedule)
-  fonts.ts                   # Local font config (Pretendard, Noto Serif KR)
-  jsonld.ts                  # JSON-LD generators: clinic, treatment, FAQ, blog post, breadcrumb, collection
-  blog/
-    types.ts                 # BlogPost, BlogPostMeta 인터페이스, 카테고리/태그 상수
-    category-slugs.ts        # 카테고리 ↔ URL 슬러그 매핑 (single source of truth)
-    category-colors.ts       # 카테고리별 색상 매핑 (목록/상세 공유)
-    index.ts                 # re-export + 진료↔블로그 매핑 (TREATMENT_CATEGORY_MAP)
-    generated/               # 자동 생성 (gitignored) — pnpm generate-blog-snapshot / generate-blog-meta
-      posts-meta.ts          # BLOG_POSTS_META 배열 (snapshot 기반 메타데이터)
-      posts-snapshot.ts      # BLOG_POSTS_SNAPSHOT 배열 (Supabase 공개 fallback)
-public/
-  fonts/                     # Local font files (woff2)
-  images/                    # Clinic and doctor images
-  BingSiteAuth.xml           # Bing webmaster verification
-  naver*.html                # Naver webmaster verification
-  7d01a83d...*.txt           # IndexNow API 키 파일
-docs/
-  blog-writing-guide.md      # 블로그 작성 가이드 (브랜드 보이스, 문체, 용어 통일표, SEO)
-  supabase-architecture.md   # Supabase 테이블/RLS/RPC/캐싱 구조
-  blog-workflow.md           # 블로그 발행 워크플로우 (초안→예약→발행)
-  environment-variables.md   # 환경변수 목록 및 설정 가이드
-  todo.md                    # 미완료 항목 및 개선 과제
-scripts/
-  generate-blog-meta.ts      # 빌드 시 snapshot에서 메타데이터 자동 추출 스크립트
-  generate-blog-snapshot.ts  # 빌드 시 Supabase blog_posts snapshot 생성 스크립트
-  generate-dev-manifest.ts   # 빌드 시 개발 대시보드 매니페스트 생성 스크립트
-  submit-indexnow.mjs        # IndexNow URL 제출 스크립트 (Node.js 내장 모듈만 사용)
-vercel.json                  # Vercel 설정 (Cron Jobs)
-supabase/
-  migrations/
-    001_initial_schema.sql   # Supabase 초기 스키마 (4 테이블, RLS, RPC)
-postcss.config.mjs           # PostCSS with @tailwindcss/postcss
-pnpm-workspace.yaml          # pnpm workspace config
+  constants.ts                # Single source of truth: clinic info, hours, treatments, links, reviews
+  jsonld.ts                   # JSON-LD generators (clinic/treatment/blog/collection/breadcrumb/doctor/website)
+  indexnow.ts                 # IndexNow 제출 유틸
+  admin-*.ts                  # GA4 / Search Console / Naver / PostHog / admin helpers
+  blog/                       # 블로그 타입, 카테고리, generated snapshot/meta
+public/                       # fonts, images, verification files, llms.txt, IndexNow key file
+docs/                         # 운영/개발 문서
+scripts/                      # build helpers, IndexNow/manual utility scripts
+supabase/migrations/          # schema, RLS, RPC
 ```
 
 ## Architecture
@@ -299,13 +183,21 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 4탭 구조 (`?tab=` query param, 기본 탭: 개발): 개발(서브탭: 현황/성능/레퍼런스), 인사이트(서브탭: 요약/트래픽/검색 성과/콘텐츠 전략/트렌드), 블로그(CRUD+발행+파이차트+스케줄), 설정(편집+빠른링크). 구 URL(`?tab=traffic`/`search`/`trend`)은 인사이트 서브탭으로 자동 리다이렉트.
+**관리자 대시보드 (`/admin`)** — 6탭 구조 (기본 탭: `dashboard`).
 
-- **API 공통**: Supabase Admin access_token 검증, `unstable_cache` TTL, `Cache-Control: private, no-store`
-- **API 엔드포인트**: `/api/admin/analytics`, `/search-console`, `/naver-datalab` (트렌드), `/naver-datalab/overview` (개요+갭분석), `/naver-datalab/category/[slug]` (카테고리별), `/naver-searchad/volume` (검색량), `/blog-likes`, `/blog-posts` (CRUD), `/site-config/[type]` (links|clinic|hours|schedule)
-- **편의 기능**: `AdminFloatingButton`(좌하단 `bg-gray-600`), `AdminEditButton`/`AdminEditIcon`(인라인 편집→딥링크), `useAdminAuth` 공유 훅. `AdminFloatingButton`과 `AdminSettingsLink`는 루트 레이아웃에서 로드되므로 `localStorage("born2smile-admin")` 게이트 + `import()` 동적 Supabase 로드 패턴을 사용하여 비관리자 방문자의 번들에서 Supabase SDK를 제거
-- **GA 관리자 트래픽 제외**: `useAdminAuth`가 관리자 로그인 시 `localStorage("born2smile-admin")` 설정 → `layout.tsx` 인라인 스크립트가 `window["ga-disable-G-3ZDMMFGP6Z"]=true`로 GA 추적 비활성화
-- **개발 탭** (`?tab=dev`): 서브탭 3개 — 현황(`sub=project`, 개선 진행률+환경변수+기술 스택), 성능(`sub=perf`, PageSpeed Insights + 수동 갱신 + 확장형 개선 기회), 레퍼런스(`sub=ref`, 아코디언 6섹션). 데이터 소스: 빌드 타임 매니페스트 (`lib/dev/generated/dev-manifest.ts`) + 정적 데이터 (`lib/dev-data.ts`). 환경변수 상태는 `/api/dev/env-status`, PageSpeed는 `/api/dev/pagespeed` (`PAGESPEED_API_KEY` 필수, L1 24h + L2 Supabase 일별 캐시). 매니페스트는 `pnpm dev`/`pnpm build` 시 자동 생성
+- **대시보드**: 요약 카드, 해야 할 일, 핵심 CTA
+- **콘텐츠**: 포스트 관리 / 발행 일정 / 성과
+- **유입·SEO**: 트래픽 / 검색 성과 / 콘텐츠 전략 / 트렌드
+- **전환**: PostHog 기반 CTA·전화·페이지 기여 리포트
+- **사이트 설정**: SNS 링크, 병원 정보, 진료시간 저장
+- **개발도구**: 현황 / 성능 / 레퍼런스 / 모니터링 / AI 로그
+
+추가 메모:
+- 구 URL(예: `?tab=dev`, `?tab=traffic`, `?tab=search`, `?tab=trend`, `?tab=blog`)은 현재 탭 구조로 자동 리다이렉트됩니다.
+- 공통 관리자 API는 Supabase Admin access token 검증 후 응답하며, 대부분 `unstable_cache`와 `Cache-Control: private, no-store`를 사용합니다.
+- `AdminFloatingButton`, `AdminSettingsLink`는 루트 레이아웃에서 로드되지만 `localStorage("born2smile-admin")` 게이트 + 동적 import로 비관리자 번들 영향을 최소화합니다.
+- GA 관리자 트래픽 제외는 `useAdminAuth`가 설정한 localStorage 플래그와 `layout.tsx` 인라인 스크립트로 처리합니다.
+- 개발도구 탭 데이터 소스는 빌드 타임 매니페스트(`lib/dev/generated/dev-manifest.ts`) + 정적 데이터(`lib/dev-data.ts`)입니다.
 
 ## Common Tasks
 
@@ -319,12 +211,12 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 **방법 1: 관리자 대시보드 (권장)**
 
-1. `/admin` → 블로그 탭 → "새 포스트 작성" 버튼
-2. BlogEditor에서 제목, 부제, 요약, 카테고리, 태그, 본문 섹션 입력
+1. `/admin?tab=content&sub=posts`에서 "새 포스트 작성" 버튼 클릭
+2. BlogEditor에서 제목, 부제, 요약, 카테고리, 태그, 본문 블록 입력
 3. "임시저장" 클릭 → Supabase에 `published: false` 상태로 저장
-4. 블로그 탭 포스트 목록에서 해당 포스트의 "발행" 버튼 클릭
-5. PublishPopup에서 스케줄 기반 추천 날짜 확인/변경 → "발행 예약" 클릭
-6. `published: true` + 선택한 날짜로 업데이트, ISR revalidate로 사이트 반영
+4. 포스트 목록에서 해당 글의 발행/예약 발행 액션 클릭
+5. PublishPopup에서 추천 날짜를 확인하거나 수정한 뒤 저장
+6. `published: true` + 선택 날짜로 업데이트되고 ISR revalidate 및 IndexNow 제출 흐름이 이어짐
 
 **공통 사항:**
 - 카테고리(1개 선택): `"예방관리" | "보존치료" | "보철치료" | "임플란트" | "치아교정" | "소아치료" | "건강상식"`
@@ -337,7 +229,7 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### 병원 정보 수정
 
-**방법 1: 관리자 대시보드** — `/admin` → 설정 탭에서 SNS 링크, 병원 정보, 진료시간 실시간 편집 (Supabase `site_config` 테이블에 저장). 발행 스케줄은 블로그 탭에서 편집.
+**방법 1: 관리자 대시보드** — `/admin?tab=settings`에서 SNS 링크, 병원 정보, 진료시간을 실시간 편집합니다 (Supabase `site_config` 테이블에 저장). 발행 스케줄은 `/admin?tab=content&sub=schedule`에서 편집합니다.
 
 **방법 2: 코드 수정** — `lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
 
@@ -355,7 +247,8 @@ pnpm-workspace.yaml          # pnpm workspace config
 
 ### JSON-LD 구조화 데이터
 
-JSON-LD 구조화 데이터는 `lib/jsonld.ts`에서 6종 생성 (Clinic, Treatment, HowTo, FAQ, BlogPost, Breadcrumb).
+`lib/jsonld.ts`에는 현재 사용 중인 JSON-LD 생성기(Clinic, Treatment/MedicalWebPage, FAQ, BlogPost, Breadcrumb)가 있습니다.
+`getHowToJsonLd()` 헬퍼는 파일에 남아 있지만 현재 라우트에서는 렌더링하지 않습니다.
 
 ## Code Conventions
 
@@ -391,7 +284,7 @@ ESLint 9 flat config (`eslint.config.mjs`):
 Vercel로 배포 (Edge Network + Serverless Functions):
 
 - `vercel.json` — Cron Jobs 설정 (예약 발행용 daily revalidate)
-- GitHub 연동 — main push → 자동 배포, PR → Preview 배포
+- GitHub 연동 — `main` push → 자동 배포, PR/브랜치 → Vercel Preview 배포
 - 정적 에셋은 Vercel Edge Network (서울 PoP 포함)에서 캐싱
 - SSR/API Routes는 Serverless Functions에서 처리
 - `next/image` Edge 최적화
@@ -399,20 +292,19 @@ Vercel로 배포 (Edge Network + Serverless Functions):
 
 ### 예약 발행 자동 재빌드
 
-Vercel Cron Job (`vercel.json`)이 매일 KST 00:05 (UTC 15:05)에 `/api/cron/rebuild` 엔드포인트를 호출하여 블로그 경로 ISR 재검증을 트리거. 이를 통해 `date` 필드가 미래 날짜인 블로그 포스트가 해당 날짜에 자동 발행됨. `CRON_SECRET` 환경변수로 인증.
+Vercel Cron Job (`vercel.json`)이 매일 KST 00:05 (UTC 15:05)에 `/api/cron/rebuild` 엔드포인트를 호출하여 블로그 경로 ISR 재검증을 트리거합니다. 이 경로는 `CRON_SECRET`으로 인증되며, 당일 발행 포스트와 `/blog`, `/sitemap.xml`을 함께 재검증합니다.
 
 ### IndexNow
 
-[IndexNow](https://www.indexnow.org/)를 통해 새 콘텐츠를 검색엔진(Bing, Naver, Yandex 등)에 즉시 알림:
+[IndexNow](https://www.indexnow.org/)를 통해 새 콘텐츠를 검색엔진(Bing, Naver, Yandex 등)에 즉시 알립니다.
 
-- **API 키 파일**: `public/7d01a83dddd13f9abf9186b937921369.txt`
-- **제출 스크립트**: `scripts/submit-indexnow.mjs` (Node.js 내장 모듈만 사용, 의존성 설치 불필요)
-- **자동 제출**: GitHub Actions 스케줄 재빌드 시 오늘 날짜 포스트를 자동 감지하여 제출
+- **API 키 파일**: `public/<INDEXNOW_KEY>.txt`
+- **자동 제출**: `/api/cron/rebuild`가 당일 발행 포스트 URL과 sitemap을 함께 제출 (`lib/indexnow.ts`)
 - **수동 제출**: `pnpm submit-indexnow` (오늘 발행분) / `pnpm submit-indexnow:all` (전체 URL)
 
 ## Environment Variables
 
-상세 내용은 [`docs/environment-variables.md`](docs/environment-variables.md) 참조. 로컬 개발: `.env.example` → `.env.local`, 프로덕션: Vercel Dashboard → Settings → Environment Variables. Supabase 관련: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Vercel 추가: `GOOGLE_SERVICE_ACCOUNT_KEY` (GA4/SC 인증), `CRON_SECRET` (Cron 인증).
+상세 내용은 [`docs/environment-variables.md`](docs/environment-variables.md) 참조. 로컬 개발: `.env.example` → `.env.local`, 프로덕션: Vercel Dashboard → Settings → Environment Variables. 핵심 변수는 Supabase(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`), 운영 자동화(`CRON_SECRET`, `INDEXNOW_KEY`), 분석/모니터링(`GOOGLE_SERVICE_ACCOUNT_KEY`, PostHog, Sentry)입니다.
 
 ## Known TODO Items
 
