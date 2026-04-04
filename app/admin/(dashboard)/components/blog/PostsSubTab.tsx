@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Pencil, Trash2, Plus, Calendar, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, RefreshCw, Sparkles } from "lucide-react";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
@@ -17,6 +17,7 @@ import BlogEditor from "../BlogEditor";
 import type { BlogEditorData } from "../BlogEditor";
 import { calcDraftRecommendationOrder, HeartIcon } from "./blog-helpers";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
+import { AiWriteModal } from "./AiWriteModal";
 
 // -------------------------------------------------------------
 // PostsSubTab
@@ -74,6 +75,8 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   // CRUD state
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
+  const [aiWriteOpen, setAiWriteOpen] = useState(false);
+  const [draftData, setDraftData] = useState<BlogEditorData | null>(null);
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
@@ -321,6 +324,13 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "새로고침 중..." : "캐시 갱신"}
+          </button>
+          <button
+            onClick={() => setAiWriteOpen(true)}
+            className="flex items-center gap-2 rounded-lg border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-medium text-[var(--color-gold,#C9930A)] hover:bg-[var(--color-gold-bg,#FDF3E0)] transition-colors"
+          >
+            <Sparkles className="h-4 w-4" />
+            AI로 작성
           </button>
           <button
             onClick={handleCreate}
@@ -596,6 +606,19 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
         />
       )}
 
+      {/* AI write modal */}
+      {aiWriteOpen && (
+        <AiWriteModal
+          onClose={() => setAiWriteOpen(false)}
+          onDraftReady={(data) => {
+            setDraftData(data);
+            setEditingPost(null);
+            setAiWriteOpen(false);
+            setEditorOpen(true);
+          }}
+        />
+      )}
+
       {/* Blog editor modal */}
       {editorOpen && (
         <BlogEditor
@@ -613,6 +636,8 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                   content: [], // fetched inside BlogEditor via API
                   published: editingPost.published,
                 }
+              : draftData
+              ? draftData
               : !editingPost && newCategory && getCategoryFromSlug(newCategory)
               ? {
                   slug: "",
