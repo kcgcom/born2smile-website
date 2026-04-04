@@ -201,6 +201,7 @@ export interface EnvVariable {
 export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NEXT_PUBLIC_POSTHOG_TOKEN", label: "PostHog 공개 토큰", required: false, scope: "public" },
   { key: "NEXT_PUBLIC_POSTHOG_HOST", label: "PostHog 수집 호스트", required: false, scope: "public" },
+  { key: "NEXT_PUBLIC_POSTHOG_UI_HOST", label: "PostHog UI 호스트", required: false, scope: "public" },
   { key: "NEXT_PUBLIC_KAKAO_MAP_APP_KEY", label: "카카오맵 앱 키", required: true, scope: "public" },
   { key: "NEXT_PUBLIC_SUPABASE_URL", label: "Supabase URL", required: true, scope: "public" },
   { key: "NEXT_PUBLIC_SUPABASE_ANON_KEY", label: "Supabase Anon Key", required: true, scope: "public" },

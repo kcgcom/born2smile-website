@@ -107,6 +107,7 @@ function getPostHogConfig(): PostHogConfig {
   const apiKey = process.env.POSTHOG_API_KEY?.trim() || null;
   const baseUrl =
     process.env.POSTHOG_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_POSTHOG_UI_HOST?.trim() ||
     (host ? derivePrivateBaseUrl(host) : null);
 
   return {
