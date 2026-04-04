@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, FilePenLine, Search, Settings2, Shield, Wrench } from "lucide-react";
+import { CalendarClock, FilePenLine, Search, Settings2, Wrench } from "lucide-react";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { MetricCard } from "@/app/admin/(dashboard)/components/MetricCard";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
@@ -142,13 +142,10 @@ export function DashboardTab({
       <AdminSurface tone="success" className="rounded-3xl px-6 py-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <AdminPill tone="sky">운영 중심 콘솔</AdminPill>
-              <AdminPill tone="amber">/admin 기본 경로</AdminPill>
-            </div>
+            <AdminPill tone="sky">운영 중심 콘솔</AdminPill>
             <h2 className="mt-3 text-2xl font-bold">오늘 확인할 운영 우선순위</h2>
             <p className="mt-2 text-sm text-emerald-50/90">
-              `/admin`이 유일한 관리자 경로입니다. 블로그, 전환, 설정을 한 흐름으로 빠르게 운영하세요.
+              블로그, 전환, 설정 작업을 한 흐름으로 빠르게 점검하세요.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -261,18 +258,6 @@ export function DashboardTab({
             </div>
           </AdminSurface>
 
-          <AdminSurface tone="white" className="rounded-3xl p-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-lg font-bold text-[var(--foreground)]">운영 안내</h3>
-              <Shield className="h-5 w-5 text-[var(--color-primary)]" />
-            </div>
-            <p className="text-sm text-[var(--muted)]">
-              관리자 기본 진입과 초안 미리보기 경로가 모두 `/admin` 기준으로 정리되었습니다.
-            </p>
-            <div className="mt-4">
-              <AdminActionLink tone="dark" href="/admin">관리자 홈으로 이동</AdminActionLink>
-            </div>
-          </AdminSurface>
         </div>
       </div>
     </div>

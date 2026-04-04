@@ -14,6 +14,13 @@ const PAGE_MODIFIED = {
   contact: new Date("2026-02-20"),
 } as const;
 
+function getPostLastModified(post: { date: string; dateModified?: string }): Date {
+  const lastModified = post.dateModified && post.dateModified > post.date
+    ? post.dateModified
+    : post.date;
+  return new Date(lastModified);
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
@@ -26,13 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 블로그 허브 및 카테고리 페이지 lastmod를 최신 포스트 날짜로 자동 계산
   const latestPostDate = publishedPosts.reduce<Date>((max, p) => {
-    const d = new Date(p.dateModified ?? p.date);
+    const d = getPostLastModified(p);
     return d > max ? d : max;
   }, PAGE_MODIFIED.blog);
 
   const latestDateByCategory = new Map<string, Date>();
   for (const p of publishedPosts) {
-    const d = new Date(p.dateModified ?? p.date);
+    const d = getPostLastModified(p);
     const prev = latestDateByCategory.get(p.category);
     if (!prev || d > prev) latestDateByCategory.set(p.category, d);
   }
@@ -71,7 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...publishedPosts.map((post) => ({
       url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
-      lastModified: new Date(post.dateModified ?? post.date),
+      lastModified: getPostLastModified(post),
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),

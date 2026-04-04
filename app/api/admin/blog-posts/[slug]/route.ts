@@ -11,6 +11,7 @@ import {
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
+import { getTodayKST } from "@/lib/date";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
@@ -91,25 +92,39 @@ export async function PUT(
       .single();
     if (existingMetaError) throw existingMetaError;
 
-    await updateBlogPost(slug, data, auth.email);
+    const todayKST = getTodayKST();
+    const previousPublished = existingMeta?.published === true;
+    const effectivePublished = data.published ?? previousPublished;
+    const effectiveDate = data.date ?? existingMeta?.date ?? existing.date;
+    const contentChanged = data.title !== undefined
+      || data.subtitle !== undefined
+      || data.excerpt !== undefined
+      || data.category !== undefined
+      || data.tags !== undefined
+      || data.blocks !== undefined
+      || data.content !== undefined;
+    const publishedAndDatedTodayOrPast = effectivePublished === true
+      && effectiveDate <= todayKST;
+    const updateData: UpdateBlogPostData = data.dateModified === undefined
+      && contentChanged
+      && publishedAndDatedTodayOrPast
+      ? { ...data, dateModified: todayKST }
+      : data;
+
+    await updateBlogPost(slug, updateData, auth.email);
 
     // 카테고리 결정: 업데이트된 카테고리 또는 기존 카테고리
-    const category = data.category ?? existing.category;
+    const category = updateData.category ?? existing.category;
     revalidatePath("/blog");
     revalidatePath(getBlogPostUrl(slug, category));
     revalidatePath(`/blog/${getCategorySlug(category)}`);
     // 카테고리가 변경된 경우 이전 카테고리 허브도 무효화
-    if (data.category && data.category !== existing.category) {
+    if (updateData.category && updateData.category !== existing.category) {
       revalidatePath(`/blog/${getCategorySlug(existing.category)}`);
     }
     revalidatePath("/sitemap.xml");
     revalidateTag("blog-posts-admin", "max");
-    const previousPublished = existingMeta?.published === true;
-    const effectivePublished = data.published ?? previousPublished;
-    const effectiveDate = data.date ?? existingMeta?.date ?? existing.date;
-    const becamePublished = !previousPublished && data.published === true;
-    const publishedAndDatedTodayOrPast = effectivePublished === true
-      && effectiveDate <= new Date().toISOString().slice(0, 10);
+    const becamePublished = !previousPublished && updateData.published === true;
     if (becamePublished || publishedAndDatedTodayOrPast) {
       void submitBlogPostToIndexNow(slug, category).catch((error) => {
         console.error("[indexnow] blog post submit failed:", error);

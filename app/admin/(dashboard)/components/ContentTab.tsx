@@ -45,8 +45,12 @@ function ContentScheduleManager() {
   const [formEdits, setFormEdits] = useState<number[] | null>(null);
 
   const days = formEdits ?? data?.publishDays ?? [1, 3, 5];
-  const upcomingPosts = (postsData ?? [])
-    .filter((post) => post.published && post.date >= today)
+  const futureScheduledPosts = (postsData ?? [])
+    .filter((post) => post.published && post.date > today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 6);
+  const publishedTodayPosts = (postsData ?? [])
+    .filter((post) => post.published && post.date === today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
 
@@ -132,21 +136,57 @@ function ContentScheduleManager() {
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-3xl p-6">
-        <h3 className="text-lg font-bold text-[var(--foreground)]">다가오는 예약 발행</h3>
-        <p className="mt-1 text-sm text-[var(--muted)]">이미 예약된 글과 발행일을 함께 확인할 수 있습니다.</p>
-        <div className="mt-4 space-y-3">
-          {upcomingPosts.length > 0 ? (
-            upcomingPosts.map((post) => (
-              <div key={post.slug} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="text-sm font-semibold text-[var(--foreground)]">{post.title}</div>
-                <div className="mt-1 text-xs text-[var(--muted)]">{post.date}</div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-[var(--muted)]">
-              오늘 이후 예약된 글이 없습니다.
+        <h3 className="text-lg font-bold text-[var(--foreground)]">발행 일정 현황</h3>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          다가오는 예약 발행과 오늘 이미 공개된 포스트를 분리해서 확인합니다.
+        </p>
+
+        <div className="mt-4 space-y-5">
+          <section>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h4 className="text-sm font-semibold text-[var(--foreground)]">다가오는 예약 발행</h4>
+              <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                {futureScheduledPosts.length}건
+              </span>
             </div>
-          )}
+            <div className="space-y-3">
+              {futureScheduledPosts.length > 0 ? (
+                futureScheduledPosts.map((post) => (
+                  <div key={post.slug} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="text-sm font-semibold text-[var(--foreground)]">{post.title}</div>
+                    <div className="mt-1 text-xs text-[var(--muted)]">{post.date}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-[var(--muted)]">
+                  오늘 이후 예약된 글이 없습니다.
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="border-t border-slate-200 pt-5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h4 className="text-sm font-semibold text-[var(--foreground)]">오늘 발행 완료</h4>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                {publishedTodayPosts.length}건
+              </span>
+            </div>
+            <div className="space-y-3">
+              {publishedTodayPosts.length > 0 ? (
+                publishedTodayPosts.map((post) => (
+                  <div key={post.slug} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div className="text-sm font-semibold text-[var(--foreground)]">{post.title}</div>
+                    <div className="mt-1 text-xs text-[var(--muted)]">{post.date}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-[var(--muted)]">
+                  오늘 이미 발행된 글은 없습니다.
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </AdminSurface>
     </div>

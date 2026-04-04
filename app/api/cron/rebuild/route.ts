@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   }
 
   revalidatePath("/blog", "layout");
+  revalidatePath("/sitemap.xml");
   const today = getTodayKST();
 
   try {
@@ -25,8 +26,15 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
+    for (const post of data ?? []) {
+      const categorySlug = getCategorySlug(post.category);
+      revalidatePath(`/blog/${categorySlug}`);
+      revalidatePath(`/blog/${categorySlug}/${post.slug}`);
+    }
+
     const urls = (data ?? []).flatMap((post) => [
       `${BASE_URL}/blog/${getCategorySlug(post.category)}/${post.slug}`,
+      `${BASE_URL}/blog/${getCategorySlug(post.category)}`,
       `${BASE_URL}/blog`,
       `${BASE_URL}/sitemap.xml`,
     ]);

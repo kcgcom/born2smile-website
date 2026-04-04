@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BarChart3 } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
-import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { AdminLoadingSkeleton } from "./components/AdminLoadingSkeleton";
 import { AdminTabs, ADMIN_TABS, type AdminTabId } from "./components/AdminTabs";
@@ -101,12 +101,9 @@ export default function AdminDashboardPage() {
         <AdminSurface tone="white" className="mb-4 rounded-3xl px-5 py-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <AdminPill tone="white">/admin 운영 콘솔</AdminPill>
-                <AdminPill tone="warning">운영 중심 기본 경로</AdminPill>
-              </div>
+              <h1 className="text-lg font-semibold text-[var(--foreground)]">운영 콘솔</h1>
               <p className="mt-2 text-sm text-[var(--muted)]">
-                관리자 기본 경로는 `/admin`입니다. 블로그, SEO, 전환, 설정을 한 흐름으로 운영할 수 있습니다.
+                블로그, SEO, 전환, 설정을 한 흐름으로 관리할 수 있습니다.
               </p>
             </div>
             <AdminActionLink tone="dark" href="/admin?tab=content&sub=posts" className="shrink-0">
