@@ -43,9 +43,10 @@ if (typeof window !== "undefined" && POSTHOG_TOKEN && POSTHOG_HOST) {
     capture_pageview: "history_change",
     capture_pageleave: "if_capture_pageview",
     autocapture: false,
-    // 이 프로젝트는 수동 이벤트/페이지뷰만 사용하므로 /flags 기반 확장 로딩을 끈다.
+    // 이 프로젝트는 수동 이벤트/페이지뷰만 사용하므로 외부 확장 로딩을 전부 끈다.
     disable_surveys: true,
     disable_session_recording: true,
+    disable_external_dependency_loading: true,
     advanced_disable_flags: true,
     before_send: (event) => {
       if (shouldBlockAnalytics()) {
