@@ -3,8 +3,14 @@ import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { adminAiWriteRequestSchema } from "@/lib/blog-validation";
 import { insertAiWriteLog, maybePruneAiWriteLogs } from "@/lib/admin-ai-write-logs";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const LLM_BASE_URL = ((process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr").trim() || "https://llm.born2smile.co.kr");
 const LLM_MODEL = ((process.env.LLM_MODEL ?? "fast").trim() || "fast");
+const CLOUDFLARE_ACCESS_CLIENT_ID = process.env.CLOUDFLARE_ACCESS_CLIENT_ID?.trim() ?? "";
+const CLOUDFLARE_ACCESS_CLIENT_SECRET = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET?.trim() ?? "";
+const LLM_UPSTREAM_TIMEOUT_MS = Number(process.env.LLM_UPSTREAM_TIMEOUT_MS ?? "55000");
 const HEADERS = {
   "Cache-Control": "private, no-store",
   Vary: "Authorization",
@@ -106,6 +112,27 @@ function logAiWriteEvent(
   payload: Record<string, unknown>,
 ) {
   console[level](`[ai-write] ${event}`, payload);
+}
+
+function getUpstreamHeaders() {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (CLOUDFLARE_ACCESS_CLIENT_ID && CLOUDFLARE_ACCESS_CLIENT_SECRET) {
+    headers["CF-Access-Client-Id"] = CLOUDFLARE_ACCESS_CLIENT_ID;
+    headers["CF-Access-Client-Secret"] = CLOUDFLARE_ACCESS_CLIENT_SECRET;
+  }
+
+  return headers;
+}
+
+function getTimeoutMs() {
+  if (!Number.isFinite(LLM_UPSTREAM_TIMEOUT_MS) || LLM_UPSTREAM_TIMEOUT_MS < 1_000) {
+    return 55_000;
+  }
+
+  return Math.min(LLM_UPSTREAM_TIMEOUT_MS, 60_000);
 }
 
 interface PersistAiWriteLogInput {
@@ -221,19 +248,23 @@ export async function POST(request: NextRequest) {
     model: LLM_MODEL,
     messageCount: messages.length,
     inputChars,
+    cloudflareAccessEnabled: Boolean(
+      CLOUDFLARE_ACCESS_CLIENT_ID && CLOUDFLARE_ACCESS_CLIENT_SECRET,
+    ),
   });
 
   let upstream: Response;
   try {
     upstream = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getUpstreamHeaders(),
       body: JSON.stringify({
         model: LLM_MODEL,
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         stream: true,
         temperature: mode === "generate" ? 0.7 : 0.9,
       }),
+      signal: AbortSignal.timeout(getTimeoutMs()),
     });
   } catch (error) {
     logAiWriteEvent("error", "upstream_unavailable", {
@@ -241,6 +272,9 @@ export async function POST(request: NextRequest) {
       mode,
       durationMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : "unknown",
+      cloudflareAccessEnabled: Boolean(
+        CLOUDFLARE_ACCESS_CLIENT_ID && CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      ),
     });
     void persistAiWriteLog({
       requestedAt: requestedAtIso,
@@ -262,11 +296,16 @@ export async function POST(request: NextRequest) {
   }
 
   if (!upstream.ok || !upstream.body) {
+    const upstreamBody = await upstream.text().catch(() => "");
     logAiWriteEvent("warn", "upstream_error", {
       email: auth.email,
       mode,
       durationMs: Date.now() - startedAt,
       status: upstream.status,
+      bodySnippet: upstreamBody.slice(0, 500),
+      cloudflareAccessEnabled: Boolean(
+        CLOUDFLARE_ACCESS_CLIENT_ID && CLOUDFLARE_ACCESS_CLIENT_SECRET,
+      ),
     });
     void persistAiWriteLog({
       requestedAt: requestedAtIso,
