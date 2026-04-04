@@ -196,6 +196,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
 
   // CRUD handlers
   const handleCreate = () => {
+    setDraftData(null);
     setEditingPost(null);
     setEditorOpen(true);
   };
@@ -287,6 +288,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     } else {
       const { error } = await mutate("/api/admin/blog-posts", "POST", data);
       if (!error) {
+        setDraftData(null);
         setEditorOpen(false);
         refetchPosts();
       }
@@ -652,7 +654,10 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
               : undefined
           }
           onSave={handleEditorSave}
-          onClose={() => setEditorOpen(false)}
+          onClose={() => {
+            if (!editingPost) setDraftData(null);
+            setEditorOpen(false);
+          }}
         />
       )}
     </div>

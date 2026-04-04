@@ -1,8 +1,13 @@
 import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
+import { adminAiWriteRequestSchema } from "@/lib/blog-validation";
 
-const LLM_BASE_URL = process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr";
-const LLM_MODEL = process.env.LLM_MODEL ?? "large";
+const LLM_BASE_URL = (process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr").trim();
+const LLM_MODEL = (process.env.LLM_MODEL ?? "large").trim();
+const HEADERS = {
+  "Cache-Control": "private, no-store",
+  Vary: "Authorization",
+} as const;
 
 const CHAT_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 작성을 돕는 어시스턴트입니다.
 사용자가 글 주제를 말하면 짧은 질문 1~2개로 방향을 잡아주세요.
@@ -58,35 +63,62 @@ export async function POST(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  const { messages, mode } = (await request.json()) as {
-    messages: { role: string; content: string }[];
-    mode: "chat" | "generate";
-  };
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { error: "BAD_REQUEST", message: "요청 본문을 파싱할 수 없습니다" },
+      { status: 400, headers: HEADERS },
+    );
+  }
+
+  const parsed = adminAiWriteRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: "VALIDATION_ERROR",
+        message: "AI 작성 요청 형식이 올바르지 않습니다",
+        issues: parsed.error.issues,
+      },
+      { status: 400, headers: HEADERS },
+    );
+  }
+
+  const { messages, mode } = parsed.data;
 
   const systemPrompt = mode === "generate" ? GENERATE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT;
 
-  const upstream = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
-      stream: true,
-      temperature: mode === "generate" ? 0.7 : 0.9,
-    }),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: LLM_MODEL,
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        stream: true,
+        temperature: mode === "generate" ? 0.7 : 0.9,
+      }),
+    });
+  } catch {
+    return Response.json(
+      { error: "UPSTREAM_UNAVAILABLE", message: "LLM 서버에 연결할 수 없습니다" },
+      { status: 502, headers: HEADERS },
+    );
+  }
 
   if (!upstream.ok || !upstream.body) {
     return Response.json(
-      { error: `LLM 서버 오류 (${upstream.status})` },
-      { status: 502 },
+      { error: "UPSTREAM_ERROR", message: `LLM 서버 오류 (${upstream.status})` },
+      { status: 502, headers: HEADERS },
     );
   }
 
   return new Response(upstream.body, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
+      ...HEADERS,
       "X-Accel-Buffering": "no",
     },
   });

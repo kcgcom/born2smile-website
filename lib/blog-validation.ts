@@ -94,6 +94,16 @@ export const blogPostUpdateSchema = blogPostBaseSchema
     }
   });
 
+export const adminAiWriteRequestSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string().trim().min(1).max(4000),
+    }),
+  ).min(1).max(20),
+  mode: z.enum(["chat", "generate"]),
+});
+
 // ---------------------------------------------------------------------------
 // Site Config Schemas
 // ---------------------------------------------------------------------------

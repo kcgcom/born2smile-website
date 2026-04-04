@@ -3,45 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Send, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 import { getTodayKST } from "@/lib/date";
-
-const LLM_BASE_URL = (
-  process.env.NEXT_PUBLIC_LLM_BASE_URL ?? "https://llm.born2smile.co.kr"
-).trim();
-const LLM_MODEL = (process.env.NEXT_PUBLIC_LLM_MODEL ?? "fast").trim();
-
-const CHAT_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 작성을 돕는 어시스턴트입니다.
-사용자가 글 주제를 말하면 짧은 질문 1~2개로 방향을 잡아주세요.
-확인할 것: 검색 의도(정보형/행동형/비교형), 강조 포인트, 특수 대상(임산부·시니어 등).
-질문은 한 번에 하나씩, 친근한 대화체로 진행하세요.
-질문이 충분히 모였으면 "이제 초안을 생성할 준비가 됐어요!" 라고 알려주세요.
-한국어로만 답하세요.`;
-
-const GENERATE_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 전문 작성가입니다.
-아래 지침을 따라 완성된 블로그 포스트를 JSON으로만 출력하세요. 설명 없이 JSON만 출력합니다.
-
-## 브랜드 보이스
-- 정직함: 과장·공포 유발 금지. "큰일납니다" → "초기에 치료하면 간단합니다"
-- 따뜻함: 환자 불안 먼저 인정 → 안심
-- 전문성: 구체적 수치·기간 사용
-
-## 문체
-- 기본 어미: ~이에요, ~해요, ~거든요 (부드러운 존댓말)
-- 같은 길이 문장 3개 이상 연속 금지
-- 모호한 시간 표현 금지 (구체적 수치 사용)
-- 피해야 할 표현: 마케팅 과장어, 공포 마케팅, AI 반복어(다양한·중요합니다·매우 남발)
-
-## 출력 JSON 스키마 (이 형식 그대로만 출력)
-{"slug":"영소문자와-하이픈만","title":"환자 시점의 질문·증상 후킹 문구 (5~100자)","subtitle":"주제+가치 한 줄 (5~150자)","excerpt":"2~3문장 환자상황→정보 (20~300자)","category":"prevention|restorative|prosthetics|implant|orthodontics|pediatric|health-tips 중 하나","tags":["치료후관리|생활습관|팩트체크|증상가이드|비교가이드|임산부|시니어 중 1~3개"],"date":"오늘날짜 YYYY-MM-DD","published":false,"blocks":[]}
-
-## 블록 타입
-{"type":"heading","level":2,"text":"소제목"}
-{"type":"paragraph","text":"문단 내용 (20자 이상)"}
-{"type":"list","style":"bullet","items":["항목1","항목2"]}
-{"type":"faq","question":"질문","answer":"답변 (20자 이상)"}
-
-## 구조 (5~6섹션 권장)
-1. 도입: 환자 공감 → 안심  2. 원인·배경  3. 분류·상세  4. 실천  5. 마무리`;
 import type { BlogEditorData } from "../BlogEditor";
+import { getAccessToken } from "@/lib/supabase";
+import { blogPostSchema } from "@/lib/blog-validation";
 
 interface Message {
   role: "user" | "assistant";
@@ -76,6 +40,10 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
@@ -94,18 +62,17 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
     setNetworkError(null);
     setParseError(null);
 
-    const systemPrompt =
-      mode === "generate" ? GENERATE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT;
-
     try {
-      const res = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
+      const token = await getAccessToken();
+      const res = await fetch("/api/admin/ai-write", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          model: LLM_MODEL,
-          messages: [{ role: "system", content: systemPrompt }, ...msgs],
-          stream: true,
-          temperature: mode === "generate" ? 0.7 : 0.9,
+          messages: msgs,
+          mode,
         }),
         signal: abortRef.current.signal,
       });
@@ -163,10 +130,25 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
           return;
         }
         try {
-          const parsed = JSON.parse(match[0]) as BlogEditorData;
-          parsed.date = parsed.date || today;
-          parsed.published = false;
-          setDraft(parsed);
+          const candidate = JSON.parse(match[0]) as Partial<BlogEditorData>;
+          const normalized = {
+            slug: typeof candidate.slug === "string" ? candidate.slug.trim() : "",
+            title: typeof candidate.title === "string" ? candidate.title.trim() : "",
+            subtitle: typeof candidate.subtitle === "string" ? candidate.subtitle.trim() : "",
+            excerpt: typeof candidate.excerpt === "string" ? candidate.excerpt.trim() : "",
+            category: candidate.category,
+            tags: Array.isArray(candidate.tags) ? candidate.tags : [],
+            date: typeof candidate.date === "string" && candidate.date.trim() ? candidate.date : today,
+            published: false,
+            blocks: Array.isArray(candidate.blocks) ? candidate.blocks : [],
+          };
+          const validated = blogPostSchema.safeParse(normalized);
+          if (!validated.success) {
+            const issue = validated.error.issues[0];
+            setParseError(issue?.message ?? "초안 형식이 올바르지 않습니다 — 다시 생성해 주세요");
+            return;
+          }
+          setDraft(validated.data);
           setMessages((prev) => [
             ...prev,
             { role: "assistant", content: "초안이 완성됐어요! 아래에서 확인하고 편집기로 열어보세요." },
@@ -213,6 +195,11 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
     }
   };
 
+  const handleClose = () => {
+    abortRef.current?.abort();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="flex h-[640px] w-full max-w-2xl flex-col rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl">
@@ -223,7 +210,7 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
             <h2 className="font-semibold text-[var(--foreground)]">AI 블로그 작성 도우미</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--surface-2)] transition-colors"
           >
             <X className="h-4 w-4" />
