@@ -282,6 +282,19 @@ export const getAllPostMetas: () => Promise<
   { revalidate: 300, tags: ["blog-posts-admin"] },
 );
 
+export async function getAllPostMetasFresh(): Promise<
+  (BlogPostMeta & { published: boolean; createdAt?: string })[]
+> {
+  const { data, error } = await getSupabaseAdmin()
+    .from(TABLE)
+    .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
+    .order("date", { ascending: false });
+
+  if (error) throw error;
+
+  return (data as DbRow[]).map((row) => rowToMeta(row));
+}
+
 /**
  * Single post by slug, including full content.
  * Returns null when not found.

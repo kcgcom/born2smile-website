@@ -116,8 +116,10 @@ pub struct CreateSuggestionRequest {
     pub suggestion_type: String,
     #[serde(default)]
     #[serde(alias = "actor_email")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub actor_email: Option<String>,
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
 }
 
@@ -126,8 +128,10 @@ pub struct CreateSuggestionRequest {
 pub struct SuggestionActionRequest {
     #[serde(default)]
     #[serde(alias = "actor_email")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub actor_email: Option<String>,
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
 }
 

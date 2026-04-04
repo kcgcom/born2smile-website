@@ -1,5 +1,5 @@
 import { getTodayKST } from "./date";
-import { getAllPostMetas, getPostBySlug, updateBlogPost, type UpdateBlogPostData } from "./blog-supabase";
+import { getAllPostMetasFresh, getPostBySlugFresh, updateBlogPost, type UpdateBlogPostData } from "./blog-supabase";
 import { fetchGA4Data } from "./admin-analytics";
 import { fetchSearchConsoleData } from "./admin-search-console";
 import { isSupabaseAdminConfigured, getSupabaseAdmin } from "./supabase-admin";
@@ -302,7 +302,7 @@ function buildIssue(code: string, label: string, detail: string): AiOpsCandidate
 async function buildCandidates(period: AiOpsBriefingPeriod) {
   const analyticsPeriod = period === "7d" ? "7d" : "30d";
   const [posts, analyticsResult, searchResult] = await Promise.all([
-    getAllPostMetas().catch(() => []),
+    getAllPostMetasFresh().catch(() => []),
     fetchGA4Data(analyticsPeriod).catch(() => null),
     fetchSearchConsoleData(period).catch(() => null),
   ]);
@@ -483,7 +483,7 @@ export async function getAiOpsBriefing(period: AiOpsBriefingPeriod): Promise<AiO
 }
 
 export async function getAiOpsTargets(): Promise<AiOpsTargetOption[]> {
-  const posts = await getAllPostMetas().catch(() => []);
+  const posts = await getAllPostMetasFresh().catch(() => []);
   return [
     ...posts.slice(0, 50).map((post) => ({
       id: post.slug,
@@ -502,7 +502,7 @@ export async function getAiOpsTargets(): Promise<AiOpsTargetOption[]> {
 
 async function resolveTargetContext(targetType: AiOpsTargetType, targetId: string): Promise<TargetContext> {
   if (targetType === "post") {
-    const post = await getPostBySlug(targetId);
+    const post = await getPostBySlugFresh(targetId);
     if (!post) {
       throw new Error(`포스트를 찾을 수 없습니다: ${targetId}`);
     }
