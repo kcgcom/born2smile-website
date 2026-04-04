@@ -53,3 +53,7 @@ playwright-report/
 .omc/
 .omx/
 AGENTS.md
+
+# local tooling scratch
+.tmp/
+supabase/.temp/

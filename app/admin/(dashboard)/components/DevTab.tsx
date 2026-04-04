@@ -1,11 +1,12 @@
 "use client";
 
-import { ClipboardCheck, Gauge, BookOpen, Activity } from "lucide-react";
+import { ClipboardCheck, Gauge, BookOpen, Activity, Sparkles } from "lucide-react";
 import { SubTabNav, useSubTab } from "./SubTabNav";
 import { ProjectTab } from "./ProjectTab";
 import { PerformanceTab } from "./PerformanceTab";
 import { ReferenceTab } from "./ReferenceTab";
 import { MonitoringTab } from "./MonitoringTab";
+import { AiWriteLogsTab } from "./AiWriteLogsTab";
 
 // -------------------------------------------------------------
 // 개발 탭 — 서브탭 네비게이션 + 콘텐츠
@@ -16,6 +17,7 @@ const SUB_TABS = [
   { id: "perf", label: "성능", icon: Gauge },
   { id: "ref", label: "레퍼런스", icon: BookOpen },
   { id: "monitoring", label: "모니터링", icon: Activity },
+  { id: "ai", label: "AI 로그", icon: Sparkles },
 ] as const;
 
 export function DevTab() {
@@ -30,6 +32,7 @@ export function DevTab() {
       {activeSub === "perf" && <PerformanceTab />}
       {activeSub === "ref" && <ReferenceTab />}
       {activeSub === "monitoring" && <MonitoringTab />}
+      {activeSub === "ai" && <AiWriteLogsTab />}
     </div>
   );
 }

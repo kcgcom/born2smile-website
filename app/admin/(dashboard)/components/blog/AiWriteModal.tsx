@@ -12,6 +12,11 @@ interface Message {
   content: string;
 }
 
+interface ApiErrorResponse {
+  error?: string;
+  message?: string;
+}
+
 interface AiWriteModalProps {
   onClose: () => void;
   onDraftReady: (data: BlogEditorData) => void;
@@ -78,7 +83,13 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
       });
 
       if (!res.ok || !res.body) {
-        throw new Error(`서버 오류 (${res.status})`);
+        const errorBody = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        const retryAfter = res.headers.get("Retry-After");
+        if (res.status === 429) {
+          const retryHint = retryAfter ? ` 약 ${retryAfter}초 후 다시 시도해 주세요.` : " 잠시 후 다시 시도해 주세요.";
+          throw new Error(errorBody.message ? `${errorBody.message}.${retryHint}` : `요청이 너무 빠릅니다.${retryHint}`);
+        }
+        throw new Error(errorBody.message ?? `서버 오류 (${res.status})`);
       }
 
       const reader = res.body.getReader();
@@ -298,7 +309,12 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
           )}
 
           {networkError && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{networkError}</div>
+            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+              <p>{networkError}</p>
+              {networkError.includes("다시 시도") && (
+                <p className="mt-1 text-xs text-red-500">잠시 기다린 뒤 같은 요청을 다시 보내 주세요.</p>
+              )}
+            </div>
           )}
         </div>
 

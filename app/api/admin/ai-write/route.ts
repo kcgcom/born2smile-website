@@ -1,13 +1,19 @@
 import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { adminAiWriteRequestSchema } from "@/lib/blog-validation";
+import { insertAiWriteLog, maybePruneAiWriteLogs } from "@/lib/admin-ai-write-logs";
 
-const LLM_BASE_URL = (process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr").trim();
-const LLM_MODEL = (process.env.LLM_MODEL ?? "large").trim();
+const LLM_BASE_URL = ((process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr").trim() || "https://llm.born2smile.co.kr");
+const LLM_MODEL = ((process.env.LLM_MODEL ?? "fast").trim() || "fast");
 const HEADERS = {
   "Cache-Control": "private, no-store",
   Vary: "Authorization",
 } as const;
+const RATE_LIMIT_RULES = {
+  chat: { windowMs: 10_000, max: 5 },
+  generate: { windowMs: 30_000, max: 2 },
+} as const;
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 const CHAT_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 작성을 돕는 어시스턴트입니다.
 사용자가 글 주제를 말하면 짧은 질문 1~2개로 방향을 잡아주세요.
@@ -59,6 +65,92 @@ const GENERATE_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 �
 4. 실천: 구체적 행동 안내
 5. 마무리: 요약 → 내원 조건 → 서울본치과 멘트 (본문 내용과 직접 연결될 때만)`;
 
+function pruneExpiredRateLimitEntries(now: number) {
+  for (const [key, bucket] of rateLimitStore.entries()) {
+    if (bucket.resetAt <= now) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
+function checkRateLimit(email: string, mode: keyof typeof RATE_LIMIT_RULES) {
+  const now = Date.now();
+  if (rateLimitStore.size > 200) {
+    pruneExpiredRateLimitEntries(now);
+  }
+
+  const rule = RATE_LIMIT_RULES[mode];
+  const key = `${email}:${mode}`;
+  const current = rateLimitStore.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + rule.windowMs });
+    return { ok: true as const, retryAfterSec: 0 };
+  }
+
+  if (current.count >= rule.max) {
+    return {
+      ok: false as const,
+      retryAfterSec: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    };
+  }
+
+  current.count += 1;
+  rateLimitStore.set(key, current);
+  return { ok: true as const, retryAfterSec: 0 };
+}
+
+function logAiWriteEvent(
+  level: "info" | "warn" | "error",
+  event: string,
+  payload: Record<string, unknown>,
+) {
+  console[level](`[ai-write] ${event}`, payload);
+}
+
+interface PersistAiWriteLogInput {
+  requestedAt: string;
+  completedAt?: string;
+  userEmail: string;
+  mode: "chat" | "generate";
+  model: string;
+  messageCount: number;
+  inputChars: number;
+  outputBytes?: number;
+  durationMs?: number;
+  success: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+async function persistAiWriteLog(input: PersistAiWriteLogInput) {
+  try {
+    await insertAiWriteLog({
+      requested_at: input.requestedAt,
+      completed_at: input.completedAt ?? null,
+      user_email: input.userEmail,
+      mode: input.mode,
+      model: input.model,
+      message_count: input.messageCount,
+      input_chars: input.inputChars,
+      output_bytes: input.outputBytes ?? 0,
+      duration_ms: input.durationMs ?? null,
+      success: input.success,
+      error_code: input.errorCode ?? null,
+      error_message: input.errorMessage ?? null,
+    });
+    void maybePruneAiWriteLogs().catch((error) => {
+      logAiWriteEvent("warn", "log_prune_failed", {
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    });
+  } catch (error) {
+    logAiWriteEvent("warn", "log_persist_failed", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
@@ -86,8 +178,50 @@ export async function POST(request: NextRequest) {
   }
 
   const { messages, mode } = parsed.data;
+  const startedAt = Date.now();
+  const requestedAtIso = new Date(startedAt).toISOString();
+  const inputChars = messages.reduce((sum, message) => sum + message.content.length, 0);
+  const rateLimit = checkRateLimit(auth.email, mode);
+  if (!rateLimit.ok) {
+    logAiWriteEvent("warn", "rate_limited", {
+      email: auth.email,
+      mode,
+      retryAfterSec: rateLimit.retryAfterSec,
+    });
+    void persistAiWriteLog({
+      requestedAt: requestedAtIso,
+      completedAt: new Date().toISOString(),
+      userEmail: auth.email,
+      mode,
+      model: LLM_MODEL,
+      messageCount: messages.length,
+      inputChars,
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorCode: "RATE_LIMITED",
+      errorMessage: "요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요",
+    });
+    return Response.json(
+      { error: "RATE_LIMITED", message: "요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요" },
+      {
+        status: 429,
+        headers: {
+          ...HEADERS,
+          "Retry-After": String(rateLimit.retryAfterSec),
+        },
+      },
+    );
+  }
 
   const systemPrompt = mode === "generate" ? GENERATE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT;
+
+  logAiWriteEvent("info", "started", {
+    email: auth.email,
+    mode,
+    model: LLM_MODEL,
+    messageCount: messages.length,
+    inputChars,
+  });
 
   let upstream: Response;
   try {
@@ -101,7 +235,26 @@ export async function POST(request: NextRequest) {
         temperature: mode === "generate" ? 0.7 : 0.9,
       }),
     });
-  } catch {
+  } catch (error) {
+    logAiWriteEvent("error", "upstream_unavailable", {
+      email: auth.email,
+      mode,
+      durationMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    void persistAiWriteLog({
+      requestedAt: requestedAtIso,
+      completedAt: new Date().toISOString(),
+      userEmail: auth.email,
+      mode,
+      model: LLM_MODEL,
+      messageCount: messages.length,
+      inputChars,
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorCode: "UPSTREAM_UNAVAILABLE",
+      errorMessage: "LLM 서버에 연결할 수 없습니다",
+    });
     return Response.json(
       { error: "UPSTREAM_UNAVAILABLE", message: "LLM 서버에 연결할 수 없습니다" },
       { status: 502, headers: HEADERS },
@@ -109,13 +262,63 @@ export async function POST(request: NextRequest) {
   }
 
   if (!upstream.ok || !upstream.body) {
+    logAiWriteEvent("warn", "upstream_error", {
+      email: auth.email,
+      mode,
+      durationMs: Date.now() - startedAt,
+      status: upstream.status,
+    });
+    void persistAiWriteLog({
+      requestedAt: requestedAtIso,
+      completedAt: new Date().toISOString(),
+      userEmail: auth.email,
+      mode,
+      model: LLM_MODEL,
+      messageCount: messages.length,
+      inputChars,
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorCode: "UPSTREAM_ERROR",
+      errorMessage: `LLM 서버 오류 (${upstream.status})`,
+    });
     return Response.json(
       { error: "UPSTREAM_ERROR", message: `LLM 서버 오류 (${upstream.status})` },
       { status: 502, headers: HEADERS },
     );
   }
 
-  return new Response(upstream.body, {
+  let outputBytes = 0;
+  const stream = upstream.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      outputBytes += chunk.byteLength;
+      controller.enqueue(chunk);
+    },
+    flush() {
+      void persistAiWriteLog({
+        requestedAt: requestedAtIso,
+        completedAt: new Date().toISOString(),
+        userEmail: auth.email,
+        mode,
+        model: LLM_MODEL,
+        messageCount: messages.length,
+        inputChars,
+        outputBytes,
+        durationMs: Date.now() - startedAt,
+        success: true,
+      });
+      logAiWriteEvent("info", "completed", {
+        email: auth.email,
+        mode,
+        model: LLM_MODEL,
+        durationMs: Date.now() - startedAt,
+        messageCount: messages.length,
+        inputChars,
+        outputBytes,
+      });
+    },
+  }));
+
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       ...HEADERS,
