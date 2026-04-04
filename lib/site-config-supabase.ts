@@ -9,6 +9,14 @@ const CACHE_TAG_HOURS = "site-config-hours";
 const CACHE_TAG_SCHEDULE = "site-config-schedule";
 const CACHE_TTL = 3600; // 1 hour
 
+function safeRevalidateTag(tag: string) {
+  try {
+    revalidateTag(tag, "max");
+  } catch (error) {
+    console.warn(`[site-config-supabase] failed to revalidate tag '${tag}'`, error);
+  }
+}
+
 // =============================================================
 // Type Definitions
 // =============================================================
@@ -123,7 +131,7 @@ export async function updateSiteLinks(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
-  revalidateTag(CACHE_TAG_LINKS, "max");
+  safeRevalidateTag(CACHE_TAG_LINKS);
 }
 
 export async function updateSiteClinic(
@@ -145,7 +153,7 @@ export async function updateSiteClinic(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
-  revalidateTag(CACHE_TAG_CLINIC, "max");
+  safeRevalidateTag(CACHE_TAG_CLINIC);
 }
 
 export async function updateSiteHours(
@@ -167,7 +175,7 @@ export async function updateSiteHours(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
-  revalidateTag(CACHE_TAG_HOURS, "max");
+  safeRevalidateTag(CACHE_TAG_HOURS);
 }
 
 // =============================================================
@@ -209,5 +217,5 @@ export async function updateSiteSchedule(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
-  revalidateTag(CACHE_TAG_SCHEDULE, "max");
+  safeRevalidateTag(CACHE_TAG_SCHEDULE);
 }

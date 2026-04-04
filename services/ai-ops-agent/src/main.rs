@@ -1,4 +1,5 @@
 mod app;
+mod bridge;
 mod config;
 mod models;
 mod routes;

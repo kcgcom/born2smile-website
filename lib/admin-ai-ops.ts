@@ -3,7 +3,7 @@ import { getAllPostMetas, getPostBySlug, updateBlogPost, type UpdateBlogPostData
 import { fetchGA4Data } from "./admin-analytics";
 import { fetchSearchConsoleData } from "./admin-search-console";
 import { isSupabaseAdminConfigured, getSupabaseAdmin } from "./supabase-admin";
-import { TREATMENTS } from "./constants";
+import { CLINIC, TREATMENTS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
 import type {
   AiOpsActionType,
@@ -111,6 +111,101 @@ type GeneratedSuggestion = {
   afterJson: Record<string, unknown>;
 };
 
+interface PageTargetDefinition {
+  id: string;
+  label: string;
+  pagePath: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  faqCount: number;
+  note: string;
+}
+
+const CORE_PAGE_TARGETS: PageTargetDefinition[] = [
+  {
+    id: "home",
+    label: "홈",
+    pagePath: "/",
+    title: `${CLINIC.name} 홈페이지`,
+    subtitle: "꼭 필요한 치료만, 오래오래 편안하게",
+    description: "서울대 출신 통합치의학전문의가 자연치아를 지키는 치료 철학, 대표원장 인사말, 진료 약속, 치료 FAQ와 상담 CTA를 한 번에 안내하는 메인 랜딩 페이지입니다.",
+    faqCount: 6,
+    note: "메인 랜딩 · 브랜드 메시지",
+  },
+  {
+    id: "about",
+    label: "병원 소개",
+    pagePath: "/about",
+    title: "병원 소개",
+    subtitle: "서울대 출신 통합치의학전문의가 정성을 다해 진료합니다",
+    description: `${CLINIC.name}의 진료 철학, 대표원장 학력과 임상경험, 치과위생사 팀, 시설과 장비, 진료시간, 오시는 길 정보를 안내하는 소개 페이지입니다.`,
+    faqCount: 0,
+    note: "브랜드 신뢰 · 의료진 소개",
+  },
+  {
+    id: "contact",
+    label: "상담 안내",
+    pagePath: "/contact",
+    title: "상담 안내",
+    subtitle: "전화로 편리하게 상담받으세요",
+    description: `${CLINIC.name} 대표전화, 진료시간, 카카오톡 상담 채널, 주소와 지도 정보를 제공해 실제 상담 및 예약 전환을 유도하는 페이지입니다.`,
+    faqCount: 0,
+    note: "전환 랜딩 · 연락처/지도",
+  },
+  {
+    id: "faq",
+    label: "자주 묻는 질문",
+    pagePath: "/faq",
+    title: "자주 묻는 질문",
+    subtitle: "진료 과목별로 궁금한 점을 확인하세요",
+    description: `임플란트, 교정, 보철, 소아치료, 보존치료, 스케일링 상담에서 자주 묻는 비용, 통증, 기간, 관리법을 ${CLINIC.name} 기준으로 정리한 FAQ 허브입니다.`,
+    faqCount: Object.values(TREATMENT_DETAILS).reduce((sum, detail) => sum + detail.faq.length, 0),
+    note: "FAQ 허브 · 질문형 검색 대응",
+  },
+  {
+    id: "treatments-overview",
+    label: "진료 안내",
+    pagePath: "/treatments",
+    title: "진료 안내",
+    subtitle: `자연치아를 지키는 치료, ${CLINIC.name}에서 시작하세요.`,
+    description: `${CLINIC.name}에서 제공하는 임플란트, 치아교정, 보철, 소아치료, 보존치료, 예방치료를 한눈에 비교하고 상담 방향을 잡도록 돕는 진료 개요 페이지입니다.`,
+    faqCount: 0,
+    note: "진료 카테고리 허브",
+  },
+  {
+    id: "blog-overview",
+    label: "건강칼럼",
+    pagePath: "/blog",
+    title: "건강칼럼",
+    subtitle: "올바른 구강관리법과 치과 상식을 쉽고 정확하게 알려드립니다.",
+    description: `${CLINIC.name} 건강칼럼 허브로, 예방관리부터 임플란트·교정 후 관리, 소아 구강관리, 팩트체크 콘텐츠까지 탐색할 수 있는 블로그 랜딩 페이지입니다.`,
+    faqCount: 0,
+    note: "콘텐츠 허브 · 블로그 진입점",
+  },
+];
+
+const PAGE_TARGETS: PageTargetDefinition[] = [
+  ...CORE_PAGE_TARGETS,
+  ...TREATMENTS.map((treatment) => {
+    const detail = TREATMENT_DETAILS[treatment.id];
+    return {
+      id: treatment.id,
+      label: `${treatment.name} 페이지`,
+      pagePath: treatment.href,
+      title: treatment.name,
+      subtitle: detail.subtitle,
+      description: detail.description,
+      faqCount: detail.faq.length,
+      note: treatment.shortDesc,
+    };
+  }),
+];
+
+function findPageTarget(targetId: string) {
+  return PAGE_TARGETS.find((page) => page.id === targetId);
+}
+
 function getLlmHeaders() {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -181,8 +276,8 @@ function isSupportedApplyType(type: AiOpsSuggestionType) {
 
 function formatTargetLabel(targetType: AiOpsTargetType, targetId: string) {
   if (targetType === "page") {
-    const treatment = TREATMENTS.find((item) => item.id === targetId);
-    return treatment ? `${treatment.name} 페이지` : `${targetId} 페이지`;
+    const page = findPageTarget(targetId);
+    return page?.label ?? `${targetId} 페이지`;
   }
   if (targetType === "post") {
     return targetId;
@@ -265,11 +360,10 @@ async function buildCandidates(period: AiOpsBriefingPeriod) {
     };
   }).sort((a, b) => b.priorityScore - a.priorityScore);
 
-  const pageCandidates: AiOpsCandidate[] = TREATMENTS.map((treatment): AiOpsCandidate => {
-    const metrics = pageMetrics.get(`/treatments/${treatment.id}`);
-    const detail = TREATMENT_DETAILS[treatment.id];
+  const pageCandidates: AiOpsCandidate[] = PAGE_TARGETS.map((page): AiOpsCandidate => {
+    const metrics = pageMetrics.get(page.pagePath);
     const issues: AiOpsCandidateIssue[] = [];
-    let score = 5;
+    let score = page.pagePath === "/contact" ? 10 : 5;
 
     if (metrics?.impressions && metrics.impressions >= 80 && metrics.ctr < 2.8) {
       score += 32;
@@ -279,21 +373,25 @@ async function buildCandidates(period: AiOpsBriefingPeriod) {
       score += 24;
       issues.push(buildIssue("position", "순위 보강 필요", `평균 검색 순위 ${metrics.position.toFixed(1)}위`));
     }
-    if ((detail?.faq.length ?? 0) < 6) {
+    if (page.faqCount > 0 && page.faqCount < 6) {
       score += 8;
       issues.push(buildIssue("faq", "FAQ 보강 여지", "질문형 검색 의도 대응을 위해 FAQ 확장이 유효할 수 있습니다."));
     }
-    if ((detail?.description.length ?? 0) < 260) {
+    if (page.description.length < 260) {
       score += 10;
       issues.push(buildIssue("copy", "본문 보강 여지", "설명 길이가 짧아 검색/설명 문구 보강 여지가 있습니다."));
     }
+    if (page.pagePath === "/contact" && (!metrics?.ctr || metrics.ctr < 4)) {
+      score += 12;
+      issues.push(buildIssue("conversion", "전환 문구 점검", "상담 전환 페이지는 클릭 이후 전화/예약 의도 전달을 더 분명하게 다듬을 수 있습니다."));
+    }
 
     return {
-      id: `page:${treatment.id}`,
+      id: `page:${page.id}`,
       targetType: "page",
-      targetId: treatment.id,
-      title: `${treatment.name} 페이지`,
-      subtitle: treatment.shortDesc,
+      targetId: page.id,
+      title: page.label,
+      subtitle: page.subtitle,
       suggestionTypes: ["title", "meta_description", "faq", "body_revision"],
       priorityScore: clampScore(score),
       primaryIssue: issues[0]?.label ?? "정기 점검",
@@ -393,11 +491,11 @@ export async function getAiOpsTargets(): Promise<AiOpsTargetOption[]> {
       targetType: "post" as const,
       note: `${post.category} · ${post.published ? "발행" : "초안"}`,
     })),
-    ...TREATMENTS.map((item) => ({
-      id: item.id,
-      label: item.name,
+    ...PAGE_TARGETS.map((page) => ({
+      id: page.id,
+      label: page.label,
       targetType: "page" as const,
-      note: item.shortDesc,
+      note: page.note,
     })),
   ];
 }
@@ -424,21 +522,20 @@ async function resolveTargetContext(targetType: AiOpsTargetType, targetId: strin
   }
 
   if (targetType === "page") {
-    const treatment = TREATMENTS.find((item) => item.id === targetId);
-    const detail = TREATMENT_DETAILS[targetId];
-    if (!treatment || !detail) {
+    const page = findPageTarget(targetId);
+    if (!page) {
       throw new Error(`페이지를 찾을 수 없습니다: ${targetId}`);
     }
 
     return {
       targetType: "page",
       targetId,
-      targetLabel: `${treatment.name} 페이지`,
-      title: treatment.name,
-      subtitle: detail.subtitle,
-      description: detail.description,
-      faqCount: detail.faq.length,
-      pagePath: treatment.href,
+      targetLabel: page.label,
+      title: page.title,
+      subtitle: page.subtitle,
+      description: page.description,
+      faqCount: page.faqCount,
+      pagePath: page.pagePath,
     };
   }
 
@@ -741,8 +838,8 @@ export async function listAiSuggestions(filters: SuggestionFilters = {}): Promis
 export async function createAiSuggestion(input: CreateSuggestionInput): Promise<AiOpsSuggestionListItem> {
   const context = await resolveTargetContext(input.targetType, input.targetId);
   const generated = await generateSuggestion(context, input.suggestionType);
-  const briefing = await getAiOpsBriefing("28d");
-  const candidate = briefing.topCandidates.find((item) => item.targetType === input.targetType && item.targetId === input.targetId);
+  const { blogCandidates, pageCandidates } = await buildCandidates("28d");
+  const candidate = [...blogCandidates, ...pageCandidates].find((item) => item.targetType === input.targetType && item.targetId === input.targetId);
   const priorityScore = candidate?.priorityScore ?? 20;
 
   if (!isSupabaseAdminConfigured) {

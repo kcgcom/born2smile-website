@@ -1,23 +1,25 @@
 use axum::Router;
 use sqlx::postgres::PgPoolOptions;
 
-use crate::{config::Config, routes};
+use crate::{bridge::ScriptBridge, config::Config, routes};
 
 #[derive(Clone)]
 pub struct AppState {
     pub config: Config,
     pub db: Option<sqlx::PgPool>,
+    pub bridge: ScriptBridge,
 }
 
 impl AppState {
     pub async fn build(config: Config) -> anyhow::Result<Self> {
+        let bridge = ScriptBridge::new(&config);
         let db = if let Some(database_url) = &config.database_url {
             Some(PgPoolOptions::new().max_connections(5).connect_lazy(database_url)?)
         } else {
             None
         };
 
-        Ok(Self { config, db })
+        Ok(Self { config, db, bridge })
     }
 }
 

@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HealthResponse {
     pub ok: bool,
@@ -14,7 +14,7 @@ pub struct HealthResponse {
     pub timestamp: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetricSnapshot {
     pub sessions: Option<i64>,
@@ -27,7 +27,7 @@ pub struct MetricSnapshot {
     pub pages_needing_attention: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CandidateIssue {
     pub code: String,
@@ -35,7 +35,7 @@ pub struct CandidateIssue {
     pub detail: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CandidateStats {
     pub impressions: Option<i64>,
@@ -45,7 +45,7 @@ pub struct CandidateStats {
     pub published_date: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Candidate {
     pub id: String,
@@ -60,7 +60,7 @@ pub struct Candidate {
     pub stats: Option<CandidateStats>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecommendedAction {
     pub id: String,
@@ -72,7 +72,7 @@ pub struct RecommendedAction {
     pub priority_score: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BriefingResponse {
     pub period: String,
@@ -85,7 +85,7 @@ pub struct BriefingResponse {
     pub top_candidates: Vec<Candidate>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuggestionRecord {
     pub id: i64,
@@ -108,28 +108,30 @@ pub struct SuggestionRecord {
     pub can_apply: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateSuggestionRequest {
     pub target_type: String,
     pub target_id: String,
     pub suggestion_type: String,
     #[serde(default)]
+    #[serde(alias = "actor_email")]
     pub actor_email: Option<String>,
     #[serde(default)]
     pub context: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuggestionActionRequest {
     #[serde(default)]
+    #[serde(alias = "actor_email")]
     pub actor_email: Option<String>,
     #[serde(default)]
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityItem {
     pub id: i64,
@@ -145,7 +147,7 @@ pub struct ActivityItem {
     pub target_label: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TargetOption {
     pub id: String,

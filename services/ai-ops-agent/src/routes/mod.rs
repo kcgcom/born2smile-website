@@ -2,10 +2,11 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
     middleware::{from_fn, from_fn_with_state},
-    response::Response,
+    response::{IntoResponse, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
+use serde::Serialize;
 
 use crate::app::AppState;
 
@@ -14,6 +15,12 @@ pub mod briefing;
 pub mod healthz;
 pub mod suggestions;
 pub mod targets;
+
+#[derive(Debug, Serialize)]
+pub struct ErrorBody {
+    pub error: String,
+    pub message: String,
+}
 
 pub fn router(state: AppState) -> Router {
     let protected = Router::new()
@@ -31,6 +38,17 @@ pub fn router(state: AppState) -> Router {
         .route("/healthz", get(healthz::get))
         .merge(protected)
         .with_state(state)
+}
+
+pub fn api_error(status: StatusCode, error: &str, message: impl Into<String>) -> Response {
+    (
+        status,
+        Json(ErrorBody {
+            error: error.to_string(),
+            message: message.into(),
+        }),
+    )
+        .into_response()
 }
 
 async fn shared_secret_middleware(

@@ -17,6 +17,14 @@ const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
 
+function safeRevalidateTag(tag: string) {
+  try {
+    revalidateTag(tag, "max");
+  } catch (error) {
+    console.warn(`[blog-supabase] failed to revalidate tag '${tag}'`, error);
+  }
+}
+
 function getBlogPostCacheTag(slug: string): string {
   return `blog-post-${slug}`;
 }
@@ -461,9 +469,9 @@ export async function createBlogPost(
   const { error } = await getSupabaseAdmin().from(TABLE).insert(row);
   if (error) throw error;
 
-  revalidateTag(CACHE_TAG, "max");
-  revalidateTag("blog-slugs", "max");
-  revalidateTag("blog-posts-admin", "max");
+  safeRevalidateTag(CACHE_TAG);
+  safeRevalidateTag("blog-slugs");
+  safeRevalidateTag("blog-posts-admin");
 }
 
 export type UpdateBlogPostData = Partial<
@@ -509,10 +517,10 @@ export async function updateBlogPost(
 
   if (error) throw error;
 
-  revalidateTag(CACHE_TAG, "max");
-  revalidateTag(getBlogPostCacheTag(slug), "max");
-  revalidateTag("blog-slugs", "max");
-  revalidateTag("blog-posts-admin", "max");
+  safeRevalidateTag(CACHE_TAG);
+  safeRevalidateTag(getBlogPostCacheTag(slug));
+  safeRevalidateTag("blog-slugs");
+  safeRevalidateTag("blog-posts-admin");
 }
 
 /**
@@ -526,8 +534,8 @@ export async function deleteBlogPost(slug: string): Promise<void> {
 
   if (error) throw error;
 
-  revalidateTag(CACHE_TAG, "max");
-  revalidateTag(getBlogPostCacheTag(slug), "max");
-  revalidateTag("blog-slugs", "max");
-  revalidateTag("blog-posts-admin", "max");
+  safeRevalidateTag(CACHE_TAG);
+  safeRevalidateTag(getBlogPostCacheTag(slug));
+  safeRevalidateTag("blog-slugs");
+  safeRevalidateTag("blog-posts-admin");
 }

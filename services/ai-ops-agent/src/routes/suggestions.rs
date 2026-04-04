@@ -1,9 +1,17 @@
-use axum::{extract::{Path, Query, State}, http::StatusCode, Extension, Json};
-use chrono::Utc;
+use axum::{
+    extract::{Extension, Path, Query, State},
+    http::StatusCode,
+    response::Response,
+    Json,
+};
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::to_value;
 
-use crate::{app::AppState, models::{CreateSuggestionRequest, SuggestionActionRequest, SuggestionRecord}};
+use crate::{
+    app::AppState,
+    models::{CreateSuggestionRequest, SuggestionActionRequest, SuggestionRecord},
+    routes::api_error,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct SuggestionsQuery {
@@ -13,99 +21,113 @@ pub struct SuggestionsQuery {
     pub limit: Option<u16>,
 }
 
-pub async fn list(State(_state): State<AppState>, Query(query): Query<SuggestionsQuery>) -> Json<Vec<SuggestionRecord>> {
-    let limit = query.limit.unwrap_or(10).max(1) as i64;
-    let now = Utc::now();
-    let target_type = query.target_type.unwrap_or_else(|| "post".to_string());
-    let target_id = if target_type == "page" { "implant" } else { "sample-post" };
-    let target_label = if target_type == "page" { "임플란트 페이지" } else { "샘플 블로그 포스트" };
+pub async fn list(
+    State(state): State<AppState>,
+    Query(query): Query<SuggestionsQuery>,
+) -> Result<Json<Vec<SuggestionRecord>>, Response> {
+    let limit = query.limit.unwrap_or(50).max(1);
+    let mut args = vec![
+        "suggestions".to_string(),
+        "list".to_string(),
+        "--limit".to_string(),
+        limit.to_string(),
+    ];
 
-    Json((0..limit.min(3)).map(|index| SuggestionRecord {
-        id: index + 1,
-        target_type: target_type.clone(),
-        target_id: format!("{}-{}", target_id, index + 1),
-        suggestion_type: "title".to_string(),
-        title: format!("샘플 제안 {}", index + 1),
-        before_json: json!({ "title": "before" }),
-        after_json: json!({ "title": "after" }),
-        reason: format!("스캐폴드 응답 (status={})", query.status.clone().unwrap_or_else(|| "all".to_string())),
-        priority_score: 25,
-        status: query.status.clone().unwrap_or_else(|| "draft".to_string()),
-        created_at: now,
-        created_by: "system@ai-ops.local".to_string(),
-        approved_at: None,
-        approved_by: None,
-        applied_at: None,
-        applied_by: None,
-        target_label: target_label.to_string(),
-        can_apply: target_type == "post",
-    }).collect())
+    if let Some(status) = query.status.filter(|value| !value.trim().is_empty()) {
+        args.push("--status".to_string());
+        args.push(status);
+    }
+
+    if let Some(target_type) = query.target_type.filter(|value| !value.trim().is_empty()) {
+        args.push("--targetType".to_string());
+        args.push(target_type);
+    }
+
+    let data = state
+        .bridge
+        .run::<Vec<SuggestionRecord>>(&args, None)
+        .await
+        .map_err(|error| api_error(StatusCode::from_u16(error.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), "API_ERROR", error.message))?;
+
+    Ok(Json(data))
 }
 
 pub async fn create(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Extension(admin_email): Extension<String>,
-    Json(payload): Json<CreateSuggestionRequest>,
-) -> (StatusCode, Json<SuggestionRecord>) {
-    let now = Utc::now();
-    let actor_email = payload.actor_email.unwrap_or(admin_email);
-    let target_label = if payload.target_type == "page" { "임플란트 페이지" } else { "샘플 블로그 포스트" };
-    let record = SuggestionRecord {
-        id: now.timestamp_millis(),
-        target_type: payload.target_type.clone(),
-        target_id: payload.target_id,
-        suggestion_type: payload.suggestion_type.clone(),
-        title: format!("{} 대상 스캐폴드 제안", actor_email),
-        before_json: json!({}),
-        after_json: json!({}),
-        reason: payload.context.map(|value| format!("스캐폴드 컨텍스트: {}", value)).unwrap_or_else(|| "실제 제안 생성 엔진은 이후 단계에서 연결됩니다.".to_string()),
-        priority_score: 20,
-        status: "draft".to_string(),
-        created_at: now,
-        created_by: actor_email,
-        approved_at: None,
-        approved_by: None,
-        applied_at: None,
-        applied_by: None,
-        target_label: target_label.to_string(),
-        can_apply: payload.target_type == "post",
-    };
-    (StatusCode::CREATED, Json(record))
+    Json(mut payload): Json<CreateSuggestionRequest>,
+) -> Result<(StatusCode, Json<SuggestionRecord>), Response> {
+    if payload.actor_email.as_ref().map(|value| value.trim().is_empty()).unwrap_or(true) {
+        payload.actor_email = Some(admin_email);
+    }
+
+    let args = vec!["suggestions".to_string(), "create".to_string()];
+    let input = to_value(&payload)
+        .map_err(|error| api_error(StatusCode::BAD_REQUEST, "BAD_REQUEST", error.to_string()))?;
+    let data = state
+        .bridge
+        .run::<SuggestionRecord>(&args, Some(input))
+        .await
+        .map_err(|error| api_error(StatusCode::from_u16(error.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), "API_ERROR", error.message))?;
+
+    Ok((StatusCode::CREATED, Json(data)))
 }
 
-async fn transition(id: i64, action: &str, payload: SuggestionActionRequest, admin_email: String) -> Json<SuggestionRecord> {
-    let now = Utc::now();
-    let actor_email = payload.actor_email.unwrap_or(admin_email);
-    Json(SuggestionRecord {
-        id,
-        target_type: "post".to_string(),
-        target_id: "sample-post".to_string(),
-        suggestion_type: "title".to_string(),
-        title: format!("{} 처리됨", action),
-        before_json: json!({ "note": payload.note }),
-        after_json: json!({ "actor": actor_email.clone() }),
-        reason: format!("{} 액션 스캐폴드 응답", action),
-        priority_score: 20,
-        status: if action == "apply" { "applied".to_string() } else if action == "approve" { "approved".to_string() } else { "rejected".to_string() },
-        created_at: now,
-        created_by: actor_email.clone(),
-        approved_at: if action == "approve" || action == "apply" { Some(now) } else { None },
-        approved_by: if action == "approve" || action == "apply" { Some(actor_email.clone()) } else { None },
-        applied_at: if action == "apply" { Some(now) } else { None },
-        applied_by: if action == "apply" { Some(actor_email) } else { None },
-        target_label: "샘플 블로그 포스트".to_string(),
-        can_apply: action == "approve",
-    })
+async fn transition(
+    state: AppState,
+    action: &str,
+    id: i64,
+    admin_email: String,
+    mut payload: SuggestionActionRequest,
+) -> Result<Json<SuggestionRecord>, Response> {
+    if id < 1 {
+        return Err(api_error(StatusCode::BAD_REQUEST, "BAD_REQUEST", "유효한 제안 ID가 아닙니다"));
+    }
+
+    if payload.actor_email.as_ref().map(|value| value.trim().is_empty()).unwrap_or(true) {
+        payload.actor_email = Some(admin_email);
+    }
+
+    let args = vec![
+        "suggestions".to_string(),
+        action.to_string(),
+        "--id".to_string(),
+        id.to_string(),
+    ];
+    let input = to_value(&payload)
+        .map_err(|error| api_error(StatusCode::BAD_REQUEST, "BAD_REQUEST", error.to_string()))?;
+    let data = state
+        .bridge
+        .run::<SuggestionRecord>(&args, Some(input))
+        .await
+        .map_err(|error| api_error(StatusCode::from_u16(error.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), "API_ERROR", error.message))?;
+
+    Ok(Json(data))
 }
 
-pub async fn approve(Path(id): Path<i64>, Extension(admin_email): Extension<String>, Json(payload): Json<SuggestionActionRequest>) -> Json<SuggestionRecord> {
-    transition(id, "approve", payload, admin_email).await
+pub async fn approve(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Extension(admin_email): Extension<String>,
+    Json(payload): Json<SuggestionActionRequest>,
+) -> Result<Json<SuggestionRecord>, Response> {
+    transition(state, "approve", id, admin_email, payload).await
 }
 
-pub async fn reject(Path(id): Path<i64>, Extension(admin_email): Extension<String>, Json(payload): Json<SuggestionActionRequest>) -> Json<SuggestionRecord> {
-    transition(id, "reject", payload, admin_email).await
+pub async fn reject(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Extension(admin_email): Extension<String>,
+    Json(payload): Json<SuggestionActionRequest>,
+) -> Result<Json<SuggestionRecord>, Response> {
+    transition(state, "reject", id, admin_email, payload).await
 }
 
-pub async fn apply(Path(id): Path<i64>, Extension(admin_email): Extension<String>, Json(payload): Json<SuggestionActionRequest>) -> Json<SuggestionRecord> {
-    transition(id, "apply", payload, admin_email).await
+pub async fn apply(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Extension(admin_email): Extension<String>,
+    Json(payload): Json<SuggestionActionRequest>,
+) -> Result<Json<SuggestionRecord>, Response> {
+    transition(state, "apply", id, admin_email, payload).await
 }

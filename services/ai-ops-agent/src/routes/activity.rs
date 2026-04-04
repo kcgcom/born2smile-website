@@ -1,29 +1,34 @@
-use axum::{extract::{Query, State}, Json};
-use chrono::Utc;
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    response::Response,
+    Json,
+};
 use serde::Deserialize;
 
-use crate::{app::AppState, models::ActivityItem};
+use crate::{
+    app::AppState,
+    models::ActivityItem,
+    routes::api_error,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ActivityQuery {
     pub limit: Option<u16>,
 }
 
-pub async fn list(State(_state): State<AppState>, Query(query): Query<ActivityQuery>) -> Json<Vec<ActivityItem>> {
-    let limit = query.limit.unwrap_or(10).max(1) as i64;
-    let now = Utc::now();
+pub async fn list(
+    State(state): State<AppState>,
+    Query(query): Query<ActivityQuery>,
+) -> Result<Json<Vec<ActivityItem>>, Response> {
+    let limit = query.limit.unwrap_or(30).max(1);
+    let args = vec!["activity".to_string(), "--limit".to_string(), limit.to_string()];
 
-    Json((0..limit.min(5)).map(|index| ActivityItem {
-        id: index + 1,
-        suggestion_id: index + 1,
-        action: "approve".to_string(),
-        actor_email: "scaffold@local".to_string(),
-        note: Some("스캐폴드 활동 로그".to_string()),
-        created_at: now,
-        suggestion_title: format!("샘플 제안 {}", index + 1),
-        suggestion_type: "title".to_string(),
-        target_type: "post".to_string(),
-        target_id: format!("target-{}", index + 1),
-        target_label: "샘플 블로그 포스트".to_string(),
-    }).collect())
+    let data = state
+        .bridge
+        .run::<Vec<ActivityItem>>(&args, None)
+        .await
+        .map_err(|error| api_error(StatusCode::from_u16(error.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), "API_ERROR", error.message))?;
+
+    Ok(Json(data))
 }
