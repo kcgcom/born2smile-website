@@ -25,7 +25,7 @@ const posthogConnectSrc = getCspOrigins(
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com",
+  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
   [
