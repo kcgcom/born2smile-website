@@ -11,7 +11,7 @@ const CSP = [
   "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
-  "connect-src 'self' https://*.supabase.co https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com https://*.i.posthog.com https://llm.born2smile.co.kr",
+  "connect-src 'self' https://*.supabase.co https://accounts.google.com https://apis.google.com https://www.googleapis.com https://dapi.kakao.com https://www.google-analytics.com https://static.cloudflareinsights.com https://*.i.posthog.com https://us.posthog.com https://eu.posthog.com https://llm.born2smile.co.kr",
   "font-src 'self'",
   "frame-src 'self' https://accounts.google.com",
   "frame-ancestors 'none'",
