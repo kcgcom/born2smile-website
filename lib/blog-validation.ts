@@ -104,6 +104,17 @@ export const adminAiWriteRequestSchema = z.object({
   mode: z.enum(["chat", "generate"]),
 });
 
+export const aiOpsSuggestionRequestSchema = z.object({
+  targetType: z.enum(["post", "page", "site"]),
+  targetId: z.string().trim().min(1).max(200),
+  suggestionType: z.enum(["title", "meta_description", "faq", "internal_links", "body_revision"]),
+  context: z.string().trim().max(500).optional(),
+});
+
+export const aiOpsSuggestionActionSchema = z.object({
+  note: z.string().trim().max(500).optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Site Config Schemas
 // ---------------------------------------------------------------------------

@@ -1,0 +1,31 @@
+import * as Sentry from "@sentry/nextjs";
+import { NextRequest } from "next/server";
+import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
+import { isAiOpsRemoteEnabled, proxyAiOpsJson } from "../_lib/proxy";
+import { getAiOpsTargets } from "@/lib/admin-ai-ops";
+import type { AiOpsTargetOption } from "@/lib/admin-ai-ops-types";
+
+const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" } as const;
+
+export async function GET(request: NextRequest) {
+  const auth = await verifyAdminRequest(request);
+  if (!auth.ok) return unauthorizedResponse(auth);
+
+  try {
+    const data = isAiOpsRemoteEnabled()
+      ? (await proxyAiOpsJson<AiOpsTargetOption[]>({
+          path: "/ai-ops/targets",
+          request,
+          adminEmail: auth.email,
+        })).data
+      : await getAiOpsTargets();
+
+    return Response.json({ data }, { headers: HEADERS });
+  } catch (error) {
+    Sentry.captureException(error);
+    return Response.json(
+      { error: "API_ERROR", message: "운영 대상 목록을 불러올 수 없습니다" },
+      { status: 500, headers: HEADERS },
+    );
+  }
+}

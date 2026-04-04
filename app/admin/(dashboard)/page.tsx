@@ -26,6 +26,10 @@ const ConversionTabView = dynamic(
   () => import("./components/ConversionTab").then((m) => m.ConversionReportTab),
   { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
 );
+const AiOpsTabView = dynamic(
+  () => import("./components/AiOpsTab").then((m) => m.AiOpsTab),
+  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
+);
 const SettingsTabView = dynamic(
   () => import("./components/AdminSettingsTab").then((m) => m.SettingsTabShell),
   { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
@@ -42,6 +46,8 @@ const TAB_REDIRECT: Record<string, { tab: AdminTabId; sub?: string }> = {
   search: { tab: "seo", sub: "search" },
   trend: { tab: "seo", sub: "trend" },
   blog: { tab: "content", sub: "posts" },
+  ai: { tab: "aiops", sub: "briefing" },
+  ops: { tab: "aiops", sub: "briefing" },
 };
 
 export default function AdminDashboardPage() {
@@ -135,6 +141,11 @@ export default function AdminDashboardPage() {
         {renderedTabs.has("conversion") && (
           <div hidden={activeTab !== "conversion"}>
             <ConversionTabView />
+          </div>
+        )}
+        {renderedTabs.has("aiops") && (
+          <div hidden={activeTab !== "aiops"}>
+            <AiOpsTabView />
           </div>
         )}
         {renderedTabs.has("settings") && (
