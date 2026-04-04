@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { X, Send, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 import { getTodayKST } from "@/lib/date";
 
-const LLM_BASE_URL =
-  process.env.NEXT_PUBLIC_LLM_BASE_URL ?? "https://llm.born2smile.co.kr";
-const LLM_MODEL = process.env.NEXT_PUBLIC_LLM_MODEL ?? "large";
+const LLM_BASE_URL = (
+  process.env.NEXT_PUBLIC_LLM_BASE_URL ?? "https://llm.born2smile.co.kr"
+).trim();
+const LLM_MODEL = (process.env.NEXT_PUBLIC_LLM_MODEL ?? "large").trim();
 
 const CHAT_SYSTEM_PROMPT = `당신은 서울본치과 블로그 포스트 작성을 돕는 어시스턴트입니다.
 사용자가 글 주제를 말하면 짧은 질문 1~2개로 방향을 잡아주세요.
