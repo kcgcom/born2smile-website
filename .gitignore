@@ -57,3 +57,6 @@ AGENTS.md
 # local tooling scratch
 .tmp/
 supabase/.temp/
+
+# cargo / rust build outputs
+services/ai-ops-agent/target/
