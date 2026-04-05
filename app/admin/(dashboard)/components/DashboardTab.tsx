@@ -155,7 +155,7 @@ export function DashboardTab({
         </div>
       </AdminSurface>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 lg:grid-cols-5 lg:[&>*:last-child]:col-span-1">
         <MetricCard
           label="주간 세션"
           value={analyticsData?.summary.sessions.value.toLocaleString("ko-KR") ?? "—"}

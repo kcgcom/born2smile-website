@@ -45,33 +45,35 @@ export function AdminSubTabs<T extends readonly AdminSubTabDef[]>({
 
   return (
     <nav
-      className="mb-6 flex flex-row items-center gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="mb-6 rounded-xl bg-slate-100/80 p-1"
       aria-label={`${parentLabel} 서브탭`}
     >
-      <div className="flex shrink-0 items-center gap-0.5 px-3">
+      <div className="hidden shrink-0 items-center gap-0.5 px-3 sm:flex">
         <span className="text-xs font-medium text-slate-500">{parentLabel}</span>
         <ChevronRight size={11} className="text-slate-400" aria-hidden="true" />
       </div>
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = tab.id === activeSub;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => handleSubChange(tab.id)}
-            aria-current={isActive ? "page" : undefined}
-            className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition-all ${
-              isActive
-                ? "bg-white font-semibold text-amber-600 shadow-sm"
-                : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            <Icon size={13} aria-hidden="true" />
-            <span>{tab.label}</span>
-          </button>
-        );
-      })}
+      <div className="grid grid-cols-3 gap-1 sm:flex sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto sm:[-ms-overflow-style:none] sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = tab.id === activeSub;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleSubChange(tab.id)}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] transition-all sm:min-w-[112px] sm:flex-1 sm:gap-1.5 sm:whitespace-nowrap sm:px-3 sm:py-1.5 sm:text-xs ${
+                isActive
+                  ? "bg-white font-semibold text-amber-600 shadow-sm"
+                  : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <Icon size={13} aria-hidden="true" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

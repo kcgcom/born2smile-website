@@ -12,14 +12,47 @@ interface Message {
   content: string;
 }
 
+interface ApiValidationIssue {
+  code?: string;
+  path?: Array<string | number>;
+  message?: string;
+  minimum?: number;
+  maximum?: number;
+}
+
 interface ApiErrorResponse {
   error?: string;
   message?: string;
+  issues?: ApiValidationIssue[];
 }
 
 interface AiWriteModalProps {
   onClose: () => void;
   onDraftReady: (data: BlogEditorData) => void;
+}
+
+function formatValidationIssue(issue?: ApiValidationIssue) {
+  if (!issue) return null;
+
+  const path = issue.path?.map(String).join(".");
+
+  if (path === "messages" && issue.code === "too_big" && typeof issue.maximum === "number") {
+    return `대화 메시지는 최대 ${issue.maximum}개까지 보낼 수 있습니다. 새로 열어서 다시 시도해 주세요.`;
+  }
+
+  if (path?.endsWith("content") && issue.code === "too_big" && typeof issue.maximum === "number") {
+    return `메시지 내용은 최대 ${issue.maximum}자까지 입력할 수 있습니다.`;
+  }
+
+  if (path?.endsWith("content") && issue.code === "too_small") {
+    return "메시지 내용이 비어 있습니다. 내용을 입력한 뒤 다시 시도해 주세요.";
+  }
+
+  if (issue.message) {
+    return path ? `${path}: ${issue.message}` : issue.message;
+  }
+
+  return path ? `${path} 필드 형식이 올바르지 않습니다.` : "요청 형식이 올바르지 않습니다.";
 }
 
 export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
@@ -85,11 +118,12 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
       if (!res.ok || !res.body) {
         const errorBody = (await res.json().catch(() => ({}))) as ApiErrorResponse;
         const retryAfter = res.headers.get("Retry-After");
+        const validationDetail = formatValidationIssue(errorBody.issues?.[0]);
         if (res.status === 429) {
           const retryHint = retryAfter ? ` 약 ${retryAfter}초 후 다시 시도해 주세요.` : " 잠시 후 다시 시도해 주세요.";
           throw new Error(errorBody.message ? `${errorBody.message}.${retryHint}` : `요청이 너무 빠릅니다.${retryHint}`);
         }
-        throw new Error(errorBody.message ?? `서버 오류 (${res.status})`);
+        throw new Error(validationDetail ?? errorBody.message ?? `서버 오류 (${res.status})`);
       }
 
       const reader = res.body.getReader();
@@ -212,8 +246,8 @@ export function AiWriteModal({ onClose, onDraftReady }: AiWriteModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex h-[640px] w-full max-w-2xl flex-col rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-2 sm:items-center sm:p-4">
+      <div className="flex h-[min(640px,calc(100dvh-1rem))] w-full max-w-2xl min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl sm:h-[min(640px,calc(100dvh-2rem))]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <div className="flex items-center gap-2">

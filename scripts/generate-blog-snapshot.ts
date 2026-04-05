@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeBlogCategory } from "../lib/blog/category-slugs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outFile = path.resolve(__dirname, "../lib/blog/generated/posts-snapshot.ts");
@@ -79,11 +80,11 @@ function calculateReadTimeFromBlocks(blocks: unknown[]): string {
 
 function buildOutput(rows: SnapshotRow[]) {
   const normalized = rows.map((row) => ({
+    category: normalizeBlogCategory(row.category) ?? row.category,
     slug: row.slug,
     title: row.title,
     subtitle: row.subtitle,
     excerpt: row.excerpt,
-    category: row.category,
     tags: row.tags ?? [],
     date: row.date,
     dateModified: row.date_modified ?? undefined,

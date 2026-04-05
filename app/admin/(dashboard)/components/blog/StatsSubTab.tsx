@@ -152,7 +152,7 @@ function ScheduleEditor() {
           {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+      <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
         {DAY_LABELS.map((label, idx) => {
           const selected = days.includes(idx);
           return (

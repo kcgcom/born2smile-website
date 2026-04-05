@@ -19,26 +19,26 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
       tone="dark"
       className="border-x-0 border-t-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))]"
     >
-      <header className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 md:gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <Link href="/" className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80">
               <Image
                 src="/images/Logo_SNU.png"
                 alt="서울대학교 엠블럼"
                 width={40}
                 height={40}
-                className="h-8 w-8 md:h-10 md:w-10 brightness-0 invert"
+                className="h-8 w-8 shrink-0 brightness-0 invert md:h-10 md:w-10"
               />
-              <span className="text-2xl font-bold tracking-tight text-white">{CLINIC.name}</span>
+              <span className="truncate text-xl font-bold tracking-tight text-white sm:text-2xl">{CLINIC.name}</span>
             </Link>
-            <div className="hidden flex-col gap-1 sm:flex">
+            <div className="hidden flex-col gap-1 md:flex">
               <AdminPill tone="amber" className="w-fit text-xs">관리자 콘솔</AdminPill>
               <p className="text-xs text-slate-400">운영 지표, 블로그, 사이트 설정</p>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <div className="flex shrink-0 items-center md:justify-end">
           <AdminActionButton
             onClick={onLogout}
             tone="ghost"

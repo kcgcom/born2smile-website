@@ -110,7 +110,7 @@ function ContentScheduleManager() {
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
           {DAY_LABELS.map((label, index) => {
             const selected = days.includes(index);
             return (
