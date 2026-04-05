@@ -101,8 +101,7 @@ export async function PUT(
       || data.excerpt !== undefined
       || data.category !== undefined
       || data.tags !== undefined
-      || data.blocks !== undefined
-      || data.content !== undefined;
+      || data.blocks !== undefined;
     const publishedAndDatedTodayOrPast = effectivePublished === true
       && effectiveDate <= todayKST;
     const updateData: UpdateBlogPostData = data.dateModified === undefined

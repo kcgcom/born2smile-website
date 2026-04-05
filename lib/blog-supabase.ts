@@ -7,7 +7,7 @@
 
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
-import type { BlogBlock, BlogPost, BlogPostMeta, BlogPostSection } from "./blog/types";
+import type { BlogBlock, BlogPost, BlogPostMeta } from "./blog/types";
 import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
 import { getCategorySlug, normalizeBlogCategory } from "./blog";
 import { getTodayKST } from "./date";
@@ -54,23 +54,6 @@ function isBlogBlockArray(value: unknown): value is BlogBlock[] {
   ));
 }
 
-function isLegacySectionArray(value: unknown): value is BlogPostSection[] {
-  return Array.isArray(value) && value.every((item) => (
-    item &&
-    typeof item === "object" &&
-    "heading" in item &&
-    "content" in item
-  ));
-}
-
-function calculateReadTimeFromSections(content: BlogPostSection[]): string {
-  const totalChars = content.reduce(
-    (sum, section) => sum + (section.heading?.length ?? 0) + (section.content?.length ?? 0),
-    0,
-  );
-  return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
-}
-
 function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
   const totalChars = blocks.reduce((sum, block) => {
     switch (block.type) {
@@ -93,11 +76,8 @@ function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
   return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
 }
 
-function calculateReadTime(data: Pick<BlogPost, "content" | "blocks">): string {
-  if (data.blocks && data.blocks.length > 0) {
-    return calculateReadTimeFromBlocks(data.blocks);
-  }
-  return calculateReadTimeFromSections(data.content ?? []);
+function calculateReadTime(data: Pick<BlogPost, "blocks">): string {
+  return calculateReadTimeFromBlocks(data.blocks);
 }
 
 // --- DB row <-> TypeScript object mapping ---
@@ -147,9 +127,6 @@ function rowToMeta(
 }
 
 function rowToPost(row: DbRow): BlogPost {
-  const blocks = isBlogBlockArray(row.content) ? row.content : undefined;
-  const content = isLegacySectionArray(row.content) ? row.content : undefined;
-
   return {
     slug: row.slug,
     title: row.title,
@@ -159,8 +136,7 @@ function rowToPost(row: DbRow): BlogPost {
     tags: (row.tags ?? []) as BlogPostMeta["tags"],
     date: row.date,
     dateModified: row.date_modified ?? undefined,
-    ...(content ? { content } : {}),
-    ...(blocks ? { blocks } : {}),
+    blocks: isBlogBlockArray(row.content) ? row.content : [],
     readTime: row.read_time ?? "1분",
     reviewedDate: row.reviewed_date ?? undefined,
   };
@@ -180,8 +156,7 @@ function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
     tags: post.tags as BlogPost["tags"],
     date: post.date,
     dateModified: post.dateModified,
-    ...(isBlogBlockArray(post.content) ? { blocks: post.content } : {}),
-    ...(isLegacySectionArray(post.content) ? { content: post.content } : {}),
+    blocks: isBlogBlockArray(post.blocks) ? post.blocks : [],
     readTime: post.readTime,
     reviewedDate: post.reviewedDate,
     published: post.published,
@@ -452,7 +427,7 @@ export type CreateBlogPostData = Omit<BlogPost, "readTime"> & {
 
 /**
  * Create a new blog post row.
- * Calculates readTime from content automatically.
+ * Calculates readTime from blocks automatically.
  */
 export async function createBlogPost(
   data: CreateBlogPostData,
@@ -470,7 +445,7 @@ export async function createBlogPost(
     tags: data.tags,
     date: data.date,
     date_modified: data.dateModified ?? null,
-    content: data.blocks ?? data.content ?? [],
+    content: data.blocks,
     read_time: readTime,
     reviewed_date: null,
     published: data.published ?? false,
@@ -493,7 +468,7 @@ export type UpdateBlogPostData = Partial<
 
 /**
  * Update an existing blog post row (partial update).
- * Recalculates readTime if content is provided.
+ * Recalculates readTime if blocks are provided.
  */
 export async function updateBlogPost(
   slug: string,
@@ -518,9 +493,6 @@ export async function updateBlogPost(
   if (data.blocks !== undefined) {
     update.content = data.blocks;
     update.read_time = calculateReadTime({ blocks: data.blocks });
-  } else if (data.content !== undefined) {
-    update.content = data.content;
-    update.read_time = calculateReadTime({ content: data.content });
   }
 
   const { error } = await getSupabaseAdmin()

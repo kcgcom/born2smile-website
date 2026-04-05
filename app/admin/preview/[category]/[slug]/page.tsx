@@ -17,7 +17,6 @@ import { getPostBySlugFresh } from "@/lib/blog-supabase";
 import TableOfContents from "@/components/blog/TableOfContents";
 import {
   getHeadingList,
-  renderLegacySections,
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
@@ -54,7 +53,7 @@ export default async function BlogPreviewPage({
   const publicUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
 
   return (
-    <BlogEditProvider initialBlocks={post.blocks ?? []}>
+    <BlogEditProvider initialBlocks={post.blocks}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-12 pb-16">
@@ -116,21 +115,17 @@ export default async function BlogPreviewPage({
           <FadeIn className="mx-auto max-w-3xl">
             {headings.length >= 3 && <TableOfContents headings={headings} />}
             <div className="space-y-10">
-              {post.blocks && post.blocks.length > 0
-                ? (
-                  <InlineBlocksEditor
-                    post={{
-                      slug,
-                      title: post.title,
-                      subtitle: post.subtitle,
-                      excerpt: post.excerpt,
-                      category: post.category,
-                      tags: post.tags,
-                      date: post.date,
-                    }}
-                  />
-                )
-                : renderLegacySections(post.content ?? [])}
+              <InlineBlocksEditor
+                post={{
+                  slug,
+                  title: post.title,
+                  subtitle: post.subtitle,
+                  excerpt: post.excerpt,
+                  category: post.category,
+                  tags: post.tags,
+                  date: post.date,
+                }}
+              />
             </div>
           </FadeIn>
         </section>

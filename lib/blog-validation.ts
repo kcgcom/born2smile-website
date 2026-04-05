@@ -11,11 +11,6 @@ const categorySchema = z
   })
   .transform((value) => normalizeBlogCategory(value)!);
 
-export const blogPostContentSchema = z.object({
-  heading: z.string().min(2).max(100),
-  content: z.string().min(50).max(3000),
-});
-
 const relatedLinkSchema = z.object({
   title: z.string().min(2).max(120),
   href: z.string().min(1).max(300),
@@ -62,37 +57,15 @@ const blogPostBaseSchema = z.object({
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  content: z.array(blogPostContentSchema).min(1).max(10).optional(),
-  blocks: z.array(blogBlockSchema).min(1).max(30).optional(),
+  blocks: z.array(blogBlockSchema).min(1).max(30),
   published: z.boolean(),
 });
 
-export const blogPostSchema = blogPostBaseSchema.superRefine((data, ctx) => {
-  if ((!data.content || data.content.length === 0) && (!data.blocks || data.blocks.length === 0)) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["content"],
-      message: "content 또는 blocks 중 하나는 반드시 필요합니다",
-    });
-  }
-});
+export const blogPostSchema = blogPostBaseSchema;
 
 export const blogPostUpdateSchema = blogPostBaseSchema
   .partial()
-  .omit({ slug: true })
-  .superRefine((data, ctx) => {
-    const hasContent = data.content && data.content.length > 0;
-    const hasBlocks = data.blocks && data.blocks.length > 0;
-    if (data.content !== undefined || data.blocks !== undefined) {
-      if (!hasContent && !hasBlocks) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["content"],
-          message: "content 또는 blocks 중 하나는 반드시 필요합니다",
-        });
-      }
-    }
-  });
+  .omit({ slug: true });
 
 export const adminAiWriteRequestSchema = z.object({
   messages: z.array(

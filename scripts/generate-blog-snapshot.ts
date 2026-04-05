@@ -43,45 +43,35 @@ interface SnapshotRow {
   published: boolean;
 }
 
-function calculateReadTimeFromContent(content: unknown[]): string {
-  const totalChars = content.reduce<number>((sum, item) => {
+function calculateReadTimeFromBlocks(blocks: unknown[]): string {
+  const totalChars = blocks.reduce<number>((sum, item) => {
     if (!item || typeof item !== "object") return sum;
     const entry = item as Record<string, unknown>;
 
-    if (typeof entry.type === "string") {
-      switch (entry.type) {
-        case "heading":
-        case "paragraph":
-          return sum + (typeof entry.text === "string" ? entry.text.length : 0);
-        case "list":
-          return sum + (Array.isArray(entry.items) ? entry.items.reduce<number>((acc, value) => acc + (typeof value === "string" ? value.length : 0), 0) : 0);
-        case "faq":
-          return sum
-            + (typeof entry.question === "string" ? entry.question.length : 0)
-            + (typeof entry.answer === "string" ? entry.answer.length : 0);
-        case "relatedLinks":
-          return sum + (Array.isArray(entry.items)
-            ? entry.items.reduce<number>((acc, value) => {
-                if (!value || typeof value !== "object") return acc;
-                const link = value as Record<string, unknown>;
-                return acc
-                  + (typeof link.title === "string" ? link.title.length : 0)
-                  + (typeof link.href === "string" ? link.href.length : 0)
-                  + (typeof link.description === "string" ? link.description.length : 0);
-              }, 0)
-            : 0);
-        default:
-          return sum;
-      }
+    switch (entry.type) {
+      case "heading":
+      case "paragraph":
+        return sum + (typeof entry.text === "string" ? entry.text.length : 0);
+      case "list":
+        return sum + (Array.isArray(entry.items) ? entry.items.reduce<number>((acc, value) => acc + (typeof value === "string" ? value.length : 0), 0) : 0);
+      case "faq":
+        return sum
+          + (typeof entry.question === "string" ? entry.question.length : 0)
+          + (typeof entry.answer === "string" ? entry.answer.length : 0);
+      case "relatedLinks":
+        return sum + (Array.isArray(entry.items)
+          ? entry.items.reduce<number>((acc, value) => {
+              if (!value || typeof value !== "object") return acc;
+              const link = value as Record<string, unknown>;
+              return acc
+                + (typeof link.title === "string" ? link.title.length : 0)
+                + (typeof link.href === "string" ? link.href.length : 0)
+                + (typeof link.description === "string" ? link.description.length : 0);
+            }, 0)
+          : 0);
+      default:
+        return sum;
     }
-
-    if ("heading" in entry || "content" in entry) {
-      return sum
-        + (typeof entry.heading === "string" ? entry.heading.length : 0)
-        + (typeof entry.content === "string" ? entry.content.length : 0);
-    }
-
-    return sum;
   }, 0);
 
   return `${Math.max(1, Math.ceil(totalChars / 500))}분`;
@@ -97,8 +87,8 @@ function buildOutput(rows: SnapshotRow[]) {
     tags: row.tags ?? [],
     date: row.date,
     dateModified: row.date_modified ?? undefined,
-    content: row.content ?? [],
-    readTime: row.read_time ?? calculateReadTimeFromContent(row.content ?? []),
+    blocks: row.content ?? [],
+    readTime: row.read_time ?? calculateReadTimeFromBlocks(row.content ?? []),
     reviewedDate: row.reviewed_date ?? undefined,
     published: row.published,
   }));
@@ -117,7 +107,7 @@ export interface BlogSnapshotPost {
   tags: string[];
   date: string;
   dateModified?: string;
-  content: unknown[];
+  blocks: unknown[];
   readTime: string;
   reviewedDate?: string;
   published: boolean;
@@ -153,7 +143,7 @@ export interface BlogSnapshotPost {
   tags: string[];
   date: string;
   dateModified?: string;
-  content: unknown[];
+  blocks: unknown[];
   readTime: string;
   reviewedDate?: string;
   published: boolean;

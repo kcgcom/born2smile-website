@@ -2,11 +2,6 @@
 // 블로그 타입 정의
 // =============================================================
 
-export interface BlogPostSection {
-  heading: string;
-  content: string;
-}
-
 export interface BlogRelatedLinkItem {
   title: string;
   href: string;
@@ -58,11 +53,9 @@ export interface BlogPostMeta {
 
 /** 상세 페이지용 전체 데이터 (본문 포함) */
 export interface BlogPost extends Omit<BlogPostMeta, "readTime"> {
-  /** legacy section-based content */
-  content?: BlogPostSection[];
   /** block-based rich content */
-  blocks?: BlogBlock[];
-  /** 수동 입력 시 사용. 생략하면 빌드 시 content 글자 수 기반 자동 계산 (한국어 분당 ~500자) */
+  blocks: BlogBlock[];
+  /** 수동 입력 시 사용. 생략하면 빌드 시 blocks 글자 수 기반 자동 계산 (한국어 분당 ~500자) */
   readTime?: string;
   /** 콘텐츠 검수 완료일 (YYYY-MM-DD). 미입력 시 미검수 상태 */
   reviewedDate?: string;

@@ -25,8 +25,7 @@ export interface BlogEditorData {
   category: BlogCategorySlug;
   tags: string[];
   date: string;
-  content?: { heading: string; content: string }[];
-  blocks?: BlogBlock[];
+  blocks: BlogBlock[];
   published: boolean;
 }
 
@@ -40,7 +39,6 @@ interface BlogEditorProps {
     category: string;
     tags: string[];
     date: string;
-    content?: { heading: string; content: string }[];
     blocks?: BlogBlock[];
     published?: boolean;
   };
@@ -67,7 +65,7 @@ function validate(form: BlogEditorData): Record<string, string> {
   if (form.excerpt.length < 20) errors.excerpt = "요약은 20자 이상이어야 합니다";
   if (form.excerpt.length > 500) errors.excerpt = "요약은 500자 이하여야 합니다";
   if (!normalizeBlogCategory(form.category)) errors.category = "유효한 카테고리를 선택해 주세요";
-  const blocks = form.blocks ?? [];
+  const blocks = form.blocks;
   if (blocks.length > 0) {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
@@ -88,37 +86,35 @@ function validate(form: BlogEditorData): Record<string, string> {
       }
     }
   } else {
-    errors.content = "블록이 최소 1개 필요합니다";
+    errors.blocks = "블록이 최소 1개 필요합니다";
   }
 
   return errors;
 }
 
 // -------------------------------------------------------------
-// Helper: calculate read time from content sections
+// Helper: calculate read time from blocks
 // -------------------------------------------------------------
 
-function calcReadTime(sections: { heading: string; content: string }[] = [], blocks: BlogBlock[] = []): string {
-  const chars = blocks.length > 0
-    ? blocks.reduce((sum, block) => {
-        switch (block.type) {
-          case "heading":
-          case "paragraph":
-            return sum + block.text.length;
-          case "list":
-            return sum + block.items.reduce((acc, item) => acc + item.length, 0);
-          case "faq":
-            return sum + block.question.length + block.answer.length;
-          case "relatedLinks":
-            return sum + block.items.reduce(
-              (acc, item) => acc + item.title.length + item.href.length + (item.description?.length ?? 0),
-              0,
-            );
-          default:
-            return sum;
-        }
-      }, 0)
-    : sections.reduce((sum, s) => sum + s.heading.length + s.content.length, 0);
+function calcReadTime(blocks: BlogBlock[] = []): string {
+  const chars = blocks.reduce((sum, block) => {
+    switch (block.type) {
+      case "heading":
+      case "paragraph":
+        return sum + block.text.length;
+      case "list":
+        return sum + block.items.reduce((acc, item) => acc + item.length, 0);
+      case "faq":
+        return sum + block.question.length + block.answer.length;
+      case "relatedLinks":
+        return sum + block.items.reduce(
+          (acc, item) => acc + item.title.length + item.href.length + (item.description?.length ?? 0),
+          0,
+        );
+      default:
+        return sum;
+    }
+  }, 0);
   const mins = Math.max(1, Math.ceil(chars / 500));
   return `${mins}분`;
 }
@@ -151,28 +147,6 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
   table: "표",
 };
 
-function convertSectionsToBlocks(
-  sections: { heading: string; content: string }[] = [],
-): BlogBlock[] {
-  const blocks = sections.flatMap((section) => {
-    const heading = section.heading.trim();
-    const content = section.content.trim();
-    const nextBlocks: BlogBlock[] = [];
-
-    if (heading) {
-      nextBlocks.push({ type: "heading", level: 2, text: heading });
-    }
-
-    if (content) {
-      nextBlocks.push({ type: "paragraph", text: content });
-    }
-
-    return nextBlocks;
-  });
-
-  return blocks.length > 0 ? blocks : [emptyBlock("paragraph")];
-}
-
 // -------------------------------------------------------------
 // BlogEditor component
 // -------------------------------------------------------------
@@ -189,10 +163,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     category: initialCategory,
     tags: initialData?.tags ?? [],
     date: initialData?.date ?? today,
-    content: undefined,
-    blocks: initialData?.blocks?.length
-      ? initialData.blocks
-      : convertSectionsToBlocks(initialData?.content),
+    blocks: initialData?.blocks?.length ? initialData.blocks : [emptyBlock("paragraph")],
     published: initialData?.published ?? false,
   });
 
@@ -205,8 +176,6 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   // List API returns metadata only — fetch full content for editing
   useEffect(() => {
     if (mode !== "edit" || !initialData?.slug) return;
-    // If content was already provided (non-empty), skip fetch
-    if (initialData.content && initialData.content.length > 0) return;
 
     setFetchingContent(true);
     (async () => {
@@ -220,10 +189,9 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
         const post = json.data ?? json;
         setForm((prev) => ({
           ...prev,
-          blocks:
-            Array.isArray(post.blocks) && post.blocks.length > 0
-              ? post.blocks
-              : convertSectionsToBlocks(Array.isArray(post.content) ? post.content : undefined),
+          blocks: Array.isArray(post.blocks) && post.blocks.length > 0
+            ? post.blocks
+            : [emptyBlock("paragraph")],
         }));
       } catch {
         // silently ignore; user can fill content manually
@@ -234,7 +202,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const readTime = useMemo(() => calcReadTime(undefined, form.blocks), [form.blocks]);
+  const readTime = useMemo(() => calcReadTime(form.blocks), [form.blocks]);
 
   // ------ field updaters ------
 
@@ -250,12 +218,12 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   const setBlock = useCallback((idx: number, nextBlock: BlogBlock) => {
     setForm((prev) => ({
       ...prev,
-      blocks: (prev.blocks ?? []).map((block, i) => (i === idx ? nextBlock : block)),
+      blocks: prev.blocks.map((block, i) => (i === idx ? nextBlock : block)),
     }));
     setFieldErrors((prev) => {
       const next = { ...prev };
       delete next[`block_${idx}`];
-      delete next.content;
+      delete next.blocks;
       return next;
     });
   }, []);
@@ -263,20 +231,20 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
   const addBlock = useCallback((type: BlogBlock["type"] = "paragraph") => {
     setForm((prev) => ({
       ...prev,
-      blocks: [...(prev.blocks ?? []), emptyBlock(type)],
+      blocks: [...prev.blocks, emptyBlock(type)],
     }));
   }, []);
 
   const removeBlock = useCallback((idx: number) => {
     setForm((prev) => ({
       ...prev,
-      blocks: (prev.blocks ?? []).filter((_, i) => i !== idx),
+      blocks: prev.blocks.filter((_, i) => i !== idx),
     }));
   }, []);
 
   const duplicateBlock = useCallback((idx: number) => {
     setForm((prev) => {
-      const blocks = [...(prev.blocks ?? [])];
+      const blocks = [...prev.blocks];
       const target = blocks[idx];
       if (!target) return prev;
       const clone = structuredClone(target);
@@ -287,7 +255,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
 
   const moveBlock = useCallback((idx: number, direction: -1 | 1) => {
     setForm((prev) => {
-      const blocks = [...(prev.blocks ?? [])];
+      const blocks = [...prev.blocks];
       const nextIdx = idx + direction;
       if (nextIdx < 0 || nextIdx >= blocks.length) return prev;
       [blocks[idx], blocks[nextIdx]] = [blocks[nextIdx], blocks[idx]];
@@ -314,7 +282,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
     }
     setSaving(true);
     setSaveError(null);
-    const payload = { ...form, content: undefined, blocks: form.blocks ?? [], published: form.published };
+    const payload = { ...form, blocks: form.blocks, published: form.published };
     const { error } = await onSave(payload);
     setSaving(false);
     if (error) setSaveError(error);
@@ -487,11 +455,11 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
                 <span className="ml-1 font-normal text-[var(--muted)]">({form.blocks?.length ?? 0}/30)</span>
               </label>
             </div>
-            {fieldErrors.content && (
-              <p className="mb-2 text-xs text-red-500">{fieldErrors.content}</p>
+            {fieldErrors.blocks && (
+              <p className="mb-2 text-xs text-red-500">{fieldErrors.blocks}</p>
             )}
             <div className="space-y-4">
-              {(form.blocks ?? []).map((block, idx) => (
+              {form.blocks.map((block, idx) => (
                 <div key={idx} className="space-y-3 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-[var(--muted)]">블록 {idx + 1}</span>
@@ -553,13 +521,13 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
         </div>
 
         {/* Footer buttons */}
-        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-[var(--border)] bg-white/90 px-6 py-4">
+        <div className="shrink-0 flex flex-col gap-2 border-t border-[var(--border)] bg-white/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6">
           <AdminActionButton
             type="button"
             onClick={() => setShowPreview((prev) => !prev)}
             disabled={saving}
             tone="dark"
-            className="px-5"
+            className="w-full px-5 sm:w-auto"
           >
             {showPreview ? "미리보기 닫기" : "미리보기"}
           </AdminActionButton>
@@ -568,7 +536,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             onClick={onClose}
             disabled={saving}
             tone="dark"
-            className="px-5"
+            className="w-full px-5 sm:w-auto"
           >
             취소
           </AdminActionButton>
@@ -577,7 +545,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
             onClick={handleSubmit}
             disabled={saving || fetchingContent}
             tone="primary"
-            className="px-5"
+            className="w-full px-5 sm:w-auto"
           >
             <Save className="h-4 w-4" />
             {saving ? "저장 중..." : "임시저장"}
@@ -597,7 +565,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
                 {form.subtitle || "부제 미리보기"}
               </p>
               <div className="mt-8 space-y-6">
-                {renderBlockPreview(form.blocks ?? [])}
+                {renderBlockPreview(form.blocks)}
               </div>
             </div>
           </div>

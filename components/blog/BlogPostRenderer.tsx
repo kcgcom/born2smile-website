@@ -1,39 +1,20 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowUpRight, BookOpenText } from "lucide-react";
-import type { BlogBlock, BlogPostSection } from "@/lib/blog";
+import type { BlogBlock } from "@/lib/blog";
 
 // ----------------------------------------------------------------
 // 블로그 포스트 렌더 유틸리티
 // 공개 페이지(/blog/[category]/[slug])와 관리자 프리뷰 페이지 공유
 // ----------------------------------------------------------------
 
-export function getHeadingList(post: {
-  content?: BlogPostSection[];
-  blocks?: BlogBlock[];
-}): string[] {
-  if (post.blocks && post.blocks.length > 0) {
-    return post.blocks
-      .filter(
-        (block): block is Extract<BlogBlock, { type: "heading" }> =>
-          block.type === "heading",
-      )
-      .map((block) => block.text);
-  }
-  return (post.content ?? []).map((s) => s.heading);
-}
-
-export function renderLegacySections(sections: BlogPostSection[]) {
-  return sections.map((section, index) => (
-    <div key={`${section.heading}-${index}`} id={`section-${index}`}>
-      <h2 className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-3xl">
-        {section.heading}
-      </h2>
-      <p className="text-base leading-relaxed text-gray-700 md:text-lg">
-        {section.content}
-      </p>
-    </div>
-  ));
+export function getHeadingList(post: { blocks: BlogBlock[] }): string[] {
+  return post.blocks
+    .filter(
+      (block): block is Extract<BlogBlock, { type: "heading" }> =>
+        block.type === "heading",
+    )
+    .map((block) => block.text);
 }
 
 export function isExternalHref(href: string): boolean {

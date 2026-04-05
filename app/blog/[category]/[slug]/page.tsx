@@ -24,12 +24,11 @@ import {
 } from "@/lib/blog-supabase";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
-import type { BlogBlock, BlogPostSection } from "@/lib/blog";
+import type { BlogBlock } from "@/lib/blog";
 import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
 import { fitMetaDescription } from "@/lib/seo";
 import {
   getHeadingList,
-  renderLegacySections,
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
@@ -47,16 +46,10 @@ function getPostMetaDescription(post: { excerpt: string; subtitle: string }): st
   return fitMetaDescription(base, POST_META_PAD);
 }
 
-function getFaqEntries(post: { content?: BlogPostSection[]; blocks?: BlogBlock[] }) {
-  if (post.blocks && post.blocks.length > 0) {
-    return post.blocks
-      .filter((block): block is Extract<BlogBlock, { type: "faq" }> => block.type === "faq")
-      .map((block) => ({ q: block.question, a: block.answer }));
-  }
-
-  return (post.content ?? [])
-    .filter((section) => section.heading.trimEnd().endsWith("?"))
-    .map((section) => ({ q: section.heading, a: section.content }));
+function getFaqEntries(post: { blocks: BlogBlock[] }) {
+  return post.blocks
+    .filter((block): block is Extract<BlogBlock, { type: "faq" }> => block.type === "faq")
+    .map((block) => ({ q: block.question, a: block.answer }));
 }
 
 function getBlogCtaCopy(slug: string, category: string, relatedTreatmentName?: string | null) {
@@ -198,7 +191,7 @@ export default async function BlogPostPage({
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
 
-  const faqEntries = getFaqEntries(post);
+  const faqEntries = getFaqEntries({ blocks: post.blocks });
   const faqJsonLd = faqEntries.length >= 2
     ? getFaqJsonLd(faqEntries)
     : null;
@@ -235,7 +228,7 @@ export default async function BlogPostPage({
       )}
 
       {/* 블로그 포스트 */}
-      <BlogEditProvider initialBlocks={post.blocks ?? []}>
+      <BlogEditProvider initialBlocks={post.blocks}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
@@ -320,21 +313,17 @@ export default async function BlogPostPage({
               <TableOfContents headings={headings} />
             )}
             <div className="space-y-10">
-              {post.blocks && post.blocks.length > 0
-                ? (
-                  <InlineBlocksEditor
-                    post={{
-                      slug,
-                      title: post.title,
-                      subtitle: post.subtitle,
-                      excerpt: post.excerpt,
-                      category: post.category,
-                      tags: post.tags,
-                      date: post.date,
-                    }}
-                  />
-                )
-                : renderLegacySections(post.content ?? [])}
+              <InlineBlocksEditor
+                post={{
+                  slug,
+                  title: post.title,
+                  subtitle: post.subtitle,
+                  excerpt: post.excerpt,
+                  category: post.category,
+                  tags: post.tags,
+                  date: post.date,
+                }}
+              />
             </div>
             <p className="mt-10 border-t border-gray-100 pt-6 text-xs text-gray-400">
               이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.

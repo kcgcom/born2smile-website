@@ -46,7 +46,7 @@ export function QueueSubTab() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-slate-900">승인 대기함</h3>
-            <p className="mt-1 text-sm text-slate-600">초안은 승인 후, 블로그 제안은 승인 뒤 즉시 반영까지 이어갈 수 있습니다.</p>
+            <p className="mt-1 text-sm text-slate-600">초안은 승인 후, 블로그 제목·요약문·FAQ·내부링크 제안은 승인 뒤 즉시 반영까지 이어갈 수 있습니다.</p>
           </div>
           <AdminPill tone="white">{queueItems.length}건</AdminPill>
         </div>

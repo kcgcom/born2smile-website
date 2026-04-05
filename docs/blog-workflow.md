@@ -57,12 +57,14 @@
 
 블로그 포스트의 Single Source of Truth는 Supabase `blog_posts`입니다.
 
-본문은 두 형식을 모두 읽을 수 있습니다.
+본문은 `blocks` 단일 포맷으로 관리합니다.
 
-- 레거시 `content`: `[{ heading, content }]`
-- 현재 기본 `blocks`: `heading | paragraph | list | faq | relatedLinks | table`
-
-신규 작성은 `blocks` 기준으로 관리합니다.
+- `heading`
+- `paragraph`
+- `list`
+- `faq`
+- `relatedLinks`
+- `table`
 
 ## 6. 빌드/폴백 전략
 

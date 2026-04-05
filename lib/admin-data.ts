@@ -152,7 +152,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // ── 미완료 — 추후 구현 ──
   { id: "m40", title: "진료 과목 간 교차 링크", priority: "MEDIUM", status: "done", description: "진료 페이지 하단에 '함께 알아보면 좋은 진료' 섹션. 내부 링크 강화 → 체류 시간 증가 + SEO" },
   { id: "m41", title: "시간대별 CTA 차별화", priority: "MEDIUM", status: "done", description: "데스크톱 플로팅 버튼에 진료 상태 표시 — 진료 중(초록)/점심(노랑)/종료(회색), 1분 갱신" },
-  { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "done", description: "BlogPostSection[] 제목으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
+  { id: "m42", title: "블로그 목차(TOC) 자동 생성", priority: "MEDIUM", status: "done", description: "heading 블록을 기준으로 앵커 링크 목차 표시. 체류 시간 증가 + Google passage ranking 개선" },
   { id: "m43", title: "카테고리 허브 페이지 지역 SEO", priority: "MEDIUM", status: "done", description: "/blog/[category] 허브 페이지 title/desc/keywords에 '김포' 지역 키워드 포함" },
   { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "done", description: "57개 키워드 서브그룹에 SearchIntent 태깅(정보형/비교검토/전환형/탐색형). 콘텐츠 전략 탭에 의도별 필터·컬럼·산점도 툴팁 추가" },
   { id: "m45", title: "SC 쿼리 × 트렌드 키워드 교차 분석", priority: "MEDIUM", status: "pending", description: "Search Console 유입 쿼리와 DataLab 시장 수요 교차 비교. '수요 높지만 유입 없는' 기회 키워드 식별" },

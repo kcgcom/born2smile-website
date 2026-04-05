@@ -5,18 +5,13 @@ import { Loader2, Sparkles } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminErrorState } from "../AdminErrorState";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
-import { TREATMENTS } from "@/lib/constants";
-import type { AiOpsBriefing, AiOpsSuggestionListItem, AiOpsSuggestionType, AiOpsTargetType } from "@/lib/admin-ai-ops-types";
+import type { AiOpsBriefing, AiOpsSuggestionListItem, AiOpsSuggestionType, AiOpsTargetOption, AiOpsTargetType } from "@/lib/admin-ai-ops-types";
 import { PriorityScoreBadge } from "./PriorityScoreBadge";
-
-interface BlogPostOption {
-  slug: string;
-  title: string;
-}
 
 const POST_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }> = [
   { value: "title", label: "제목 개선" },
   { value: "meta_description", label: "요약문 개선" },
+  { value: "internal_links", label: "내부 링크" },
   { value: "faq", label: "FAQ 추가" },
   { value: "body_revision", label: "도입부 보강" },
 ];
@@ -24,27 +19,31 @@ const POST_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }
 const PAGE_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }> = [
   { value: "title", label: "메타 타이틀" },
   { value: "meta_description", label: "메타 설명" },
+  { value: "internal_links", label: "내부 링크" },
   { value: "faq", label: "FAQ 제안" },
   { value: "body_revision", label: "본문 보강" },
 ];
 
 export function SuggestionsSubTab() {
   const { data: briefing, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=28d");
-  const { data: posts, loading: postsLoading } = useAdminApi<BlogPostOption[]>("/api/admin/blog-posts");
+  const { data: targets, loading: targetsLoading, error: targetsError, refetch: refetchTargets } = useAdminApi<AiOpsTargetOption[]>("/api/admin/ai-ops/targets");
   const { data: recentSuggestions, loading: suggestionsLoading, error: suggestionsError, refetch: refetchSuggestions } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=8");
   const { mutate, loading: creating, error: createError, clearError } = useAdminMutation<AiOpsSuggestionListItem>();
 
   const [targetType, setTargetType] = useState<AiOpsTargetType>("post");
   const [targetId, setTargetId] = useState("");
   const [suggestionType, setSuggestionType] = useState<AiOpsSuggestionType>("title");
+  const [operatorContext, setOperatorContext] = useState("");
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
 
   const targetOptions = useMemo(() => {
-    if (targetType === "post") {
-      return (posts ?? []).map((post) => ({ value: post.slug, label: post.title }));
-    }
-    return TREATMENTS.map((treatment) => ({ value: treatment.id, label: treatment.name }));
-  }, [posts, targetType]);
+    return (targets ?? [])
+      .filter((target) => target.targetType === targetType)
+      .map((target) => ({
+        value: target.id,
+        label: target.note ? `${target.label} · ${target.note}` : target.label,
+      }));
+  }, [targets, targetType]);
 
   const suggestionTypeOptions = targetType === "post" ? POST_SUGGESTION_TYPES : PAGE_SUGGESTION_TYPES;
 
@@ -63,9 +62,10 @@ export function SuggestionsSubTab() {
       targetType,
       targetId: resolvedTargetId,
       suggestionType: resolvedSuggestionType,
+      ...(operatorContext.trim() ? { context: operatorContext.trim() } : {}),
     });
     if (!result.error && result.data) {
-      setCreatedMessage("새 운영 제안을 생성했습니다.");
+      setCreatedMessage("운영 제안을 준비했습니다.");
       refetchSuggestions();
       refetchBriefing();
     }
@@ -73,6 +73,10 @@ export function SuggestionsSubTab() {
 
   if (briefingError) {
     return <AdminErrorState message={briefingError} onRetry={refetchBriefing} />;
+  }
+
+  if (targetsError) {
+    return <AdminErrorState message={targetsError} onRetry={refetchTargets} />;
   }
 
   if (suggestionsError) {
@@ -113,7 +117,7 @@ export function SuggestionsSubTab() {
                 value={resolvedTargetId}
                 onChange={(event) => setTargetId(event.target.value)}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                disabled={postsLoading && targetType === "post"}
+                disabled={targetsLoading}
               >
                 {targetOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -132,6 +136,21 @@ export function SuggestionsSubTab() {
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
+              <textarea
+                value={operatorContext}
+                onChange={(event) => setOperatorContext(event.target.value)}
+                rows={4}
+                maxLength={500}
+                placeholder="예: 김포/장기동 검색 의도를 더 반영하고, 예약 전환 문구는 부드럽게 유지"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+              />
+              <p className="mt-1.5 text-xs text-slate-500">
+                검색 의도, 톤, 강조할 치료 키워드처럼 이번 제안에만 반영할 힌트를 남길 수 있습니다.
+              </p>
             </div>
 
             <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !resolvedTargetId} className="w-full">
@@ -175,7 +194,7 @@ export function SuggestionsSubTab() {
                     <PriorityScoreBadge score={candidate.priorityScore} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {candidate.suggestionTypes.slice(0, 2).map((type) => (
+                    {candidate.suggestionTypes.slice(0, 3).map((type) => (
                       <button
                         key={`${candidate.id}-${type}`}
                         type="button"

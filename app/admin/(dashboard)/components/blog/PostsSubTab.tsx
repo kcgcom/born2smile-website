@@ -635,7 +635,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                   category: editingPost.category,
                   tags: editingPost.tags,
                   date: editingPost.date,
-                  content: [], // fetched inside BlogEditor via API
+                  blocks: [], // fetched inside BlogEditor via API
                   published: editingPost.published,
                 }
               : draftData
@@ -649,7 +649,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                   category: getCategoryFromSlug(newCategory) as string,
                   tags: [],
                   date: today,
-                  content: [],
+                  blocks: [],
                 }
               : undefined
           }

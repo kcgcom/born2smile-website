@@ -5,6 +5,7 @@ import { fetchSearchConsoleData } from "./admin-search-console";
 import { isSupabaseAdminConfigured, getSupabaseAdmin } from "./supabase-admin";
 import { CLINIC, TREATMENTS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
+import type { BlogRelatedLinkItem } from "./blog/types";
 import type {
   AiOpsActionType,
   AiOpsActivityItem,
@@ -25,10 +26,19 @@ const BRIEFINGS_TABLE = "ai_agent_briefings";
 const SUGGESTIONS_TABLE = "ai_agent_suggestions";
 const ACTIONS_TABLE = "ai_agent_actions";
 
-const LLM_BASE_URL = ((process.env.LLM_BASE_URL ?? "https://llm.born2smile.co.kr").trim() || "https://llm.born2smile.co.kr");
-const LLM_MODEL = ((process.env.LLM_MODEL ?? "fast").trim() || "fast");
-const CLOUDFLARE_ACCESS_CLIENT_ID = process.env.CLOUDFLARE_ACCESS_CLIENT_ID?.trim() ?? "";
-const CLOUDFLARE_ACCESS_CLIENT_SECRET = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET?.trim() ?? "";
+function readOptionalEnv(key: string) {
+  const raw = process.env[key]?.trim();
+  if (!raw) return "";
+  if (raw.toLowerCase() === "undefined" || raw.toLowerCase() === "null") {
+    return "";
+  }
+  return raw;
+}
+
+const LLM_BASE_URL = readOptionalEnv("LLM_BASE_URL") || "https://llm.born2smile.co.kr";
+const LLM_MODEL = readOptionalEnv("LLM_MODEL") || "fast";
+const CLOUDFLARE_ACCESS_CLIENT_ID = readOptionalEnv("CLOUDFLARE_ACCESS_CLIENT_ID");
+const CLOUDFLARE_ACCESS_CLIENT_SECRET = readOptionalEnv("CLOUDFLARE_ACCESS_CLIENT_SECRET");
 const LLM_UPSTREAM_TIMEOUT_MS = Number(process.env.LLM_UPSTREAM_TIMEOUT_MS ?? "25000");
 
 interface SuggestionFilters {
@@ -42,6 +52,7 @@ interface CreateSuggestionInput {
   targetId: string;
   suggestionType: AiOpsSuggestionType;
   actorEmail: string;
+  context?: string;
 }
 
 interface ActionInput {
@@ -87,8 +98,7 @@ interface BlogTargetContext {
   excerpt: string;
   category: string;
   date: string;
-  blocks?: unknown[];
-  content?: unknown[];
+  blocks: unknown[];
 }
 
 interface PageTargetContext {
@@ -110,6 +120,29 @@ type GeneratedSuggestion = {
   beforeJson: Record<string, unknown>;
   afterJson: Record<string, unknown>;
 };
+
+type SuggestionBase = Pick<GeneratedSuggestion, "title" | "beforeJson">;
+
+interface SuggestionPromptContext {
+  operatorContext?: string;
+  priorityScore?: number;
+  primaryIssue?: string;
+  issues?: AiOpsCandidateIssue[];
+  representativeQueries?: string[];
+  recentSuggestions?: Array<{
+    suggestionType: AiOpsSuggestionType;
+    title: string;
+    status: AiOpsSuggestionStatus;
+    createdAt: string;
+    reason: string;
+  }>;
+  internalLinkCandidates?: BlogRelatedLinkItem[];
+}
+
+interface RelatedLinksBlock {
+  type: "relatedLinks";
+  items: BlogRelatedLinkItem[];
+}
 
 interface PageTargetDefinition {
   id: string;
@@ -226,7 +259,28 @@ function getLlmTimeoutMs() {
   return Math.min(LLM_UPSTREAM_TIMEOUT_MS, 45_000);
 }
 
-async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise<T | null> {
+function parseJsonResponse<T>(text: string): T {
+  const trimmed = text.trim();
+  const normalized = trimmed.startsWith("```")
+    ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
+    : trimmed;
+
+  return JSON.parse(normalized) as T;
+}
+
+function getRequiredString(
+  value: unknown,
+  fieldName: string,
+  suggestionType: AiOpsSuggestionType,
+) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`AI가 ${suggestionType} 제안의 ${fieldName} 필드를 올바르게 반환하지 않았습니다`);
+  }
+
+  return value.trim();
+}
+
+async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise<T> {
   try {
     const response = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
       method: "POST",
@@ -244,7 +298,7 @@ async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise
     });
 
     if (!response.ok) {
-      return null;
+      throw new Error(`AI 제안 생성 요청이 실패했습니다 (${response.status})`);
     }
 
     const payload = await response.json() as {
@@ -256,13 +310,16 @@ async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise
       : content;
 
     if (!text) {
-      return null;
+      throw new Error("AI 제안 생성 응답이 비어 있습니다");
     }
 
-    return JSON.parse(text) as T;
+    return parseJsonResponse<T>(text);
   } catch (error) {
-    console.warn("[ai-ops] llm generation failed, using fallback", error);
-    return null;
+    console.warn("[ai-ops] llm generation failed", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("AI 제안 생성 중 알 수 없는 오류가 발생했습니다");
   }
 }
 
@@ -271,7 +328,11 @@ function clampScore(score: number) {
 }
 
 function isSupportedApplyType(type: AiOpsSuggestionType) {
-  return type === "title" || type === "meta_description" || type === "faq" || type === "body_revision";
+  return type === "title" || type === "meta_description" || type === "faq" || type === "body_revision" || type === "internal_links";
+}
+
+function canAutoApplySuggestion(row: Pick<SuggestionRow, "target_type" | "status" | "suggestion_type" | "before_json">) {
+  return row.target_type === "post" && row.status === "approved" && isSupportedApplyType(row.suggestion_type);
 }
 
 function formatTargetLabel(targetType: AiOpsTargetType, targetId: string) {
@@ -297,6 +358,17 @@ function normalizeDaysOld(date: string) {
 
 function buildIssue(code: string, label: string, detail: string): AiOpsCandidateIssue {
   return { code, label, detail };
+}
+
+function isRelatedLinksBlock(value: unknown): value is RelatedLinksBlock {
+  return Boolean(value)
+    && typeof value === "object"
+    && (value as { type?: unknown }).type === "relatedLinks"
+    && Array.isArray((value as { items?: unknown }).items);
+}
+
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
 }
 
 async function buildCandidates(period: AiOpsBriefingPeriod) {
@@ -346,7 +418,7 @@ async function buildCandidates(period: AiOpsBriefingPeriod) {
       targetId: post.slug,
       title: post.title,
       subtitle: post.subtitle,
-      suggestionTypes: ["title", "meta_description", "faq", "body_revision"],
+      suggestionTypes: ["title", "meta_description", "internal_links", "faq", "body_revision"],
       priorityScore: clampScore(score),
       primaryIssue: issues[0]?.label ?? "운영 점검",
       issues: issues.length > 0 ? issues : [buildIssue("monitor", "운영 점검", "최근 지표 기준으로 우선순위는 낮지만 정기 점검 대상입니다.")],
@@ -392,7 +464,7 @@ async function buildCandidates(period: AiOpsBriefingPeriod) {
       targetId: page.id,
       title: page.label,
       subtitle: page.subtitle,
-      suggestionTypes: ["title", "meta_description", "faq", "body_revision"],
+      suggestionTypes: ["title", "meta_description", "internal_links", "faq", "body_revision"],
       priorityScore: clampScore(score),
       primaryIssue: issues[0]?.label ?? "정기 점검",
       issues: issues.length > 0 ? issues : [buildIssue("monitor", "정기 점검", "핵심 랜딩 페이지 상태를 정기적으로 검토하세요.")],
@@ -517,7 +589,6 @@ async function resolveTargetContext(targetType: AiOpsTargetType, targetId: strin
       category: post.category,
       date: post.date,
       blocks: post.blocks,
-      content: post.content,
     };
   }
 
@@ -542,60 +613,49 @@ async function resolveTargetContext(targetType: AiOpsTargetType, targetId: strin
   throw new Error(`지원하지 않는 대상 유형입니다: ${targetType}`);
 }
 
-function buildFallbackSuggestion(context: TargetContext, suggestionType: AiOpsSuggestionType): GeneratedSuggestion {
+function buildSuggestionBase(context: TargetContext, suggestionType: AiOpsSuggestionType): SuggestionBase {
   if (context.targetType === "post") {
     switch (suggestionType) {
       case "title":
         return {
           title: `${context.title} 개선안`,
-          reason: "현재 제목의 검색 의도를 더 선명하게 드러내도록 질문형 표현을 보강했습니다.",
           beforeJson: { title: context.title },
-          afterJson: { title: `${context.title.replace(/\s*\|.*$/, "")} 전 꼭 확인할 점` },
         };
       case "meta_description":
         return {
           title: `${context.title} 요약문 개선안`,
-          reason: "검색 결과 스니펫으로 쓰일 수 있도록 핵심 증상·행동 가이드를 짧게 재정리했습니다.",
           beforeJson: { excerpt: context.excerpt },
-          afterJson: { excerpt: `${context.title}를 찾는 분이 먼저 확인해야 할 증상 기준, 집에서의 관리 포인트, 내원 시점을 짧게 정리했어요.` },
         };
       case "faq":
         return {
           title: `${context.title} FAQ 추가안`,
-          reason: "환자 질문형 검색 의도를 보강하기 위해 FAQ를 추가합니다.",
-          beforeJson: { faqCount: Array.isArray(context.blocks) ? context.blocks.filter((block) => (block as { type?: string }).type === "faq").length : 0 },
-          afterJson: {
-            faq: {
-              question: `${context.title} 후 언제 다시 치과에 가야 하나요?`,
-              answer: "증상이 하루이틀 사이에 빠르게 심해지거나 통증·붓기가 지속되면 미루지 말고 검진을 받는 것이 좋아요. 일상 관리로 괜찮아지는 경우도 있지만, 통증이 반복되면 원인을 정확히 확인해야 합니다.",
-            },
+          beforeJson: {
+            faqCount: Array.isArray(context.blocks) ? context.blocks.filter((block) => (block as { type?: string }).type === "faq").length : 0,
           },
         };
       case "body_revision":
         return {
           title: `${context.title} 도입부 보강안`,
-          reason: "도입부에서 환자 상황과 글의 가치를 더 빨리 전달하도록 리드 문장을 다듬습니다.",
           beforeJson: { subtitle: context.subtitle, excerpt: context.excerpt },
-          afterJson: {
-            subtitle: `${context.subtitle} 먼저 확인해야 할 기준을 정리했어요.`,
-            excerpt: `${context.title} 때문에 검색하셨다면 지금 단계에서 무엇을 확인해야 하는지, 집에서 어떻게 관리하면 되는지, 언제 검진이 필요한지 순서대로 안내해 드릴게요.`,
+        };
+      case "internal_links": {
+        const existingRelatedLinks = Array.isArray(context.blocks)
+          ? context.blocks
+            .filter(isRelatedLinksBlock)
+            .flatMap((block) => block.items)
+          : [];
+        return {
+          title: `${context.title} 내부링크 제안`,
+          beforeJson: {
+            existingRelatedLinks,
+            relatedLinksCount: existingRelatedLinks.length,
           },
         };
-      case "internal_links":
+      }
       default:
         return {
           title: `${context.title} 내부링크 제안`,
-          reason: "연관 진료/블로그로 이어지는 내부 링크를 보강해 탐색 흐름을 강화합니다.",
-          beforeJson: { relatedLinks: [] },
-          afterJson: {
-            relatedLinks: [
-              {
-                title: "진료 안내 바로가기",
-                href: "/treatments",
-                description: "관련 진료 페이지로 이어지는 내부 링크 제안입니다.",
-              },
-            ],
-          },
+          beforeJson: {},
         };
     }
   }
@@ -604,55 +664,41 @@ function buildFallbackSuggestion(context: TargetContext, suggestionType: AiOpsSu
     case "title":
       return {
         title: `${context.title} 메타 타이틀 개선안`,
-        reason: "지역 키워드와 진료 의도를 더 분명하게 드러내도록 제안합니다.",
         beforeJson: { title: context.title },
-        afterJson: { proposedTitle: `김포 ${context.title} | ${context.subtitle}` },
       };
     case "meta_description":
       return {
         title: `${context.title} 메타 설명 개선안`,
-        reason: "검색 결과에서 환자 관점 질문과 답을 더 분명하게 보여주도록 정리합니다.",
         beforeJson: { description: context.description },
-        afterJson: { proposedDescription: `${context.title}가 필요할 때 먼저 확인할 기준, 치료 과정, 내원 전후 체크포인트를 한눈에 이해하기 쉽게 정리한 메타 설명 제안입니다.` },
       };
     case "faq":
       return {
         title: `${context.title} FAQ 보강안`,
-        reason: "질문형 검색 대응을 위해 핵심 질문을 한 개 추가합니다.",
         beforeJson: { faqCount: context.faqCount },
-        afterJson: {
-          faq: {
-            question: `${context.title}를 선택할 때 무엇을 먼저 확인해야 하나요?`,
-            answer: "진료 전 검사 범위, 치료 과정 설명, 통증 관리 계획, 치료 후 재내원 기준을 함께 확인하면 선택에 도움이 됩니다.",
-          },
-        },
       };
     case "body_revision":
       return {
         title: `${context.title} 본문 보강안`,
-        reason: "첫 문단에서 환자 고민과 치료 가치가 더 빨리 드러나도록 제안합니다.",
         beforeJson: { description: context.description },
-        afterJson: { proposedDescription: `${context.description} 특히 내원 전 궁금해하시는 치료 기간, 통증 관리, 회복 흐름까지 자연스럽게 이해할 수 있도록 설명을 보강합니다.` },
       };
     case "internal_links":
     default:
       return {
         title: `${context.title} 내부링크 보강안`,
-        reason: "연관 블로그/진료 페이지 링크 후보를 제안합니다.",
         beforeJson: { pagePath: context.pagePath },
-        afterJson: {
-          relatedLinks: [
-            { title: "블로그 허브", href: "/blog", description: "관련 증상/치료 가이드를 연결합니다." },
-          ],
-        },
       };
   }
 }
 
-function buildLlmPrompt(context: TargetContext, suggestionType: AiOpsSuggestionType) {
+function buildLlmPrompt(
+  context: TargetContext,
+  suggestionType: AiOpsSuggestionType,
+  promptContext: SuggestionPromptContext,
+) {
   const systemPrompt = `당신은 서울본치과 웹사이트 운영을 돕는 AI 에디터입니다.
 과장 표현, 공포 마케팅, 확정적 치료 보장은 금지합니다.
-친절하고 명확한 한국어로 작성하고 JSON만 출력하세요.`;
+친절하고 명확한 한국어로 작성하고 JSON만 출력하세요.
+특히 내부링크 제안은 제공된 후보 링크만 사용하고 존재하지 않는 URL을 만들지 마세요.`;
 
   const schemaByType: Record<AiOpsSuggestionType, string> = {
     title: '{"title":"...","reason":"..."}',
@@ -671,52 +717,59 @@ function buildLlmPrompt(context: TargetContext, suggestionType: AiOpsSuggestionT
     `제안 유형: ${suggestionType}`,
     `출력 스키마: ${schemaByType[suggestionType]}`,
     `현재 정보: ${JSON.stringify(context, null, 2)}`,
+    `운영 컨텍스트: ${JSON.stringify(promptContext, null, 2)}`,
     "반드시 JSON만 출력하세요.",
   ].join("\n\n");
 
   return { systemPrompt, userPrompt };
 }
 
-async function generateSuggestion(context: TargetContext, suggestionType: AiOpsSuggestionType): Promise<GeneratedSuggestion> {
-  const fallback = buildFallbackSuggestion(context, suggestionType);
-  const { systemPrompt, userPrompt } = buildLlmPrompt(context, suggestionType);
-  const llm = await callJsonLlm<Record<string, unknown>>(systemPrompt, userPrompt);
-  if (!llm || typeof llm !== "object") {
-    return fallback;
+async function generateSuggestion(
+  context: TargetContext,
+  suggestionType: AiOpsSuggestionType,
+  promptContext: SuggestionPromptContext,
+): Promise<GeneratedSuggestion> {
+  if (suggestionType === "internal_links" && (!promptContext.internalLinkCandidates || promptContext.internalLinkCandidates.length === 0)) {
+    throw new Error("추천할 내부 링크 후보가 충분하지 않습니다");
   }
 
-  const reason = typeof llm.reason === "string" && llm.reason.trim().length > 0
-    ? llm.reason.trim()
-    : fallback.reason;
+  const base = buildSuggestionBase(context, suggestionType);
+  const { systemPrompt, userPrompt } = buildLlmPrompt(context, suggestionType, promptContext);
+  const llm = await callJsonLlm<Record<string, unknown>>(systemPrompt, userPrompt);
+  const reason = getRequiredString(llm.reason, "reason", suggestionType);
 
   if (suggestionType === "title" && typeof llm.title === "string") {
     return {
-      title: fallback.title,
+      title: base.title,
       reason,
-      beforeJson: fallback.beforeJson,
-      afterJson: { title: llm.title.trim() },
+      beforeJson: base.beforeJson,
+      afterJson: { title: getRequiredString(llm.title, "title", suggestionType) },
     };
   }
 
   if (suggestionType === "meta_description") {
     if (context.targetType === "post" && typeof llm.excerpt === "string") {
-      return { title: fallback.title, reason, beforeJson: fallback.beforeJson, afterJson: { excerpt: llm.excerpt.trim() } };
+      return { title: base.title, reason, beforeJson: base.beforeJson, afterJson: { excerpt: getRequiredString(llm.excerpt, "excerpt", suggestionType) } };
     }
     if (typeof llm.proposedDescription === "string") {
-      return { title: fallback.title, reason, beforeJson: fallback.beforeJson, afterJson: { proposedDescription: llm.proposedDescription.trim() } };
+      return { title: base.title, reason, beforeJson: base.beforeJson, afterJson: { proposedDescription: getRequiredString(llm.proposedDescription, "proposedDescription", suggestionType) } };
     }
+    throw new Error("AI가 meta_description 제안 결과를 올바르게 반환하지 않았습니다");
   }
 
   if (suggestionType === "faq") {
     const faq = llm.faq as { question?: string; answer?: string } | undefined;
-    if (faq?.question && faq?.answer) {
-      return {
-        title: fallback.title,
-        reason,
-        beforeJson: fallback.beforeJson,
-        afterJson: { faq: { question: faq.question.trim(), answer: faq.answer.trim() } },
-      };
-    }
+    return {
+      title: base.title,
+      reason,
+      beforeJson: base.beforeJson,
+      afterJson: {
+        faq: {
+          question: getRequiredString(faq?.question, "faq.question", suggestionType),
+          answer: getRequiredString(faq?.answer, "faq.answer", suggestionType),
+        },
+      },
+    };
   }
 
   if (suggestionType === "body_revision") {
@@ -725,44 +778,63 @@ async function generateSuggestion(context: TargetContext, suggestionType: AiOpsS
       const subtitle = typeof llm.subtitle === "string" ? llm.subtitle.trim() : undefined;
       if (excerpt || subtitle) {
         return {
-          title: fallback.title,
+          title: base.title,
           reason,
-          beforeJson: fallback.beforeJson,
+          beforeJson: base.beforeJson,
           afterJson: {
             ...(subtitle ? { subtitle } : {}),
             ...(excerpt ? { excerpt } : {}),
           },
         };
       }
+      throw new Error("AI가 body_revision 제안의 subtitle/excerpt 필드를 반환하지 않았습니다");
     }
     if (typeof llm.proposedDescription === "string") {
       return {
-        title: fallback.title,
+        title: base.title,
         reason,
-        beforeJson: fallback.beforeJson,
-        afterJson: { proposedDescription: llm.proposedDescription.trim() },
+        beforeJson: base.beforeJson,
+        afterJson: { proposedDescription: getRequiredString(llm.proposedDescription, "proposedDescription", suggestionType) },
       };
     }
+    throw new Error("AI가 body_revision 제안의 proposedDescription 필드를 반환하지 않았습니다");
   }
 
   if (suggestionType === "internal_links" && Array.isArray(llm.relatedLinks)) {
-    const links = llm.relatedLinks.filter((link): link is { title: string; href: string; description?: string } => (
-      Boolean(link)
-      && typeof link === "object"
-      && typeof (link as { title?: unknown }).title === "string"
-      && typeof (link as { href?: unknown }).href === "string"
-    ));
+    const allowedLinks = new Map((promptContext.internalLinkCandidates ?? []).map((link) => [link.href, link]));
+    const links = llm.relatedLinks
+      .filter((link): link is { title: string; href: string; description?: string } => (
+        Boolean(link)
+        && typeof link === "object"
+        && typeof (link as { title?: unknown }).title === "string"
+        && typeof (link as { href?: unknown }).href === "string"
+      ))
+      .map((link) => {
+        const href = link.href.trim();
+        const matched = allowedLinks.get(href);
+        if (!matched) return null;
+        const description = typeof link.description === "string" && link.description.trim().length > 0
+          ? link.description.trim()
+          : matched.description;
+        return {
+          title: matched.title,
+          href: matched.href,
+          ...(description ? { description } : {}),
+        } satisfies BlogRelatedLinkItem;
+      })
+      .filter(isPresent);
     if (links.length > 0) {
       return {
-        title: fallback.title,
+        title: base.title,
         reason,
-        beforeJson: fallback.beforeJson,
+        beforeJson: base.beforeJson,
         afterJson: { relatedLinks: links.slice(0, 4) },
       };
     }
+    throw new Error("AI가 internal_links 제안의 relatedLinks 필드를 올바르게 반환하지 않았습니다");
   }
 
-  return fallback;
+  throw new Error(`AI가 ${suggestionType} 제안을 올바르게 생성하지 못했습니다`);
 }
 
 async function insertAction(suggestionId: number, action: AiOpsActionType, actorEmail: string, note?: string) {
@@ -795,7 +867,7 @@ function mapSuggestionRow(row: SuggestionRow): AiOpsSuggestionListItem {
     appliedAt: row.applied_at,
     appliedBy: row.applied_by,
     targetLabel,
-    canApply: row.target_type === "post" && isSupportedApplyType(row.suggestion_type) && row.status === "approved",
+    canApply: canAutoApplySuggestion(row),
   };
 }
 
@@ -835,12 +907,124 @@ export async function listAiSuggestions(filters: SuggestionFilters = {}): Promis
   return (data as SuggestionRow[]).map(mapSuggestionRow);
 }
 
+async function getRecentSuggestionHistory(targetType: AiOpsTargetType, targetId: string) {
+  if (!isSupabaseAdminConfigured) return [];
+
+  const { data, error } = await getSupabaseAdmin()
+    .from(SUGGESTIONS_TABLE)
+    .select("suggestion_type, title, status, created_at, reason")
+    .eq("target_type", targetType)
+    .eq("target_id", targetId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.warn("[ai-ops] failed to load recent suggestion history", error);
+    return [];
+  }
+
+  return (data as Array<{
+    suggestion_type: AiOpsSuggestionType;
+    title: string;
+    status: AiOpsSuggestionStatus;
+    created_at: string;
+    reason: string;
+  }>).map((item) => ({
+    suggestionType: item.suggestion_type,
+    title: item.title,
+    status: item.status,
+    createdAt: item.created_at,
+    reason: item.reason,
+  }));
+}
+
+function toBlogPath(category: string, slug: string) {
+  return `/blog/${category}/${slug}`;
+}
+
+function dedupeRelatedLinks(links: BlogRelatedLinkItem[]) {
+  const seen = new Set<string>();
+  return links.filter((link) => {
+    const key = `${link.href}::${link.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildInternalLinkCandidates(
+  context: TargetContext,
+  posts: Awaited<ReturnType<typeof getAllPostMetasFresh>>,
+) {
+  if (context.targetType !== "post") return [];
+
+  const currentTags = Array.from(new Set(
+    posts.find((post) => post.slug === context.targetId)?.tags ?? [],
+  ));
+  const scoredMatches = posts
+    .filter((post) => post.slug !== context.targetId && post.published)
+    .map((post) => {
+      let score = 0;
+      if (post.category === context.category) score += 3;
+      if (post.tags.some((tag) => currentTags.includes(tag))) score += 2;
+      if (post.dateModified) score += 1;
+      return { post, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || b.post.date.localeCompare(a.post.date))
+    .slice(0, 6)
+    .map(({ post }) => ({
+      title: post.title,
+      href: toBlogPath(post.category, post.slug),
+      description: post.excerpt,
+    }));
+
+  return dedupeRelatedLinks(scoredMatches);
+}
+
+function getTargetPath(context: TargetContext) {
+  if (context.targetType === "post") {
+    return toBlogPath(context.category, context.targetId);
+  }
+  return context.pagePath;
+}
+
+async function buildSuggestionPromptContext(
+  context: TargetContext,
+  input: Pick<CreateSuggestionInput, "targetType" | "targetId" | "context">,
+  candidateData: Awaited<ReturnType<typeof buildCandidates>>,
+) {
+  const candidate = [...candidateData.blogCandidates, ...candidateData.pageCandidates]
+    .find((item) => item.targetType === input.targetType && item.targetId === input.targetId);
+  const targetPath = getTargetPath(context);
+  const representativeQueries = candidateData.searchResult?.pageTopQueries?.[targetPath]
+    ?.slice(0, 5)
+    .map((item) => item.query) ?? [];
+
+  const [posts, recentSuggestions] = await Promise.all([
+    getAllPostMetasFresh().catch(() => []),
+    getRecentSuggestionHistory(input.targetType, input.targetId),
+  ]);
+
+  return {
+    promptContext: {
+      operatorContext: input.context?.trim() || undefined,
+      priorityScore: candidate?.priorityScore,
+      primaryIssue: candidate?.primaryIssue,
+      issues: candidate?.issues,
+      representativeQueries,
+      recentSuggestions,
+      internalLinkCandidates: buildInternalLinkCandidates(context, posts),
+    } satisfies SuggestionPromptContext,
+    priorityScore: candidate?.priorityScore ?? 20,
+  };
+}
+
 export async function createAiSuggestion(input: CreateSuggestionInput): Promise<AiOpsSuggestionListItem> {
   const context = await resolveTargetContext(input.targetType, input.targetId);
-  const generated = await generateSuggestion(context, input.suggestionType);
-  const { blogCandidates, pageCandidates } = await buildCandidates("28d");
-  const candidate = [...blogCandidates, ...pageCandidates].find((item) => item.targetType === input.targetType && item.targetId === input.targetId);
-  const priorityScore = candidate?.priorityScore ?? 20;
+  const candidateData = await buildCandidates("28d");
+  const { promptContext, priorityScore } = await buildSuggestionPromptContext(context, input, candidateData);
+  const generated = await generateSuggestion(context, input.suggestionType, promptContext);
 
   if (!isSupabaseAdminConfigured) {
     return {
@@ -861,7 +1045,12 @@ export async function createAiSuggestion(input: CreateSuggestionInput): Promise<
       appliedAt: null,
       appliedBy: null,
       targetLabel: context.targetLabel,
-      canApply: input.targetType === "post" && isSupportedApplyType(input.suggestionType),
+      canApply: canAutoApplySuggestion({
+        target_type: input.targetType,
+        status: "approved",
+        suggestion_type: input.suggestionType,
+        before_json: generated.beforeJson,
+      }),
     };
   }
 
@@ -914,27 +1103,45 @@ export async function rejectAiSuggestion({ id, actorEmail, note }: ActionInput):
 }
 
 function appendFaqPatch(existing: BlogTargetContext, faq: { question: string; answer: string }): UpdateBlogPostData {
-  if (Array.isArray(existing.blocks) && existing.blocks.length > 0) {
-    return {
-      blocks: [
-        ...existing.blocks,
-        {
-          type: "faq",
-          question: faq.question,
-          answer: faq.answer,
-        },
-      ] as NonNullable<UpdateBlogPostData["blocks"]>,
+  return {
+    blocks: [
+      ...existing.blocks,
+      {
+        type: "faq",
+        question: faq.question,
+        answer: faq.answer,
+      },
+    ] as NonNullable<UpdateBlogPostData["blocks"]>,
+  };
+}
+
+function appendRelatedLinksPatch(existing: BlogTargetContext, links: BlogRelatedLinkItem[]): UpdateBlogPostData {
+  if (!Array.isArray(existing.blocks) || existing.blocks.length === 0) {
+    throw new Error("내부링크 자동 반영은 블록형 본문에서만 지원합니다");
+  }
+
+  const mergedBlocks = [...existing.blocks];
+  const existingIndex = mergedBlocks.findIndex(isRelatedLinksBlock);
+
+  if (existingIndex >= 0) {
+    const current = mergedBlocks[existingIndex];
+    if (!isRelatedLinksBlock(current)) {
+      throw new Error("relatedLinks 블록을 처리할 수 없습니다");
+    }
+
+    mergedBlocks[existingIndex] = {
+      type: "relatedLinks",
+      items: dedupeRelatedLinks([...current.items, ...links]).slice(0, 6),
     };
+  } else {
+    mergedBlocks.push({
+      type: "relatedLinks",
+      items: links.slice(0, 6),
+    });
   }
 
   return {
-    content: [
-      ...((existing.content ?? []) as NonNullable<UpdateBlogPostData["content"]>),
-      {
-        heading: faq.question,
-        content: faq.answer,
-      },
-    ],
+    blocks: mergedBlocks as NonNullable<UpdateBlogPostData["blocks"]>,
   };
 }
 
@@ -984,6 +1191,29 @@ export async function applyAiSuggestion({ id, actorEmail, note }: ActionInput): 
         question: faq.question.trim(),
         answer: faq.answer.trim(),
       }));
+      break;
+    }
+    case "internal_links": {
+      const relatedLinks = Array.isArray(after.relatedLinks)
+        ? after.relatedLinks.filter((link): link is BlogRelatedLinkItem => (
+          Boolean(link)
+          && typeof link === "object"
+          && typeof (link as { title?: unknown }).title === "string"
+          && typeof (link as { href?: unknown }).href === "string"
+        ))
+          .map((link) => ({
+            title: link.title.trim(),
+            href: link.href.trim(),
+            description: link.description?.trim() || undefined,
+          }))
+          .filter((link) => link.title.length > 0 && link.href.length > 0)
+        : [];
+
+      if (relatedLinks.length === 0) {
+        throw new Error("내부링크 제안 형식이 올바르지 않습니다");
+      }
+
+      Object.assign(patch, appendRelatedLinksPatch(context, relatedLinks));
       break;
     }
     default:
