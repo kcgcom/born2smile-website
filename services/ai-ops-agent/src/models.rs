@@ -137,6 +137,28 @@ pub struct SuggestionActionRequest {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SuggestionJob {
+    pub id: i64,
+    pub job_type: String,
+    pub target_type: String,
+    pub target_id: String,
+    pub suggestion_type: String,
+    pub actor_email: String,
+    pub context: Option<String>,
+    pub payload_json: Value,
+    pub status: String,
+    pub stage: String,
+    pub message: String,
+    pub result_suggestion_id: Option<i64>,
+    pub last_error: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ActivityItem {
     pub id: i64,
     pub suggestion_id: i64,

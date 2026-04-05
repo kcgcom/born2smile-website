@@ -42,6 +42,9 @@
 | `POSTHOG_BASE_URL` | PostHog API base URL | 전환 리포트 API 사용 시 |
 | `LLM_BASE_URL` | AI 작성 도우미 gateway URL | AI 작성 도우미 사용 시 |
 | `LLM_MODEL` | gateway에 전달할 기본 모델명 | AI 작성 도우미 사용 시 |
+| `AI_OPS_AGENT_BASE_URL` | AI 운영실 전용 외부/사설 엔진 base URL | AI 운영실 원격 프록시 사용 시 |
+| `AI_OPS_AGENT_SHARED_SECRET` | AI 운영실 프록시와 원격 엔진 간 공유 시크릿 | AI 운영실 원격 프록시 사용 시 |
+| `AI_OPS_AGENT_SUGGESTION_TIMEOUT_MS` | AI 운영실 제안 생성 프록시 타임아웃(ms) | AI 운영실 원격 프록시 사용 시 선택 |
 | `CLOUDFLARE_ACCESS_CLIENT_ID` | Cloudflare Access service token ID | 외부 gateway 보호 시 |
 | `CLOUDFLARE_ACCESS_CLIENT_SECRET` | Cloudflare Access service token secret | 외부 gateway 보호 시 |
 | `LLM_UPSTREAM_TIMEOUT_MS` | gateway 업스트림 타임아웃(ms) | 선택 |
@@ -85,3 +88,9 @@
 - `LLM_BASE_URL`은 브라우저가 아니라 서버 라우트(`app/api/admin/ai-write/route.ts`)에서만 사용합니다.
 - 외부 공개 경로는 `Cloudflare Tunnel + Access Service Token` 조합을 권장합니다.
 - 자세한 운영 절차는 `docs/llm-gateway-cloudflare-setup.md`를 참고하세요.
+
+### AI 운영실 원격 프록시
+
+- `AI_OPS_AGENT_BASE_URL`이 비어 있지 않으면 `/api/admin/ai-ops/*`는 원격 엔진으로 프록시됩니다.
+- 제안 생성은 LLM 호출이 포함돼 오래 걸릴 수 있으므로 `AI_OPS_AGENT_SUGGESTION_TIMEOUT_MS` 기본값을 `55000`ms로 둡니다.
+- 타임아웃이 반복되면 원격 엔진의 실제 처리 시간과 Vercel 함수 `maxDuration`을 함께 확인하세요.

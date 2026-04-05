@@ -1,12 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, Loader2, Sparkles, Waves, XCircle } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminErrorState } from "../AdminErrorState";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
-import type { AiOpsBriefing, AiOpsSuggestionListItem, AiOpsSuggestionType, AiOpsTargetOption, AiOpsTargetType } from "@/lib/admin-ai-ops-types";
+import type {
+  AiOpsBriefing,
+  AiOpsSuggestionJob,
+  AiOpsSuggestionJobEvent,
+  AiOpsSuggestionListItem,
+  AiOpsSuggestionType,
+  AiOpsTargetOption,
+  AiOpsTargetType,
+} from "@/lib/admin-ai-ops-types";
 import { PriorityScoreBadge } from "./PriorityScoreBadge";
+import { useAiSuggestionJob } from "./useAiSuggestionJob";
 
 const POST_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }> = [
   { value: "title", label: "제목 개선" },
@@ -28,13 +37,16 @@ export function SuggestionsSubTab() {
   const { data: briefing, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=28d");
   const { data: targets, loading: targetsLoading, error: targetsError, refetch: refetchTargets } = useAdminApi<AiOpsTargetOption[]>("/api/admin/ai-ops/targets");
   const { data: recentSuggestions, loading: suggestionsLoading, error: suggestionsError, refetch: refetchSuggestions } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=8");
-  const { mutate, loading: creating, error: createError, clearError } = useAdminMutation<AiOpsSuggestionListItem>();
+  const { mutate, loading: creating, error: createError, clearError } = useAdminMutation<AiOpsSuggestionJob>();
+  const { job, events, loading: jobLoading, error: jobError, bindJob, clearCurrentJob } = useAiSuggestionJob();
 
   const [targetType, setTargetType] = useState<AiOpsTargetType>("post");
   const [targetId, setTargetId] = useState("");
   const [suggestionType, setSuggestionType] = useState<AiOpsSuggestionType>("title");
   const [operatorContext, setOperatorContext] = useState("");
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
+  const previousJobStatusRef = useRef<AiOpsSuggestionJob["status"] | null>(null);
+  const visibleCreatedMessage = job?.status === "completed" ? "운영 제안을 생성했습니다." : createdMessage;
 
   const targetOptions = useMemo(() => {
     return (targets ?? [])
@@ -58,18 +70,36 @@ export function SuggestionsSubTab() {
     if (!resolvedTargetId) return;
     clearError();
     setCreatedMessage(null);
-    const result = await mutate("/api/admin/ai-ops/suggestions", "POST", {
+    const result = await mutate("/api/admin/ai-ops/suggestion-jobs", "POST", {
       targetType,
       targetId: resolvedTargetId,
       suggestionType: resolvedSuggestionType,
       ...(operatorContext.trim() ? { context: operatorContext.trim() } : {}),
     });
     if (!result.error && result.data) {
-      setCreatedMessage("운영 제안을 준비했습니다.");
+      bindJob(result.data.id);
+      setCreatedMessage("운영 제안 생성을 시작했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    const previousStatus = previousJobStatusRef.current;
+    if (!job) {
+      previousJobStatusRef.current = null;
+      return;
+    }
+
+    if (job.status === "completed" && previousStatus !== "completed") {
       refetchSuggestions();
       refetchBriefing();
     }
-  };
+
+    if (job.status === "failed" && previousStatus !== "failed") {
+      refetchBriefing();
+    }
+
+    previousJobStatusRef.current = job.status;
+  }, [job, refetchBriefing, refetchSuggestions]);
 
   if (briefingError) {
     return <AdminErrorState message={briefingError} onRetry={refetchBriefing} />;
@@ -164,9 +194,9 @@ export function SuggestionsSubTab() {
               {createError}
             </div>
           )}
-          {createdMessage && (
+          {visibleCreatedMessage && (
             <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {createdMessage}
+              {visibleCreatedMessage}
             </div>
           )}
         </AdminSurface>
@@ -216,6 +246,78 @@ export function SuggestionsSubTab() {
         </AdminSurface>
       </div>
 
+      {(job || jobLoading || jobError) && (
+        <AdminSurface tone="white" className="rounded-3xl p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Waves className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-lg font-bold text-slate-900">실시간 생성 상태</h3>
+              </div>
+              <p className="mt-2 text-sm text-slate-600">Supabase Realtime으로 현재 제안 생성 단계를 반영합니다.</p>
+            </div>
+            {job && (
+              <div className="flex items-center gap-2">
+                <AdminPill tone="white">{jobLabel(job)}</AdminPill>
+                <button
+                  type="button"
+                  onClick={clearCurrentJob}
+                  className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+                >
+                  패널 닫기
+                </button>
+              </div>
+            )}
+          </div>
+
+          {jobLoading && !job ? (
+            <div className="mt-4 h-28 animate-pulse rounded-2xl bg-slate-100" />
+          ) : jobError ? (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {jobError}
+            </div>
+          ) : job ? (
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{labelForSuggestionType(job.suggestionType)} · {job.targetId}</div>
+                    <div className="mt-1 text-xs text-slate-500">{stageLabel(job.stage)}</div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    {job.status === "completed" ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    ) : job.status === "failed" ? (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <Loader2 className="h-4 w-4 animate-spin text-[var(--color-primary)]" />
+                    )}
+                    <span className="font-medium text-slate-700">{job.message}</span>
+                  </div>
+                </div>
+                {job.lastError && (
+                  <div className="mt-3 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs text-red-600">
+                    {job.lastError}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {events.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
+                    아직 수신된 진행 이벤트가 없습니다.
+                  </div>
+                ) : (
+                  events.map((event) => (
+                    <JobEventRow key={event.id} event={event} />
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
+        </AdminSurface>
+      )}
+
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -245,6 +347,57 @@ export function SuggestionsSubTab() {
           )}
         </div>
       </AdminSurface>
+    </div>
+  );
+}
+
+function jobLabel(job: AiOpsSuggestionJob) {
+  switch (job.status) {
+    case "queued":
+      return "대기 중";
+    case "running":
+      return "생성 중";
+    case "completed":
+      return "완료";
+    case "failed":
+      return "실패";
+    default:
+      return job.status;
+  }
+}
+
+function stageLabel(stage: AiOpsSuggestionJob["stage"]) {
+  switch (stage) {
+    case "queued":
+      return "대기열 등록";
+    case "context":
+      return "문맥 수집";
+    case "generation":
+      return "AI 생성";
+    case "persisting":
+      return "저장";
+    case "completed":
+      return "완료";
+    case "failed":
+      return "실패";
+    default:
+      return stage;
+  }
+}
+
+function JobEventRow({ event }: { event: AiOpsSuggestionJobEvent }) {
+  const tone = event.status === "failed"
+    ? "border-red-200 bg-red-50 text-red-600"
+    : event.status === "completed"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : "border-slate-200 bg-white text-slate-700";
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm font-medium">{event.message}</div>
+        <div className="text-xs opacity-70">{stageLabel(event.stage)}</div>
+      </div>
     </div>
   );
 }

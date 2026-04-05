@@ -1,10 +1,13 @@
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
-import { isAiOpsRemoteEnabled, proxyAiOpsJson } from "../_lib/proxy";
+import { getAiOpsSuggestionTimeoutMs, isAiOpsRemoteEnabled, proxyAiOpsJson } from "../_lib/proxy";
 import { createAiSuggestion, listAiSuggestions } from "@/lib/admin-ai-ops";
 import { aiOpsSuggestionRequestSchema } from "@/lib/blog-validation";
 import type { AiOpsSuggestionListItem, AiOpsSuggestionStatus, AiOpsTargetType } from "@/lib/admin-ai-ops-types";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const HEADERS = {
   "Cache-Control": "private, no-store",
@@ -79,6 +82,7 @@ export async function POST(request: NextRequest) {
           path: "/ai-ops/suggestions",
           method: "POST",
           adminEmail: auth.email,
+          timeoutMs: getAiOpsSuggestionTimeoutMs(),
           body: {
             ...parsed.data,
             actor_email: auth.email,

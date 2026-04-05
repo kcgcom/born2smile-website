@@ -69,10 +69,12 @@ loadLocalEnv();
 
 async function getModules() {
   const aiOpsModule = await import("../lib/admin-ai-ops");
+  const aiOpsJobsModule = await import("../lib/admin-ai-ops-jobs");
   const validationModule = await import("../lib/blog-validation");
 
   return {
     aiOps: ("default" in aiOpsModule ? aiOpsModule.default : aiOpsModule) as typeof import("../lib/admin-ai-ops"),
+    aiOpsJobs: ("default" in aiOpsJobsModule ? aiOpsJobsModule.default : aiOpsJobsModule) as typeof import("../lib/admin-ai-ops-jobs"),
     aiOpsSuggestionActionSchema: validationModule.aiOpsSuggestionActionSchema,
     aiOpsSuggestionRequestSchema: validationModule.aiOpsSuggestionRequestSchema,
   };
@@ -135,7 +137,7 @@ function getActorEmail(body: unknown, fallback = "system@ai-ops.local") {
 }
 
 async function run() {
-  const { aiOps, aiOpsSuggestionActionSchema, aiOpsSuggestionRequestSchema } = await getModules();
+  const { aiOps, aiOpsJobs, aiOpsSuggestionActionSchema, aiOpsSuggestionRequestSchema } = await getModules();
   const { positional, flags } = parseFlags(process.argv.slice(2));
   const [resource, action = ""] = positional;
 
@@ -207,6 +209,45 @@ async function run() {
         }
         default:
           throw new CliError(`지원하지 않는 suggestions 액션입니다: ${action || "(없음)"}`, 400);
+      }
+    }
+    case "suggestion-jobs": {
+      switch (action) {
+        case "create": {
+          const body = readJsonFlag(flags, "input");
+          const parsed = aiOpsSuggestionRequestSchema.safeParse(body);
+          if (!parsed.success) {
+            throw new CliError("운영 제안 잡 요청 형식이 올바르지 않습니다", 400);
+          }
+
+          return aiOpsJobs.createAiSuggestionJob({
+            ...parsed.data,
+            actorEmail: getActorEmail(body),
+          });
+        }
+        case "run": {
+          const id = getRequiredInt(flags, "id");
+          const body = readJsonFlag(flags, "input");
+          const parsed = aiOpsSuggestionRequestSchema.safeParse(body);
+          if (!parsed.success) {
+            throw new CliError("운영 제안 잡 실행 형식이 올바르지 않습니다", 400);
+          }
+
+          return aiOpsJobs.processAiSuggestionJob(id, {
+            ...parsed.data,
+            actorEmail: getActorEmail(body),
+          });
+        }
+        case "fail": {
+          const id = getRequiredInt(flags, "id");
+          const body = (readJsonFlag(flags, "input") ?? {}) as { message?: string };
+          return aiOpsJobs.failAiSuggestionJob(
+            id,
+            typeof body.message === "string" ? body.message : "운영 제안 잡 실행에 실패했습니다",
+          );
+        }
+        default:
+          throw new CliError(`지원하지 않는 suggestion-jobs 액션입니다: ${action || "(없음)"}`, 400);
       }
     }
     default:

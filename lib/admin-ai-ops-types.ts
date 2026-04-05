@@ -4,6 +4,8 @@ export type AiOpsTargetType = "post" | "page" | "site";
 export type AiOpsSuggestionType = "title" | "meta_description" | "faq" | "internal_links" | "body_revision";
 export type AiOpsSuggestionStatus = "draft" | "approved" | "rejected" | "applied";
 export type AiOpsActionType = "approve" | "reject" | "apply" | "rollback";
+export type AiOpsSuggestionJobStatus = "queued" | "running" | "completed" | "failed";
+export type AiOpsSuggestionJobStage = "queued" | "context" | "generation" | "persisting" | "completed" | "failed";
 
 export interface AiOpsMetricSnapshot {
   sessions: number | null;
@@ -105,4 +107,34 @@ export interface AiOpsTargetOption {
   label: string;
   targetType: Exclude<AiOpsTargetType, "site">;
   note?: string;
+}
+
+export interface AiOpsSuggestionJob {
+  id: number;
+  jobType: "suggestion";
+  targetType: AiOpsTargetType;
+  targetId: string;
+  suggestionType: AiOpsSuggestionType;
+  actorEmail: string;
+  context: string | null;
+  payloadJson: Record<string, unknown>;
+  status: AiOpsSuggestionJobStatus;
+  stage: AiOpsSuggestionJobStage;
+  message: string;
+  resultSuggestionId: number | null;
+  lastError: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  updatedAt: string;
+}
+
+export interface AiOpsSuggestionJobEvent {
+  id: number;
+  jobId: number;
+  status: AiOpsSuggestionJobStatus;
+  stage: AiOpsSuggestionJobStage;
+  message: string;
+  metadataJson: Record<string, unknown>;
+  createdAt: string;
 }

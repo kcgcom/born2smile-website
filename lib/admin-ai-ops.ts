@@ -55,6 +55,14 @@ interface CreateSuggestionInput {
   context?: string;
 }
 
+interface CreateSuggestionOptions {
+  onProgress?: (input: {
+    stage: "context" | "generation" | "persisting";
+    message: string;
+    metadata?: Record<string, unknown>;
+  }) => void | Promise<void>;
+}
+
 interface ActionInput {
   id: number;
   actorEmail: string;
@@ -259,6 +267,11 @@ function getLlmTimeoutMs() {
   return Math.min(LLM_UPSTREAM_TIMEOUT_MS, 45_000);
 }
 
+function isTimeoutError(error: unknown) {
+  return error instanceof Error
+    && (error.name === "TimeoutError" || /aborted due to timeout/i.test(error.message));
+}
+
 function parseJsonResponse<T>(text: string): T {
   const trimmed = text.trim();
   const normalized = trimmed.startsWith("```")
@@ -316,6 +329,9 @@ async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise
     return parseJsonResponse<T>(text);
   } catch (error) {
     console.warn("[ai-ops] llm generation failed", error);
+    if (isTimeoutError(error)) {
+      throw new Error("AI 제안 생성 시간이 예상보다 오래 걸리고 있습니다. 잠시 후 다시 시도해 주세요");
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -1020,11 +1036,28 @@ async function buildSuggestionPromptContext(
   };
 }
 
-export async function createAiSuggestion(input: CreateSuggestionInput): Promise<AiOpsSuggestionListItem> {
+export async function createAiSuggestion(
+  input: CreateSuggestionInput,
+  options?: CreateSuggestionOptions,
+): Promise<AiOpsSuggestionListItem> {
+  await options?.onProgress?.({
+    stage: "context",
+    message: "대상 문맥을 수집하고 있습니다.",
+    metadata: { targetType: input.targetType, targetId: input.targetId },
+  });
   const context = await resolveTargetContext(input.targetType, input.targetId);
   const candidateData = await buildCandidates("28d");
   const { promptContext, priorityScore } = await buildSuggestionPromptContext(context, input, candidateData);
+  await options?.onProgress?.({
+    stage: "generation",
+    message: "AI가 제안 초안을 생성하고 있습니다.",
+    metadata: { suggestionType: input.suggestionType },
+  });
   const generated = await generateSuggestion(context, input.suggestionType, promptContext);
+  await options?.onProgress?.({
+    stage: "persisting",
+    message: "생성된 제안을 저장하고 있습니다.",
+  });
 
   if (!isSupabaseAdminConfigured) {
     return {
