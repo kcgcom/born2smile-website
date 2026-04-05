@@ -14,6 +14,27 @@ const HEADERS = {
   Vary: "Authorization",
 } as const;
 
+function shouldFallbackToLocalJob(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return /404/.test(error.message) || /not found/i.test(error.message);
+}
+
+async function createAndRunLocalJob(input: {
+  targetType: AiOpsSuggestionJob["targetType"];
+  targetId: string;
+  suggestionType: AiOpsSuggestionJob["suggestionType"];
+  actorEmail: string;
+  context?: string;
+}) {
+  const job = await createAiSuggestionJob(input);
+
+  void processAiSuggestionJob(job.id, input).catch((error) => {
+    Sentry.captureException(error);
+  });
+
+  return job;
+}
+
 export async function POST(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
@@ -38,30 +59,31 @@ export async function POST(request: NextRequest) {
 
   try {
     if (isAiOpsRemoteEnabled()) {
-      const data = (await proxyAiOpsJson<AiOpsSuggestionJob>({
-        path: "/ai-ops/suggestion-jobs",
-        method: "POST",
-        adminEmail: auth.email,
-        timeoutMs: 10_000,
-        body: {
-          ...parsed.data,
-          actor_email: auth.email,
-        },
-      })).data;
+      try {
+        const data = (await proxyAiOpsJson<AiOpsSuggestionJob>({
+          path: "/ai-ops/suggestion-jobs",
+          method: "POST",
+          adminEmail: auth.email,
+          timeoutMs: 10_000,
+          body: {
+            ...parsed.data,
+            actor_email: auth.email,
+          },
+        })).data;
 
-      return Response.json({ data }, { status: 202, headers: HEADERS });
+        return Response.json({ data }, { status: 202, headers: HEADERS });
+      } catch (error) {
+        if (!shouldFallbackToLocalJob(error)) {
+          throw error;
+        }
+
+        console.warn("[ai-ops] remote suggestion-jobs endpoint unavailable, falling back to local job runner");
+      }
     }
 
-    const job = await createAiSuggestionJob({
+    const job = await createAndRunLocalJob({
       ...parsed.data,
       actorEmail: auth.email,
-    });
-
-    void processAiSuggestionJob(job.id, {
-      ...parsed.data,
-      actorEmail: auth.email,
-    }).catch((error) => {
-      Sentry.captureException(error);
     });
 
     return Response.json({ data: job }, { status: 202, headers: HEADERS });
