@@ -262,9 +262,9 @@ function getLlmHeaders() {
 
 function getLlmTimeoutMs() {
   if (!Number.isFinite(LLM_UPSTREAM_TIMEOUT_MS) || LLM_UPSTREAM_TIMEOUT_MS < 5_000) {
-    return 25_000;
+    return 55_000;
   }
-  return Math.min(LLM_UPSTREAM_TIMEOUT_MS, 45_000);
+  return Math.min(LLM_UPSTREAM_TIMEOUT_MS, 120_000);
 }
 
 function isTimeoutError(error: unknown) {

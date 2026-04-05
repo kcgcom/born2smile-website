@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import type { AiOpsSuggestionJob, AiOpsSuggestionJobEvent } from "@/lib/admin-ai-ops-types";
 
 const STORAGE_KEY = "born2smile-ai-ops-current-job";
+const ACTIVE_JOB_POLL_MS = 5000;
 
 interface SuggestionJobRow {
   id: number;
@@ -93,6 +94,10 @@ function sortEvents(events: AiOpsSuggestionJobEvent[]) {
   return [...events].sort((a, b) => a.id - b.id);
 }
 
+function isTerminalStatus(status: AiOpsSuggestionJob["status"] | undefined) {
+  return status === "completed" || status === "failed";
+}
+
 export function useAiSuggestionJob() {
   const [currentJobId, setCurrentJobId] = useState<number | null>(null);
   const [job, setJob] = useState<AiOpsSuggestionJob | null>(null);
@@ -135,8 +140,10 @@ export function useAiSuggestionJob() {
     let active = true;
     const supabase = getSupabaseBrowserClient();
 
-    async function loadInitial() {
-      setLoading(true);
+    async function loadSnapshot(showLoading: boolean) {
+      if (showLoading) {
+        setLoading(true);
+      }
       try {
         const [{ data: jobRow, error: jobError }, { data: eventRows, error: eventError }] = await Promise.all([
           supabase.from("ai_agent_jobs").select("*").eq("id", currentJobId).single(),
@@ -154,11 +161,11 @@ export function useAiSuggestionJob() {
         if (!active) return;
         setError(nextError instanceof Error ? nextError.message : "잡 상태를 불러올 수 없습니다");
       } finally {
-        if (active) setLoading(false);
+        if (active && showLoading) setLoading(false);
       }
     }
 
-    void loadInitial();
+    void loadSnapshot(true);
 
     const channel = supabase
       .channel(`ai-ops-job-${currentJobId}`)
@@ -187,15 +194,20 @@ export function useAiSuggestionJob() {
       .subscribe();
 
     channelRef.current = channel;
+    const pollTimer = window.setInterval(() => {
+      if (!active || isTerminalStatus(job?.status)) return;
+      void loadSnapshot(false);
+    }, ACTIVE_JOB_POLL_MS);
 
     return () => {
       active = false;
+      window.clearInterval(pollTimer);
       if (channelRef.current) {
         void supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [currentJobId]);
+  }, [currentJobId, job?.status]);
 
   const derivedState = useMemo(() => ({
     currentJobId,
