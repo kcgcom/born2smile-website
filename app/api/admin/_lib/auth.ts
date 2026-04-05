@@ -5,6 +5,8 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+const ADMIN_CLI_SECRET = process.env.ADMIN_CLI_SECRET ?? "";
+
 interface AuthSuccess {
   ok: true;
   email: string;
@@ -20,6 +22,12 @@ interface AuthFailure {
 export type AuthResult = AuthSuccess | AuthFailure;
 
 export async function verifyAdminRequest(request: Request): Promise<AuthResult> {
+  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+
+  if (ADMIN_CLI_SECRET && token === ADMIN_CLI_SECRET) {
+    return { ok: true, email: "cli@admin" };
+  }
+
   if (ADMIN_EMAILS.length === 0) {
     return {
       ok: false,
@@ -29,7 +37,6 @@ export async function verifyAdminRequest(request: Request): Promise<AuthResult> 
     };
   }
 
-  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token) {
     return { ok: false, status: 401, error: "UNAUTHORIZED", message: "인증 토큰이 없습니다" };
   }
