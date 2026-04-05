@@ -293,20 +293,44 @@ function getRequiredString(
   return value.trim();
 }
 
-async function callJsonLlm<T>(systemPrompt: string, userPrompt: string): Promise<T> {
+function getSuggestionMaxTokens(suggestionType: AiOpsSuggestionType) {
+  if (suggestionType === "title") {
+    return 256;
+  }
+  return 1024;
+}
+
+function buildLlmRequestBody(systemPrompt: string, userPrompt: string, suggestionType: AiOpsSuggestionType) {
+  const body: Record<string, unknown> = {
+    model: LLM_MODEL,
+    stream: false,
+    temperature: 0.4,
+    max_tokens: getSuggestionMaxTokens(suggestionType),
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+  };
+
+  if (suggestionType === "title") {
+    body.chat_template_kwargs = {
+      enable_thinking: false,
+    };
+  }
+
+  return body;
+}
+
+async function callJsonLlm<T>(
+  systemPrompt: string,
+  userPrompt: string,
+  suggestionType: AiOpsSuggestionType,
+): Promise<T> {
   try {
     const response = await fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
       method: "POST",
       headers: getLlmHeaders(),
-      body: JSON.stringify({
-        model: LLM_MODEL,
-        stream: false,
-        temperature: 0.4,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+      body: JSON.stringify(buildLlmRequestBody(systemPrompt, userPrompt, suggestionType)),
       signal: AbortSignal.timeout(getLlmTimeoutMs()),
     });
 
@@ -751,7 +775,7 @@ async function generateSuggestion(
 
   const base = buildSuggestionBase(context, suggestionType);
   const { systemPrompt, userPrompt } = buildLlmPrompt(context, suggestionType, promptContext);
-  const llm = await callJsonLlm<Record<string, unknown>>(systemPrompt, userPrompt);
+  const llm = await callJsonLlm<Record<string, unknown>>(systemPrompt, userPrompt, suggestionType);
   const reason = getRequiredString(llm.reason, "reason", suggestionType);
 
   if (suggestionType === "title" && typeof llm.title === "string") {
