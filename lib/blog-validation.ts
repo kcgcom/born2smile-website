@@ -121,8 +121,6 @@ export const siteClinicSchema = z.object({
   nameEn: z.string().max(100),
   slogan: z.string().max(200),
   phone: z.string().max(20),
-  phoneIntl: z.string().max(30),
-  phoneHref: z.string().max(30),
   address: z.string().max(200),
   addressShort: z.string().max(100),
   neighborhood: z.string().max(50),

@@ -3,22 +3,86 @@
 // 이 파일 하나만 수정하면 사이트 전체에 반영됩니다.
 // =============================================================
 
+type ClinicBase = {
+  name: string;
+  nameEn: string;
+  slogan: string;
+  phone: string;
+  address: string;
+  addressShort: string;
+  neighborhood: string;
+  businessNumber: string;
+  representative: string;
+};
+
+export type ClinicContactFields = {
+  phoneIntl: string;
+  phoneHref: string;
+};
+
+function normalizePhoneForDial(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
+
+export function formatClinicPhoneInput(phone: string) {
+  const digits = normalizePhoneForDial(phone).slice(0, 11);
+
+  if (!digits) return "";
+
+  if (/^(15|16|18)\d{0,6}$/.test(digits)) {
+    if (digits.length <= 4) return digits;
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+
+  if (digits.startsWith("02")) {
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`;
+    return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
+export function deriveClinicContactFields(phone: string): ClinicContactFields {
+  const formatted = formatClinicPhoneInput(phone);
+  const dial = normalizePhoneForDial(formatted);
+  const internationalDisplay = dial.startsWith("0")
+    ? formatClinicPhoneInput(dial.slice(1))
+    : formatted;
+
+  return {
+    phoneIntl: `+82-${internationalDisplay}`,
+    phoneHref: `tel:${dial}`,
+  };
+}
+
+export function enrichClinicWithContact<T extends { phone: string }>(clinic: T): T & ClinicContactFields {
+  return {
+    ...clinic,
+    ...deriveClinicContactFields(clinic.phone),
+  };
+}
+
 // -------------------------------------------------------------
 // 기본 정보
 // -------------------------------------------------------------
-export const CLINIC = {
+export const CLINIC_BASE: ClinicBase = {
   name: "서울본치과",
   nameEn: "Seoul Born2smile Dental Clinic",
   slogan: "꼭 필요한 치료만, 오래오래 편안하게",
   phone: "1833-7552",
-  phoneIntl: "+82-1833-7552",
-  phoneHref: "tel:1833-7552",
   address: "경기도 김포시 태장로 820, 엠프라자 2층 (장기동)",
   addressShort: "김포시 태장로 820, 엠프라자 2층",
   neighborhood: "한강신도시 장기동",
   businessNumber: "647-18-00478", // 사업자등록번호
   representative: "김창균", // 대표자
-} as const;
+};
+
+export const CLINIC = enrichClinicWithContact(CLINIC_BASE);
 
 // -------------------------------------------------------------
 // 의료진

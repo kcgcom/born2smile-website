@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
   getSiteLinks,
-  getSiteClinic,
+  getSiteClinicDraft,
   getSiteHours,
   getSiteSchedule,
   updateSiteLinks,
@@ -46,7 +46,7 @@ export async function GET(
   try {
     let config;
     if (type === "links") config = await getSiteLinks();
-    else if (type === "clinic") config = await getSiteClinic();
+    else if (type === "clinic") config = await getSiteClinicDraft();
     else if (type === "hours") config = await getSiteHours();
     else config = await getSiteSchedule();
 

@@ -6,6 +6,7 @@
     "generate-blog-meta": "tsx scripts/generate-blog-meta.ts",
     "generate-blog-snapshot": "tsx scripts/generate-blog-snapshot.ts",
     "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",
+    "migrate-clinic-phone": "tsx scripts/migrate-clinic-phone-single-source.ts",
     "dev": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && next dev",
     "build": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",

@@ -5,6 +5,7 @@ import { Save, Loader2, Check, ChevronDown, ChevronUp, Clock3, Globe2, MapPinned
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
+import { formatClinicPhoneInput } from "@/lib/constants";
 import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-supabase";
 
 // -------------------------------------------------------------
@@ -280,7 +281,10 @@ function ClinicInfoEditor() {
   };
 
   const set = (key: keyof SiteClinic) => (value: string) =>
-    setFormEdits((prev) => ({ ...(prev ?? data ?? {} as SiteClinic), [key]: value }));
+    setFormEdits((prev) => ({
+      ...(prev ?? data ?? {} as SiteClinic),
+      [key]: key === "phone" ? formatClinicPhoneInput(value) : value,
+    }));
 
   if (loading || !form) return <LoadingPlaceholder />;
 
@@ -320,18 +324,6 @@ function ClinicInfoEditor() {
           value={form.phone}
           onChange={set("phone")}
           placeholder="031-000-0000"
-        />
-        <FormField
-          label="국제전화"
-          value={form.phoneIntl}
-          onChange={set("phoneIntl")}
-          placeholder="+82-31-000-0000"
-        />
-        <FormField
-          label="전화 링크"
-          value={form.phoneHref}
-          onChange={set("phoneHref")}
-          placeholder="tel:031-000-0000"
         />
         <FormField
           label="지역"
@@ -434,48 +426,48 @@ function HoursEditor() {
       onSave={handleSave}
       saveError={saveError}
     >
-      <div className="mb-4 grid gap-3 md:grid-cols-2">
+      <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {form.schedule.map((row, i) => (
           <div
             key={row.day}
-            className={`rounded-2xl border px-4 py-4 ${
-              row.open
-                ? "border-slate-200 bg-white/80"
-                : "border-slate-200 bg-slate-50/90"
-            }`}
+            className={`grid gap-3 px-4 py-4 md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)] md:items-center ${
+              i === 0 ? "" : "border-t border-slate-100"
+            } ${row.open ? "bg-white" : "bg-slate-50/90"}`}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  {row.open ? "운영 중" : "휴진"} · {row.note || "비고 없음"}
-                </div>
+            <div>
+              <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
+              <div className="mt-1 text-xs text-[var(--muted)] md:hidden">
+                {row.open ? "운영 중" : "휴진"}
               </div>
-              <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
-                <input
-                  type="checkbox"
-                  checked={row.open}
-                  onChange={(e) => setScheduleField(i, "open", e.target.checked)}
-                  className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
-                />
-                운영
-              </label>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <FormField
-                label="진료 시간"
-                value={row.time}
-                onChange={(value) => setScheduleField(i, "time", value)}
-                placeholder="09:30 - 18:30"
+            <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+              <input
+                type="checkbox"
+                checked={row.open}
+                onChange={(e) => setScheduleField(i, "open", e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
               />
-              <FormField
-                label="비고"
-                value={row.note ?? ""}
-                onChange={(value) => setScheduleField(i, "note", value)}
-                placeholder="예: 야간진료"
-              />
-            </div>
+              운영
+            </label>
+
+            <input
+              type="text"
+              value={row.time}
+              onChange={(e) => setScheduleField(i, "time", e.target.value)}
+              placeholder="09:30 - 18:30"
+              className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+              aria-label={`${row.day} 진료 시간`}
+            />
+
+            <input
+              type="text"
+              value={row.note ?? ""}
+              onChange={(e) => setScheduleField(i, "note", e.target.value)}
+              placeholder="예: 야간진료"
+              className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+              aria-label={`${row.day} 비고`}
+            />
           </div>
         ))}
       </div>

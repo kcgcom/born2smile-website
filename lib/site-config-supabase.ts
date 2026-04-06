@@ -1,6 +1,6 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getSupabaseAdmin } from "./supabase-admin";
-import { CLINIC, LINKS, HOURS } from "./constants";
+import { CLINIC_BASE, LINKS, HOURS, enrichClinicWithContact, type ClinicContactFields } from "./constants";
 
 const TABLE = "site_config";
 const CACHE_TAG_LINKS = "site-config-links";
@@ -15,6 +15,15 @@ function safeRevalidateTag(tag: string) {
   } catch (error) {
     console.warn(`[site-config-supabase] failed to revalidate tag '${tag}'`, error);
   }
+}
+
+function stripLegacyClinicContactFields(
+  clinic: Partial<SiteClinic & Partial<ClinicContactFields>>,
+): Partial<SiteClinic> {
+  const next = { ...clinic };
+  delete (next as Partial<SiteClinic & Partial<ClinicContactFields>>).phoneIntl;
+  delete (next as Partial<SiteClinic & Partial<ClinicContactFields>>).phoneHref;
+  return next;
 }
 
 // =============================================================
@@ -34,14 +43,14 @@ export type SiteClinic = {
   nameEn: string;
   slogan: string;
   phone: string;
-  phoneIntl: string;
-  phoneHref: string;
   address: string;
   addressShort: string;
   neighborhood: string;
   businessNumber: string;
   representative: string;
 };
+
+export type ResolvedSiteClinic = SiteClinic & ClinicContactFields;
 
 export type SiteHours = {
   schedule: Array<{ day: string; time: string; open: boolean; note?: string }>;
@@ -73,18 +82,25 @@ export const getSiteLinks = unstable_cache(
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS] },
 );
 
-export const getSiteClinic = unstable_cache(
+export const getSiteClinicDraft = unstable_cache(
   async (): Promise<SiteClinic> => {
-    const defaults: SiteClinic = { ...CLINIC };
+    const defaults: SiteClinic = { ...CLINIC_BASE };
     const { data: row } = await getSupabaseAdmin()
       .from(TABLE)
       .select("data")
       .eq("type", "clinic")
       .single();
     if (!row?.data) return defaults;
-    return { ...defaults, ...(row.data as Partial<SiteClinic>) };
+    const rest = stripLegacyClinicContactFields(row.data as Partial<SiteClinic & Partial<ClinicContactFields>>);
+    return { ...defaults, ...rest };
   },
   [CACHE_TAG_CLINIC],
+  { revalidate: CACHE_TTL, tags: [CACHE_TAG_CLINIC] },
+);
+
+export const getSiteClinic = unstable_cache(
+  async (): Promise<ResolvedSiteClinic> => enrichClinicWithContact(await getSiteClinicDraft()),
+  [`${CACHE_TAG_CLINIC}-resolved`],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_CLINIC] },
 );
 
@@ -144,7 +160,10 @@ export async function updateSiteClinic(
     .select("data")
     .eq("type", "clinic")
     .single();
-  const merged = { ...(current?.data ?? {}), ...data };
+  const currentBase = stripLegacyClinicContactFields(
+    (current?.data ?? {}) as Partial<SiteClinic & Partial<ClinicContactFields>>,
+  );
+  const merged = { ...currentBase, ...data };
   await admin
     .from(TABLE)
     .upsert({
