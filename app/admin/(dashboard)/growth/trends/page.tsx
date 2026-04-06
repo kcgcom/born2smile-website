@@ -1,5 +1,5 @@
-import { TrendSubTab } from "../../components/insight/TrendSubTab";
+import { redirect } from "next/navigation";
 
 export default function AdminGrowthTrendsPage() {
-  return <TrendSubTab />;
+  redirect("/admin/content/trends");
 }

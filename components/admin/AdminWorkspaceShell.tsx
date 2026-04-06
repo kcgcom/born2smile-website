@@ -55,6 +55,7 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/content/schedule", label: "발행 일정", icon: Sparkles },
       { href: "/admin/content/stats", label: "통계", icon: BarChart3 },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
+      { href: "/admin/content/trends", label: "트렌드", icon: TrendingUp },
     ],
   },
   {
@@ -66,7 +67,6 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/growth/overview", label: "개요", icon: LayoutDashboard },
       { href: "/admin/growth/traffic", label: "트래픽", icon: BarChart3 },
       { href: "/admin/growth/search", label: "검색 성과", icon: FileText },
-      { href: "/admin/growth/trends", label: "트렌드", icon: TrendingUp },
       { href: "/admin/growth/conversion", label: "전환", icon: MousePointerClick },
       { href: "/admin/growth/ai-ops", label: "AI 운영실", icon: Bot },
     ],
