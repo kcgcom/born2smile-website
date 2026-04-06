@@ -272,13 +272,91 @@ function isTimeoutError(error: unknown) {
     && (error.name === "TimeoutError" || /aborted due to timeout/i.test(error.message));
 }
 
+function extractFirstJsonValue(text: string) {
+  const start = text.search(/[\[{]/);
+  if (start < 0) return null;
+
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") {
+      stack.push("}");
+      continue;
+    }
+
+    if (char === "[") {
+      stack.push("]");
+      continue;
+    }
+
+    const expected = stack[stack.length - 1];
+    if (char === expected) {
+      stack.pop();
+      if (stack.length === 0) {
+        return text.slice(start, index + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
 function parseJsonResponse<T>(text: string): T {
   const trimmed = text.trim();
   const normalized = trimmed.startsWith("```")
     ? trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
     : trimmed;
+  const withoutThinking = normalized.replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "").trim();
+  const candidates = Array.from(new Set([normalized, withoutThinking].filter(Boolean)));
 
-  return JSON.parse(normalized) as T;
+  let parseError: unknown = null;
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate) as T;
+    } catch (error) {
+      parseError = error;
+    }
+
+    const extracted = extractFirstJsonValue(candidate);
+    if (!extracted) continue;
+
+    try {
+      return JSON.parse(extracted) as T;
+    } catch (error) {
+      parseError = error;
+    }
+  }
+
+  const preview = withoutThinking.slice(0, 120).replace(/\s+/g, " ");
+  throw new Error(
+    `AI 제안 생성 응답을 JSON으로 해석할 수 없습니다${preview ? `: ${preview}` : ""}`,
+    { cause: parseError instanceof Error ? parseError : undefined },
+  );
 }
 
 function getRequiredString(
