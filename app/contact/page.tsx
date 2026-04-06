@@ -135,6 +135,22 @@ export default async function ContactPage() {
                 {hours.notice && (
                   <p className="mt-1 text-sm text-gray-500">{hours.notice}</p>
                 )}
+                {hours.exceptions.length > 0 && (
+                  <div className="mt-3 border-t border-gray-200 pt-3">
+                    <p className="text-sm font-medium text-gray-700">운영 예외 / 날짜별 공지</p>
+                    <ul className="mt-2 space-y-1.5 text-sm text-gray-600">
+                      {hours.exceptions.map((exception, index) => (
+                        <li key={`${exception.date}-${index}`}>
+                          <span className="font-medium text-gray-800">{exception.date}</span>
+                          <span className="ml-2">
+                            {exception.time || (exception.open ? "운영시간 미설정" : "휴진")}
+                          </span>
+                          {exception.note ? <span className="ml-2 text-gray-500">· {exception.note}</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </FadeIn>
 

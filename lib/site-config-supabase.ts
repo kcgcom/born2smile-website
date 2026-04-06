@@ -67,6 +67,7 @@ export type ResolvedSiteClinic = SiteClinic & ClinicContactFields;
 
 export type SiteHours = {
   schedule: Array<{ day: string; time: string; open: boolean; note?: string }>;
+  exceptions: Array<{ date: string; open: boolean; time: string; note?: string }>;
   lunchTime: string;
   closedDays: string;
   notice: string;
@@ -121,6 +122,7 @@ export const getSiteHours = unstable_cache(
   async (): Promise<SiteHours> => {
     const defaults: SiteHours = {
       schedule: HOURS.schedule.map((s) => ({ ...s })),
+      exceptions: HOURS.exceptions.map((exception) => ({ ...exception })),
       lunchTime: HOURS.lunchTime,
       closedDays: HOURS.closedDays,
       notice: HOURS.notice,

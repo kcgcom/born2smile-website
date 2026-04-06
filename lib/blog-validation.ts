@@ -135,8 +135,16 @@ const scheduleItemSchema = z.object({
   note: z.string().max(100).optional(),
 });
 
+const scheduleExceptionSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "예외 일정 날짜 형식이 올바르지 않습니다"),
+  time: z.string().max(50),
+  open: z.boolean(),
+  note: z.string().max(100).optional(),
+});
+
 export const siteHoursSchema = z.object({
   schedule: z.array(scheduleItemSchema).min(1).max(10),
+  exceptions: z.array(scheduleExceptionSchema).max(30),
   lunchTime: z.string().max(50),
   closedDays: z.string().max(100),
   notice: z.string().max(200),

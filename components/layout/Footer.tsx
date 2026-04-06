@@ -118,6 +118,22 @@ export async function Footer() {
               <li className="mt-2 border-t border-gray-700 pt-2 text-gray-400">
                 점심시간 {hours.lunchTime} · 공휴일 휴진
               </li>
+              {hours.exceptions.length > 0 && (
+                <li className="border-t border-gray-700 pt-2 text-gray-400">
+                  <div className="mb-1 text-white">운영 예외</div>
+                  <ul className="space-y-1 text-sm">
+                    {hours.exceptions.map((exception, index) => (
+                      <li key={`${exception.date}-${index}`}>
+                        <span className="text-white">{exception.date}</span>
+                        <span className="ml-2">
+                          {exception.time || (exception.open ? "운영시간 미설정" : "휴진")}
+                        </span>
+                        {exception.note ? <span className="ml-1 text-[var(--color-gold-light)]">({exception.note})</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )}
             </ul>
           </div>
 

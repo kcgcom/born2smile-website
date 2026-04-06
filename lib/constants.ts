@@ -164,6 +164,7 @@ export const HOURS = {
     { day: "토요일", time: "09:30 - 13:30", open: true },
     { day: "일요일", time: "휴진", open: false },
   ],
+  exceptions: [] as Array<{ date: string; time: string; open: boolean; note?: string }>,
   lunchTime: "13:00 - 14:00",
   closedDays: "공휴일 휴진",
   notice: "토요일은 점심시간 없이 진료합니다",

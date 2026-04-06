@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, type ReactNode } from "react";
-import { Save, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, Loader2, Check, PencilLine, Plus, Trash2, X } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
@@ -116,6 +116,7 @@ function SectionShell({
   title,
   description,
   summary,
+  preview,
   saving,
   saved,
   onSave,
@@ -126,6 +127,7 @@ function SectionShell({
   title: string;
   description: string;
   summary?: string;
+  preview: ReactNode;
   saving: boolean;
   saved: boolean;
   onSave: () => void;
@@ -156,24 +158,50 @@ function SectionShell({
             onClick={() => setOpen((current) => !current)}
             className="px-3 text-xs"
           >
-            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            {open ? "접기" : "펼치기"}
+            {open ? <X className="h-3.5 w-3.5" /> : <PencilLine className="h-3.5 w-3.5" />}
+            {open ? "편집 닫기" : "편집"}
           </AdminActionButton>
-          <SaveButton saving={saving} saved={saved} onClick={onSave} />
+          {open && <SaveButton saving={saving} saved={saved} onClick={onSave} />}
         </div>
+      </div>
+      <div className="rounded-xl bg-[var(--background)]/72 px-4 py-4">
+        {preview}
       </div>
       {saveError && (
         <AdminNotice tone="error" className="mb-4">
           저장 실패: {saveError}
         </AdminNotice>
       )}
-      {open ? children : (
-        <div className="rounded-xl bg-[var(--background)]/80 px-4 py-4 text-sm text-[var(--muted)]">
-          필요할 때만 상세 입력 필드를 펼쳐 수정할 수 있습니다.
-        </div>
-      )}
+      {open ? <div className="mt-4">{children}</div> : null}
     </AdminSurface>
   );
+}
+
+function PreviewList({
+  items,
+}: {
+  items: Array<{ label: string; value: ReactNode }>;
+}) {
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="flex flex-col gap-1 border-b border-slate-200/80 pb-2 last:border-b-0 last:pb-0 sm:flex-row sm:items-start sm:gap-3"
+        >
+          <div className="w-28 shrink-0 text-xs font-medium text-[var(--muted)]">{item.label}</div>
+          <div className="min-w-0 text-sm text-[var(--foreground)] break-all">{item.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatExceptionDateLabel(date: string) {
+  if (!date) return "날짜 미설정";
+  const [year, month, day] = date.split("-");
+  if (!year || !month || !day) return date;
+  return `${year}.${month}.${day}`;
 }
 
 // -------------------------------------------------------------
@@ -214,11 +242,21 @@ function SnsLinksEditor() {
       title="SNS 링크"
       description="외부 채널, 지도, 블로그 링크를 최신 상태로 유지합니다."
       summary={`입력 완료 ${SITE_LINK_FIELDS.filter((key) => Boolean(form[key])).length}/${SITE_LINK_FIELDS.length}`}
+      preview={(
+        <PreviewList
+          items={[
+            { label: "카카오 채널", value: form.kakaoChannel || "미설정" },
+            { label: "인스타그램", value: form.instagram || "미설정" },
+            { label: "네이버 블로그", value: form.naverBlog || "미설정" },
+            { label: "네이버 지도", value: form.naverMap || "미설정" },
+            { label: "카카오맵", value: form.kakaoMap || "미설정" },
+          ]}
+        />
+      )}
       saving={saving}
       saved={saved}
       onSave={handleSave}
       saveError={saveError}
-      defaultOpen={true}
     >
       <div className="space-y-3">
         <FormField
@@ -301,6 +339,20 @@ function ClinicInfoEditor() {
       title="병원 정보"
       description="사이트 전반에 쓰이는 기본 병원 정보를 관리합니다."
       summary={`${form.name || "병원명 미설정"} · ${form.phone || "전화번호 미설정"}`}
+      preview={(
+        <div className="grid gap-2 md:grid-cols-2">
+          <div className="space-y-2">
+            <div className="text-sm font-semibold text-[var(--foreground)]">{form.name || "병원명 미설정"}</div>
+            <div className="text-sm text-[var(--muted)]">{form.slogan || "슬로건 미설정"}</div>
+            <div className="text-sm text-[var(--foreground)]">{form.phone || "전화번호 미설정"}</div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div><span className="mr-2 text-[var(--muted)]">주소</span>{form.addressShort || form.address || "미설정"}</div>
+            <div><span className="mr-2 text-[var(--muted)]">지역</span>{form.neighborhood || "미설정"}</div>
+            <div><span className="mr-2 text-[var(--muted)]">대표자</span>{form.representative || "미설정"}</div>
+          </div>
+        </div>
+      )}
       saving={saving}
       saved={saved}
       onSave={handleSave}
@@ -422,6 +474,46 @@ function HoursEditor() {
   const setTop = (key: "lunchTime" | "closedDays" | "notice") => (value: string) =>
     setFormEdits((prev) => ({ ...(prev ?? data ?? {} as SiteHours), [key]: value }));
 
+  const setExceptionField = (
+    index: number,
+    key: "date" | "time" | "open" | "note",
+    value: string | boolean,
+  ) => {
+    setFormEdits((prev) => {
+      const base = prev ?? data;
+      if (!base) return prev;
+      const exceptions = (base.exceptions ?? []).map((row, i) =>
+        i === index ? { ...row, [key]: value } : row,
+      );
+      return { ...base, exceptions };
+    });
+  };
+
+  const addException = () => {
+    setFormEdits((prev) => {
+      const base = prev ?? data;
+      if (!base) return prev;
+      return {
+        ...base,
+        exceptions: [
+          ...(base.exceptions ?? []),
+          { date: "", open: false, time: "휴진", note: "" },
+        ],
+      };
+    });
+  };
+
+  const removeException = (index: number) => {
+    setFormEdits((prev) => {
+      const base = prev ?? data;
+      if (!base) return prev;
+      return {
+        ...base,
+        exceptions: (base.exceptions ?? []).filter((_, i) => i !== index),
+      };
+    });
+  };
+
   if (loading || !form) return <LoadingPlaceholder />;
 
   return (
@@ -429,6 +521,41 @@ function HoursEditor() {
       title="진료시간"
       description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
       summary={`운영 ${form.schedule.filter((row) => row.open).length}일 · 휴진일 ${form.closedDays || "미설정"}`}
+      preview={(
+        <div className="space-y-2">
+          <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
+            {form.schedule.map((row) => (
+              <div key={row.day} className="flex items-center justify-between gap-3 text-sm">
+                <div className="min-w-0 text-[var(--foreground)]">
+                  {row.day}
+                  {row.note ? <span className="ml-1 text-xs text-[var(--muted)]">({row.note})</span> : null}
+                </div>
+                <div className={row.open ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>{row.time}</div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-slate-200 pt-2 text-sm text-[var(--muted)]">
+            점심시간 {form.lunchTime || "미설정"} · {form.closedDays || "휴진일 미설정"}
+            {form.notice ? <span className="block pt-1">{form.notice}</span> : null}
+          </div>
+          {form.exceptions.length > 0 ? (
+            <div className="border-t border-slate-200 pt-2">
+              <div className="mb-2 text-xs font-medium text-[var(--muted)]">운영 예외 / 날짜별 공지</div>
+              <div className="space-y-1">
+                {form.exceptions.map((exception, index) => (
+                  <div key={`${exception.date || "new"}-${index}`} className="flex flex-wrap items-center gap-x-2 text-sm">
+                    <span className="font-medium text-[var(--foreground)]">{formatExceptionDateLabel(exception.date)}</span>
+                    <span className={exception.open ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>
+                      {exception.time || (exception.open ? "운영시간 미설정" : "휴진")}
+                    </span>
+                    {exception.note ? <span className="text-[var(--muted)]">· {exception.note}</span> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
       saving={saving}
       saved={saved}
       onSave={handleSave}
@@ -500,6 +627,77 @@ function HoursEditor() {
           onChange={setTop("notice")}
           placeholder="토요일 점심시간 없이 진료"
         />
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-[var(--foreground)]">운영 예외 / 날짜별 공지</h4>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다.
+            </p>
+          </div>
+          <AdminActionButton tone="dark" onClick={addException} className="px-3 text-xs">
+            <Plus className="h-3.5 w-3.5" />
+            예외 추가
+          </AdminActionButton>
+        </div>
+
+        {form.exceptions.length === 0 ? (
+          <div className="rounded-xl bg-[var(--background)]/72 px-4 py-3 text-sm text-[var(--muted)]">
+            등록된 예외 일정이 없습니다.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {form.exceptions.map((exception, index) => (
+              <div
+                key={`${exception.date || "new"}-${index}`}
+                className="grid gap-3 rounded-xl border border-slate-200 bg-[var(--background)]/72 p-4 md:grid-cols-[160px_96px_minmax(0,1fr)_minmax(0,1fr)_84px] md:items-center"
+              >
+                <input
+                  type="date"
+                  value={exception.date}
+                  onChange={(e) => setExceptionField(index, "date", e.target.value)}
+                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  aria-label={`예외 일정 ${index + 1} 날짜`}
+                />
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+                  <input
+                    type="checkbox"
+                    checked={exception.open}
+                    onChange={(e) => setExceptionField(index, "open", e.target.checked)}
+                    className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
+                  />
+                  운영
+                </label>
+                <input
+                  type="text"
+                  value={exception.time}
+                  onChange={(e) => setExceptionField(index, "time", e.target.value)}
+                  placeholder={exception.open ? "10:00 - 15:00" : "휴진"}
+                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  aria-label={`예외 일정 ${index + 1} 시간`}
+                />
+                <input
+                  type="text"
+                  value={exception.note ?? ""}
+                  onChange={(e) => setExceptionField(index, "note", e.target.value)}
+                  placeholder="예: 현충일 휴진"
+                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  aria-label={`예외 일정 ${index + 1} 비고`}
+                />
+                <AdminActionButton
+                  tone="ghost"
+                  onClick={() => removeException(index)}
+                  className="px-3 text-xs text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  삭제
+                </AdminActionButton>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </SectionShell>
   );
