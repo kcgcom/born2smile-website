@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, CalendarDays, Check, FileText, Loader2, Save, Sparkles } from "lucide-react";
+import { BarChart3, CalendarDays, Check, FileText, Loader2, Save, Sparkles, TrendingUp } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { PostsSubTab } from "@/app/admin/(dashboard)/components/blog/PostsSubTab";
 import { StatsSubTab } from "@/app/admin/(dashboard)/components/blog/StatsSubTab";
 import { StrategySubTab } from "@/app/admin/(dashboard)/components/insight/StrategySubTab";
+import { TrendSubTab } from "@/app/admin/(dashboard)/components/insight/TrendSubTab";
 import { AiWriteModal } from "@/app/admin/(dashboard)/components/blog/AiWriteModal";
 import { BLOG_EDITOR_DRAFT_KEY } from "@/app/admin/(dashboard)/components/blog/blog-editor-draft";
 import { useAdminSubTab, AdminSubTabs } from "./AdminSubTabs";
@@ -18,6 +19,7 @@ const SUB_TABS = [
   { id: "schedule", label: "발행 일정", icon: CalendarDays },
   { id: "stats", label: "통계", icon: BarChart3 },
   { id: "strategy", label: "콘텐츠 전략", icon: Sparkles },
+  { id: "trend", label: "트렌드", icon: TrendingUp },
 ] as const;
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -32,6 +34,7 @@ export function ContentTab() {
       {activeSub === "schedule" && <ContentScheduleManager />}
       {activeSub === "stats" && <StatsSubTab />}
       {activeSub === "strategy" && <StrategySubTab />}
+      {activeSub === "trend" && <TrendSubTab />}
     </div>
   );
 }
