@@ -53,7 +53,7 @@ const WORKSPACES: WorkspaceConfig[] = [
     tabs: [
       { href: "/admin/content/posts", label: "포스트 관리", icon: FileText },
       { href: "/admin/content/schedule", label: "발행 일정", icon: Sparkles },
-      { href: "/admin/content/stats", label: "성과", icon: BarChart3 },
+      { href: "/admin/content/stats", label: "통계", icon: BarChart3 },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
     ],
   },

@@ -523,7 +523,7 @@ function HoursEditor() {
       summary={`운영 ${form.schedule.filter((row) => row.open).length}일 · 휴진일 ${form.closedDays || "미설정"}`}
       preview={(
         <div className="space-y-2">
-          <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-2">
             {form.schedule.map((row) => (
               <div key={row.day} className="flex items-center justify-between gap-3 text-sm">
                 <div className="min-w-0 text-[var(--foreground)]">
@@ -711,8 +711,10 @@ export function SettingsTab() {
   return (
     <div className="grid gap-6">
       <SnsLinksEditor />
-      <ClinicInfoEditor />
-      <HoursEditor />
+      <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+        <ClinicInfoEditor />
+        <HoursEditor />
+      </div>
       <QuickLinksSection />
     </div>
   );

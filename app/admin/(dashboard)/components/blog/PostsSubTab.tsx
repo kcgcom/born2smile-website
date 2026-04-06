@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Pencil, Trash2, Plus, Calendar, RefreshCw, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Calendar, RefreshCw, Sparkles } from "lucide-react";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
@@ -18,8 +18,6 @@ import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/A
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { calcDraftRecommendationOrder, HeartIcon } from "./blog-helpers";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
-import { AiWriteModal } from "./AiWriteModal";
-import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
 
 // -------------------------------------------------------------
 // PostsSubTab
@@ -73,7 +71,6 @@ export function PostsSubTab() {
   );
 
   // CRUD state
-  const [aiWriteOpen, setAiWriteOpen] = useState(false);
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
@@ -163,11 +160,6 @@ export function PostsSubTab() {
   const topDraft = filteredPosts.find((post) => !post.published) ?? null;
 
   // CRUD handlers
-  const handleCreate = () => {
-    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
-    router.push("/admin/content/posts/new");
-  };
-
   const handleEdit = (post: AdminBlogPost) => {
     router.push(`/admin/content/posts/${post.slug}`);
   };
@@ -270,9 +262,9 @@ export function PostsSubTab() {
                 {blogStats.draft > 0 ? "초안 우선 정리 필요" : "운영 안정"}
               </AdminPill>
             </div>
-            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">새 글 작성과 기존 글 정리를 한 화면에서 관리합니다.</h2>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">기존 글 상태와 초안 정리를 한 화면에서 관리합니다.</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              초안, 예약, 발행 상태를 먼저 보고 필요한 액션만 바로 실행할 수 있도록 정리했습니다.
+              목록 정리와 수정 작업에 집중하고, 새 글 작성과 발행 준비는 발행 일정 탭에서 이어집니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -284,20 +276,6 @@ export function PostsSubTab() {
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "새로고침 중..." : "캐시 갱신"}
-          </button>
-          <button
-            onClick={() => setAiWriteOpen(true)}
-            className="flex items-center gap-2 rounded-lg border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-medium text-[var(--color-gold,#C9930A)] hover:bg-[var(--color-gold-bg,#FDF3E0)] transition-colors"
-          >
-            <Sparkles className="h-4 w-4" />
-            AI로 작성
-          </button>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            새 포스트 작성
           </button>
           </div>
         </div>
@@ -644,18 +622,6 @@ export function PostsSubTab() {
           onDateChange={setPublishDate}
           onConfirm={handlePublishConfirm}
           onClose={() => { setPublishingSlug(null); setPublishError(null); }}
-        />
-      )}
-
-      {/* AI write modal */}
-      {aiWriteOpen && (
-        <AiWriteModal
-          onClose={() => setAiWriteOpen(false)}
-          onDraftReady={(data) => {
-            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(data));
-            setAiWriteOpen(false);
-            router.push("/admin/content/posts/new?draft=1");
-          }}
         />
       )}
     </div>

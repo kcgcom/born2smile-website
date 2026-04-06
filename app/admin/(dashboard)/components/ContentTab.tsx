@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { BarChart3, CalendarDays, Check, FileText, Loader2, Save, Sparkles } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { PostsSubTab } from "@/app/admin/(dashboard)/components/blog/PostsSubTab";
 import { StatsSubTab } from "@/app/admin/(dashboard)/components/blog/StatsSubTab";
 import { StrategySubTab } from "@/app/admin/(dashboard)/components/insight/StrategySubTab";
+import { AiWriteModal } from "@/app/admin/(dashboard)/components/blog/AiWriteModal";
+import { BLOG_EDITOR_DRAFT_KEY } from "@/app/admin/(dashboard)/components/blog/blog-editor-draft";
 import { useAdminSubTab, AdminSubTabs } from "./AdminSubTabs";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { getTodayKST } from "@/lib/date";
@@ -13,7 +16,7 @@ import { getTodayKST } from "@/lib/date";
 const SUB_TABS = [
   { id: "posts", label: "포스트 관리", icon: FileText },
   { id: "schedule", label: "발행 일정", icon: CalendarDays },
-  { id: "stats", label: "성과", icon: BarChart3 },
+  { id: "stats", label: "통계", icon: BarChart3 },
   { id: "strategy", label: "콘텐츠 전략", icon: Sparkles },
 ] as const;
 
@@ -34,12 +37,14 @@ export function ContentTab() {
 }
 
 export function ContentScheduleManager() {
+  const router = useRouter();
   const today = getTodayKST();
   const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { data: postsData } = useAdminApi<Array<{ slug: string; title: string; date: string; published: boolean }>>("/api/admin/blog-posts");
   const { mutate, loading: saving } = useAdminMutation();
   const [saved, setSaved] = useState(false);
   const [formEdits, setFormEdits] = useState<number[] | null>(null);
+  const [aiWriteOpen, setAiWriteOpen] = useState(false);
 
   const days = formEdits ?? data?.publishDays ?? [1, 3, 5];
   const futureScheduledPosts = (postsData ?? [])
@@ -72,6 +77,11 @@ export function ContentScheduleManager() {
     }
   };
 
+  const handleCreate = () => {
+    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
+    router.push("/admin/content/posts/new");
+  };
+
   if (loading) {
     return (
       <AdminSurface tone="white" className="rounded-3xl p-6">
@@ -93,18 +103,36 @@ export function ContentScheduleManager() {
               <h3 className="text-lg font-bold text-[var(--foreground)]">발행 요일 정책</h3>
             </div>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              추천 발행일 계산과 예약 발행 흐름에 쓰이는 기본 요일 정책입니다.
+              추천 발행일 계산, 예약 발행 준비, 새 글 작성 시작점을 한곳에서 관리합니다.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setAiWriteOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-semibold text-[var(--color-gold,#C9930A)] transition-colors hover:bg-[var(--color-gold-bg,#FDF3E0)]"
+            >
+              <Sparkles className="h-4 w-4" />
+              AI로 작성
+            </button>
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            >
+              <FileText className="h-4 w-4" />
+              새 포스트 작성
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
@@ -186,6 +214,17 @@ export function ContentScheduleManager() {
           </section>
         </div>
       </AdminSurface>
+
+      {aiWriteOpen && (
+        <AiWriteModal
+          onClose={() => setAiWriteOpen(false)}
+          onDraftReady={(data) => {
+            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(data));
+            setAiWriteOpen(false);
+            router.push("/admin/content/posts/new?draft=1");
+          }}
+        />
+      )}
     </div>
   );
 }
