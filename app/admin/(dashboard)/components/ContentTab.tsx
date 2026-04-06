@@ -5,6 +5,7 @@ import { BarChart3, CalendarDays, Check, FileText, Loader2, Save, Sparkles } fro
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { PostsSubTab } from "@/app/admin/(dashboard)/components/blog/PostsSubTab";
 import { StatsSubTab } from "@/app/admin/(dashboard)/components/blog/StatsSubTab";
+import { StrategySubTab } from "@/app/admin/(dashboard)/components/insight/StrategySubTab";
 import { useAdminSubTab, AdminSubTabs } from "./AdminSubTabs";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { getTodayKST } from "@/lib/date";
@@ -13,6 +14,7 @@ const SUB_TABS = [
   { id: "posts", label: "포스트 관리", icon: FileText },
   { id: "schedule", label: "발행 일정", icon: CalendarDays },
   { id: "stats", label: "성과", icon: BarChart3 },
+  { id: "strategy", label: "콘텐츠 전략", icon: Sparkles },
 ] as const;
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -26,6 +28,7 @@ export function ContentTab() {
       {activeSub === "posts" && <PostsSubTab />}
       {activeSub === "schedule" && <ContentScheduleManager />}
       {activeSub === "stats" && <StatsSubTab />}
+      {activeSub === "strategy" && <StrategySubTab />}
     </div>
   );
 }

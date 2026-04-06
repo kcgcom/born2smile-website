@@ -34,10 +34,10 @@ export function GrowthOverviewPanel() {
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <AdminPill tone="white">성장 워크스페이스</AdminPill>
+            <AdminPill tone="white">운영 분석 워크스페이스</AdminPill>
             <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">유입과 전환, 개선 제안을 한 화면에서 요약합니다.</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              상세 분석은 각 화면으로 들어가고, 여기서는 지금 확인할 성장 신호만 빠르게 봅니다.
+              상세 분석은 각 화면으로 들어가고, 여기서는 지금 확인할 운영 신호만 빠르게 봅니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -107,17 +107,17 @@ export function GrowthOverviewPanel() {
         <AdminSurface tone="white" className="rounded-3xl p-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" />
-            <h3 className="text-base font-bold text-[var(--foreground)]">트렌드와 전략</h3>
+            <h3 className="text-base font-bold text-[var(--foreground)]">트렌드와 실행</h3>
           </div>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            트렌드 변화와 콘텐츠 전략 후보를 나눠서 확인합니다.
+            트렌드 변화는 여기서 보고, 콘텐츠 전략 정리는 콘텐츠 워크스페이스에서 이어집니다.
           </p>
           <div className="mt-4 flex gap-2">
             <AdminActionLink tone="dark" href="/admin/growth/trends" className="flex-1">
               트렌드
             </AdminActionLink>
-            <AdminActionLink tone="dark" href="/admin/growth/strategy" className="flex-1">
-              전략
+            <AdminActionLink tone="dark" href="/admin/content/strategy" className="flex-1">
+              콘텐츠 전략
             </AdminActionLink>
           </div>
         </AdminSurface>

@@ -33,10 +33,11 @@ function buildLegacyAdminPath({
     case "content":
       if (sub === "schedule") return "/admin/content/schedule";
       if (sub === "stats") return "/admin/content/stats";
+      if (sub === "strategy") return "/admin/content/strategy";
       return "/admin/content/posts";
     case "seo":
       if (sub === "traffic") return "/admin/growth/traffic";
-      if (sub === "strategy") return "/admin/growth/strategy";
+      if (sub === "strategy") return "/admin/content/strategy";
       if (sub === "trend") return "/admin/growth/trends";
       return "/admin/growth/search";
     case "conversion":

@@ -1,5 +1,5 @@
-import { StrategySubTab } from "../../components/insight/StrategySubTab";
+import { redirect } from "next/navigation";
 
 export default function AdminGrowthStrategyPage() {
-  return <StrategySubTab />;
+  redirect("/admin/content/strategy");
 }
