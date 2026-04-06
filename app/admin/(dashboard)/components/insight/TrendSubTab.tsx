@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { TrendingUp, TrendingDown, Minus, X, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, X, AlertCircle, Smartphone, UserRound, CalendarRange } from "lucide-react";
 import {
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
@@ -43,6 +43,23 @@ interface OverviewData {
   period: { start: string; end: string } | null;
   categories: OverviewCategory[];
   contentGap: ContentGapItem[];
+  segmentInsights?: Array<{
+    category: KeywordCategorySlug;
+    slug: KeywordCategorySlug;
+    subGroup: string;
+    device: { label: "모바일" | "PC"; momentumScore: number; changeRate: number };
+    gender: { label: "여성" | "남성"; momentumScore: number; changeRate: number };
+    age: { label: string; momentumScore: number; changeRate: number };
+    note: string;
+  }>;
+  seasonalityInsights?: Array<{
+    category: KeywordCategorySlug;
+    slug: KeywordCategorySlug;
+    peakMonths: string[];
+    lowMonths: string[];
+    confidence: "high" | "medium" | "low";
+    note: string;
+  }>;
 }
 
 interface SubGroupDetail {
@@ -355,6 +372,8 @@ export function TrendSubTab() {
     }
     return map;
   }, [overviewData, selectedCategory]);
+  const segmentInsights = overviewData?.segmentInsights ?? [];
+  const seasonalityInsights = overviewData?.seasonalityInsights ?? [];
 
   // ── Graceful degradation ─────────────────────────────────────
   if (!overviewLoading && !overviewError && overviewData === null) {
@@ -384,6 +403,95 @@ export function TrendSubTab() {
           </span>
         )}
       </div>
+
+      {/* ── Segment / seasonality cards ───────────────── */}
+      {!overviewLoading && !overviewError && overviewData && (
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-[var(--color-primary)]" />
+              <h2 className="text-sm font-semibold text-[var(--foreground)]">기기 반응 인사이트</h2>
+            </div>
+            <div className="space-y-3">
+              {segmentInsights.slice(0, 3).map((item) => (
+                <div key={`${item.slug}-device`} className="rounded-xl bg-[var(--background)] px-3 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                      {getKeywordCategoryLabel(item.category)}
+                    </span>
+                    <span className="text-xs font-semibold text-[var(--foreground)]">{item.subGroup}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                    최근 {item.device.label} 반응이 더 강합니다.
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    모멘텀 {item.device.momentumScore} · 변화율 {item.device.changeRate > 0 ? "+" : ""}{item.device.changeRate.toFixed(1)}%
+                  </p>
+                </div>
+              ))}
+              {segmentInsights.length === 0 && (
+                <p className="py-6 text-center text-sm text-[var(--muted)]">세그먼트 인사이트를 계산할 수 없습니다.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <UserRound className="h-4 w-4 text-[var(--color-primary)]" />
+              <h2 className="text-sm font-semibold text-[var(--foreground)]">타깃층 반응 인사이트</h2>
+            </div>
+            <div className="space-y-3">
+              {segmentInsights.slice(0, 3).map((item) => (
+                <div key={`${item.slug}-audience`} className="rounded-xl bg-[var(--background)] px-3 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                      {getKeywordCategoryLabel(item.category)}
+                    </span>
+                    <span className="text-xs font-semibold text-[var(--foreground)]">{item.subGroup}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                    {item.gender.label} · {item.age.label} 반응이 상대적으로 두드러집니다.
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">{item.note}</p>
+                </div>
+              ))}
+              {segmentInsights.length === 0 && (
+                <p className="py-6 text-center text-sm text-[var(--muted)]">타깃층 인사이트를 계산할 수 없습니다.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <CalendarRange className="h-4 w-4 text-[var(--color-primary)]" />
+              <h2 className="text-sm font-semibold text-[var(--foreground)]">시즌성 힌트</h2>
+            </div>
+            <div className="space-y-3">
+              {seasonalityInsights.slice(0, 3).map((item) => (
+                <div key={`${item.slug}-seasonality`} className="rounded-xl bg-[var(--background)] px-3 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                      {getKeywordCategoryLabel(item.category)}
+                    </span>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                      {item.confidence.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                    성수기 {item.peakMonths.join(" · ")} / 약세 {item.lowMonths.join(" · ")}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">{item.note}</p>
+                </div>
+              ))}
+              {seasonalityInsights.length === 0 && (
+                <p className="py-6 text-center text-sm text-[var(--muted)]">
+                  3년/10년 기간에서 더 뚜렷한 시즌성을 볼 수 있습니다.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Category overview cards ────────────────────── */}
       <section>

@@ -3,6 +3,12 @@
 
 import type { KeywordSubGroup } from "./admin-naver-datalab-keywords";
 
+interface DatalabRequestFilter {
+  device?: "pc" | "mo";
+  gender?: "m" | "f";
+  ages?: string[];
+}
+
 const KEYWORD_GROUPS = [
   { groupName: "임플란트", keywords: ["임플란트", "임플란트 비용", "임플란트 수명", "임플란트 통증"] },
   { groupName: "치아교정", keywords: ["치아교정", "투명교정", "교정 비용", "치아교정 기간"] },
@@ -143,6 +149,7 @@ async function fetchSingleBatch(
   timeUnit: string,
   clientId: string,
   clientSecret: string,
+  filter?: DatalabRequestFilter,
 ): Promise<ParsedGroup[]> {
   const keywordGroups = subGroups.map((sg) => ({
     groupName: sg.name,
@@ -156,7 +163,15 @@ async function fetchSingleBatch(
       "X-Naver-Client-Id": clientId,
       "X-Naver-Client-Secret": clientSecret,
     },
-    body: JSON.stringify({ startDate, endDate, timeUnit, keywordGroups }),
+    body: JSON.stringify({
+      startDate,
+      endDate,
+      timeUnit,
+      keywordGroups,
+      ...(filter?.device ? { device: filter.device } : {}),
+      ...(filter?.gender ? { gender: filter.gender } : {}),
+      ...(filter?.ages?.length ? { ages: filter.ages } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -231,6 +246,7 @@ function normalizeBridgedBatches(
 export async function fetchNaverDatalabByCategory(
   subGroups: KeywordSubGroup[],
   period: string,
+  filter?: DatalabRequestFilter,
 ): Promise<NaverDatalabData> {
   const clientId = process.env.NAVER_DATALAB_CLIENT_ID;
   const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET;
@@ -245,13 +261,13 @@ export async function fetchNaverDatalabByCategory(
 
   if (subGroups.length <= 5) {
     // 단일 배치 — 기존 로직
-    groups = await fetchSingleBatch(subGroups, startDate, endDate, timeUnit, clientId, clientSecret);
+    groups = await fetchSingleBatch(subGroups, startDate, endDate, timeUnit, clientId, clientSecret, filter);
   } else {
     // 브릿지 배칭 — 5개씩 분할, 브릿지 그룹으로 정규화
     const batches = splitIntoBridgedBatches(subGroups);
     const batchResults: ParsedGroup[][] = [];
     for (const batch of batches) {
-      batchResults.push(await fetchSingleBatch(batch, startDate, endDate, timeUnit, clientId, clientSecret));
+      batchResults.push(await fetchSingleBatch(batch, startDate, endDate, timeUnit, clientId, clientSecret, filter));
     }
     groups = normalizeBridgedBatches(batches, batchResults);
   }

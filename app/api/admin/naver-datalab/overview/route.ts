@@ -5,6 +5,9 @@ import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, generateTopicSuggestions, buildSyntheticCategoryData } from "@/lib/trend-analysis";
+import { buildPageUpdateOpportunities, deriveInsightActions, generateFaqSuggestions } from "@/lib/trend-insights";
+import { deriveSeasonalityInsights, deriveSegmentInsights } from "@/lib/trend-segment-insights";
+import { generateBlogBriefSuggestions, generatePageImprovementBriefs } from "@/lib/trend-briefs";
 import type { CategoryTrendData, VolumeDataEntry } from "@/lib/trend-analysis";
 import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
@@ -323,6 +326,15 @@ export async function GET(request: NextRequest) {
 
     // Generate topic suggestions
     const suggestions = generateTopicSuggestions(contentGap, CATEGORY_KEYWORDS);
+    const insightActions = deriveInsightActions(contentGap);
+    const faqSuggestions = generateFaqSuggestions(contentGap);
+    const pageOpportunities = buildPageUpdateOpportunities(contentGap);
+    const blogBriefs = generateBlogBriefSuggestions(contentGap);
+    const pageBriefs = generatePageImprovementBriefs(pageOpportunities, faqSuggestions);
+    const seasonalityInsights = deriveSeasonalityInsights(successfulCategoryData, period);
+    const segmentInsights = isFullMode
+      ? await deriveSegmentInsights(CATEGORY_KEYWORDS, successfulCategoryData, period).catch(() => [])
+      : [];
 
     return Response.json(
       {
@@ -332,6 +344,13 @@ export async function GET(request: NextRequest) {
           categories,
           contentGap,
           suggestions,
+          insightActions,
+          faqSuggestions,
+          pageOpportunities,
+          blogBriefs,
+          pageBriefs,
+          segmentInsights,
+          seasonalityInsights,
           volumeSource: volumeData ? "searchad" : "datalab-fallback",
           volumeCoverage: volumeCoverage,
         },

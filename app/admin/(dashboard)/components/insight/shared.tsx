@@ -4,6 +4,7 @@ import {
   type KeywordCategorySlug,
   type SearchIntent,
 } from "@/lib/admin-naver-datalab-keywords";
+import type { BusinessValue, InsightActionType } from "@/lib/trend-insights";
 
 // ---------------------------------------------------------------
 // 공유 타입 (insight 서브탭 간 공유)
@@ -44,12 +45,71 @@ export interface TopicSuggestionItem {
   priority: "high" | "medium" | "low";
 }
 
+export interface InsightActionItem {
+  slug: KeywordCategorySlug;
+  subGroup: string;
+  actionType: InsightActionType;
+  businessValue: BusinessValue;
+  confidence: number;
+  reason: string;
+  targetPage: string;
+}
+
+export interface FaqSuggestionItem {
+  slug: KeywordCategorySlug;
+  subGroup: string;
+  question: string;
+  priority: number;
+  keywords: string[];
+  targetPage: string;
+}
+
+export interface PageUpdateOpportunityItem {
+  slug: KeywordCategorySlug;
+  subGroup: string;
+  targetPage: string;
+  pageUpdateScore: number;
+  missingSections: string[];
+  recommendedBlocks: string[];
+}
+
+export interface BlogBriefItem {
+  slug: KeywordCategorySlug;
+  subGroup: string;
+  suggestedTitle: string;
+  targetKeyword: string;
+  searchIntent: string;
+  targetReader: string;
+  outline: string[];
+  cta: string;
+  metaDescription: string;
+  targetPage: string;
+}
+
+export interface PageBriefItem {
+  slug: KeywordCategorySlug;
+  subGroup: string;
+  targetPage: string;
+  heroCopy: string;
+  supportingCopy: string;
+  blocks: string[];
+  faqQuestions: string[];
+  cta: string;
+  sourceFiles: string[];
+  checklist: string[];
+}
+
 export interface OverviewData {
   mode: "volume" | "full";
   period: { start: string; end: string } | null;
   categories: unknown[];
   contentGap: ContentGapItem[];
   suggestions: TopicSuggestionItem[];
+  insightActions: InsightActionItem[];
+  faqSuggestions: FaqSuggestionItem[];
+  pageOpportunities: PageUpdateOpportunityItem[];
+  blogBriefs: BlogBriefItem[];
+  pageBriefs: PageBriefItem[];
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
 }
@@ -125,4 +185,14 @@ export function PriorityBadge({ priority }: { priority: "high" | "medium" | "low
     return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
   return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
+}
+
+export function BusinessValueBadge({ value }: { value: BusinessValue }) {
+  if (value === "high") {
+    return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">고가치</span>;
+  }
+  if (value === "medium") {
+    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">중간</span>;
+  }
+  return <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">탐색형</span>;
 }

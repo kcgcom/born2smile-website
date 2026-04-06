@@ -12,7 +12,7 @@ import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/component
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { getAdminPreviewUrl } from "@/lib/blog/category-slugs";
 import { normalizeBlogCategory } from "@/lib/blog";
-import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
+import { BLOG_EDITOR_DRAFT_KEY, BLOG_EDITOR_PREFILL_KEY } from "./blog-editor-draft";
 
 interface BlogEditorScreenProps {
   mode: "create" | "edit";
@@ -75,6 +75,25 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
           nextData = { ...nextData, ...parsed, category: normalizeBlogCategory(parsed.category) ?? category };
         } catch {
           window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
+        }
+      }
+    }
+
+    if (typeof window !== "undefined" && searchParams.get("prefill") === "brief") {
+      const raw = window.sessionStorage.getItem(BLOG_EDITOR_PREFILL_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as Partial<EditablePost>;
+          nextData = {
+            ...nextData,
+            ...parsed,
+            category: normalizeBlogCategory(parsed.category ?? "") ?? category,
+            tags: Array.isArray(parsed.tags) ? parsed.tags : nextData.tags,
+            blocks: Array.isArray(parsed.blocks) ? parsed.blocks : nextData.blocks,
+          };
+          window.sessionStorage.removeItem(BLOG_EDITOR_PREFILL_KEY);
+        } catch {
+          window.sessionStorage.removeItem(BLOG_EDITOR_PREFILL_KEY);
         }
       }
     }

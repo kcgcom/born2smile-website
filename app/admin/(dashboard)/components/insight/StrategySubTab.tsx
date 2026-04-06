@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Lightbulb, Target } from "lucide-react";
+import { ChevronRight, FileQuestion, Lightbulb, NotebookPen, Sparkles, Target, Wrench } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
@@ -11,11 +11,13 @@ import { DataTable } from "../DataTable";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import { CategoryBadge, GapScoreBadge, PriorityBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
-import type { ContentGapItem, OverviewData } from "./shared";
+import { BusinessValueBadge, CategoryBadge, GapScoreBadge, PriorityBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
+import type { BlogBriefItem, ContentGapItem, FaqSuggestionItem, InsightActionItem, OverviewData, PageBriefItem, PageUpdateOpportunityItem } from "./shared";
 import type { SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
+import { BLOG_EDITOR_PREFILL_KEY, PAGE_BRIEF_WORKNOTE_KEY } from "../blog/blog-editor-draft";
+import type { BlogBlock, BlogTag } from "@/lib/blog/types";
 
 // ---------------------------------------------------------------
 // Opportunity Scatter Chart
@@ -189,6 +191,14 @@ const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: string 
   { value: "navigational", label: "탐색형" },
 ];
 
+const ACTION_LABELS: Record<InsightActionItem["actionType"], string> = {
+  "new-post": "새 글 작성",
+  "update-service-page": "서비스 페이지 보강",
+  "expand-faq": "FAQ 확장",
+  "strengthen-cta": "CTA 강화",
+  "seasonal-campaign": "시즌 캠페인",
+};
+
 export function StrategySubTab() {
   const router = useRouter();
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
@@ -198,6 +208,11 @@ export function StrategySubTab() {
     loading: overviewLoading,
     error: overviewError,
   } = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview");
+  const insightActions = overviewData?.insightActions ?? [];
+  const faqSuggestions = overviewData?.faqSuggestions ?? [];
+  const pageOpportunities = overviewData?.pageOpportunities ?? [];
+  const blogBriefs = overviewData?.blogBriefs ?? [];
+  const pageBriefs = overviewData?.pageBriefs ?? [];
 
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
@@ -205,6 +220,45 @@ export function StrategySubTab() {
   const handleNewPost = (slug: KeywordCategorySlug) => {
     if (!isBlogCategorySlug(slug)) return;
     router.push(`/admin/content/posts/new?category=${slug}`);
+  };
+
+  const startBriefDraft = (brief: BlogBriefItem) => {
+    if (!isBlogCategorySlug(brief.slug) || typeof window === "undefined") return;
+
+    const tags: BlogTag[] =
+      brief.searchIntent === "commercial"
+        ? ["비교가이드"]
+        : brief.searchIntent === "transactional"
+          ? ["증상가이드"]
+          : ["팩트체크"];
+
+    const blocks: BlogBlock[] = [
+      { type: "paragraph", text: `${brief.targetKeyword}이 궁금한 환자를 위해 서울본치과 관점에서 핵심 내용을 먼저 정리합니다.` },
+      ...brief.outline.flatMap<BlogBlock>((item) => [
+        { type: "heading", level: 2, text: item },
+        { type: "paragraph", text: `${item}에 대해 실제 상담에서 환자분들이 궁금해하는 기준, 치료 전후 체크포인트, 내원 전에 확인할 내용을 중심으로 구체적으로 설명합니다.` },
+      ]),
+      { type: "paragraph", text: brief.cta },
+    ];
+
+    window.sessionStorage.setItem(
+      BLOG_EDITOR_PREFILL_KEY,
+      JSON.stringify({
+        title: brief.suggestedTitle,
+        subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`,
+        excerpt: brief.metaDescription,
+        category: brief.slug,
+        tags,
+        blocks,
+      }),
+    );
+    router.push(`/admin/content/posts/new?category=${brief.slug}&prefill=brief`);
+  };
+
+  const openPageBriefWorkspace = (brief: PageBriefItem) => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(PAGE_BRIEF_WORKNOTE_KEY, JSON.stringify(brief));
+    router.push("/admin/content/strategy/brief");
   };
 
   // Pre-compute totalVolume per gap item once
@@ -286,6 +340,13 @@ export function StrategySubTab() {
   const suggestions = overviewData.suggestions;
   const urgentGapCount = filteredGap.filter((item) => item.gapScore >= 70).length;
   const topGapItem = gapRows[0] ?? null;
+  const topPageOpportunity = pageOpportunities[0] ?? null;
+  const topInsightAction = insightActions[0] ?? null;
+  const topFaqSuggestion = faqSuggestions[0] ?? null;
+  const topBlogBrief = blogBriefs[0] ?? null;
+  const topPageBrief = pageBriefs[0] ?? null;
+  const actionByKey = new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item]));
+  const pageOpportunityByKey = new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item]));
 
   // ── Cross-keyword analysis ───────────────────────────────────
   const crossKeywords = (() => {
@@ -328,7 +389,7 @@ export function StrategySubTab() {
               월 검색량, 기존 포스트 수, 갭 점수를 합쳐 지금 새 글을 써야 할 영역을 빠르게 판단할 수 있게 정리했습니다.
             </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[480px]">
             <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
               <div className="text-xs font-medium text-amber-700">시급한 갭</div>
               <div className="mt-1 text-lg font-semibold text-amber-900">{urgentGapCount}건</div>
@@ -340,6 +401,10 @@ export function StrategySubTab() {
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
               <div className="text-xs font-medium text-emerald-700">교차 키워드</div>
               <div className="mt-1 text-lg font-semibold text-emerald-900">{crossKeywords.length}건</div>
+            </div>
+            <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3">
+              <div className="text-xs font-medium text-fuchsia-700">페이지 보강 후보</div>
+              <div className="mt-1 text-lg font-semibold text-fuchsia-900">{pageOpportunities.length}건</div>
             </div>
           </div>
         </div>
@@ -385,7 +450,237 @@ export function StrategySubTab() {
         </AdminDisclosureSection>
       )}
 
-      {/* ── Section 2: Cross-keyword analysis ──────────── */}
+      {/* ── Section 2: Recommended actions ─────────────── */}
+      {(insightActions.length > 0 || pageOpportunities.length > 0 || faqSuggestions.length > 0) && (
+        <AdminDisclosureSection
+          title="실행 추천"
+          description="검색 수요를 실제 사이트 개선 작업으로 바로 연결할 수 있게 액션, 페이지 보강, FAQ 후보를 나눠 보여줍니다."
+          countLabel={`${insightActions.length + pageOpportunities.length + faqSuggestions.length}개`}
+          defaultOpen={true}
+          collapsedMessage="필요할 때만 실행 추천 패널을 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
+          <div className="grid gap-4 xl:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">우선 실행 액션</h3>
+              </div>
+              <div className="space-y-3">
+                {insightActions.slice(0, 5).map((item: InsightActionItem) => (
+                  <div key={`${item.slug}-${item.subGroup}-${item.actionType}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={item.slug} />
+                      <BusinessValueBadge value={item.businessValue} />
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                        {ACTION_LABELS[item.actionType]}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{item.subGroup}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">{item.reason}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-600">신뢰도 {item.confidence}</span>
+                      <a href={item.targetPage} target="_blank" rel="noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">
+                        대상 페이지 열기
+                      </a>
+                    </div>
+                  </div>
+                ))}
+                {!topInsightAction && (
+                  <p className="py-8 text-center text-sm text-[var(--muted)]">추천 액션이 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">서비스 페이지 보강</h3>
+              </div>
+              <div className="space-y-3">
+                {pageOpportunities.slice(0, 5).map((item: PageUpdateOpportunityItem) => (
+                  <div key={`${item.slug}-${item.subGroup}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={item.slug} />
+                      <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-700">
+                        보강 점수 {item.pageUpdateScore}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{item.subGroup}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      부족 섹션: {item.missingSections.join(" · ")}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      추천 블록: {item.recommendedBlocks.join(" · ")}
+                    </p>
+                    <div className="mt-2">
+                      <a href={item.targetPage} target="_blank" rel="noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">
+                        서비스 페이지 열기
+                      </a>
+                    </div>
+                  </div>
+                ))}
+                {!topPageOpportunity && (
+                  <p className="py-8 text-center text-sm text-[var(--muted)]">보강 후보가 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <FileQuestion className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">FAQ 추가 추천</h3>
+              </div>
+              <div className="space-y-3">
+                {faqSuggestions.slice(0, 5).map((item: FaqSuggestionItem) => (
+                  <div key={`${item.slug}-${item.subGroup}-${item.question}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={item.slug} />
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                        우선순위 {item.priority}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{item.question}</p>
+                    {item.keywords.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {item.keywords.map((keyword) => (
+                          <span key={keyword} className="rounded bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <a href={item.targetPage} target="_blank" rel="noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">
+                        적용 페이지 열기
+                      </a>
+                    </div>
+                  </div>
+                ))}
+                {!topFaqSuggestion && (
+                  <p className="py-8 text-center text-sm text-[var(--muted)]">FAQ 추천이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </AdminDisclosureSection>
+      )}
+
+      {(blogBriefs.length > 0 || pageBriefs.length > 0) && (
+        <AdminDisclosureSection
+          title="자동 생성 브리프"
+          description="키워드 기회와 페이지 보강 후보를 바로 실행 가능한 글 초안/페이지 개편 메모 형태로 정리했습니다."
+          countLabel={`${blogBriefs.length + pageBriefs.length}개`}
+          defaultOpen={true}
+          collapsedMessage="필요할 때만 자동 생성 브리프를 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <NotebookPen className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">블로그 초안 브리프</h3>
+              </div>
+              <div className="space-y-3">
+                {blogBriefs.slice(0, 4).map((item: BlogBriefItem) => (
+                  <div key={`${item.slug}-${item.subGroup}-brief`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={item.slug} />
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                        {item.targetReader}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{item.suggestedTitle}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">타깃 키워드: {item.targetKeyword}</p>
+                    <ul className="mt-2 space-y-1 text-xs text-[var(--muted)]">
+                      {item.outline.map((outline) => (
+                        <li key={outline}>• {outline}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-[var(--muted)]">메타 초안: {item.metaDescription}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">CTA: {item.cta}</p>
+                    <div className="mt-3 flex justify-end">
+                      {isBlogCategorySlug(item.slug) ? (
+                        <button
+                          type="button"
+                          onClick={() => startBriefDraft(item)}
+                          className="flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+                        >
+                          브리프로 작성 시작
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <span className="text-xs text-[var(--muted)]">블로그 카테고리 아님</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {!topBlogBrief && (
+                  <p className="py-8 text-center text-sm text-[var(--muted)]">생성된 블로그 브리프가 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-[var(--color-primary)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">페이지 개편 브리프</h3>
+              </div>
+              <div className="space-y-3">
+                {pageBriefs.slice(0, 4).map((item: PageBriefItem) => (
+                  <div key={`${item.slug}-${item.subGroup}-page-brief`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={item.slug} />
+                      <a href={item.targetPage} target="_blank" rel="noreferrer" className="text-[11px] font-medium text-[var(--color-primary)] hover:underline">
+                        {item.targetPage}
+                      </a>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{item.subGroup}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">히어로 카피: {item.heroCopy}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">보조 카피: {item.supportingCopy}</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {item.blocks.map((block) => (
+                        <span key={block} className="rounded bg-white px-2 py-0.5 text-[10px] text-slate-600">{block}</span>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      수정 파일: {item.sourceFiles.join(" · ")}
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs text-[var(--muted)]">
+                      {item.checklist.slice(0, 2).map((check) => (
+                        <li key={check}>• {check}</li>
+                      ))}
+                    </ul>
+                    {item.faqQuestions.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-xs text-[var(--muted)]">
+                        {item.faqQuestions.map((question) => (
+                          <li key={question}>• {question}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="mt-2 text-xs text-[var(--muted)]">CTA: {item.cta}</p>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => openPageBriefWorkspace(item)}
+                        className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--background)] transition-colors"
+                      >
+                        개편 워크노트 열기
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {!topPageBrief && (
+                  <p className="py-8 text-center text-sm text-[var(--muted)]">생성된 페이지 브리프가 없습니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </AdminDisclosureSection>
+      )}
+
+      {/* ── Section 3: Cross-keyword analysis ──────────── */}
       {crossKeywords.length > 0 && (
         <AdminDisclosureSection
           title="교차 키워드 분석"
@@ -524,6 +819,25 @@ export function StrategySubTab() {
                     : null,
                 },
                 {
+                  key: "actionType",
+                  label: "추천 액션",
+                  align: "left",
+                  render: (row) => {
+                    const item = actionByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
+                    if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
+                    return (
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                          {ACTION_LABELS[item.actionType]}
+                        </span>
+                        <div>
+                          <BusinessValueBadge value={item.businessValue} />
+                        </div>
+                      </div>
+                    );
+                  },
+                },
+                {
                   key: "monthlyVolume",
                   label: "검색량",
                   align: "right",
@@ -576,6 +890,16 @@ export function StrategySubTab() {
                     </div>
                   ),
                 },
+                {
+                  key: "pageUpdateScore",
+                  label: "페이지 보강",
+                  align: "right",
+                  render: (row) => {
+                    const item = pageOpportunityByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
+                    if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
+                    return <span className="tabular-nums text-[var(--foreground)]">{item.pageUpdateScore}</span>;
+                  },
+                },
               ]}
               rows={gapRows as unknown as Record<string, unknown>[]}
               keyField="id"
@@ -619,6 +943,8 @@ export function StrategySubTab() {
                 const direct = item.directKeywords ?? [];
                 const related = item.relatedKeywords ?? [];
                 const hasKeywords = direct.length > 0 || related.length > 0;
+                const action = actionByKey.get(`${item.slug}:${item.subGroup}`);
+                const pageOpportunity = pageOpportunityByKey.get(`${item.slug}:${item.subGroup}`);
                 return (
                   <div key={item.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
@@ -636,6 +962,23 @@ export function StrategySubTab() {
                         <GapScoreBadge score={item.gapScore} />
                       </span>
                     </div>
+                    {(action || pageOpportunity) && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {action && (
+                          <>
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                              {ACTION_LABELS[action.actionType]}
+                            </span>
+                            <BusinessValueBadge value={action.businessValue} />
+                          </>
+                        )}
+                        {pageOpportunity && (
+                          <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">
+                            페이지 {pageOpportunity.pageUpdateScore}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {hasKeywords && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {direct.map((dk) => (
