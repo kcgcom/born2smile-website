@@ -388,6 +388,15 @@ export function StrategySubTab() {
             <p className="mt-1 text-sm text-[var(--muted)]">
               월 검색량, 기존 포스트 수, 갭 점수를 합쳐 지금 새 글을 써야 할 영역을 빠르게 판단할 수 있게 정리했습니다.
             </p>
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => router.push("/admin/content/strategy/rules")}
+                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+              >
+                규칙 기반 추천 원리 읽어보기
+              </button>
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[480px]">
             <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
