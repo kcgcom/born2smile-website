@@ -1,164 +1,121 @@
-"use client";
+import { redirect } from "next/navigation";
+import { AdminHomePageClient } from "./components/AdminHomePageClient";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3 } from "lucide-react";
-import { DashboardHeader } from "@/components/admin/DashboardHeader";
-import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
-import { signOutAdmin } from "@/lib/admin-auth";
-import { AdminLoadingSkeleton } from "./components/AdminLoadingSkeleton";
-import { AdminTabs, ADMIN_TABS, type AdminTabId } from "./components/AdminTabs";
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const OverviewTab = dynamic(
-  () => import("./components/DashboardTab").then((m) => m.DashboardTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const ContentTabView = dynamic(
-  () => import("./components/ContentTab").then((m) => m.ContentTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const SeoTabView = dynamic(
-  () => import("./components/SeoTab").then((m) => m.SeoTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const ConversionTabView = dynamic(
-  () => import("./components/ConversionTab").then((m) => m.ConversionReportTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const AiOpsTabView = dynamic(
-  () => import("./components/AiOpsTab").then((m) => m.AiOpsTab),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const SettingsTabView = dynamic(
-  () => import("./components/AdminSettingsTab").then((m) => m.SettingsTabShell),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
-const DevtoolsTabView = dynamic(
-  () => import("./components/DevtoolsTab").then((m) => m.DevtoolsShell),
-  { loading: () => <AdminLoadingSkeleton variant="full" />, ssr: false },
-);
+function getString(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
-const TAB_REDIRECT: Record<string, { tab: AdminTabId; sub?: string }> = {
-  dev: { tab: "devtools" },
-  insight: { tab: "seo", sub: "search" },
-  traffic: { tab: "seo", sub: "traffic" },
-  search: { tab: "seo", sub: "search" },
-  trend: { tab: "seo", sub: "trend" },
-  blog: { tab: "content", sub: "posts" },
-  ai: { tab: "aiops", sub: "briefing" },
-  ops: { tab: "aiops", sub: "briefing" },
-};
+function buildLegacyAdminPath({
+  tab,
+  sub,
+  edit,
+  newCategory,
+}: {
+  tab?: string;
+  sub?: string;
+  edit?: string;
+  newCategory?: string;
+}) {
+  if (edit) {
+    return `/admin/content/posts/${edit}`;
+  }
 
-export default function AdminDashboardPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  if (newCategory) {
+    return `/admin/content/posts/new?category=${encodeURIComponent(newCategory)}`;
+  }
 
-  const rawTab = searchParams.get("tab");
-  const editSlug = searchParams.get("edit");
-  const newCategory = searchParams.get("newCategory");
+  switch (tab) {
+    case undefined:
+    case "dashboard":
+      return null;
+    case "content":
+      if (sub === "schedule") return "/admin/content/schedule";
+      if (sub === "stats") return "/admin/content/stats";
+      return "/admin/content/posts";
+    case "seo":
+      if (sub === "traffic") return "/admin/growth/traffic";
+      if (sub === "strategy") return "/admin/growth/strategy";
+      if (sub === "trend") return "/admin/growth/trends";
+      return "/admin/growth/search";
+    case "conversion":
+      return "/admin/growth/conversion";
+    case "aiops":
+      switch (sub) {
+        case "suggestions":
+          return "/admin/growth/ai-ops/suggestions";
+        case "queue":
+          return "/admin/growth/ai-ops/queue";
+        case "activity":
+          return "/admin/growth/ai-ops/activity";
+        case "briefing":
+        default:
+          return "/admin/growth/ai-ops/briefing";
+      }
+    case "settings":
+      return "/admin/system/settings";
+    case "devtools":
+      switch (sub) {
+        case "perf":
+          return "/admin/system/devtools/perf";
+        case "ref":
+          return "/admin/system/devtools/ref";
+        case "monitoring":
+          return "/admin/system/devtools/monitoring";
+        case "ai":
+          return "/admin/system/devtools/ai";
+        case "project":
+        default:
+          return "/admin/system/devtools/project";
+      }
+    case "dev":
+      switch (sub) {
+        case "perf":
+          return "/admin/system/devtools/perf";
+        case "ref":
+          return "/admin/system/devtools/ref";
+        case "monitoring":
+          return "/admin/system/devtools/monitoring";
+        case "ai":
+          return "/admin/system/devtools/ai";
+        case "project":
+        default:
+          return "/admin/system/devtools/project";
+      }
+    case "insight":
+    case "search":
+      return "/admin/growth/search";
+    case "traffic":
+      return "/admin/growth/traffic";
+    case "trend":
+      return "/admin/growth/trends";
+    case "blog":
+      return "/admin/content/posts";
+    case "ai":
+    case "ops":
+      return "/admin/growth/ai-ops/briefing";
+    default:
+      return null;
+  }
+}
 
-  useEffect(() => {
-    if (rawTab && rawTab in TAB_REDIRECT) {
-      const redirect = TAB_REDIRECT[rawTab];
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", redirect.tab);
-      if (redirect.sub) params.set("sub", redirect.sub);
-      router.replace(`${pathname}?${params.toString()}`);
-    }
-  }, [pathname, rawTab, router, searchParams]);
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const resolved = await searchParams;
+  const path = buildLegacyAdminPath({
+    tab: getString(resolved.tab),
+    sub: getString(resolved.sub),
+    edit: getString(resolved.edit),
+    newCategory: getString(resolved.newCategory),
+  });
 
-  const validTabIds = ADMIN_TABS.map((tab) => tab.id) as string[];
-  const activeTab: AdminTabId = validTabIds.includes(rawTab ?? "") ? (rawTab as AdminTabId) : "dashboard";
+  if (path) {
+    redirect(path);
+  }
 
-  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTabId>>(() => new Set(["dashboard", activeTab]));
-  const renderedTabs = useMemo(() => {
-    if (visitedTabs.has(activeTab)) return visitedTabs;
-    return new Set(visitedTabs).add(activeTab);
-  }, [activeTab, visitedTabs]);
-
-  const replaceParams = useCallback((tab: string, sub?: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", tab);
-    if (sub) params.set("sub", sub);
-    else params.delete("sub");
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [pathname, router, searchParams]);
-
-  const handleTabChange = (tab: AdminTabId) => {
-    setVisitedTabs((prev) => {
-      if (prev.has(tab)) return prev;
-      return new Set(prev).add(tab);
-    });
-    replaceParams(tab);
-  };
-
-  const handleLogout = async () => {
-    await signOutAdmin();
-    router.replace("/admin/login");
-  };
-
-  return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
-      <DashboardHeader onLogout={handleLogout} />
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <AdminSurface tone="white" className="mb-4 rounded-3xl px-5 py-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-[var(--foreground)]">운영 콘솔</h1>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                블로그, SEO, 전환, 설정을 한 흐름으로 관리할 수 있습니다.
-              </p>
-            </div>
-            <AdminActionLink tone="dark" href="/admin?tab=content&sub=posts" className="shrink-0">
-              <BarChart3 className="h-4 w-4" />
-              콘텐츠 관리 열기
-            </AdminActionLink>
-          </div>
-        </AdminSurface>
-
-        <div className="mb-2">
-          <AdminTabs activeTab={activeTab} onTabChange={handleTabChange} />
-        </div>
-
-        {renderedTabs.has("dashboard") && (
-          <div hidden={activeTab !== "dashboard"}>
-            <OverviewTab navigateTo={replaceParams} />
-          </div>
-        )}
-        {renderedTabs.has("content") && (
-          <div hidden={activeTab !== "content"}>
-            <ContentTabView editSlug={editSlug} newCategory={newCategory} />
-          </div>
-        )}
-        {renderedTabs.has("seo") && (
-          <div hidden={activeTab !== "seo"}>
-            <SeoTabView />
-          </div>
-        )}
-        {renderedTabs.has("conversion") && (
-          <div hidden={activeTab !== "conversion"}>
-            <ConversionTabView />
-          </div>
-        )}
-        {renderedTabs.has("aiops") && (
-          <div hidden={activeTab !== "aiops"}>
-            <AiOpsTabView />
-          </div>
-        )}
-        {renderedTabs.has("settings") && (
-          <div hidden={activeTab !== "settings"}>
-            <SettingsTabView />
-          </div>
-        )}
-        {renderedTabs.has("devtools") && (
-          <div hidden={activeTab !== "devtools"}>
-            <DevtoolsTabView />
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <AdminHomePageClient />;
 }

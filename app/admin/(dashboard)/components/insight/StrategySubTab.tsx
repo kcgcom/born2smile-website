@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, Lightbulb, Target } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
@@ -14,6 +14,8 @@ import { ApiSourceBadge } from "./ApiSourceBadge";
 import { CategoryBadge, GapScoreBadge, PriorityBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { ContentGapItem, OverviewData } from "./shared";
 import type { SearchIntent } from "@/lib/admin-naver-datalab-keywords";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 
 // ---------------------------------------------------------------
 // Opportunity Scatter Chart
@@ -189,7 +191,6 @@ const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: string 
 
 export function StrategySubTab() {
   const router = useRouter();
-  const pathname = usePathname();
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
 
   const {
@@ -203,7 +204,7 @@ export function StrategySubTab() {
 
   const handleNewPost = (slug: KeywordCategorySlug) => {
     if (!isBlogCategorySlug(slug)) return;
-    router.push(`${pathname}?tab=blog&newCategory=${slug}`);
+    router.push(`/admin/content/posts/new?category=${slug}`);
   };
 
   // Pre-compute totalVolume per gap item once
@@ -283,6 +284,8 @@ export function StrategySubTab() {
   }));
 
   const suggestions = overviewData.suggestions;
+  const urgentGapCount = filteredGap.filter((item) => item.gapScore >= 70).length;
+  const topGapItem = gapRows[0] ?? null;
 
   // ── Cross-keyword analysis ───────────────────────────────────
   const crossKeywords = (() => {
@@ -311,24 +314,86 @@ export function StrategySubTab() {
     <div className="space-y-8">
       <ApiSourceBadge sources={["naverSearchAd"]} />
 
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <AdminPill tone="white">콘텐츠 전략 요약</AdminPill>
+              <AdminPill tone={urgentGapCount > 0 ? "warning" : "white"}>
+                {urgentGapCount > 0 ? "갭 높은 주제 존재" : "급한 갭 적음"}
+              </AdminPill>
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">검색 수요 대비 비어 있는 주제를 먼저 보여줍니다.</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              월 검색량, 기존 포스트 수, 갭 점수를 합쳐 지금 새 글을 써야 할 영역을 빠르게 판단할 수 있게 정리했습니다.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+              <div className="text-xs font-medium text-amber-700">시급한 갭</div>
+              <div className="mt-1 text-lg font-semibold text-amber-900">{urgentGapCount}건</div>
+            </div>
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="text-xs font-medium text-blue-700">추천 주제</div>
+              <div className="mt-1 text-lg font-semibold text-blue-900">{suggestions.length}건</div>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+              <div className="text-xs font-medium text-emerald-700">교차 키워드</div>
+              <div className="mt-1 text-lg font-semibold text-emerald-900">{crossKeywords.length}건</div>
+            </div>
+          </div>
+        </div>
+
+        {topGapItem && (
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-[var(--color-primary)]" />
+              <span className="text-sm font-semibold text-[var(--foreground)]">가장 먼저 볼 주제 영역</span>
+            </div>
+            <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{topGapItem.subGroup}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              검색량 {calcTotalVolume(topGapItem) ? calcTotalVolume(topGapItem).toLocaleString("ko-KR") : Number(topGapItem.currentAvg).toFixed(1)} · 포스트 {topGapItem.existingPostCount}개 · 갭 점수 {topGapItem.gapScore.toFixed(0)}
+            </p>
+            {isBlogCategorySlug(topGapItem.slug) && (
+              <div className="mt-3">
+                <AdminActionButton
+                  tone="dark"
+                  onClick={() => handleNewPost(topGapItem.slug)}
+                  className="min-h-8 px-3 py-1 text-xs"
+                >
+                  <Target className="h-3.5 w-3.5" />
+                  이 카테고리로 새 글 작성
+                </AdminActionButton>
+              </div>
+            )}
+          </div>
+        )}
+      </AdminSurface>
+
       {/* ── Section 1: Opportunity scatter ─────────────── */}
       {scatterData.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            기회 매트릭스 — 검색량 vs 포스트 수
-          </h2>
+        <AdminDisclosureSection
+          title="기회 매트릭스"
+          description="검색량과 포스트 수를 같이 봐서, 우측 하단의 비어 있는 기회 영역을 빠르게 찾습니다."
+          countLabel={`${scatterData.length}개`}
+          collapsedMessage="필요할 때만 기회 매트릭스 차트를 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
           <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
             <OpportunityScatter data={scatterData} onPointClick={handleNewPost} />
           </div>
-        </section>
+        </AdminDisclosureSection>
       )}
 
       {/* ── Section 2: Cross-keyword analysis ──────────── */}
       {crossKeywords.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            교차 키워드 분석 — 2개 이상 카테고리에 걸친 키워드
-          </h2>
+        <AdminDisclosureSection
+          title="교차 키워드 분석"
+          description="2개 이상 카테고리에 걸친 키워드를 분리해 중복 경쟁과 주제 충돌 가능성을 확인합니다."
+          countLabel={`${crossKeywords.length}개`}
+          collapsedMessage="필요할 때만 교차 키워드 표를 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
           <div className="rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
             <DataTable
               columns={[
@@ -362,16 +427,20 @@ export function StrategySubTab() {
               emptyMessage="교차 키워드가 없습니다"
             />
           </div>
-        </section>
+        </AdminDisclosureSection>
       )}
 
       {/* ── Section 3: Content gap table ──────────────── */}
       {overviewData.contentGap.length > 0 && (
-        <section>
+        <AdminDisclosureSection
+          title="콘텐츠 갭 분석"
+          description="검색 수요와 현재 콘텐츠 수를 비교해 새 글 작성 우선순위를 정합니다."
+          countLabel={`${gapRows.length}개`}
+          defaultOpen={true}
+          collapsedMessage="필요할 때만 갭 분석 표와 필터를 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
           <div className="mb-3">
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">
-              콘텐츠 갭 분석 — 검색 수요 vs 콘텐츠 현황
-            </h2>
             <p className="mt-1 text-xs text-[var(--muted)]">
               갭 점수 = 검색량(70%) + 콘텐츠 부족도(25%)
               &nbsp;·&nbsp;
@@ -588,15 +657,19 @@ export function StrategySubTab() {
               })
             )}
           </div>
-        </section>
+        </AdminDisclosureSection>
       )}
 
       {/* ── Section 4: Topic suggestions ──────────────── */}
       {suggestions.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-            추천 블로그 주제 — 검색량 + 콘텐츠 갭 기반
-          </h2>
+        <AdminDisclosureSection
+          title="추천 블로그 주제"
+          description="검색량과 콘텐츠 갭을 바탕으로 바로 작성할 만한 블로그 아이디어를 추렸습니다."
+          countLabel={`${suggestions.length}개`}
+          defaultOpen={true}
+          collapsedMessage="필요할 때만 추천 주제 목록을 펼쳐 볼 수 있습니다."
+          titleLevel="h2"
+        >
           <div className="space-y-3">
             {suggestions.slice(0, 15).map((item) => (
               <div key={`${item.rank}-${item.slug}`} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
@@ -657,7 +730,7 @@ export function StrategySubTab() {
               </div>
             ))}
           </div>
-        </section>
+        </AdminDisclosureSection>
       )}
 
       {/* ── Empty state ───────────────────────────────── */}

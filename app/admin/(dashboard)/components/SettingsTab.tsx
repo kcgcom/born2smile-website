@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, type ReactNode } from "react";
-import { Save, Loader2, Check } from "lucide-react";
+import { Save, Loader2, Check, ChevronDown, ChevronUp, Clock3, Globe2, MapPinned } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
 import type { SiteLinks, SiteClinic, SiteHours } from "@/lib/site-config-supabase";
 
@@ -105,20 +106,26 @@ function SaveButton({
 function SectionShell({
   title,
   description,
+  summary,
   saving,
   saved,
   onSave,
   saveError,
+  defaultOpen = false,
   children,
 }: {
   title: string;
   description: string;
+  summary?: string;
   saving: boolean;
   saved: boolean;
   onSave: () => void;
   saveError: string | null;
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
     <AdminSurface tone="white" className="rounded-2xl p-6">
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -130,15 +137,32 @@ function SectionShell({
             </AdminPill>
           </div>
           <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+          {summary && (
+            <p className="mt-2 text-xs text-[var(--muted)]">{summary}</p>
+          )}
         </div>
-        <SaveButton saving={saving} saved={saved} onClick={onSave} />
+        <div className="flex items-center gap-2">
+          <AdminActionButton
+            tone="dark"
+            onClick={() => setOpen((current) => !current)}
+            className="px-3 text-xs"
+          >
+            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {open ? "접기" : "펼치기"}
+          </AdminActionButton>
+          <SaveButton saving={saving} saved={saved} onClick={onSave} />
+        </div>
       </div>
       {saveError && (
-        <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+        <AdminNotice tone="error" className="mb-4">
           저장 실패: {saveError}
-        </p>
+        </AdminNotice>
       )}
-      {children}
+      {open ? children : (
+        <div className="rounded-xl bg-[var(--background)]/80 px-4 py-4 text-sm text-[var(--muted)]">
+          필요할 때만 상세 입력 필드를 펼쳐 수정할 수 있습니다.
+        </div>
+      )}
     </AdminSurface>
   );
 }
@@ -180,10 +204,12 @@ function SnsLinksEditor() {
     <SectionShell
       title="SNS 링크"
       description="외부 채널, 지도, 블로그 링크를 최신 상태로 유지합니다."
+      summary={`입력 완료 ${Object.values(form).filter(Boolean).length}/${Object.keys(form).length}`}
       saving={saving}
       saved={saved}
       onSave={handleSave}
       saveError={saveError}
+      defaultOpen={true}
     >
       <div className="space-y-3">
         <FormField
@@ -262,6 +288,7 @@ function ClinicInfoEditor() {
     <SectionShell
       title="병원 정보"
       description="사이트 전반에 쓰이는 기본 병원 정보를 관리합니다."
+      summary={`${form.name || "병원명 미설정"} · ${form.phone || "전화번호 미설정"}`}
       saving={saving}
       saved={saved}
       onSave={handleSave}
@@ -401,57 +428,56 @@ function HoursEditor() {
     <SectionShell
       title="진료시간"
       description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
+      summary={`운영 ${form.schedule.filter((row) => row.open).length}일 · 휴진일 ${form.closedDays || "미설정"}`}
       saving={saving}
       saved={saved}
       onSave={handleSave}
       saveError={saveError}
     >
-      {/* Schedule table */}
-      <div className="mb-4 overflow-x-auto rounded-2xl border border-[var(--border)] bg-white/70">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-[var(--background)] text-[var(--muted)]">
-              <th className="py-2 pl-4 pr-2 text-left font-medium">요일</th>
-              <th className="px-2 py-2 text-left font-medium">시간</th>
-              <th className="px-2 py-2 text-center font-medium">운영</th>
-              <th className="px-2 py-2 pl-2 pr-4 text-left font-medium">비고</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border)]">
-            {form.schedule.map((row, i) => (
-              <tr key={row.day}>
-                <td className="py-2 pl-4 pr-2 font-medium text-[var(--foreground)]">
-                  {row.day}
-                </td>
-                <td className="px-2 py-1.5">
-                  <input
-                    type="text"
-                    value={row.time}
-                    onChange={(e) => setScheduleField(i, "time", e.target.value)}
-                    className="w-36 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/15"
-                  />
-                </td>
-                <td className="px-2 py-1.5 text-center">
-                  <input
-                    type="checkbox"
-                    checked={row.open}
-                    onChange={(e) => setScheduleField(i, "open", e.target.checked)}
-                    className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
-                  />
-                </td>
-                <td className="px-2 py-1.5 pr-4">
-                  <input
-                    type="text"
-                    value={row.note ?? ""}
-                    onChange={(e) => setScheduleField(i, "note", e.target.value)}
-                    placeholder="예: 야간진료"
-                    className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/15"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mb-4 grid gap-3 md:grid-cols-2">
+        {form.schedule.map((row, i) => (
+          <div
+            key={row.day}
+            className={`rounded-2xl border px-4 py-4 ${
+              row.open
+                ? "border-slate-200 bg-white/80"
+                : "border-slate-200 bg-slate-50/90"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
+                <div className="mt-1 text-xs text-[var(--muted)]">
+                  {row.open ? "운영 중" : "휴진"} · {row.note || "비고 없음"}
+                </div>
+              </div>
+              <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+                <input
+                  type="checkbox"
+                  checked={row.open}
+                  onChange={(e) => setScheduleField(i, "open", e.target.checked)}
+                  className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
+                />
+                운영
+              </label>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <FormField
+                label="진료 시간"
+                value={row.time}
+                onChange={(value) => setScheduleField(i, "time", value)}
+                placeholder="09:30 - 18:30"
+              />
+              <FormField
+                label="비고"
+                value={row.note ?? ""}
+                onChange={(value) => setScheduleField(i, "note", value)}
+                placeholder="예: 야간진료"
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Additional fields */}
@@ -484,8 +510,52 @@ function HoursEditor() {
 // -------------------------------------------------------------
 
 export function SettingsTab() {
+  const { data: linksData } = useAdminApi<SiteLinks>("/api/admin/site-config/links");
+  const { data: clinicData } = useAdminApi<SiteClinic>("/api/admin/site-config/clinic");
+  const { data: hoursData } = useAdminApi<SiteHours>("/api/admin/site-config/hours");
+
+  const linkConfiguredCount = linksData ? Object.values(linksData).filter(Boolean).length : 0;
+  const openDays = hoursData?.schedule.filter((row) => row.open).length ?? 0;
+
   return (
     <div className="grid gap-6">
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <AdminPill tone="white">사이트 설정 요약</AdminPill>
+              <AdminPill tone="warning">운영 정보 변경 시 즉시 반영</AdminPill>
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">사이트 전반에 쓰이는 운영 정보를 섹션별로 정리했습니다.</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              기본 병원 정보, 외부 채널 링크, 진료시간을 나눠 관리하고 필요할 때만 펼쳐 수정할 수 있습니다.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-blue-700">
+                <Globe2 className="h-3.5 w-3.5" />
+                외부 링크
+              </div>
+              <div className="mt-1 text-lg font-semibold text-blue-900">{linkConfiguredCount}/5</div>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-emerald-700">
+                <MapPinned className="h-3.5 w-3.5" />
+                대표 정보
+              </div>
+              <div className="mt-1 text-sm font-semibold text-emerald-900">{clinicData?.name ?? "확인 중..."}</div>
+            </div>
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
+                <Clock3 className="h-3.5 w-3.5" />
+                운영 요일
+              </div>
+              <div className="mt-1 text-lg font-semibold text-amber-900">주 {openDays}일</div>
+            </div>
+          </div>
+        </div>
+      </AdminSurface>
       <SnsLinksEditor />
       <ClinicInfoEditor />
       <HoursEditor />

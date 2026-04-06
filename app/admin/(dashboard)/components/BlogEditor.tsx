@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { X, Trash2, Save, Copy } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 import { BLOG_CATEGORY_SLUGS, BLOG_TAGS } from "@/lib/blog/types";
 import type {
   BlogBlock,
@@ -31,6 +32,7 @@ export interface BlogEditorData {
 
 interface BlogEditorProps {
   mode: "create" | "edit";
+  presentation?: "drawer" | "page";
   initialData?: {
     slug: string;
     title: string;
@@ -151,8 +153,15 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
 // BlogEditor component
 // -------------------------------------------------------------
 
-export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogEditorProps) {
+export default function BlogEditor({
+  mode,
+  presentation = "drawer",
+  initialData,
+  onSave,
+  onClose,
+}: BlogEditorProps) {
   const today = new Date().toISOString().slice(0, 10);
+  const isPage = presentation === "page";
   const initialCategory = normalizeBlogCategory(initialData?.category ?? "") ?? BLOG_CATEGORY_SLUGS[0];
 
   const [form, setForm] = useState<BlogEditorData>({
@@ -175,7 +184,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
 
   // List API returns metadata only — fetch full content for editing
   useEffect(() => {
-    if (mode !== "edit" || !initialData?.slug) return;
+    if (mode !== "edit" || !initialData?.slug || (initialData.blocks?.length ?? 0) > 0) return;
 
     setFetchingContent(true);
     (async () => {
@@ -293,22 +302,27 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-end"
-      role="dialog"
-      aria-modal="true"
+      className={isPage ? "space-y-6" : "fixed inset-0 z-50 flex items-stretch justify-end"}
+      role={isPage ? undefined : "dialog"}
+      aria-modal={isPage ? undefined : true}
       aria-label={mode === "create" ? "새 포스트 작성" : "포스트 수정"}
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {!isPage && (
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Panel */}
       <AdminSurface
         tone="white"
-        className="relative z-10 flex h-full w-full max-w-2xl flex-col rounded-none border-y-0 border-r-0 shadow-2xl"
+        className={`relative z-10 flex w-full flex-col overflow-hidden ${
+          isPage
+            ? "mx-auto max-w-5xl rounded-[2rem] shadow-xl shadow-slate-950/8"
+            : "h-full max-w-2xl rounded-none border-y-0 border-r-0 shadow-2xl"
+        }`}
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))] px-6 py-4 text-white">
@@ -336,7 +350,7 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 space-y-5 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] px-6 py-5">
+        <div className={`flex-1 space-y-5 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] px-6 py-5 ${isPage ? "" : "overflow-y-auto"}`}>
           {fetchingContent && (
             <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
               포스트 본문을 불러오는 중...
@@ -514,9 +528,9 @@ export default function BlogEditor({ mode, initialData, onSave, onClose }: BlogE
 
           {/* Save error */}
           {saveError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AdminNotice tone="error" className="rounded-lg">
               {saveError}
-            </div>
+            </AdminNotice>
           )}
         </div>
 

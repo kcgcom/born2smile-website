@@ -1,8 +1,9 @@
 "use client";
 
 import { type ReactNode, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { FilePenLine, Search, Sparkles } from "lucide-react";
 import type { BlogCategorySlug } from "@/lib/blog/types";
 import { getCategoryLabel, isBlogCategorySlug } from "@/lib/blog/category-slugs";
 import { useAdminApi } from "./useAdminApi";
@@ -12,6 +13,8 @@ import { DataTable } from "./DataTable";
 import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { ApiSourceBadge } from "./insight/ApiSourceBadge";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 
 // ---------------------------------------------------------------
 // Recharts keyword chart — loaded client-side only
@@ -177,6 +180,15 @@ interface SearchConsoleData {
       position: number;
     }>
   >;
+}
+
+type SearchPriorityRow =
+  | SearchConsoleData["topPages"][number]
+  | SearchConsoleData["topQueries"][number]
+  | SearchConsoleData["blogPages"][number];
+
+function hasQuery(row: SearchPriorityRow): row is SearchConsoleData["topQueries"][number] {
+  return "query" in row;
 }
 
 type TableSortKey = keyof SearchMetricRow;
@@ -613,7 +625,6 @@ function QueryPageDrilldown({
 
 export function SearchTab() {
   const router = useRouter();
-  const pathname = usePathname();
   const [period, setPeriod] = useState<"7d" | "28d" | "90d">("28d");
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
@@ -635,15 +646,15 @@ export function SearchTab() {
   };
 
   const handleEditBlog = (slug: string) => {
-    router.push(`${pathname}?tab=blog&sub=posts&edit=${encodeURIComponent(slug)}`);
+    router.push(`/admin/content/posts/${encodeURIComponent(slug)}`);
   };
 
   const handleCreateRelatedPost = (category?: string | null) => {
     if (category && isBlogCategorySlug(category)) {
-      router.push(`${pathname}?tab=blog&sub=posts&newCategory=${encodeURIComponent(category)}`);
+      router.push(`/admin/content/posts/new?category=${encodeURIComponent(category)}`);
       return;
     }
-    router.push(`${pathname}?tab=blog&sub=posts`);
+    router.push("/admin/content/posts/new");
   };
 
   const metaImprovementPages = useMemo(() => {
@@ -687,6 +698,8 @@ export function SearchTab() {
   const selectedBlogPageMetrics = selectedBlogPage
     ? data?.blogPages.find((item) => item.page === selectedBlogPage)
     : undefined;
+  const topOpportunity: SearchPriorityRow | null =
+    rewriteCandidates[0] ?? rankingOpportunityQueries[0] ?? metaImprovementPages[0] ?? null;
 
   return (
     <div className="space-y-6">
@@ -712,6 +725,74 @@ export function SearchTab() {
 
       {!loading && !error && data && (
         <>
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AdminPill tone="white">검색 성과 요약</AdminPill>
+                  <AdminPill tone={hasPriorityItems ? "warning" : "white"}>
+                    {hasPriorityItems ? "즉시 확인 필요" : "급한 항목 적음"}
+                  </AdminPill>
+                </div>
+                <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">먼저 볼 것만 위로 올렸습니다.</h2>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  검색량이 충분한데 클릭이 약한 항목, 순위를 더 올릴 여지가 있는 키워드, 반응이 약한 블로그를 우선 보여줍니다.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                  <div className="text-xs font-medium text-amber-700">메타 개선 후보</div>
+                  <div className="mt-1 text-lg font-semibold text-amber-900">{metaImprovementPages.length}건</div>
+                </div>
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+                  <div className="text-xs font-medium text-blue-700">순위 상승 여지</div>
+                  <div className="mt-1 text-lg font-semibold text-blue-900">{rankingOpportunityQueries.length}건</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                  <div className="text-xs font-medium text-emerald-700">리라이트 후보</div>
+                  <div className="mt-1 text-lg font-semibold text-emerald-900">{rewriteCandidates.length}건</div>
+                </div>
+              </div>
+            </div>
+
+            {topOpportunity && (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
+                  <span className="text-sm font-semibold text-[var(--foreground)]">가장 먼저 볼 후보</span>
+                </div>
+                <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                  {hasQuery(topOpportunity) ? topOpportunity.query : topOpportunity.page}
+                </p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  노출 {topOpportunity.impressions.toLocaleString("ko-KR")} · 클릭 {topOpportunity.clicks.toLocaleString("ko-KR")} · CTR {topOpportunity.ctr}% · 순위 {topOpportunity.position}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {"page" in topOpportunity && getEditableBlogSlug(topOpportunity.page) && (
+                    <AdminActionButton
+                      tone="dark"
+                      onClick={() => handleEditBlog(getEditableBlogSlug(topOpportunity.page)!)}
+                      className="min-h-8 px-3 py-1 text-xs"
+                    >
+                      <FilePenLine className="h-3.5 w-3.5" />
+                      이 글 수정
+                    </AdminActionButton>
+                  )}
+                  {hasQuery(topOpportunity) && (
+                    <AdminActionButton
+                      tone="dark"
+                      onClick={() => setSelectedQuery(topOpportunity.query)}
+                      className="min-h-8 px-3 py-1 text-xs"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      연결 페이지 보기
+                    </AdminActionButton>
+                  )}
+                </div>
+              </div>
+            )}
+          </AdminSurface>
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <MetricCard
               label="총 노출"
@@ -917,18 +998,12 @@ export function SearchTab() {
             )}
           </section>
 
-          <section>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                  상위 검색 키워드
-                </h3>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  키워드를 더 많이 불러오고 표 내부 스크롤로 끝까지 확인할 수 있습니다. 키워드를 클릭하면 실제로 어떤 페이지가 그 검색어로 노출되는지 바로 볼 수 있습니다.
-                </p>
-              </div>
-              <span className="text-xs text-[var(--muted)]">CTR/순위 클릭 정렬 + 내부 스크롤</span>
-            </div>
+          <AdminDisclosureSection
+            title="상위 검색 키워드"
+            description="키워드를 더 많이 불러오고, 선택한 키워드의 연결 페이지를 바로 확인할 수 있습니다."
+            countLabel={`${data.topQueries.length}개`}
+            collapsedMessage="필요할 때만 키워드 표와 드릴다운을 펼쳐 볼 수 있습니다."
+          >
             {data.topQueries.length > 0 && (
               <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
                 <KeywordBarChart data={data.topQueries} />
@@ -992,20 +1067,14 @@ export function SearchTab() {
                 onCreatePost={handleCreateRelatedPost}
               />
             )}
-          </section>
+          </AdminDisclosureSection>
 
-          <section>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                  상위 페이지별 검색 성과 (블로그 제외)
-                </h3>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  블로그를 제외한 주요 페이지만 보여줍니다. 페이지명을 클릭하면 대표 유입 키워드를 바로 확인할 수 있습니다.
-                </p>
-              </div>
-              <span className="text-xs text-[var(--muted)]">노출·CTR·순위 기준 비교</span>
-            </div>
+          <AdminDisclosureSection
+            title="상위 페이지별 검색 성과"
+            description="블로그를 제외한 주요 페이지 성과를 비교하고, 대표 유입 키워드를 바로 확인할 수 있습니다."
+            countLabel={`${data.topPages.length}개`}
+            collapsedMessage="필요할 때만 주요 페이지 표와 대표 키워드 드릴다운을 펼쳐 볼 수 있습니다."
+          >
             <DataTable
               columns={[
                 {
@@ -1061,20 +1130,15 @@ export function SearchTab() {
                 metrics={selectedTopPageMetrics}
               />
             )}
-          </section>
+          </AdminDisclosureSection>
 
-          <section>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                  블로그 포스트 검색 성과
-                </h3>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  페이지명을 클릭하면 유입 키워드를 보고, 수정 버튼으로 바로 편집할 수 있습니다.
-                </p>
-              </div>
-              <span className="text-xs text-[var(--muted)]">블로그 운영 액션 연결</span>
-            </div>
+          <AdminDisclosureSection
+            title="블로그 포스트 검색 성과"
+            description="페이지명을 클릭하면 유입 키워드를 보고, 수정 버튼으로 바로 편집할 수 있습니다."
+            countLabel={`${data.blogPages.length}개`}
+            defaultOpen={true}
+            collapsedMessage="필요할 때만 블로그 성과 표와 수정 액션을 펼쳐 볼 수 있습니다."
+          >
             <DataTable
               columns={[
                 {
@@ -1156,7 +1220,7 @@ export function SearchTab() {
                 }
               />
             )}
-          </section>
+          </AdminDisclosureSection>
         </>
       )}
     </div>

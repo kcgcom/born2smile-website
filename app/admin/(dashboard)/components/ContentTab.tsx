@@ -17,26 +17,20 @@ const SUB_TABS = [
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
-export function ContentTab({
-  editSlug,
-  newCategory,
-}: {
-  editSlug?: string | null;
-  newCategory?: string | null;
-}) {
+export function ContentTab() {
   const activeSub = useAdminSubTab(SUB_TABS, "posts");
 
   return (
     <div>
       <AdminSubTabs tabs={SUB_TABS} parentLabel="콘텐츠" parentTab="content" defaultSub="posts" />
-      {activeSub === "posts" && <PostsSubTab editSlug={editSlug} newCategory={newCategory} />}
+      {activeSub === "posts" && <PostsSubTab />}
       {activeSub === "schedule" && <ContentScheduleManager />}
       {activeSub === "stats" && <StatsSubTab />}
     </div>
   );
 }
 
-function ContentScheduleManager() {
+export function ContentScheduleManager() {
   const today = getTodayKST();
   const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { data: postsData } = useAdminApi<Array<{ slug: string; title: string; date: string; published: boolean }>>("/api/admin/blog-posts");

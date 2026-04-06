@@ -1,34 +1,32 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Pencil, Trash2, Plus, Calendar, RefreshCw, Sparkles } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Plus, Calendar, RefreshCw, Sparkles } from "lucide-react";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
-import { getAdminPreviewUrl, getBlogPostUrl, getCategoryFromSlug, getCategoryLabel } from "@/lib/blog/category-slugs";
+import { getAdminPreviewUrl, getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { StatCard } from "../StatCard";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
-import BlogEditor from "../BlogEditor";
-import type { BlogEditorData } from "../BlogEditor";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 import { calcDraftRecommendationOrder, HeartIcon } from "./blog-helpers";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
 import { AiWriteModal } from "./AiWriteModal";
+import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
 
 // -------------------------------------------------------------
 // PostsSubTab
 // -------------------------------------------------------------
 
-interface PostsSubTabProps {
-  editSlug?: string | null;
-  newCategory?: string | null;
-}
-
-export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
+export function PostsSubTab() {
+  const router = useRouter();
   const today = getTodayKST();
 
   const {
@@ -56,6 +54,8 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
   // statusFilter 변경 시 sortKey도 연동
   const handleStatusFilterChange = (next: StatusFilter) => {
@@ -73,10 +73,7 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
   );
 
   // CRUD state
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
   const [aiWriteOpen, setAiWriteOpen] = useState(false);
-  const [draftData, setDraftData] = useState<BlogEditorData | null>(null);
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
@@ -92,36 +89,6 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // 딥링크: ?edit=slug 파라미터로 특정 포스트 편집 모드 자동 진입
-  const deepLinkProcessed = useRef(false);
-  useEffect(() => {
-    if (!editSlug || postsLoading || deepLinkProcessed.current) return;
-    const target = posts.find((p) => p.slug === editSlug);
-    if (target) {
-      deepLinkProcessed.current = true;
-      const timer = setTimeout(() => {
-        setEditingPost(target);
-        setEditorOpen(true);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [editSlug, posts, postsLoading]);
-
-  // 딥링크: ?newCategory=slug 파라미터로 해당 카테고리의 새 포스트 편집기 자동 진입
-  const newCategoryProcessed = useRef(false);
-  useEffect(() => {
-    if (!newCategory || newCategoryProcessed.current) return;
-    const categoryValue = getCategoryFromSlug(newCategory);
-    if (categoryValue) {
-      newCategoryProcessed.current = true;
-      const timer = setTimeout(() => {
-        setEditingPost(null);
-        setEditorOpen(true);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [newCategory]);
 
   // Computed blog stats from API data (single pass)
   const blogStats = useMemo(() => {
@@ -193,17 +160,16 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
     return map;
   }, [filteredPosts, sortKey]);
+  const topDraft = filteredPosts.find((post) => !post.published) ?? null;
 
   // CRUD handlers
   const handleCreate = () => {
-    setDraftData(null);
-    setEditingPost(null);
-    setEditorOpen(true);
+    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
+    router.push("/admin/content/posts/new");
   };
 
   const handleEdit = (post: AdminBlogPost) => {
-    setEditingPost(post);
-    setEditorOpen(true);
+    router.push(`/admin/content/posts/${post.slug}`);
   };
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -277,25 +243,6 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
     }
   };
 
-  const handleEditorSave = async (data: BlogEditorData): Promise<{ error: string | null }> => {
-    if (editingPost) {
-      const { error } = await mutate(`/api/admin/blog-posts/${editingPost.slug}`, "PUT", data);
-      if (!error) {
-        setEditorOpen(false);
-        refetchPosts();
-      }
-      return { error };
-    } else {
-      const { error } = await mutate("/api/admin/blog-posts", "POST", data);
-      if (!error) {
-        setDraftData(null);
-        setEditorOpen(false);
-        refetchPosts();
-      }
-      return { error };
-    }
-  };
-
   const handleReschedule = async (slug: string, newDate: string) => {
     if (!newDate) return;
     setRescheduling(true);
@@ -314,11 +261,22 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Top action bar */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-[var(--foreground)]">블로그 관리</h2>
-        <div className="flex items-center gap-2">
-          <button
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <AdminPill tone="white">포스트 관리</AdminPill>
+              <AdminPill tone={blogStats.draft > 0 ? "warning" : "white"}>
+                {blogStats.draft > 0 ? "초안 우선 정리 필요" : "운영 안정"}
+              </AdminPill>
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">새 글 작성과 기존 글 정리를 한 화면에서 관리합니다.</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              초안, 예약, 발행 상태를 먼저 보고 필요한 액션만 바로 실행할 수 있도록 정리했습니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
             onClick={handleRefreshCache}
             disabled={refreshing}
             title="캐시 새로고침 (Supabase 직접 수정 후 사용)"
@@ -341,8 +299,32 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
             <Plus className="h-4 w-4" />
             새 포스트 작성
           </button>
+          </div>
         </div>
-      </div>
+
+        {topDraft && (
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
+              <span className="text-sm font-semibold text-[var(--foreground)]">먼저 볼 초안</span>
+            </div>
+            <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{topDraft.title}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              카테고리 {getCategoryLabel(topDraft.category)} · 작성일 {topDraft.date || "미정"} · 추천순 상단
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <AdminActionButton tone="dark" onClick={() => handleEdit(topDraft)} className="min-h-8 px-3 py-1 text-xs">
+                <Pencil className="h-3.5 w-3.5" />
+                초안 열기
+              </AdminActionButton>
+              <AdminActionButton tone="dark" onClick={() => handlePublishOpen(topDraft.slug)} className="min-h-8 px-3 py-1 text-xs">
+                <Calendar className="h-3.5 w-3.5" />
+                발행 예약
+              </AdminActionButton>
+            </div>
+          </div>
+        )}
+      </AdminSurface>
 
       {/* Posts loading / error */}
       {postsLoading && <AdminLoadingSkeleton variant="table" />}
@@ -350,10 +332,10 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
         <AdminErrorState message={postsError} onRetry={refetchPosts} />
       )}
       {deleteError && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600" role="alert">
+        <AdminNotice tone="error">
           삭제 실패: {deleteError}
           <button onClick={() => setDeleteError(null)} className="ml-2 font-medium underline">닫기</button>
-        </div>
+        </AdminNotice>
       )}
 
       {!postsLoading && !postsError && (
@@ -368,7 +350,22 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
 
           {/* Search & Filter bar */}
           <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">목록 필터</h3>
+                <p className="mt-1 text-xs text-[var(--muted)]">필요할 때만 상세 필터를 펼쳐 목록 범위를 줄일 수 있습니다.</p>
+              </div>
+              <AdminActionButton
+                tone="dark"
+                onClick={() => setFiltersOpen((current) => !current)}
+                className="min-h-8 px-3 py-1 text-xs"
+              >
+                {filtersOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {filtersOpen ? "필터 접기" : "필터 열기"}
+              </AdminActionButton>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               {/* Text search */}
               <input
                 type="search"
@@ -378,48 +375,53 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                 className="h-9 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 min-w-[160px]"
               />
 
-              {/* Category dropdown */}
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as BlogCategoryFilter)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-              >
-                <option value="all">전체 카테고리</option>
-                {BLOG_CATEGORY_SLUGS.map((cat) => (
-                  <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
-                ))}
-              </select>
-
-              {/* Status filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => handleStatusFilterChange(e.target.value as StatusFilter)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-              >
-                <option value="all">전체 상태</option>
-                <option value="published">발행</option>
-                <option value="scheduled">예약</option>
-                <option value="draft">초안</option>
-              </select>
-
-              {/* Sort */}
-              <select
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-              >
-                <option value="newest">최신순</option>
-                <option value="oldest">오래된순</option>
-                <option value="likes">좋아요순</option>
-                {statusFilter === "draft" && (
-                  <option value="recommended">추천순</option>
-                )}
-              </select>
             </div>
+
+            {filtersOpen && (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                {/* Category dropdown */}
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as BlogCategoryFilter)}
+                  className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  <option value="all">전체 카테고리</option>
+                  {BLOG_CATEGORY_SLUGS.map((cat) => (
+                    <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
+                  ))}
+                </select>
+
+                {/* Status filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => handleStatusFilterChange(e.target.value as StatusFilter)}
+                  className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  <option value="all">전체 상태</option>
+                  <option value="published">발행</option>
+                  <option value="scheduled">예약</option>
+                  <option value="draft">초안</option>
+                </select>
+
+                {/* Sort */}
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  <option value="newest">최신순</option>
+                  <option value="oldest">오래된순</option>
+                  <option value="likes">좋아요순</option>
+                  {statusFilter === "draft" && (
+                    <option value="recommended">추천순</option>
+                  )}
+                </select>
+              </div>
+            )}
 
             {/* Results count */}
             <p className="mt-3 text-xs text-[var(--muted)]">
-              {filteredPosts.length}개 포스트
+              {filteredPosts.length}개 포스트 · 상태 {statusFilter === "all" ? "전체" : statusFilter} · 정렬 {sortKey}
             </p>
           </section>
 
@@ -456,129 +458,166 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700";
                   const draftRank = draftRankMap?.get(post.slug) ?? null;
+                  const expanded = expandedSlug === post.slug;
 
                   return (
                     <li
                       key={post.slug}
-                      className={`flex flex-col gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm${isDraft ? " border-l-4 border-l-amber-400" : dDay !== null ? " border-l-4 border-l-blue-400" : ""}`}
+                      className={`flex flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm${isDraft ? " border-l-4 border-l-amber-400" : dDay !== null ? " border-l-4 border-l-blue-400" : ""}`}
                     >
-                      {/* Row 1: Category + Title + Status */}
-                      <div className="flex items-center gap-2">
-                        <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                          {getCategoryLabel(post.category)}
-                        </span>
-                        {isDraft ? (
-                          <a
-                            href={getAdminPreviewUrl(post.slug, post.category)}
-                            target="_blank"
-                            rel="noopener"
-                            className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-amber-600 hover:underline"
-                            title="초안 미리보기"
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
+                              {getCategoryLabel(post.category)}
+                            </span>
+                            <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                            {draftRank !== null && (
+                              <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                추천 #{draftRank}
+                              </span>
+                            )}
+                          </div>
+                          {isDraft ? (
+                            <a
+                              href={getAdminPreviewUrl(post.slug, post.category)}
+                              target="_blank"
+                              rel="noopener"
+                              className="mt-2 block truncate font-medium text-[var(--foreground)] hover:text-amber-600 hover:underline"
+                              title="초안 미리보기"
+                            >
+                              {post.title}
+                            </a>
+                          ) : (
+                            <a
+                              href={getBlogPostUrl(post.slug, post.category)}
+                              target="_blank"
+                              rel="noopener"
+                              className="mt-2 block truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                            >
+                              {post.title}
+                            </a>
+                          )}
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
+                            <span>{isDraft ? "미정" : post.date}</span>
+                            {dDay !== null && <span className="font-medium text-amber-600">D-{dDay}</span>}
+                            <span className="flex items-center gap-1">
+                              <HeartIcon />
+                              {likesLoading ? "..." : likeCount}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {!expanded && (
+                            <button
+                              onClick={() => handleEdit(post)}
+                              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                              aria-label={`${post.title} 수정`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              수정
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setExpandedSlug((current) => current === post.slug ? null : post.slug)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)] transition-colors"
                           >
-                            {post.title}
-                          </a>
-                        ) : (
-                          <a
-                            href={getBlogPostUrl(post.slug, post.category)}
-                            target="_blank"
-                            rel="noopener"
-                            className="min-w-0 flex-1 truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                          >
-                            {post.title}
-                          </a>
-                        )}
-                        <span
-                          className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${statusClass}`}
-                        >
-                          {statusLabel}
-                        </span>
+                            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            {expanded ? "접기" : "상세"}
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Row 2: Date/meta + CRUD buttons */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
-                          {draftRank !== null && (
-                            <span className="font-semibold text-amber-600">#{draftRank}</span>
+                      {expanded && (
+                        <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-3">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
+                            <span>슬러그: {post.slug}</span>
+                            <span>읽기 시간: {post.readTime}</span>
+                            {post.dateModified && <span>수정일: {post.dateModified}</span>}
+                          </div>
+                          <p className="mt-3 text-sm text-[var(--foreground)]">{post.subtitle}</p>
+                          <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{post.excerpt}</p>
+                          {post.tags.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {post.tags.map((tag) => (
+                                <span key={`${post.slug}-${tag}`} className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                          {dDay !== null && editingDateSlug === post.slug ? (
-                            <input
-                              type="date"
-                              value={editingDateValue}
-                              min={today}
-                              onChange={(e) => setEditingDateValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") void handleReschedule(post.slug, editingDateValue);
-                                if (e.key === "Escape") setEditingDateSlug(null);
-                              }}
-                              autoFocus
-                              className="rounded border border-blue-300 px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                            />
-                          ) : (
-                            <span
-                              className={dDay !== null ? "cursor-pointer underline decoration-dotted hover:text-blue-500" : ""}
-                              onClick={dDay !== null ? () => { setEditingDateSlug(post.slug); setEditingDateValue(post.date); } : undefined}
-                              title={dDay !== null ? "클릭하여 발행일 변경" : undefined}
-                            >
-                              {isDraft ? "미정" : post.date}
-                            </span>
-                          )}
-                          {dDay !== null && (
-                            <span className="font-medium text-amber-600">D-{dDay}</span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <HeartIcon />
-                            {likesLoading ? "..." : likeCount}
-                          </span>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          {editingDateSlug === post.slug ? (
-                            <>
-                              <button
-                                onClick={() => void handleReschedule(post.slug, editingDateValue)}
-                                disabled={rescheduling}
-                                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                              >
-                                저장
-                              </button>
-                              <button
-                                onClick={() => setEditingDateSlug(null)}
-                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)] transition-colors"
-                              >
-                                취소
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {isDraft && (
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            {editingDateSlug === post.slug ? (
+                              <>
+                                <input
+                                  type="date"
+                                  value={editingDateValue}
+                                  min={today}
+                                  onChange={(e) => setEditingDateValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") void handleReschedule(post.slug, editingDateValue);
+                                    if (e.key === "Escape") setEditingDateSlug(null);
+                                  }}
+                                  autoFocus
+                                  className="rounded border border-blue-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                />
                                 <button
-                                  onClick={() => handlePublishOpen(post.slug)}
-                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
-                                  aria-label={`${post.title} 발행`}
+                                  onClick={() => void handleReschedule(post.slug, editingDateValue)}
+                                  disabled={rescheduling}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
                                 >
-                                  <Calendar className="h-3.5 w-3.5" />
-                                  발행
+                                  저장
                                 </button>
-                              )}
-                              <button
-                                onClick={() => handleEdit(post)}
-                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
-                                aria-label={`${post.title} 수정`}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDelete(post.slug)}
-                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
-                                aria-label={`${post.title} 삭제`}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                삭제
-                              </button>
-                            </>
-                          )}
+                                <button
+                                  onClick={() => setEditingDateSlug(null)}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)] transition-colors"
+                                >
+                                  취소
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                {dDay !== null && (
+                                  <button
+                                    onClick={() => { setEditingDateSlug(post.slug); setEditingDateValue(post.date); }}
+                                    className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 transition-colors"
+                                  >
+                                    발행일 변경
+                                  </button>
+                                )}
+                                {isDraft && (
+                                  <button
+                                    onClick={() => handlePublishOpen(post.slug)}
+                                    className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+                                    aria-label={`${post.title} 발행`}
+                                  >
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    발행
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleEdit(post)}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-blue-50 hover:text-[var(--color-primary)] transition-colors"
+                                  aria-label={`${post.title} 수정`}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  수정
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(post.slug)}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                                  aria-label={`${post.title} 삭제`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  삭제
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </li>
                   );
                 })}
@@ -613,50 +652,9 @@ export function PostsSubTab({ editSlug, newCategory }: PostsSubTabProps) {
         <AiWriteModal
           onClose={() => setAiWriteOpen(false)}
           onDraftReady={(data) => {
-            setDraftData(data);
-            setEditingPost(null);
+            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(data));
             setAiWriteOpen(false);
-            setEditorOpen(true);
-          }}
-        />
-      )}
-
-      {/* Blog editor modal */}
-      {editorOpen && (
-        <BlogEditor
-          mode={editingPost ? "edit" : "create"}
-          initialData={
-            editingPost
-              ? {
-                  slug: editingPost.slug,
-                  title: editingPost.title,
-                  subtitle: editingPost.subtitle,
-                  excerpt: editingPost.excerpt,
-                  category: editingPost.category,
-                  tags: editingPost.tags,
-                  date: editingPost.date,
-                  blocks: [], // fetched inside BlogEditor via API
-                  published: editingPost.published,
-                }
-              : draftData
-              ? draftData
-              : !editingPost && newCategory && getCategoryFromSlug(newCategory)
-              ? {
-                  slug: "",
-                  title: "",
-                  subtitle: "",
-                  excerpt: "",
-                  category: getCategoryFromSlug(newCategory) as string,
-                  tags: [],
-                  date: today,
-                  blocks: [],
-                }
-              : undefined
-          }
-          onSave={handleEditorSave}
-          onClose={() => {
-            if (!editingPost) setDraftData(null);
-            setEditorOpen(false);
+            router.push("/admin/content/posts/new?draft=1");
           }}
         />
       )}

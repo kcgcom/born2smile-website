@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Check, X } from "lucide-react";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 
 export type PublishMode = "immediate" | "schedule" | "custom";
 
@@ -133,9 +134,9 @@ export function PublishPopup({
         </fieldset>
 
         {error && (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          <AdminNotice tone="error" className="mb-3 rounded-lg">
             {error}
-          </p>
+          </AdminNotice>
         )}
 
         <div className="flex items-center justify-end gap-3">

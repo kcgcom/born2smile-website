@@ -47,7 +47,7 @@ interface SiteLinks {
 export function DashboardTab({
   navigateTo,
 }: {
-  navigateTo: (tab: string, sub?: string) => void;
+  navigateTo: (href: string) => void;
 }) {
   const today = getTodayKST();
   const { data: analyticsData, loading: analyticsLoading } = useAdminApi<AnalyticsData>("/api/admin/analytics?period=7d");
@@ -86,8 +86,7 @@ export function DashboardTab({
           icon: CalendarClock,
           title: `예약 발행 ${blogStats.scheduled}건 점검`,
           description: "이번 주에 공개될 포스트의 제목, 날짜, 최종 문안을 확인하세요.",
-          tab: "content",
-          sub: "schedule",
+          href: "/admin/content/schedule",
         }
       : null,
     blogStats.draft > 0
@@ -96,8 +95,7 @@ export function DashboardTab({
           icon: FilePenLine,
           title: `초안 ${blogStats.draft}건 정리`,
           description: "초안 중 우선 발행할 글을 고르고 예약 발행까지 이어가세요.",
-          tab: "content",
-          sub: "posts",
+          href: "/admin/content/posts",
         }
       : null,
     metaCandidates > 0 || rewriteCandidates > 0
@@ -106,8 +104,7 @@ export function DashboardTab({
           icon: Search,
           title: `검색 개선 후보 ${metaCandidates + rewriteCandidates}건`,
           description: "CTR이 낮거나 순위 상승 여지가 있는 페이지를 먼저 보강하세요.",
-          tab: "seo",
-          sub: "search",
+          href: "/admin/growth/search",
         }
       : null,
     missingLinks > 0
@@ -116,7 +113,7 @@ export function DashboardTab({
           icon: Settings2,
           title: `외부 채널 링크 ${missingLinks}건 미설정`,
           description: "카카오톡, 인스타그램, 지도 링크를 채워 전환 동선을 완성하세요.",
-          tab: "settings",
+          href: "/admin/system/settings",
         }
       : null,
     conversionData && !conversionData.configured
@@ -125,7 +122,7 @@ export function DashboardTab({
           icon: Wrench,
           title: "전환 리포트 설정 필요",
           description: "PostHog 설정을 마치면 CTA/전화 전환 성과를 바로 볼 수 있습니다.",
-          tab: "conversion",
+          href: "/admin/growth/conversion",
         }
       : null,
   ].filter(Boolean) as Array<{
@@ -133,8 +130,7 @@ export function DashboardTab({
     icon: typeof CalendarClock;
     title: string;
     description: string;
-    tab: string;
-    sub?: string;
+    href: string;
   }>;
 
   return (
@@ -149,8 +145,8 @@ export function DashboardTab({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <AdminActionButton tone="ghost" onClick={() => navigateTo("content", "schedule")}>예약 발행 보기</AdminActionButton>
-            <AdminActionLink tone="ghost" href="/admin?tab=content&sub=posts">콘텐츠 관리 열기</AdminActionLink>
+            <AdminActionButton tone="ghost" onClick={() => navigateTo("/admin/content/schedule")}>예약 발행 보기</AdminActionButton>
+            <AdminActionLink tone="ghost" href="/admin/content/posts">콘텐츠 관리 열기</AdminActionLink>
           </div>
         </div>
       </AdminSurface>
@@ -206,7 +202,7 @@ export function DashboardTab({
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => navigateTo(item.tab, item.sub)}
+                    onClick={() => navigateTo(item.href)}
                     className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-white"
                   >
                     <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
@@ -239,8 +235,8 @@ export function DashboardTab({
               <MiniStat label="발행" value={blogStats.published} tone="slate" loading={postsLoading} />
             </div>
             <div className="mt-4 flex gap-2">
-              <AdminActionButton tone="dark" onClick={() => navigateTo("content", "posts")} className="flex-1">포스트 관리</AdminActionButton>
-              <AdminActionButton tone="dark" onClick={() => navigateTo("content", "schedule")} className="flex-1">발행 일정</AdminActionButton>
+              <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/content/posts")} className="flex-1">포스트 관리</AdminActionButton>
+              <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/content/schedule")} className="flex-1">발행 일정</AdminActionButton>
             </div>
           </AdminSurface>
 
@@ -253,8 +249,8 @@ export function DashboardTab({
               외부 링크 미설정 {linksLoading ? "확인 중" : `${missingLinks}건`} · 설정이 완료되면 푸터와 상담 동선에서 바로 반영됩니다.
             </p>
             <div className="mt-4 flex gap-2">
-              <AdminActionButton tone="dark" onClick={() => navigateTo("settings")} className="flex-1">사이트 설정</AdminActionButton>
-              <AdminActionLink tone="dark" href="/admin?tab=conversion" className="flex-1">전환 리포트</AdminActionLink>
+              <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/system/settings")} className="flex-1">사이트 설정</AdminActionButton>
+              <AdminActionLink tone="dark" href="/admin/growth/conversion" className="flex-1">전환 리포트</AdminActionLink>
             </div>
           </AdminSurface>
 
