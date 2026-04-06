@@ -8,6 +8,7 @@ const CACHE_TAG_CLINIC = "site-config-clinic";
 const CACHE_TAG_HOURS = "site-config-hours";
 const CACHE_TAG_SCHEDULE = "site-config-schedule";
 const CACHE_TTL = 3600; // 1 hour
+const SITE_LINK_KEYS = ["kakaoChannel", "instagram", "naverBlog", "naverMap", "kakaoMap"] as const;
 
 function safeRevalidateTag(tag: string) {
   try {
@@ -24,6 +25,18 @@ function stripLegacyClinicContactFields(
   delete (next as Partial<SiteClinic & Partial<ClinicContactFields>>).phoneIntl;
   delete (next as Partial<SiteClinic & Partial<ClinicContactFields>>).phoneHref;
   return next;
+}
+
+function pickSiteLinks(data: Record<string, unknown> | null | undefined): Partial<SiteLinks> {
+  if (!data) return {};
+
+  return SITE_LINK_KEYS.reduce<Partial<SiteLinks>>((acc, key) => {
+    const value = data[key];
+    if (typeof value === "string") {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
 }
 
 // =============================================================
@@ -76,7 +89,7 @@ export const getSiteLinks = unstable_cache(
       .eq("type", "links")
       .single();
     if (!row?.data) return defaults;
-    return { ...defaults, ...(row.data as Partial<SiteLinks>) };
+    return { ...defaults, ...pickSiteLinks(row.data as Record<string, unknown>) };
   },
   [CACHE_TAG_LINKS],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS] },
@@ -138,7 +151,11 @@ export async function updateSiteLinks(
     .select("data")
     .eq("type", "links")
     .single();
-  const merged = { ...(current?.data ?? {}), ...data };
+  const merged = {
+    ...LINKS,
+    ...pickSiteLinks((current?.data ?? {}) as Record<string, unknown>),
+    ...pickSiteLinks(data as Record<string, unknown>),
+  };
   await admin
     .from(TABLE)
     .upsert({

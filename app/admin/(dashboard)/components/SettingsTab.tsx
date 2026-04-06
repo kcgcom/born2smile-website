@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, type ReactNode } from "react";
-import { Save, Loader2, Check, ChevronDown, ChevronUp, Clock3, Globe2, MapPinned } from "lucide-react";
+import { Save, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "./useAdminApi";
@@ -29,6 +29,14 @@ const QUICK_LINKS = [
     icon: "star" as const,
   },
 ] as const;
+
+const SITE_LINK_FIELDS = [
+  "kakaoChannel",
+  "instagram",
+  "naverBlog",
+  "naverMap",
+  "kakaoMap",
+] as const satisfies ReadonlyArray<keyof SiteLinks>;
 
 type IconType = "search" | "chart" | "database" | "code" | "map" | "star";
 
@@ -205,7 +213,7 @@ function SnsLinksEditor() {
     <SectionShell
       title="SNS 링크"
       description="외부 채널, 지도, 블로그 링크를 최신 상태로 유지합니다."
-      summary={`입력 완료 ${Object.values(form).filter(Boolean).length}/${Object.keys(form).length}`}
+      summary={`입력 완료 ${SITE_LINK_FIELDS.filter((key) => Boolean(form[key])).length}/${SITE_LINK_FIELDS.length}`}
       saving={saving}
       saved={saved}
       onSave={handleSave}
@@ -502,52 +510,8 @@ function HoursEditor() {
 // -------------------------------------------------------------
 
 export function SettingsTab() {
-  const { data: linksData } = useAdminApi<SiteLinks>("/api/admin/site-config/links");
-  const { data: clinicData } = useAdminApi<SiteClinic>("/api/admin/site-config/clinic");
-  const { data: hoursData } = useAdminApi<SiteHours>("/api/admin/site-config/hours");
-
-  const linkConfiguredCount = linksData ? Object.values(linksData).filter(Boolean).length : 0;
-  const openDays = hoursData?.schedule.filter((row) => row.open).length ?? 0;
-
   return (
     <div className="grid gap-6">
-      <AdminSurface tone="white" className="rounded-3xl p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <AdminPill tone="white">사이트 설정 요약</AdminPill>
-              <AdminPill tone="warning">운영 정보 변경 시 즉시 반영</AdminPill>
-            </div>
-            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">사이트 전반에 쓰이는 운영 정보를 섹션별로 정리했습니다.</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              기본 병원 정보, 외부 채널 링크, 진료시간을 나눠 관리하고 필요할 때만 펼쳐 수정할 수 있습니다.
-            </p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[360px]">
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-blue-700">
-                <Globe2 className="h-3.5 w-3.5" />
-                외부 링크
-              </div>
-              <div className="mt-1 text-lg font-semibold text-blue-900">{linkConfiguredCount}/5</div>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-700">
-                <MapPinned className="h-3.5 w-3.5" />
-                대표 정보
-              </div>
-              <div className="mt-1 text-sm font-semibold text-emerald-900">{clinicData?.name ?? "확인 중..."}</div>
-            </div>
-            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
-                <Clock3 className="h-3.5 w-3.5" />
-                운영 요일
-              </div>
-              <div className="mt-1 text-lg font-semibold text-amber-900">주 {openDays}일</div>
-            </div>
-          </div>
-        </div>
-      </AdminSurface>
       <SnsLinksEditor />
       <ClinicInfoEditor />
       <HoursEditor />
