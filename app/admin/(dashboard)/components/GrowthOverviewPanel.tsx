@@ -4,6 +4,7 @@ import { Bot, MousePointerClick, Search, TrendingUp } from "lucide-react";
 import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { MetricCard } from "@/app/admin/(dashboard)/components/MetricCard";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
+import type { AiOpsSuggestionListItem } from "@/lib/admin-ai-ops-types";
 
 interface SearchConsoleData {
   summary: {
@@ -21,16 +22,12 @@ interface ConversionData {
   };
 }
 
-interface SuggestionData {
-  items: Array<{ status: string }>;
-}
-
 export function GrowthOverviewPanel() {
   const { data: searchData, loading: searchLoading } = useAdminApi<SearchConsoleData>("/api/admin/search-console?period=28d");
   const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>("/api/admin/posthog/conversion?period=7d");
-  const { data: suggestionData, loading: suggestionLoading } = useAdminApi<SuggestionData>("/api/admin/ai-ops/suggestions?limit=20");
+  const { data: suggestionData, loading: suggestionLoading } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=20");
 
-  const pendingSuggestions = suggestionData?.items.filter((item) => item.status === "pending").length ?? 0;
+  const pendingSuggestions = suggestionData?.filter((item) => item.status === "draft").length ?? 0;
 
   return (
     <div className="space-y-6">
