@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, Check, Save } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { categoryColors } from "@/lib/blog/category-colors";
 import type { BlogCategorySlug } from "@/lib/blog/types";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
-import { useAdminApi, useAdminMutation } from "../useAdminApi";
+import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
+import { useAdminApi } from "../useAdminApi";
 import { DataTable } from "../DataTable";
 import { CATEGORY_HEX, HeartIcon } from "./blog-helpers";
 import type { AdminBlogPost, BlogLikesData } from "./blog-helpers";
@@ -77,108 +78,6 @@ const CategoryPieChart = dynamic(
 );
 
 // -------------------------------------------------------------
-// Publish Schedule Editor
-// -------------------------------------------------------------
-
-const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
-function ScheduleEditor() {
-  const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>(
-    "/api/admin/site-config/schedule",
-  );
-  const { mutate, loading: saving } = useAdminMutation();
-  const [formEdits, setFormEdits] = useState<number[] | null>(null);
-  const [saved, setSaved] = useState(false);
-
-  const days = formEdits ?? data?.publishDays ?? [1, 3, 5];
-
-  const toggleDay = (day: number) => {
-    setFormEdits((prev) => {
-      const current = prev ?? data?.publishDays ?? [1, 3, 5];
-      if (current.includes(day)) {
-        if (current.length <= 1) return current;
-        return current.filter((d) => d !== day);
-      }
-      return [...current, day].sort((a, b) => a - b);
-    });
-  };
-
-  const handleSave = async () => {
-    const { error } = await mutate(
-      "/api/admin/site-config/schedule",
-      "PUT",
-      { publishDays: days },
-    );
-    if (!error) {
-      setFormEdits(null);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-      refetch();
-    }
-  };
-
-  if (loading) {
-    return (
-      <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-        <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>불러오는 중...</span>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="rounded-xl bg-[var(--surface)] p-6 shadow-sm">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-[var(--foreground)]">발행 스케줄</h3>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            블로그 포스트 발행 요일을 설정합니다. 발행 시 추천 날짜 계산에 사용됩니다.
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
-        >
-          {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : saved ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
-        </button>
-      </div>
-      <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
-        {DAY_LABELS.map((label, idx) => {
-          const selected = days.includes(idx);
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => toggleDay(idx)}
-              className={`flex h-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
-                selected
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                  : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      <p className="mt-3 text-xs text-[var(--muted)]">
-        선택된 요일: {days.length === 0 ? "없음" : days.map((d) => DAY_LABELS[d]).join(", ")} (주 {days.length}회)
-      </p>
-    </section>
-  );
-}
-
-// -------------------------------------------------------------
 // StatsSubTab
 // -------------------------------------------------------------
 
@@ -238,6 +137,21 @@ export function StatsSubTab() {
 
   return (
     <div className="space-y-6">
+      <AdminSurface tone="white" className="rounded-3xl p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-bold text-[var(--foreground)]">통계</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              정책 편집은 일정 탭에서 하고, 여기서는 성과만 봅니다.
+            </p>
+          </div>
+          <AdminActionLink tone="dark" href="/admin/content/schedule" className="sm:self-start">
+            <CalendarDays className="h-4 w-4" />
+            일정 열기
+          </AdminActionLink>
+        </div>
+      </AdminSurface>
+
       {/* Category distribution — side by side */}
       <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
@@ -342,8 +256,6 @@ export function StatsSubTab() {
         )}
       </section>
 
-      {/* Publish schedule editor */}
-      <ScheduleEditor />
     </div>
   );
 }

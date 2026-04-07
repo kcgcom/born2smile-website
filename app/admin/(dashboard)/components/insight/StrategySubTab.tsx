@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, FileQuestion, Lightbulb, NotebookPen, Sparkles, Target, Wrench } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
-import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import type { KeywordCategorySlug, SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
 import { DataTable } from "../DataTable";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -13,191 +12,18 @@ import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { BusinessValueBadge, CategoryBadge, GapScoreBadge, PriorityBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { BlogBriefItem, ContentGapItem, FaqSuggestionItem, InsightActionItem, OverviewData, PageBriefItem, PageUpdateOpportunityItem } from "./shared";
-import type { SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { BLOG_EDITOR_PREFILL_KEY, PAGE_BRIEF_WORKNOTE_KEY } from "../blog/blog-editor-draft";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
-
-// ---------------------------------------------------------------
-// Opportunity Scatter Chart
-// ---------------------------------------------------------------
-
-const CATEGORY_SCATTER_COLORS: Record<KeywordCategorySlug, string> = {
-  implant: "#2563EB",
-  orthodontics: "#C9962B",
-  prosthetics: "#16A34A",
-  restorative: "#9333EA",
-  prevention: "#0891B2",
-  pediatric: "#DC2626",
-  "health-tips": "#EA580C",
-  "dental-choice": "#D946EF",
-};
-
-interface ScatterPoint {
-  subGroup: string;
-  category: KeywordCategorySlug;
-  slug: KeywordCategorySlug;
-  x: number;
-  y: number;
-  z: number;
-  searchIntent?: SearchIntent;
-}
-
-const OpportunityScatter = dynamic(
-  () =>
-    import("recharts").then((mod) => {
-      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick: (slug: KeywordCategorySlug) => void }) {
-        if (data.length === 0) {
-          return (
-            <p className="py-8 text-center text-sm text-[var(--muted)]">
-              검색량 데이터가 있는 항목이 없습니다
-            </p>
-          );
-        }
-
-        const categories = [...new Set(data.map((d) => d.category))] as KeywordCategorySlug[];
-
-        return (
-          <div>
-            <mod.ResponsiveContainer width="100%" height={360}>
-              <mod.ScatterChart margin={{ top: 12, right: 20, bottom: 20, left: 4 }}>
-                <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <mod.XAxis
-                  type="number"
-                  dataKey="x"
-                  name="검색량"
-                  scale="log"
-                  domain={["auto", "auto"]}
-                  tick={{ fontSize: 11, fill: "#6B7280" }}
-                  label={{ value: "월 검색량", position: "bottom", offset: 4, fontSize: 11, fill: "#6B7280" }}
-                />
-                <mod.YAxis
-                  type="number"
-                  dataKey="y"
-                  name="포스트 수"
-                  tick={{ fontSize: 11, fill: "#6B7280" }}
-                  label={{ value: "포스트 수", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
-                />
-                <mod.ZAxis type="number" dataKey="z" range={[60, 400]} />
-                <mod.Tooltip
-                  cursor={{ strokeDasharray: "3 3" }}
-                  content={({ payload }) => {
-                    if (!payload || payload.length === 0) return null;
-                    const d = payload[0].payload as ScatterPoint;
-                    const intentStyles: Record<SearchIntent, { label: string; className: string }> = {
-                      informational: { label: "정보형", className: "bg-blue-100 text-blue-700" },
-                      commercial:    { label: "비교/검토", className: "bg-orange-100 text-orange-700" },
-                      transactional: { label: "전환형", className: "bg-green-100 text-green-700" },
-                      navigational:  { label: "탐색형", className: "bg-gray-100 text-gray-600" },
-                    };
-                    const intentStyle = d.searchIntent ? intentStyles[d.searchIntent] : null;
-                    return (
-                      <div className="rounded-lg border border-[var(--border)] bg-white p-2 shadow text-xs">
-                        <p className="font-semibold">{d.subGroup}</p>
-                        <p className="text-[var(--muted)]">{d.category}</p>
-                        {intentStyle && (
-                          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${intentStyle.className}`}>
-                            {intentStyle.label}
-                          </span>
-                        )}
-                        <p>검색량: {d.x.toLocaleString("ko-KR")}/월</p>
-                        <p>포스트: {d.y}개</p>
-                        <p>갭 점수: {d.z.toFixed(0)}</p>
-                      </div>
-                    );
-                  }}
-                />
-                {categories.map((cat) => (
-                  <mod.Scatter
-                    key={cat}
-                    name={cat}
-                    data={data.filter((d) => d.category === cat)}
-                    fill={CATEGORY_SCATTER_COLORS[cat] ?? "#6B7280"}
-                    fillOpacity={0.7}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(point: any) => {
-                      if (point?.slug) onPointClick(point.slug);
-                    }}
-                    cursor="pointer"
-                  />
-                ))}
-                <mod.Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-              </mod.ScatterChart>
-            </mod.ResponsiveContainer>
-            <p className="mt-2 text-center text-xs text-[var(--muted)]">
-              우측 하단(검색량 높음 + 포스트 적음) = 기회 영역 · 점 크기 = 갭 점수 · 클릭하면 새 포스트 작성
-            </p>
-          </div>
-        );
-      }
-      return Chart;
-    }),
-  { ssr: false },
-);
-
-// ---------------------------------------------------------------
-// Sort state management for content gap table
-// ---------------------------------------------------------------
-
-type GapSortKey = "gapScore" | "existingPostCount" | "currentAvg" | "monthlyVolume";
-
-function useGapTableSort(initial: GapSortKey = "gapScore") {
-  const [sortKey, setSortKey] = useState<GapSortKey>(initial);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-  const handleSort = useCallback(
-    (key: string) => {
-      const k = key as GapSortKey;
-      if (k === sortKey) {
-        setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
-      } else {
-        setSortKey(k);
-        setSortDirection("desc");
-      }
-    },
-    [sortKey],
-  );
-
-  const sort = useCallback(
-    (rows: ContentGapItem[]) =>
-      [...rows].sort((a, b) => {
-        const av =
-          sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (calcTotalVolume(a) || a.currentAvg)
-            : (a[sortKey] as number);
-        const bv =
-          sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (calcTotalVolume(b) || b.currentAvg)
-            : (b[sortKey] as number);
-        const dir = sortDirection === "asc" ? 1 : -1;
-        return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
-      }),
-    [sortKey, sortDirection],
-  );
-
-  return { sortKey, sortDirection, handleSort, sort };
-}
-
-// ---------------------------------------------------------------
-// Main StrategySubTab component
-// ---------------------------------------------------------------
-
-const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: string }> = [
-  { value: "all", label: "전체" },
-  { value: "informational", label: "정보형" },
-  { value: "commercial", label: "비교/검토" },
-  { value: "transactional", label: "전환형" },
-  { value: "navigational", label: "탐색형" },
-];
-
-const ACTION_LABELS: Record<InsightActionItem["actionType"], string> = {
-  "new-post": "새 글 작성",
-  "update-service-page": "서비스 페이지 보강",
-  "expand-faq": "FAQ 확장",
-  "strengthen-cta": "CTA 강화",
-  "seasonal-campaign": "시즌 캠페인",
-};
+import {
+  ACTION_LABELS,
+  INTENT_FILTER_OPTIONS,
+  OpportunityScatter,
+  buildCrossKeywords,
+  type ScatterPoint,
+  useGapTableSort,
+} from "./strategy-shared";
 
 export function StrategySubTab() {
   const router = useRouter();
@@ -303,6 +129,8 @@ export function StrategySubTab() {
     return map;
   }, [overviewData?.contentGap]);
 
+  const crossKeywords = useMemo(() => buildCrossKeywords(overviewData?.contentGap ?? []), [overviewData?.contentGap]);
+
   // ── Graceful degradation ─────────────────────────────────────
   if (!overviewLoading && !overviewError && overviewData === null) {
     return (
@@ -348,29 +176,6 @@ export function StrategySubTab() {
   const actionByKey = new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item]));
   const pageOpportunityByKey = new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item]));
 
-  // ── Cross-keyword analysis ───────────────────────────────────
-  const crossKeywords = (() => {
-    const kwCatMap = new Map<string, { categories: Set<string>; volume: number }>();
-    for (const gap of overviewData.contentGap) {
-      for (const kw of [...(gap.directKeywords ?? []), ...(gap.relatedKeywords ?? [])]) {
-        const entry = kwCatMap.get(kw.keyword) ?? { categories: new Set(), volume: 0 };
-        entry.categories.add(gap.category);
-        entry.volume = Math.max(entry.volume, kw.volume);
-        kwCatMap.set(kw.keyword, entry);
-      }
-    }
-    return [...kwCatMap.entries()]
-      .filter(([, v]) => v.categories.size >= 2)
-      .sort((a, b) => b[1].categories.size - a[1].categories.size || b[1].volume - a[1].volume)
-      .slice(0, 20)
-      .map(([keyword, v]) => ({
-        keyword,
-        categories: [...v.categories],
-        categoryCount: v.categories.size,
-        volume: v.volume,
-      }));
-  })();
-
   return (
     <div className="space-y-8">
       <ApiSourceBadge sources={["naverSearchAd"]} />
@@ -384,9 +189,9 @@ export function StrategySubTab() {
                 {urgentGapCount > 0 ? "갭 높은 주제 존재" : "급한 갭 적음"}
               </AdminPill>
             </div>
-            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">검색 수요 대비 비어 있는 주제를 먼저 보여줍니다.</h2>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">비어 있는 주제를 먼저 보여줍니다.</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              월 검색량, 기존 포스트 수, 갭 점수를 합쳐 지금 새 글을 써야 할 영역을 빠르게 판단할 수 있게 정리했습니다.
+              검색량·포스트 수·갭 점수로 우선순위를 보여줍니다.
             </p>
             <div className="mt-3">
               <button
@@ -394,7 +199,7 @@ export function StrategySubTab() {
                 onClick={() => router.push("/admin/content/strategy/rules")}
                 className="text-xs font-medium text-[var(--color-primary)] hover:underline"
               >
-                규칙 기반 추천 원리 읽어보기
+                추천 원리 보기
               </button>
             </div>
           </div>
@@ -422,7 +227,7 @@ export function StrategySubTab() {
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="flex flex-wrap items-center gap-2">
               <Lightbulb className="h-4 w-4 text-[var(--color-primary)]" />
-              <span className="text-sm font-semibold text-[var(--foreground)]">가장 먼저 볼 주제 영역</span>
+              <span className="text-sm font-semibold text-[var(--foreground)]">우선 주제</span>
             </div>
             <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{topGapItem.subGroup}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">
@@ -448,9 +253,9 @@ export function StrategySubTab() {
       {scatterData.length > 0 && (
         <AdminDisclosureSection
           title="기회 매트릭스"
-          description="검색량과 포스트 수를 같이 봐서, 우측 하단의 비어 있는 기회 영역을 빠르게 찾습니다."
+          description="검색량과 포스트 수로 기회 영역을 봅니다."
           countLabel={`${scatterData.length}개`}
-          collapsedMessage="필요할 때만 기회 매트릭스 차트를 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
@@ -463,10 +268,10 @@ export function StrategySubTab() {
       {(insightActions.length > 0 || pageOpportunities.length > 0 || faqSuggestions.length > 0) && (
         <AdminDisclosureSection
           title="실행 추천"
-          description="검색 수요를 실제 사이트 개선 작업으로 바로 연결할 수 있게 액션, 페이지 보강, FAQ 후보를 나눠 보여줍니다."
+          description="실행할 액션과 보강 후보를 나눠 보여줍니다."
           countLabel={`${insightActions.length + pageOpportunities.length + faqSuggestions.length}개`}
           defaultOpen={true}
-          collapsedMessage="필요할 때만 실행 추천 패널을 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="grid gap-4 xl:grid-cols-3">
@@ -578,10 +383,10 @@ export function StrategySubTab() {
       {(blogBriefs.length > 0 || pageBriefs.length > 0) && (
         <AdminDisclosureSection
           title="자동 생성 브리프"
-          description="키워드 기회와 페이지 보강 후보를 바로 실행 가능한 글 초안/페이지 개편 메모 형태로 정리했습니다."
+          description="실행 가능한 글/페이지 브리프입니다."
           countLabel={`${blogBriefs.length + pageBriefs.length}개`}
           defaultOpen={true}
-          collapsedMessage="필요할 때만 자동 생성 브리프를 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="grid gap-4 xl:grid-cols-2">
@@ -693,9 +498,9 @@ export function StrategySubTab() {
       {crossKeywords.length > 0 && (
         <AdminDisclosureSection
           title="교차 키워드 분석"
-          description="2개 이상 카테고리에 걸친 키워드를 분리해 중복 경쟁과 주제 충돌 가능성을 확인합니다."
+          description="교차 키워드만 따로 봅니다."
           countLabel={`${crossKeywords.length}개`}
-          collapsedMessage="필요할 때만 교차 키워드 표를 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
@@ -738,10 +543,10 @@ export function StrategySubTab() {
       {overviewData.contentGap.length > 0 && (
         <AdminDisclosureSection
           title="콘텐츠 갭 분석"
-          description="검색 수요와 현재 콘텐츠 수를 비교해 새 글 작성 우선순위를 정합니다."
+          description="검색 수요와 현재 글 수를 비교합니다."
           countLabel={`${gapRows.length}개`}
           defaultOpen={true}
-          collapsedMessage="필요할 때만 갭 분석 표와 필터를 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="mb-3">
@@ -1016,10 +821,10 @@ export function StrategySubTab() {
       {suggestions.length > 0 && (
         <AdminDisclosureSection
           title="추천 블로그 주제"
-          description="검색량과 콘텐츠 갭을 바탕으로 바로 작성할 만한 블로그 아이디어를 추렸습니다."
+          description="바로 작성할 만한 블로그 아이디어입니다."
           countLabel={`${suggestions.length}개`}
           defaultOpen={true}
-          collapsedMessage="필요할 때만 추천 주제 목록을 펼쳐 볼 수 있습니다."
+          collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
         >
           <div className="space-y-3">

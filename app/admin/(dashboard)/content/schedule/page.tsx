@@ -1,4 +1,4 @@
-import { ContentScheduleManager } from "../../components/ContentTab";
+import { ContentScheduleManager } from "../../components/ContentScheduleManager";
 
 export default function AdminContentSchedulePage() {
   return <ContentScheduleManager />;

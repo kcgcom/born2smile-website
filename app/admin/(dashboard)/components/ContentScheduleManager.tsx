@@ -2,42 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, CalendarDays, Check, FileText, Loader2, Save, Sparkles, TrendingUp } from "lucide-react";
+import { Check, FileText, Loader2, Save, Sparkles } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
-import { PostsSubTab } from "@/app/admin/(dashboard)/components/blog/PostsSubTab";
-import { StatsSubTab } from "@/app/admin/(dashboard)/components/blog/StatsSubTab";
-import { StrategySubTab } from "@/app/admin/(dashboard)/components/insight/StrategySubTab";
-import { TrendSubTab } from "@/app/admin/(dashboard)/components/insight/TrendSubTab";
 import { AiWriteModal } from "@/app/admin/(dashboard)/components/blog/AiWriteModal";
 import { BLOG_EDITOR_DRAFT_KEY } from "@/app/admin/(dashboard)/components/blog/blog-editor-draft";
-import { useAdminSubTab, AdminSubTabs } from "./AdminSubTabs";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { getTodayKST } from "@/lib/date";
 
-const SUB_TABS = [
-  { id: "posts", label: "포스트 관리", icon: FileText },
-  { id: "schedule", label: "발행 일정", icon: CalendarDays },
-  { id: "stats", label: "통계", icon: BarChart3 },
-  { id: "strategy", label: "콘텐츠 전략", icon: Sparkles },
-  { id: "trend", label: "트렌드", icon: TrendingUp },
-] as const;
-
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
-export function ContentTab() {
-  const activeSub = useAdminSubTab(SUB_TABS, "posts");
-
-  return (
-    <div>
-      <AdminSubTabs tabs={SUB_TABS} parentLabel="콘텐츠" parentTab="content" defaultSub="posts" />
-      {activeSub === "posts" && <PostsSubTab />}
-      {activeSub === "schedule" && <ContentScheduleManager />}
-      {activeSub === "stats" && <StatsSubTab />}
-      {activeSub === "strategy" && <StrategySubTab />}
-      {activeSub === "trend" && <TrendSubTab />}
-    </div>
-  );
-}
 
 export function ContentScheduleManager() {
   const router = useRouter();
@@ -106,7 +78,7 @@ export function ContentScheduleManager() {
               <h3 className="text-lg font-bold text-[var(--foreground)]">발행 요일 정책</h3>
             </div>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              추천 발행일 계산, 예약 발행 준비, 새 글 작성 시작점을 한곳에서 관리합니다.
+              발행 요일과 예약 현황을 관리합니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -116,7 +88,7 @@ export function ContentScheduleManager() {
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-semibold text-[var(--color-gold,#C9930A)] transition-colors hover:bg-[var(--color-gold-bg,#FDF3E0)]"
             >
               <Sparkles className="h-4 w-4" />
-              AI로 작성
+              AI 초안
             </button>
             <button
               type="button"
@@ -124,7 +96,7 @@ export function ContentScheduleManager() {
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
             >
               <FileText className="h-4 w-4" />
-              새 포스트 작성
+              새 글
             </button>
             <button
               type="button"
@@ -164,9 +136,9 @@ export function ContentScheduleManager() {
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-3xl p-6">
-        <h3 className="text-lg font-bold text-[var(--foreground)]">발행 일정 현황</h3>
+        <h3 className="text-lg font-bold text-[var(--foreground)]">일정 현황</h3>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          다가오는 예약 발행과 오늘 이미 공개된 포스트를 분리해서 확인합니다.
+          예약 발행과 오늘 공개 글을 확인합니다.
         </p>
 
         <div className="mt-4 space-y-5">
@@ -195,7 +167,7 @@ export function ContentScheduleManager() {
 
           <section className="border-t border-slate-200 pt-5">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <h4 className="text-sm font-semibold text-[var(--foreground)]">오늘 발행 완료</h4>
+              <h4 className="text-sm font-semibold text-[var(--foreground)]">오늘 공개</h4>
               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 {publishedTodayPosts.length}건
               </span>
@@ -221,8 +193,8 @@ export function ContentScheduleManager() {
       {aiWriteOpen && (
         <AiWriteModal
           onClose={() => setAiWriteOpen(false)}
-          onDraftReady={(data) => {
-            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(data));
+          onDraftReady={(draft) => {
+            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(draft));
             setAiWriteOpen(false);
             router.push("/admin/content/posts/new?draft=1");
           }}
