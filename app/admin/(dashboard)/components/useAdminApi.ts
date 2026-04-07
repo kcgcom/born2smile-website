@@ -46,7 +46,11 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
     },
   );
 
-  const refetch = useCallback(() => { mutate(); }, [mutate]);
+  const refetch = useCallback(() => {
+    // SWR mutate can reject on revalidation errors. Keep the failure in hook state
+    // instead of letting an unhandled promise trip the route error boundary.
+    void mutate().catch(() => {});
+  }, [mutate]);
 
   return {
     data: data ?? null,
