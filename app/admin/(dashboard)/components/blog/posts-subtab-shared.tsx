@@ -29,13 +29,10 @@ interface FilterPostsParams {
 
 interface PostsHeroProps {
   blogStats: BlogStats;
-  topDraft: AdminBlogPost | null;
   refreshing: boolean;
   onRefresh: () => void;
   onCreatePost: () => void;
   onOpenAiWrite: () => void;
-  onEditTopDraft: (post: AdminBlogPost) => void;
-  onPublishTopDraft: (slug: string) => void;
 }
 
 interface PostsSummaryCardsProps {
@@ -188,13 +185,10 @@ export function getNextPublishDate({
 
 export function PostsHero({
   blogStats,
-  topDraft,
   refreshing,
   onRefresh,
   onCreatePost,
   onOpenAiWrite,
-  onEditTopDraft,
-  onPublishTopDraft,
 }: PostsHeroProps) {
   return (
     <AdminSurface tone="white" className="rounded-3xl p-6">
@@ -235,28 +229,6 @@ export function PostsHero({
         </div>
       </div>
 
-      {topDraft && (
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-            <span className="text-sm font-semibold text-[var(--foreground)]">우선 초안</span>
-          </div>
-          <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{topDraft.title}</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            카테고리 {getCategoryLabel(topDraft.category)} · 작성일 {topDraft.date || "미정"}
-          </p>
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
-            <AdminActionButton tone="dark" onClick={() => onEditTopDraft(topDraft)} className="min-h-8 w-full px-3 py-1 text-xs sm:w-auto">
-              <Pencil className="h-3.5 w-3.5" />
-              초안 열기
-            </AdminActionButton>
-            <AdminActionButton tone="dark" onClick={() => onPublishTopDraft(topDraft.slug)} className="min-h-8 w-full px-3 py-1 text-xs sm:w-auto">
-              <Calendar className="h-3.5 w-3.5" />
-              발행 예약
-            </AdminActionButton>
-          </div>
-        </div>
-      )}
     </AdminSurface>
   );
 }

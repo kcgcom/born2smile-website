@@ -542,7 +542,7 @@ export function StrategySubTab() {
         </AdminSurface>
       )}
 
-      {(scatterData.length > 0 || overviewData.contentGap.length > 0 || crossKeywords.length > 0) && (
+      {(overviewData.contentGap.length > 0 || crossKeywords.length > 0) && (
         <AdminDisclosureSection
           title="근거 데이터"
           description="왜 이 주제가 중요한지 검색 수요와 교차 신호를 함께 봅니다."
@@ -552,18 +552,6 @@ export function StrategySubTab() {
           titleLevel="h2"
         >
           <div className="space-y-6">
-            {scatterData.length > 0 && (
-              <section className="space-y-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-[var(--foreground)]">기회 매트릭스</h3>
-                  <p className="mt-1 text-xs text-[var(--muted)]">검색량과 현재 포스트 수를 기준으로 새 글이 필요한 영역을 봅니다.</p>
-                </div>
-                <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-                  <OpportunityScatter data={scatterData} onPointClick={handleNewPost} />
-                </div>
-              </section>
-            )}
-
             {crossKeywords.length > 0 && (
               <section className="space-y-3">
                 <div>

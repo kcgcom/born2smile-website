@@ -96,7 +96,6 @@ export function PostsSubTab() {
     [posts, likesData, today, debouncedQuery, categoryFilter, statusFilter, sortKey],
   );
   const draftRankMap = useMemo(() => getDraftRankMap(filteredPosts, sortKey), [filteredPosts, sortKey]);
-  const topDraft = filteredPosts.find((post) => !post.published) ?? null;
 
   const handleEdit = (post: AdminBlogPost) => {
     router.push(`/admin/content/posts/${post.slug}`);
@@ -158,13 +157,10 @@ export function PostsSubTab() {
     <div className="space-y-6">
       <PostsHero
         blogStats={blogStats}
-        topDraft={topDraft}
         refreshing={refreshing}
         onRefresh={handleRefreshCache}
         onCreatePost={handleCreate}
         onOpenAiWrite={() => setAiWriteOpen(true)}
-        onEditTopDraft={handleEdit}
-        onPublishTopDraft={handlePublishOpen}
       />
 
       {postsLoading && <AdminLoadingSkeleton variant="table" />}
