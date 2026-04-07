@@ -147,11 +147,34 @@ async function run() {
 
   switch (resource) {
     case "briefing": {
-      const period = flags.get("period") === "28d" ? "28d" : "7d";
+      const rawPeriod = flags.get("period");
+      const period = rawPeriod === "60d"
+        ? "60d"
+        : rawPeriod === "14d" || rawPeriod === "7d"
+          ? "14d"
+          : "30d";
       return aiOps.getAiOpsBriefing(period);
+    }
+    case "playbooks":
+      return aiOps.getAiOpsPlaybooks();
+    case "opportunities": {
+      const rawPeriod = flags.get("period");
+      const rawLimit = flags.get("limit");
+      const period = rawPeriod === "60d"
+        ? "60d"
+        : rawPeriod === "14d" || rawPeriod === "7d"
+          ? "14d"
+          : "30d";
+      const limit = rawLimit ? getRequiredInt(flags, "limit") : 18;
+      return aiOps.getAiOpsOpportunities(period, limit);
     }
     case "targets":
       return aiOps.getAiOpsTargets();
+    case "outcomes": {
+      const rawLimit = flags.get("limit");
+      const limit = rawLimit ? getRequiredInt(flags, "limit") : 20;
+      return aiOps.listAiOutcomes(limit);
+    }
     case "activity": {
       const rawLimit = flags.get("limit");
       const limit = rawLimit ? getRequiredInt(flags, "limit") : 30;

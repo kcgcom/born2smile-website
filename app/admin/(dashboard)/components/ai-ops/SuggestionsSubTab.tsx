@@ -1,435 +1,453 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, Sparkles, Waves, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckCircle2, Loader2, Sparkles, Target, Wand2 } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminErrorState } from "../AdminErrorState";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import type {
   AiOpsBriefing,
+  AiOpsPlaybook,
+  AiOpsRecommendedAction,
   AiOpsSuggestionJob,
-  AiOpsSuggestionJobEvent,
   AiOpsSuggestionListItem,
-  AiOpsSuggestionType,
   AiOpsTargetOption,
-  AiOpsTargetType,
 } from "@/lib/admin-ai-ops-types";
-import { PriorityScoreBadge } from "./PriorityScoreBadge";
 import { useAiSuggestionJob } from "./useAiSuggestionJob";
-
-const POST_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }> = [
-  { value: "title", label: "제목 개선" },
-  { value: "meta_description", label: "요약문 개선" },
-  { value: "internal_links", label: "내부 링크" },
-  { value: "faq", label: "FAQ 추가" },
-  { value: "body_revision", label: "도입부 보강" },
-];
-
-const PAGE_SUGGESTION_TYPES: Array<{ value: AiOpsSuggestionType; label: string }> = [
-  { value: "title", label: "메타 타이틀" },
-  { value: "meta_description", label: "메타 설명" },
-  { value: "internal_links", label: "내부 링크" },
-  { value: "faq", label: "FAQ 제안" },
-  { value: "body_revision", label: "본문 보강" },
-];
+import { PriorityScoreBadge } from "./PriorityScoreBadge";
 
 export function SuggestionsSubTab() {
-  const { data: briefing, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=28d");
+  const { data: playbooks, loading: playbooksLoading, error: playbooksError, refetch: refetchPlaybooks } = useAdminApi<AiOpsPlaybook[]>("/api/admin/ai-ops/playbooks");
   const { data: targets, loading: targetsLoading, error: targetsError, refetch: refetchTargets } = useAdminApi<AiOpsTargetOption[]>("/api/admin/ai-ops/targets");
-  const { data: recentSuggestions, loading: suggestionsLoading, error: suggestionsError, refetch: refetchSuggestions } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=8");
+  const { data: briefing, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=30d");
+  const { data: recentSuggestions, loading: suggestionsLoading, error: suggestionsError, refetch: refetchSuggestions } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=4");
   const { mutate, loading: creating, error: createError, clearError } = useAdminMutation<AiOpsSuggestionJob>();
-  const { job, events, loading: jobLoading, error: jobError, bindJob, clearCurrentJob } = useAiSuggestionJob();
+  const { job, events, bindJob } = useAiSuggestionJob();
 
-  const [targetType, setTargetType] = useState<AiOpsTargetType>("post");
-  const [targetId, setTargetId] = useState("");
-  const [suggestionType, setSuggestionType] = useState<AiOpsSuggestionType>("title");
+  const [targetType, setTargetType] = useState<"post" | "page">("post");
+  const [playbookId, setPlaybookId] = useState<string>("");
+  const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
   const [operatorContext, setOperatorContext] = useState("");
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
-  const previousJobStatusRef = useRef<AiOpsSuggestionJob["status"] | null>(null);
-  const visibleCreatedMessage = job?.status === "completed" ? "운영 제안을 생성했습니다." : createdMessage;
 
   const targetOptions = useMemo(() => {
-    return (targets ?? [])
-      .filter((target) => target.targetType === targetType)
-      .map((target) => ({
-        value: target.id,
-        label: target.note ? `${target.label} · ${target.note}` : target.label,
-      }));
-  }, [targets, targetType]);
+    const raw = targets ?? [];
+    return raw.filter((target) => target.targetType === targetType);
+  }, [targetType, targets]);
 
-  const suggestionTypeOptions = targetType === "post" ? POST_SUGGESTION_TYPES : PAGE_SUGGESTION_TYPES;
+  const filteredPlaybooks = useMemo(
+    () => (playbooks ?? []).filter((item) => item.targetTypes.includes(targetType)),
+    [playbooks, targetType],
+  );
+  const resolvedPlaybookId = playbookId || filteredPlaybooks[0]?.id || "";
+  const selectedTargetIdsSafe = selectedTargetIds.filter((id) => targetOptions.some((target) => target.id === id));
 
-  const resolvedTargetId = targetOptions.some((option) => option.value === targetId)
-    ? targetId
-    : (targetOptions[0]?.value ?? "");
-  const resolvedSuggestionType = suggestionTypeOptions.some((option) => option.value === suggestionType)
-    ? suggestionType
-    : (suggestionTypeOptions[0]?.value ?? "title");
+  const activePlaybook = filteredPlaybooks.find((item) => item.id === resolvedPlaybookId) ?? null;
 
-  const handleCreate = async () => {
-    if (!resolvedTargetId) return;
-    clearError();
-    setCreatedMessage(null);
-    const result = await mutate("/api/admin/ai-ops/suggestion-jobs", "POST", {
-      targetType,
-      targetId: resolvedTargetId,
-      suggestionType: resolvedSuggestionType,
-      ...(operatorContext.trim() ? { context: operatorContext.trim() } : {}),
-    });
-    if (!result.error && result.data) {
-      bindJob(result.data.id);
-      setCreatedMessage("운영 제안 생성을 시작했습니다.");
+  const getRecommendedPlaybookId = (targetId: string) => {
+    return targetOptions.find((target) => target.id === targetId)?.recommendedPlaybooks[0] ?? "";
+  };
+
+  const getPlaybookLabel = (nextPlaybookId: string) => {
+    return playbooks?.find((item) => item.id === nextPlaybookId)?.label ?? nextPlaybookId;
+  };
+
+  const getSuggestedActionLabel = (nextPlaybookId: string) => {
+    const playbook = playbooks?.find((item) => item.id === nextPlaybookId);
+    if (!playbook) return "운영 작업";
+
+    switch (playbook.defaultSuggestionType) {
+      case "title":
+        return "제목 개선";
+      case "meta_description":
+        return "요약문 개선";
+      case "faq":
+        return "FAQ 추가";
+      case "internal_links":
+        return "내부링크 보강";
+      case "body_revision":
+        return "본문 보강";
+      default:
+        return playbook.defaultSuggestionType;
     }
   };
 
-  useEffect(() => {
-    const previousStatus = previousJobStatusRef.current;
-    if (!job) {
-      previousJobStatusRef.current = null;
-      return;
+  const prepareExecution = ({
+    nextTargetType,
+    nextTargetId,
+    nextPlaybookId,
+  }: {
+    nextTargetType: "post" | "page";
+    nextTargetId: string;
+    nextPlaybookId?: string | null;
+  }) => {
+    setTargetType(nextTargetType);
+    setSelectedTargetIds([nextTargetId]);
+    if (nextPlaybookId) {
+      setPlaybookId(nextPlaybookId);
+    }
+  };
+
+  const handleToggleTarget = (targetId: string) => {
+    const recommendedPlaybookId = getRecommendedPlaybookId(targetId);
+    setSelectedTargetIds((prev) => {
+      if (prev.includes(targetId)) {
+        const next = prev.filter((item) => item !== targetId);
+        if (next.length === 1) {
+          const nextRecommended = getRecommendedPlaybookId(next[0]);
+          if (nextRecommended) {
+            setPlaybookId(nextRecommended);
+          }
+        }
+        return next;
+      }
+
+      const next = [...prev.filter((id) => targetOptions.some((target) => target.id === id)), targetId].slice(0, 3);
+      if (recommendedPlaybookId) {
+        setPlaybookId(recommendedPlaybookId);
+      }
+      return next;
+    });
+  };
+
+  const handleCreate = async () => {
+    if (!activePlaybook || selectedTargetIdsSafe.length === 0) return;
+    clearError();
+    setCreatedMessage(null);
+
+    let lastJob: AiOpsSuggestionJob | null = null;
+    for (const targetId of selectedTargetIdsSafe) {
+      const result = await mutate("/api/admin/ai-ops/suggestion-jobs", "POST", {
+        targetType,
+        targetId,
+        suggestionType: activePlaybook.defaultSuggestionType,
+        playbookId: activePlaybook.id,
+        context: operatorContext.trim() || undefined,
+      });
+      if (result.data) {
+        lastJob = result.data;
+      }
+      if (result.error) {
+        break;
+      }
     }
 
-    if (job.status === "completed" && previousStatus !== "completed") {
+    if (lastJob) {
+      bindJob(lastJob.id);
+      setCreatedMessage(`${selectedTargetIdsSafe.length}건의 실행 작업 생성을 시작했습니다.`);
       refetchSuggestions();
-      refetchBriefing();
     }
+  };
 
-    if (job.status === "failed" && previousStatus !== "failed") {
-      refetchBriefing();
-    }
+  const readyTasks = briefing?.todayTasks ?? [];
+  const readyCandidateIds = new Set(readyTasks.map((task) => task.id.split(":")[0]));
+  const topCandidates = (briefing?.topCandidates ?? [])
+    .filter((item) => item.targetType === targetType && !readyCandidateIds.has(item.id))
+    .slice(0, 3);
+  const selectionSummary = selectedTargetIdsSafe[0]
+    ? (() => {
+        const target = targetOptions.find((item) => item.id === selectedTargetIdsSafe[0]);
+        if (!target || !target.recommendedPlaybooks[0]) return null;
+        return `추천 사유: ${target.note} → 추천 플레이북: ${getPlaybookLabel(target.recommendedPlaybooks[0])} → 추천 작업 유형: ${getSuggestedActionLabel(target.recommendedPlaybooks[0])}`;
+      })()
+    : null;
 
-    previousJobStatusRef.current = job.status;
-  }, [job, refetchBriefing, refetchSuggestions]);
 
-  if (briefingError) {
-    return <AdminErrorState message={briefingError} onRetry={refetchBriefing} />;
-  }
-
-  if (targetsError) {
-    return <AdminErrorState message={targetsError} onRetry={refetchTargets} />;
-  }
-
-  if (suggestionsError) {
-    return <AdminErrorState message={suggestionsError} onRetry={refetchSuggestions} />;
-  }
+  if (playbooksError) return <AdminErrorState message={playbooksError} onRetry={refetchPlaybooks} />;
+  if (targetsError) return <AdminErrorState message={targetsError} onRetry={refetchTargets} />;
+  if (briefingError) return <AdminErrorState message={briefingError} onRetry={refetchBriefing} />;
+  if (suggestionsError) return <AdminErrorState message={suggestionsError} onRetry={refetchSuggestions} />;
 
   return (
     <div className="space-y-6">
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--color-primary)]" />
+              <h3 className="text-lg font-bold text-slate-900">실행 센터</h3>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              오늘 처리할 후보를 고르고 초안을 바로 생성합니다.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SummaryChip label="오늘 처리" value={`${briefing?.metrics.tasksReadyToday ?? 0}건`} />
+            <SummaryChip label="관측 대기" value={`${briefing?.metrics.signalsPendingReview ?? 0}건`} />
+            <SummaryChip label="최근 생성" value={`${recentSuggestions?.length ?? 0}건`} />
+          </div>
+        </div>
+      </AdminSurface>
+
       <div className="grid gap-6 xl:grid-cols-[1fr_1.1fr]">
-        <AdminSurface tone="white" className="rounded-3xl p-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-            <h3 className="text-lg font-bold text-slate-900">새 제안 생성</h3>
-          </div>
-          <p className="mt-2 text-sm text-slate-600">
-            블로그 또는 핵심 페이지를 선택해 운영 제안을 생성합니다.
-          </p>
+        <div className="space-y-6">
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-[var(--color-primary)]" />
+                  <h3 className="text-lg font-bold text-slate-900">우선 작업</h3>
+                </div>
+                <p className="mt-1 text-sm text-slate-600">브리핑에서 추린 항목입니다. 클릭하면 바로 생성 대상으로 잡습니다.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {briefingLoading ? (
+                <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+              ) : readyTasks.length === 0 ? (
+                <EmptyState text="지금 잡을 우선 작업이 없습니다." />
+              ) : (
+                readyTasks.map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => {
+                      if (task.targetType === "site") return;
+                      prepareExecution({
+                        nextTargetType: task.targetType,
+                        nextTargetId: task.targetId,
+                        nextPlaybookId: task.playbookId ?? null,
+                      });
+                    }}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-blue-50"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">{task.title}</div>
+                        <div className="mt-1 text-sm text-slate-600">{task.description}</div>
+                      </div>
+                      <PriorityScoreBadge score={task.priorityScore} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <AdminPill tone="white">{targetTypeLabel(task.targetType)}</AdminPill>
+                      {task.playbookId ? <AdminPill tone="white">{getPlaybookLabel(task.playbookId)}</AdminPill> : null}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </AdminSurface>
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 유형</label>
-              <select
-                value={targetType}
-                onChange={(event) => {
-                  setTargetType(event.target.value as AiOpsTargetType);
-                  setTargetId("");
-                }}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-              >
-                <option value="post">블로그 포스트</option>
-                <option value="page">핵심 페이지</option>
-              </select>
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--color-primary)]" />
+              <h3 className="text-lg font-bold text-slate-900">초안 생성</h3>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">최대 3개 대상까지 한 번에 생성할 수 있습니다.</p>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 유형</label>
+                <select
+                  value={targetType}
+                  onChange={(event) => {
+                    setTargetType(event.target.value as "post" | "page");
+                    setSelectedTargetIds([]);
+                  }}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  <option value="post">블로그 포스트</option>
+                  <option value="page">핵심 페이지</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">플레이북</label>
+                <select
+                  value={resolvedPlaybookId}
+                  onChange={(event) => setPlaybookId(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                  disabled={playbooksLoading}
+                >
+                  {(playbooks ?? []).filter((item) => item.targetTypes.includes(targetType)).map((playbook) => (
+                    <option key={playbook.id} value={playbook.id}>{playbook.label}</option>
+                  ))}
+                </select>
+                {activePlaybook && <p className="mt-2 text-xs text-slate-500">{activePlaybook.summary}</p>}
+                {selectionSummary && (
+                  <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-slate-700">
+                    {selectionSummary}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 선택 (최대 3개)</label>
+                <div className="space-y-2">
+                  {targetsLoading ? (
+                    <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                  ) : (
+                    targetOptions.map((target) => {
+                      const checked = selectedTargetIdsSafe.includes(target.id);
+                      return (
+                        <label key={target.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 ${checked ? "border-[var(--color-primary)] bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
+                          <input type="checkbox" checked={checked} onChange={() => handleToggleTarget(target.id)} className="mt-1" />
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">{target.label}</div>
+                            <div className="mt-1 text-xs text-slate-500">{target.note}</div>
+                            {target.recommendedPlaybooks[0] && (
+                              <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-medium">
+                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[var(--color-primary)]">
+                                  추천 플레이북: {getPlaybookLabel(target.recommendedPlaybooks[0])}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
+                <textarea
+                  value={operatorContext}
+                  onChange={(event) => setOperatorContext(event.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  placeholder={activePlaybook?.operatorPromptHint ?? "예: 김포/장기동 검색 의도를 더 반영하고 상담 문구는 부드럽게 유지"}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+
+              <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !activePlaybook || selectedTargetIdsSafe.length === 0} className="w-full">
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                초안 생성
+              </AdminActionButton>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 선택</label>
-              <select
-                value={resolvedTargetId}
-                onChange={(event) => setTargetId(event.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                disabled={targetsLoading}
-              >
-                {targetOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
+            {createError && <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{createError}</div>}
+            {createdMessage && <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{createdMessage}</div>}
+          </AdminSurface>
+        </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">제안 유형</label>
-              <select
-                value={resolvedSuggestionType}
-                onChange={(event) => setSuggestionType(event.target.value as AiOpsSuggestionType)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-              >
-                {suggestionTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+        <div className="space-y-6">
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">추가 후보</h3>
+                <p className="mt-1 text-sm text-slate-600">현재 필터에서 바로 이어서 볼 후보입니다.</p>
+              </div>
             </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
-              <textarea
-                value={operatorContext}
-                onChange={(event) => setOperatorContext(event.target.value)}
-                rows={4}
-                maxLength={500}
-                placeholder="예: 김포/장기동 검색 의도를 더 반영하고, 예약 전환 문구는 부드럽게 유지"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-              />
-              <p className="mt-1.5 text-xs text-slate-500">
-                검색 의도, 톤, 강조할 치료 키워드처럼 이번 제안에만 반영할 힌트를 남길 수 있습니다.
-              </p>
-            </div>
-
-            <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !resolvedTargetId} className="w-full">
-              {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              제안 생성
-            </AdminActionButton>
-          </div>
-
-          {createError && (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {createError}
-            </div>
-          )}
-          {visibleCreatedMessage && (
-            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {visibleCreatedMessage}
-            </div>
-          )}
-        </AdminSurface>
-
-        <AdminSurface tone="white" className="rounded-3xl p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">브리핑 추천 후보</h3>
-              <p className="mt-1 text-sm text-slate-600">우선순위가 높은 대상부터 빠르게 제안을 생성하세요.</p>
-            </div>
-            {briefing && <AdminPill tone="white">{briefing.topCandidates.length}건</AdminPill>}
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {briefingLoading ? (
-              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-            ) : (
-              briefing?.topCandidates.map((candidate) => (
-                <div key={candidate.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-4 space-y-3">
+              {briefingLoading ? (
+                <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+              ) : topCandidates.length === 0 ? (
+                <EmptyState text="지금 볼 추가 후보가 없습니다." />
+              ) : topCandidates.map((candidate) => (
+                <button
+                  key={candidate.id}
+                  type="button"
+                  onClick={() => {
+                    if (candidate.targetType === "site") return;
+                    prepareExecution({
+                      nextTargetType: candidate.targetType,
+                      nextTargetId: candidate.targetId,
+                      nextPlaybookId: candidate.playbookIds[0] ?? null,
+                    });
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-blue-50"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-semibold text-slate-900">{candidate.title}</div>
-                      <div className="mt-1 text-xs text-slate-500">{candidate.primaryIssue}</div>
+                      <div className="mt-1 text-xs text-slate-500">추천 사유: {candidate.primaryIssue}</div>
                     </div>
                     <PriorityScoreBadge score={candidate.priorityScore} />
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {candidate.suggestionTypes.slice(0, 3).map((type) => (
-                      <button
-                        key={`${candidate.id}-${type}`}
-                        type="button"
-                        onClick={() => {
-                          setTargetType(candidate.targetType);
-                          setTargetId(candidate.targetId);
-                          setSuggestionType(type);
-                        }}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
-                      >
-                        {labelForSuggestionType(type)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </AdminSurface>
-      </div>
-
-      {(job || jobLoading || jobError) && (
-        <AdminSurface tone="white" className="rounded-3xl p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Waves className="h-4 w-4 text-[var(--color-primary)]" />
-                <h3 className="text-lg font-bold text-slate-900">실시간 생성 상태</h3>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">Supabase Realtime으로 현재 제안 생성 단계를 반영합니다.</p>
-            </div>
-            {job && (
-              <div className="flex items-center gap-2">
-                <AdminPill tone="white">{jobLabel(job)}</AdminPill>
-                <button
-                  type="button"
-                  onClick={clearCurrentJob}
-                  className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
-                >
-                  패널 닫기
+                  {candidate.playbookIds[0] && (
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-medium">
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[var(--color-primary)]">
+                        추천 플레이북: {getPlaybookLabel(candidate.playbookIds[0])}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-2 text-sm text-slate-600">{candidate.evidence.summary}</div>
                 </button>
-              </div>
-            )}
-          </div>
-
-          {jobLoading && !job ? (
-            <div className="mt-4 h-28 animate-pulse rounded-2xl bg-slate-100" />
-          ) : jobError ? (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {jobError}
+              ))}
             </div>
-          ) : job ? (
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">{labelForSuggestionType(job.suggestionType)} · {job.targetId}</div>
-                    <div className="mt-1 text-xs text-slate-500">{stageLabel(job.stage)}</div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    {job.status === "completed" ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    ) : job.status === "failed" ? (
-                      <XCircle className="h-4 w-4 text-red-500" />
-                    ) : (
-                      <Loader2 className="h-4 w-4 animate-spin text-[var(--color-primary)]" />
-                    )}
-                    <span className="font-medium text-slate-700">{job.message}</span>
-                  </div>
-                </div>
-                {job.lastError && (
-                  <div className="mt-3 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs text-red-600">
-                    {job.lastError}
-                  </div>
-                )}
-              </div>
+          </AdminSurface>
 
-              <div className="space-y-2">
-                {events.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-4 text-sm text-slate-500">
-                    아직 수신된 진행 이벤트가 없습니다.
-                  </div>
-                ) : (
-                  events.map((event) => (
-                    <JobEventRow key={event.id} event={event} />
-                  ))
-                )}
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">최근 생성 초안</h3>
+                <p className="mt-1 text-sm text-slate-600">생성 후 검토·적용에서 마무리합니다.</p>
               </div>
             </div>
-          ) : null}
-        </AdminSurface>
-      )}
+            <div className="mt-4 space-y-3">
+              {suggestionsLoading ? (
+                <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+              ) : (
+                (recentSuggestions ?? []).map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                    <div className="mt-1 text-xs text-slate-500">{statusLabel(item.status)} · {item.targetLabel}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </AdminSurface>
 
-      <AdminSurface tone="white" className="rounded-3xl p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">최근 생성된 제안</h3>
-            <p className="mt-1 text-sm text-slate-600">바로 승인 대기함에서 검토할 수 있습니다.</p>
-          </div>
-          <AdminPill tone="white">{recentSuggestions?.length ?? 0}건</AdminPill>
-        </div>
-        <div className="mt-4 space-y-3">
-          {suggestionsLoading ? (
-            <div className="h-28 animate-pulse rounded-2xl bg-slate-100" />
-          ) : (
-            (recentSuggestions ?? []).map((suggestion) => (
-              <div key={suggestion.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">{suggestion.title}</div>
-                    <div className="mt-1 text-xs text-slate-500">{suggestion.targetLabel} · {labelForSuggestionType(suggestion.suggestionType)}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <PriorityScoreBadge score={suggestion.priorityScore} />
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{statusLabel(suggestion.status)}</span>
-                  </div>
-                </div>
+          {job && (
+            <AdminSurface tone="white" className="rounded-3xl p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <CheckCircle2 className="h-4 w-4 text-[var(--color-primary)]" />
+                생성 진행 상태
               </div>
-            ))
+              <p className="mt-2 text-sm text-slate-600">{job?.message}</p>
+              <div className="mt-3 space-y-2 text-sm text-slate-500">
+                {events.slice(-4).map((event) => (
+                  <div key={event.id}>{event.message}</div>
+                ))}
+              </div>
+            </AdminSurface>
           )}
         </div>
-      </AdminSurface>
-    </div>
-  );
-}
-
-function jobLabel(job: AiOpsSuggestionJob) {
-  switch (job.status) {
-    case "queued":
-      return "대기 중";
-    case "running":
-      return "생성 중";
-    case "completed":
-      return "완료";
-    case "failed":
-      return "실패";
-    default:
-      return job.status;
-  }
-}
-
-function stageLabel(stage: AiOpsSuggestionJob["stage"]) {
-  switch (stage) {
-    case "queued":
-      return "대기열 등록";
-    case "context":
-      return "문맥 수집";
-    case "generation":
-      return "AI 생성";
-    case "persisting":
-      return "저장";
-    case "completed":
-      return "완료";
-    case "failed":
-      return "실패";
-    default:
-      return stage;
-  }
-}
-
-function JobEventRow({ event }: { event: AiOpsSuggestionJobEvent }) {
-  const tone = event.status === "failed"
-    ? "border-red-200 bg-red-50 text-red-600"
-    : event.status === "completed"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : "border-slate-200 bg-white text-slate-700";
-
-  return (
-    <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm font-medium">{event.message}</div>
-        <div className="text-xs opacity-70">{stageLabel(event.stage)}</div>
       </div>
     </div>
   );
 }
 
-function labelForSuggestionType(type: AiOpsSuggestionType) {
-  switch (type) {
-    case "title":
-      return "제목";
-    case "meta_description":
-      return "요약문";
-    case "faq":
-      return "FAQ";
-    case "body_revision":
-      return "본문";
-    case "internal_links":
-      return "링크";
+function SummaryChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+      {text}
+    </div>
+  );
+}
+
+function targetTypeLabel(value: AiOpsRecommendedAction["targetType"]) {
+  switch (value) {
+    case "post":
+      return "블로그";
+    case "page":
+      return "페이지";
     default:
-      return type;
+      return "사이트";
   }
 }
 
 function statusLabel(status: AiOpsSuggestionListItem["status"]) {
   switch (status) {
     case "draft":
-      return "검토 전";
+      return "초안";
     case "approved":
       return "승인됨";
-    case "rejected":
-      return "반려됨";
     case "applied":
       return "반영됨";
     default:
-      return status;
+      return "반려됨";
   }
 }

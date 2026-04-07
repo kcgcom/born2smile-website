@@ -1,13 +1,13 @@
 "use client";
 
-import { ClipboardCheck, History, LayoutList, Sparkles } from "lucide-react";
+import { ClipboardCheck, History, Sparkles, Wand2 } from "lucide-react";
 import { PathSubNav } from "./PathSubNav";
 
 const AI_OPS_ITEMS = [
   { href: "/admin/growth/ai-ops/briefing", label: "운영 브리핑", icon: Sparkles },
-  { href: "/admin/growth/ai-ops/suggestions", label: "개선 제안", icon: LayoutList },
-  { href: "/admin/growth/ai-ops/queue", label: "승인 대기함", icon: ClipboardCheck },
-  { href: "/admin/growth/ai-ops/activity", label: "활동 로그", icon: History },
+  { href: "/admin/growth/ai-ops/suggestions", label: "실행 센터", icon: Wand2 },
+  { href: "/admin/growth/ai-ops/queue", label: "검토·적용", icon: ClipboardCheck },
+  { href: "/admin/growth/ai-ops/activity", label: "활동·관측", icon: History },
 ] as const;
 
 export function AiOpsSectionShell({ children }: { children: React.ReactNode }) {

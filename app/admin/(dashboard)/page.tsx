@@ -44,6 +44,7 @@ function buildLegacyAdminPath({
       return "/admin/growth/conversion";
     case "aiops":
       switch (sub) {
+        case "opportunities":
         case "suggestions":
           return "/admin/growth/ai-ops/suggestions";
         case "queue":

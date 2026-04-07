@@ -7,6 +7,7 @@ import type {
   AiOpsSuggestionJobStatus,
   AiOpsSuggestionType,
   AiOpsTargetType,
+  AiOpsPlaybookId,
 } from "./admin-ai-ops-types";
 
 const JOBS_TABLE = "ai_agent_jobs";
@@ -48,6 +49,7 @@ export interface CreateAiSuggestionJobInput {
   suggestionType: AiOpsSuggestionType;
   actorEmail: string;
   context?: string;
+  playbookId?: AiOpsPlaybookId;
 }
 
 function mapSuggestionJobRow(row: SuggestionJobRow): AiOpsSuggestionJob {
@@ -107,6 +109,7 @@ export async function createAiSuggestionJob(input: CreateAiSuggestionJobInput): 
         targetType: input.targetType,
         targetId: input.targetId,
         suggestionType: input.suggestionType,
+        ...(input.playbookId ? { playbookId: input.playbookId } : {}),
         ...(input.context?.trim() ? { context: input.context.trim() } : {}),
       },
       status: "queued",
@@ -125,6 +128,7 @@ export async function createAiSuggestionJob(input: CreateAiSuggestionJobInput): 
     targetType: input.targetType,
     targetId: input.targetId,
     suggestionType: input.suggestionType,
+    ...(input.playbookId ? { playbookId: input.playbookId } : {}),
     ...(input.context?.trim() ? { context: input.context.trim() } : {}),
   };
 

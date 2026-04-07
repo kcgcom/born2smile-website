@@ -35,9 +35,9 @@ export function GrowthOverviewPanel() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <AdminPill tone="white">운영 분석 워크스페이스</AdminPill>
-            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">유입과 전환, 개선 제안을 한 화면에서 요약합니다.</h2>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">유입, 전환, 실행 현황을 빠르게 확인합니다.</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              상세 분석은 각 화면으로 들어가고, 여기서는 지금 확인할 운영 신호만 빠르게 봅니다.
+              여기서는 핵심 신호만 보고, 상세 작업은 각 화면에서 바로 처리합니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -100,7 +100,7 @@ export function GrowthOverviewPanel() {
             Search Console 기반 상위 쿼리, CTR, 순위 변화를 점검합니다.
           </p>
           <AdminActionLink tone="dark" href="/admin/growth/search" className="mt-4 w-full">
-            상세 보기
+            열기
           </AdminActionLink>
         </AdminSurface>
 
@@ -114,10 +114,10 @@ export function GrowthOverviewPanel() {
           </p>
           <div className="mt-4 flex gap-2">
             <AdminActionLink tone="dark" href="/admin/growth/trends" className="flex-1">
-              트렌드
+              열기
             </AdminActionLink>
             <AdminActionLink tone="dark" href="/admin/content/strategy" className="flex-1">
-              콘텐츠 전략
+              전략
             </AdminActionLink>
           </div>
         </AdminSurface>
@@ -128,10 +128,10 @@ export function GrowthOverviewPanel() {
             <h3 className="text-base font-bold text-[var(--foreground)]">AI 운영실</h3>
           </div>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            운영 브리핑, 개선 제안, 승인 대기함과 활동 로그를 관리합니다.
+            브리핑, 실행, 검토, 관측 흐름을 한곳에서 관리합니다.
           </p>
           <AdminActionLink tone="dark" href="/admin/growth/ai-ops" className="mt-4 w-full">
-            작업 열기
+            열기
           </AdminActionLink>
         </AdminSurface>
       </div>

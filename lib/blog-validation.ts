@@ -80,7 +80,10 @@ export const adminAiWriteRequestSchema = z.object({
 export const aiOpsSuggestionRequestSchema = z.object({
   targetType: z.enum(["post", "page", "site"]),
   targetId: z.string().trim().min(1).max(200),
+  targetIds: z.array(z.string().trim().min(1).max(200)).max(10).optional(),
   suggestionType: z.enum(["title", "meta_description", "faq", "internal_links", "body_revision"]),
+  playbookId: z.enum(["local-intent-refresh", "faq-expansion", "internal-link-cluster", "snippet-refresh", "stale-refresh"]).optional(),
+  batchMode: z.boolean().optional(),
   context: z.string().trim().max(500).optional(),
 });
 

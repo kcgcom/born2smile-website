@@ -92,5 +92,11 @@
 ### AI 운영실 원격 프록시
 
 - `AI_OPS_AGENT_BASE_URL`이 비어 있지 않으면 `/api/admin/ai-ops/*`는 원격 엔진으로 프록시됩니다.
+- `AI_OPS_AGENT_BASE_URL`이 비어 있으면 관리자페이지 AI 운영실은 **원격 엔진 없이 Next.js 내장 로컬 구현으로 계속 동작**합니다.
 - 제안 생성은 LLM 호출이 포함돼 오래 걸릴 수 있으므로 `AI_OPS_AGENT_SUGGESTION_TIMEOUT_MS` 기본값을 `55000`ms로 둡니다.
 - 타임아웃이 반복되면 원격 엔진의 실제 처리 시간과 Vercel 함수 `maxDuration`을 함께 확인하세요.
+
+### ai-ops-agent 서비스 전용 환경변수
+
+- `.env.example`의 `AI_OPS_DATABASE_URL`, `AI_OPS_LLM_BASE_URL`, `AI_OPS_LLM_MODEL`, `AI_OPS_SHARED_SECRET`는 **선택적인 `services/ai-ops-agent` 프로세스용 예시값**입니다.
+- 이 값들은 현재 Next.js 관리자페이지가 직접 읽지 않습니다. 관리자페이지는 `AI_OPS_AGENT_BASE_URL`로 원격 프록시를 켜거나, 비워 두고 로컬 구현을 사용합니다.

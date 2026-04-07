@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { isAiOpsRemoteEnabled, proxyAiOpsJson } from "../_lib/proxy";
-import { getAiOpsBriefing } from "@/lib/admin-ai-ops";
-import type { AiOpsBriefing, AiOpsBriefingPeriod } from "@/lib/admin-ai-ops-types";
+import { listAiOutcomes } from "@/lib/admin-ai-ops";
+import type { AiOpsOutcomesResponse } from "@/lib/admin-ai-ops-types";
 
 const HEADERS = {
   "Cache-Control": "private, no-store",
@@ -14,27 +14,22 @@ export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  const rawPeriod = request.nextUrl.searchParams.get("period");
-  const period: AiOpsBriefingPeriod = rawPeriod === "60d"
-    ? "60d"
-    : rawPeriod === "14d" || rawPeriod === "7d"
-      ? "14d"
-      : "30d";
+  const limit = Number(request.nextUrl.searchParams.get("limit") ?? "20");
 
   try {
     const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsBriefing>({
-          path: "/ai-ops/briefing",
+      ? (await proxyAiOpsJson<AiOpsOutcomesResponse>({
+          path: "/ai-ops/outcomes",
           request,
           adminEmail: auth.email,
         })).data
-      : await getAiOpsBriefing(period);
+      : await listAiOutcomes(limit);
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(
-      { error: "API_ERROR", message: "운영 브리핑을 불러올 수 없습니다" },
+      { error: "API_ERROR", message: "관측 신호를 불러올 수 없습니다" },
       { status: 500, headers: HEADERS },
     );
   }

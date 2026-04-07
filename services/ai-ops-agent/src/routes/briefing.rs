@@ -20,10 +20,10 @@ pub async fn get(
     State(state): State<AppState>,
     Query(query): Query<BriefingQuery>,
 ) -> Result<Json<BriefingResponse>, Response> {
-    let period = if query.period.as_deref() == Some("28d") {
-        "28d"
-    } else {
-        "7d"
+    let period = match query.period.as_deref() {
+        Some("60d") => "60d",
+        Some("14d") | Some("7d") => "14d",
+        _ => "30d",
     };
 
     let args = vec!["briefing".to_string(), "--period".to_string(), period.to_string()];

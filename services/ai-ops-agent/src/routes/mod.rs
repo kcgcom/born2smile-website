@@ -13,6 +13,9 @@ use crate::app::AppState;
 pub mod activity;
 pub mod briefing;
 pub mod healthz;
+pub mod opportunities;
+pub mod outcomes;
+pub mod playbooks;
 pub mod suggestion_jobs;
 pub mod suggestions;
 pub mod targets;
@@ -26,6 +29,9 @@ pub struct ErrorBody {
 pub fn router(state: AppState) -> Router {
     let protected = Router::new()
         .route("/ai-ops/briefing", get(briefing::get))
+        .route("/ai-ops/opportunities", get(opportunities::list))
+        .route("/ai-ops/playbooks", get(playbooks::list))
+        .route("/ai-ops/outcomes", get(outcomes::list))
         .route("/ai-ops/suggestion-jobs", post(suggestion_jobs::create))
         .route("/ai-ops/suggestions", get(suggestions::list).post(suggestions::create))
         .route("/ai-ops/suggestions/{id}/approve", post(suggestions::approve))
