@@ -86,7 +86,7 @@ export function DashboardTab({
           icon: CalendarClock,
           title: `예약 발행 ${blogStats.scheduled}건 점검`,
           description: "이번 주에 공개될 포스트의 제목, 날짜, 최종 문안을 확인하세요.",
-          href: "/admin/content/schedule",
+          href: "/admin/content/posts",
         }
       : null,
     blogStats.draft > 0
@@ -145,8 +145,8 @@ export function DashboardTab({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <AdminActionButton tone="ghost" onClick={() => navigateTo("/admin/content/schedule")}>예약 발행 보기</AdminActionButton>
-            <AdminActionLink tone="ghost" href="/admin/content/posts">콘텐츠 관리 열기</AdminActionLink>
+            <AdminActionButton tone="ghost" onClick={() => navigateTo("/admin/content/posts")}>포스트 운영 열기</AdminActionButton>
+            <AdminActionLink tone="ghost" href="/admin/content/posts">새 글/예약 관리</AdminActionLink>
           </div>
         </div>
       </AdminSurface>
@@ -236,7 +236,7 @@ export function DashboardTab({
             </div>
             <div className="mt-4 flex gap-2">
               <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/content/posts")} className="flex-1">포스트 관리</AdminActionButton>
-              <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/content/schedule")} className="flex-1">발행 일정</AdminActionButton>
+            <AdminActionButton tone="dark" onClick={() => navigateTo("/admin/content/posts")} className="flex-1">포스트 운영</AdminActionButton>
             </div>
           </AdminSurface>
 

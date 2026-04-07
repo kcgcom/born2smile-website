@@ -31,8 +31,8 @@ function buildLegacyAdminPath({
     case "dashboard":
       return null;
     case "content":
-      if (sub === "schedule") return "/admin/content/schedule";
-      if (sub === "stats") return "/admin/content/stats";
+      if (sub === "schedule") return "/admin/content/posts";
+      if (sub === "stats") return "/admin/content/posts";
       if (sub === "strategy") return "/admin/content/strategy";
       return "/admin/content/posts";
     case "seo":

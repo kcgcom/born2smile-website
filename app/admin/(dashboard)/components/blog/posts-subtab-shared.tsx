@@ -32,6 +32,8 @@ interface PostsHeroProps {
   topDraft: AdminBlogPost | null;
   refreshing: boolean;
   onRefresh: () => void;
+  onCreatePost: () => void;
+  onOpenAiWrite: () => void;
   onEditTopDraft: (post: AdminBlogPost) => void;
   onPublishTopDraft: (slug: string) => void;
 }
@@ -189,6 +191,8 @@ export function PostsHero({
   topDraft,
   refreshing,
   onRefresh,
+  onCreatePost,
+  onOpenAiWrite,
   onEditTopDraft,
   onPublishTopDraft,
 }: PostsHeroProps) {
@@ -197,22 +201,33 @@ export function PostsHero({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <AdminPill tone="white">포스트 관리</AdminPill>
+            <AdminPill tone="white">포스트 운영</AdminPill>
             <AdminPill tone={blogStats.draft > 0 ? "warning" : "white"}>
               {blogStats.draft > 0 ? "초안 우선 정리 필요" : "운영 안정"}
             </AdminPill>
           </div>
           <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">글 상태와 초안을 빠르게 정리합니다.</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            목록 정리 중심 화면입니다. 작성·발행은 일정 탭에서 이어집니다.
+            작성, 발행, 일정, 성과 요약까지 한 화면에서 관리합니다.
+          </p>
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            초안 {blogStats.draft}건 · 예약 {blogStats.scheduled}건 · 발행 {blogStats.published}건
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-10 w-full px-4 py-2 text-sm sm:w-auto">
+            <Pencil className="h-4 w-4" />
+            새 글 작성
+          </AdminActionButton>
+          <AdminActionButton tone="dark" onClick={onOpenAiWrite} className="min-h-10 w-full px-4 py-2 text-sm sm:w-auto">
+            <Sparkles className="h-4 w-4" />
+            AI 초안
+          </AdminActionButton>
           <button
             onClick={onRefresh}
             disabled={refreshing}
             title="캐시 새로고침 (Supabase 직접 수정 후 사용)"
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50"
+            className="flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50 sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "새로고침 중..." : "캐시 갱신"}
@@ -230,12 +245,12 @@ export function PostsHero({
           <p className="mt-1 text-xs text-[var(--muted)]">
             카테고리 {getCategoryLabel(topDraft.category)} · 작성일 {topDraft.date || "미정"}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <AdminActionButton tone="dark" onClick={() => onEditTopDraft(topDraft)} className="min-h-8 px-3 py-1 text-xs">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+            <AdminActionButton tone="dark" onClick={() => onEditTopDraft(topDraft)} className="min-h-8 w-full px-3 py-1 text-xs sm:w-auto">
               <Pencil className="h-3.5 w-3.5" />
               초안 열기
             </AdminActionButton>
-            <AdminActionButton tone="dark" onClick={() => onPublishTopDraft(topDraft.slug)} className="min-h-8 px-3 py-1 text-xs">
+            <AdminActionButton tone="dark" onClick={() => onPublishTopDraft(topDraft.slug)} className="min-h-8 w-full px-3 py-1 text-xs sm:w-auto">
               <Calendar className="h-3.5 w-3.5" />
               발행 예약
             </AdminActionButton>
@@ -248,11 +263,14 @@ export function PostsHero({
 
 export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChange }: PostsSummaryCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => onStatusFilterChange("all")} active={statusFilter === "all"} />
-      <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => onStatusFilterChange("published")} active={statusFilter === "published"} />
-      <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => onStatusFilterChange("scheduled")} active={statusFilter === "scheduled"} />
-      <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => onStatusFilterChange("draft")} active={statusFilter === "draft"} />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => onStatusFilterChange("all")} active={statusFilter === "all"} />
+        <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => onStatusFilterChange("published")} active={statusFilter === "published"} />
+        <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => onStatusFilterChange("scheduled")} active={statusFilter === "scheduled"} />
+        <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => onStatusFilterChange("draft")} active={statusFilter === "draft"} />
+      </div>
+      <p className="text-xs text-[var(--muted)]">요약 카드를 누르면 포스트 목록이 해당 상태로 바로 필터링됩니다.</p>
     </div>
   );
 }

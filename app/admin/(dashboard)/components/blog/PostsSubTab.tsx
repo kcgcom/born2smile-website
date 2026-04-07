@@ -4,13 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
+import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import type { BlogCategoryFilter } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { ContentScheduleManager } from "../ContentScheduleManager";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
+import { AiWriteModal } from "./AiWriteModal";
+import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
+import { ContentStatsPanel } from "./StatsSubTab";
 import {
   PostListItem,
   PostsFilterPanel,
@@ -32,8 +37,8 @@ export function PostsSubTab() {
     error: postsError,
     refetch: refetchPosts,
   } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
-  const { data: likesData, loading: likesLoading } = useAdminApi<BlogLikesData>("/api/admin/blog-likes");
-  const { data: scheduleData } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
+  const { data: likesData, loading: likesLoading, error: likesError } = useAdminApi<BlogLikesData>("/api/admin/blog-likes");
+  const { data: scheduleData, loading: scheduleLoading } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { mutate } = useAdminMutation();
 
   const [publishedSlugs, setPublishedSlugs] = useState<Set<string>>(new Set());
@@ -55,6 +60,7 @@ export function PostsSubTab() {
   const [rescheduling, setRescheduling] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [aiWriteOpen, setAiWriteOpen] = useState(false);
 
   const posts = useMemo(() => {
     const raw = postsData ?? [];
@@ -94,6 +100,11 @@ export function PostsSubTab() {
 
   const handleEdit = (post: AdminBlogPost) => {
     router.push(`/admin/content/posts/${post.slug}`);
+  };
+
+  const handleCreate = () => {
+    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
+    router.push("/admin/content/posts/new");
   };
 
   const handleDelete = async (slug: string) => {
@@ -150,6 +161,8 @@ export function PostsSubTab() {
         topDraft={topDraft}
         refreshing={refreshing}
         onRefresh={handleRefreshCache}
+        onCreatePost={handleCreate}
+        onOpenAiWrite={() => setAiWriteOpen(true)}
         onEditTopDraft={handleEdit}
         onPublishTopDraft={handlePublishOpen}
       />
@@ -221,6 +234,38 @@ export function PostsSubTab() {
               </ul>
             )}
           </section>
+
+          <AdminDisclosureSection
+            title="발행 정책과 일정"
+            description="발행 요일, 예약 발행, 오늘 공개 글을 함께 점검합니다."
+            countLabel={`${blogStats.scheduled}건 예약`}
+            defaultOpen={blogStats.scheduled > 0}
+            collapsedMessage="발행 요일 정책과 예약 현황은 필요할 때만 펼쳐 봅니다."
+            titleLevel="h2"
+          >
+            <ContentScheduleManager
+              embedded
+              initialPublishDays={scheduleData?.publishDays}
+              initialPosts={posts}
+              loadingOverride={scheduleLoading}
+            />
+          </AdminDisclosureSection>
+
+          <AdminDisclosureSection
+            title="콘텐츠 성과 요약"
+            description="카테고리 분포와 좋아요 반응을 빠르게 확인합니다."
+            countLabel={`${blogStats.published}건 발행`}
+            collapsedMessage="운영 판단이 필요할 때만 성과 요약을 펼쳐 봅니다."
+            titleLevel="h2"
+          >
+            <ContentStatsPanel
+              embedded
+              initialPosts={posts}
+              initialLikesData={likesData}
+              initialLikesLoading={likesLoading}
+              initialLikesError={likesError}
+            />
+          </AdminDisclosureSection>
         </>
       )}
 
@@ -242,6 +287,17 @@ export function PostsSubTab() {
           onClose={() => {
             setPublishingSlug(null);
             setPublishError(null);
+          }}
+        />
+      )}
+
+      {aiWriteOpen && (
+        <AiWriteModal
+          onClose={() => setAiWriteOpen(false)}
+          onDraftReady={(draft) => {
+            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(draft));
+            setAiWriteOpen(false);
+            router.push("/admin/content/posts/new?draft=1");
           }}
         />
       )}

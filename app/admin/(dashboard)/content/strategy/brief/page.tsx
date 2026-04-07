@@ -1,5 +1,5 @@
-import { PageBriefWorkspace } from '../../../components/insight/PageBriefWorkspace';
+import { redirect } from "next/navigation";
 
 export default function AdminContentStrategyBriefPage() {
-  return <PageBriefWorkspace />;
+  redirect("/admin/content/strategy?panel=brief");
 }

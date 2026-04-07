@@ -56,6 +56,26 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
+  test('콘텐츠 워크스페이스 핵심 경로는 로그인으로 보호된다', async ({ page }) => {
+    for (const path of [
+      '/admin/content/posts',
+      '/admin/content/strategy',
+      '/admin/content/trends',
+      '/admin/content/posts/new',
+      '/admin/content/strategy/rules',
+    ]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/admin\/login$/);
+    }
+  });
+
+  test('구형 콘텐츠 서브탭 경로도 계속 로그인으로 수렴한다', async ({ page }) => {
+    for (const path of ['/admin/content/schedule', '/admin/content/stats']) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/admin\/login$/);
+    }
+  });
+
   test('sitemap.xml', async ({ page }) => {
     const response = await page.goto('/sitemap.xml');
     expect(response?.status()).toBe(200);

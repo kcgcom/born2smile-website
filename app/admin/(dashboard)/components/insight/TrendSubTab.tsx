@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Minus, X, AlertCircle, Smartphone, UserRound, CalendarRange } from "lucide-react";
 import {
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
 } from "@/lib/admin-naver-datalab-keywords";
+import { isBlogCategorySlug } from "@/lib/blog";
+import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { useAdminApi } from "../useAdminApi";
 import { PeriodSelector } from "../PeriodSelector";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -259,9 +262,19 @@ interface CategoryDetailProps {
   onClose: () => void;
   detailRef: React.RefObject<HTMLDivElement | null>;
   volumeMap: Map<string, number>;
+  onOpenStrategy: (slug: KeywordCategorySlug) => void;
+  onCreatePost: (slug: KeywordCategorySlug) => void;
 }
 
-function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: CategoryDetailProps) {
+function CategoryDetail({
+  slug,
+  period,
+  onClose,
+  detailRef,
+  volumeMap,
+  onOpenStrategy,
+  onCreatePost,
+}: CategoryDetailProps) {
   const { data, loading, error, refetch } = useAdminApi<CategoryDetailData>(
     `/api/admin/naver-datalab/category/${slug}?period=${period}`,
   );
@@ -280,6 +293,16 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
       {error && <AdminErrorState message={error} onRetry={refetch} />}
       {!loading && !error && data && (
         <>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <AdminActionButton tone="dark" onClick={() => onOpenStrategy(slug)} className="min-h-8 px-3 py-1 text-xs">
+              전략 화면 보기
+            </AdminActionButton>
+            {isBlogCategorySlug(slug) && (
+              <AdminActionButton tone="primary" onClick={() => onCreatePost(slug)} className="min-h-8 px-3 py-1 text-xs">
+                이 카테고리로 새 글 작성
+              </AdminActionButton>
+            )}
+          </div>
           <div className="mb-4 rounded-xl bg-[var(--background)] p-4">
             <SubGroupLineChart subGroups={data.subGroups} />
           </div>
@@ -329,6 +352,7 @@ function CategoryDetail({ slug, period, onClose, detailRef, volumeMap }: Categor
 // ---------------------------------------------------------------
 
 export function TrendSubTab() {
+  const router = useRouter();
   const [period, setPeriod] = useState<"1m" | "3m" | "1y" | "3y" | "10y">("3m");
   const [selectedCategory, setSelectedCategory] = useState<KeywordCategorySlug | null>(null);
 
@@ -534,6 +558,11 @@ export function TrendSubTab() {
             onClose={() => setSelectedCategory(null)}
             detailRef={detailRef}
             volumeMap={selectedVolumeMap}
+            onOpenStrategy={() => router.push("/admin/content/strategy")}
+            onCreatePost={(slug) => {
+              if (!isBlogCategorySlug(slug)) return;
+              router.push(`/admin/content/posts/new?category=${slug}`);
+            }}
           />
         </section>
       )}

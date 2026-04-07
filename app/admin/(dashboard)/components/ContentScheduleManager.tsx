@@ -11,29 +11,50 @@ import { getTodayKST } from "@/lib/date";
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
-export function ContentScheduleManager() {
+interface SchedulePostItem {
+  slug: string;
+  title: string;
+  date: string;
+  published: boolean;
+}
+
+export function ContentScheduleManager({
+  embedded = false,
+  initialPublishDays,
+  initialPosts,
+  loadingOverride = false,
+}: {
+  embedded?: boolean;
+  initialPublishDays?: number[];
+  initialPosts?: SchedulePostItem[];
+  loadingOverride?: boolean;
+}) {
   const router = useRouter();
   const today = getTodayKST();
-  const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
-  const { data: postsData } = useAdminApi<Array<{ slug: string; title: string; date: string; published: boolean }>>("/api/admin/blog-posts");
+  const shouldFetch = !embedded;
+  const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule", shouldFetch);
+  const { data: postsData } = useAdminApi<SchedulePostItem[]>("/api/admin/blog-posts", shouldFetch);
   const { mutate, loading: saving } = useAdminMutation();
   const [saved, setSaved] = useState(false);
   const [formEdits, setFormEdits] = useState<number[] | null>(null);
   const [aiWriteOpen, setAiWriteOpen] = useState(false);
+  const [savedPublishDays, setSavedPublishDays] = useState<number[] | null>(null);
 
-  const days = formEdits ?? data?.publishDays ?? [1, 3, 5];
-  const futureScheduledPosts = (postsData ?? [])
+  const currentPublishDays = embedded ? (savedPublishDays ?? initialPublishDays) : data?.publishDays;
+  const days = formEdits ?? currentPublishDays ?? [1, 3, 5];
+  const posts = embedded ? (initialPosts ?? []) : (postsData ?? []);
+  const futureScheduledPosts = posts
     .filter((post) => post.published && post.date > today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
-  const publishedTodayPosts = (postsData ?? [])
+  const publishedTodayPosts = posts
     .filter((post) => post.published && post.date === today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
 
   const toggleDay = (day: number) => {
     setFormEdits((prev) => {
-      const current = prev ?? data?.publishDays ?? [1, 3, 5];
+      const current = prev ?? currentPublishDays ?? [1, 3, 5];
       if (current.includes(day)) {
         if (current.length <= 1) return current;
         return current.filter((value) => value !== day);
@@ -45,10 +66,13 @@ export function ContentScheduleManager() {
   const handleSave = async () => {
     const { error } = await mutate("/api/admin/site-config/schedule", "PUT", { publishDays: days });
     if (!error) {
+      setSavedPublishDays(days);
       setFormEdits(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-      refetch();
+      if (!embedded) {
+        refetch();
+      }
     }
   };
 
@@ -57,7 +81,7 @@ export function ContentScheduleManager() {
     router.push("/admin/content/posts/new");
   };
 
-  if (loading) {
+  if (loading || loadingOverride) {
     return (
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
@@ -75,29 +99,35 @@ export function ContentScheduleManager() {
           <div>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-              <h3 className="text-lg font-bold text-[var(--foreground)]">발행 요일 정책</h3>
+              <h3 className="text-lg font-bold text-[var(--foreground)]">
+                {embedded ? "발행 정책과 일정" : "발행 요일 정책"}
+              </h3>
             </div>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              발행 요일과 예약 현황을 관리합니다.
+              {embedded ? "발행 요일, 예약 현황, 오늘 공개 글을 함께 관리합니다." : "발행 요일과 예약 현황을 관리합니다."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setAiWriteOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-semibold text-[var(--color-gold,#C9930A)] transition-colors hover:bg-[var(--color-gold-bg,#FDF3E0)]"
-            >
-              <Sparkles className="h-4 w-4" />
-              AI 초안
-            </button>
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-            >
-              <FileText className="h-4 w-4" />
-              새 글
-            </button>
+            {!embedded && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAiWriteOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-semibold text-[var(--color-gold,#C9930A)] transition-colors hover:bg-[var(--color-gold-bg,#FDF3E0)]"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  AI 초안
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                >
+                  <FileText className="h-4 w-4" />
+                  새 글
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={handleSave}

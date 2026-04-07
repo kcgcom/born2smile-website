@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   MousePointerClick,
   Settings,
-  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -51,9 +50,7 @@ const WORKSPACES: WorkspaceConfig[] = [
     label: "콘텐츠",
     icon: FileText,
     tabs: [
-      { href: "/admin/content/posts", label: "포스트 관리", icon: FileText },
-      { href: "/admin/content/schedule", label: "발행 일정", icon: Sparkles },
-      { href: "/admin/content/stats", label: "통계", icon: BarChart3 },
+      { href: "/admin/content/posts", label: "포스트 운영", icon: FileText },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
       { href: "/admin/content/trends", label: "트렌드", icon: TrendingUp },
     ],
@@ -147,12 +144,19 @@ function SectionTabs({
     return null;
   }
 
+  const gridClass =
+    workspace.tabs.length <= 2
+      ? "grid-cols-2"
+      : workspace.tabs.length === 3
+        ? "grid-cols-3"
+        : "grid-cols-2 md:grid-cols-3";
+
   return (
     <nav
       className="mt-4 rounded-xl bg-slate-100/80 p-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className="grid grid-cols-2 gap-1 md:grid-cols-4 xl:flex xl:flex-row xl:items-center xl:gap-1 xl:overflow-x-auto xl:[-ms-overflow-style:none] xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
+      <div className={`grid ${gridClass} gap-1 xl:flex xl:flex-row xl:items-center xl:gap-1 xl:overflow-x-auto xl:[-ms-overflow-style:none] xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActivePath(pathname, tab.href);
