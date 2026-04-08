@@ -22,7 +22,7 @@ export function SuggestionsSubTab() {
   const { data: briefing, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=30d");
   const { data: recentSuggestions, loading: suggestionsLoading, error: suggestionsError, refetch: refetchSuggestions } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=4");
   const { mutate, loading: creating, error: createError, clearError } = useAdminMutation<AiOpsSuggestionJob>();
-  const { job, events, bindJob } = useAiSuggestionJob();
+  const { job, events, loading: jobLoading, error: jobError, bindJob } = useAiSuggestionJob();
 
   const [targetType, setTargetType] = useState<"post" | "page">("post");
   const [playbookId, setPlaybookId] = useState<string>("");
@@ -397,18 +397,31 @@ export function SuggestionsSubTab() {
             </div>
           </AdminSurface>
 
-          {job && (
+          {(job || jobLoading || jobError) && (
             <AdminSurface tone="white" className="rounded-3xl p-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <CheckCircle2 className="h-4 w-4 text-[var(--color-primary)]" />
                 생성 진행 상태
               </div>
-              <p className="mt-2 text-sm text-slate-600">{job?.message}</p>
-              <div className="mt-3 space-y-2 text-sm text-slate-500">
-                {events.slice(-4).map((event) => (
-                  <div key={event.id}>{event.message}</div>
-                ))}
-              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                {jobError
+                  ? `잡 상태 조회 오류: ${jobError}`
+                  : jobLoading && !job
+                    ? "잡 상태를 불러오고 있습니다."
+                    : job?.message}
+              </p>
+              {job?.lastError && (
+                <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {job.lastError}
+                </div>
+              )}
+              {events.length > 0 && (
+                <div className="mt-3 space-y-2 text-sm text-slate-500">
+                  {events.slice(-4).map((event) => (
+                    <div key={event.id}>{event.message}</div>
+                  ))}
+                </div>
+              )}
             </AdminSurface>
           )}
         </div>

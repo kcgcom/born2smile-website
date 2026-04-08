@@ -530,13 +530,10 @@ function buildLlmRequestBody(systemPrompt: string, userPrompt: string, suggestio
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-  };
-
-  if (suggestionType === "title") {
-    body.chat_template_kwargs = {
+    chat_template_kwargs: {
       enable_thinking: false,
-    };
-  }
+    },
+  };
 
   return body;
 }
