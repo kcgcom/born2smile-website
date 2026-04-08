@@ -212,6 +212,7 @@ export function SuggestionsSubTab() {
   const completedSteps = progressSteps.filter((step) => step.state === "done").length;
   const activeStep = progressSteps.find((step) => step.state === "current") ?? null;
   const recentEvents = events.slice(-5).reverse();
+  const latestEvent = recentEvents[0] ?? null;
 
   useEffect(() => {
     if (job?.status === "completed") {
@@ -283,242 +284,74 @@ export function SuggestionsSubTab() {
           </AdminSurface>
 
           {workflowMode === "recommended" ? (
-            <>
-              <AdminSurface tone="white" className="rounded-3xl p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-[var(--color-primary)]" />
-                      <h3 className="text-lg font-bold text-slate-900">추천 후보</h3>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">
-                      브리핑과 추가 후보를 한 목록으로 합쳤습니다. 클릭해서 바로 실행 대상으로 담을 수 있습니다.
-                    </p>
+            <AdminSurface tone="white" className="rounded-3xl p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-[var(--color-primary)]" />
+                    <h3 className="text-lg font-bold text-slate-900">추천 후보</h3>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-                    <div className="text-xs font-medium text-slate-500">선택</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">{selectedTargetIdsSafe.length}/3</div>
-                  </div>
+                  <p className="mt-1 text-sm text-slate-600">
+                    브리핑과 추가 후보를 한 목록으로 합쳤습니다. 클릭해서 바로 실행 대상으로 담을 수 있습니다.
+                  </p>
                 </div>
-                <div className="mt-4 space-y-3">
-                  {briefingLoading ? (
-                    <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-                  ) : recommendedItems.length === 0 ? (
-                    <EmptyState text="지금 바로 실행할 추천 후보가 없습니다." />
-                  ) : (
-                    recommendedItems.map((item) => {
-                      const selected = targetType === item.targetType && selectedTargetIdsSafe.includes(item.targetId);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectRecommendedItem(item)}
-                          className={`w-full rounded-2xl border p-4 text-left transition-colors ${
-                            selected
-                              ? "border-[var(--color-primary)] bg-blue-50"
-                              : "border-slate-200 bg-slate-50 hover:border-[var(--color-primary)] hover:bg-blue-50"
-                          }`}
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-slate-900">{item.title}</span>
-                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                  item.source === "today" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
-                                }`}>
-                                  {item.source === "today" ? "오늘 우선" : "추가 후보"}
-                                </span>
-                              </div>
-                              <div className="mt-1 text-sm text-slate-600">{item.description}</div>
-                            </div>
-                            <PriorityScoreBadge score={item.priorityScore} />
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <AdminPill tone="white">{targetTypeLabel(item.targetType)}</AdminPill>
-                            {item.playbookId ? <AdminPill tone="white">{getPlaybookLabel(item.playbookId)}</AdminPill> : null}
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                  <div className="text-xs font-medium text-slate-500">선택</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">{selectedTargetIdsSafe.length}/3</div>
                 </div>
-              </AdminSurface>
-
-              <AdminSurface tone="white" className="rounded-3xl p-6">
-                <div className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4 text-[var(--color-primary)]" />
-                  <h3 className="text-lg font-bold text-slate-900">실행 설정</h3>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  선택된 후보를 확인하고 바로 초안을 생성합니다.
-                </p>
-
-                <div className="mt-5 space-y-4">
-                  <div>
-                    <div className="mb-1.5 flex items-center justify-between gap-3">
-                      <label className="block text-sm font-medium text-slate-700">선택된 대상</label>
+              </div>
+              <div className="mt-4 space-y-3">
+                {briefingLoading ? (
+                  <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+                ) : recommendedItems.length === 0 ? (
+                  <EmptyState text="지금 바로 실행할 추천 후보가 없습니다." />
+                ) : (
+                  recommendedItems.map((item) => {
+                    const selected = targetType === item.targetType && selectedTargetIdsSafe.includes(item.targetId);
+                    return (
                       <button
+                        key={item.id}
                         type="button"
-                        onClick={() => setWorkflowMode("manual")}
-                        className="text-xs font-medium text-[var(--color-primary)]"
+                        onClick={() => handleSelectRecommendedItem(item)}
+                        className={`w-full rounded-2xl border p-4 text-left transition-colors ${
+                          selected
+                            ? "border-[var(--color-primary)] bg-blue-50"
+                            : "border-slate-200 bg-slate-50 hover:border-[var(--color-primary)] hover:bg-blue-50"
+                        }`}
                       >
-                        직접 선택으로 전환
-                      </button>
-                    </div>
-                    {selectedTargets.length === 0 ? (
-                      <EmptyState text="위 추천 후보에서 대상을 선택해 주세요." />
-                    ) : (
-                      <div className="space-y-2">
-                        {selectedTargets.map((target) => (
-                          <div key={target.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{target.label}</div>
-                              <div className="mt-1 text-xs text-slate-500">{target.note}</div>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-semibold text-slate-900">{item.title}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                item.source === "today" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+                              }`}>
+                                {item.source === "today" ? "오늘 우선" : "추가 후보"}
+                              </span>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSelectedTarget(target.id)}
-                              className="text-xs font-medium text-slate-500"
-                            >
-                              제거
-                            </button>
+                            <div className="mt-1 text-sm text-slate-600">{item.description}</div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">플레이북</label>
-                    <select
-                      value={resolvedPlaybookId}
-                      onChange={(event) => setPlaybookId(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                      disabled={playbooksLoading}
-                    >
-                      {(playbooks ?? []).filter((item) => item.targetTypes.includes(targetType)).map((playbook) => (
-                        <option key={playbook.id} value={playbook.id}>{playbook.label}</option>
-                      ))}
-                    </select>
-                    {activePlaybook && <p className="mt-2 text-xs text-slate-500">{activePlaybook.summary}</p>}
-                    {selectionSummary && (
-                      <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-slate-700">
-                        {selectionSummary}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
-                    <textarea
-                      value={operatorContext}
-                      onChange={(event) => setOperatorContext(event.target.value)}
-                      rows={4}
-                      maxLength={500}
-                      placeholder={activePlaybook?.operatorPromptHint ?? "예: 김포/장기동 검색 의도를 더 반영하고 상담 문구는 부드럽게 유지"}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                    />
-                  </div>
-
-                  <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !activePlaybook || selectedTargetIdsSafe.length === 0} className="w-full">
-                    {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    초안 생성
-                  </AdminActionButton>
-                </div>
-              </AdminSurface>
-            </>
+                          <PriorityScoreBadge score={item.priorityScore} />
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <AdminPill tone="white">{targetTypeLabel(item.targetType)}</AdminPill>
+                          {item.playbookId ? <AdminPill tone="white">{getPlaybookLabel(item.playbookId)}</AdminPill> : null}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </AdminSurface>
           ) : (
             <AdminSurface tone="white" className="rounded-3xl p-6">
               <div className="flex items-center gap-2">
                 <Wand2 className="h-4 w-4 text-[var(--color-primary)]" />
-                <h3 className="text-lg font-bold text-slate-900">직접 생성</h3>
+                <h3 className="text-lg font-bold text-slate-900">직접 생성 안내</h3>
               </div>
               <p className="mt-2 text-sm text-slate-600">
-                추천과 별개로 원하는 대상을 직접 골라 초안을 생성합니다.
+                우측 상단의 실행 설정에서 원하는 대상을 직접 고를 수 있습니다. 추천 목록은 숨기고 실행에 집중한 상태입니다.
               </p>
-
-              <div className="mt-5 space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 유형</label>
-                  <select
-                    value={targetType}
-                    onChange={(event) => {
-                      setTargetType(event.target.value as "post" | "page");
-                      setSelectedTargetIds([]);
-                    }}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                  >
-                    <option value="post">블로그 포스트</option>
-                    <option value="page">핵심 페이지</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">플레이북</label>
-                  <select
-                    value={resolvedPlaybookId}
-                    onChange={(event) => setPlaybookId(event.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                    disabled={playbooksLoading}
-                  >
-                    {(playbooks ?? []).filter((item) => item.targetTypes.includes(targetType)).map((playbook) => (
-                      <option key={playbook.id} value={playbook.id}>{playbook.label}</option>
-                    ))}
-                  </select>
-                  {activePlaybook && <p className="mt-2 text-xs text-slate-500">{activePlaybook.summary}</p>}
-                </div>
-
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-3">
-                    <label className="block text-sm font-medium text-slate-700">대상 선택 (최대 3개)</label>
-                    <span className="text-xs font-medium text-slate-500">
-                      선택 {selectedTargetIdsSafe.length}/3
-                    </span>
-                  </div>
-                  <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-                    {targetsLoading ? (
-                      <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-                    ) : (
-                      targetOptions.map((target) => {
-                        const checked = selectedTargetIdsSafe.includes(target.id);
-                        return (
-                          <label key={target.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 ${checked ? "border-[var(--color-primary)] bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
-                            <input type="checkbox" checked={checked} onChange={() => handleToggleTarget(target.id)} className="mt-1" />
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{target.label}</div>
-                              <div className="mt-1 text-xs text-slate-500">{target.note}</div>
-                              {target.recommendedPlaybooks[0] && (
-                                <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-medium">
-                                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[var(--color-primary)]">
-                                    추천 플레이북: {getPlaybookLabel(target.recommendedPlaybooks[0])}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
-                  <textarea
-                    value={operatorContext}
-                    onChange={(event) => setOperatorContext(event.target.value)}
-                    rows={4}
-                    maxLength={500}
-                    placeholder={activePlaybook?.operatorPromptHint ?? "예: 김포/장기동 검색 의도를 더 반영하고 상담 문구는 부드럽게 유지"}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
-                  />
-                </div>
-
-                <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !activePlaybook || selectedTargetIdsSafe.length === 0} className="w-full">
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  초안 생성
-                </AdminActionButton>
-              </div>
             </AdminSurface>
           )}
 
@@ -528,23 +361,133 @@ export function SuggestionsSubTab() {
 
         <div className="space-y-6">
           <AdminSurface tone="white" className="rounded-3xl p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">최근 생성 초안</h3>
-                <p className="mt-1 text-sm text-slate-600">생성 후 검토·적용에서 마무리합니다.</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--color-primary)]" />
+              <h3 className="text-lg font-bold text-slate-900">실행 설정</h3>
             </div>
-            <div className="mt-4 space-y-3">
-              {suggestionsLoading ? (
-                <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-              ) : (
-                (recentSuggestions ?? []).map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                    <div className="text-sm font-semibold text-slate-900">{item.title}</div>
-                    <div className="mt-1 text-xs text-slate-500">{statusLabel(item.status)} · {item.targetLabel}</div>
+            <p className="mt-2 text-sm text-slate-600">
+              {workflowMode === "recommended"
+                ? "선택된 후보를 확인하고 바로 초안을 생성합니다."
+                : "추천과 별개로 원하는 대상을 직접 골라 초안을 생성합니다."}
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {workflowMode === "recommended" ? (
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
+                    <label className="block text-sm font-medium text-slate-700">선택된 대상</label>
+                    <button
+                      type="button"
+                      onClick={() => setWorkflowMode("manual")}
+                      className="text-xs font-medium text-[var(--color-primary)]"
+                    >
+                      직접 선택으로 전환
+                    </button>
                   </div>
-                ))
+                  {selectedTargets.length === 0 ? (
+                    <EmptyState text="좌측 추천 후보에서 대상을 선택해 주세요." />
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedTargets.map((target) => (
+                        <div key={target.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">{target.label}</div>
+                            <div className="mt-1 text-xs text-slate-500">{target.note}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSelectedTarget(target.id)}
+                            className="text-xs font-medium text-slate-500"
+                          >
+                            제거
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">대상 유형</label>
+                    <select
+                      value={targetType}
+                      onChange={(event) => {
+                        setTargetType(event.target.value as "post" | "page");
+                        setSelectedTargetIds([]);
+                      }}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                    >
+                      <option value="post">블로그 포스트</option>
+                      <option value="page">핵심 페이지</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between gap-3">
+                      <label className="block text-sm font-medium text-slate-700">대상 선택 (최대 3개)</label>
+                      <span className="text-xs font-medium text-slate-500">
+                        선택 {selectedTargetIdsSafe.length}/3
+                      </span>
+                    </div>
+                    <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                      {targetsLoading ? (
+                        <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                      ) : (
+                        targetOptions.map((target) => {
+                          const checked = selectedTargetIdsSafe.includes(target.id);
+                          return (
+                            <label key={target.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 ${checked ? "border-[var(--color-primary)] bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
+                              <input type="checkbox" checked={checked} onChange={() => handleToggleTarget(target.id)} className="mt-1" />
+                              <div>
+                                <div className="text-sm font-semibold text-slate-900">{target.label}</div>
+                                <div className="mt-1 text-xs text-slate-500">{target.note}</div>
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">플레이북</label>
+                <select
+                  value={resolvedPlaybookId}
+                  onChange={(event) => setPlaybookId(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                  disabled={playbooksLoading}
+                >
+                  {(playbooks ?? []).filter((item) => item.targetTypes.includes(targetType)).map((playbook) => (
+                    <option key={playbook.id} value={playbook.id}>{playbook.label}</option>
+                  ))}
+                </select>
+                {activePlaybook && <p className="mt-2 text-xs text-slate-500">{activePlaybook.summary}</p>}
+                {selectionSummary && workflowMode === "recommended" && (
+                  <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-slate-700">
+                    {selectionSummary}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">운영자 추가 지시</label>
+                <textarea
+                  value={operatorContext}
+                  onChange={(event) => setOperatorContext(event.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  placeholder={activePlaybook?.operatorPromptHint ?? "예: 김포/장기동 검색 의도를 더 반영하고 상담 문구는 부드럽게 유지"}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+
+              <AdminActionButton tone="primary" onClick={handleCreate} disabled={creating || !activePlaybook || selectedTargetIdsSafe.length === 0} className="w-full">
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                초안 생성
+              </AdminActionButton>
             </div>
           </AdminSurface>
 
@@ -594,6 +537,11 @@ export function SuggestionsSubTab() {
                         진행 중: {activeStep.label}
                       </div>
                     )}
+                    {latestEvent && (
+                      <div className="mt-3 text-xs text-slate-500">
+                        최근 업데이트: {latestEvent.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 space-y-3">
@@ -628,31 +576,29 @@ export function SuggestionsSubTab() {
                   {job.lastError}
                 </div>
               )}
-              {recentEvents.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-xs font-medium text-slate-500">최근 작업 로그</div>
-                  <div className="mt-3 space-y-2">
-                    {recentEvents.map((event) => (
-                      <div key={event.id} className="rounded-2xl bg-slate-50 px-4 py-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                              {stageLabel(event.stage)}
-                            </span>
-                            <span className="text-xs text-slate-400">{formatEventTime(event.createdAt)}</span>
-                          </div>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${event.status === "failed" ? "bg-red-100 text-red-700" : "bg-slate-200 text-slate-600"}`}>
-                            {jobStatusLabel(event.status)}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-sm text-slate-700">{event.message}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </AdminSurface>
           )}
+
+          <AdminSurface tone="white" className="rounded-3xl p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">최근 생성 초안</h3>
+                <p className="mt-1 text-sm text-slate-600">생성 후 검토·적용에서 마무리합니다.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {suggestionsLoading ? (
+                <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+              ) : (
+                (recentSuggestions ?? []).map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                    <div className="mt-1 text-xs text-slate-500">{statusLabel(item.status)} · {item.targetLabel}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </AdminSurface>
         </div>
       </div>
     </div>
@@ -734,21 +680,6 @@ function defaultStageMessage(stage: AiOpsSuggestionJob["stage"]) {
   }
 }
 
-function jobStatusLabel(status: AiOpsSuggestionJob["status"]) {
-  switch (status) {
-    case "queued":
-      return "대기";
-    case "running":
-      return "진행 중";
-    case "completed":
-      return "완료";
-    case "failed":
-      return "실패";
-    default:
-      return status;
-  }
-}
-
 function stepStateLabel(state: "done" | "current" | "pending" | "failed") {
   switch (state) {
     case "done":
@@ -813,12 +744,5 @@ function buildJobProgressSteps(job: AiOpsSuggestionJob | null, events: AiOpsSugg
       state,
       message: latestEvent?.message ?? (job?.stage === stage ? job.message : undefined),
     };
-  });
-}
-
-function formatEventTime(value: string) {
-  return new Date(value).toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
