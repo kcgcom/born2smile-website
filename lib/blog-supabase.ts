@@ -466,6 +466,43 @@ export type UpdateBlogPostData = Partial<
   Omit<BlogPost, "slug" | "readTime"> & { published: boolean }
 >;
 
+export type BlogPostAdminRecord = BlogPost & {
+  published: boolean;
+  createdAt?: string;
+};
+
+/**
+ * All posts with full block content for admin analysis.
+ * Use sparingly for internal tooling where metadata-only reads are insufficient.
+ */
+export async function getAllPostDetailsFresh(): Promise<BlogPostAdminRecord[]> {
+  const snapshotFallback = () =>
+    getSnapshotPosts().map((post) => ({
+      ...post,
+      createdAt: undefined,
+    }));
+
+  if (!isSupabaseAdminConfigured) return snapshotFallback();
+
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (error) throw error;
+
+    return (data as DbRow[]).map((row) => ({
+      ...rowToPost(row),
+      published: row.published ?? true,
+      createdAt: row.created_at ?? undefined,
+    }));
+  } catch (error) {
+    console.warn("[blog-supabase] Supabase full-post query failed, using snapshot fallback", error);
+    return snapshotFallback();
+  }
+}
+
 /**
  * Update an existing blog post row (partial update).
  * Recalculates readTime if blocks are provided.

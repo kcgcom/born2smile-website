@@ -1,12 +1,12 @@
 import { getTodayKST } from "./date";
-import { getAllPostMetasFresh, getPostBySlugFresh, updateBlogPost, type UpdateBlogPostData } from "./blog-supabase";
+import { getAllPostDetailsFresh, getAllPostMetasFresh, getPostBySlugFresh, updateBlogPost, type UpdateBlogPostData } from "./blog-supabase";
 import { fetchGA4Data } from "./admin-analytics";
 import { fetchSearchConsoleData } from "./admin-search-console";
 import { fetchPostHogConversion } from "./admin-posthog";
 import { isSupabaseAdminConfigured, getSupabaseAdmin } from "./supabase-admin";
 import { CLINIC, TREATMENTS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
-import type { BlogRelatedLinkItem } from "./blog/types";
+import type { BlogBlock, BlogRelatedLinkItem } from "./blog/types";
 import type {
   AiOpsActionType,
   AiOpsActivityItem,
@@ -69,6 +69,34 @@ const LOCAL_KEYWORDS = Array.from(new Set([
   CLINIC.neighborhood.replace(/\s+/g, " ").trim(),
   ...CLINIC.addressShort.split(/[\s,()]+/).map((token) => token.trim()).filter(Boolean),
 ])).filter((token) => token.length >= 2);
+
+const SNIPPET_VALUE_TERMS = [
+  "알아",
+  "정리",
+  "설명",
+  "안내",
+  "비교",
+  "확인",
+  "체크",
+  "도움",
+  "대처",
+  "관리",
+  "예방",
+];
+
+const SNIPPET_TOPIC_STOPWORDS = new Set([
+  "서울본치과",
+  "서울",
+  "본치과",
+  "김포",
+  "장기동",
+  "한강신도시",
+  "치과",
+  "요약",
+  "정리",
+  "설명",
+  "가이드",
+]);
 
 interface SuggestionFilters {
   status?: AiOpsSuggestionStatus | "all";
@@ -216,11 +244,16 @@ interface PageTargetDefinition {
 }
 
 interface OpportunityDatasets {
-  posts: Awaited<ReturnType<typeof getAllPostMetasFresh>>;
+  posts: Awaited<ReturnType<typeof getAllPostDetailsFresh>>;
   analyticsResult: Awaited<ReturnType<typeof fetchGA4Data>> | null;
   searchResult: Awaited<ReturnType<typeof fetchSearchConsoleData>> | null;
   conversionResult: Awaited<ReturnType<typeof fetchPostHogConversion>> | null;
   suggestionRows: SuggestionRow[];
+}
+
+interface WeightedIssue {
+  issue: AiOpsCandidateIssue;
+  weight: number;
 }
 
 interface TargetPerformanceSnapshot {
@@ -617,6 +650,87 @@ function buildScoreFactor(label: string, score: number, detail: string): AiOpsSc
   return { label, score, detail };
 }
 
+function normalizeSnippetText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function countSnippetSentences(text: string) {
+  const normalized = normalizeSnippetText(text);
+  if (!normalized) return 0;
+  const parts = normalized
+    .split(/[.!?]\s*|\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return Math.max(parts.length, 1);
+}
+
+function extractTopicTokens(...texts: string[]) {
+  return Array.from(new Set(
+    texts
+      .flatMap((text) => normalizeSnippetText(text).split(/[\s,()[\]/·•|:;"'`~!?]+/))
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 2 && !SNIPPET_TOPIC_STOPWORDS.has(token)),
+  )).slice(0, 8);
+}
+
+function countFaqBlocks(blocks: BlogBlock[]) {
+  return blocks.filter((block) => block.type === "faq").length;
+}
+
+function countRelatedLinkItems(blocks: BlogBlock[]) {
+  return blocks.reduce((sum, block) => {
+    if (block.type !== "relatedLinks") return sum;
+    return sum + block.items.filter((item) => item.title.trim().length > 0 && item.href.trim().length > 0).length;
+  }, 0);
+}
+
+function assessPostSnippet(excerpt: string, title: string, subtitle: string) {
+  const normalized = normalizeSnippetText(excerpt);
+  const length = normalized.length;
+  const sentenceCount = countSnippetSentences(normalized);
+  const topicTokens = extractTopicTokens(title, subtitle);
+  const hasTopicSignal = topicTokens.length === 0 || topicTokens.some((token) => normalized.includes(token));
+  const hasValueSignal = SNIPPET_VALUE_TERMS.some((term) => normalized.includes(term));
+  const details: string[] = [];
+  const factors: AiOpsScoreFactor[] = [];
+  let penalty = 0;
+
+  if (length < 70) {
+    penalty += 18;
+    details.push(`길이가 ${length}자로 짧습니다`);
+    factors.push(buildScoreFactor("구조적 결함", 18, `요약문 ${length}자 / 70자 미만`));
+  } else if (length < 90) {
+    penalty += 10;
+    details.push(`길이가 ${length}자로 다소 짧습니다`);
+    factors.push(buildScoreFactor("구조적 결함", 10, `요약문 ${length}자 / 90자 미만`));
+  }
+
+  if (sentenceCount < 2) {
+    penalty += 6;
+    details.push("한 문장에 그쳐 환자 상황과 제공 가치를 함께 보여주기 어렵습니다");
+    factors.push(buildScoreFactor("스니펫 구성", 6, `문장 수 ${sentenceCount}개`));
+  }
+
+  if (!hasTopicSignal) {
+    penalty += 5;
+    details.push("제목의 핵심 주제가 요약문에 바로 드러나지 않습니다");
+    factors.push(buildScoreFactor("스니펫 구성", 5, "주제 키워드 노출 부족"));
+  }
+
+  if (!hasValueSignal) {
+    penalty += 4;
+    details.push("독자가 이 글에서 무엇을 얻는지 바로 읽히지 않습니다");
+    factors.push(buildScoreFactor("스니펫 구성", 4, "가치 제안 표현 부족"));
+  }
+
+  return {
+    isWeak: penalty >= 12,
+    penalty,
+    detail: details.join(" · "),
+    factors,
+  };
+}
+
 function isRelatedLinksBlock(value: unknown): value is RelatedLinksBlock {
   return Boolean(value)
     && typeof value === "object"
@@ -659,7 +773,7 @@ async function loadSuggestionRows(limit = 120): Promise<SuggestionRow[]> {
 
 async function loadOpportunityDatasets(period: AiOpsBriefingPeriod): Promise<OpportunityDatasets> {
   const [posts, analyticsResult, searchResult, conversionResult, suggestionRows] = await Promise.all([
-    getAllPostMetasFresh().catch(() => []),
+    getAllPostDetailsFresh().catch(() => []),
     fetchGA4Data(toAnalyticsPeriod(period)).catch(() => null),
     fetchSearchConsoleData(toSearchPeriod(period)).catch(() => null),
     fetchPostHogConversion(toConversionPeriod(period)).catch(() => null),
@@ -766,34 +880,63 @@ function resolveSignalState(lastAppliedAt: string | null, observationPlan: AiOps
   return "watch";
 }
 
-function buildPlaybookIdsForIssues(issues: AiOpsCandidateIssue[]) {
-  const playbooks = new Set<AiOpsPlaybookId>();
-  for (const issue of issues) {
+function pushWeightedIssue(
+  weightedIssues: WeightedIssue[],
+  issues: AiOpsCandidateIssue[],
+  code: string,
+  label: string,
+  detail: string,
+  weight: number,
+) {
+  const issue = buildIssue(code, label, detail);
+  weightedIssues.push({ issue, weight });
+  issues.push(issue);
+}
+
+function rankIssues(weightedIssues: WeightedIssue[]) {
+  return [...weightedIssues]
+    .sort((a, b) => b.weight - a.weight || a.issue.label.localeCompare(b.issue.label, "ko"))
+    .map((item) => item.issue);
+}
+
+function registerPlaybookScore(
+  playbookScores: Map<AiOpsPlaybookId, number>,
+  playbookId: AiOpsPlaybookId,
+  weight: number,
+) {
+  playbookScores.set(playbookId, Math.max(playbookScores.get(playbookId) ?? 0, weight));
+}
+
+function buildPlaybookIdsForIssues(weightedIssues: WeightedIssue[]) {
+  const playbookScores = new Map<AiOpsPlaybookId, number>();
+  for (const { issue, weight } of weightedIssues) {
     switch (issue.code) {
       case "low_ctr":
       case "weak_snippet":
       case "local_gap":
-        playbooks.add("snippet-refresh");
-        playbooks.add("local-intent-refresh");
+        registerPlaybookScore(playbookScores, "snippet-refresh", weight);
+        registerPlaybookScore(playbookScores, "local-intent-refresh", Math.max(weight - 1, 1));
         break;
       case "faq_gap":
-        playbooks.add("faq-expansion");
+        registerPlaybookScore(playbookScores, "faq-expansion", weight);
         break;
       case "internal_links_gap":
-        playbooks.add("internal-link-cluster");
+        registerPlaybookScore(playbookScores, "internal-link-cluster", weight);
         break;
       case "stale":
       case "thin_copy":
-        playbooks.add("stale-refresh");
+        registerPlaybookScore(playbookScores, "stale-refresh", weight);
         break;
       default:
-        playbooks.add("snippet-refresh");
+        registerPlaybookScore(playbookScores, "snippet-refresh", Math.max(weight, 1));
     }
   }
-  if (playbooks.size === 0) {
-    playbooks.add("snippet-refresh");
+  if (playbookScores.size === 0) {
+    registerPlaybookScore(playbookScores, "snippet-refresh", 1);
   }
-  return Array.from(playbooks);
+  return [...playbookScores.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([playbookId]) => playbookId);
 }
 
 function buildSuggestionTypesFromPlaybooks(playbooks: AiOpsPlaybookId[]) {
@@ -816,8 +959,8 @@ function buildCandidateForPost(
   post: OpportunityDatasets["posts"][number],
   datasets: OpportunityDatasets,
 ): AiOpsCandidate {
-  const faqCount = 0;
-  const relatedLinksCount = 0;
+  const faqCount = countFaqBlocks(post.blocks);
+  const relatedLinksCount = countRelatedLinkItems(post.blocks);
   const context: BlogTargetContext = {
     targetType: "post",
     targetId: post.slug,
@@ -827,10 +970,11 @@ function buildCandidateForPost(
     excerpt: post.excerpt,
     category: post.category,
     date: post.dateModified ?? post.date,
-    blocks: [],
+    blocks: post.blocks,
   };
   const performance = getTargetPerformanceSnapshot(context, datasets);
   const issues: AiOpsCandidateIssue[] = [];
+  const weightedIssues: WeightedIssue[] = [];
   const factors: AiOpsScoreFactor[] = [];
   const notes: string[] = [];
   let score = 0;
@@ -838,47 +982,48 @@ function buildCandidateForPost(
   const ageDays = normalizeDaysOld(post.dateModified ?? post.date);
   if (ageDays >= 180) {
     score += 24;
-    issues.push(buildIssue("stale", "오래된 콘텐츠", `최근 수정 후 ${ageDays}일이 지나 최신성이 약해졌습니다.`));
+    pushWeightedIssue(weightedIssues, issues, "stale", "오래된 콘텐츠", `최근 수정 후 ${ageDays}일이 지나 최신성이 약해졌습니다.`, 24);
     factors.push(buildScoreFactor("콘텐츠 신선도", 24, `최근 수정 후 ${ageDays}일 경과`));
   } else if (ageDays >= 120) {
     score += 14;
-    issues.push(buildIssue("stale", "정비 주기 도래", `최근 수정 후 ${ageDays}일이 지나 간단한 정비가 필요합니다.`));
+    pushWeightedIssue(weightedIssues, issues, "stale", "정비 주기 도래", `최근 수정 후 ${ageDays}일이 지나 간단한 정비가 필요합니다.`, 14);
     factors.push(buildScoreFactor("콘텐츠 신선도", 14, `최근 수정 후 ${ageDays}일 경과`));
   }
 
-  if (post.excerpt.length < 90) {
-    score += 18;
-    issues.push(buildIssue("weak_snippet", "요약문 약함", "검색 결과에서 클릭을 만들 설명이 짧습니다."));
-    factors.push(buildScoreFactor("구조적 결함", 18, `excerpt ${post.excerpt.length}자`));
+  const snippetAssessment = assessPostSnippet(post.excerpt, post.title, post.subtitle);
+  if (snippetAssessment.isWeak) {
+    score += snippetAssessment.penalty;
+    pushWeightedIssue(weightedIssues, issues, "weak_snippet", "요약문 약함", snippetAssessment.detail, snippetAssessment.penalty);
+    factors.push(...snippetAssessment.factors);
   }
 
   if (faqCount === 0) {
     score += 16;
-    issues.push(buildIssue("faq_gap", "FAQ 없음", "질문형 검색을 받을 FAQ 블록이 없습니다."));
+    pushWeightedIssue(weightedIssues, issues, "faq_gap", "FAQ 없음", "질문형 검색을 받을 FAQ 블록이 없습니다.", 16);
     factors.push(buildScoreFactor("구조적 결함", 16, "FAQ 블록 0개"));
   }
 
   if (relatedLinksCount === 0) {
     score += 14;
-    issues.push(buildIssue("internal_links_gap", "내부링크 부족", "관련 글/치료로 이어지는 탐색 링크가 없습니다."));
+    pushWeightedIssue(weightedIssues, issues, "internal_links_gap", "내부링크 부족", "관련 글/치료로 이어지는 탐색 링크가 없습니다.", 14);
     factors.push(buildScoreFactor("탐색성", 14, "related links 0개"));
   }
 
   if (!hasLocalKeyword([post.title, post.subtitle, post.excerpt])) {
     score += 12;
-    issues.push(buildIssue("local_gap", "지역 의도 약함", "김포·장기동 생활권 맥락이 스니펫에 드러나지 않습니다."));
+    pushWeightedIssue(weightedIssues, issues, "local_gap", "지역 의도 약함", "김포·장기동 생활권 맥락이 스니펫에 드러나지 않습니다.", 12);
     factors.push(buildScoreFactor("지역 SEO", 12, "지역 키워드 노출 부족"));
   }
 
   if ((performance.metrics.impressions ?? 0) >= 80 && (performance.metrics.ctr ?? 0) < 2.2) {
     score += 18;
-    issues.push(buildIssue("low_ctr", "CTR 낮음", `노출 ${formatMetric(performance.metrics.impressions)} 대비 CTR ${formatPercent(performance.metrics.ctr)}`));
+    pushWeightedIssue(weightedIssues, issues, "low_ctr", "CTR 낮음", `노출 ${formatMetric(performance.metrics.impressions)} 대비 CTR ${formatPercent(performance.metrics.ctr)}`, 18);
     factors.push(buildScoreFactor("검색 기회", 18, `노출 ${formatMetric(performance.metrics.impressions)} / CTR ${formatPercent(performance.metrics.ctr)}`));
   }
 
   if ((performance.metrics.position ?? 0) > 6.5) {
     score += 10;
-    issues.push(buildIssue("position", "순위 보강 여지", `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`));
+    pushWeightedIssue(weightedIssues, issues, "position", "순위 보강 여지", `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`, 10);
     factors.push(buildScoreFactor("검색 기회", 10, `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`));
   }
 
@@ -896,14 +1041,16 @@ function buildCandidateForPost(
   }
 
   if (issues.length === 0) {
-    issues.push(buildIssue("monitor", "정기 점검", "급한 구조적 결함은 없지만 주기 점검 대상으로 유지합니다."));
+    pushWeightedIssue(weightedIssues, issues, "monitor", "정기 점검", "급한 구조적 결함은 없지만 주기 점검 대상으로 유지합니다.", 1);
   }
 
-  const playbookIds = buildPlaybookIdsForIssues(issues);
+  const rankedIssues = rankIssues(weightedIssues);
+  const primaryIssue = rankedIssues[0] ?? buildIssue("monitor", "정기 점검", "급한 구조적 결함은 없지만 주기 점검 대상으로 유지합니다.");
+  const playbookIds = buildPlaybookIdsForIssues(weightedIssues);
   const difficulty = chooseDifficulty(playbookIds);
   const signalState = resolveSignalState(lastAppliedAt, null);
   const evidence: AiOpsEvidence = {
-    summary: issues[0]?.detail ?? "정기 점검",
+    summary: primaryIssue.detail,
     scoreBreakdown: factors.length > 0 ? factors : [buildScoreFactor("정기 점검", 5, "낮은 강도의 개선 기회")],
     topQueries: performance.topQueries,
     metrics: performance.metrics,
@@ -919,8 +1066,8 @@ function buildCandidateForPost(
     suggestionTypes: buildSuggestionTypesFromPlaybooks(playbookIds),
     playbookIds,
     priorityScore: clampScore(score || 8),
-    primaryIssue: issues[0]?.label ?? "정기 점검",
-    issues,
+    primaryIssue: primaryIssue.label,
+    issues: rankedIssues,
     difficulty,
     signalState,
     evidence,
@@ -950,37 +1097,38 @@ function buildCandidateForPage(page: PageTargetDefinition, datasets: Opportunity
   };
   const performance = getTargetPerformanceSnapshot(context, datasets);
   const issues: AiOpsCandidateIssue[] = [];
+  const weightedIssues: WeightedIssue[] = [];
   const factors: AiOpsScoreFactor[] = [];
   const notes: string[] = [];
   let score = 0;
 
   if (!hasLocalKeyword([page.title, page.subtitle, page.description, page.note])) {
     score += 14;
-    issues.push(buildIssue("local_gap", "지역 의도 약함", "페이지 설명에 김포·장기동 생활권 맥락이 약합니다."));
+    pushWeightedIssue(weightedIssues, issues, "local_gap", "지역 의도 약함", "페이지 설명에 김포·장기동 생활권 맥락이 약합니다.", 14);
     factors.push(buildScoreFactor("지역 SEO", 14, "지역 키워드 노출 부족"));
   }
 
   if (page.faqCount === 0 && (page.pagePath === "/contact" || page.pagePath.includes("/treatments/"))) {
     score += 18;
-    issues.push(buildIssue("faq_gap", "FAQ 보강 필요", "핵심 상담/치료 페이지인데 질문형 검색 대응이 약합니다."));
+    pushWeightedIssue(weightedIssues, issues, "faq_gap", "FAQ 보강 필요", "핵심 상담/치료 페이지인데 질문형 검색 대응이 약합니다.", 18);
     factors.push(buildScoreFactor("구조적 결함", 18, `FAQ ${page.faqCount}개`));
   }
 
   if (page.description.length < 180) {
     score += 16;
-    issues.push(buildIssue("thin_copy", "설명 부족", "핵심 문장이 짧아 검색 결과와 랜딩 메시지가 약합니다."));
+    pushWeightedIssue(weightedIssues, issues, "thin_copy", "설명 부족", "핵심 문장이 짧아 검색 결과와 랜딩 메시지가 약합니다.", 16);
     factors.push(buildScoreFactor("구조적 결함", 16, `${page.description.length}자 설명`));
   }
 
   if ((performance.metrics.impressions ?? 0) >= 120 && (performance.metrics.ctr ?? 0) < 2.8) {
     score += 18;
-    issues.push(buildIssue("low_ctr", "CTR 낮음", `노출 ${formatMetric(performance.metrics.impressions)} 대비 CTR ${formatPercent(performance.metrics.ctr)}`));
+    pushWeightedIssue(weightedIssues, issues, "low_ctr", "CTR 낮음", `노출 ${formatMetric(performance.metrics.impressions)} 대비 CTR ${formatPercent(performance.metrics.ctr)}`, 18);
     factors.push(buildScoreFactor("검색 기회", 18, `노출 ${formatMetric(performance.metrics.impressions)} / CTR ${formatPercent(performance.metrics.ctr)}`));
   }
 
   if ((performance.metrics.position ?? 0) > 5.5) {
     score += 10;
-    issues.push(buildIssue("position", "순위 보강 여지", `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`));
+    pushWeightedIssue(weightedIssues, issues, "position", "순위 보강 여지", `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`, 10);
     factors.push(buildScoreFactor("검색 기회", 10, `평균 순위 ${formatNumber(performance.metrics.position, 1)}위`));
   }
 
@@ -1007,14 +1155,16 @@ function buildCandidateForPage(page: PageTargetDefinition, datasets: Opportunity
   }
 
   if (issues.length === 0) {
-    issues.push(buildIssue("monitor", "정기 점검", "급한 구조적 결함은 없지만 핵심 랜딩으로서 정기 점검이 필요합니다."));
+    pushWeightedIssue(weightedIssues, issues, "monitor", "정기 점검", "급한 구조적 결함은 없지만 핵심 랜딩으로서 정기 점검이 필요합니다.", 1);
   }
 
-  const playbookIds = buildPlaybookIdsForIssues(issues);
+  const rankedIssues = rankIssues(weightedIssues);
+  const primaryIssue = rankedIssues[0] ?? buildIssue("monitor", "정기 점검", "급한 구조적 결함은 없지만 핵심 랜딩으로서 정기 점검이 필요합니다.");
+  const playbookIds = buildPlaybookIdsForIssues(weightedIssues);
   const difficulty = chooseDifficulty(playbookIds);
   const signalState = resolveSignalState(lastAppliedAt, null);
   const evidence: AiOpsEvidence = {
-    summary: issues[0]?.detail ?? "정기 점검",
+    summary: primaryIssue.detail,
     scoreBreakdown: factors.length > 0 ? factors : [buildScoreFactor("정기 점검", 5, "낮은 강도의 개선 기회")],
     topQueries: performance.topQueries,
     metrics: performance.metrics,
@@ -1030,8 +1180,8 @@ function buildCandidateForPage(page: PageTargetDefinition, datasets: Opportunity
     suggestionTypes: buildSuggestionTypesFromPlaybooks(playbookIds),
     playbookIds,
     priorityScore: clampScore(score || 8),
-    primaryIssue: issues[0]?.label ?? "정기 점검",
-    issues,
+    primaryIssue: primaryIssue.label,
+    issues: rankedIssues,
     difficulty,
     signalState,
     evidence,
@@ -1830,7 +1980,7 @@ function appendRelatedLinksPatch(existing: BlogTargetContext, links: BlogRelated
 async function captureCurrentObservationMetrics(targetType: AiOpsTargetType, targetId: string): Promise<AiOpsObservationMetrics> {
   const context = await resolveTargetContext(targetType, targetId);
   const datasets = {
-    posts: [] as Awaited<ReturnType<typeof getAllPostMetasFresh>>,
+    posts: [] as OpportunityDatasets["posts"],
     analyticsResult: await fetchGA4Data("30d").catch(() => null),
     searchResult: await fetchSearchConsoleData("28d").catch(() => null),
     conversionResult: await fetchPostHogConversion("30d").catch(() => null),
@@ -2146,7 +2296,7 @@ export async function listAiOutcomes(limit = 20): Promise<AiOpsOutcomesResponse>
   }
 
   const datasets = {
-    posts: [] as Awaited<ReturnType<typeof getAllPostMetasFresh>>,
+    posts: [] as OpportunityDatasets["posts"],
     analyticsResult: await fetchGA4Data("30d").catch(() => null),
     searchResult: await fetchSearchConsoleData("28d").catch(() => null),
     conversionResult: await fetchPostHogConversion("30d").catch(() => null),
