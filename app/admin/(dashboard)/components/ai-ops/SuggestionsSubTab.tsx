@@ -140,7 +140,7 @@ export function SuggestionsSubTab() {
   };
 
   const readyTasks = briefing?.todayTasks ?? [];
-  const readyCandidateIds = new Set(readyTasks.map((task) => task.id.split(":")[0]));
+  const readyCandidateIds = new Set(readyTasks.map((task) => `${task.targetType}:${task.targetId}`));
   const topCandidates = (briefing?.topCandidates ?? [])
     .filter((item) => item.targetType === targetType && !readyCandidateIds.has(item.id))
     .slice(0, 3);
