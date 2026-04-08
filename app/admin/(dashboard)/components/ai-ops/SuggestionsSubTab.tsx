@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, Sparkles, Target, Wand2 } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminErrorState } from "../AdminErrorState";
@@ -151,6 +151,12 @@ export function SuggestionsSubTab() {
         return `추천 사유: ${target.note} → 추천 플레이북: ${getPlaybookLabel(target.recommendedPlaybooks[0])} → 추천 작업 유형: ${getSuggestedActionLabel(target.recommendedPlaybooks[0])}`;
       })()
     : null;
+
+  useEffect(() => {
+    if (job?.status === "completed") {
+      refetchSuggestions();
+    }
+  }, [job?.status, refetchSuggestions]);
 
 
   if (playbooksError) return <AdminErrorState message={playbooksError} onRetry={refetchPlaybooks} />;

@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { after, NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { isAiOpsRemoteEnabled, proxyAiOpsJson } from "../_lib/proxy";
@@ -52,16 +52,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ data }, { status: 202, headers: HEADERS });
     }
 
-    const job = await createAiSuggestionJob({
+    const nextInput = {
       ...parsed.data,
       actorEmail: auth.email,
-    });
+    };
+    const job = await createAiSuggestionJob(nextInput);
 
-    void processAiSuggestionJob(job.id, {
-      ...parsed.data,
-      actorEmail: auth.email,
-    }).catch((error) => {
-      Sentry.captureException(error);
+    after(async () => {
+      try {
+        await processAiSuggestionJob(job.id, nextInput);
+      } catch (error) {
+        Sentry.captureException(error);
+      }
     });
 
     return Response.json({ data: job }, { status: 202, headers: HEADERS });
