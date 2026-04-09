@@ -544,29 +544,43 @@ export function SuggestionsSubTab() {
                     )}
                   </div>
 
-                  <div className="mt-4 space-y-3">
-                    {progressSteps.map((step) => (
-                      <div key={step.stage} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                        <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${stepTone(step.state)}`}>
-                          {step.state === "current" ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900">{step.label}</span>
-                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${stepBadgeTone(step.state)}`}>
-                              {stepStateLabel(step.state)}
-                            </span>
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                    <div className="-mx-1 overflow-x-auto pb-1">
+                      <div className="flex min-w-max items-center px-1">
+                        {progressSteps.map((step, index) => (
+                          <div key={step.stage} className="flex items-center">
+                            {index > 0 && (
+                              <div
+                                aria-hidden="true"
+                                className={`mx-2 h-px w-8 shrink-0 sm:w-10 ${stepConnectorTone(progressSteps[index - 1]?.state ?? "pending")}`}
+                              />
+                            )}
+                            <div className="flex min-w-[72px] flex-col items-center gap-1 text-center">
+                              <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${stepTone(step.state)}`}>
+                                {step.state === "current" ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                )}
+                              </div>
+                              <div className="text-[11px] font-semibold leading-tight text-slate-900">
+                                {step.label}
+                              </div>
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${stepBadgeTone(step.state)}`}>
+                                {stepStateLabel(step.state)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="mt-1 text-sm text-slate-600">
-                            {step.message ?? defaultStageMessage(step.stage)}
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2">
+                      <div className="text-[11px] font-medium text-slate-500">현재 단계 안내</div>
+                      <div className="mt-1 text-sm text-slate-700">
+                        {(activeStep?.message ?? latestEvent?.message ?? (job ? defaultStageMessage(job.stage) : "")) || "진행 상태를 확인하고 있습니다."}
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -716,6 +730,19 @@ function stepBadgeTone(state: "done" | "current" | "pending" | "failed") {
       return "bg-red-100 text-red-700";
     default:
       return "bg-slate-100 text-slate-500";
+  }
+}
+
+function stepConnectorTone(state: "done" | "current" | "pending" | "failed") {
+  switch (state) {
+    case "done":
+      return "bg-emerald-300";
+    case "current":
+      return "bg-blue-300";
+    case "failed":
+      return "bg-red-300";
+    default:
+      return "bg-slate-200";
   }
 }
 
