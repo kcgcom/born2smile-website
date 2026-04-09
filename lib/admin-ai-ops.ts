@@ -98,6 +98,73 @@ const SNIPPET_TOPIC_STOPWORDS = new Set([
   "가이드",
 ]);
 
+const FAQ_QUERY_PATTERNS = [
+  /\?/,
+  /어떻게/,
+  /왜/,
+  /언제/,
+  /어디/,
+  /누구/,
+  /몇\s*(번|회|개월|주|일|살)?/,
+  /얼마/,
+  /차이/,
+  /통증/,
+  /아프/,
+  /비용/,
+  /가격/,
+  /기간/,
+  /회복/,
+  /부작용/,
+  /주의사항/,
+  /보험/,
+  /가능/,
+  /괜찮/,
+  /해야/,
+  /되나/,
+  /나요/,
+  /인가요/,
+  /일까요/,
+];
+
+const FAQ_CONTENT_HINTS = [
+  "비용",
+  "가격",
+  "통증",
+  "아프",
+  "기간",
+  "회복",
+  "부작용",
+  "주의",
+  "보험",
+  "가능",
+  "괜찮",
+  "언제",
+  "어떻게",
+  "왜",
+  "차이",
+  "나이",
+  "시기",
+  "몇 번",
+  "몇회",
+  "유지장치",
+  "발치",
+];
+
+const FAQ_EXCLUSION_HINTS = [
+  "공지",
+  "휴진",
+  "오시는 길",
+  "오시는길",
+  "진료시간",
+  "의료진",
+  "대표원장",
+  "인사말",
+  "철학",
+  "소개",
+  "소식",
+  "이벤트",
+];
+
 interface SuggestionFilters {
   status?: AiOpsSuggestionStatus | "all";
   targetType?: AiOpsTargetType | "all";
@@ -684,6 +751,63 @@ function countRelatedLinkItems(blocks: BlogBlock[]) {
   }, 0);
 }
 
+function countFaqIntentHits(text: string, hints: string[]) {
+  return hints.filter((hint) => text.includes(hint)).length;
+}
+
+function isQuestionLikeQuery(query: string) {
+  const normalized = normalizeSnippetText(query);
+  return FAQ_QUERY_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function assessFaqIntent(params: {
+  title: string;
+  subtitle: string;
+  excerpt: string;
+  queries: string[];
+}) {
+  const title = normalizeSnippetText(params.title);
+  const subtitle = normalizeSnippetText(params.subtitle);
+  const excerpt = normalizeSnippetText(params.excerpt);
+  const combined = [title, subtitle, excerpt].filter(Boolean).join(" ");
+  const questionQueries = params.queries
+    .map((query) => normalizeSnippetText(query))
+    .filter((query) => query.length > 0 && isQuestionLikeQuery(query));
+  const contentHintCount = countFaqIntentHits(combined, FAQ_CONTENT_HINTS);
+  const exclusionHintCount = countFaqIntentHits([title, subtitle].join(" "), FAQ_EXCLUSION_HINTS);
+  let score = 0;
+  const details: string[] = [];
+
+  if (questionQueries.length > 0) {
+    score += Math.min(questionQueries.length * 2, 6);
+    details.push(`질문형 유입 쿼리 ${questionQueries.length}개`);
+  }
+
+  if (contentHintCount >= 2) {
+    score += 2;
+    details.push(`상담형 주제 단서 ${contentHintCount}개`);
+  } else if (contentHintCount === 1) {
+    score += 1;
+    details.push("상담형 주제 단서 1개");
+  }
+
+  if (excerpt.length >= 90 && contentHintCount > 0) {
+    score += 1;
+    details.push("요약문에 상담 맥락이 충분히 드러남");
+  }
+
+  if (exclusionHintCount > 0) {
+    score -= 3;
+    details.push("공지/소개 성격 신호");
+  }
+
+  return {
+    score,
+    shouldRecommend: score >= 3,
+    detail: details.join(" · "),
+  };
+}
+
 function assessPostSnippet(excerpt: string, title: string, subtitle: string) {
   const normalized = normalizeSnippetText(excerpt);
   const length = normalized.length;
@@ -997,10 +1121,23 @@ function buildCandidateForPost(
     factors.push(...snippetAssessment.factors);
   }
 
-  if (faqCount === 0) {
+  const faqIntentAssessment = assessFaqIntent({
+    title: post.title,
+    subtitle: post.subtitle,
+    excerpt: post.excerpt,
+    queries: performance.topQueries,
+  });
+  if (faqCount === 0 && faqIntentAssessment.shouldRecommend) {
     score += 16;
-    pushWeightedIssue(weightedIssues, issues, "faq_gap", "FAQ 없음", "질문형 검색을 받을 FAQ 블록이 없습니다.", 16);
-    factors.push(buildScoreFactor("구조적 결함", 16, "FAQ 블록 0개"));
+    pushWeightedIssue(
+      weightedIssues,
+      issues,
+      "faq_gap",
+      "FAQ 보강 필요",
+      `FAQ 블록은 없고 질문형 검색/상담 의도가 확인됩니다.${faqIntentAssessment.detail ? ` (${faqIntentAssessment.detail})` : ""}`,
+      16,
+    );
+    factors.push(buildScoreFactor("질문형 검색 대응", 16, faqIntentAssessment.detail || "FAQ 블록 0개"));
   }
 
   if (relatedLinksCount === 0) {
