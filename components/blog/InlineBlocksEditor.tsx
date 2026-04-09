@@ -623,11 +623,18 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
     case "heading":
       return { type: "heading", level: 2, text: "새 소제목" };
     case "paragraph":
-      return { type: "paragraph", text: "새 문단 내용을 입력하세요." };
+      return {
+        type: "paragraph",
+        text: "문단 내용을 입력해 주세요. 구체적인 설명을 덧붙이면 바로 저장됩니다.",
+      };
     case "list":
       return { type: "list", style: "bullet", items: ["항목 1", "항목 2"] };
     case "faq":
-      return { type: "faq", question: "자주 묻는 질문을 입력하세요", answer: "답변을 입력하세요" };
+      return {
+        type: "faq",
+        question: "자주 묻는 질문을 입력하세요",
+        answer: "답변을 입력해 주세요. 환자가 바로 이해할 수 있게 구체적으로 작성합니다.",
+      };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "관련 링크", href: "/" }] };
     case "table":
