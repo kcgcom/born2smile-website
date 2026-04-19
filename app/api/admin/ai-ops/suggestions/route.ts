@@ -30,19 +30,32 @@ export async function GET(request: NextRequest) {
     rawTargetType === "post" || rawTargetType === "page" || rawTargetType === "site"
       ? rawTargetType
       : "all";
+  const limit = Number.isFinite(rawLimit) ? rawLimit : 50;
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsSuggestionListItem[]>({
+    let data: AiOpsSuggestionListItem[];
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsSuggestionListItem[]>({
           path: "/ai-ops/suggestions",
           request,
           adminEmail: auth.email,
-        })).data
-      : await listAiSuggestions({
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote suggestions failed, falling back to local", error);
+        data = await listAiSuggestions({
           status,
           targetType,
-          limit: Number.isFinite(rawLimit) ? rawLimit : 50,
+          limit,
         });
+      }
+    } else {
+      data = await listAiSuggestions({
+        status,
+        targetType,
+        limit,
+      });
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
