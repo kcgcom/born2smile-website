@@ -22,13 +22,21 @@ export async function GET(request: NextRequest) {
       : "30d";
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsBriefing>({
+    let data: AiOpsBriefing;
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsBriefing>({
           path: "/ai-ops/briefing",
           request,
           adminEmail: auth.email,
-        })).data
-      : await getAiOpsBriefing(period);
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote briefing failed, falling back to local", error);
+        data = await getAiOpsBriefing(period);
+      }
+    } else {
+      data = await getAiOpsBriefing(period);
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
