@@ -17,13 +17,21 @@ export async function GET(request: NextRequest) {
   const limit = Number(request.nextUrl.searchParams.get("limit") ?? "20");
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsOutcomesResponse>({
+    let data: AiOpsOutcomesResponse;
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsOutcomesResponse>({
           path: "/ai-ops/outcomes",
           request,
           adminEmail: auth.email,
-        })).data
-      : await listAiOutcomes(limit);
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote outcomes failed, falling back to local", error);
+        data = await listAiOutcomes(limit);
+      }
+    } else {
+      data = await listAiOutcomes(limit);
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
