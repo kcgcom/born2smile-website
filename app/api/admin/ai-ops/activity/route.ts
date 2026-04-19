@@ -15,15 +15,24 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   const rawLimit = Number(request.nextUrl.searchParams.get("limit") ?? "30");
+  const limit = Number.isFinite(rawLimit) ? rawLimit : 30;
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsActivityItem[]>({
+    let data: AiOpsActivityItem[];
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsActivityItem[]>({
           path: "/ai-ops/activity",
           request,
           adminEmail: auth.email,
-        })).data
-      : await listAiActivity(Number.isFinite(rawLimit) ? rawLimit : 30);
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote activity failed, falling back to local", error);
+        data = await listAiActivity(limit);
+      }
+    } else {
+      data = await listAiActivity(limit);
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
