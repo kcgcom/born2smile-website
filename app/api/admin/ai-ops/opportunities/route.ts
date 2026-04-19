@@ -16,15 +16,24 @@ export async function GET(request: NextRequest) {
 
   const period = request.nextUrl.searchParams.get("period");
   const limit = Number(request.nextUrl.searchParams.get("limit") ?? "18");
+  const normalizedPeriod = period === "60d" ? "60d" : period === "14d" || period === "7d" ? "14d" : "30d";
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsOpportunityListResponse>({
+    let data: AiOpsOpportunityListResponse;
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsOpportunityListResponse>({
           path: "/ai-ops/opportunities",
           request,
           adminEmail: auth.email,
-        })).data
-      : await getAiOpsOpportunities(period === "60d" ? "60d" : period === "14d" || period === "7d" ? "14d" : "30d", limit);
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote opportunities failed, falling back to local", error);
+        data = await getAiOpsOpportunities(normalizedPeriod, limit);
+      }
+    } else {
+      data = await getAiOpsOpportunities(normalizedPeriod, limit);
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
