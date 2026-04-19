@@ -12,13 +12,21 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsTargetOption[]>({
+    let data: AiOpsTargetOption[];
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsTargetOption[]>({
           path: "/ai-ops/targets",
           request,
           adminEmail: auth.email,
-        })).data
-      : await getAiOpsTargets();
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote targets failed, falling back to local", error);
+        data = await getAiOpsTargets();
+      }
+    } else {
+      data = await getAiOpsTargets();
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
