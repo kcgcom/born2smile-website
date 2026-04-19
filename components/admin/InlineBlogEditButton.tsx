@@ -2,9 +2,9 @@
 
 import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Check, Eye, LayoutDashboard, Pencil, RotateCcw, X } from "lucide-react";
+import { ArrowUpRight, Check, Eye, Pencil, RotateCcw, X } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
 import { useBlogEditContext } from "@/components/blog/BlogEditProvider";
 import { ALL_CATEGORY_SLUGS, BLOG_CATEGORY_LABELS } from "@/lib/blog/category-slugs";
@@ -29,6 +29,8 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   const { isEditMode, enter, exit, blocks } = useBlogEditContext();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
 
   const [title, setTitle] = useState(post.title);
   const [subtitle, setSubtitle] = useState(post.subtitle);
@@ -123,6 +125,33 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
     exit();
   };
 
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setRefreshNotice(null);
+    try {
+      const token = await getAccessToken();
+      const res = await fetch("/api/admin/revalidate", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(json.message ?? "새로고침에 실패했어요");
+      }
+      setRefreshNotice("공개 페이지 캐시를 새로고침했습니다.");
+      router.refresh();
+    } catch (err) {
+      setRefreshNotice(err instanceof Error ? err.message : "새로고침에 실패했어요");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing, router, slug]);
+
   const handleSave = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -206,14 +235,16 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
             </div>
             {/* 우측: 버튼 */}
             <div className="flex shrink-0 items-center gap-2">
-              <AdminActionLink
-                href={`/admin?tab=content&sub=posts&edit=${slug}`}
+              <AdminActionButton
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing || saving}
                 tone="ghost"
-                className="rounded-full border-white/12 bg-white/6 text-slate-100"
+                className="rounded-full border-white/12 bg-white/6 px-4 text-slate-100"
               >
-                <LayoutDashboard size={14} aria-hidden="true" />
-                <span className="hidden sm:inline">대시보드</span>
-              </AdminActionLink>
+                <RotateCcw size={14} aria-hidden="true" className={refreshing ? "animate-spin" : undefined} />
+                <span className="hidden sm:inline">{refreshing ? "새로고침 중..." : "새로고침"}</span>
+              </AdminActionButton>
               <AdminActionButton
                 type="button"
                 onClick={isEditMode ? handleExit : enter}
@@ -271,6 +302,11 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
               {hasMetaChanges && (
                 <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
                   아직 저장되지 않은 메타 변경사항이 있습니다.
+                </p>
+              )}
+              {refreshNotice && (
+                <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800">
+                  {refreshNotice}
                 </p>
               )}
             </AdminSurface>

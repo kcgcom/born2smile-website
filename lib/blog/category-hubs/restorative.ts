@@ -14,7 +14,7 @@ export const restorativeHub = defineCategoryHub({
     question("신경치료 후 왜 크라운을 권하는 걸까요?", "root-canal-and-crown", "신경치료 후 치아는 약해질 수 있어 파절 예방과 장기 사용을 위해 크라운이 권장되는 경우가 많습니다."),
   ],
   sections: [
-    section("충치와 초기 손상", "자연치아를 살릴 수 있는 시점을 이해하는 데 도움이 됩니다.", ["cavity-stages-and-treatment", "after-filling-care", "cracked-tooth-syndrome"]),
+    section("충치와 초기 손상", "충치 단계와 함께 치료 후 식사 시간, 인레이 후 주의사항까지 한 번에 확인할 수 있습니다.", ["cavity-stages-and-treatment", "after-filling-care", "cracked-tooth-syndrome"]),
     section("재료 선택과 비교", "치료 범위와 재료 선택 기준을 비교해 보세요.", ["resin-vs-inlay-comparison", "old-amalgam-replacement", "cracked-tooth-syndrome"]),
     section("신경치료와 응급상황", "통증과 파절 상황에서 무엇을 확인해야 하는지 정리했습니다.", ["root-canal-and-crown", "root-canal-pain-truth", "after-root-canal-care", "resin-vs-inlay-comparison"]),
   ],
