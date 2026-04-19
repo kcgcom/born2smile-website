@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { X, Trash2, Save, Copy } from "lucide-react";
+import { X, Trash2, Save, Copy, Send } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { BLOG_CATEGORY_SLUGS, BLOG_TAGS } from "@/lib/blog/types";
@@ -45,6 +45,7 @@ interface BlogEditorProps {
     published?: boolean;
   };
   onSave: (data: BlogEditorData) => Promise<{ error: string | null }>;
+  onPublish?: (data: BlogEditorData) => Promise<{ error: string | null }>;
   onClose: () => void;
 }
 
@@ -158,6 +159,7 @@ export default function BlogEditor({
   presentation = "drawer",
   initialData,
   onSave,
+  onPublish,
   onClose,
 }: BlogEditorProps) {
   const today = new Date().toISOString().slice(0, 10);
@@ -180,7 +182,7 @@ export default function BlogEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [fetchingContent, setFetchingContent] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   // List API returns metadata only — fetch full content for editing
   useEffect(() => {
@@ -294,6 +296,21 @@ export default function BlogEditor({
     const payload = { ...form, blocks: form.blocks, published: form.published };
     const { error } = await onSave(payload);
     setSaving(false);
+    if (error) setSaveError(error);
+  };
+
+  const handlePublish = async () => {
+    if (!onPublish) return;
+    const errors = validate(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setPublishing(true);
+    setSaveError(null);
+    const payload = { ...form, blocks: form.blocks };
+    const { error } = await onPublish(payload);
+    setPublishing(false);
     if (error) setSaveError(error);
   };
 
@@ -538,26 +555,29 @@ export default function BlogEditor({
         <div className="shrink-0 flex flex-col gap-2 border-t border-[var(--border)] bg-white/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6">
           <AdminActionButton
             type="button"
-            onClick={() => setShowPreview((prev) => !prev)}
-            disabled={saving}
-            tone="dark"
-            className="w-full px-5 sm:w-auto"
-          >
-            {showPreview ? "미리보기 닫기" : "미리보기"}
-          </AdminActionButton>
-          <AdminActionButton
-            type="button"
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || publishing}
             tone="dark"
             className="w-full px-5 sm:w-auto"
           >
             취소
           </AdminActionButton>
+          {onPublish && mode === "edit" && !form.published && (
+            <AdminActionButton
+              type="button"
+              onClick={handlePublish}
+              disabled={saving || publishing || fetchingContent}
+              tone="dark"
+              className="w-full px-5 sm:w-auto"
+            >
+              <Send className="h-4 w-4" />
+              {publishing ? "발행 중..." : "저장 후 발행"}
+            </AdminActionButton>
+          )}
           <AdminActionButton
             type="button"
             onClick={handleSubmit}
-            disabled={saving || fetchingContent}
+            disabled={saving || publishing || fetchingContent}
             tone="primary"
             className="w-full px-5 sm:w-auto"
           >
@@ -565,25 +585,6 @@ export default function BlogEditor({
             {saving ? "저장 중..." : "임시저장"}
           </AdminActionButton>
         </div>
-
-        {showPreview && (
-          <div className="border-t border-[var(--border)] bg-[var(--background)] px-6 py-5">
-            <div className="mx-auto max-w-3xl rounded-2xl bg-white p-5 shadow-sm">
-              <p className="mb-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase">
-                Preview
-              </p>
-              <h1 className="font-headline text-2xl font-bold text-[var(--foreground)]">
-                {form.title || "제목 미리보기"}
-              </h1>
-              <p className="mt-2 text-base text-[var(--muted)]">
-                {form.subtitle || "부제 미리보기"}
-              </p>
-              <div className="mt-8 space-y-6">
-                {renderBlockPreview(form.blocks)}
-              </div>
-            </div>
-          </div>
-        )}
       </AdminSurface>
     </div>
   );
@@ -627,70 +628,6 @@ function Field({ label, required, error, hint, children }: FieldProps) {
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
-}
-
-function renderBlockPreview(blocks: BlogBlock[]) {
-  return blocks.map((block, idx) => {
-    switch (block.type) {
-      case "heading": {
-        const Tag = block.level === 3 ? "h3" : "h2";
-        return (
-          <Tag key={idx} className="font-headline text-xl font-bold text-[var(--foreground)]">
-            {block.text || "제목 블록"}
-          </Tag>
-        );
-      }
-      case "paragraph":
-        return (
-          <p key={idx} className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
-            {block.text || "문단 블록"}
-          </p>
-        );
-      case "list": {
-        const ListTag = block.style === "number" ? "ol" : "ul";
-        return (
-          <ListTag
-            key={idx}
-            className={`${block.style === "number" ? "list-decimal" : "list-disc"} space-y-2 pl-5 text-base text-gray-700`}
-          >
-            {block.items.map((item, itemIdx) => (
-              <li key={itemIdx}>{item || "목록 항목"}</li>
-            ))}
-          </ListTag>
-        );
-      }
-      case "faq":
-        return (
-          <div key={idx} className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-            <h3 className="font-semibold text-[var(--foreground)]">
-              {block.question || "FAQ 질문"}
-            </h3>
-            <p className="mt-2 text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
-              {block.answer || "FAQ 답변"}
-            </p>
-          </div>
-        );
-      case "relatedLinks":
-        return (
-          <div key={idx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <h3 className="font-semibold text-[var(--foreground)]">함께 읽으면 좋은 글</h3>
-            <div className="mt-3 space-y-2">
-              {block.items.map((item, itemIdx) => (
-                <div key={itemIdx} className="rounded-lg bg-white p-3">
-                  <p className="font-medium text-[var(--foreground)]">{item.title || "링크 제목"}</p>
-                  {item.description && (
-                    <p className="mt-1 text-sm text-gray-600">{item.description}</p>
-                  )}
-                  <p className="mt-1 text-xs text-[var(--muted)]">{item.href || "/path"}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  });
 }
 
 function renderBlockEditor(

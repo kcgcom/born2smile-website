@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { PublishPopup, type PublishMode } from "@/components/admin/PublishPopup";
 import BlogEditor, { type BlogEditorData } from "@/app/admin/(dashboard)/components/BlogEditor";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -12,7 +13,9 @@ import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/component
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import { getAdminPreviewUrl } from "@/lib/blog/category-slugs";
 import { normalizeBlogCategory } from "@/lib/blog";
+import { getTodayKST } from "@/lib/date";
 import { BLOG_EDITOR_DRAFT_KEY, BLOG_EDITOR_PREFILL_KEY } from "./blog-editor-draft";
+import { getNextPublishDate } from "./posts-subtab-shared";
 
 interface BlogEditorScreenProps {
   mode: "create" | "edit";
@@ -46,8 +49,22 @@ const EMPTY_CREATE_DRAFT: EditablePost = {
 export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const today = getTodayKST();
   const { mutate } = useAdminMutation<{ slug: string }>();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishDraft, setPublishDraft] = useState<BlogEditorData | null>(null);
+  const [publishDate, setPublishDate] = useState("");
+  const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
+  const [publishing, setPublishing] = useState(false);
+
+  const {
+    data: scheduleData,
+  } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
+  const recommendedPublishDate = useMemo(
+    () => getNextPublishDate({ publishDays: scheduleData?.publishDays, posts: [], today }),
+    [scheduleData?.publishDays, today],
+  );
 
   const {
     data: postData,
@@ -133,6 +150,47 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     return { error: saveError };
   };
 
+  const handlePublish = async (data: BlogEditorData) => {
+    setSaveNotice(null);
+    setPublishError(null);
+    setPublishDraft(data);
+    setPublishMode("schedule");
+    setPublishDate(recommendedPublishDate);
+    return { error: null };
+  };
+
+  const handlePublishConfirm = async () => {
+    if (!publishDraft || !publishDate) return;
+
+    setPublishing(true);
+    setPublishError(null);
+
+    const payload = {
+      ...publishDraft,
+      published: true,
+      date: publishDate,
+    };
+
+    const targetSlug = slug ?? publishDraft.slug;
+    const method = mode === "edit" ? "PUT" : "POST";
+    const endpoint = mode === "edit" && targetSlug
+      ? `/api/admin/blog-posts/${targetSlug}`
+      : "/api/admin/blog-posts";
+    const { error: saveError } = await mutate(endpoint, method, payload);
+
+    setPublishing(false);
+
+    if (saveError) {
+      setPublishError(saveError);
+      return;
+    }
+
+    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
+    setPublishDraft(null);
+    setSaveNotice(publishDate <= today ? "포스트를 발행했습니다." : `포스트 발행을 예약했습니다. (${publishDate})`);
+    router.replace(`/admin/content/posts/${payload.slug}`);
+  };
+
   const previewCategory = initialData ? normalizeBlogCategory(initialData.category) : null;
   const previewHref = initialData?.slug && previewCategory
     ? getAdminPreviewUrl(initialData.slug, previewCategory)
@@ -184,8 +242,28 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         presentation="page"
         initialData={initialData}
         onSave={handleSave}
+        onPublish={handlePublish}
         onClose={() => router.push("/admin/content/posts")}
       />
+
+      {publishDraft && (
+        <PublishPopup
+          publishDate={publishDate}
+          publishMode={publishMode}
+          scheduledDate={recommendedPublishDate}
+          publishing={publishing}
+          today={today}
+          onModeChange={setPublishMode}
+          onDateChange={setPublishDate}
+          onConfirm={handlePublishConfirm}
+          onClose={() => {
+            if (publishing) return;
+            setPublishDraft(null);
+            setPublishError(null);
+          }}
+          error={publishError}
+        />
+      )}
     </div>
   );
 }
