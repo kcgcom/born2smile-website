@@ -17,6 +17,9 @@ export default function AdminLoginPage() {
     const supabase = getSupabaseBrowserClient();
     let cancelled = false;
     let handled = false;
+    const fallbackTimer = window.setTimeout(() => {
+      if (!cancelled) setChecking(false);
+    }, 4000);
 
     async function handleAdminRedirect(email?: string, accessToken?: string) {
       if (handled) return;
@@ -40,22 +43,26 @@ export default function AdminLoginPage() {
     }
 
     async function init() {
-      const code = new URLSearchParams(window.location.search).get("code");
-      if (code) {
-        window.history.replaceState({}, "", window.location.pathname);
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (!exchangeError && data.session?.user) {
-          await handleAdminRedirect(data.session.user.email ?? undefined, data.session.access_token);
+      try {
+        const code = new URLSearchParams(window.location.search).get("code");
+        if (code) {
+          window.history.replaceState({}, "", window.location.pathname);
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (!exchangeError && data.session?.user) {
+            await handleAdminRedirect(data.session.user.email ?? undefined, data.session.access_token);
+            return;
+          }
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
           return;
         }
-      }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
-        return;
+      } catch {
+        // fall through to manual login UI
       }
 
       if (!cancelled) setChecking(false);
@@ -75,6 +82,7 @@ export default function AdminLoginPage() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);
