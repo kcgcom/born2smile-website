@@ -4,6 +4,7 @@ import { Fragment, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil,
+  Copy,
   Trash2,
   ChevronUp,
   ChevronDown,
@@ -156,6 +157,11 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
           onCancelEdit={() => setEditingIndex(null)}
           onSave={(updated) => handleSave(index, updated)}
           onDelete={() => handleDelete(index)}
+          onDuplicate={() => {
+            const nb = [...blocks];
+            nb.splice(index + 1, 0, structuredClone(block));
+            saveToApi(nb);
+          }}
           onMoveUp={() => handleMove(index, "up")}
           onMoveDown={() => handleMove(index, "down")}
           onAddAfter={(nb) => handleAddAfter(index, nb)}
@@ -185,6 +191,7 @@ interface AdminBlockWrapperProps {
   onCancelEdit: () => void;
   onSave: (updated: BlogBlock) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onAddAfter: (newBlock: BlogBlock) => void;
@@ -201,6 +208,7 @@ function AdminBlockWrapper({
   onCancelEdit,
   onSave,
   onDelete,
+  onDuplicate,
   onMoveUp,
   onMoveDown,
   onAddAfter,
@@ -271,6 +279,16 @@ function AdminBlockWrapper({
               </div>
               <button
                 type="button"
+                onClick={onDuplicate}
+                disabled={saving}
+                className="flex h-6 items-center gap-1 rounded-full bg-white px-2.5 text-gray-600 shadow hover:bg-gray-100 disabled:opacity-30"
+                title="복제"
+              >
+                <Copy size={11} />
+                <span className="text-[11px]">복제</span>
+              </button>
+              <button
+                type="button"
                 onClick={onDelete}
                 disabled={saving}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-red-50 text-red-500 shadow hover:bg-red-100"
@@ -302,6 +320,7 @@ function AdminBlockWrapper({
               block={block}
               saving={saving}
               onSave={onSave}
+              onChangeType={(type) => onSave(makeDefaultBlock(type))}
               onCancel={onCancelEdit}
             />
           </div>
@@ -324,24 +343,59 @@ interface BlockFormProps {
   block: BlogBlock;
   saving: boolean;
   onSave: (updated: BlogBlock) => void;
+  onChangeType: (type: BlogBlock["type"]) => void;
   onCancel: () => void;
 }
 
-function BlockEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function BlockEditForm({ block, saving, onSave, onChangeType, onCancel }: BlockFormProps) {
+  const blockTypeOptions = BLOCK_OPTIONS.filter((option) => option.type !== "table");
+
   switch (block.type) {
     case "heading":
-      return <HeadingEditForm block={block} saving={saving} onSave={onSave} onCancel={onCancel} />;
+      return <HeadingEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
     case "paragraph":
-      return <ParagraphEditForm block={block} saving={saving} onSave={onSave} onCancel={onCancel} />;
+      return <ParagraphEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
     case "list":
-      return <ListEditForm block={block} saving={saving} onSave={onSave} onCancel={onCancel} />;
+      return <ListEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
     case "faq":
-      return <FaqEditForm block={block} saving={saving} onSave={onSave} onCancel={onCancel} />;
+      return <FaqEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
     case "relatedLinks":
-      return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onCancel={onCancel} />;
+      return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
     default:
       return null;
   }
+}
+
+function BlockTypeSelector({
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  value: BlogBlock["type"];
+  options: { type: BlogBlock["type"]; label: string; desc: string }[];
+  disabled: boolean;
+  onChange: (type: BlogBlock["type"]) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">
+        블록 타입
+      </label>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as BlogBlock["type"])}
+        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none disabled:opacity-50"
+      >
+        {options.map((option) => (
+          <option key={option.type} value={option.type}>
+            {option.label} · {option.desc}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 }
 
 function FormActions({ saving, onCancel }: { saving: boolean; onCancel: () => void }) {
@@ -370,7 +424,14 @@ function FormActions({ saving, onCancel }: { saving: boolean; onCancel: () => vo
 
 // ─── Edit forms ───────────────────────────────────────────────────────────────
 
-function HeadingEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function HeadingEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "heading" }>;
   const [text, setText] = useState(b.text);
   const [level, setLevel] = useState<2 | 3>(b.level);
@@ -383,6 +444,7 @@ function HeadingEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
         onSave({ type: "heading", level, text: text.trim() });
       }}
     >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
       <div className="mb-3 flex gap-4">
         {([2, 3] as const).map((lv) => (
           <label key={lv} className="flex items-center gap-1.5 text-sm text-gray-600">
@@ -409,7 +471,14 @@ function HeadingEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
   );
 }
 
-function ParagraphEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function ParagraphEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "paragraph" }>;
   const [text, setText] = useState(b.text);
 
@@ -421,6 +490,7 @@ function ParagraphEditForm({ block, saving, onSave, onCancel }: BlockFormProps) 
         onSave({ type: "paragraph", text: text.trim() });
       }}
     >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -434,7 +504,14 @@ function ParagraphEditForm({ block, saving, onSave, onCancel }: BlockFormProps) 
   );
 }
 
-function ListEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function ListEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "list" }>;
   const [style, setStyle] = useState<"bullet" | "number">(b.style);
   const [items, setItems] = useState<string[]>([...b.items]);
@@ -451,6 +528,7 @@ function ListEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
         onSave({ type: "list", style, items: valid });
       }}
     >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
       <div className="mb-3 flex gap-4">
         {(["bullet", "number"] as const).map((s) => (
           <label key={s} className="flex items-center gap-1.5 text-sm text-gray-600">
@@ -503,7 +581,14 @@ function ListEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
   );
 }
 
-function FaqEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function FaqEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "faq" }>;
   const [question, setQuestion] = useState(b.question);
   const [answer, setAnswer] = useState(b.answer);
@@ -516,6 +601,7 @@ function FaqEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
         onSave({ type: "faq", question: question.trim(), answer: answer.trim() });
       }}
     >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
       <label className="mb-1 block text-sm font-medium text-gray-600">질문</label>
       <input
         type="text"
@@ -538,7 +624,14 @@ function FaqEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
   );
 }
 
-function RelatedLinksEditForm({ block, saving, onSave, onCancel }: BlockFormProps) {
+function RelatedLinksEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "relatedLinks" }>;
   const [items, setItems] = useState(
     b.items.map((it) => ({ ...it, description: it.description ?? "" })),
@@ -562,6 +655,7 @@ function RelatedLinksEditForm({ block, saving, onSave, onCancel }: BlockFormProp
         onSave({ type: "relatedLinks", items: valid });
       }}
     >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
       <div className="space-y-3">
         {items.map((item, idx) => (
           <div key={idx} className="rounded-lg border border-gray-200 bg-white p-3">

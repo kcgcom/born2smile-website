@@ -10,6 +10,7 @@ import { useBlogEditContext } from "@/components/blog/BlogEditProvider";
 import { ALL_CATEGORY_SLUGS, BLOG_CATEGORY_LABELS } from "@/lib/blog/category-slugs";
 import { BLOG_TAGS } from "@/lib/blog/types";
 import type { BlogCategorySlug } from "@/lib/blog";
+import { computeHeadingIds, renderSingleBlock } from "@/components/blog/BlogPostRenderer";
 
 interface PostMeta {
   slug: string;
@@ -39,10 +40,12 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   const [tags, setTags] = useState<string[]>(post.tags);
   const [date, setDate] = useState(post.date);
   const [toolbarHeight, setToolbarHeight] = useState<number | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const inflightRef = useRef(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const { slug } = post;
+  const previewHeadingIds = computeHeadingIds(blocks);
   const normalizeTags = (value: string[]) => [...value].sort().join("|");
   const hasMetaChanges =
     title !== post.title ||
@@ -122,6 +125,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   const handleExit = () => {
     handleResetMeta();
+    setShowPreview(false);
     exit();
   };
 
@@ -402,6 +406,16 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                     <AdminActionButton
                       type="button"
+                      onClick={() => setShowPreview((prev) => !prev)}
+                      disabled={saving}
+                      tone="dark"
+                      className="px-4 py-3"
+                    >
+                      <Eye size={14} />
+                      {showPreview ? "미리보기 닫기" : "미리보기"}
+                    </AdminActionButton>
+                    <AdminActionButton
+                      type="button"
                       onClick={handleResetMeta}
                       disabled={!hasMetaChanges || saving}
                       tone="dark"
@@ -423,6 +437,27 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                 </div>
               </form>
             </AdminSurface>
+
+            {showPreview && (
+              <AdminSurface tone="white" className="mt-5 rounded-2xl p-4 md:p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Preview
+                </p>
+                <h1 className="font-headline mt-2 text-3xl font-bold leading-tight text-slate-900">
+                  {title || "제목 미리보기"}
+                </h1>
+                <p className="mt-3 text-lg text-slate-600">
+                  {subtitle || "부제 미리보기"}
+                </p>
+                <div className="mt-8 space-y-10">
+                  {blocks.map((block, index) => (
+                    <div key={`preview-${index}`}>
+                      {renderSingleBlock(block, previewHeadingIds[index])}
+                    </div>
+                  ))}
+                </div>
+              </AdminSurface>
+            )}
           </div>
         </div>
       )}
