@@ -15,13 +15,21 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
-    const data = isAiOpsRemoteEnabled()
-      ? (await proxyAiOpsJson<AiOpsPlaybook[]>({
+    let data: AiOpsPlaybook[];
+    if (isAiOpsRemoteEnabled()) {
+      try {
+        data = (await proxyAiOpsJson<AiOpsPlaybook[]>({
           path: "/ai-ops/playbooks",
           request,
           adminEmail: auth.email,
-        })).data
-      : await getAiOpsPlaybooks();
+        })).data;
+      } catch (error) {
+        console.warn("[ai-ops] remote playbooks failed, falling back to local", error);
+        data = await getAiOpsPlaybooks();
+      }
+    } else {
+      data = await getAiOpsPlaybooks();
+    }
 
     return Response.json({ data }, { headers: HEADERS });
   } catch (error) {
