@@ -64,18 +64,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         } catch {}
       };
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser({ email: session.user.email ?? undefined });
-        const admin = await verifyAdminUser(session.access_token);
-        setIsAdmin(admin);
-        setAdminFlag(admin);
-        setLoading(false);
-      }
-
+      // onAuthStateChange만 사용 — INITIAL_SESSION 이벤트로 초기 세션 처리
+      // SIGNED_OUT 외의 null 세션(INITIAL_SESSION 등)은 일시적일 수 있으므로 플래그 유지
       const { data } = supabase.auth.onAuthStateChange(async (event: string, session: AuthSession | null) => {
         if (session?.user) {
           setUser({ email: session.user.email ?? undefined });
@@ -91,7 +81,6 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       });
 
       subscription = data.subscription;
-      if (!session?.user) setLoading(false);
     })();
 
     return () => {
