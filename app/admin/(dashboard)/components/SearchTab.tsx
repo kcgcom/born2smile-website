@@ -22,11 +22,9 @@ import {
   getEditableBlogSlug,
   getMetaChecklist,
   getQueryActionRecommendation,
-  getRewriteReasonBadges,
   hasQuery,
   useSearchTableSort,
   type SearchConsoleData,
-  type SearchPriorityRow,
 } from "./search/shared";
 
 // ---------------------------------------------------------------
@@ -38,7 +36,6 @@ export function SearchTab() {
   const [period, setPeriod] = useState<"7d" | "28d" | "90d">("28d");
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
-  const [selectedBlogPage, setSelectedBlogPage] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
     `/api/admin/search-console?period=${period}`,
@@ -46,13 +43,11 @@ export function SearchTab() {
 
   const querySort = useSearchTableSort(data?.topQueries ?? []);
   const pageSort = useSearchTableSort(data?.topPages ?? []);
-  const blogSort = useSearchTableSort(data?.blogPages ?? []);
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value as "7d" | "28d" | "90d");
     setSelectedQuery(null);
     setSelectedTopPage(null);
-    setSelectedBlogPage(null);
   };
 
   const handleEditBlog = (slug: string) => {
@@ -81,17 +76,9 @@ export function SearchTab() {
       .slice(0, 3);
   }, [data?.topQueries]);
 
-  const rewriteCandidates = useMemo(() => {
-    return (data?.blogPages ?? [])
-      .filter((row) => row.impressions >= 60 && (row.ctr < 2.5 || row.position > 8))
-      .sort((a, b) => b.impressions - a.impressions)
-      .slice(0, 3);
-  }, [data?.blogPages]);
-
   const hasPriorityItems =
     metaImprovementPages.length > 0 ||
-    rankingOpportunityQueries.length > 0 ||
-    rewriteCandidates.length > 0;
+    rankingOpportunityQueries.length > 0;
 
   const selectedQueryPages = selectedQuery
     ? data?.queryTopPages[selectedQuery] ?? []
@@ -99,17 +86,24 @@ export function SearchTab() {
   const selectedTopPageQueries = selectedTopPage
     ? data?.pageTopQueries[selectedTopPage] ?? []
     : [];
-  const selectedBlogPageQueries = selectedBlogPage
-    ? data?.pageTopQueries[selectedBlogPage] ?? []
-    : [];
   const selectedTopPageMetrics = selectedTopPage
     ? data?.topPages.find((item) => item.page === selectedTopPage)
     : undefined;
-  const selectedBlogPageMetrics = selectedBlogPage
-    ? data?.blogPages.find((item) => item.page === selectedBlogPage)
-    : undefined;
-  const topOpportunity: SearchPriorityRow | null =
-    rewriteCandidates[0] ?? rankingOpportunityQueries[0] ?? metaImprovementPages[0] ?? null;
+  const topOpportunity:
+    | SearchConsoleData["topPages"][number]
+    | SearchConsoleData["topQueries"][number]
+    | null =
+    rankingOpportunityQueries[0] ?? metaImprovementPages[0] ?? null;
+  const topBlogPage = data?.blogPages[0] ?? null;
+  const topOpportunityLabel = topOpportunity
+    ? ("query" in (topOpportunity as Record<string, unknown>)
+      ? (topOpportunity as SearchConsoleData["topQueries"][number]).query
+      : ((topOpportunity as unknown) as { page: string }).page)
+    : null;
+  const topOpportunityPage =
+    topOpportunity && "page" in (topOpportunity as Record<string, unknown>)
+      ? ((topOpportunity as unknown) as { page: string }).page
+      : null;
 
   return (
     <div className="space-y-6">
@@ -117,6 +111,11 @@ export function SearchTab() {
 
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
+        {data?.period && (
+          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+            집계 기간: {data.period.start} ~ {data.period.end}
+          </span>
+        )}
         {data?.siteUrl && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
             🔎 속성: {data.siteUrl}
@@ -128,6 +127,9 @@ export function SearchTab() {
             ⓘ 데이터 기준: {data.dataAsOf} (2~3일 지연)
           </span>
         )}
+        <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+          Search Console 지연 때문에 트래픽 탭과 실제 날짜 범위가 완전히 같지 않을 수 있습니다.
+        </span>
       </div>
 
       {error && <AdminErrorState message={error} onRetry={refetch} />}
@@ -159,8 +161,8 @@ export function SearchTab() {
                   <div className="mt-1 text-lg font-semibold text-blue-900">{rankingOpportunityQueries.length}건</div>
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-                  <div className="text-xs font-medium text-emerald-700">리라이트 후보</div>
-                  <div className="mt-1 text-lg font-semibold text-emerald-900">{rewriteCandidates.length}건</div>
+                  <div className="text-xs font-medium text-emerald-700">블로그 요약</div>
+                  <div className="mt-1 text-lg font-semibold text-emerald-900">{data.blogPages.length}개</div>
                 </div>
               </div>
             </div>
@@ -172,16 +174,16 @@ export function SearchTab() {
                   <span className="text-sm font-semibold text-[var(--foreground)]">우선 후보</span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                  {hasQuery(topOpportunity) ? topOpportunity.query : topOpportunity.page}
+                  {topOpportunityLabel}
                 </p>
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   노출 {topOpportunity.impressions.toLocaleString("ko-KR")} · 클릭 {topOpportunity.clicks.toLocaleString("ko-KR")} · CTR {topOpportunity.ctr}% · 순위 {topOpportunity.position}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {"page" in topOpportunity && getEditableBlogSlug(topOpportunity.page) && (
+                  {topOpportunityPage && getEditableBlogSlug(topOpportunityPage) && (
                     <AdminActionButton
                       tone="dark"
-                      onClick={() => handleEditBlog(getEditableBlogSlug(topOpportunity.page)!)}
+                      onClick={() => handleEditBlog(getEditableBlogSlug(topOpportunityPage)!)}
                       className="min-h-8 px-3 py-1 text-xs"
                     >
                       <FilePenLine className="h-3.5 w-3.5" />
@@ -243,7 +245,7 @@ export function SearchTab() {
             </div>
 
             {hasPriorityItems ? (
-              <div className="grid gap-4 xl:grid-cols-3">
+              <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
@@ -350,56 +352,6 @@ export function SearchTab() {
                   )}
                 </div>
 
-                <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="text-sm font-semibold text-[var(--foreground)]">블로그 리라이트 후보</h4>
-                      <p className="mt-1 text-xs text-[var(--muted)]">반응이 약한 글 우선순위입니다.</p>
-                    </div>
-                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                      {rewriteCandidates.length}건
-                    </span>
-                  </div>
-                  {rewriteCandidates.length > 0 ? (
-                    <ul className="space-y-3">
-                      {rewriteCandidates.map((row) => {
-                        const slug = getEditableBlogSlug(row.page);
-                        const rewriteReasons = getRewriteReasonBadges(row);
-                        return (
-                          <li key={row.page} className="rounded-xl bg-white/80 p-3">
-                            <p className="truncate text-sm font-medium text-[var(--foreground)]" title={row.page}>{row.page}</p>
-                            <p className="mt-1 text-xs text-[var(--muted)]">
-                              노출 {row.impressions.toLocaleString("ko-KR")} · CTR {row.ctr}% · 순위 {row.position}
-                            </p>
-                            {rewriteReasons.length > 0 && (
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {rewriteReasons.map((reason) => (
-                                  <span
-                                    key={`${row.page}-${reason.label}`}
-                                    className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 ${reason.className}`}
-                                  >
-                                    {reason.label}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            {slug && (
-                              <button
-                                type="button"
-                                onClick={() => handleEditBlog(slug)}
-                                className="mt-2 inline-flex items-center rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                              >
-                                이 글 수정하기
-                              </button>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="rounded-xl bg-white/80 p-3 text-xs text-[var(--muted)]">지금은 리라이트 우선 글이 없습니다.</p>
-                  )}
-                </div>
               </div>
             ) : (
               <div className="rounded-2xl bg-[var(--surface)] p-4 text-sm text-[var(--muted)] shadow-sm ring-1 ring-[var(--border)]/80">
@@ -543,97 +495,66 @@ export function SearchTab() {
           </AdminDisclosureSection>
 
           <AdminDisclosureSection
-            title="블로그 포스트 검색 성과"
-            description="페이지별 유입 키워드를 바로 확인합니다."
+            title="블로그 검색 성과 요약"
+            description="블로그 상세 분석과 리라이트 후보는 콘텐츠 탭에서 이어서 확인합니다."
             countLabel={`${data.blogPages.length}개`}
             defaultOpen={true}
-            collapsedMessage="필요할 때만 펼쳐 봅니다."
+            collapsedMessage="블로그 분석은 콘텐츠 탭에서 더 깊게 볼 수 있습니다."
           >
-            <DataTable
-              columns={[
-                {
-                  key: "page",
-                  label: "페이지",
-                  align: "left",
-                  render: (row) => {
-                    const page = String((row as { page: string }).page);
-                    const isSelected = selectedBlogPage === page;
-                    return (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedBlogPage((current) =>
-                            current === page ? null : page,
-                          )
-                        }
-                        className={`block max-w-[200px] truncate text-left sm:max-w-xs ${
-                          isSelected
-                            ? "font-medium text-[var(--color-primary)]"
-                            : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
-                        }`}
-                        title={page}
-                      >
-                        {page}
-                      </button>
-                    );
-                  },
-                },
-                { key: "impressions", label: "노출", align: "right", sortable: true },
-                { key: "clicks", label: "클릭", align: "right", sortable: true },
-                {
-                  key: "ctr",
-                  label: "CTR (%)",
-                  align: "right",
-                  sortable: true,
-                  render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr),
-                },
-                { key: "position", label: "순위", align: "right", sortable: true },
-                {
-                  key: "actions",
-                  label: "실행",
-                  align: "center",
-                  render: (row) => {
-                    const page = String((row as { page: string }).page);
-                    const slug = getEditableBlogSlug(page);
-                    if (!slug) {
-                      return <span className="text-xs text-[var(--muted)]">상세 글 아님</span>;
-                    }
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleEditBlog(slug)}
-                        className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                      >
-                        수정하기
-                      </button>
-                    );
-                  },
-                },
-              ]}
-              rows={blogSort.sortedRows as unknown as Record<string, unknown>[]}
-              keyField="page"
-              emptyMessage="블로그 검색 데이터가 없습니다"
-              sortKey={blogSort.sortKey}
-              sortDirection={blogSort.sortDirection}
-              onSort={blogSort.handleSort}
-            />
-            {selectedBlogPage && (
-              <PageQueryDrilldown
-                page={selectedBlogPage}
-                queries={selectedBlogPageQueries}
-                onClose={() => setSelectedBlogPage(null)}
-                metrics={selectedBlogPageMetrics}
-                onEditBlog={
-                  getEditableBlogSlug(selectedBlogPage)
-                    ? () => handleEditBlog(getEditableBlogSlug(selectedBlogPage)!)
-                    : undefined
-                }
-              />
-            )}
+            <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--foreground)]">블로그는 콘텐츠 탭에서 깊게 봅니다.</h4>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    포스트별 대표 쿼리, 연결 페이지, 리라이트 후보는 콘텐츠 탭으로 옮겼습니다.
+                  </p>
+                  {topBlogPage && (
+                    <p className="mt-3 text-sm text-[var(--foreground)]">
+                      현재 상위 블로그 페이지: <span className="font-medium">{topBlogPage.page}</span>
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[260px]">
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                    <div className="text-xs font-medium text-emerald-700">블로그 페이지</div>
+                    <div className="mt-1 text-lg font-semibold text-emerald-900">{data.blogPages.length}개</div>
+                  </div>
+                  <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
+                    <div className="text-xs font-medium text-sky-700">블로그 노출</div>
+                    <div className="mt-1 text-lg font-semibold text-sky-900">
+                      {data.blogPages.reduce((sum, row) => sum + row.impressions, 0).toLocaleString("ko-KR")}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3">
+                    <div className="text-xs font-medium text-violet-700">블로그 클릭</div>
+                    <div className="mt-1 text-lg font-semibold text-violet-900">
+                      {data.blogPages.reduce((sum, row) => sum + row.clicks, 0).toLocaleString("ko-KR")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <AdminActionButton
+                  tone="dark"
+                  onClick={() => router.push("/admin/content/posts")}
+                  className="min-h-8 px-3 py-1 text-xs"
+                >
+                  블로그 성과 상세 보기
+                </AdminActionButton>
+                {topBlogPage && getEditableBlogSlug(topBlogPage.page) && (
+                  <AdminActionButton
+                    tone="dark"
+                    onClick={() => handleEditBlog(getEditableBlogSlug(topBlogPage.page)!)}
+                    className="min-h-8 px-3 py-1 text-xs"
+                  >
+                    상위 글 바로 수정
+                  </AdminActionButton>
+                )}
+              </div>
+            </div>
           </AdminDisclosureSection>
         </>
       )}
     </div>
   );
 }
-

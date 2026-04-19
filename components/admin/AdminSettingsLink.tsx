@@ -6,7 +6,7 @@ import type { AuthSession } from "@supabase/supabase-js";
 import { AdminActionLink } from "@/components/admin/AdminChrome";
 
 interface AdminSettingsLinkProps {
-  tab?: string;
+  href?: string;
 }
 
 /**
@@ -16,7 +16,7 @@ interface AdminSettingsLinkProps {
  * 성능 최적화: localStorage 게이트 + 동적 Supabase import로
  * 비관리자 방문자는 Supabase SDK를 로드하지 않음.
  */
-export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) {
+export function AdminSettingsLink({ href = "/admin/system/settings" }: AdminSettingsLinkProps) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function AdminSettingsLink({ tab = "settings" }: AdminSettingsLinkProps) 
 
   return (
     <AdminActionLink
-      href={`/admin?tab=${tab}`}
+      href={href}
       tone="dark"
       className="rounded-full px-2.5 py-1 text-xs font-medium"
       title="설정 편집"

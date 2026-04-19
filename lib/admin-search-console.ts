@@ -31,7 +31,7 @@ function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstNow = new Date(Date.now() + kstOffset);
 
-  const days = period === "7d" ? 7 : period === "28d" ? 28 : 90;
+  const days = period === "7d" ? 7 : period === "28d" ? 28 : period === "90d" ? 90 : 180;
   const DELAY_DAYS = 3; // SC data is delayed 2-3 days
 
   const endDate = new Date(kstNow);
@@ -317,7 +317,6 @@ export async function fetchSearchConsoleData(period: string) {
   };
 
   const topQueries = (queriesRes.data.rows ?? [])
-    .filter((row) => !/^[a-zA-Z\s]+$/.test(row.keys?.[0] ?? ""))
     .map((row) => ({
       query: row.keys?.[0] ?? "",
       ...toMetricRow(row),
@@ -340,7 +339,7 @@ export async function fetchSearchConsoleData(period: string) {
   const pageQueryRows = (pageQueryRes.data.rows ?? []).flatMap((row) => {
     const [fullUrl, query = ""] = row.keys ?? [];
     const page = normalizePagePath(fullUrl ?? "");
-    if (!page || !query || /^[a-zA-Z\s]+$/.test(query)) {
+    if (!page || !query) {
       return [];
     }
 

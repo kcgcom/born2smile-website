@@ -1,5 +1,5 @@
 import { SearchTab } from "../../components/SearchTab";
 
-export default function AdminGrowthSearchPage() {
+export default function AdminAnalysisSearchPage() {
   return <SearchTab />;
 }

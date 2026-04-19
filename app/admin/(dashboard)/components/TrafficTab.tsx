@@ -37,9 +37,9 @@ interface AnalyticsData {
 type Period = "7d" | "30d" | "90d";
 
 const PERIODS: Array<{ value: Period; label: string }> = [
-  { value: "7d", label: "7일" },
-  { value: "30d", label: "30일" },
-  { value: "90d", label: "90일" },
+  { value: "7d", label: "1주" },
+  { value: "30d", label: "1개월" },
+  { value: "90d", label: "3개월" },
 ];
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -415,11 +415,19 @@ export function TrafficTab() {
           selected={period}
           onChange={(v) => setPeriod(v as Period)}
         />
-        {data?.dataAsOf && (
+        {data?.period && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            ⓘ 데이터 기준: {data.dataAsOf}
+            집계 기간: {data.period.start} ~ {data.period.end}
           </span>
         )}
+        {data?.dataAsOf && (
+          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+            ⓘ 데이터 기준: {data.dataAsOf} (어제 기준)
+          </span>
+        )}
+        <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+          탭별 데이터 지연 기준이 달라 검색 성과 탭과 날짜 범위가 완전히 같지 않을 수 있습니다.
+        </span>
       </div>
 
       {/* Loading */}

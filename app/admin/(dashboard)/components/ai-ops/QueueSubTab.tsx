@@ -64,7 +64,7 @@ export function QueueSubTab() {
         {queueItems.length === 0 ? (
           <AdminSurface tone="white" className="rounded-3xl p-8 text-center">
             <div className="text-sm text-slate-500">검토할 항목이 없습니다.</div>
-            <AdminActionLink tone="dark" href="/admin/growth/ai-ops/suggestions" className="mt-4">
+            <AdminActionLink tone="dark" href="/admin/operations/ai-ops/suggestions" className="mt-4">
               실행 센터 열기
             </AdminActionLink>
           </AdminSurface>

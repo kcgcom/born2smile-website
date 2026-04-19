@@ -184,8 +184,8 @@ export type SortDirection = "asc" | "desc";
 // ---------------------------------------------------------------
 
 export const PERIODS = [
-  { value: "7d", label: "7일" },
-  { value: "28d", label: "28일" },
+  { value: "7d", label: "1주" },
+  { value: "28d", label: "1개월" },
   { value: "90d", label: "3개월" },
 ];
 

@@ -9,6 +9,7 @@ import {
   FileText,
   Gauge,
   LayoutDashboard,
+  Activity,
   MousePointerClick,
   Settings,
   Target,
@@ -39,10 +40,25 @@ interface WorkspaceConfig {
 
 const WORKSPACES: WorkspaceConfig[] = [
   {
-    id: "home",
-    href: "/admin",
-    label: "홈",
+    id: "operations",
+    href: "/admin/operations/overview",
+    label: "운영",
     icon: LayoutDashboard,
+    tabs: [
+      { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
+      { href: "/admin/operations/conversion", label: "전환", icon: MousePointerClick },
+      { href: "/admin/operations/ai-ops", label: "AI 운영실", icon: Bot },
+    ],
+  },
+  {
+    id: "analysis",
+    href: "/admin/analysis/traffic",
+    label: "분석",
+    icon: TrendingUp,
+    tabs: [
+      { href: "/admin/analysis/traffic", label: "트래픽", icon: BarChart3 },
+      { href: "/admin/analysis/search", label: "검색 성과", icon: FileText },
+    ],
   },
   {
     id: "content",
@@ -56,25 +72,13 @@ const WORKSPACES: WorkspaceConfig[] = [
     ],
   },
   {
-    id: "growth",
-    href: "/admin/growth/overview",
-    label: "운영 분석",
-    icon: TrendingUp,
-    tabs: [
-      { href: "/admin/growth/overview", label: "개요", icon: LayoutDashboard },
-      { href: "/admin/growth/traffic", label: "트래픽", icon: BarChart3 },
-      { href: "/admin/growth/search", label: "검색 성과", icon: FileText },
-      { href: "/admin/growth/conversion", label: "전환", icon: MousePointerClick },
-      { href: "/admin/growth/ai-ops", label: "AI 운영실", icon: Bot },
-    ],
-  },
-  {
     id: "system",
     href: "/admin/system/settings",
     label: "시스템",
     icon: Settings,
     tabs: [
       { href: "/admin/system/settings", label: "사이트 설정", icon: Settings },
+      { href: "/admin/system/monitoring", label: "모니터링", icon: Activity },
       { href: "/admin/system/devtools", label: "개발도구", icon: Gauge },
     ],
   },
@@ -85,10 +89,6 @@ function isActivePath(pathname: string, href: string) {
 }
 
 function isWorkspaceActive(pathname: string, workspace: WorkspaceConfig) {
-  if (workspace.id === "home") {
-    return pathname === workspace.href;
-  }
-
   if (isActivePath(pathname, workspace.href)) {
     return true;
   }
@@ -97,11 +97,7 @@ function isWorkspaceActive(pathname: string, workspace: WorkspaceConfig) {
 }
 
 function getWorkspace(pathname: string) {
-  if (pathname === "/admin") {
-    return WORKSPACES[0];
-  }
-
-  return WORKSPACES.slice(1).find((workspace) => isWorkspaceActive(pathname, workspace)) ?? WORKSPACES[0];
+  return WORKSPACES.find((workspace) => isWorkspaceActive(pathname, workspace)) ?? WORKSPACES[0];
 }
 
 function WorkspaceNav({ pathname }: { pathname: string }) {

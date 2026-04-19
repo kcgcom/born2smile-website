@@ -1,7 +1,7 @@
 import { AiOpsSectionShell } from "../../../components/AiOpsSectionShell";
 import { SuggestionsSubTab } from "../../../components/ai-ops/SuggestionsSubTab";
 
-export default function AdminGrowthAiOpsSuggestionsPage() {
+export default function AdminOperationsAiOpsSuggestionsPage() {
   return (
     <AiOpsSectionShell>
       <SuggestionsSubTab />

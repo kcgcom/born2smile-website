@@ -35,7 +35,7 @@ export function AdminFloatingButton() {
 
   if (!isAdmin || isBlogEditMode || pathname.startsWith("/admin")) return null;
 
-  const href = pathname.startsWith("/blog") ? "/admin?tab=content&sub=posts" : "/admin";
+  const href = pathname.startsWith("/blog") ? "/admin/content/posts" : "/admin/operations/overview";
 
   return (
     <AdminActionLink

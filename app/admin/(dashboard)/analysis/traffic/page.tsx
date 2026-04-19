@@ -1,5 +1,5 @@
 import { TrafficTab } from "../../components/TrafficTab";
 
-export default function AdminGrowthTrafficPage() {
+export default function AdminAnalysisTrafficPage() {
   return <TrafficTab />;
 }

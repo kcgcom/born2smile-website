@@ -1,5 +1,5 @@
 import { GrowthOverviewPanel } from "../../components/GrowthOverviewPanel";
 
-export default function AdminGrowthOverviewPage() {
+export default function AdminOperationsOverviewPage() {
   return <GrowthOverviewPanel />;
 }

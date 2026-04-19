@@ -95,7 +95,7 @@ export function BriefingSubTab() {
               ))
             )}
           </div>
-          <AdminActionLink tone="dark" href="/admin/growth/ai-ops/suggestions" className="mt-4 w-full">
+          <AdminActionLink tone="dark" href="/admin/operations/ai-ops/suggestions" className="mt-4 w-full">
             실행 센터 열기
           </AdminActionLink>
         </AdminSurface>
