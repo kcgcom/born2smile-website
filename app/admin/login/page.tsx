@@ -34,6 +34,8 @@ export default function AdminLoginPage() {
       } else {
         setError(`${email ?? "알 수 없는 계정"} 은(는) 관리자 계정이 아닙니다.`);
         await signOutAdmin();
+        handled = false;
+        if (!cancelled) setChecking(false);
       }
     }
 
@@ -66,6 +68,8 @@ export default function AdminLoginPage() {
     } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
       if (session?.user) {
         await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
+      } else if (!cancelled) {
+        setChecking(false);
       }
     });
 
