@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { TrendingUp, TrendingDown, Minus, X, AlertCircle, Smartphone, UserRound, CalendarRange } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, X, AlertCircle } from "lucide-react";
 import {
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
@@ -15,7 +15,7 @@ import { PeriodSelector } from "../PeriodSelector";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import type { TrendInsightsData, TrendOverviewCategory, TrendSummaryData } from "./shared";
+import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
 
 // ---------------------------------------------------------------
 // TypeScript interfaces
@@ -322,13 +322,6 @@ export function TrendSubTab() {
   } = useAdminApi<TrendSummaryData>(
     `/api/admin/naver-datalab/trend-summary?period=${period}&mode=full`,
   );
-  const {
-    data: insightsData,
-    loading: insightsLoading,
-    error: insightsError,
-  } = useAdminApi<TrendInsightsData>(
-    `/api/admin/naver-datalab/trend-insights?period=${period}`,
-  );
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value as "1m" | "3m" | "1y" | "3y" | "10y");
@@ -359,8 +352,6 @@ export function TrendSubTab() {
     }
     return map;
   }, [overviewData, selectedCategory]);
-  const segmentInsights = insightsData?.segmentInsights ?? [];
-  const seasonalityInsights = insightsData?.seasonalityInsights ?? [];
 
   // ── Graceful degradation ─────────────────────────────────────
   if (!overviewLoading && !overviewError && overviewData === null) {
@@ -439,107 +430,6 @@ export function TrendSubTab() {
             }}
           />
         </section>
-      )}
-
-      {!overviewLoading && !overviewError && overviewData && (
-        <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-[var(--color-primary)]" />
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">기기</h2>
-            </div>
-            <div className="space-y-3">
-              {insightsLoading && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">계산 중...</p>
-              )}
-              {segmentInsights.slice(0, 3).map((item) => (
-                <div key={`${item.slug}-device`} className="rounded-xl bg-[var(--background)] px-3 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                      {getKeywordCategoryLabel(item.category)}
-                    </span>
-                    <span className="text-xs font-semibold text-[var(--foreground)]">{item.subGroup}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                    {item.device.label}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    {item.device.changeRate > 0 ? "+" : ""}{item.device.changeRate.toFixed(1)}%
-                  </p>
-                </div>
-              ))}
-              {!insightsLoading && segmentInsights.length === 0 && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">데이터 없음</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <UserRound className="h-4 w-4 text-[var(--color-primary)]" />
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">타깃층</h2>
-            </div>
-            <div className="space-y-3">
-              {insightsLoading && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">계산 중...</p>
-              )}
-              {segmentInsights.slice(0, 3).map((item) => (
-                <div key={`${item.slug}-audience`} className="rounded-xl bg-[var(--background)] px-3 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                      {getKeywordCategoryLabel(item.category)}
-                    </span>
-                    <span className="text-xs font-semibold text-[var(--foreground)]">{item.subGroup}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                    {item.gender.label} · {item.age.label}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">{item.note}</p>
-                </div>
-              ))}
-              {!insightsLoading && segmentInsights.length === 0 && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">데이터 없음</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <CalendarRange className="h-4 w-4 text-[var(--color-primary)]" />
-              <h2 className="text-sm font-semibold text-[var(--foreground)]">시즌성</h2>
-            </div>
-            <div className="space-y-3">
-              {insightsLoading && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">계산 중...</p>
-              )}
-              {seasonalityInsights.slice(0, 3).map((item) => (
-                <div key={`${item.slug}-seasonality`} className="rounded-xl bg-[var(--background)] px-3 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                      {getKeywordCategoryLabel(item.category)}
-                    </span>
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                      {item.confidence.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                    {item.peakMonths.join(" · ")}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">약세 {item.lowMonths.join(" · ")}</p>
-                </div>
-              ))}
-              {!insightsLoading && seasonalityInsights.length === 0 && (
-                <p className="py-6 text-center text-sm text-[var(--muted)]">데이터 없음</p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {!insightsLoading && insightsError && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-          <p className="text-sm text-[var(--muted)]">{insightsError}</p>
-        </div>
       )}
 
       {/* ── Empty state ───────────────────────────────── */}
