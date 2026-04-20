@@ -49,8 +49,6 @@ lib/dev/generated/
 test-results/
 playwright-report/
 
-# oh-my-claudecode / oh-my-codex
-.omc/
 .omx/
 AGENTS.md
 
