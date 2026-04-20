@@ -35,6 +35,28 @@ const AGE_BANDS: Array<{ label: string; ages: string[] }> = [
   { label: "50세 이상", ages: ["9", "10", "11"] },
 ];
 
+async function mapWithConcurrencyLimit<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function run() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run()),
+  );
+
+  return results;
+}
+
 function scoreMomentum(data: Array<{ period: string; ratio: number }>): { momentumScore: number; changeRate: number } {
   const { changeRate, currentAvg } = analyzeTrend(data);
   const momentumScore = Math.round(currentAvg * 0.55 + Math.max(0, changeRate) * 0.45);
@@ -74,8 +96,10 @@ export async function deriveSegmentInsights(
     .filter((cat) => cat.topSubGroupData)
     .slice(0, 3);
 
-  const insights = await Promise.all(
-    prioritized.map(async (cat) => {
+  const insights = await mapWithConcurrencyLimit(
+    prioritized,
+    1,
+    async (cat) => {
       const keywordCategory = categoryKeywords.find((item) => item.category === cat.category);
       const subGroup = keywordCategory?.subGroups.find((item) => item.name === cat.topSubGroupData.name);
       if (!subGroup) return null;
@@ -106,7 +130,7 @@ export async function deriveSegmentInsights(
         age,
         note: `필터별 상대 지수 추세 기준으로 ${subGroup.name}는 ${device.label}·${gender.label}·${age.label} 반응이 최근 더 두드러집니다.`,
       } satisfies SegmentInsightItem;
-    }),
+    },
   );
 
   return insights.filter((item): item is SegmentInsightItem => item !== null);

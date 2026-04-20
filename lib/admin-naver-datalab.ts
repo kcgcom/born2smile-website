@@ -9,6 +9,19 @@ interface DatalabRequestFilter {
   ages?: string[];
 }
 
+interface DatalabRequestBody {
+  startDate: string;
+  endDate: string;
+  timeUnit: string;
+  keywordGroups: Array<{
+    groupName: string;
+    keywords: string[];
+  }>;
+  device?: "pc" | "mo";
+  gender?: "m" | "f";
+  ages?: string[];
+}
+
 const KEYWORD_GROUPS = [
   { groupName: "임플란트", keywords: ["임플란트", "임플란트 비용", "임플란트 수명", "임플란트 통증"] },
   { groupName: "치아교정", keywords: ["치아교정", "투명교정", "교정 비용", "치아교정 기간"] },
@@ -56,6 +69,10 @@ function getPeriodDates(period: string) {
   const startDate = new Date(endDate);
   startDate.setDate(startDate.getDate() - config.days + 1);
 
+  if (config.timeUnit === "month") {
+    startDate.setDate(1);
+  }
+
   // DataLab 데이터는 2016-01-01부터 존재 — startDate 클램핑
   const minDate = new Date("2016-01-01T00:00:00Z");
   if (startDate < minDate) {
@@ -64,6 +81,62 @@ function getPeriodDates(period: string) {
 
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return { startDate: fmt(startDate), endDate: fmt(endDate), timeUnit: config.timeUnit };
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildDatalabError(status: number, errText: string): Error {
+  try {
+    const parsed = JSON.parse(errText) as {
+      errMsg?: string;
+      errId?: string;
+    };
+    const detail = parsed.errMsg ?? "알 수 없는 오류";
+    const errId = parsed.errId ? ` [${parsed.errId}]` : "";
+    return new Error(`네이버 DataLab API 오류 (${status}): ${detail}${errId}`);
+  } catch {
+    const compact = errText.trim().replace(/\s+/g, " ").slice(0, 180);
+    return new Error(`네이버 DataLab API 오류 (${status}): ${compact || "응답 본문 없음"}`);
+  }
+}
+
+async function postDatalabRequest(
+  body: DatalabRequestBody,
+  clientId: string,
+  clientSecret: string,
+): Promise<Response> {
+  const retryableStatuses = new Set([429, 500, 502, 503, 504]);
+  const retryDelays = [250, 700];
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+    const res = await fetch("https://openapi.naver.com/v1/datalab/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Naver-Client-Id": clientId,
+        "X-Naver-Client-Secret": clientSecret,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      return res;
+    }
+
+    const errText = await res.text().catch(() => "");
+    lastError = buildDatalabError(res.status, errText);
+
+    if (!retryableStatuses.has(res.status) || attempt === retryDelays.length) {
+      throw lastError;
+    }
+
+    await delay(retryDelays[attempt]);
+  }
+
+  throw lastError ?? new Error("네이버 DataLab API 요청에 실패했습니다");
 }
 
 export async function fetchNaverDatalabTrend(period: string): Promise<NaverDatalabData> {
@@ -76,25 +149,16 @@ export async function fetchNaverDatalabTrend(period: string): Promise<NaverDatal
 
   const { startDate, endDate, timeUnit } = getPeriodDates(period);
 
-  const res = await fetch("https://openapi.naver.com/v1/datalab/search", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Naver-Client-Id": clientId,
-      "X-Naver-Client-Secret": clientSecret,
-    },
-    body: JSON.stringify({
+  const res = await postDatalabRequest(
+    {
       startDate,
       endDate,
       timeUnit,
       keywordGroups: KEYWORD_GROUPS,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`네이버 DataLab API 오류 (${res.status}): ${errText}`);
-  }
+    },
+    clientId,
+    clientSecret,
+  );
 
   const json = await res.json();
 
@@ -156,14 +220,8 @@ async function fetchSingleBatch(
     keywords: sg.keywords,
   }));
 
-  const res = await fetch("https://openapi.naver.com/v1/datalab/search", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Naver-Client-Id": clientId,
-      "X-Naver-Client-Secret": clientSecret,
-    },
-    body: JSON.stringify({
+  const res = await postDatalabRequest(
+    {
       startDate,
       endDate,
       timeUnit,
@@ -171,13 +229,10 @@ async function fetchSingleBatch(
       ...(filter?.device ? { device: filter.device } : {}),
       ...(filter?.gender ? { gender: filter.gender } : {}),
       ...(filter?.ages?.length ? { ages: filter.ages } : {}),
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    throw new Error(`네이버 DataLab API 오류 (${res.status}): ${errText}`);
-  }
+    },
+    clientId,
+    clientSecret,
+  );
 
   const json = await res.json();
   return (json.results ?? []).map((r: { title: string; data: Array<{ period: string; ratio: number }> }) => ({

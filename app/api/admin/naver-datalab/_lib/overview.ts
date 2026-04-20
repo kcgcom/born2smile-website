@@ -37,6 +37,38 @@ export interface TrendOverviewWithGapData extends TrendOverviewBaseData {
   contentGap: ReturnType<typeof analyzeContentGap>;
 }
 
+async function mapSettledWithConcurrencyLimit<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function run() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      try {
+        results[currentIndex] = {
+          status: "fulfilled",
+          value: await worker(items[currentIndex], currentIndex),
+        };
+      } catch (error) {
+        results[currentIndex] = {
+          status: "rejected",
+          reason: error,
+        };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run()),
+  );
+
+  return results;
+}
+
 async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> {
   if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
 
@@ -139,17 +171,15 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
 
   const [datalabResults, volumeResult] = await Promise.all([
     isFullMode
-      ? Promise.allSettled(
-          CATEGORY_KEYWORDS.map(async (ck) => {
-            const getData = createCachedFetcher(
-              `naver-trend-${ck.slug}-${period}`,
-              () => fetchNaverDatalabByCategory(ck.subGroups, period),
-              CACHE_TTL.NAVER_DATALAB,
-            );
-            const raw = await getData();
-            return { ck, raw };
-          }),
-        )
+      ? mapSettledWithConcurrencyLimit(CATEGORY_KEYWORDS, 2, async (ck) => {
+          const getData = createCachedFetcher(
+            `naver-trend-${ck.slug}-${period}`,
+            () => fetchNaverDatalabByCategory(ck.subGroups, period),
+            CACHE_TTL.NAVER_DATALAB,
+          );
+          const raw = await getData();
+          return { ck, raw };
+        })
       : Promise.resolve(null),
     fetchVolumeOverviewData(),
   ]);
