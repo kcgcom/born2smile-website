@@ -395,7 +395,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // ---------------------------------------------------------------
 
 export function TrafficTab() {
-  const [period, setPeriod] = useState<Period>("7d");
+  const [period, setPeriod] = useState<Period>("30d");
 
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
