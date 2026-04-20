@@ -67,14 +67,14 @@ export const STRATEGY_RULE_SECTIONS = [
       "DataLab 값은 절대 검색량이 아니라 상대 지수이므로 market size처럼 읽으면 안 됨",
       "segment/seasonality 카드는 힌트이며, 실제 전환 판단은 Search Console/GA4와 함께 봐야 함",
       "브리프는 초안이므로 의료 표현, 비용 표현, 과장 문구는 사람이 최종 검수해야 함",
-      "페이지 개편 워크노트는 자동 수정이 아니라 코드 수정 handoff를 위한 문서임",
+      "페이지 보강 워크노트는 자동 수정이 아니라 코드 수정 handoff를 위한 문서임",
     ],
   },
 ] as const;
 
 export function buildPageBriefMarkdown(brief: PageBriefItem): string {
   return [
-    `# ${brief.subGroup} 페이지 개편 워크노트`,
+    `# ${brief.subGroup} 페이지 보강 워크노트`,
     "",
     `- 대상 페이지: ${brief.targetPage}`,
     `- 히어로 카피: ${brief.heroCopy}`,
@@ -172,7 +172,7 @@ export function PageBriefPanel({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(markdown);
-      setNotice("페이지 개편 워크노트를 클립보드에 복사했습니다.");
+      setNotice("페이지 보강 워크노트를 클립보드에 복사했습니다.");
     } catch {
       setNotice("클립보드 복사에 실패했습니다. 직접 선택해 복사해 주세요.");
     }
@@ -186,7 +186,7 @@ export function PageBriefPanel({
             <div className="flex flex-wrap items-center gap-2">
               <CategoryBadge category={brief.slug} />
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                페이지 개편 워크노트
+                페이지 보강 워크노트
               </span>
             </div>
             <h2 className="mt-3 text-xl font-bold text-[var(--foreground)]">{brief.subGroup}</h2>
@@ -228,7 +228,7 @@ export function PageBriefPanel({
           </AdminNotice>
         )}
         <p className="mt-4 text-xs text-[var(--muted)]">
-          이 워크노트는 브리프에서 넘어온 임시 메모입니다. 복사한 뒤 실제 페이지 수정 작업으로 이어가세요.
+          이 워크노트는 브리프에서 넘어온 임시 메모입니다. 복사한 뒤 실제 페이지 보강 작업으로 이어가세요.
         </p>
       </AdminSurface>
 
@@ -236,7 +236,7 @@ export function PageBriefPanel({
         <AdminSurface tone="white" className="rounded-3xl p-6">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-[var(--color-primary)]" />
-            <h3 className="text-lg font-bold text-[var(--foreground)]">개편 메모</h3>
+            <h3 className="text-lg font-bold text-[var(--foreground)]">보강 메모</h3>
           </div>
           <div className="mt-4 space-y-4 text-sm text-[var(--foreground)]">
             <section>

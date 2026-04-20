@@ -99,12 +99,55 @@ export interface PageBriefItem {
   checklist: string[];
 }
 
-export interface OverviewData {
+export interface TrendOverviewCategory {
+  category: KeywordCategorySlug;
+  slug: KeywordCategorySlug;
+  overallTrend?: "rising" | "falling" | "stable" | null;
+  changeRate?: number | null;
+  topSubGroup?: string | null;
+  subGroupCount?: number | null;
+  risingCount?: number | null;
+  fallingCount?: number | null;
+  stableCount?: number | null;
+  monthlyTotalVolume?: number | null;
+  error: string | null;
+}
+
+export interface TrendSummaryData {
   mode: "volume" | "full";
   period: { start: string; end: string } | null;
-  categories: unknown[];
+  categories: TrendOverviewCategory[];
   contentGap: ContentGapItem[];
-  suggestions: TopicSuggestionItem[];
+  volumeSource: "searchad" | "datalab-fallback";
+  volumeCoverage: number | null;
+}
+
+export interface TrendInsightsData {
+  mode: "volume" | "full";
+  period: { start: string; end: string } | null;
+  segmentInsights: Array<{
+    category: KeywordCategorySlug;
+    slug: KeywordCategorySlug;
+    subGroup: string;
+    device: { label: "모바일" | "PC"; momentumScore: number; changeRate: number };
+    gender: { label: "여성" | "남성"; momentumScore: number; changeRate: number };
+    age: { label: string; momentumScore: number; changeRate: number };
+    note: string;
+  }>;
+  seasonalityInsights: Array<{
+    category: KeywordCategorySlug;
+    slug: KeywordCategorySlug;
+    peakMonths: string[];
+    lowMonths: string[];
+    confidence: "high" | "medium" | "low";
+    note: string;
+  }>;
+}
+
+export interface StrategyOverviewData {
+  mode: "volume" | "full";
+  period: { start: string; end: string } | null;
+  contentGap: ContentGapItem[];
   insightActions: InsightActionItem[];
   faqSuggestions: FaqSuggestionItem[];
   pageOpportunities: PageUpdateOpportunityItem[];

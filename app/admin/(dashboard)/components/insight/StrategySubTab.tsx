@@ -11,7 +11,7 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
-import type { BlogBriefItem, ContentGapItem, FaqSuggestionItem, InsightActionItem, OverviewData, PageBriefItem, PageUpdateOpportunityItem } from "./shared";
+import type { BlogBriefItem, ContentGapItem, FaqSuggestionItem, InsightActionItem, PageBriefItem, PageUpdateOpportunityItem, StrategyOverviewData } from "./shared";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { BLOG_EDITOR_PREFILL_KEY, PAGE_BRIEF_WORKNOTE_KEY } from "../blog/blog-editor-draft";
@@ -36,7 +36,7 @@ export function StrategySubTab() {
     data: overviewData,
     loading: overviewLoading,
     error: overviewError,
-  } = useAdminApi<OverviewData>("/api/admin/naver-datalab/overview");
+  } = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/strategy-overview");
   const insightActions = overviewData?.insightActions ?? [];
   const faqSuggestions = overviewData?.faqSuggestions ?? [];
   const pageOpportunities = overviewData?.pageOpportunities ?? [];
@@ -194,22 +194,19 @@ export function StrategySubTab() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <AdminPill tone="white">콘텐츠 전략 요약</AdminPill>
+              <AdminPill tone="white">콘텐츠 전략</AdminPill>
               <AdminPill tone={urgentGapCount > 0 ? "warning" : "white"}>
                 {urgentGapCount > 0 ? "갭 높은 주제 존재" : "급한 갭 적음"}
               </AdminPill>
             </div>
-            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">지금 먼저 다룰 주제와 실행 흐름을 정리합니다.</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              우선 실행, 바로 쓸 브리프, 필요할 때만 보는 근거 데이터를 순서대로 제공합니다.
-            </p>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">우선순위와 실행안을 정리합니다.</h2>
             <div className="mt-3">
               <button
                 type="button"
                 onClick={() => updatePanel(activePanel === "rules" ? undefined : "rules")}
                 className="text-xs font-medium text-[var(--color-primary)] hover:underline"
               >
-                {activePanel === "rules" ? "추천 원리 접기" : "추천 원리 보기"}
+                {activePanel === "rules" ? "추천원리 접기" : "추천원리 보기"}
               </button>
             </div>
           </div>
@@ -219,7 +216,7 @@ export function StrategySubTab() {
               <div className="mt-1 text-lg font-semibold text-amber-900">{urgentGapCount}건</div>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-              <div className="text-xs font-medium text-blue-700">우선 실행</div>
+              <div className="text-xs font-medium text-blue-700">실행 항목</div>
               <div className="mt-1 text-lg font-semibold text-blue-900">{actionableCount}건</div>
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
@@ -231,9 +228,6 @@ export function StrategySubTab() {
               <div className="mt-1 text-lg font-semibold text-fuchsia-900">{gapRows.length}건</div>
             </div>
           </div>
-          <p className="text-xs text-[var(--muted)] lg:max-w-[480px]">
-            위에서 아래로 읽으면 우선 실행 → 브리프 → 근거 데이터 순서로 이어집니다.
-          </p>
         </div>
 
         {topGapItem && (
@@ -273,7 +267,7 @@ export function StrategySubTab() {
       {scatterData.length > 0 && (
         <AdminDisclosureSection
           title="기회 매트릭스"
-          description="검색량과 포스트 수로 기회 영역을 봅니다."
+          description="기회 분포"
           countLabel={`${scatterData.length}개`}
           collapsedMessage="필요할 때만 펼쳐 봅니다."
           titleLevel="h2"
@@ -287,8 +281,8 @@ export function StrategySubTab() {
       {/* ── Section 2: Recommended actions ─────────────── */}
       {(insightActions.length > 0 || pageOpportunities.length > 0 || faqSuggestions.length > 0) && (
         <AdminDisclosureSection
-          title="실행 추천"
-          description="실행할 액션과 보강 후보를 나눠 보여줍니다."
+          title="우선 실행안"
+          description="우선순위 기준"
           countLabel={`${insightActions.length + pageOpportunities.length + faqSuggestions.length}개`}
           defaultOpen={true}
           collapsedMessage="필요할 때만 펼쳐 봅니다."
@@ -337,7 +331,7 @@ export function StrategySubTab() {
                     <div className="flex flex-wrap items-center gap-2">
                       <CategoryBadge category={item.slug} />
                       <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-700">
-                        보강 점수 {item.pageUpdateScore}
+                        보강 {item.pageUpdateScore}
                       </span>
                     </div>
                     <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{item.subGroup}</p>
@@ -402,8 +396,8 @@ export function StrategySubTab() {
 
       {(blogBriefs.length > 0 || pageBriefs.length > 0) && (
         <AdminDisclosureSection
-          title="자동 생성 브리프"
-          description="실행 가능한 글/페이지 브리프입니다."
+          title="실행 브리프"
+          description="실행 초안"
           countLabel={`${blogBriefs.length + pageBriefs.length}개`}
           defaultOpen={true}
           collapsedMessage="필요할 때만 펼쳐 봅니다."
@@ -465,7 +459,7 @@ export function StrategySubTab() {
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
               <div className="mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-[var(--color-primary)]" />
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">페이지 개편 브리프</h3>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">페이지 보강 브리프</h3>
               </div>
               <div className="space-y-3">
                 {pageBriefs.slice(0, 4).map((item: PageBriefItem) => (
@@ -507,7 +501,7 @@ export function StrategySubTab() {
                         onClick={() => openPageBriefWorkspace(item)}
                         className="min-h-8 px-3 py-1 text-xs"
                       >
-                        개편 워크노트 열기
+                        보강 워크노트 열기
                         <ChevronRight className="h-3.5 w-3.5" />
                       </AdminActionButton>
                     </div>
@@ -528,9 +522,9 @@ export function StrategySubTab() {
 
       {activePanel === "brief" && !selectedPageBrief && (
         <AdminSurface tone="white" className="rounded-3xl p-6">
-          <h2 className="text-lg font-bold text-[var(--foreground)]">페이지 개편 워크노트</h2>
+          <h2 className="text-lg font-bold text-[var(--foreground)]">페이지 보강 워크노트</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            브리프 카드에서 “개편 워크노트 열기”를 눌러야 전략 탭 안에서 메모가 열립니다.
+            브리프 카드에서 “보강 워크노트 열기”를 눌러야 전략 탭 안에서 메모가 열립니다.
           </p>
           <button
             type="button"

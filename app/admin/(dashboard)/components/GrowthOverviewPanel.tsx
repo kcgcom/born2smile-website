@@ -138,17 +138,17 @@ export function GrowthOverviewPanel() {
         <AdminSurface tone="white" className="rounded-3xl p-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" />
-            <h3 className="text-base font-bold text-[var(--foreground)]">트렌드와 실행</h3>
+            <h3 className="text-base font-bold text-[var(--foreground)]">검색 트렌드와 콘텐츠 전략</h3>
           </div>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            트렌드 변화는 여기서 보고, 콘텐츠 전략 정리는 콘텐츠 워크스페이스에서 이어집니다.
+            검색 수요 변화는 여기서 보고, 실행 우선순위와 브리프는 콘텐츠 전략에서 정리합니다.
           </p>
           <div className="mt-4 flex gap-2">
             <AdminActionLink tone="dark" href="/admin/content/trends" className="flex-1">
-              열기
+              검색 트렌드
             </AdminActionLink>
             <AdminActionLink tone="dark" href="/admin/content/strategy" className="flex-1">
-              전략
+              콘텐츠 전략
             </AdminActionLink>
           </div>
         </AdminSurface>

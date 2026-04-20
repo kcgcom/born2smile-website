@@ -124,10 +124,22 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     description: "네이버 DataLab 검색 트렌드",
   },
   {
-    path: "/api/admin/naver-datalab/overview",
+    path: "/api/admin/naver-datalab/trend-summary",
     methods: ["GET"],
     auth: true,
-    description: "트렌드 개요 (검색량/트렌드)",
+    description: "검색 트렌드 요약 (카테고리/갭)",
+  },
+  {
+    path: "/api/admin/naver-datalab/trend-insights",
+    methods: ["GET"],
+    auth: true,
+    description: "검색 트렌드 보조 인사이트 (세그먼트/시즌성)",
+  },
+  {
+    path: "/api/admin/naver-datalab/strategy-overview",
+    methods: ["GET"],
+    auth: true,
+    description: "콘텐츠 전략 데이터 (실행안/브리프)",
   },
   {
     path: "/api/admin/naver-datalab/category/[slug]",

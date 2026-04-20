@@ -22,7 +22,13 @@ async function adminFetcher<T>(endpoint: string): Promise<T> {
 }
 
 // PageSpeed 등 느린 엔드포인트 판별
-const SLOW_ENDPOINTS = ["/api/dev/pagespeed"];
+const SLOW_ENDPOINTS = [
+  "/api/dev/pagespeed",
+  "/api/admin/naver-datalab/trend-summary",
+  "/api/admin/naver-datalab/trend-insights",
+  "/api/admin/naver-datalab/strategy-overview",
+  "/api/admin/naver-datalab/category/",
+];
 
 function isSlowEndpoint(endpoint: string): boolean {
   return SLOW_ENDPOINTS.some((p) => endpoint.startsWith(p));

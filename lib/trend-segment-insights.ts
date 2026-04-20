@@ -1,4 +1,5 @@
 import type { KeywordCategorySlug, KeywordSubGroup } from "./admin-naver-datalab-keywords";
+import { unstable_cache } from "next/cache";
 import { fetchNaverDatalabByCategory } from "./admin-naver-datalab";
 import { analyzeTrend, type CategoryTrendData } from "./trend-analysis";
 
@@ -45,9 +46,19 @@ async function fetchSingleSubGroupSegment(
   period: string,
   filter: DatalabFilter,
 ): Promise<{ momentumScore: number; changeRate: number }> {
-  const result = await fetchNaverDatalabByCategory([subGroup], period, filter);
-  const data = result.groups[0]?.data ?? [];
-  return scoreMomentum(data);
+  const filterKey = JSON.stringify(filter);
+  const subgroupKey = `${subGroup.name}:${subGroup.keywords.join("|")}`;
+  const getSegment = unstable_cache(
+    async () => {
+      const result = await fetchNaverDatalabByCategory([subGroup], period, filter);
+      const data = result.groups[0]?.data ?? [];
+      return scoreMomentum(data);
+    },
+    [`trend-segment:${subgroupKey}:${period}:${filterKey}`],
+    { revalidate: 21600 },
+  );
+  const result = await getSegment();
+  return result;
 }
 
 export async function deriveSegmentInsights(
