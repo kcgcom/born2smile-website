@@ -1,5 +1,5 @@
-import { MonitoringTab } from "../../components/MonitoringTab";
+import { PerformanceTab } from "../../components/PerformanceTab";
 
 export default function AdminSystemMonitoringPage() {
-  return <MonitoringTab />;
+  return <PerformanceTab />;
 }

@@ -159,11 +159,11 @@ export function MonitoringTab() {
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-[var(--color-primary)]" />
               <h3 className="text-base font-semibold text-slate-900">
-                Sentry 모니터링 상태
+                Sentry 연동 점검
               </h3>
             </div>
             <p className="text-sm text-slate-600">
-              환경변수 설정과 실제 테스트 이벤트 전송을 한 화면에서 점검합니다.
+              환경변수 설정과 테스트 이벤트 전송으로 계측 연동이 살아 있는지 점검합니다.
             </p>
           </div>
           <AdminPill tone={isReady ? "white" : "warning"}>
@@ -346,11 +346,11 @@ function PostHogSection({
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-[var(--color-primary)]" />
             <h3 className="text-base font-semibold text-slate-900">
-              PostHog 수집 상태
+              PostHog 연동 점검
             </h3>
           </div>
           <p className="text-sm text-slate-600">
-            CTA/상담 전환 이벤트 수집과 관리자 조회용 설정 상태를 점검합니다.
+            CTA/상담 이벤트 수집과 관리자 조회용 설정이 연결되어 있는지 확인합니다.
           </p>
         </div>
         <AdminPill tone={isReady ? "white" : "warning"}>

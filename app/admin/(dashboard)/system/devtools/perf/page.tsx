@@ -1,10 +1,5 @@
-import { DevtoolsSectionShell } from "../../../components/DevtoolsSectionShell";
-import { PerformanceTab } from "../../../components/PerformanceTab";
+import { redirect } from "next/navigation";
 
 export default function AdminSystemDevtoolsPerfPage() {
-  return (
-    <DevtoolsSectionShell>
-      <PerformanceTab />
-    </DevtoolsSectionShell>
-  );
+  redirect("/admin/system/devtools/integrations");
 }

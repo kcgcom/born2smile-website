@@ -1,11 +1,11 @@
 "use client";
 
-import { BookOpen, ClipboardCheck, Gauge, Sparkles } from "lucide-react";
+import { Activity, BookOpen, ClipboardCheck, Sparkles } from "lucide-react";
 import { PathSubNav } from "./PathSubNav";
 
 const DEVTOOLS_ITEMS = [
   { href: "/admin/system/devtools/project", label: "현황", icon: ClipboardCheck },
-  { href: "/admin/system/devtools/perf", label: "성능", icon: Gauge },
+  { href: "/admin/system/devtools/integrations", label: "연동 점검", icon: Activity },
   { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
   { href: "/admin/system/devtools/ai", label: "AI 로그", icon: Sparkles },
 ] as const;
