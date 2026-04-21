@@ -33,8 +33,8 @@ pnpm dev                      # http://localhost:3000
 
 ## Commands
 
-- `pnpm dev` — Start dev server (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 실행)
-- `pnpm build` — Production build (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 빌드)
+- `pnpm dev` — Start dev server (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 실행, 공개 블로그는 snapshot 기준)
+- `pnpm build` — Production build (블로그 snapshot + 메타데이터 + 개발 매니페스트 자동 생성 후 빌드, 공개 블로그는 빌드 직전 snapshot 기준으로 정적 생성)
 - `pnpm start` — Start production Next.js server (빌드 후 로컬 프로덕션 테스트)
 - `pnpm generate-blog-meta` — 블로그 메타데이터 수동 재생성 (`lib/blog/generated/posts-meta.ts`)
 - `pnpm generate-blog-snapshot` — Supabase 블로그 snapshot 수동 재생성 (`lib/blog/generated/posts-snapshot.ts`)
@@ -125,7 +125,7 @@ supabase/migrations/          # schema, RLS, RPC
 | `/about` | SSG | Static |
 | `/treatments` | SSG | Static |
 | `/treatments/[slug]` | SSG | `generateStaticParams()` for 6 slugs |
-| `/blog` | SSG | Static (metadata from Supabase snapshot fallback) |
+| `/blog` | SSG | Static (dev/build에서는 snapshot 기준, 런타임 공개 조회는 Supabase 우선 + snapshot fallback) |
 | `/blog/[category]` | SSG + ISR | 카테고리 허브 페이지 (7개), `generateStaticParams()` + `revalidate: 3600` |
 | `/blog/[category]/[slug]` | SSG + ISR | `generateStaticParams()` + `revalidate: 3600` (1시간) |
 | `/faq` | SSG | 전체 FAQ 통합 페이지 (6개 진료 과목, FAQPage JSON-LD) |
@@ -140,7 +140,7 @@ supabase/migrations/          # schema, RLS, RPC
 
 ### Supabase 데이터 아키텍처
 
-상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), Supabase→snapshot 자동 폴백, `unstable_cache` + 2-tier 캐싱.
+상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), 공개 블로그의 dev/build snapshot 우선 전략과 런타임 Supabase→snapshot 폴백, `unstable_cache` + 2-tier 캐싱을 사용합니다.
 
 ### 블로그 발행 워크플로우
 

@@ -29,8 +29,8 @@ pnpm dev                     # http://localhost:3000
 
 | 명령어 | 설명 |
 |--------|------|
-| `pnpm dev` | 개발 서버 (snapshot/meta/dev manifest 생성 후 실행) |
-| `pnpm build` | 프로덕션 빌드 |
+| `pnpm dev` | 개발 서버 (블로그 snapshot/meta/dev manifest 생성 후, 공개 블로그는 snapshot 기준으로 실행) |
+| `pnpm build` | 프로덕션 빌드 (빌드 직전 생성한 블로그 snapshot 기준으로 공개 페이지 정적 생성) |
 | `pnpm start` | 로컬 프로덕션 서버 |
 | `pnpm lint` | ESLint 실행 |
 | `pnpm test:e2e` | Playwright 스모크 테스트 |

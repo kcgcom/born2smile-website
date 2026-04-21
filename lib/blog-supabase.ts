@@ -16,6 +16,8 @@ import { BLOG_POSTS_SNAPSHOT } from "./blog/generated/posts-snapshot";
 const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
+const PUBLIC_POSTS_CACHE_KEY = "blog-posts-published-full";
+const PUBLIC_BLOG_DATA_SOURCE = process.env.BLOG_PUBLIC_DATA_SOURCE;
 
 function safeRevalidateTag(tag: string) {
   try {
@@ -163,21 +165,15 @@ function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
   }));
 }
 
-function getSnapshotPublishedMetas(): BlogPostMeta[] {
+function getSnapshotPublishedPosts(): BlogPost[] {
   const today = getTodayKST();
   return getSnapshotPosts()
     .filter((post) => post.published && post.date <= today)
-    .map((post) => ({
-      slug: post.slug,
-      title: post.title,
-      subtitle: post.subtitle,
-      excerpt: post.excerpt,
-      category: post.category,
-      tags: post.tags,
-      date: post.date,
-      dateModified: post.dateModified,
-      readTime: post.readTime ?? calculateReadTime(post),
-    }))
+    .map((post) => {
+      const { published: _published, ...rest } = post;
+      void _published;
+      return rest;
+    })
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
@@ -194,6 +190,37 @@ function getSnapshotPost(slug: string): BlogPost | null {
 // ---------------------------------------------------------------------------
 
 /**
+ * All published posts visible to site visitors (date <= today KST), including full blocks.
+ * Ordered by date DESC.
+ * Falls back to snapshot data if Supabase query fails.
+ */
+export const getAllPublishedPosts: () => Promise<BlogPost[]> =
+  unstable_cache(
+    async (): Promise<BlogPost[]> => {
+      if (PUBLIC_BLOG_DATA_SOURCE === "snapshot") return getSnapshotPublishedPosts();
+      if (!isSupabaseAdminConfigured) return getSnapshotPublishedPosts();
+      try {
+        const today = getTodayKST();
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select("*")
+          .eq("published", true)
+          .lte("date", today)
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+
+        return (data as DbRow[]).map((row) => rowToPost(row));
+      } catch (e) {
+        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback", e);
+        return getSnapshotPublishedPosts();
+      }
+    },
+    [PUBLIC_POSTS_CACHE_KEY],
+    { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
+  );
+
+/**
  * All published posts visible to site visitors (date <= today KST).
  * Ordered by date DESC.
  * Falls back to snapshot data if Supabase query fails.
@@ -201,36 +228,18 @@ function getSnapshotPost(slug: string): BlogPost | null {
 export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
   unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
-      if (!isSupabaseAdminConfigured) return getSnapshotPublishedMetas();
-      try {
-        const today = getTodayKST();
-        const { data, error } = await getSupabaseAdmin()
-          .from(TABLE)
-          .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
-          .eq("published", true)
-          .lte("date", today)
-          .order("date", { ascending: false });
-
-        if (error) throw error;
-
-        return (data as DbRow[]).map((row) => {
-          const meta = rowToMeta(row);
-          return {
-            slug: meta.slug,
-            title: meta.title,
-            subtitle: meta.subtitle,
-            excerpt: meta.excerpt,
-            category: meta.category,
-            tags: meta.tags,
-            date: meta.date,
-            dateModified: meta.dateModified,
-            readTime: meta.readTime,
-          };
-        });
-      } catch (e) {
-        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback", e);
-        return getSnapshotPublishedMetas();
-      }
+      const posts = await getAllPublishedPosts();
+      return posts.map((post) => ({
+        slug: post.slug,
+        title: post.title,
+        subtitle: post.subtitle,
+        excerpt: post.excerpt,
+        category: post.category,
+        tags: post.tags,
+        date: post.date,
+        dateModified: post.dateModified,
+        readTime: post.readTime ?? calculateReadTime(post),
+      }));
     },
     ["blog-posts-published"],
     { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
@@ -280,25 +289,8 @@ export function getPostBySlug(
 ): Promise<BlogPost | null> {
   return unstable_cache(
     async (): Promise<BlogPost | null> => {
-      if (!isSupabaseAdminConfigured) return getSnapshotPost(slug);
-      try {
-        const { data, error } = await getSupabaseAdmin()
-          .from(TABLE)
-          .select("*")
-          .eq("slug", slug)
-          .single();
-
-        if (error) {
-          // PGRST116 = row not found
-          if (error.code === "PGRST116") return getSnapshotPost(slug);
-          throw error;
-        }
-
-        return rowToPost(data as DbRow);
-      } catch {
-        console.warn(`[blog-supabase] Supabase read failed for ${slug}, using snapshot fallback`);
-        return getSnapshotPost(slug);
-      }
+      const posts = await getAllPublishedPosts();
+      return posts.find((post) => post.slug === slug) ?? null;
     },
     [getBlogPostCacheTag(slug)],
     { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
@@ -337,22 +329,8 @@ export async function getPostBySlugFresh(slug: string): Promise<BlogPost | null>
  */
 export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
   async (): Promise<string[]> => {
-    if (!isSupabaseAdminConfigured) return getSnapshotPublishedMetas().map((p) => p.slug);
-    try {
-      const today = getTodayKST();
-      const { data, error } = await getSupabaseAdmin()
-        .from(TABLE)
-        .select("slug")
-        .eq("published", true)
-        .lte("date", today);
-
-      if (error) throw error;
-
-      return (data as Pick<DbRow, "slug">[]).map((row) => row.slug);
-    } catch (e) {
-      console.warn("[blog-supabase] Supabase query failed, using snapshot fallback for slugs", e);
-      return getSnapshotPublishedMetas().map((p) => p.slug);
-    }
+    const posts = await getAllPublishedPosts();
+    return posts.map((post) => post.slug);
   },
   ["blog-slugs"],
   { revalidate: CACHE_TTL, tags: ["blog-slugs"] },
@@ -370,43 +348,21 @@ export function getRelatedPosts(
 ): Promise<BlogPostMeta[]> {
   return unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
-      const snapshotFallback = () =>
-        getSnapshotPublishedMetas()
-          .filter((p) => p.category === category && p.slug !== excludeSlug)
-          .slice(0, limit);
-      if (!isSupabaseAdminConfigured) return snapshotFallback();
-      try {
-        const today = getTodayKST();
-        const { data, error } = await getSupabaseAdmin()
-          .from(TABLE)
-          .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
-          .eq("published", true)
-          .eq("category", category)
-          .neq("slug", excludeSlug)
-          .lte("date", today)
-          .order("date", { ascending: false })
-          .limit(limit);
-
-        if (error) throw error;
-
-        return (data as DbRow[]).map((row) => {
-          const meta = rowToMeta(row);
-          return {
-            slug: meta.slug,
-            title: meta.title,
-            subtitle: meta.subtitle,
-            excerpt: meta.excerpt,
-            category: meta.category,
-            tags: meta.tags,
-            date: meta.date,
-            dateModified: meta.dateModified,
-            readTime: meta.readTime,
-          };
-        });
-      } catch (e) {
-        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback for related posts", e);
-        return snapshotFallback();
-      }
+      const posts = await getAllPublishedPosts();
+      return posts
+        .filter((post) => post.category === category && post.slug !== excludeSlug)
+        .slice(0, limit)
+        .map((post) => ({
+          slug: post.slug,
+          title: post.title,
+          subtitle: post.subtitle,
+          excerpt: post.excerpt,
+          category: post.category,
+          tags: post.tags,
+          date: post.date,
+          dateModified: post.dateModified,
+          readTime: post.readTime ?? calculateReadTime(post),
+        }));
     },
     [getRelatedPostsCacheKey(category, excludeSlug, limit)],
     {

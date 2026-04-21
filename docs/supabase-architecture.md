@@ -1,6 +1,6 @@
 # Supabase 데이터 아키텍처
 
-블로그 포스트의 Single Source of Truth는 **Supabase**(`blog_posts` 테이블)다. 공개 블로그는 Supabase 조회 실패 시 빌드 시점에 생성한 snapshot(`lib/blog/generated/posts-snapshot.ts`)으로 폴백한다.
+블로그 포스트의 Single Source of Truth는 **Supabase**(`blog_posts` 테이블)다. 다만 공개 블로그는 안정적인 정적 생성을 위해 `pnpm dev`, `pnpm build` 시점에는 빌드 직전 생성한 snapshot(`lib/blog/generated/posts-snapshot.ts`)을 기준으로 렌더링하며, 런타임 공개 조회는 Supabase 우선 + snapshot 폴백 전략을 사용한다.
 
 ## 테이블 구조
 
@@ -37,7 +37,11 @@ Row Level Security로 보안:
 
 ## 폴백 전략
 
-Supabase 쿼리 실패 시 snapshot(`BLOG_POSTS_SNAPSHOT`)으로 자동 폴백한다. snapshot은 `pnpm generate-blog-snapshot`으로 생성되며 `pnpm dev`, `pnpm build`에서 자동 갱신된다.
+snapshot(`BLOG_POSTS_SNAPSHOT`)은 `pnpm generate-blog-snapshot`으로 생성되며 `pnpm dev`, `pnpm build`에서 자동 갱신된다.
+
+- 개발/빌드 시 공개 블로그 페이지(`/blog`, `/blog/[category]`, `/blog/[category]/[slug]`, `sitemap.xml`)는 snapshot을 기준으로 정적 생성된다.
+- 런타임 공개 블로그 조회는 Supabase 우선이며, 쿼리 실패 시 snapshot으로 자동 폴백한다.
+- 관리자용 fresh 조회/CRUD는 계속 Supabase를 직접 사용한다.
 
 관련 코드: `lib/blog-supabase.ts`
 

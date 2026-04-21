@@ -70,7 +70,8 @@
 
 - `pnpm dev`, `pnpm build` 시 `generate-blog-snapshot.ts`가 snapshot 생성
 - 이어서 `generate-blog-meta.ts`가 목록용 메타데이터 생성
-- 공개 블로그 조회가 실패하면 snapshot으로 폴백
+- `pnpm dev`, `pnpm build`의 공개 블로그 렌더링은 방금 생성한 snapshot을 기준으로 동작
+- 런타임 공개 블로그 조회는 Supabase 우선이며, 조회 실패 시 snapshot으로 폴백
 
 ## 7. 관련 문서
 
