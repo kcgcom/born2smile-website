@@ -10,13 +10,14 @@ export async function Footer() {
     getSiteHours(),
     getSiteLinks(),
   ]);
+  const footerClinicName = clinic.name === "서울본치과" ? "서울본치과의원" : clinic.name;
 
   return (
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-28 md:px-6 md:pb-12">
         {/* 병원명 + 전화번호 */}
         <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <span className="text-xl font-bold text-white">{clinic.name}</span>
+          <span className="text-xl font-bold text-white">{footerClinicName}</span>
           <TrackedAnchor
             href={clinic.phoneHref}
             event="footer_phone_click"
@@ -251,7 +252,7 @@ export async function Footer() {
             대표 {clinic.representative} · 사업자등록번호 {clinic.businessNumber}
           </p>
           <p className="mt-1">
-            &copy; 2017–{new Date().getFullYear()} {clinic.name}. All rights reserved.
+            &copy; 2017–{new Date().getFullYear()} {footerClinicName}. All rights reserved.
             {" · "}
             <Link href="/privacy" className="hover:text-gray-200 underline underline-offset-2">
               개인정보처리방침

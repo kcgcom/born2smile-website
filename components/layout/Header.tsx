@@ -13,6 +13,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const headerClinicName = CLINIC.name === "서울본치과" ? "서울본치과의원" : CLINIC.name;
 
   useEffect(() => {
     let ticking = false;
@@ -106,7 +107,7 @@ export function Header() {
               className="h-8 w-8 md:h-10 md:w-10"
             />
             <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-2xl">
-              {CLINIC.name}
+              {headerClinicName}
             </span>
           </Link>
 
