@@ -24,14 +24,14 @@ const WHO_WE_SERVE = [
     icon: HelpCircle,
     label: "치료를 결정하기 어려울 때",
     title: "함께 고민할 사람이 필요해요.",
-    desc: "꼭 필요한 치료인지, 어떤 장점과 단점이 있는지, 무엇부터 치료하면 좋을지 차근차근 설명드리겠습니다. 서두르지 않고 환자분 입장에서 함께 고민하겠습니다.",
-    note: "서두르지 않고, 환자분 입장에서 함께 고민하겠습니다.",
+    desc: "꼭 필요한 치료인지, 어떤 장점과 단점이 있는지, 무엇부터 치료하면 좋을지 차근차근 설명드리겠습니다. 고민이 되는 부분을 편하게 말씀해주세요. 환자분 입장에서 함께 고민하겠습니다.",
+    note: "작은 궁금증도 편하게 물어보세요.",
   },
   {
     icon: Smile,
     label: "치과 공포가 클 때",
     title: "치과가 너무 무서워요. 어릴 적 트라우마가 있어요.",
-    desc: "미루고 미루다 용기를 내어 찾아오시는 분들이 계십니다. 힘들지 않은 치료부터 차근차근, 마음이 열릴 수 있도록 속도를 맞춰 치료하겠습니다.",
+    desc: "미루고 미루다 용기를 내어 찾아오시는 분들이 계십니다. 힘들지 않은 치료부터 차근차근, 마음이 열릴 수 있도록 속도를 맞춰 치료하겠습니다. 무서운 부분이 무엇인지 먼저 말씀해주시면 그만큼 더 세심하게 살피겠습니다.",
     note: "무섭다고 먼저 말씀해주세요.",
   },
   {
@@ -39,7 +39,7 @@ const WHO_WE_SERVE = [
     label: "일정이 빠듯할 때",
     title: "중요한 일정을 앞두고 있어요.",
     desc: "출국 일정이 있거나 결혼식처럼 중요한 일정이 있다면 먼저 말씀해주세요. 남은 시간 안에 꼭 필요한 치료가 무엇인지 먼저 살펴보겠습니다. 급하다고 무리하게 치료하기보다는 우선순위에 맞춰 현실적인 계획을 세워드리겠습니다.",
-    note: "시간이 없을수록 꼭 필요한 치료부터 살펴보겠습니다.",
+    note: "시간이 없을수록 계획이 중요합니다.",
   },
   {
     icon: Building2,
@@ -421,14 +421,8 @@ export default function Home() {
               Who We Help
             </p>
             <h2 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
-              이런 분들과
-              <br />
               함께 고민하겠습니다.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-gray-600 md:text-lg">
-              치료를 결정하기 전, 무엇이 가장 걱정되는지부터 듣겠습니다.
-              서울본치과는 서두르지 않고 현재 상태와 가능한 선택지를 함께 정리합니다.
-            </p>
           </FadeIn>
 
           <StaggerContainer className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2">
@@ -436,18 +430,20 @@ export default function Home() {
               <StaggerItem key={item.title}>
                 <div className="group flex h-full flex-col rounded-[28px] border border-slate-200/80 bg-white p-7 shadow-[0_18px_50px_rgba(15,23,42,0.05)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(37,99,235,0.10)]">
                   <div className="mb-5 flex items-start justify-between gap-4">
-                    <span className="inline-flex rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-[var(--color-gold-text)]">
-                      {item.label}
-                    </span>
+                    <div className="flex min-h-12 flex-1 flex-col justify-between">
+                      <span className="inline-flex w-fit rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-[var(--color-gold-text)]">
+                        {item.label}
+                      </span>
+                      <h3 className="mt-2 text-xl font-bold leading-snug text-gray-900">
+                        {item.title}
+                      </h3>
+                    </div>
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.10),rgba(201,150,43,0.14))] ring-1 ring-slate-200/70">
                       <item.icon size={22} className="text-[var(--color-primary)]" aria-hidden="true" />
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col">
-                    <h3 className="text-xl font-bold leading-snug text-gray-900">
-                      {item.title}
-                    </h3>
-                    <p className="mt-3 text-[15px] leading-7 text-gray-600">
+                    <p className="text-[15px] leading-7 text-gray-600">
                       {item.desc}
                     </p>
                     <div className="mt-5 border-t border-slate-100 pt-4 text-sm font-medium text-[var(--color-primary)]">
