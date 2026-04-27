@@ -22,23 +22,31 @@ import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 const WHO_WE_SERVE = [
   {
     icon: HelpCircle,
-    title: "함께 고민해줄 전문가가 필요해요.",
-    desc: "치과 치료는 선택의 연속입니다. 어떤 치료를 받을지, 지금 해야 하는지, 기다려도 되는지 — 혼자 판단하기 어려운 것들이 많습니다. 충분히 들어드리고, 여러 선택지와 그 장단점을 솔직하게 설명드리겠습니다. 결정은 언제나 환자분께서 하십니다.",
+    label: "치료 결정이 어려울 때",
+    title: "지금 치료가 필요한지부터 차분히 묻고 싶어요.",
+    desc: "치료를 서두르기보다 현재 상태와 선택지를 먼저 정리해 드립니다. 꼭 필요한 치료인지, 조금 지켜봐도 되는지 이해하기 쉽게 설명합니다.",
+    note: "먼저 묻고, 이해하기 쉽게 설명합니다.",
   },
   {
     icon: Smile,
-    title: "치과치료가 너무 무서워요.",
-    desc: "무서운 게 당연합니다. 치과에 대한 두려움은 의지나 용기의 문제가 아닙니다. 저희는 서두르지 않습니다. 오늘 치료가 목표가 아니라, 편안한 첫 경험이 먼저입니다. 컴퓨터 제어 무통마취기를 사용하고, 치료 중 언제든 멈출 수 있습니다.",
+    label: "치과 공포가 클 때",
+    title: "치료보다 긴장부터 내려놓고 싶어요.",
+    desc: "무서운 마음을 당연한 전제로 두고 설명과 속도를 맞춥니다. 첫 방문부터 바로 치료를 권하기보다, 편안하게 시작할 수 있는 흐름을 먼저 만듭니다.",
+    note: "불안부터 낮추는 진료 흐름을 생각합니다.",
   },
   {
     icon: Plane,
-    title: "해외 출국일정에 맞춰서 치과치료를 받고 싶어요.",
-    desc: "출국 일정이 정해져 있다면, 그 일정에 맞는 치료 계획이 필요합니다. 무리하게 한 번에 끝내려다 오히려 문제가 생기는 경우도 있습니다. 언제 출발하시는지 알려주시면, 귀국 후 이어지는 치료까지 단계별로 설계해 드리겠습니다.",
+    label: "일정이 빠듯할 때",
+    title: "출국이나 중요한 일정에 맞춰 계획이 필요해요.",
+    desc: "남은 기간 안에 가능한 치료와 미뤄도 되는 치료를 구분해 드립니다. 무리한 진행보다 일정에 맞는 우선순위를 세워 현실적인 계획을 안내합니다.",
+    note: "일정에 맞는 우선순위를 함께 정리합니다.",
   },
   {
     icon: Building2,
-    title: "다니던 치과가 문을 닫았어요.",
-    desc: "익숙한 치과가 갑자기 문을 닫으면 당황스러우실 수밖에 없습니다. 오랫동안 쌓아온 신뢰를 새로운 곳에서 다시 시작하는 일이 쉽지 않다는 것도 압니다. 처음 오시는 분도 편안하게 이야기 나눌 수 있도록, 충분한 시간을 드리겠습니다.",
+    label: "갑작스러운 공백이 생겼을 때",
+    title: "다니던 치과 이후 치료를 어디서 이어야 할지 막막해요.",
+    desc: "기존 치료 이력과 현재 불편을 함께 확인한 뒤 이어서 관리할 수 있는 방향을 잡아드립니다. 처음 오시는 분도 부담 없이 상황을 설명하실 수 있게 듣겠습니다.",
+    note: "기존 치료 흐름을 이어갈 수 있게 돕습니다.",
   },
 ];
 
@@ -406,41 +414,107 @@ export default function Home() {
       )}
 
       {/* ───────────── 이런 고민을 가진 분들께 추천 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_28%,#f8fbff_100%)]">
         <div className="container-narrow">
-          <FadeIn className="mb-12 text-center">
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              이런 고민을 가진 분들께
+          <FadeIn className="mx-auto mb-12 max-w-3xl text-center md:mb-14">
+            <p className="mb-3 text-sm font-medium tracking-[0.24em] text-[var(--color-gold-text)] uppercase">
+              이런 분들을 위해
+            </p>
+            <h2 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
+              이런 상황이라면
               <br />
-              서울본치과를 추천합니다.
+              차분한 설명이 먼저입니다.
             </h2>
+            <p className="mt-4 text-base leading-relaxed text-gray-600 md:text-lg">
+              치료를 결정하기 전, 무엇이 가장 걱정되는지부터 듣겠습니다.
+              서울본치과는 서두르지 않고 현재 상태와 가능한 선택지를 함께 정리합니다.
+            </p>
           </FadeIn>
 
-          <StaggerContainer className="grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
-            {WHO_WE_SERVE.map((item) => (
-              <StaggerItem key={item.title}>
-                <div className="flex h-full flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-7 transition-shadow hover:shadow-md">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-primary)]/8">
-                    <item.icon size={22} className="text-[var(--color-primary)]" aria-hidden="true" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)] lg:items-stretch">
+            <StaggerContainer className="grid gap-5 sm:grid-cols-2">
+              {WHO_WE_SERVE.map((item) => (
+                <StaggerItem key={item.title}>
+                  <div className="group flex h-full flex-col rounded-[28px] border border-slate-200/80 bg-white p-7 shadow-[0_18px_50px_rgba(15,23,42,0.05)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(37,99,235,0.10)]">
+                    <div className="mb-5 flex items-start justify-between gap-4">
+                      <span className="inline-flex rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-[var(--color-gold-text)]">
+                        {item.label}
+                      </span>
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.10),rgba(201,150,43,0.14))] ring-1 ring-slate-200/70">
+                        <item.icon size={22} className="text-[var(--color-primary)]" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="flex flex-1 flex-col">
+                      <h3 className="text-xl font-bold leading-snug text-gray-900">
+                        {item.title}
+                      </h3>
+                      <p className="mt-3 text-[15px] leading-7 text-gray-600">
+                        {item.desc}
+                      </p>
+                      <div className="mt-5 border-t border-slate-100 pt-4 text-sm font-medium text-[var(--color-primary)]">
+                        {item.note}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="mb-2 text-lg font-bold text-gray-900">{item.title}</h3>
-                    <p className="text-base leading-relaxed text-gray-600">{item.desc}</p>
-                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+
+            <FadeIn delay={0.15} className="h-full">
+              <aside className="flex h-full flex-col rounded-[32px] border border-[var(--color-primary)]/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.98),rgba(239,246,255,0.92),rgba(253,243,224,0.78))] p-7 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-8">
+                <p className="text-sm font-semibold tracking-[0.18em] text-[var(--color-primary)] uppercase">
+                  서울본치과의 상담 방식
+                </p>
+                <h3 className="mt-4 font-headline text-2xl font-bold leading-snug text-gray-900 md:text-[2rem]">
+                  설명을 충분히 듣고
+                  <br />
+                  결정하고 싶은 분께
+                </h3>
+                <p className="mt-4 text-base leading-7 text-gray-700">
+                  치과 방문이 오랜만이거나, 이전 경험 때문에 망설여지신다면
+                  상담부터 편하게 시작하셔도 됩니다.
+                </p>
+
+                <div className="mt-7 space-y-3">
+                  {[
+                    "현재 상태와 치료 우선순위를 먼저 정리합니다.",
+                    "필요한 치료와 지켜봐도 되는 부분을 구분해 설명합니다.",
+                    "일정과 두려움까지 고려해 현실적인 계획을 함께 잡습니다.",
+                  ].map((point) => (
+                    <div
+                      key={point}
+                      className="flex items-start gap-3 rounded-2xl border border-white/70 bg-white/80 px-4 py-4 backdrop-blur-sm"
+                    >
+                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--color-gold)]" aria-hidden="true" />
+                      <p className="text-sm leading-6 text-gray-700">{point}</p>
+                    </div>
+                  ))}
                 </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
 
-          <FadeIn delay={0.3} className="mt-10 text-center">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
-            >
-              어떤 고민이든 편하게 물어보세요
-              <ArrowRight size={16} />
-            </Link>
-          </FadeIn>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col">
+                  <TrackedLink
+                    href="/contact"
+                    event="home_recommendation_contact_click"
+                    properties={{ cta_location: "recommendation_section", page_type: "home" }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)]"
+                  >
+                    상담 안내 보기
+                    <ArrowRight size={16} />
+                  </TrackedLink>
+                  <TrackedAnchor
+                    href={CLINIC.phoneHref}
+                    event="home_recommendation_phone_click"
+                    properties={{ cta_location: "recommendation_section", page_type: "home" }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-primary)]/18 bg-white/85 px-6 py-3.5 text-sm font-semibold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/6"
+                    aria-label={`전화 상담 ${CLINIC.phone}`}
+                  >
+                    <Phone size={16} aria-hidden="true" />
+                    {CLINIC.phone}
+                  </TrackedAnchor>
+                </div>
+              </aside>
+            </FadeIn>
+          </div>
         </div>
       </section>
 
