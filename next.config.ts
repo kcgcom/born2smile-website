@@ -36,6 +36,7 @@ const CSP = [
     "https://www.googleapis.com",
     "https://dapi.kakao.com",
     "https://www.google-analytics.com",
+    "https://www.google.com",
     "https://static.cloudflareinsights.com",
     "https://*.i.posthog.com",
     "https://*.posthog.com",

@@ -6,25 +6,40 @@ import {
   ExternalLink,
   ShieldCheck,
   Phone,
+  Smile,
+  HelpCircle,
+  Plane,
+  Building2,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
-import { TREATMENT_DETAILS } from "@/lib/treatments";
-import { getFaqJsonLd, getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
-import { FaqAccordion } from "@/components/ui/FaqAccordion";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 
-// 홈페이지에 노출할 자주 묻는 질문 (각 진료 분야에서 선별)
-const HOMEPAGE_FAQ = [
-  TREATMENT_DETAILS.implant.faq[0],     // 임플란트 수술은 아프나요?
-  TREATMENT_DETAILS.implant.faq[1],     // 임플란트 수명은 얼마나 되나요?
-  TREATMENT_DETAILS.orthodontics.faq[0], // 성인도 교정이 가능한가요?
-  TREATMENT_DETAILS.pediatric.faq[0],    // 아이가 처음 치과에 가는 시기는?
-  TREATMENT_DETAILS.restorative.faq[0],  // 신경치료는 아프나요?
-  TREATMENT_DETAILS.scaling.faq[0],      // 스케일링이 아프지 않나요?
+const WHO_WE_SERVE = [
+  {
+    icon: HelpCircle,
+    title: "함께 고민해줄 전문가가 필요해요.",
+    desc: "치과 치료는 선택의 연속입니다. 어떤 치료를 받을지, 지금 해야 하는지, 기다려도 되는지 — 혼자 판단하기 어려운 것들이 많습니다. 충분히 들어드리고, 여러 선택지와 그 장단점을 솔직하게 설명드리겠습니다. 결정은 언제나 환자분께서 하십니다.",
+  },
+  {
+    icon: Smile,
+    title: "치과치료가 너무 무서워요.",
+    desc: "무서운 게 당연합니다. 치과에 대한 두려움은 의지나 용기의 문제가 아닙니다. 저희는 서두르지 않습니다. 오늘 치료가 목표가 아니라, 편안한 첫 경험이 먼저입니다. 컴퓨터 제어 무통마취기를 사용하고, 치료 중 언제든 멈출 수 있습니다.",
+  },
+  {
+    icon: Plane,
+    title: "해외 출국일정에 맞춰서 치과치료를 받고 싶어요.",
+    desc: "출국 일정이 정해져 있다면, 그 일정에 맞는 치료 계획이 필요합니다. 무리하게 한 번에 끝내려다 오히려 문제가 생기는 경우도 있습니다. 언제 출발하시는지 알려주시면, 귀국 후 이어지는 치료까지 단계별로 설계해 드리겠습니다.",
+  },
+  {
+    icon: Building2,
+    title: "다니던 치과가 문을 닫았어요.",
+    desc: "익숙한 치과가 갑자기 문을 닫으면 당황스러우실 수밖에 없습니다. 오랫동안 쌓아온 신뢰를 새로운 곳에서 다시 시작하는 일이 쉽지 않다는 것도 압니다. 처음 오시는 분도 편안하게 이야기 나눌 수 있도록, 충분한 시간을 드리겠습니다.",
+  },
 ];
 
 export const metadata: Metadata = {
@@ -390,39 +405,43 @@ export default function Home() {
         </section>
       )}
 
-      {/* ───────────── 자주 묻는 질문 ───────────── */}
-      <section id="faq" className="section-padding bg-gray-50">
+      {/* ───────────── 이런 고민을 가진 분들께 추천 ───────────── */}
+      <section className="section-padding bg-gray-50">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
-            <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
-              FAQ
-            </p>
             <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
-              자주 묻는 질문
+              이런 고민을 가진 분들께
+              <br />
+              서울본치과를 추천합니다.
             </h2>
-            <p className="mt-4 text-gray-600">
-              환자분들이 자주 궁금해하시는 질문을 모았습니다.
-            </p>
           </FadeIn>
-          <FadeIn delay={0.15}>
-            <FaqAccordion items={HOMEPAGE_FAQ} />
-          </FadeIn>
-          <FadeIn delay={0.3} className="mt-8 text-center">
+
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
+            {WHO_WE_SERVE.map((item) => (
+              <StaggerItem key={item.title}>
+                <div className="flex h-full flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-7 transition-shadow hover:shadow-md">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-primary)]/8">
+                    <item.icon size={22} className="text-[var(--color-primary)]" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-lg font-bold text-gray-900">{item.title}</h3>
+                    <p className="text-base leading-relaxed text-gray-600">{item.desc}</p>
+                  </div>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+
+          <FadeIn delay={0.3} className="mt-10 text-center">
             <Link
-              href="/treatments"
-              className="inline-flex items-center gap-2 text-base font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)]"
             >
-              진료 안내에서 더 알아보기
+              어떤 고민이든 편하게 물어보세요
               <ArrowRight size={16} />
             </Link>
           </FadeIn>
         </div>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: serializeJsonLd(getFaqJsonLd(HOMEPAGE_FAQ)),
-          }}
-        />
       </section>
 
       {/* ───────────── CTA 배너 ───────────── */}
