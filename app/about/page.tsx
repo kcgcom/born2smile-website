@@ -56,7 +56,7 @@ export default function AboutPage() {
               병원 소개
             </h1>
             <p className="mt-4 text-base text-gray-600 md:text-lg">
-              서울대 출신 통합치의학전문의가 정성을 다해 진료합니다
+              서울대 출신 치과전문의가 정성을 다해 진료합니다
             </p>
           </FadeIn>
         </div>

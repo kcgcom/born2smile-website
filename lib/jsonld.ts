@@ -409,7 +409,7 @@ export function getWebSiteJsonLd() {
     "@id": `${BASE_URL}/#website`,
     url: BASE_URL,
     name: CLINIC.name,
-    description: `김포 한강신도시 장기동 치과 — 서울대 출신 통합치의학전문의 운영`,
+    description: `김포 한강신도시 장기동 치과 — 서울대 출신 치과전문의 운영`,
     inLanguage: "ko-KR",
     publisher: {
       "@id": `${BASE_URL}/#organization`,
