@@ -84,8 +84,20 @@ function validate(form: BlogEditorData): Record<string, string> {
       if (block.type === "faq" && (block.question.length < 5 || block.answer.length < 20)) {
         errors[`block_${i}`] = `블록 ${i + 1} FAQ 내용을 확인해 주세요`;
       }
+      if (block.type === "image" && (!block.src.trim() || block.alt.trim().length < 2)) {
+        errors[`block_${i}`] = `블록 ${i + 1} 이미지 경로와 대체 텍스트를 확인해 주세요`;
+      }
       if (block.type === "relatedLinks" && block.items.some((item) => item.title.length < 2 || item.href.length < 1)) {
         errors[`block_${i}`] = `블록 ${i + 1} 관련 링크 정보를 확인해 주세요`;
+      }
+      if (block.type === "table") {
+        const hasInvalidHeader = block.headers.some((header) => header.trim().length < 1);
+        const hasInvalidRow = block.rows.some((row) => (
+          row.length !== block.headers.length || row.some((cell) => cell.trim().length < 1)
+        ));
+        if (hasInvalidHeader || hasInvalidRow) {
+          errors[`block_${i}`] = `블록 ${i + 1} 표의 헤더와 셀 내용을 확인해 주세요`;
+        }
       }
     }
   } else {
@@ -105,6 +117,8 @@ function calcReadTime(blocks: BlogBlock[] = []): string {
       case "heading":
       case "paragraph":
         return sum + block.text.length;
+      case "image":
+        return sum + block.src.length + block.alt.length + (block.caption?.length ?? 0);
       case "list":
         return sum + block.items.reduce((acc, item) => acc + item.length, 0);
       case "faq":
@@ -114,6 +128,12 @@ function calcReadTime(blocks: BlogBlock[] = []): string {
           (acc, item) => acc + item.title.length + item.href.length + (item.description?.length ?? 0),
           0,
         );
+      case "table":
+        return sum + block.headers.reduce((acc, item) => acc + item.length, 0)
+          + block.rows.reduce(
+            (rowAcc, row) => rowAcc + row.reduce((cellAcc, cell) => cellAcc + cell.length, 0),
+            0,
+          );
       default:
         return sum;
     }
@@ -131,6 +151,8 @@ function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
       return { type: "list", style: "bullet", items: ["", ""] };
     case "faq":
       return { type: "faq", question: "", answer: "" };
+    case "image":
+      return { type: "image", src: "/images/blog/example.png", alt: "", caption: "" };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "", href: "", description: "" }] };
     case "table":
@@ -146,6 +168,7 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
   paragraph: "문단",
   list: "목록",
   faq: "FAQ",
+  image: "이미지",
   relatedLinks: "관련 링크",
   table: "표",
 };
@@ -768,9 +791,183 @@ function renderBlockEditor(
           )}
         </div>
       );
+    case "image":
+      return (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={block.src}
+            onChange={(e) => setBlock(idx, { ...block, src: e.target.value })}
+            placeholder="/images/blog/prosthetics/crown-materials-chart.png"
+            className={inputClass(!!fieldErrors[`block_${idx}`])}
+          />
+          <input
+            type="text"
+            value={block.alt}
+            onChange={(e) => setBlock(idx, { ...block, alt: e.target.value })}
+            placeholder="이미지 대체 텍스트"
+            className={inputClass(!!fieldErrors[`block_${idx}`])}
+          />
+          <textarea
+            value={block.caption ?? ""}
+            onChange={(e) => setBlock(idx, { ...block, caption: e.target.value })}
+            rows={2}
+            placeholder="이미지 캡션 (선택)"
+            className={`${inputClass(false)} resize-y`}
+          />
+        </div>
+      );
+    case "table":
+      return (
+        <TableBlockEditor
+          block={block}
+          idx={idx}
+          setBlock={setBlock}
+          hasError={!!fieldErrors[`block_${idx}`]}
+        />
+      );
     default:
       return null;
   }
+}
+
+function TableBlockEditor({
+  block,
+  idx,
+  setBlock,
+  hasError,
+}: {
+  block: Extract<BlogBlock, { type: "table" }>;
+  idx: number;
+  setBlock: (idx: number, block: BlogBlock) => void;
+  hasError: boolean;
+}) {
+  const updateHeader = (headerIdx: number, value: string) => {
+    const headers = block.headers.map((header, i) => (i === headerIdx ? value : header));
+    const rows = block.rows.map((row) => {
+      if (row.length === headers.length) return row;
+      return [...row, ...Array.from({ length: headers.length - row.length }, () => "")].slice(0, headers.length);
+    });
+    setBlock(idx, { ...block, headers, rows });
+  };
+
+  const updateCell = (rowIdx: number, cellIdx: number, value: string) => {
+    const rows = block.rows.map((row, i) => (
+      i === rowIdx ? row.map((cell, j) => (j === cellIdx ? value : cell)) : row
+    ));
+    setBlock(idx, { ...block, rows });
+  };
+
+  const addColumn = () => {
+    if (block.headers.length >= 8) return;
+    setBlock(idx, {
+      ...block,
+      headers: [...block.headers, ""],
+      rows: block.rows.map((row) => [...row, ""]),
+    });
+  };
+
+  const removeColumn = (columnIdx: number) => {
+    if (block.headers.length <= 2) return;
+    setBlock(idx, {
+      ...block,
+      headers: block.headers.filter((_, i) => i !== columnIdx),
+      rows: block.rows.map((row) => row.filter((_, i) => i !== columnIdx)),
+    });
+  };
+
+  const addRow = () => {
+    if (block.rows.length >= 20) return;
+    setBlock(idx, {
+      ...block,
+      rows: [...block.rows, Array.from({ length: block.headers.length }, () => "")],
+    });
+  };
+
+  const removeRow = (rowIdx: number) => {
+    if (block.rows.length <= 1) return;
+    setBlock(idx, { ...block, rows: block.rows.filter((_, i) => i !== rowIdx) });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={addColumn}
+          className="rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          + 열 추가
+        </button>
+        <button
+          type="button"
+          onClick={addRow}
+          className="rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          + 행 추가
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+        <table className="w-full min-w-[420px] border-collapse bg-white text-sm">
+          <thead className="bg-[var(--background)]">
+            <tr>
+              {block.headers.map((header, headerIdx) => (
+                <th key={`header-${headerIdx}`} className="border-b border-[var(--border)] p-2 align-top">
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="text"
+                      value={header}
+                      onChange={(e) => updateHeader(headerIdx, e.target.value)}
+                      placeholder={`헤더 ${headerIdx + 1}`}
+                      className={inputClass(hasError)}
+                    />
+                    {block.headers.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeColumn(headerIdx)}
+                        className="shrink-0 rounded px-2 py-2 text-xs text-red-500 hover:bg-red-50"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row, rowIdx) => (
+              <tr key={`row-${rowIdx}`} className="border-t border-[var(--border)]">
+                {row.map((cell, cellIdx) => (
+                  <td key={`cell-${rowIdx}-${cellIdx}`} className="p-2 align-top">
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        value={cell}
+                        onChange={(e) => updateCell(rowIdx, cellIdx, e.target.value)}
+                        rows={2}
+                        placeholder={`행 ${rowIdx + 1}, 열 ${cellIdx + 1}`}
+                        className={`${inputClass(hasError)} resize-y`}
+                      />
+                      {cellIdx === row.length - 1 && block.rows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow(rowIdx)}
+                          className="shrink-0 rounded px-2 py-2 text-xs text-red-500 hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function RelatedLinkEditor({

@@ -29,6 +29,12 @@ export type BlogBlock =
       answer: string;
     }
   | {
+      type: "image";
+      src: string;
+      alt: string;
+      caption?: string;
+    }
+  | {
       type: "relatedLinks";
       items: BlogRelatedLinkItem[];
     }

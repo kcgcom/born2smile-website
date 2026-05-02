@@ -62,6 +62,8 @@ function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
       case "heading":
       case "paragraph":
         return sum + block.text.length;
+      case "image":
+        return sum + block.src.length + block.alt.length + (block.caption?.length ?? 0);
       case "list":
         return sum + block.items.reduce((acc, item) => acc + item.length, 0);
       case "faq":
@@ -71,6 +73,12 @@ function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
           (acc, item) => acc + item.title.length + item.href.length + (item.description?.length ?? 0),
           0,
         );
+      case "table":
+        return sum + block.headers.reduce((acc, item) => acc + item.length, 0)
+          + block.rows.reduce(
+            (rowAcc, row) => rowAcc + row.reduce((cellAcc, cell) => cellAcc + cell.length, 0),
+            0,
+          );
       default:
         return sum;
     }

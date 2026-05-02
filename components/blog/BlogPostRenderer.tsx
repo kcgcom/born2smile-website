@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, BookOpenText } from "lucide-react";
 import type { BlogBlock } from "@/lib/blog";
 
@@ -93,6 +94,26 @@ export function renderSingleBlock(
             {block.answer}
           </p>
         </div>
+      );
+    case "image":
+      return (
+        <figure className="space-y-3">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+            <Image
+              src={block.src}
+              alt={block.alt}
+              width={1600}
+              height={900}
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="h-auto w-full object-cover"
+            />
+          </div>
+          {block.caption && (
+            <figcaption className="text-sm leading-relaxed text-gray-500">
+              {block.caption}
+            </figcaption>
+          )}
+        </figure>
       );
     case "relatedLinks": {
       const allExternal = block.items.every((item) =>

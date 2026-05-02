@@ -37,6 +37,7 @@ const BLOCK_OPTIONS: { type: BlogBlock["type"]; label: string; desc: string }[] 
   { type: "paragraph", label: "문단", desc: "텍스트" },
   { type: "list", label: "목록", desc: "불릿/번호" },
   { type: "faq", label: "FAQ", desc: "Q&A" },
+  { type: "image", label: "이미지", desc: "경로/캡션" },
   { type: "relatedLinks", label: "관련 링크", desc: "링크 모음" },
   { type: "table", label: "표", desc: "비교/정리" },
 ];
@@ -348,19 +349,21 @@ interface BlockFormProps {
 }
 
 function BlockEditForm({ block, saving, onSave, onChangeType, onCancel }: BlockFormProps) {
-  const blockTypeOptions = BLOCK_OPTIONS.filter((option) => option.type !== "table");
-
   switch (block.type) {
     case "heading":
-      return <HeadingEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
+      return <HeadingEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "paragraph":
-      return <ParagraphEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
+      return <ParagraphEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "list":
-      return <ListEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
+      return <ListEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "faq":
-      return <FaqEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
+      return <FaqEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
+    case "image":
+      return <ImageEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "relatedLinks":
-      return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={blockTypeOptions} />;
+      return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
+    case "table":
+      return <TableEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     default:
       return null;
   }
@@ -710,6 +713,193 @@ function RelatedLinksEditForm({
   );
 }
 
+function ImageEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
+  const b = block as Extract<BlogBlock, { type: "image" }>;
+  const [src, setSrc] = useState(b.src);
+  const [alt, setAlt] = useState(b.alt);
+  const [caption, setCaption] = useState(b.caption ?? "");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!src.trim() || alt.trim().length < 2) return;
+        onSave({
+          type: "image",
+          src: src.trim(),
+          alt: alt.trim(),
+          ...(caption.trim() ? { caption: caption.trim() } : {}),
+        });
+      }}
+    >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
+      <label className="mb-1 block text-sm font-medium text-gray-600">이미지 경로</label>
+      <input
+        type="text"
+        value={src}
+        onChange={(e) => setSrc(e.target.value)}
+        className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+        placeholder="/images/blog/prosthetics/crown-materials-chart.png"
+        autoFocus
+      />
+      <label className="mb-1 block text-sm font-medium text-gray-600">대체 텍스트</label>
+      <input
+        type="text"
+        value={alt}
+        onChange={(e) => setAlt(e.target.value)}
+        className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+        placeholder="이미지 내용을 설명하는 텍스트"
+      />
+      <label className="mb-1 block text-sm font-medium text-gray-600">캡션</label>
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        rows={2}
+        className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+        placeholder="캡션 (선택)"
+      />
+      <FormActions saving={saving} onCancel={onCancel} />
+    </form>
+  );
+}
+
+function TableEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
+  const b = block as Extract<BlogBlock, { type: "table" }>;
+  const [headers, setHeaders] = useState<string[]>([...b.headers]);
+  const [rows, setRows] = useState<string[][]>(b.rows.map((row) => [...row]));
+
+  const updateHeader = (idx: number, value: string) => {
+    setHeaders((prev) => prev.map((header, i) => (i === idx ? value : header)));
+  };
+
+  const updateCell = (rowIdx: number, cellIdx: number, value: string) => {
+    setRows((prev) => prev.map((row, i) => (
+      i === rowIdx ? row.map((cell, j) => (j === cellIdx ? value : cell)) : row
+    )));
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const normalizedHeaders = headers.map((header) => header.trim());
+        const normalizedRows = rows.map((row) => row.map((cell) => cell.trim()));
+        if (
+          normalizedHeaders.some((header) => !header)
+          || normalizedRows.some((row) => row.length !== normalizedHeaders.length || row.some((cell) => !cell))
+        ) {
+          return;
+        }
+        onSave({ type: "table", headers: normalizedHeaders, rows: normalizedRows });
+      }}
+    >
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (headers.length >= 8) return;
+              setHeaders((prev) => [...prev, ""]);
+              setRows((prev) => prev.map((row) => [...row, ""]));
+            }}
+            className="rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-700"
+          >
+            열 추가
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (rows.length >= 20) return;
+              setRows((prev) => [...prev, Array.from({ length: headers.length }, () => "")]);
+            }}
+            className="rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-700"
+          >
+            행 추가
+          </button>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="w-full min-w-[420px] text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {headers.map((header, idx) => (
+                  <th key={`header-${idx}`} className="border-b border-gray-200 p-2 align-top">
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="text"
+                        value={header}
+                        onChange={(e) => updateHeader(idx, e.target.value)}
+                        className="w-full rounded border border-gray-200 px-2 py-1.5 font-medium text-gray-700 focus:border-blue-400 focus:outline-none"
+                        placeholder={`헤더 ${idx + 1}`}
+                      />
+                      {headers.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeaders((prev) => prev.filter((_, i) => i !== idx));
+                            setRows((prev) => prev.map((row) => row.filter((_, i) => i !== idx)));
+                          }}
+                          className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIdx) => (
+                <tr key={`row-${rowIdx}`} className="border-t border-gray-200">
+                  {row.map((cell, cellIdx) => (
+                    <td key={`cell-${rowIdx}-${cellIdx}`} className="p-2 align-top">
+                      <div className="flex items-start gap-2">
+                        <textarea
+                          value={cell}
+                          onChange={(e) => updateCell(rowIdx, cellIdx, e.target.value)}
+                          rows={2}
+                          className="w-full resize-y rounded border border-gray-200 px-2 py-1.5 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+                          placeholder={`행 ${rowIdx + 1}, 열 ${cellIdx + 1}`}
+                        />
+                        {cellIdx === row.length - 1 && rows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setRows((prev) => prev.filter((_, i) => i !== rowIdx))}
+                            className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <FormActions saving={saving} onCancel={onCancel} />
+    </form>
+  );
+}
+
 // ─── BlockTypeMenu ────────────────────────────────────────────────────────────
 
 function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
@@ -728,6 +918,13 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
         type: "faq",
         question: "자주 묻는 질문을 입력하세요",
         answer: "답변을 입력해 주세요. 환자가 바로 이해할 수 있게 구체적으로 작성합니다.",
+      };
+    case "image":
+      return {
+        type: "image",
+        src: "/images/blog/example.png",
+        alt: "이미지 설명을 입력하세요",
+        caption: "캡션을 입력하세요",
       };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "관련 링크", href: "/" }] };

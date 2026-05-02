@@ -38,6 +38,12 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     answer: z.string().min(20).max(3000),
   }),
   z.object({
+    type: z.literal("image"),
+    src: z.string().min(1).max(500),
+    alt: z.string().min(2).max(150),
+    caption: z.string().max(200).optional(),
+  }),
+  z.object({
     type: z.literal("relatedLinks"),
     items: z.array(relatedLinkSchema).min(1).max(6),
   }),
