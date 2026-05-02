@@ -1,46 +1,37 @@
-<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="900" rx="32" fill="#F8FBFF"/>
-  <rect x="48" y="48" width="1104" height="804" rx="28" fill="white" stroke="#D9E7F5" stroke-width="2"/>
-  <text x="76" y="116" fill="#0F172A" font-family="Pretendard, sans-serif" font-size="38" font-weight="700">크라운 재료 한눈에 비교</text>
-  <text x="76" y="154" fill="#475569" font-family="Pretendard, sans-serif" font-size="20">지르코니아 · 골드 · PFM은 각각 강점이 다르고, 치아 위치와 교합에 따라 선택이 달라집니다.</text>
+<svg width="1200" height="840" viewBox="0 0 1200 840" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="840" fill="#F7F4EE"/>
+  <rect x="64" y="64" width="1072" height="712" rx="36" fill="#FFFDF9" stroke="#E9E1D2" stroke-width="2"/>
+  <circle cx="260" cy="252" r="120" fill="#F4EFE5"/>
+  <circle cx="600" cy="252" r="120" fill="#EFE7D4"/>
+  <circle cx="940" cy="252" r="120" fill="#F2EEE7"/>
 
-  <rect x="76" y="198" width="1048" height="84" rx="20" fill="#EAF3FF"/>
-  <text x="116" y="251" fill="#1E3A8A" font-family="Pretendard, sans-serif" font-size="24" font-weight="700">비교 항목</text>
-  <text x="412" y="251" fill="#1E3A8A" font-family="Pretendard, sans-serif" font-size="24" font-weight="700">지르코니아</text>
-  <text x="694" y="251" fill="#1E3A8A" font-family="Pretendard, sans-serif" font-size="24" font-weight="700">골드</text>
-  <text x="942" y="251" fill="#1E3A8A" font-family="Pretendard, sans-serif" font-size="24" font-weight="700">PFM</text>
+  <path d="M215 214C215 182 241 158 273 158H287C319 158 345 182 345 214V296C345 340 309 376 265 376C221 376 185 340 185 296V214C185 182 211 158 243 158H257" fill="#FCFBF7"/>
+  <path d="M555 214C555 182 581 158 613 158H627C659 158 685 182 685 214V296C685 340 649 376 605 376C561 376 525 340 525 296V214C525 182 551 158 583 158H597" fill="#D7B36A"/>
+  <path d="M895 214C895 182 921 158 953 158H967C999 158 1025 182 1025 214V296C1025 340 989 376 945 376C901 376 865 340 865 296V214C865 182 891 158 923 158H937" fill="#EAE5DC"/>
+  <path d="M917 208C917 186 935 168 957 168H963C985 168 1003 186 1003 208V294C1003 326 977 352 945 352C913 352 887 326 887 294V208C887 186 905 168 927 168H933" fill="#FFF9F0"/>
 
-  <g font-family="Pretendard, sans-serif" font-size="20" fill="#334155">
-    <rect x="76" y="298" width="1048" height="86" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
-    <text x="116" y="351" font-weight="700">심미성</text>
-    <text x="412" y="339">치아 색 표현이 자연스러운 편</text>
-    <text x="694" y="339">색이 눈에 띄어 전치부에는 제한적</text>
-    <text x="942" y="339">도재 색은 가능하지만 경계부 한계 존재</text>
+  <text x="206" y="430" fill="#2B3340" font-family="Pretendard, sans-serif" font-size="34" font-weight="700">지르코니아</text>
+  <text x="574" y="430" fill="#7A5615" font-family="Pretendard, sans-serif" font-size="34" font-weight="700">골드</text>
+  <text x="926" y="430" fill="#4B5563" font-family="Pretendard, sans-serif" font-size="34" font-weight="700">PFM</text>
 
-    <rect x="76" y="398" width="1048" height="86" rx="16" fill="#FCFDFE" stroke="#E2E8F0"/>
-    <text x="116" y="451" font-weight="700">강한 힘이 가는 부위</text>
-    <text x="412" y="439">어금니에서도 널리 고려</text>
-    <text x="694" y="439">기능 면에서 오랜 임상 경험</text>
-    <text x="942" y="439">충분히 가능하지만 도재 파절 가능성 설명 필요</text>
-
-    <rect x="76" y="498" width="1048" height="86" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
-    <text x="116" y="551" font-weight="700">금속 노출 가능성</text>
-    <text x="412" y="539">없음</text>
-    <text x="694" y="539">재료 자체가 금색으로 보임</text>
-    <text x="942" y="539">잇몸 경계에서 금속 라인이 비칠 수 있음</text>
-
-    <rect x="76" y="598" width="1048" height="86" rx="16" fill="#FCFDFE" stroke="#E2E8F0"/>
-    <text x="116" y="651" font-weight="700">장기 임상 데이터</text>
-    <text x="412" y="639">좋은 결과가 많지만 세대별 차이 고려</text>
-    <text x="694" y="639">매우 풍부함</text>
-    <text x="942" y="639">매우 풍부함</text>
-
-    <rect x="76" y="698" width="1048" height="86" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
-    <text x="116" y="751" font-weight="700">이런 경우 고려</text>
-    <text x="412" y="739">심미와 강도의 균형이 중요한 경우</text>
-    <text x="694" y="739">어금니 기능과 장기 안정성을 우선할 때</text>
-    <text x="942" y="739">비용과 임상 경험을 함께 고려할 때</text>
+  <g fill="#4B5563" font-family="Pretendard, sans-serif" font-size="24">
+    <text x="154" y="486">자연스러운 색과 강도의 균형</text>
+    <text x="520" y="486">어금니 기능과 장기 안정성</text>
+    <text x="848" y="486">검증된 선택지, 경계부 심미는 확인</text>
   </g>
 
-  <text x="76" y="826" fill="#64748B" font-family="Pretendard, sans-serif" font-size="18">핵심: 재료만으로 정답이 정해지지 않으며, 치아 위치·교합·이갈이 여부·남은 치아량·심미 요구를 함께 봐야 합니다.</text>
+  <line x1="144" y1="552" x2="1056" y2="552" stroke="#E8E1D6" stroke-width="2"/>
+
+  <g fill="#2B3340" font-family="Pretendard, sans-serif" font-size="28" font-weight="700">
+    <text x="150" y="622">볼 것 1</text>
+    <text x="150" y="692">볼 것 2</text>
+  </g>
+  <g fill="#5B6472" font-family="Pretendard, sans-serif" font-size="24">
+    <text x="282" y="622">앞니인가, 어금니인가</text>
+    <text x="282" y="692">심미를 더 볼지, 기능을 더 볼지</text>
+    <text x="660" y="622">이갈이·교합력이 강한가</text>
+    <text x="660" y="692">잇몸 경계가 많이 보이는 위치인가</text>
+  </g>
+
+  <text x="150" y="744" fill="#6B7280" font-family="Pretendard, sans-serif" font-size="22">정답은 재료 이름 하나로 정해지지 않습니다. 위치와 교합, 심미 기대치를 함께 보는 것이 핵심입니다.</text>
 </svg>

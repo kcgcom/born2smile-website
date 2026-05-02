@@ -1,28 +1,30 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="760" rx="32" fill="#F8FBFF"/>
-  <rect x="48" y="48" width="1104" height="664" rx="28" fill="white" stroke="#D9E7F5" stroke-width="2"/>
-  <text x="76" y="114" fill="#0F172A" font-family="Pretendard, sans-serif" font-size="38" font-weight="700">PFM에서 말하는 “금속 라인”은 이런 뜻입니다</text>
-  <text x="76" y="152" fill="#475569" font-family="Pretendard, sans-serif" font-size="20">금속 프레임 위에 도재를 입힌 구조라서, 잇몸 경계나 얇은 치은에서 어둡게 비쳐 보일 수 있습니다.</text>
+  <rect width="1200" height="760" fill="#F7F4EE"/>
+  <rect x="64" y="64" width="1072" height="632" rx="36" fill="#FFFDF9" stroke="#E9E1D2" stroke-width="2"/>
 
-  <rect x="92" y="214" width="460" height="430" rx="28" fill="#F9FBFF" stroke="#D7E8FF" stroke-width="2"/>
-  <text x="132" y="268" fill="#1D4ED8" font-family="Pretendard, sans-serif" font-size="28" font-weight="700">PFM 단면 구조</text>
-  <path d="M234 346C234 296 276 256 326 256H350C400 256 442 296 442 346V478C442 534 396 580 340 580H336C280 580 234 534 234 478V346Z" fill="#CBD5E1"/>
-  <path d="M254 344C254 308 284 278 320 278H356C392 278 422 308 422 344V474C422 520 384 558 338 558C292 558 254 520 254 474V344Z" fill="#FFF7ED" stroke="#FB923C" stroke-width="6"/>
-  <path d="M192 412C226 390 262 380 338 380C414 380 450 390 484 412" stroke="#F59E0B" stroke-width="18" stroke-linecap="round"/>
-  <text x="304" y="318" fill="#334155" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">도재층</text>
-  <text x="286" y="608" fill="#334155" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">금속 프레임</text>
-  <text x="170" y="446" fill="#92400E" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">잇몸 경계</text>
+  <text x="108" y="138" fill="#253042" font-family="Pretendard, sans-serif" font-size="38" font-weight="700">PFM은 왜 앞니에서 설명이 더 필요할까요?</text>
+  <text x="108" y="180" fill="#5E6775" font-family="Pretendard, sans-serif" font-size="23">금속 프레임 위에 도재를 입힌 구조라서, 잇몸 경계가 많이 보이는 위치에서는 한계를 설명해야 합니다.</text>
 
-  <rect x="606" y="214" width="502" height="430" rx="28" fill="#FFFBF2" stroke="#F3D8A3" stroke-width="2"/>
-  <text x="646" y="268" fill="#B45309" font-family="Pretendard, sans-serif" font-size="28" font-weight="700">어떨 때 눈에 띌 수 있나요?</text>
-  <g fill="#334155" font-family="Pretendard, sans-serif" font-size="24">
-    <text x="646" y="346">1. 시간이 지나 잇몸이 약간 내려간 경우</text>
-    <text x="646" y="408">2. 잇몸이 얇아서 경계부가 어둡게 비치는 경우</text>
-    <text x="646" y="470">3. 앞니처럼 심미 요구가 높은 부위인 경우</text>
-    <text x="646" y="532">4. 밝은 치아 색을 원하는 경우 대비가 더 느껴질 수 있음</text>
+  <rect x="110" y="236" width="420" height="376" rx="28" fill="#FBF8F1" stroke="#E9E1D2" stroke-width="2"/>
+  <text x="150" y="292" fill="#2B3340" font-family="Pretendard, sans-serif" font-size="30" font-weight="700">PFM 구조</text>
+  <path d="M238 340C238 292 278 252 326 252H350C398 252 438 292 438 340V460C438 518 392 564 334 564C276 564 230 518 230 460V340H238Z" fill="#BFC4CC"/>
+  <path d="M254 334C254 298 284 268 320 268H356C392 268 422 298 422 334V456C422 504 384 542 336 542C288 542 250 504 250 456V334H254Z" fill="#FFF8EE"/>
+  <path d="M214 396C248 374 288 364 336 364C384 364 424 374 458 396" stroke="#C79B4D" stroke-width="14" stroke-linecap="round"/>
+  <text x="342" y="312" fill="#7A5A2A" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">도재층</text>
+  <text x="154" y="472" fill="#8A6B38" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">잇몸 경계</text>
+  <text x="294" y="592" fill="#4B5563" font-family="Pretendard, sans-serif" font-size="22" font-weight="700">금속 프레임</text>
+
+  <rect x="588" y="236" width="502" height="376" rx="28" fill="#FBF8F1" stroke="#E9E1D2" stroke-width="2"/>
+  <text x="628" y="292" fill="#2B3340" font-family="Pretendard, sans-serif" font-size="30" font-weight="700">이럴 때 눈에 띄기 쉽습니다</text>
+  <g fill="#4F5968" font-family="Pretendard, sans-serif" font-size="24">
+    <text x="628" y="374">1. 잇몸이 조금 내려가 경계가 드러난 경우</text>
+    <text x="628" y="430">2. 잇몸이 얇아 어둡게 비쳐 보이는 경우</text>
+    <text x="628" y="486">3. 앞니처럼 빛과 색 차이가 더 잘 보이는 경우</text>
+    <text x="628" y="542">4. 아주 밝은 치아 색을 원할수록 차이가 느껴질 수 있는 경우</text>
   </g>
-  <rect x="646" y="572" width="406" height="42" rx="12" fill="#FEF3C7"/>
-  <text x="668" y="600" fill="#92400E" font-family="Pretendard, sans-serif" font-size="20" font-weight="700">모든 PFM이 문제라는 뜻은 아니며, 심미 영역에서 특히 설명이 필요한 포인트입니다.</text>
 
-  <text x="76" y="684" fill="#64748B" font-family="Pretendard, sans-serif" font-size="18">핵심: PFM은 여전히 검증된 재료지만, 전치부에서는 경계부 심미 한계를 함께 설명하는 것이 정확합니다.</text>
+  <rect x="628" y="570" width="404" height="44" rx="14" fill="#F1E8D6"/>
+  <text x="648" y="599" fill="#6B5A3E" font-family="Pretendard, sans-serif" font-size="20" font-weight="700">PFM이 나쁜 재료라는 뜻은 아니고, 심미 요구가 높은 위치에서 설명이 필요한 재료라는 뜻에 가깝습니다.</text>
+
+  <text x="108" y="660" fill="#6B7280" font-family="Pretendard, sans-serif" font-size="22">어금니에서는 큰 문제가 되지 않아도, 앞니처럼 많이 보이는 부위에서는 작은 경계 차이도 더 크게 느껴질 수 있어요.</text>
 </svg>

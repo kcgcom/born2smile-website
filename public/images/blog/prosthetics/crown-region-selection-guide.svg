@@ -1,33 +1,35 @@
 <svg width="1200" height="820" viewBox="0 0 1200 820" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="820" rx="32" fill="#F8FBFF"/>
-  <rect x="48" y="48" width="1104" height="724" rx="28" fill="white" stroke="#D9E7F5" stroke-width="2"/>
-  <text x="76" y="114" fill="#0F172A" font-family="Pretendard, sans-serif" font-size="38" font-weight="700">앞니와 어금니는 보는 기준이 다릅니다</text>
-  <text x="76" y="152" fill="#475569" font-family="Pretendard, sans-serif" font-size="20">전치부는 색과 투명도, 구치부는 교합력과 내구성이 더 중요하게 작용하는 경우가 많습니다.</text>
+  <rect width="1200" height="820" fill="#F8F6F1"/>
+  <rect x="64" y="64" width="1072" height="692" rx="36" fill="#FFFDFA" stroke="#E8E1D6" stroke-width="2"/>
 
-  <rect x="76" y="204" width="480" height="500" rx="28" fill="#F8FBFF" stroke="#D7E8FF" stroke-width="2"/>
-  <text x="116" y="266" fill="#1D4ED8" font-family="Pretendard, sans-serif" font-size="30" font-weight="700">앞니에서 우선 보는 것</text>
-  <circle cx="316" cy="398" r="112" fill="#EFF6FF" stroke="#93C5FD" stroke-width="4"/>
-  <rect x="252" y="336" width="26" height="94" rx="13" fill="#FFFFFF" stroke="#60A5FA" stroke-width="4"/>
-  <rect x="288" y="324" width="30" height="112" rx="15" fill="#FFFFFF" stroke="#60A5FA" stroke-width="4"/>
-  <rect x="328" y="324" width="30" height="112" rx="15" fill="#FFFFFF" stroke="#60A5FA" stroke-width="4"/>
-  <rect x="364" y="336" width="26" height="94" rx="13" fill="#FFFFFF" stroke="#60A5FA" stroke-width="4"/>
-  <g fill="#334155" font-family="Pretendard, sans-serif" font-size="22">
-    <text x="116" y="528">• 색상과 투명도가 얼마나 자연스러운지</text>
-    <text x="116" y="570">• 웃을 때 경계부가 눈에 띄지 않는지</text>
-    <text x="116" y="612">• 얇은 잇몸에서 금속이 비칠 가능성이 없는지</text>
-    <text x="116" y="654">• 심미 요구가 높다면 세라믹 계열을 우선 고려</text>
+  <text x="110" y="138" fill="#253042" font-family="Pretendard, sans-serif" font-size="38" font-weight="700">앞니와 어금니는 선택 기준이 다릅니다</text>
+  <text x="110" y="180" fill="#5E6775" font-family="Pretendard, sans-serif" font-size="23">전치부는 보이는 영역, 구치부는 씹는 힘을 더 많이 받는 영역이라는 차이가 있어요.</text>
+
+  <rect x="110" y="232" width="446" height="428" rx="28" fill="#FBF8F1" stroke="#E9E1D2" stroke-width="2"/>
+  <rect x="644" y="232" width="446" height="428" rx="28" fill="#FBF8F1" stroke="#E9E1D2" stroke-width="2"/>
+
+  <text x="156" y="290" fill="#2B3340" font-family="Pretendard, sans-serif" font-size="32" font-weight="700">앞니에서 먼저 보는 것</text>
+  <text x="690" y="290" fill="#2B3340" font-family="Pretendard, sans-serif" font-size="32" font-weight="700">어금니에서 먼저 보는 것</text>
+
+  <ellipse cx="333" cy="400" rx="116" ry="86" fill="#F3EBDD"/>
+  <rect x="252" y="356" width="22" height="82" rx="11" fill="#FFFDF8" stroke="#CDBAA0" stroke-width="3"/>
+  <rect x="282" y="344" width="28" height="100" rx="14" fill="#FFFDF8" stroke="#CDBAA0" stroke-width="3"/>
+  <rect x="318" y="340" width="30" height="106" rx="15" fill="#FFFDF8" stroke="#CDBAA0" stroke-width="3"/>
+  <rect x="356" y="344" width="28" height="100" rx="14" fill="#FFFDF8" stroke="#CDBAA0" stroke-width="3"/>
+  <rect x="392" y="356" width="22" height="82" rx="11" fill="#FFFDF8" stroke="#CDBAA0" stroke-width="3"/>
+
+  <ellipse cx="867" cy="400" rx="116" ry="86" fill="#EFE5D3"/>
+  <path d="M796 374C796 338 826 312 862 320L884 325L906 320C942 312 972 338 972 374V442C972 486 936 522 892 522H842C798 522 762 486 762 442V374C762 338 792 312 828 320L850 325L872 320" fill="#FFFDF8" stroke="#B89A67" stroke-width="4"/>
+
+  <g fill="#4F5968" font-family="Pretendard, sans-serif" font-size="24">
+    <text x="156" y="540">• 색과 투명도가 자연스러운지</text>
+    <text x="156" y="586">• 웃을 때 경계가 눈에 띄지 않는지</text>
+    <text x="156" y="632">• 잇몸 라인과 조화로운지</text>
+
+    <text x="690" y="540">• 교합력과 이갈이를 견딜 수 있는지</text>
+    <text x="690" y="586">• 남은 치아량과 파절 위험이 어떤지</text>
+    <text x="690" y="632">• 기능을 오래 유지하기 유리한지</text>
   </g>
 
-  <rect x="644" y="204" width="480" height="500" rx="28" fill="#FFFBF2" stroke="#F3D8A3" stroke-width="2"/>
-  <text x="684" y="266" fill="#B45309" font-family="Pretendard, sans-serif" font-size="30" font-weight="700">어금니에서 우선 보는 것</text>
-  <circle cx="884" cy="398" r="112" fill="#FFF7E6" stroke="#F59E0B" stroke-width="4"/>
-  <path d="M820 352C820 328 842 312 866 320L884 326L902 320C926 312 948 328 948 352V432C948 458 926 480 900 480H868C842 480 820 458 820 432V352Z" fill="#FFFFFF" stroke="#F59E0B" stroke-width="4"/>
-  <g fill="#334155" font-family="Pretendard, sans-serif" font-size="22">
-    <text x="684" y="528">• 씹는 힘과 이갈이 습관을 견딜 수 있는지</text>
-    <text x="684" y="570">• 남은 치아량과 파절 위험이 어떤지</text>
-    <text x="684" y="612">• 반대편 치아와의 교합 조화가 맞는지</text>
-    <text x="684" y="654">• 기능 우선이라면 골드나 지르코니아를 자주 검토</text>
-  </g>
-
-  <text x="76" y="744" fill="#64748B" font-family="Pretendard, sans-serif" font-size="18">핵심: 앞니와 어금니는 같은 재료라도 판단 기준이 다르므로, 위치별 설명을 듣고 선택하는 것이 좋습니다.</text>
+  <text x="110" y="714" fill="#6B7280" font-family="Pretendard, sans-serif" font-size="22">앞니에서는 ‘보이는 느낌’, 어금니에서는 ‘버티는 힘’의 비중이 커집니다. 그래서 같은 재료도 위치에 따라 판단이 달라집니다.</text>
 </svg>
