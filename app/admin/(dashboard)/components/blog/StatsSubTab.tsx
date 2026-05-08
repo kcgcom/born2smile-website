@@ -3,16 +3,12 @@
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
-import { categoryColors } from "@/lib/blog/category-colors";
-import type { BlogCategorySlug } from "@/lib/blog/types";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
-import { getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
+import { getCategoryLabel } from "@/lib/blog/category-slugs";
 import { getTodayKST } from "@/lib/date";
-import { AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminApi } from "../useAdminApi";
-import { DataTable } from "../DataTable";
-import { CATEGORY_HEX, HeartIcon } from "./blog-helpers";
-import type { AdminBlogPost, BlogLikesData } from "./blog-helpers";
+import { CATEGORY_HEX } from "./blog-helpers";
+import type { AdminBlogPost } from "./blog-helpers";
 
 type CategoryData = { category: string; count: number };
 const EMPTY_POSTS: AdminBlogPost[] = [];
@@ -71,33 +67,11 @@ const CategoryPieChart = dynamic(
   { ssr: false },
 );
 
-export function ContentStatsPanel({
-  embedded = false,
-  initialPosts,
-  initialLikesData,
-  initialLikesLoading = false,
-  initialLikesError = null,
-}: {
-  embedded?: boolean;
-  initialPosts?: AdminBlogPost[];
-  initialLikesData?: BlogLikesData | null;
-  initialLikesLoading?: boolean;
-  initialLikesError?: string | null;
-}) {
+export function ContentStatsPanel() {
   const today = getTodayKST();
 
-  const shouldFetch = !embedded;
-  const { data: postsData, loading: postsLoading, error: postsError } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts", shouldFetch);
-  const posts = embedded ? (initialPosts ?? EMPTY_POSTS) : (postsData ?? EMPTY_POSTS);
-
-  const {
-    data: fetchedLikesData,
-    loading: fetchedLikesLoading,
-    error: fetchedLikesError,
-  } = useAdminApi<BlogLikesData>("/api/admin/blog-likes", shouldFetch);
-  const likesData = embedded ? (initialLikesData ?? null) : fetchedLikesData;
-  const likesLoading = embedded ? initialLikesLoading : fetchedLikesLoading;
-  const likesError = embedded ? initialLikesError : fetchedLikesError;
+  const { data: postsData, loading: postsLoading, error: postsError } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
+  const posts = postsData ?? EMPTY_POSTS;
 
   const byCategoryAll = useMemo(
     () =>
@@ -115,15 +89,6 @@ export function ContentStatsPanel({
       count: published.filter((p) => p.category === cat).length,
     }));
   }, [posts, today]);
-
-  const top10Posts = useMemo(() => {
-    if (!likesData) return [];
-    return [...posts]
-      .filter((p) => p.published && p.date <= today)
-      .map((p) => ({ ...p, likeCount: likesData.likes[p.slug] ?? 0 }))
-      .sort((a, b) => b.likeCount - a.likeCount)
-      .slice(0, 10);
-  }, [likesData, posts, today]);
 
   if (postsLoading) {
     return (
@@ -144,18 +109,7 @@ export function ContentStatsPanel({
 
   return (
     <div className="space-y-6">
-      {!embedded && (
-        <AdminSurface tone="white" className="rounded-3xl p-5">
-          <div>
-            <h3 className="text-base font-bold text-[var(--foreground)]">콘텐츠 성과 요약</h3>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              카테고리 분포와 좋아요 반응을 빠르게 확인합니다.
-            </p>
-          </div>
-        </AdminSurface>
-      )}
-
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+<section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
@@ -169,89 +123,6 @@ export function ContentStatsPanel({
             <CategoryPieChart data={byCategoryPublished} />
           </div>
         </div>
-      </section>
-
-      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-[var(--foreground)]">인기 포스트 TOP 10</h3>
-          {likesData && (
-            <span className="text-xs text-[var(--muted)]">
-              전체 좋아요 {likesData.totalLikes.toLocaleString()}개
-            </span>
-          )}
-        </div>
-
-        {likesLoading && (
-          <div className="rounded-lg bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted)]">
-            불러오는 중...
-          </div>
-        )}
-
-        {likesError && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {likesError}
-          </div>
-        )}
-
-        {!likesLoading && !likesError && (
-          <DataTable
-            columns={[
-              {
-                key: "rank",
-                label: "#",
-                align: "center",
-                render: (row) => {
-                  const idx = top10Posts.findIndex((p) => p.slug === row.slug);
-                  return <span className="font-semibold text-[var(--muted)]">{idx + 1}</span>;
-                },
-              },
-              {
-                key: "title",
-                label: "제목",
-                render: (row) => {
-                  const category = String(row.category) as BlogCategorySlug;
-                  return (
-                    <a
-                      href={getBlogPostUrl(String(row.slug), category)}
-                      target="_blank"
-                      rel="noopener"
-                      className="hover:text-[var(--color-primary)] hover:underline"
-                    >
-                      {String(row.title)}
-                    </a>
-                  );
-                },
-              },
-              {
-                key: "category",
-                label: "카테고리",
-                render: (row) => {
-                  const category = String(row.category) as BlogCategorySlug;
-                  const catColor = categoryColors[category] ?? "bg-[var(--background)] text-[var(--muted)]";
-                  return (
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${catColor}`}>
-                      {getCategoryLabel(category)}
-                    </span>
-                  );
-                },
-              },
-              {
-                key: "likeCount",
-                label: "좋아요",
-                align: "right",
-                render: (row) => (
-                  <span className="flex items-center justify-end gap-1 font-semibold text-rose-500">
-                    <HeartIcon />
-                    {Number(row.likeCount).toLocaleString()}
-                  </span>
-                ),
-              },
-            ]}
-            rows={top10Posts as unknown as Record<string, unknown>[]}
-            keyField="slug"
-            emptyMessage="좋아요 데이터가 없습니다"
-          />
-        )}
       </section>
     </div>
   );

@@ -354,6 +354,7 @@ export function PostListItem({
   const categoryColor = categoryColors[post.category as BlogCategorySlug] ?? "bg-[var(--background)] text-[var(--muted)]";
 
   const isDraft = !post.published;
+  const isScheduled = post.published && post.date > today;
   const statusLabel = isDraft ? "초안" : isPublished ? "발행" : "예약";
   const statusClass = isDraft
     ? "bg-amber-50 text-amber-700"
@@ -380,13 +381,13 @@ export function PostListItem({
               </span>
             )}
           </div>
-          {isDraft ? (
+          {isDraft || isScheduled ? (
             <a
               href={getAdminPreviewUrl(post.slug, post.category)}
               target="_blank"
               rel="noopener"
               className="mt-2 block truncate font-medium text-[var(--foreground)] hover:text-amber-600 hover:underline"
-              title="초안 미리보기"
+              title={isDraft ? "초안 미리보기" : "예약 글 미리보기"}
             >
               {post.title}
             </a>
