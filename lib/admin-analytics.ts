@@ -57,7 +57,7 @@ export async function fetchGA4Data(period: string) {
   const client = getClient();
   const { start, end, compareStart, compareEnd } = getPeriodDates(period);
 
-  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport] =
+  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport, cityReport, returningReport] =
     await Promise.all([
       // Summary metrics - current period
       client.runReport({
@@ -116,6 +116,22 @@ export async function fetchGA4Data(period: string) {
         dimensions: [{ name: "date" }],
         metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
         orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+      }),
+      // City
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "city" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 10,
+      }),
+      // New vs Returning
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "newVsReturning" }],
+        metrics: [{ name: "sessions" }],
       }),
     ]);
 
@@ -192,6 +208,31 @@ export async function fetchGA4Data(period: string) {
     };
   });
 
+  // Parse city
+  const cities = (cityReport[0]?.rows ?? [])
+    .map((row) => ({
+      city: row.dimensionValues?.[0]?.value ?? "(unknown)",
+      sessions: Number(row.metricValues?.[0]?.value ?? 0),
+    }))
+    .filter((c) => c.city !== "(not set)")
+    .map((c) => ({
+      ...c,
+      percentage: Math.round((c.sessions / totalSessions) * 1000) / 10,
+    }));
+
+  // Parse new vs returning
+  const returningRaw = returningReport[0]?.rows ?? [];
+  const newSessions = Number(
+    returningRaw.find((r) => r.dimensionValues?.[0]?.value === "new")?.metricValues?.[0]?.value ?? 0,
+  );
+  const returningSessions = Number(
+    returningRaw.find((r) => r.dimensionValues?.[0]?.value === "returning")?.metricValues?.[0]?.value ?? 0,
+  );
+  const newVsReturning = [
+    { label: "신규", sessions: newSessions, percentage: Math.round((newSessions / totalSessions) * 1000) / 10 },
+    { label: "재방문", sessions: returningSessions, percentage: Math.round((returningSessions / totalSessions) * 1000) / 10 },
+  ];
+
   return {
     propertyId: GA4_PROPERTY_ID,
     analyticsUrl: `https://analytics.google.com/analytics/web/#/p${GA4_PROPERTY_ID}/reports/intelligenthome`,
@@ -203,5 +244,7 @@ export async function fetchGA4Data(period: string) {
     trafficSources,
     devices,
     dailyTrend,
+    cities,
+    newVsReturning,
   };
 }

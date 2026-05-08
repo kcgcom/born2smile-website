@@ -32,6 +32,8 @@ interface AnalyticsData {
   trafficSources: Array<{ source: string; sessions: number; percentage: number }>;
   devices: Array<{ category: string; sessions: number; percentage: number }>;
   dailyTrend: Array<{ date: string; sessions: number; pageviews: number }>;
+  cities: Array<{ city: string; sessions: number; percentage: number }>;
+  newVsReturning: Array<{ label: string; sessions: number; percentage: number }>;
 }
 
 type Period = "7d" | "30d" | "90d";
@@ -377,6 +379,140 @@ const DailyTrendChart = dynamic(
 );
 
 
+const CityChart = dynamic(
+  () =>
+    import("recharts").then(
+      ({
+        ResponsiveContainer,
+        BarChart,
+        Bar,
+        XAxis,
+        YAxis,
+        Tooltip,
+        CartesianGrid,
+        Cell,
+      }) => {
+        function CityChartInner({
+          data,
+        }: {
+          data: Array<{ city: string; sessions: number; percentage: number }>;
+        }) {
+          if (data.length === 0) {
+            return (
+              <p className="py-8 text-center text-sm text-[var(--muted)]">
+                데이터가 없습니다
+              </p>
+            );
+          }
+
+          return (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart
+                data={data}
+                layout="vertical"
+                margin={{ top: 0, right: 40, bottom: 0, left: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 11, fill: "#6B7280" }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => v.toLocaleString("ko-KR")}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="city"
+                  width={70}
+                  tick={{ fontSize: 11, fill: "#374151" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  formatter={
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ((value: number | undefined, _name: string, props: { payload?: { percentage?: number } }) => [`${(value ?? 0).toLocaleString("ko-KR")}건 (${props?.payload?.percentage ?? 0}%)`, "세션"]) as any
+                  }
+                  labelStyle={{ fontSize: 12, color: "#111827" }}
+                  contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }}
+                />
+                <Bar dataKey="sessions" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                  {data.map((_, idx) => (
+                    <Cell key={idx} fill={CHART_COLORS[2]} fillOpacity={idx === 0 ? 1 : 0.6 - idx * 0.04} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          );
+        }
+        return CityChartInner;
+      },
+    ),
+  { ssr: false },
+);
+
+const NewVsReturningChart = dynamic(
+  () =>
+    import("recharts").then(
+      ({
+        ResponsiveContainer,
+        PieChart,
+        Pie,
+        Cell,
+        Tooltip,
+        Legend,
+      }) => {
+        function NewVsReturningChartInner({
+          data,
+        }: {
+          data: Array<{ label: string; sessions: number; percentage: number }>;
+        }) {
+          if (data.length === 0 || data.every((d) => d.sessions === 0)) {
+            return (
+              <p className="py-8 text-center text-sm text-[var(--muted)]">
+                데이터가 없습니다
+              </p>
+            );
+          }
+
+          return (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="sessions"
+                  nameKey="label"
+                  cx="50%"
+                  cy="45%"
+                  outerRadius={80}
+                  innerRadius={44}
+                >
+                  {data.map((_, idx) => (
+                    <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ((value: number | undefined, name: string, props: { payload?: { percentage?: number } }) => [`${(value ?? 0).toLocaleString("ko-KR")}건 (${props?.payload?.percentage ?? 0}%)`, name]) as any
+                  }
+                  contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          );
+        }
+        return NewVsReturningChartInner;
+      },
+    ),
+  { ssr: false },
+);
+
 // ---------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------
@@ -491,6 +627,16 @@ export function TrafficTab() {
             {/* Daily trend */}
             <SectionCard title="일별 방문자 추이">
               <DailyTrendChart data={data.dailyTrend} />
+            </SectionCard>
+
+            {/* City */}
+            <SectionCard title="지역별 유입 TOP 10">
+              <CityChart data={data.cities} />
+            </SectionCard>
+
+            {/* New vs Returning */}
+            <SectionCard title="신규 vs 재방문">
+              <NewVsReturningChart data={data.newVsReturning} />
             </SectionCard>
           </div>
         </>
