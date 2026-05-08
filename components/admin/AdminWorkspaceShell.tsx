@@ -47,7 +47,6 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: LayoutDashboard,
     tabs: [
       { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
-      { href: "/admin/operations/conversion", label: "전환", icon: MousePointerClick },
       { href: "/admin/operations/ai-ops", label: "AI 운영실", icon: Bot },
     ],
   },
@@ -59,6 +58,7 @@ const WORKSPACES: WorkspaceConfig[] = [
     tabs: [
       { href: "/admin/analysis/traffic", label: "트래픽", icon: BarChart3 },
       { href: "/admin/analysis/search", label: "검색 성과", icon: FileText },
+      { href: "/admin/analysis/conversion", label: "전환", icon: MousePointerClick },
     ],
   },
   {
