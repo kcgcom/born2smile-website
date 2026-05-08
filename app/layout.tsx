@@ -119,6 +119,10 @@ export default function RootLayout({
         <Script id="ga-init" strategy="lazyOnload">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-3ZDMMFGP6Z')`}
         </Script>
+        <Script src="//wcs.pstatic.net/wcslog.js" strategy="lazyOnload" />
+        <Script id="naver-analytics" strategy="lazyOnload">
+          {`if(!wcs_add) var wcs_add={};wcs_add["wa"]="c7ed6945ea77a8";if(window.wcs){wcs_do();}`}
+        </Script>
         <Analytics />
       </body>
     </html>
