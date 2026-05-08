@@ -57,7 +57,7 @@ export async function fetchGA4Data(period: string) {
   const client = getClient();
   const { start, end, compareStart, compareEnd } = getPeriodDates(period);
 
-  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport, cityReport, returningReport] =
+  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport, cityReport, returningReport, hourReport, dayOfWeekReport] =
     await Promise.all([
       // Summary metrics - current period
       client.runReport({
@@ -132,6 +132,22 @@ export async function fetchGA4Data(period: string) {
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "newVsReturning" }],
         metrics: [{ name: "sessions" }],
+      }),
+      // Hourly pattern
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "hour" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ dimension: { dimensionName: "hour" }, desc: false }],
+      }),
+      // Day of week pattern
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "dayOfWeek" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ dimension: { dimensionName: "dayOfWeek" }, desc: false }],
       }),
     ]);
 
@@ -233,6 +249,33 @@ export async function fetchGA4Data(period: string) {
     { label: "재방문", sessions: returningSessions, percentage: Math.round((returningSessions / totalSessions) * 1000) / 10 },
   ];
 
+  // Parse hourly pattern (GA4 returns "00"~"23" as strings, KST 기준)
+  const hourlyMap = new Map<number, number>();
+  for (let h = 0; h < 24; h++) hourlyMap.set(h, 0);
+  for (const row of hourReport[0]?.rows ?? []) {
+    const h = parseInt(row.dimensionValues?.[0]?.value ?? "0", 10);
+    hourlyMap.set(h, Number(row.metricValues?.[0]?.value ?? 0));
+  }
+  const hourlyPattern = Array.from(hourlyMap.entries()).map(([hour, sessions]) => ({
+    hour: `${String(hour).padStart(2, "0")}시`,
+    sessions,
+  }));
+
+  // Parse day of week (GA4: 0=Sunday, 1=Monday, ..., 6=Saturday)
+  const DOW_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+  const dowMap = new Map<number, number>();
+  for (let d = 0; d < 7; d++) dowMap.set(d, 0);
+  for (const row of dayOfWeekReport[0]?.rows ?? []) {
+    const d = parseInt(row.dimensionValues?.[0]?.value ?? "0", 10);
+    dowMap.set(d, Number(row.metricValues?.[0]?.value ?? 0));
+  }
+  // 월(1)부터 시작하도록 정렬
+  const dowOrder = [1, 2, 3, 4, 5, 6, 0];
+  const dowPattern = dowOrder.map((d) => ({
+    day: DOW_LABELS[d],
+    sessions: dowMap.get(d) ?? 0,
+  }));
+
   return {
     propertyId: GA4_PROPERTY_ID,
     analyticsUrl: `https://analytics.google.com/analytics/web/#/p${GA4_PROPERTY_ID}/reports/intelligenthome`,
@@ -246,5 +289,7 @@ export async function fetchGA4Data(period: string) {
     dailyTrend,
     cities,
     newVsReturning,
+    hourlyPattern,
+    dowPattern,
   };
 }
