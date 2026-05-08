@@ -67,7 +67,7 @@ const CategoryPieChart = dynamic(
   { ssr: false },
 );
 
-export function ContentStatsPanel() {
+export function StatsSubTab() {
   const today = getTodayKST();
 
   const { data: postsData, loading: postsLoading, error: postsError } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
@@ -109,7 +109,7 @@ export function ContentStatsPanel() {
 
   return (
     <div className="space-y-6">
-<section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+      <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
@@ -126,8 +126,4 @@ export function ContentStatsPanel() {
       </section>
     </div>
   );
-}
-
-export function StatsSubTab() {
-  return <ContentStatsPanel />;
 }
