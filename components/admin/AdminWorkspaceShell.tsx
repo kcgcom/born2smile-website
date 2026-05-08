@@ -8,6 +8,7 @@ import {
   Bot,
   FileText,
   Gauge,
+  Image,
   LayoutDashboard,
   Activity,
   MousePointerClick,
@@ -67,6 +68,7 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: FileText,
     tabs: [
       { href: "/admin/content/posts", label: "포스트 운영", icon: FileText },
+      { href: "/admin/content/images", label: "이미지", icon: Image },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
       { href: "/admin/content/trends", label: "검색 트렌드", icon: TrendingUp },
     ],
