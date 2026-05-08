@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { ContentScheduleManager } from "../../components/ContentScheduleManager";
 
 export default function AdminContentSchedulePage() {
-  redirect("/admin/content/posts");
+  return <ContentScheduleManager />;
 }

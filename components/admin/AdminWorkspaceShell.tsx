@@ -67,7 +67,9 @@ const WORKSPACES: WorkspaceConfig[] = [
     label: "콘텐츠",
     icon: FileText,
     tabs: [
-      { href: "/admin/content/posts", label: "포스트 운영", icon: FileText },
+      { href: "/admin/content/posts", label: "포스트", icon: FileText },
+      { href: "/admin/content/schedule", label: "발행 일정", icon: Activity },
+      { href: "/admin/content/stats", label: "성과", icon: BarChart3 },
       { href: "/admin/content/images", label: "이미지", icon: Image },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
       { href: "/admin/content/trends", label: "검색 트렌드", icon: TrendingUp },

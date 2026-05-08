@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { StatsSubTab } from "../../components/blog/StatsSubTab";
 
 export default function AdminContentStatsPage() {
-  redirect("/admin/content/posts");
+  return <StatsSubTab />;
 }
