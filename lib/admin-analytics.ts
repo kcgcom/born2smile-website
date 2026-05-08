@@ -293,3 +293,47 @@ export async function fetchGA4Data(period: string) {
     dowPattern,
   };
 }
+
+export async function fetchBlogPostGA4Data(period: string) {
+  if (!GA4_PROPERTY_ID) {
+    throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
+  }
+
+  const client = getClient();
+
+  // Search Console과 동일한 기간 지원: 28d, 90d, 180d
+  const days = period === "90d" ? 90 : period === "180d" ? 180 : 28;
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + kstOffset);
+  const endDate = new Date(kstNow);
+  endDate.setDate(endDate.getDate() - 1);
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - days + 1);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const start = fmt(startDate);
+  const end = fmt(endDate);
+
+  const [report] = await client.runReport({
+    property: `properties/${GA4_PROPERTY_ID}`,
+    dateRanges: [{ startDate: start, endDate: end }],
+    dimensions: [{ name: "pagePath" }],
+    metrics: [{ name: "screenPageViews" }, { name: "averageSessionDuration" }],
+    dimensionFilter: {
+      filter: {
+        fieldName: "pagePath",
+        stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+      },
+    },
+    orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+    limit: 30,
+  });
+
+  const blogPostStats = (report?.rows ?? []).map((row) => ({
+    path: row.dimensionValues?.[0]?.value ?? "",
+    pageViews: Number(row.metricValues?.[0]?.value ?? 0),
+    avgDuration: Math.round(Number(row.metricValues?.[1]?.value ?? 0)),
+  }));
+
+  return { blogPostStats, dataAsOf: end };
+}
