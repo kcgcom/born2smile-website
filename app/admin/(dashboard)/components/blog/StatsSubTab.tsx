@@ -299,7 +299,7 @@ export function StatsSubTab() {
                           {slug && (
                             <div className="mb-2.5 flex gap-3">
                               <button type="button" onClick={() => setSelectedBlogPage((c) => c === item.page ? null : item.page)} className="text-xs font-medium text-[var(--color-primary)]">대표 쿼리 보기</button>
-                              <button type="button" onClick={() => router.push(`/admin/content/posts/${slug}`)} className="text-xs font-medium text-[var(--color-primary)]">이 글 편집</button>
+                              <a href={item.page} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[var(--color-primary)]">블로그 보기</a>
                             </div>
                           )}
                           <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
@@ -333,7 +333,7 @@ export function StatsSubTab() {
                                 {slug && (
                                   <div className="mt-1 flex flex-wrap gap-2">
                                     <button type="button" onClick={() => setSelectedBlogPage((c) => c === page ? null : page)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">대표 쿼리 보기</button>
-                                    <button type="button" onClick={() => router.push(`/admin/content/posts/${slug}`)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">이 글 편집</button>
+                                    <a href={page} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">블로그 보기</a>
                                   </div>
                                 )}
                               </div>
