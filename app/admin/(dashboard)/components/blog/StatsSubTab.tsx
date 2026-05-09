@@ -373,10 +373,7 @@ export function StatsSubTab() {
                                 queries={selectedBlogPageQueries}
                                 metrics={selectedBlogPageMetrics}
                                 onClose={() => setSelectedBlogPage(null)}
-                                onEditBlog={() => {
-                                  if (slug) router.push(`/admin/content/posts/${slug}`);
-                                }}
-                              />
+                                  />
                             </div>
                           )}
                         </div>
@@ -437,16 +434,12 @@ export function StatsSubTab() {
                       expandedRowKey={selectedBlogPage ?? undefined}
                       renderExpandedRow={(row) => {
                         const page = (row as SearchConsoleData["blogPages"][number]).page;
-                        const slug = getEditableBlogSlug(page);
                         return (
                           <PageQueryDrilldown
                             page={page}
                             queries={selectedBlogPageQueries}
                             metrics={selectedBlogPageMetrics}
                             onClose={() => setSelectedBlogPage(null)}
-                            onEditBlog={() => {
-                              if (slug) router.push(`/admin/content/posts/${slug}`);
-                            }}
                           />
                         );
                       }}
