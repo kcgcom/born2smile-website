@@ -8,6 +8,7 @@ interface Column<T> {
   label: string;
   align?: "left" | "right" | "center";
   sortable?: boolean;
+  className?: string;
   render?: (row: T) => React.ReactNode;
 }
 
@@ -86,7 +87,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     col.sortable && onSort
                       ? "cursor-pointer select-none hover:text-[var(--foreground)]"
                       : ""
-                  }`}
+                  } ${col.className ?? ""}`}
                   onClick={
                     col.sortable && onSort ? () => onSort(col.key) : undefined
                   }
@@ -124,7 +125,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       : col.align === "center"
                         ? "text-center"
                         : "text-left"
-                  }`}
+                  } ${col.className ?? ""}`}
                 >
                   {col.render ? col.render(row) : String(row[col.key] ?? "")}
                 </td>

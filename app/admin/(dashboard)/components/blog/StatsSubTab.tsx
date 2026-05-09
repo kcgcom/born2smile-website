@@ -282,85 +282,89 @@ export function StatsSubTab() {
 
               {tableTab === "posts" && (
                 <>
-                  <DataTable
-                    keyField="page"
-                    rows={topBlogSearchPages}
-                    columns={[
-                      {
-                        key: "page",
-                        label: "포스트",
-                        render: (row) => {
-                          const page = (row as SearchConsoleData["blogPages"][number]).page;
-                          const slug = getEditableBlogSlug(page);
-                          const title = slug ? slugToTitleMap.get(slug) : undefined;
-                          return (
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-[var(--foreground)]" title={page}>
-                                {title ?? slug ?? page}
-                              </p>
-                              {slug && (
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedBlogPage((current) => current === page ? null : page)}
-                                    className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-                                  >
-                                    대표 쿼리 보기
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => router.push(`/admin/content/posts/${slug}`)}
-                                    className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-                                  >
-                                    이 글 편집
-                                  </button>
-                                </div>
-                              )}
+                  {/* 모바일 카드 */}
+                  <div className="sm:hidden space-y-2">
+                    {topBlogSearchPages.length === 0 && (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">블로그 검색 성과 데이터가 아직 없습니다</p>
+                    )}
+                    {topBlogSearchPages.map((item) => {
+                      const slug = getEditableBlogSlug(item.page);
+                      const title = slug ? slugToTitleMap.get(slug) : undefined;
+                      const ga4 = ga4StatsMap.get(item.page);
+                      const m = ga4 ? Math.floor(ga4.avgDuration / 60) : 0;
+                      const s = ga4 ? ga4.avgDuration % 60 : 0;
+                      return (
+                        <div key={item.page} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                          <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm leading-snug">{title ?? slug ?? item.page}</p>
+                          {slug && (
+                            <div className="mb-2.5 flex gap-3">
+                              <button type="button" onClick={() => setSelectedBlogPage((c) => c === item.page ? null : item.page)} className="text-xs font-medium text-[var(--color-primary)]">대표 쿼리 보기</button>
+                              <button type="button" onClick={() => router.push(`/admin/content/posts/${slug}`)} className="text-xs font-medium text-[var(--color-primary)]">이 글 편집</button>
                             </div>
-                          );
+                          )}
+                          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
+                            <div><span className="text-[var(--muted)]">노출</span><br /><span className="font-semibold">{item.impressions.toLocaleString("ko-KR")}</span></div>
+                            <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
+                            <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
+                            <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
+                            <div><span className="text-[var(--muted)]">페이지뷰</span><br /><span className="font-semibold text-blue-600">{ga4 ? ga4.pageViews.toLocaleString("ko-KR") : "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">체류시간</span><br /><span className="font-semibold text-emerald-600">{ga4 ? `${m}:${String(s).padStart(2, "0")}` : "—"}</span></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* 데스크탑 테이블 */}
+                  <div className="hidden sm:block">
+                    <DataTable
+                      keyField="page"
+                      rows={topBlogSearchPages}
+                      columns={[
+                        {
+                          key: "page",
+                          label: "포스트",
+                          render: (row) => {
+                            const page = (row as SearchConsoleData["blogPages"][number]).page;
+                            const slug = getEditableBlogSlug(page);
+                            const title = slug ? slugToTitleMap.get(slug) : undefined;
+                            return (
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-[var(--foreground)]" title={page}>{title ?? slug ?? page}</p>
+                                {slug && (
+                                  <div className="mt-1 flex flex-wrap gap-2">
+                                    <button type="button" onClick={() => setSelectedBlogPage((c) => c === page ? null : page)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">대표 쿼리 보기</button>
+                                    <button type="button" onClick={() => router.push(`/admin/content/posts/${slug}`)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">이 글 편집</button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          },
                         },
-                      },
-                      { key: "impressions", label: "노출", align: "right" },
-                      { key: "clicks", label: "클릭", align: "right" },
-                      {
-                        key: "ctr",
-                        label: "CTR",
-                        align: "right",
-                        render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr),
-                      },
-                      { key: "position", label: "순위", align: "right" },
-                      {
-                        key: "pageViews",
-                        label: "페이지뷰",
-                        align: "right",
-                        render: (row) => {
-                          const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
-                          return ga4 ? (
-                            <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span>
-                          ) : (
-                            <span className="text-[var(--muted)]">—</span>
-                          );
+                        { key: "impressions", label: "노출", align: "right" },
+                        { key: "clicks", label: "클릭", align: "right" },
+                        { key: "ctr", label: "CTR", align: "right", render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr) },
+                        { key: "position", label: "순위", align: "right" },
+                        {
+                          key: "pageViews", label: "페이지뷰", align: "right",
+                          render: (row) => {
+                            const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
+                            return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
+                          },
                         },
-                      },
-                      {
-                        key: "avgDuration",
-                        label: "체류시간",
-                        align: "right",
-                        render: (row) => {
-                          const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
-                          if (!ga4) return <span className="text-[var(--muted)]">—</span>;
-                          const m = Math.floor(ga4.avgDuration / 60);
-                          const s = ga4.avgDuration % 60;
-                          return (
-                            <span className="font-medium text-emerald-600">
-                              {m}:{String(s).padStart(2, "0")}
-                            </span>
-                          );
+                        {
+                          key: "avgDuration", label: "체류시간", align: "right",
+                          render: (row) => {
+                            const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
+                            if (!ga4) return <span className="text-[var(--muted)]">—</span>;
+                            const m = Math.floor(ga4.avgDuration / 60);
+                            const s = ga4.avgDuration % 60;
+                            return <span className="font-medium text-emerald-600">{m}:{String(s).padStart(2, "0")}</span>;
+                          },
                         },
-                      },
-                    ]}
-                    emptyMessage="블로그 검색 성과 데이터가 아직 없습니다"
-                  />
+                      ]}
+                      emptyMessage="블로그 검색 성과 데이터가 아직 없습니다"
+                    />
+                  </div>
                   {selectedBlogPage && (
                     <PageQueryDrilldown
                       page={selectedBlogPage}
@@ -378,49 +382,54 @@ export function StatsSubTab() {
 
               {tableTab === "queries" && (
                 <>
-                  <DataTable
-                    keyField="query"
-                    rows={topBlogSearchQueries}
-                    columns={[
-                      {
-                        key: "query",
-                        label: "쿼리",
-                        render: (row) => (
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-[var(--foreground)]" title={(row as typeof topBlogSearchQueries[number]).query}>
-                              {(row as typeof topBlogSearchQueries[number]).query}
-                            </p>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedBlogQuery((current) => (
-                                  current === (row as typeof topBlogSearchQueries[number]).query
-                                    ? null
-                                    : (row as typeof topBlogSearchQueries[number]).query
-                                ))}
-                                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-                              >
-                                연결 페이지 보기
-                              </button>
-                              <p className="truncate text-xs text-[var(--muted)]" title={(row as typeof topBlogSearchQueries[number]).page}>
-                                {(row as typeof topBlogSearchQueries[number]).page}
-                              </p>
+                  {/* 모바일 카드 */}
+                  <div className="sm:hidden space-y-2">
+                    {topBlogSearchQueries.length === 0 && (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">대표 유입 쿼리 데이터가 아직 없습니다</p>
+                    )}
+                    {topBlogSearchQueries.map((item) => (
+                      <div key={item.query} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                        <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm">{item.query}</p>
+                        <div className="mb-2.5 flex gap-3">
+                          <button type="button" onClick={() => setSelectedBlogQuery((c) => c === item.query ? null : item.query)} className="text-xs font-medium text-[var(--color-primary)]">연결 페이지 보기</button>
+                          <p className="truncate text-xs text-[var(--muted)]">{item.page}</p>
+                        </div>
+                        <div className="grid grid-cols-4 gap-x-3 gap-y-1.5 text-xs">
+                          <div><span className="text-[var(--muted)]">노출</span><br /><span className="font-semibold">{item.impressions.toLocaleString("ko-KR")}</span></div>
+                          <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
+                          <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
+                          <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* 데스크탑 테이블 */}
+                  <div className="hidden sm:block">
+                    <DataTable
+                      keyField="query"
+                      rows={topBlogSearchQueries}
+                      columns={[
+                        {
+                          key: "query",
+                          label: "쿼리",
+                          render: (row) => (
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-[var(--foreground)]" title={(row as typeof topBlogSearchQueries[number]).query}>{(row as typeof topBlogSearchQueries[number]).query}</p>
+                              <div className="mt-1 flex flex-wrap gap-2">
+                                <button type="button" onClick={() => setSelectedBlogQuery((c) => c === (row as typeof topBlogSearchQueries[number]).query ? null : (row as typeof topBlogSearchQueries[number]).query)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">연결 페이지 보기</button>
+                                <p className="truncate text-xs text-[var(--muted)]">{(row as typeof topBlogSearchQueries[number]).page}</p>
+                              </div>
                             </div>
-                          </div>
-                        ),
-                      },
-                      { key: "impressions", label: "노출", align: "right" },
-                      { key: "clicks", label: "클릭", align: "right" },
-                      {
-                        key: "ctr",
-                        label: "CTR",
-                        align: "right",
-                        render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr),
-                      },
-                      { key: "position", label: "순위", align: "right" },
-                    ]}
-                    emptyMessage="대표 유입 쿼리 데이터가 아직 없습니다"
-                  />
+                          ),
+                        },
+                        { key: "impressions", label: "노출", align: "right" },
+                        { key: "clicks", label: "클릭", align: "right" },
+                        { key: "ctr", label: "CTR", align: "right", render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
+                        { key: "position", label: "순위", align: "right" },
+                      ]}
+                      emptyMessage="대표 유입 쿼리 데이터가 아직 없습니다"
+                    />
+                  </div>
                   {selectedBlogQuery && (
                     <QueryPageDrilldown
                       query={selectedBlogQuery}
