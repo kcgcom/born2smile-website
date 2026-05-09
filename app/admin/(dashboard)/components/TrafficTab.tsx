@@ -696,11 +696,12 @@ export function TrafficTab() {
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
+  const sourceDetails = data?.sourceDetails ?? {};
 
-  const activeSource = selectedSource && data?.sourceDetails[selectedSource]
+  const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
     : (data?.trafficSources[0]?.source ?? null);
-  const activeSourceDetail = activeSource ? data?.sourceDetails[activeSource] : null;
+  const activeSourceDetail = activeSource ? sourceDetails[activeSource] : null;
 
   return (
     <div className="space-y-6">
