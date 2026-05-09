@@ -22,6 +22,8 @@ interface DataTableProps<T> {
   onSort?: (key: string) => void;
   scrollClassName?: string;
   stickyHeader?: boolean;
+  expandedRowKey?: string;
+  renderExpandedRow?: (row: T) => React.ReactNode;
 }
 
 function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
@@ -40,6 +42,8 @@ export function DataTable<T extends Record<string, unknown>>({
   onSort,
   scrollClassName,
   stickyHeader = false,
+  expandedRowKey,
+  renderExpandedRow,
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return (
@@ -111,27 +115,37 @@ export function DataTable<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody className="bg-white/90">
-          {rows.map((row) => (
-            <tr
-              key={String(row[keyField])}
-              className="border-b border-[var(--background)] transition-colors hover:bg-[var(--background)]/70"
-            >
-              {columns.map((col) => (
-                <td
-                  key={col.key}
-                  className={`px-3 py-2 text-[var(--foreground)] ${
-                    col.align === "right"
-                      ? "text-right"
-                      : col.align === "center"
-                        ? "text-center"
-                        : "text-left"
-                  } ${col.className ?? ""}`}
-                >
-                  {col.render ? col.render(row) : String(row[col.key] ?? "")}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const rowKey = String(row[keyField]);
+            const isExpanded = expandedRowKey === rowKey;
+            return (
+              <React.Fragment key={rowKey}>
+                <tr className="border-b border-[var(--background)] transition-colors hover:bg-[var(--background)]/70">
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className={`px-3 py-2 text-[var(--foreground)] ${
+                        col.align === "right"
+                          ? "text-right"
+                          : col.align === "center"
+                            ? "text-center"
+                            : "text-left"
+                      } ${col.className ?? ""}`}
+                    >
+                      {col.render ? col.render(row) : String(row[col.key] ?? "")}
+                    </td>
+                  ))}
+                </tr>
+                {isExpanded && renderExpandedRow && (
+                  <tr className="border-b border-[var(--background)] bg-slate-50/80">
+                    <td colSpan={columns.length} className="px-3 py-3">
+                      {renderExpandedRow(row)}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
         </table>
       </div>

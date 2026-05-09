@@ -306,6 +306,19 @@ export function StatsSubTab() {
                             <div><span className="text-[var(--muted)]">페이지뷰</span><br /><span className="font-semibold text-blue-600">{ga4 ? ga4.pageViews.toLocaleString("ko-KR") : "—"}</span></div>
                             <div><span className="text-[var(--muted)]">체류시간</span><br /><span className="font-semibold text-emerald-600">{ga4 ? `${m}:${String(s).padStart(2, "0")}` : "—"}</span></div>
                           </div>
+                          {selectedBlogPage === item.page && (
+                            <div className="mt-3">
+                              <PageQueryDrilldown
+                                page={item.page}
+                                queries={selectedBlogPageQueries}
+                                metrics={selectedBlogPageMetrics}
+                                onClose={() => setSelectedBlogPage(null)}
+                                onEditBlog={() => {
+                                  if (slug) router.push(`/admin/content/posts/${slug}`);
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -359,20 +372,24 @@ export function StatsSubTab() {
                         },
                       ]}
                       emptyMessage="블로그 검색 성과 데이터가 아직 없습니다"
-                    />
-                  </div>
-                  {selectedBlogPage && (
-                    <PageQueryDrilldown
-                      page={selectedBlogPage}
-                      queries={selectedBlogPageQueries}
-                      metrics={selectedBlogPageMetrics}
-                      onClose={() => setSelectedBlogPage(null)}
-                      onEditBlog={() => {
-                        const slug = getEditableBlogSlug(selectedBlogPage);
-                        if (slug) router.push(`/admin/content/posts/${slug}`);
+                      expandedRowKey={selectedBlogPage ?? undefined}
+                      renderExpandedRow={(row) => {
+                        const page = (row as SearchConsoleData["blogPages"][number]).page;
+                        const slug = getEditableBlogSlug(page);
+                        return (
+                          <PageQueryDrilldown
+                            page={page}
+                            queries={selectedBlogPageQueries}
+                            metrics={selectedBlogPageMetrics}
+                            onClose={() => setSelectedBlogPage(null)}
+                            onEditBlog={() => {
+                              if (slug) router.push(`/admin/content/posts/${slug}`);
+                            }}
+                          />
+                        );
                       }}
                     />
-                  )}
+                  </div>
                 </>
               )}
 
@@ -383,21 +400,28 @@ export function StatsSubTab() {
                     {topBlogSearchQueries.length === 0 && (
                       <p className="py-8 text-center text-sm text-[var(--muted)]">대표 유입 쿼리 데이터가 아직 없습니다</p>
                     )}
-                    {topBlogSearchQueries.map((item) => (
-                      <div key={item.query} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
-                        <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm">{item.query}</p>
-                        <div className="mb-2.5 flex gap-3">
-                          <button type="button" onClick={() => setSelectedBlogQuery((c) => c === item.query ? null : item.query)} className="text-xs font-medium text-[var(--color-primary)]">연결 페이지 보기</button>
-                          <p className="truncate text-xs text-[var(--muted)]">{item.page}</p>
+                    {topBlogSearchQueries.map((item) => {
+                      const ga4 = ga4StatsMap.get(item.page);
+                      const m = ga4 ? Math.floor(ga4.avgDuration / 60) : 0;
+                      const s = ga4 ? ga4.avgDuration % 60 : 0;
+                      return (
+                        <div key={item.query} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                          <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm">{item.query}</p>
+                          <div className="mb-2.5 flex gap-3">
+                            <button type="button" onClick={() => setSelectedBlogQuery((c) => c === item.query ? null : item.query)} className="text-xs font-medium text-[var(--color-primary)]">연결 페이지 보기</button>
+                            <p className="truncate text-xs text-[var(--muted)]">{item.page}</p>
+                          </div>
+                          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
+                            <div><span className="text-[var(--muted)]">노출</span><br /><span className="font-semibold">{item.impressions.toLocaleString("ko-KR")}</span></div>
+                            <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
+                            <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
+                            <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
+                            <div><span className="text-[var(--muted)]">페이지뷰</span><br /><span className="font-semibold text-blue-600">{ga4 ? ga4.pageViews.toLocaleString("ko-KR") : "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">체류시간</span><br /><span className="font-semibold text-emerald-600">{ga4 ? `${m}:${String(s).padStart(2, "0")}` : "—"}</span></div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-4 gap-x-3 gap-y-1.5 text-xs">
-                          <div><span className="text-[var(--muted)]">노출</span><br /><span className="font-semibold">{item.impressions.toLocaleString("ko-KR")}</span></div>
-                          <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
-                          <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
-                          <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {/* 데스크탑 테이블 */}
                   <div className="hidden sm:block">
@@ -422,6 +446,23 @@ export function StatsSubTab() {
                         { key: "clicks", label: "클릭", align: "right" },
                         { key: "ctr", label: "CTR", align: "right", render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
                         { key: "position", label: "순위", align: "right" },
+                        {
+                          key: "pageViews", label: "페이지뷰", align: "right",
+                          render: (row) => {
+                            const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
+                            return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
+                          },
+                        },
+                        {
+                          key: "avgDuration", label: "체류시간", align: "right",
+                          render: (row) => {
+                            const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
+                            if (!ga4) return <span className="text-[var(--muted)]">—</span>;
+                            const m = Math.floor(ga4.avgDuration / 60);
+                            const s = ga4.avgDuration % 60;
+                            return <span className="font-medium text-emerald-600">{m}:{String(s).padStart(2, "0")}</span>;
+                          },
+                        },
                       ]}
                       emptyMessage="대표 유입 쿼리 데이터가 아직 없습니다"
                     />
