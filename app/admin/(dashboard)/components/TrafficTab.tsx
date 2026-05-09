@@ -726,7 +726,7 @@ export function TrafficTab() {
 
   const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
-    : (data?.trafficSources[0]?.source ?? null);
+    : null;
   const activeSourceDetail = activeSource ? sourceDetails[activeSource] : null;
   const activeTopPage = selectedTopPage && topPageDetails[selectedTopPage]
     ? selectedTopPage
