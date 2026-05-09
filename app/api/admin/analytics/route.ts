@@ -4,7 +4,7 @@ import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { fetchGA4Data } from "@/lib/admin-analytics";
 
-const VALID_PERIODS = ["7d", "30d", "90d"];
+const VALID_PERIODS = ["7d", "30d", "90d", "180d"];
 
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const period = request.nextUrl.searchParams.get("period") ?? "30d";
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d, 180d)" },
       { status: 400, headers: { "Cache-Control": "private, no-store" } },
     );
   }

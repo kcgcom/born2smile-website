@@ -38,12 +38,12 @@ interface AnalyticsData {
   dowPattern: Array<{ day: string; sessions: number }>;
 }
 
-type Period = "7d" | "30d" | "90d";
+type Period = "30d" | "90d" | "180d";
 
 const PERIODS: Array<{ value: Period; label: string }> = [
-  { value: "7d", label: "1주" },
   { value: "30d", label: "1개월" },
   { value: "90d", label: "3개월" },
+  { value: "180d", label: "6개월" },
 ];
 
 const DEVICE_LABELS: Record<string, string> = {
