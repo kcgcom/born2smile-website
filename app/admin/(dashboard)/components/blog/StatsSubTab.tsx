@@ -352,11 +352,10 @@ export function StatsSubTab() {
                       const s = ga4 ? ga4.avgDuration % 60 : 0;
                       return (
                         <div key={item.page} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
-                          <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm leading-snug">{title ?? slug ?? item.page}</p>
+                          <a href={item.page} target="_blank" rel="noopener noreferrer" className="mb-1.5 block font-medium text-[var(--foreground)] text-sm leading-snug hover:text-[var(--color-primary)] hover:underline">{title ?? slug ?? item.page}</a>
                           {slug && (
-                            <div className="mb-2.5 flex gap-3">
+                            <div className="mb-2.5">
                               <button type="button" onClick={() => setSelectedBlogPage((c) => c === item.page ? null : item.page)} className="text-xs font-medium text-[var(--color-primary)]">대표 쿼리 보기</button>
-                              <a href={item.page} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[var(--color-primary)]">블로그 보기</a>
                             </div>
                           )}
                           <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
@@ -402,11 +401,10 @@ export function StatsSubTab() {
                             const title = slug ? slugToTitleMap.get(slug) : undefined;
                             return (
                               <div className="min-w-0">
-                                <p className="truncate font-medium text-[var(--foreground)]" title={page}>{title ?? slug ?? page}</p>
+                                <a href={page} target="_blank" rel="noopener noreferrer" className="block truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline" title={page}>{title ?? slug ?? page}</a>
                                 {slug && (
-                                  <div className="mt-1 flex flex-wrap gap-2">
+                                  <div className="mt-1">
                                     <button type="button" onClick={() => setSelectedBlogPage((c) => c === page ? null : page)} className="text-xs font-medium text-[var(--color-primary)] hover:underline">대표 쿼리 보기</button>
-                                    <a href={page} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">블로그 보기</a>
                                   </div>
                                 )}
                               </div>
