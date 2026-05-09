@@ -60,6 +60,12 @@ function buildInListFilter(fieldName: string, values: string[]) {
   };
 }
 
+function normalizeGaDate(raw: string) {
+  return raw.length === 8
+    ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+    : raw;
+}
+
 export async function fetchGA4Data(period: string) {
   if (!GA4_PROPERTY_ID) {
     throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
@@ -101,7 +107,7 @@ export async function fetchGA4Data(period: string) {
         dimensions: [{ name: "pagePath" }],
         metrics: [{ name: "screenPageViews" }, { name: "sessions" }],
         orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-        limit: 10,
+        limit: 100,
       }),
       // Traffic sources
       client.runReport({
@@ -252,13 +258,91 @@ export async function fetchGA4Data(period: string) {
 
   // Parse top pages (exclude admin/dev paths)
   const EXCLUDED_PREFIXES = ["/admin", "/api/"];
-  const topPages = (pagesReport[0]?.rows ?? [])
+  const rawTopPages = (pagesReport[0]?.rows ?? [])
     .map((row) => ({
       path: row.dimensionValues?.[0]?.value ?? "",
       views: Number(row.metricValues?.[0]?.value ?? 0),
       sessions: Number(row.metricValues?.[1]?.value ?? 0),
     }))
     .filter((p) => !EXCLUDED_PREFIXES.some((prefix) => p.path.startsWith(prefix)));
+
+  const blogPages = rawTopPages.filter((page) => page.path.startsWith("/blog/"));
+  const nonBlogPages = rawTopPages.filter((page) => !page.path.startsWith("/blog/"));
+  const blogAggregate = blogPages.length > 0
+    ? {
+      path: "/blog (전체)",
+      views: blogPages.reduce((sum, page) => sum + page.views, 0),
+      sessions: blogPages.reduce((sum, page) => sum + page.sessions, 0),
+    }
+    : null;
+  const topPages = [...nonBlogPages, ...(blogAggregate ? [blogAggregate] : [])]
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
+  const trackedPagePaths = Array.from(
+    new Set([
+      ...nonBlogPages
+        .slice(0, 12)
+        .map((page) => page.path)
+        .filter((path) => topPages.some((item) => item.path === path)),
+      ...blogPages.slice(0, 10).map((page) => page.path),
+    ]),
+  );
+
+  const [pageDailyReport, pageSourceReport] = await Promise.all([
+    client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate: start, endDate: end }],
+      dimensions: [{ name: "pagePath" }, { name: "date" }],
+      metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
+      dimensionFilter: buildInListFilter("pagePath", trackedPagePaths.length > 0 ? trackedPagePaths : ["/"]),
+      orderBys: [
+        { dimension: { dimensionName: "pagePath" }, desc: false },
+        { dimension: { dimensionName: "date" }, desc: false },
+      ],
+      limit: 1000,
+    }),
+    client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate: start, endDate: end }],
+      dimensions: [{ name: "pagePath" }, { name: "sessionSource" }],
+      metrics: [{ name: "sessions" }],
+      dimensionFilter: buildInListFilter("pagePath", trackedPagePaths.length > 0 ? trackedPagePaths : ["/"]),
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 500,
+    }),
+  ]);
+
+  const [blogDailyReport, blogSourceReport] = blogAggregate
+    ? await Promise.all([
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+          },
+        },
+        orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+      }),
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "sessionSource" }],
+        metrics: [{ name: "sessions" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+          },
+        },
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 12,
+      }),
+    ])
+    : [null, null];
 
   // Parse traffic sources
   const totalSessions = summary.sessions.value || 1;
@@ -336,6 +420,91 @@ export async function fetchGA4Data(period: string) {
           topLandingPages,
           dailyTrend,
           devices,
+        },
+      ];
+    }),
+  );
+
+  const detailPages = [
+    ...topPages.filter((page) => page.path !== "/blog (전체)"),
+    ...blogPages
+      .filter((page) => trackedPagePaths.includes(page.path))
+      .filter((page) => !topPages.some((item) => item.path === page.path)),
+  ];
+
+  const topPageDetails = Object.fromEntries(
+    [
+      ...(blogAggregate ? [blogAggregate] : []),
+      ...detailPages,
+    ].map((page) => {
+      if (page.path === "/blog (전체)") {
+        const dailyTrend = (blogDailyReport?.[0]?.rows ?? []).map((row) => ({
+          date: normalizeGaDate(row.dimensionValues?.[0]?.value ?? ""),
+          sessions: Number(row.metricValues?.[0]?.value ?? 0),
+          pageviews: Number(row.metricValues?.[1]?.value ?? 0),
+        }));
+        const sources = (blogSourceReport?.[0]?.rows ?? []).map((row) => {
+          const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+          return {
+            source: row.dimensionValues?.[0]?.value ?? "(unknown)",
+            sessions,
+            percentage:
+              page.sessions > 0 ? Math.round((sessions / page.sessions) * 1000) / 10 : 0,
+          };
+        });
+
+        return [
+          page.path,
+          {
+            isBlogAggregate: true,
+            summary: {
+              views: page.views,
+              sessions: page.sessions,
+              pageviewsPerSession:
+                page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
+            },
+            dailyTrend,
+            sources,
+            topBlogPosts: blogPages
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 10),
+          },
+        ];
+      }
+
+      const dailyTrend = (pageDailyReport[0]?.rows ?? [])
+        .filter((row) => row.dimensionValues?.[0]?.value === page.path)
+        .map((row) => ({
+          date: normalizeGaDate(row.dimensionValues?.[1]?.value ?? ""),
+          sessions: Number(row.metricValues?.[0]?.value ?? 0),
+          pageviews: Number(row.metricValues?.[1]?.value ?? 0),
+        }));
+      const sources = (pageSourceReport[0]?.rows ?? [])
+        .filter((row) => row.dimensionValues?.[0]?.value === page.path)
+        .map((row) => {
+          const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+          return {
+            source: row.dimensionValues?.[1]?.value ?? "(unknown)",
+            sessions,
+            percentage:
+              page.sessions > 0 ? Math.round((sessions / page.sessions) * 1000) / 10 : 0,
+          };
+        })
+        .slice(0, 10);
+
+      return [
+        page.path,
+        {
+          isBlogAggregate: false,
+          summary: {
+            views: page.views,
+            sessions: page.sessions,
+            pageviewsPerSession:
+              page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
+          },
+          dailyTrend,
+          sources,
+          topBlogPosts: [],
         },
       ];
     }),
@@ -425,6 +594,7 @@ export async function fetchGA4Data(period: string) {
     comparePeriod: { start: compareStart, end: compareEnd },
     summary,
     topPages,
+    topPageDetails,
     trafficSources,
     sourceDetails,
     devices,

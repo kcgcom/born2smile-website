@@ -29,6 +29,20 @@ interface AnalyticsData {
     bounceRate: MetricValue;
   };
   topPages: Array<{ path: string; views: number; sessions: number }>;
+  topPageDetails: Record<
+    string,
+    {
+      isBlogAggregate: boolean;
+      summary: {
+        views: number;
+        sessions: number;
+        pageviewsPerSession: number;
+      };
+      dailyTrend: Array<{ date: string; sessions: number; pageviews: number }>;
+      sources: Array<{ source: string; sessions: number; percentage: number }>;
+      topBlogPosts: Array<{ path: string; views: number; sessions: number }>;
+    }
+  >;
   trafficSources: Array<{ source: string; sessions: number; percentage: number }>;
   sourceDetails: Record<
     string,
@@ -105,8 +119,12 @@ const TopPagesChart = dynamic(
       }) => {
         function TopPagesChartInner({
           data,
+          selectedPath,
+          onSelect,
         }: {
           data: Array<{ path: string; views: number; sessions: number }>;
+          selectedPath?: string | null;
+          onSelect?: (path: string) => void;
         }) {
           if (data.length === 0) {
             return (
@@ -156,8 +174,14 @@ const TopPagesChart = dynamic(
                   }}
                 />
                 <Bar dataKey="views" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                  {data.map((_, idx) => (
-                    <Cell key={idx} fill={CHART_COLORS[0]} fillOpacity={0.85} />
+                  {data.map((item) => (
+                    <Cell
+                      key={item.path}
+                      fill={CHART_COLORS[0]}
+                      fillOpacity={!selectedPath || selectedPath === item.path ? 0.85 : 0.35}
+                      onClick={onSelect ? () => onSelect(item.path) : undefined}
+                      style={onSelect ? { cursor: "pointer" } : undefined}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -692,16 +716,22 @@ function SectionCard({ title, children }: { title: string; children: React.React
 export function TrafficTab() {
   const [period, setPeriod] = useState<Period>("30d");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
   const sourceDetails = data?.sourceDetails ?? {};
+  const topPageDetails = data?.topPageDetails ?? {};
 
   const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
     : (data?.trafficSources[0]?.source ?? null);
   const activeSourceDetail = activeSource ? sourceDetails[activeSource] : null;
+  const activeTopPage = selectedTopPage && topPageDetails[selectedTopPage]
+    ? selectedTopPage
+    : null;
+  const activeTopPageDetail = activeTopPage ? topPageDetails[activeTopPage] : null;
 
   return (
     <div className="space-y-6">
@@ -718,6 +748,7 @@ export function TrafficTab() {
           onChange={(v) => {
             setPeriod(v as Period);
             setSelectedSource(null);
+            setSelectedTopPage(null);
           }}
         />
         {data?.period && (
@@ -780,7 +811,14 @@ export function TrafficTab() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Top pages */}
             <SectionCard title="인기 페이지 TOP 10">
-              <TopPagesChart data={data.topPages} />
+              <TopPagesChart
+                data={data.topPages}
+                selectedPath={activeTopPage}
+                onSelect={setSelectedTopPage}
+              />
+              <p className="mt-3 text-xs text-[var(--muted)]">
+                블로그 글은 `블로그 전체`로 묶었습니다. 막대를 누르면 상세가 열립니다.
+              </p>
             </SectionCard>
 
             {/* Traffic sources */}
@@ -790,112 +828,9 @@ export function TrafficTab() {
                 selectedSource={activeSource}
                 onSelect={setSelectedSource}
               />
-              <div className="mt-4 grid gap-2">
-                {data.trafficSources.map((item) => {
-                  const active = item.source === activeSource;
-                  return (
-                    <button
-                      key={item.source}
-                      type="button"
-                      onClick={() => setSelectedSource(item.source)}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                        active
-                          ? "border-[var(--color-primary)] bg-blue-50 text-[var(--foreground)]"
-                          : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--color-primary)]/40"
-                      }`}
-                    >
-                      <span className="truncate pr-3 font-medium">{item.source}</span>
-                      <span className="shrink-0 text-xs">
-                        {item.sessions.toLocaleString("ko-KR")}세션 · {item.percentage}%
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {activeSource && activeSourceDetail && (
-                <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-semibold text-[var(--foreground)]">
-                        {activeSource} 상세
-                      </h4>
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        검색어는 직접 알 수 없지만, 어떤 페이지로 얼마나 질 좋게 유입되는지는 바로 볼 수 있습니다.
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-                      세션 {activeSourceDetail.summary.sessions.toLocaleString("ko-KR")}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-                    <MetricCard
-                      label="참여 세션"
-                      value={activeSourceDetail.summary.engagedSessions.toLocaleString("ko-KR")}
-                    />
-                    <MetricCard
-                      label="참여율"
-                      value={`${activeSourceDetail.summary.engagementRate.toFixed(1)}%`}
-                    />
-                    <MetricCard
-                      label="평균 체류"
-                      value={formatDuration(activeSourceDetail.summary.avgDuration)}
-                    />
-                    <MetricCard
-                      label="세션당 페이지뷰"
-                      value={activeSourceDetail.summary.pageviewsPerSession.toFixed(2)}
-                    />
-                  </div>
-
-                  <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                    <div className="rounded-2xl bg-[var(--surface)] p-4">
-                      <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                        이 유입의 랜딩 페이지 TOP
-                      </h5>
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        어떤 페이지가 해당 유입을 실제로 받고 있는지 봅니다.
-                      </p>
-                      <div className="mt-3">
-                        <TopPagesChart data={activeSourceDetail.topLandingPages} />
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-[var(--surface)] p-4">
-                      <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                        이 유입의 기간별 추이
-                      </h5>
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        최근 들어 늘고 있는 유입인지 빠르게 확인할 수 있습니다.
-                      </p>
-                      <div className="mt-3">
-                        <DailyTrendChart data={activeSourceDetail.dailyTrend} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
-                    <div className="rounded-2xl bg-[var(--surface)] p-4">
-                      <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                        유입 해석 메모
-                      </h5>
-                      <ul className="mt-3 space-y-2 text-sm text-[var(--muted)]">
-                        <li>이탈률: {activeSourceDetail.summary.bounceRate.toFixed(1)}%</li>
-                        <li>참여율이 높고 랜딩 페이지가 명확하면 운영 액션으로 이어지기 좋습니다.</li>
-                        <li>검색어는 확인이 어려워도, 어떤 페이지가 네이버/구글 유입을 먹는지는 판단할 수 있습니다.</li>
-                      </ul>
-                    </div>
-
-                    <div className="rounded-2xl bg-[var(--surface)] p-4">
-                      <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                        기기 분포
-                      </h5>
-                      <div className="mt-3">
-                        <DeviceChart data={activeSourceDetail.devices} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <p className="mt-3 text-xs text-[var(--muted)]">
+                파이차트의 해당 조각을 누르면 유입경로 상세가 열립니다.
+              </p>
             </SectionCard>
 
             {/* Devices */}
@@ -931,6 +866,189 @@ export function TrafficTab() {
             </SectionCard>
           </div>
         </>
+      )}
+
+      {activeSource && activeSourceDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-2 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${activeSource} 유입경로 상세`}
+          onClick={() => setSelectedSource(null)}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-white p-4 shadow-2xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="text-base font-semibold text-[var(--foreground)]">
+                  {activeSource} 상세
+                </h4>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  검색어는 직접 알 수 없지만, 어떤 페이지로 얼마나 질 좋게 유입되는지는 바로 볼 수 있습니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+                  세션 {activeSourceDetail.summary.sessions.toLocaleString("ko-KR")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSource(null)}
+                  className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)]"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <MetricCard
+                label="참여 세션"
+                value={activeSourceDetail.summary.engagedSessions.toLocaleString("ko-KR")}
+              />
+              <MetricCard
+                label="참여율"
+                value={`${activeSourceDetail.summary.engagementRate.toFixed(1)}%`}
+              />
+              <MetricCard
+                label="평균 체류"
+                value={formatDuration(activeSourceDetail.summary.avgDuration)}
+              />
+              <MetricCard
+                label="세션당 페이지뷰"
+                value={activeSourceDetail.summary.pageviewsPerSession.toFixed(2)}
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl bg-[var(--surface)] p-4">
+                <h5 className="text-sm font-semibold text-[var(--foreground)]">
+                  이 유입의 랜딩 페이지 TOP
+                </h5>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  어떤 페이지가 해당 유입을 실제로 받고 있는지 봅니다.
+                </p>
+                <div className="mt-3">
+                  <TopPagesChart data={activeSourceDetail.topLandingPages} />
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[var(--surface)] p-4">
+                <h5 className="text-sm font-semibold text-[var(--foreground)]">
+                  이 유입의 기간별 추이
+                </h5>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  최근 들어 늘고 있는 유입인지 빠르게 확인할 수 있습니다.
+                </p>
+                <div className="mt-3">
+                  <DailyTrendChart data={activeSourceDetail.dailyTrend} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTopPage && activeTopPageDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-2 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${activeTopPage} 상세`}
+          onClick={() => setSelectedTopPage(null)}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-white p-4 shadow-2xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="text-base font-semibold text-[var(--foreground)]">
+                  {activeTopPage}
+                </h4>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  {activeTopPageDetail.isBlogAggregate
+                    ? "블로그 전체 유입을 묶어서 보여줍니다."
+                    : "해당 페이지 단위의 세부 데이터를 보여줍니다."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTopPage(null)}
+                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)]"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
+              <MetricCard
+                label="페이지뷰"
+                value={activeTopPageDetail.summary.views.toLocaleString("ko-KR")}
+              />
+              <MetricCard
+                label="세션"
+                value={activeTopPageDetail.summary.sessions.toLocaleString("ko-KR")}
+              />
+              <MetricCard
+                label="세션당 페이지뷰"
+                value={activeTopPageDetail.summary.pageviewsPerSession.toFixed(2)}
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl bg-[var(--surface)] p-4">
+                <h5 className="text-sm font-semibold text-[var(--foreground)]">
+                  최근 추이
+                </h5>
+                <div className="mt-3">
+                  <DailyTrendChart data={activeTopPageDetail.dailyTrend} />
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[var(--surface)] p-4">
+                <h5 className="text-sm font-semibold text-[var(--foreground)]">
+                  주요 유입경로
+                </h5>
+                <div className="mt-3 space-y-2">
+                  {activeTopPageDetail.sources.length > 0 ? activeTopPageDetail.sources.map((item) => (
+                    <div
+                      key={item.source}
+                      className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm"
+                    >
+                      <span className="truncate pr-3 font-medium text-[var(--foreground)]">{item.source}</span>
+                      <span className="shrink-0 text-xs text-[var(--muted)]">
+                        {item.sessions.toLocaleString("ko-KR")}세션 · {item.percentage}%
+                      </span>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-[var(--muted)]">표시할 유입경로 데이터가 없습니다.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {activeTopPageDetail.isBlogAggregate && activeTopPageDetail.topBlogPosts.length > 0 && (
+              <div className="mt-4 rounded-2xl bg-[var(--surface)] p-4">
+                <h5 className="text-sm font-semibold text-[var(--foreground)]">
+                  블로그에서 많이 본 글
+                </h5>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  블로그 전체 안에서 실제 조회를 만든 개별 글입니다. 막대를 누르면 그 글 상세로 이동합니다.
+                </p>
+                <div className="mt-3">
+                  <TopPagesChart
+                    data={activeTopPageDetail.topBlogPosts}
+                    selectedPath={activeTopPage}
+                    onSelect={setSelectedTopPage}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
