@@ -92,6 +92,29 @@ export function StatsSubTab() {
   const [selectedBlogPage, setSelectedBlogPage] = useState<string | null>(null);
   const [selectedBlogQuery, setSelectedBlogQuery] = useState<string | null>(null);
 
+  type SortKey = "impressions" | "clicks" | "ctr" | "position" | "pageViews" | "avgDuration";
+  const [postsSortKey, setPostsSortKey] = useState<SortKey>("impressions");
+  const [postsSortDir, setPostsSortDir] = useState<"asc" | "desc">("desc");
+  const [queriesSortKey, setQueriesSortKey] = useState<SortKey>("impressions");
+  const [queriesSortDir, setQueriesSortDir] = useState<"asc" | "desc">("desc");
+
+  function makeHandleSort<K extends string>(
+    current: K,
+    currentDir: "asc" | "desc",
+    setKey: (k: K) => void,
+    setDir: (d: "asc" | "desc") => void,
+  ) {
+    return (key: string) => {
+      const k = key as K;
+      if (k === current) {
+        setDir(currentDir === "desc" ? "asc" : "desc");
+      } else {
+        setKey(k);
+        setDir(k === "position" ? "asc" : "desc");
+      }
+    };
+  }
+
   const { data: postsData, loading: postsLoading, error: postsError } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const posts = postsData ?? EMPTY_POSTS;
 
@@ -168,6 +191,44 @@ export function StatsSubTab() {
   const selectedBlogQueryPages = selectedBlogQuery
     ? searchData?.blogQueryTopPages[selectedBlogQuery] ?? []
     : [];
+
+  const sortedBlogSearchPages = useMemo(() => {
+    const rows = [...topBlogSearchPages];
+    rows.sort((a, b) => {
+      let av: number, bv: number;
+      if (postsSortKey === "pageViews") {
+        av = ga4StatsMap.get(a.page)?.pageViews ?? -1;
+        bv = ga4StatsMap.get(b.page)?.pageViews ?? -1;
+      } else if (postsSortKey === "avgDuration") {
+        av = ga4StatsMap.get(a.page)?.avgDuration ?? -1;
+        bv = ga4StatsMap.get(b.page)?.avgDuration ?? -1;
+      } else {
+        av = a[postsSortKey as keyof typeof a] as number;
+        bv = b[postsSortKey as keyof typeof b] as number;
+      }
+      return postsSortDir === "desc" ? bv - av : av - bv;
+    });
+    return rows;
+  }, [topBlogSearchPages, postsSortKey, postsSortDir, ga4StatsMap]);
+
+  const sortedBlogSearchQueries = useMemo(() => {
+    const rows = [...topBlogSearchQueries];
+    rows.sort((a, b) => {
+      let av: number, bv: number;
+      if (queriesSortKey === "pageViews") {
+        av = ga4StatsMap.get(a.page)?.pageViews ?? -1;
+        bv = ga4StatsMap.get(b.page)?.pageViews ?? -1;
+      } else if (queriesSortKey === "avgDuration") {
+        av = ga4StatsMap.get(a.page)?.avgDuration ?? -1;
+        bv = ga4StatsMap.get(b.page)?.avgDuration ?? -1;
+      } else {
+        av = a[queriesSortKey as keyof typeof a] as number;
+        bv = b[queriesSortKey as keyof typeof b] as number;
+      }
+      return queriesSortDir === "desc" ? bv - av : av - bv;
+    });
+    return rows;
+  }, [topBlogSearchQueries, queriesSortKey, queriesSortDir, ga4StatsMap]);
 
   const blogSearchSummary = useMemo(() => {
     const rows = searchData?.blogPages ?? [];
@@ -327,7 +388,10 @@ export function StatsSubTab() {
                   <div className="hidden sm:block">
                     <DataTable
                       keyField="page"
-                      rows={topBlogSearchPages}
+                      rows={sortedBlogSearchPages}
+                      sortKey={postsSortKey}
+                      sortDirection={postsSortDir}
+                      onSort={makeHandleSort(postsSortKey, postsSortDir, setPostsSortKey, setPostsSortDir)}
                       columns={[
                         {
                           key: "page",
@@ -349,19 +413,19 @@ export function StatsSubTab() {
                             );
                           },
                         },
-                        { key: "impressions", label: "노출", align: "right" },
-                        { key: "clicks", label: "클릭", align: "right" },
-                        { key: "ctr", label: "CTR", align: "right", render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr) },
-                        { key: "position", label: "순위", align: "right" },
+                        { key: "impressions", label: "노출", align: "right", sortable: true },
+                        { key: "clicks", label: "클릭", align: "right", sortable: true },
+                        { key: "ctr", label: "CTR", align: "right", sortable: true, render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr) },
+                        { key: "position", label: "순위", align: "right", sortable: true },
                         {
-                          key: "pageViews", label: "페이지뷰", align: "right",
+                          key: "pageViews", label: "페이지뷰", align: "right", sortable: true,
                           render: (row) => {
                             const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
                             return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
                           },
                         },
                         {
-                          key: "avgDuration", label: "체류시간", align: "right",
+                          key: "avgDuration", label: "체류시간", align: "right", sortable: true,
                           render: (row) => {
                             const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
                             if (!ga4) return <span className="text-[var(--muted)]">—</span>;
@@ -427,7 +491,10 @@ export function StatsSubTab() {
                   <div className="hidden sm:block">
                     <DataTable
                       keyField="query"
-                      rows={topBlogSearchQueries}
+                      rows={sortedBlogSearchQueries}
+                      sortKey={queriesSortKey}
+                      sortDirection={queriesSortDir}
+                      onSort={makeHandleSort(queriesSortKey, queriesSortDir, setQueriesSortKey, setQueriesSortDir)}
                       columns={[
                         {
                           key: "query",
@@ -442,19 +509,19 @@ export function StatsSubTab() {
                             </div>
                           ),
                         },
-                        { key: "impressions", label: "노출", align: "right" },
-                        { key: "clicks", label: "클릭", align: "right" },
-                        { key: "ctr", label: "CTR", align: "right", render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
-                        { key: "position", label: "순위", align: "right" },
+                        { key: "impressions", label: "노출", align: "right", sortable: true },
+                        { key: "clicks", label: "클릭", align: "right", sortable: true },
+                        { key: "ctr", label: "CTR", align: "right", sortable: true, render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
+                        { key: "position", label: "순위", align: "right", sortable: true },
                         {
-                          key: "pageViews", label: "페이지뷰", align: "right",
+                          key: "pageViews", label: "페이지뷰", align: "right", sortable: true,
                           render: (row) => {
                             const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
                             return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
                           },
                         },
                         {
-                          key: "avgDuration", label: "체류시간", align: "right",
+                          key: "avgDuration", label: "체류시간", align: "right", sortable: true,
                           render: (row) => {
                             const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
                             if (!ga4) return <span className="text-[var(--muted)]">—</span>;
