@@ -141,23 +141,23 @@ export function StatsSubTab() {
   }, [blogGA4Data]);
 
   const topBlogSearchQueries = useMemo(() => {
-    if (!searchData) return [];
-    const rows = topBlogSearchPages.flatMap((pageRow) =>
-      (searchData.pageTopQueries[pageRow.page] ?? []).map((queryRow) => ({
-        ...queryRow,
-        page: pageRow.page,
-      })),
-    );
-    const deduped = new Map<string, typeof rows[number]>();
-    for (const row of rows) {
-      const existing = deduped.get(row.query);
-      if (!existing || row.impressions > existing.impressions) {
-        deduped.set(row.query, row);
-      }
-    }
-    return Array.from(deduped.values())
+    if (!searchData?.blogQueryTopPages) return [];
+    // blogQueryTopPages: query → [{page, impressions, ...}]
+    // Flatten to one row per query (pick the page with highest impressions as representative)
+    return Object.entries(searchData.blogQueryTopPages)
+      .map(([query, pages]) => {
+        const top = pages[0];
+        return {
+          query,
+          page: top?.page ?? "",
+          impressions: top?.impressions ?? 0,
+          clicks: top?.clicks ?? 0,
+          ctr: top?.ctr ?? 0,
+          position: top?.position ?? 0,
+        };
+      })
       .sort((a, b) => b.impressions - a.impressions);
-  }, [searchData, topBlogSearchPages]);
+  }, [searchData]);
 
   const selectedBlogPageQueries = selectedBlogPage
     ? searchData?.pageTopQueries[selectedBlogPage] ?? []
@@ -166,7 +166,7 @@ export function StatsSubTab() {
     ? searchData?.blogPages.find((item) => item.page === selectedBlogPage)
     : undefined;
   const selectedBlogQueryPages = selectedBlogQuery
-    ? searchData?.queryTopPages[selectedBlogQuery] ?? []
+    ? searchData?.blogQueryTopPages[selectedBlogQuery] ?? []
     : [];
 
   const blogSearchSummary = useMemo(() => {

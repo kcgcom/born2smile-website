@@ -165,6 +165,16 @@ export interface SearchConsoleData {
       position: number;
     }>
   >;
+  blogQueryTopPages: Record<
+    string,
+    Array<{
+      page: string;
+      impressions: number;
+      clicks: number;
+      ctr: number;
+      position: number;
+    }>
+  >;
 }
 
 export type SearchPriorityRow =

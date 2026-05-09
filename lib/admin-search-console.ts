@@ -247,8 +247,8 @@ export async function fetchSearchConsoleData(period: string) {
 
   const { start, end, compareStart, compareEnd, dataAsOf } = getPeriodDates(period);
 
-  // Parallel API calls: current period, compare period, queries, pages, page-query drilldown
-  const [currentRes, compareRes, queriesRes, pagesRes, pageQueryRes] = await Promise.all([
+  // Parallel API calls: current period, compare period, queries, pages, page-query drilldown, blog-specific page+query
+  const [currentRes, compareRes, queriesRes, pagesRes, pageQueryRes, blogPageQueryRes] = await Promise.all([
     // Summary - current
     searchconsole.searchanalytics.query({
       siteUrl,
@@ -281,7 +281,7 @@ export async function fetchSearchConsoleData(period: string) {
         dataState: "final",
       },
     }),
-    // Representative queries by page
+    // Representative queries by page (site-wide, for pageTopQueries / queryTopPages)
     searchconsole.searchanalytics.query({
       siteUrl,
       requestBody: {
@@ -290,6 +290,24 @@ export async function fetchSearchConsoleData(period: string) {
         dimensions: ["page", "query"],
         rowLimit: 250,
         dataState: "final",
+      },
+    }),
+    // Blog-specific page+query (filtered to /blog/ pages only — avoids site-wide top-query bias)
+    searchconsole.searchanalytics.query({
+      siteUrl,
+      requestBody: {
+        startDate: start,
+        endDate: end,
+        dimensions: ["page", "query"],
+        rowLimit: 500,
+        dataState: "final",
+        dimensionFilterGroups: [
+          {
+            filters: [
+              { dimension: "page", operator: "contains", expression: "/blog/" },
+            ],
+          },
+        ],
       },
     }),
   ]);
@@ -376,6 +394,34 @@ export async function fetchSearchConsoleData(period: string) {
     ]),
   );
 
+  // Blog-specific query → pages map (not filtered by site-wide top queries)
+  const blogPageQueryRows = (blogPageQueryRes.data.rows ?? []).flatMap((row) => {
+    const [fullUrl, query = ""] = row.keys ?? [];
+    const page = normalizePagePath(fullUrl ?? "");
+    if (!page || !query) return [];
+    return [{ page, query, ...toMetricRow(row) }];
+  });
+
+  const blogQueryTopPages = Object.fromEntries(
+    Array.from(
+      blogPageQueryRows.reduce((acc, row) => {
+        const list = acc.get(row.query) ?? [];
+        list.push({
+          page: row.page,
+          impressions: row.impressions,
+          clicks: row.clicks,
+          ctr: row.ctr,
+          position: row.position,
+        });
+        acc.set(row.query, list);
+        return acc;
+      }, new Map<string, SearchConsoleQueryPage[]>()),
+    ).map(([query, rows]) => [
+      query,
+      rows.sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks).slice(0, 5),
+    ]),
+  );
+
   const queryTopPages = Object.fromEntries(
     Array.from(
       pageQueryRows.reduce((acc, row) => {
@@ -415,5 +461,6 @@ export async function fetchSearchConsoleData(period: string) {
     blogPages,
     pageTopQueries,
     queryTopPages,
+    blogQueryTopPages,
   };
 }
