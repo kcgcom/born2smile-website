@@ -189,39 +189,35 @@ export function StatsSubTab() {
     setSelectedBlogQuery(null);
   };
 
-  if (postsLoading) {
-    return (
-      <div className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        통계를 불러오는 중...
-      </div>
-    );
-  }
-
-  if (postsError) {
-    return (
-      <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-        {postsError}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">카테고리별 분포</h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">전체 ({posts.length}편)</p>
-            <CategoryPieChart data={byCategoryAll} />
+        {postsLoading && (
+          <div className="flex items-center gap-2 py-4 text-sm text-[var(--muted)]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            불러오는 중...
           </div>
-          <div>
-            <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">
-              발행 ({posts.filter((p) => p.published && p.date <= today).length}편)
-            </p>
-            <CategoryPieChart data={byCategoryPublished} />
+        )}
+        {postsError && (
+          <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {postsError}
           </div>
-        </div>
+        )}
+        {!postsLoading && !postsError && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">전체 ({posts.length}편)</p>
+              <CategoryPieChart data={byCategoryAll} />
+            </div>
+            <div>
+              <p className="mb-2 text-center text-sm font-medium text-[var(--muted)]">
+                발행 ({posts.filter((p) => p.published && p.date <= today).length}편)
+              </p>
+              <CategoryPieChart data={byCategoryPublished} />
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">

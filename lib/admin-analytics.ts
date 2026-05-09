@@ -326,7 +326,7 @@ export async function fetchBlogPostGA4Data(period: string) {
       },
     },
     orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-    limit: 30,
+    limit: 100,
   });
 
   const blogPostStats = (report?.rows ?? []).map((row) => ({
