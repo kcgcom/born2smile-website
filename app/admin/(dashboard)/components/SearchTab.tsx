@@ -33,7 +33,7 @@ import {
 
 export function SearchTab() {
   const router = useRouter();
-  const [period, setPeriod] = useState<"7d" | "28d" | "90d">("28d");
+  const [period, setPeriod] = useState<"7d" | "28d" | "90d" | "180d">("28d");
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export function SearchTab() {
   const pageSort = useSearchTableSort(data?.topPages ?? []);
 
   const handlePeriodChange = (value: string) => {
-    setPeriod(value as "7d" | "28d" | "90d");
+    setPeriod(value as "7d" | "28d" | "90d" | "180d");
     setSelectedQuery(null);
     setSelectedTopPage(null);
   };

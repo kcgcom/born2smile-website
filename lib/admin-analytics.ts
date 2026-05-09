@@ -49,6 +49,17 @@ function getPeriodDates(period: string): {
   };
 }
 
+function buildInListFilter(fieldName: string, values: string[]) {
+  return {
+    filter: {
+      fieldName,
+      inListFilter: {
+        values,
+      },
+    },
+  };
+}
+
 export async function fetchGA4Data(period: string) {
   if (!GA4_PROPERTY_ID) {
     throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
@@ -151,6 +162,66 @@ export async function fetchGA4Data(period: string) {
       }),
     ]);
 
+  const topSourceRows = (sourcesReport[0]?.rows ?? [])
+    .map((row) => ({
+      source: row.dimensionValues?.[0]?.value ?? "(unknown)",
+      sessions: Number(row.metricValues?.[0]?.value ?? 0),
+    }))
+    .filter((row) => row.source && row.sessions > 0);
+  const trackedSources = topSourceRows.map((row) => row.source);
+
+  const [sourceSummaryReport, sourceLandingReport, sourceDailyReport, sourceDeviceReport] =
+    trackedSources.length > 0
+      ? await Promise.all([
+        client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate: start, endDate: end }],
+          dimensions: [{ name: "sessionSource" }],
+          metrics: [
+            { name: "sessions" },
+            { name: "engagedSessions" },
+            { name: "engagementRate" },
+            { name: "averageSessionDuration" },
+            { name: "bounceRate" },
+            { name: "screenPageViews" },
+          ],
+          dimensionFilter: buildInListFilter("sessionSource", trackedSources),
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: trackedSources.length,
+        }),
+        client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate: start, endDate: end }],
+          dimensions: [{ name: "sessionSource" }, { name: "landingPagePlusQueryString" }],
+          metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
+          dimensionFilter: buildInListFilter("sessionSource", trackedSources),
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: 100,
+        }),
+        client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate: start, endDate: end }],
+          dimensions: [{ name: "sessionSource" }, { name: "date" }],
+          metrics: [{ name: "sessions" }],
+          dimensionFilter: buildInListFilter("sessionSource", trackedSources),
+          orderBys: [
+            { dimension: { dimensionName: "sessionSource" }, desc: false },
+            { dimension: { dimensionName: "date" }, desc: false },
+          ],
+          limit: 500,
+        }),
+        client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate: start, endDate: end }],
+          dimensions: [{ name: "sessionSource" }, { name: "deviceCategory" }],
+          metrics: [{ name: "sessions" }],
+          dimensionFilter: buildInListFilter("sessionSource", trackedSources),
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: 100,
+        }),
+      ])
+      : [null, null, null, null];
+
   // Parse summary
   const cur = currentReport[0]?.rows?.[0]?.metricValues ?? [];
   const prev = compareReport[0]?.rows?.[0]?.metricValues ?? [];
@@ -191,14 +262,84 @@ export async function fetchGA4Data(period: string) {
 
   // Parse traffic sources
   const totalSessions = summary.sessions.value || 1;
-  const trafficSources = (sourcesReport[0]?.rows ?? []).map((row) => {
-    const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+  const trafficSources = topSourceRows.map((row) => {
+    const sessions = row.sessions;
     return {
-      source: row.dimensionValues?.[0]?.value ?? "(unknown)",
+      source: row.source,
       sessions,
       percentage: Math.round((sessions / totalSessions) * 1000) / 10,
     };
   });
+
+  const sourceDetails = Object.fromEntries(
+    trackedSources.map((source) => {
+      const summaryRow = (sourceSummaryReport?.[0]?.rows ?? []).find(
+        (row) => row.dimensionValues?.[0]?.value === source,
+      );
+      const sourceSessions = Number(summaryRow?.metricValues?.[0]?.value ?? 0);
+      const engagedSessions = Number(summaryRow?.metricValues?.[1]?.value ?? 0);
+      const engagementRate = Number(summaryRow?.metricValues?.[2]?.value ?? 0);
+      const avgDuration = Number(summaryRow?.metricValues?.[3]?.value ?? 0);
+      const bounceRate = Number(summaryRow?.metricValues?.[4]?.value ?? 0);
+      const pageviews = Number(summaryRow?.metricValues?.[5]?.value ?? 0);
+
+      const topLandingPages = (sourceLandingReport?.[0]?.rows ?? [])
+        .filter((row) => row.dimensionValues?.[0]?.value === source)
+        .map((row) => ({
+          path: row.dimensionValues?.[1]?.value || "(landing page unknown)",
+          sessions: Number(row.metricValues?.[0]?.value ?? 0),
+          views: Number(row.metricValues?.[1]?.value ?? 0),
+        }))
+        .slice(0, 8);
+
+      const dailyTrend = (sourceDailyReport?.[0]?.rows ?? [])
+        .filter((row) => row.dimensionValues?.[0]?.value === source)
+        .map((row) => {
+          const raw = row.dimensionValues?.[1]?.value ?? "";
+          const date =
+            raw.length === 8
+              ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+              : raw;
+          return {
+            date,
+            sessions: Number(row.metricValues?.[0]?.value ?? 0),
+            pageviews: 0,
+          };
+        });
+
+      const devices = (sourceDeviceReport?.[0]?.rows ?? [])
+        .filter((row) => row.dimensionValues?.[0]?.value === source)
+        .map((row) => {
+          const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+          return {
+            category: row.dimensionValues?.[1]?.value ?? "unknown",
+            sessions,
+            percentage:
+              sourceSessions > 0
+                ? Math.round((sessions / sourceSessions) * 1000) / 10
+                : 0,
+          };
+        });
+
+      return [
+        source,
+        {
+          summary: {
+            sessions: sourceSessions,
+            engagedSessions,
+            engagementRate: Math.round(engagementRate * 1000) / 10,
+            avgDuration: Math.round(avgDuration),
+            bounceRate: Math.round(bounceRate * 1000) / 10,
+            pageviewsPerSession:
+              sourceSessions > 0 ? Math.round((pageviews / sourceSessions) * 100) / 100 : 0,
+          },
+          topLandingPages,
+          dailyTrend,
+          devices,
+        },
+      ];
+    }),
+  );
 
   // Parse devices
   const devices = (devicesReport[0]?.rows ?? []).map((row) => {
@@ -285,6 +426,7 @@ export async function fetchGA4Data(period: string) {
     summary,
     topPages,
     trafficSources,
+    sourceDetails,
     devices,
     dailyTrend,
     cities,

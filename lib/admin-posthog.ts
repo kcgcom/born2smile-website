@@ -27,7 +27,7 @@ export const POSTHOG_CONTACT_EVENTS = [
   "contact_kakao_click",
 ] as const;
 
-export const POSTHOG_PERIODS = ["7d", "30d", "90d"] as const;
+export const POSTHOG_PERIODS = ["7d", "30d", "90d", "180d"] as const;
 
 export type PostHogPeriod = (typeof POSTHOG_PERIODS)[number];
 
@@ -98,6 +98,7 @@ const PERIOD_TO_DAYS: Record<PostHogPeriod, number> = {
   "7d": 7,
   "30d": 30,
   "90d": 90,
+  "180d": 180,
 };
 
 function getPostHogConfig(): PostHogConfig {

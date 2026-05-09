@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const period = (request.nextUrl.searchParams.get("period") ?? "7d") as PostHogPeriod;
   if (!POSTHOG_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d, 180d)" },
       {
         status: 400,
         headers: {

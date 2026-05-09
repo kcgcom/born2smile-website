@@ -197,6 +197,7 @@ export const PERIODS = [
   { value: "7d", label: "1주" },
   { value: "28d", label: "1개월" },
   { value: "90d", label: "3개월" },
+  { value: "180d", label: "6개월" },
 ];
 
 const DEFAULT_SORT_DIRECTION: Record<TableSortKey, SortDirection> = {
