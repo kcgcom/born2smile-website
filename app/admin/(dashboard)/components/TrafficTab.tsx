@@ -746,10 +746,9 @@ export function TrafficTab() {
   } = useAdminApi<BlogGA4Data>(
     `/api/admin/blog-analytics?period=${toBlogAnalyticsPeriod(period)}`,
   );
-  const sourceDetails = data?.sourceDetails ?? {};
-  const topPageDetails = data?.topPageDetails ?? {};
+  const sourceDetails = useMemo(() => data?.sourceDetails ?? {}, [data?.sourceDetails]);
+  const topPageDetails = useMemo(() => data?.topPageDetails ?? {}, [data?.topPageDetails]);
   const blogAggregateDetail = data?.topPageDetails["/blog (전체)"] ?? null;
-  const blogTopPosts = blogAggregateDetail?.topBlogPosts ?? [];
 
   const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
@@ -780,6 +779,17 @@ export function TrafficTab() {
       trackedPosts: rows.length,
     };
   }, [blogAggregateDetail?.summary.views, blogGa4Data]);
+  const blogTopPosts = useMemo(() => {
+    return (blogGa4Data?.blogPostStats ?? [])
+      .map((item) => ({
+        path: item.path,
+        views: item.pageViews,
+        sessions: topPageDetails[item.path]?.summary.sessions ?? 0,
+        avgDuration: item.avgDuration,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+  }, [blogGa4Data, topPageDetails]);
 
   return (
     <div className="space-y-6">
@@ -950,8 +960,9 @@ export function TrafficTab() {
                   loading={blogGa4Loading && blogSummary.trackedPosts === 0}
                 />
                 <MetricCard
-                  label="블로그 세션"
-                  value={blogAggregateDetail?.summary.sessions.toLocaleString("ko-KR") ?? "—"}
+                  label="상위 글 수"
+                  value={blogTopPosts.length.toLocaleString("ko-KR")}
+                  loading={blogGa4Loading && blogTopPosts.length === 0}
                 />
               </div>
 
@@ -960,47 +971,6 @@ export function TrafficTab() {
                   블로그 평균 체류 집계 일부를 불러오지 못했습니다. 글별 조회와 드릴다운은 계속 볼 수 있습니다.
                 </div>
               )}
-
-              <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-                <SectionCard title="블로그 방문 추이">
-                  {blogAggregateDetail ? (
-                    <>
-                      <DailyTrendChart data={blogAggregateDetail.dailyTrend} />
-                      <p className="mt-3 text-xs text-[var(--muted)]">
-                        블로그 전체 `/blog/*` 방문 흐름을 묶어서 보여줍니다.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="py-8 text-center text-sm text-[var(--muted)]">
-                      블로그 추이 데이터가 없습니다.
-                    </p>
-                  )}
-                </SectionCard>
-
-                <SectionCard title="블로그 주요 유입경로">
-                  <div className="space-y-2">
-                    {blogAggregateDetail?.sources.length ? (
-                      blogAggregateDetail.sources.map((item) => (
-                        <div
-                          key={item.source}
-                          className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm"
-                        >
-                          <span className="truncate pr-3 font-medium text-[var(--foreground)]">
-                            {item.source}
-                          </span>
-                          <span className="shrink-0 text-xs text-[var(--muted)]">
-                            {item.sessions.toLocaleString("ko-KR")}세션 · {item.percentage}%
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="py-8 text-center text-sm text-[var(--muted)]">
-                        표시할 유입경로 데이터가 없습니다.
-                      </p>
-                    )}
-                  </div>
-                </SectionCard>
-              </div>
 
               <SectionCard title="많이 본 글 TOP 10">
                 <TopPagesChart
@@ -1011,6 +981,33 @@ export function TrafficTab() {
                 <p className="mt-3 text-xs text-[var(--muted)]">
                   막대를 누르면 해당 글의 최근 추이와 주요 유입경로를 더 자세히 볼 수 있습니다.
                 </p>
+              </SectionCard>
+
+              <SectionCard title="글별 방문 성과">
+                <div className="space-y-2">
+                  {blogTopPosts.length > 0 ? blogTopPosts.map((item) => (
+                    <button
+                      key={item.path}
+                      type="button"
+                      onClick={() => setSelectedTopPage(item.path)}
+                      className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                    >
+                      <div className="min-w-0 pr-3">
+                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.path}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          페이지뷰 {item.views.toLocaleString("ko-KR")} · 평균 체류 {item.avgDuration > 0 ? formatDuration(item.avgDuration) : "—"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-medium text-[var(--color-primary)]">
+                        상세 보기
+                      </span>
+                    </button>
+                  )) : (
+                    <p className="py-8 text-center text-sm text-[var(--muted)]">
+                      블로그 방문 성과 데이터가 없습니다.
+                    </p>
+                  )}
+                </div>
               </SectionCard>
             </>
           )}
