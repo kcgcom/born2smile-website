@@ -29,6 +29,12 @@ type BlogGA4Data = { blogPostStats: { path: string; pageViews: number; avgDurati
 type CategoryData = { category: string; count: number };
 const EMPTY_POSTS: AdminBlogPost[] = [];
 
+function formatDurationShort(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remain = seconds % 60;
+  return `${minutes}:${String(remain).padStart(2, "0")}`;
+}
+
 const CategoryPieChart = dynamic(
   () =>
     import("recharts").then((mod) => {
@@ -182,6 +188,58 @@ export function StatsSubTab() {
       .sort((a, b) => b.impressions - a.impressions);
   }, [searchData]);
 
+  const topVisitedPosts = useMemo(() => {
+    return (blogGA4Data?.blogPostStats ?? [])
+      .map((item) => {
+        const slug = getEditableBlogSlug(item.path);
+        return {
+          ...item,
+          slug,
+          title: slug ? slugToTitleMap.get(slug) : undefined,
+          searchMetrics: searchData?.blogPages.find((page) => page.page === item.path) ?? null,
+        };
+      })
+      .sort((a, b) => b.pageViews - a.pageViews)
+      .slice(0, 12);
+  }, [blogGA4Data, slugToTitleMap, searchData?.blogPages]);
+
+  const visitSummary = useMemo(() => {
+    const rows = blogGA4Data?.blogPostStats ?? [];
+    if (rows.length === 0) return { pageViews: 0, avgDuration: 0, trackedPosts: 0 };
+    const pageViews = rows.reduce((sum, row) => sum + row.pageViews, 0);
+    const weightedDuration = rows.reduce((sum, row) => sum + row.avgDuration * row.pageViews, 0);
+    return {
+      pageViews,
+      avgDuration: pageViews > 0 ? Math.round(weightedDuration / pageViews) : 0,
+      trackedPosts: rows.length,
+    };
+  }, [blogGA4Data]);
+
+  const combinedInsights = useMemo(() => {
+    const searchStrongVisitWeak = topBlogSearchPages
+      .map((row) => ({
+        ...row,
+        ga4: ga4StatsMap.get(row.page),
+        slug: getEditableBlogSlug(row.page),
+      }))
+      .filter((row) => row.impressions >= 100 && (row.ga4?.pageViews ?? 0) < 30)
+      .slice(0, 3);
+
+    const visitStrongSearchWeak = topVisitedPosts
+      .filter((row) => (row.searchMetrics?.impressions ?? 0) < 100)
+      .slice(0, 3);
+
+    const strongCombined = topVisitedPosts
+      .filter((row) => (row.searchMetrics?.clicks ?? 0) >= 10 && row.pageViews >= 50)
+      .slice(0, 3);
+
+    return {
+      searchStrongVisitWeak,
+      visitStrongSearchWeak,
+      strongCombined,
+    };
+  }, [topBlogSearchPages, ga4StatsMap, topVisitedPosts]);
+
   const selectedBlogPageQueries = selectedBlogPage
     ? searchData?.pageTopQueries[selectedBlogPage] ?? []
     : [];
@@ -282,41 +340,53 @@ export function StatsSubTab() {
       </section>
 
       <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-        <h3 className="mb-2 text-base font-bold text-[var(--foreground)]">블로그 검색 성과</h3>
-        <ApiSourceBadge sources={["searchConsole", "ga4"]} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-bold text-[var(--foreground)]">콘텐츠 통계</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              검색 성과, 방문 성과, 그리고 두 데이터를 함께 해석한 인사이트를 나눠서 봅니다.
+            </p>
+          </div>
+          <PeriodSelector
+            periods={[
+              { value: "28d", label: "1개월" },
+              { value: "90d", label: "3개월" },
+              { value: "180d", label: "6개월" },
+            ]}
+            selected={searchPeriod}
+            onChange={handleSearchPeriodChange}
+          />
+        </div>
 
         {searchLoading && <AdminLoadingSkeleton variant="metrics" />}
         {searchError && <AdminErrorState message={searchError} onRetry={refetchSearch} />}
 
         {!searchLoading && !searchError && (
           <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <PeriodSelector
-                periods={[
-                  { value: "28d", label: "1개월" },
-                  { value: "90d", label: "3개월" },
-                  { value: "180d", label: "6개월" },
-                ]}
-                selected={searchPeriod}
-                onChange={handleSearchPeriodChange}
-              />
-              {searchData?.dataAsOf && (
-                <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-                  데이터 기준: {searchData.dataAsOf}
-                </span>
-              )}
-            </div>
+            <div className="grid gap-5 xl:grid-cols-[1.15fr,0.85fr]">
+              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--foreground)]">검색 성과</h4>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    검색 결과에서 얼마나 보이고 클릭됐는지 봅니다.
+                  </p>
+                </div>
+                <ApiSourceBadge sources={["searchConsole"]} />
+                {searchData?.dataAsOf && (
+                  <span className="inline-flex rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+                    Search Console 기준: {searchData.dataAsOf}
+                  </span>
+                )}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <MetricCard label="블로그 노출" value={blogSearchSummary.impressions.toLocaleString("ko-KR")} />
+                  <MetricCard label="블로그 클릭" value={blogSearchSummary.clicks.toLocaleString("ko-KR")} />
+                  <MetricCard label="블로그 CTR" value={`${blogSearchSummary.ctr}%`} />
+                  <MetricCard label="평균 순위" value={blogSearchSummary.position} />
+                </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <MetricCard label="블로그 노출" value={blogSearchSummary.impressions.toLocaleString("ko-KR")} />
-              <MetricCard label="블로그 클릭" value={blogSearchSummary.clicks.toLocaleString("ko-KR")} />
-              <MetricCard label="블로그 CTR" value={`${blogSearchSummary.ctr}%`} />
-              <MetricCard label="평균 순위" value={blogSearchSummary.position} />
-            </div>
-
-            <div>
+                <div>
               {/* 탭 전환 */}
-              <div className="mb-4 flex gap-1 rounded-xl bg-slate-100/80 p-1 w-fit">
+              <div className="mb-4 flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
                 {(["posts", "queries"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -347,9 +417,6 @@ export function StatsSubTab() {
                     {topBlogSearchPages.map((item) => {
                       const slug = getEditableBlogSlug(item.page);
                       const title = slug ? slugToTitleMap.get(slug) : undefined;
-                      const ga4 = ga4StatsMap.get(item.page);
-                      const m = ga4 ? Math.floor(ga4.avgDuration / 60) : 0;
-                      const s = ga4 ? ga4.avgDuration % 60 : 0;
                       return (
                         <div key={item.page} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
                           <a href={item.page} target="_blank" rel="noopener noreferrer" className="mb-1.5 block font-medium text-[var(--foreground)] text-sm leading-snug hover:text-[var(--color-primary)] hover:underline">{title ?? slug ?? item.page}</a>
@@ -363,8 +430,8 @@ export function StatsSubTab() {
                             <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
                             <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
                             <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
-                            <div><span className="text-[var(--muted)]">페이지뷰</span><br /><span className="font-semibold text-blue-600">{ga4 ? ga4.pageViews.toLocaleString("ko-KR") : "—"}</span></div>
-                            <div><span className="text-[var(--muted)]">체류시간</span><br /><span className="font-semibold text-emerald-600">{ga4 ? `${m}:${String(s).padStart(2, "0")}` : "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">페이지</span><br /><span className="font-semibold text-slate-700">{title ?? slug ?? "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">대표 쿼리</span><br /><span className="font-semibold text-[var(--color-primary)]">{slug ? "확인 가능" : "—"}</span></div>
                           </div>
                           {selectedBlogPage === item.page && (
                             <div className="mt-3">
@@ -412,23 +479,6 @@ export function StatsSubTab() {
                         { key: "clicks", label: "클릭", align: "right", sortable: true },
                         { key: "ctr", label: "CTR", align: "right", sortable: true, render: (row) => formatCtr((row as SearchConsoleData["blogPages"][number]).ctr) },
                         { key: "position", label: "순위", align: "right", sortable: true },
-                        {
-                          key: "pageViews", label: "페이지뷰", align: "right", sortable: true,
-                          render: (row) => {
-                            const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
-                            return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
-                          },
-                        },
-                        {
-                          key: "avgDuration", label: "체류시간", align: "right", sortable: true,
-                          render: (row) => {
-                            const ga4 = ga4StatsMap.get((row as SearchConsoleData["blogPages"][number]).page);
-                            if (!ga4) return <span className="text-[var(--muted)]">—</span>;
-                            const m = Math.floor(ga4.avgDuration / 60);
-                            const s = ga4.avgDuration % 60;
-                            return <span className="font-medium text-emerald-600">{m}:{String(s).padStart(2, "0")}</span>;
-                          },
-                        },
                       ]}
                       emptyMessage="블로그 검색 성과 데이터가 아직 없습니다"
                       expandedRowKey={selectedBlogPage ?? undefined}
@@ -456,9 +506,6 @@ export function StatsSubTab() {
                       <p className="py-8 text-center text-sm text-[var(--muted)]">대표 유입 쿼리 데이터가 아직 없습니다</p>
                     )}
                     {topBlogSearchQueries.map((item) => {
-                      const ga4 = ga4StatsMap.get(item.page);
-                      const m = ga4 ? Math.floor(ga4.avgDuration / 60) : 0;
-                      const s = ga4 ? ga4.avgDuration % 60 : 0;
                       return (
                         <div key={item.query} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
                           <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm">{item.query}</p>
@@ -471,8 +518,8 @@ export function StatsSubTab() {
                             <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
                             <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
                             <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
-                            <div><span className="text-[var(--muted)]">페이지뷰</span><br /><span className="font-semibold text-blue-600">{ga4 ? ga4.pageViews.toLocaleString("ko-KR") : "—"}</span></div>
-                            <div><span className="text-[var(--muted)]">체류시간</span><br /><span className="font-semibold text-emerald-600">{ga4 ? `${m}:${String(s).padStart(2, "0")}` : "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">대표 페이지</span><br /><span className="font-semibold text-slate-700">{item.page || "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">연결 페이지</span><br /><span className="font-semibold text-[var(--color-primary)]">확인 가능</span></div>
                           </div>
                         </div>
                       );
@@ -504,23 +551,6 @@ export function StatsSubTab() {
                         { key: "clicks", label: "클릭", align: "right", sortable: true },
                         { key: "ctr", label: "CTR", align: "right", sortable: true, render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
                         { key: "position", label: "순위", align: "right", sortable: true },
-                        {
-                          key: "pageViews", label: "페이지뷰", align: "right", sortable: true,
-                          render: (row) => {
-                            const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
-                            return ga4 ? <span className="font-medium text-blue-600">{ga4.pageViews.toLocaleString("ko-KR")}</span> : <span className="text-[var(--muted)]">—</span>;
-                          },
-                        },
-                        {
-                          key: "avgDuration", label: "체류시간", align: "right", sortable: true,
-                          render: (row) => {
-                            const ga4 = ga4StatsMap.get((row as typeof topBlogSearchQueries[number]).page);
-                            if (!ga4) return <span className="text-[var(--muted)]">—</span>;
-                            const m = Math.floor(ga4.avgDuration / 60);
-                            const s = ga4.avgDuration % 60;
-                            return <span className="font-medium text-emerald-600">{m}:{String(s).padStart(2, "0")}</span>;
-                          },
-                        },
                       ]}
                       emptyMessage="대표 유입 쿼리 데이터가 아직 없습니다"
                     />
@@ -542,10 +572,136 @@ export function StatsSubTab() {
                   )}
                 </>
               )}
+
+                </div>
+              </div>
+
+              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--foreground)]">방문 성과</h4>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    실제로 들어온 뒤 얼마나 읽히는지 봅니다.
+                  </p>
+                </div>
+                <ApiSourceBadge sources={["ga4"]} />
+                {blogGA4Data?.dataAsOf && (
+                  <span className="inline-flex rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+                    Analytics 기준: {blogGA4Data.dataAsOf}
+                  </span>
+                )}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <MetricCard label="블로그 페이지뷰" value={visitSummary.pageViews.toLocaleString("ko-KR")} />
+                  <MetricCard label="평균 체류" value={formatDurationShort(visitSummary.avgDuration)} />
+                  <MetricCard label="추적 포스트" value={visitSummary.trackedPosts.toLocaleString("ko-KR")} />
+                </div>
+
+                <div className="space-y-3">
+                  <h5 className="text-sm font-semibold text-[var(--foreground)]">많이 본 글</h5>
+                  <div className="space-y-2">
+                    {topVisitedPosts.length > 0 ? topVisitedPosts.slice(0, 8).map((item) => (
+                      <div key={item.path} className="rounded-xl border border-[var(--border)] bg-white px-4 py-3">
+                        <a
+                          href={item.path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                        >
+                          {item.title ?? item.slug ?? item.path}
+                        </a>
+                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <span className="text-[var(--muted)]">페이지뷰</span><br />
+                            <span className="font-semibold text-blue-600">{item.pageViews.toLocaleString("ko-KR")}</span>
+                          </div>
+                          <div>
+                            <span className="text-[var(--muted)]">체류시간</span><br />
+                            <span className="font-semibold text-emerald-600">{formatDurationShort(item.avgDuration)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[var(--muted)]">검색 클릭</span><br />
+                            <span className="font-semibold text-slate-700">{item.searchMetrics ? item.searchMetrics.clicks.toLocaleString("ko-KR") : "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="rounded-xl border border-dashed border-[var(--border)] px-4 py-6 text-center text-sm text-[var(--muted)]">
+                        방문 성과 데이터가 아직 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-[var(--foreground)]">핵심 인사이트</h4>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  검색 성과와 방문 성과를 함께 봤을 때 바로 행동으로 옮길 포인트입니다.
+                </p>
+              </div>
+              <ApiSourceBadge sources={["searchConsole", "ga4"]} />
+              <div className="mt-4 grid gap-4 xl:grid-cols-3">
+                <InsightListCard
+                  title="검색은 보이는데 방문 반응 약한 글"
+                  items={combinedInsights.searchStrongVisitWeak.map((item) => ({
+                    key: item.page,
+                    title: (item.slug ? slugToTitleMap.get(item.slug) : null) ?? item.slug ?? item.page,
+                    meta: `노출 ${item.impressions.toLocaleString("ko-KR")} · 페이지뷰 ${(item.ga4?.pageViews ?? 0).toLocaleString("ko-KR")}`,
+                  }))}
+                  emptyMessage="지금은 뚜렷한 후보가 없습니다."
+                />
+                <InsightListCard
+                  title="방문은 좋은데 검색 노출 약한 글"
+                  items={combinedInsights.visitStrongSearchWeak.map((item) => ({
+                    key: item.path,
+                    title: item.title ?? item.slug ?? item.path,
+                    meta: `페이지뷰 ${item.pageViews.toLocaleString("ko-KR")} · 노출 ${(item.searchMetrics?.impressions ?? 0).toLocaleString("ko-KR")}`,
+                  }))}
+                  emptyMessage="지금은 뚜렷한 후보가 없습니다."
+                />
+                <InsightListCard
+                  title="검색과 방문이 함께 강한 글"
+                  items={combinedInsights.strongCombined.map((item) => ({
+                    key: item.path,
+                    title: item.title ?? item.slug ?? item.path,
+                    meta: `클릭 ${(item.searchMetrics?.clicks ?? 0).toLocaleString("ko-KR")} · 페이지뷰 ${item.pageViews.toLocaleString("ko-KR")}`,
+                  }))}
+                  emptyMessage="아직 충분한 결합 데이터가 없습니다."
+                />
+              </div>
             </div>
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function InsightListCard({
+  title,
+  items,
+  emptyMessage,
+}: {
+  title: string;
+  items: Array<{ key: string; title: string; meta: string }>;
+  emptyMessage: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-[var(--surface)] p-4">
+      <h5 className="text-sm font-semibold text-[var(--foreground)]">{title}</h5>
+      <div className="mt-3 space-y-2">
+        {items.length > 0 ? items.map((item) => (
+          <div key={item.key} className="rounded-xl border border-[var(--border)] bg-white px-3 py-3">
+            <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">{item.meta}</p>
+          </div>
+        )) : (
+          <p className="rounded-xl border border-dashed border-[var(--border)] px-3 py-5 text-center text-sm text-[var(--muted)]">
+            {emptyMessage}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

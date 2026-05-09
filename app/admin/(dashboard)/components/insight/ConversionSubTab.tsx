@@ -12,7 +12,7 @@ import { useAdminApi } from "../useAdminApi";
 
 interface ConversionData {
   configured: boolean;
-  period: "7d" | "30d" | "90d" | "180d";
+  period: "30d" | "90d" | "180d";
   summary: {
     totalCtaClicks: number;
     totalPhoneClicks: number;
@@ -40,14 +40,13 @@ interface ConversionData {
 }
 
 const PERIODS = [
-  { value: "7d", label: "7일" },
   { value: "30d", label: "1개월" },
   { value: "90d", label: "3개월" },
   { value: "180d", label: "6개월" },
 ] as const;
 
 export function ConversionSubTab() {
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d" | "180d">("30d");
+  const [period, setPeriod] = useState<"30d" | "90d" | "180d">("30d");
   const { data, loading, error, refetch } = useAdminApi<ConversionData>(
     `/api/admin/posthog/conversion?period=${period}`,
   );
@@ -60,7 +59,7 @@ export function ConversionSubTab() {
         <PeriodSelector
           periods={PERIODS.map((item) => ({ value: item.value, label: item.label }))}
           selected={period}
-          onChange={(value) => setPeriod(value as "7d" | "30d" | "90d" | "180d")}
+          onChange={(value) => setPeriod(value as "30d" | "90d" | "180d")}
         />
         {data && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
