@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useAdminApi } from "./useAdminApi";
 import { MetricCard } from "./MetricCard";
@@ -68,12 +68,23 @@ interface AnalyticsData {
   dowPattern: Array<{ day: string; sessions: number }>;
 }
 
+interface BlogGA4Data {
+  blogPostStats: Array<{ path: string; pageViews: number; avgDuration: number }>;
+  dataAsOf: string;
+}
+
 type Period = "30d" | "90d" | "180d";
+type TrafficView = "overall" | "blog";
 
 const PERIODS: Array<{ value: Period; label: string }> = [
   { value: "30d", label: "1개월" },
   { value: "90d", label: "3개월" },
   { value: "180d", label: "6개월" },
+];
+
+const TRAFFIC_VIEWS: Array<{ value: TrafficView; label: string }> = [
+  { value: "overall", label: "전체" },
+  { value: "blog", label: "블로그" },
 ];
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -98,6 +109,12 @@ const CHART_COLORS = [
 function formatDateLabel(date: string): string {
   if (date.length === 10) return date.slice(5).replace("-", ".");
   return date;
+}
+
+function toBlogAnalyticsPeriod(period: Period): "28d" | "90d" | "180d" {
+  if (period === "90d") return "90d";
+  if (period === "180d") return "180d";
+  return "28d";
 }
 
 // ---------------------------------------------------------------
@@ -715,14 +732,24 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export function TrafficTab() {
   const [period, setPeriod] = useState<Period>("30d");
+  const [view, setView] = useState<TrafficView>("overall");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
+  const {
+    data: blogGa4Data,
+    loading: blogGa4Loading,
+    error: blogGa4Error,
+  } = useAdminApi<BlogGA4Data>(
+    `/api/admin/blog-analytics?period=${toBlogAnalyticsPeriod(period)}`,
+  );
   const sourceDetails = data?.sourceDetails ?? {};
   const topPageDetails = data?.topPageDetails ?? {};
+  const blogAggregateDetail = data?.topPageDetails["/blog (전체)"] ?? null;
+  const blogTopPosts = blogAggregateDetail?.topBlogPosts ?? [];
 
   const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
@@ -732,6 +759,27 @@ export function TrafficTab() {
     ? selectedTopPage
     : null;
   const activeTopPageDetail = activeTopPage ? topPageDetails[activeTopPage] : null;
+  const blogSummary = useMemo(() => {
+    const rows = blogGa4Data?.blogPostStats ?? [];
+    const fallbackPageViews = blogAggregateDetail?.summary.views ?? 0;
+
+    if (rows.length === 0) {
+      return {
+        pageViews: fallbackPageViews,
+        avgDuration: 0,
+        trackedPosts: 0,
+      };
+    }
+
+    const pageViews = rows.reduce((sum, row) => sum + row.pageViews, 0);
+    const weightedDuration = rows.reduce((sum, row) => sum + row.avgDuration * row.pageViews, 0);
+
+    return {
+      pageViews: pageViews || fallbackPageViews,
+      avgDuration: pageViews > 0 ? Math.round(weightedDuration / pageViews) : 0,
+      trackedPosts: rows.length,
+    };
+  }, [blogAggregateDetail?.summary.views, blogGa4Data]);
 
   return (
     <div className="space-y-6">
@@ -766,6 +814,27 @@ export function TrafficTab() {
         </span>
       </div>
 
+      <div className="flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
+        {TRAFFIC_VIEWS.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            onClick={() => {
+              setView(item.value);
+              setSelectedSource(null);
+              setSelectedTopPage(null);
+            }}
+            className={`rounded-lg px-4 py-1.5 text-sm transition-all ${
+              view === item.value
+                ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
+                : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       {/* Loading */}
       {loading && <AdminLoadingSkeleton variant="full" />}
 
@@ -777,98 +846,178 @@ export function TrafficTab() {
       {/* Data */}
       {!loading && !error && data && (
         <>
-          {/* Summary metric cards */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <MetricCard
-              label="세션"
-              value={data.summary.sessions.value.toLocaleString("ko-KR")}
-              change={data.summary.sessions.change}
-            />
-            <MetricCard
-              label="사용자"
-              value={data.summary.users.value.toLocaleString("ko-KR")}
-              change={data.summary.users.change}
-            />
-            <MetricCard
-              label="페이지뷰"
-              value={data.summary.pageviews.value.toLocaleString("ko-KR")}
-              change={data.summary.pageviews.change}
-            />
-            <MetricCard
-              label="평균 체류"
-              value={formatDuration(data.summary.avgDuration.value)}
-              change={data.summary.avgDuration.change}
-            />
-            <MetricCard
-              label="이탈률"
-              value={`${data.summary.bounceRate.value.toFixed(1)}%`}
-              change={data.summary.bounceRate.change}
-              invertChange={true}
-            />
-          </div>
+          {view === "overall" ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <MetricCard
+                  label="세션"
+                  value={data.summary.sessions.value.toLocaleString("ko-KR")}
+                  change={data.summary.sessions.change}
+                />
+                <MetricCard
+                  label="사용자"
+                  value={data.summary.users.value.toLocaleString("ko-KR")}
+                  change={data.summary.users.change}
+                />
+                <MetricCard
+                  label="페이지뷰"
+                  value={data.summary.pageviews.value.toLocaleString("ko-KR")}
+                  change={data.summary.pageviews.change}
+                />
+                <MetricCard
+                  label="평균 체류"
+                  value={formatDuration(data.summary.avgDuration.value)}
+                  change={data.summary.avgDuration.change}
+                />
+                <MetricCard
+                  label="이탈률"
+                  value={`${data.summary.bounceRate.value.toFixed(1)}%`}
+                  change={data.summary.bounceRate.change}
+                  invertChange={true}
+                />
+              </div>
 
-          {/* 2×2 grid */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Top pages */}
-            <SectionCard title="인기 페이지 TOP 10">
-              <TopPagesChart
-                data={data.topPages}
-                selectedPath={activeTopPage}
-                onSelect={setSelectedTopPage}
-              />
-              <p className="mt-3 text-xs text-[var(--muted)]">
-                블로그 글은 `블로그 전체`로 묶었습니다. 막대를 누르면 상세가 열립니다.
-              </p>
-            </SectionCard>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <SectionCard title="인기 페이지 TOP 10">
+                  <TopPagesChart
+                    data={data.topPages}
+                    selectedPath={activeTopPage}
+                    onSelect={setSelectedTopPage}
+                  />
+                  <p className="mt-3 text-xs text-[var(--muted)]">
+                    블로그 글은 `블로그 전체`로 묶었습니다. 막대를 누르면 상세가 열립니다.
+                  </p>
+                </SectionCard>
 
-            {/* Traffic sources */}
-            <SectionCard title="유입 경로">
-              <TrafficSourceChart
-                data={data.trafficSources}
-                selectedSource={activeSource}
-                onSelect={setSelectedSource}
-              />
-              <p className="mt-3 text-xs text-[var(--muted)]">
-                파이차트의 해당 조각을 누르면 유입경로 상세가 열립니다.
-              </p>
-            </SectionCard>
+                <SectionCard title="유입 경로">
+                  <TrafficSourceChart
+                    data={data.trafficSources}
+                    selectedSource={activeSource}
+                    onSelect={setSelectedSource}
+                  />
+                  <p className="mt-3 text-xs text-[var(--muted)]">
+                    파이차트의 해당 조각을 누르면 유입경로 상세가 열립니다.
+                  </p>
+                </SectionCard>
 
-            {/* Devices */}
-            <SectionCard title="기기별 접속">
-              <DeviceChart data={data.devices} />
-            </SectionCard>
+                <SectionCard title="기기별 접속">
+                  <DeviceChart data={data.devices} />
+                </SectionCard>
 
-            {/* Daily trend */}
-            <SectionCard title="일별 방문자 추이">
-              <DailyTrendChart data={data.dailyTrend} />
-            </SectionCard>
+                <SectionCard title="일별 방문자 추이">
+                  <DailyTrendChart data={data.dailyTrend} />
+                </SectionCard>
 
-            {/* City */}
-            <SectionCard title="지역별 유입 TOP 10">
-              <CityChart data={data.cities} />
-            </SectionCard>
+                <SectionCard title="지역별 유입 TOP 10">
+                  <CityChart data={data.cities} />
+                </SectionCard>
 
-            {/* New vs Returning */}
-            <SectionCard title="신규 vs 재방문">
-              <NewVsReturningChart data={data.newVsReturning} />
-            </SectionCard>
+                <SectionCard title="신규 vs 재방문">
+                  <NewVsReturningChart data={data.newVsReturning} />
+                </SectionCard>
 
-            {/* Hourly pattern */}
-            <SectionCard title="시간대별 방문 패턴">
-              <HourlyPatternChart data={data.hourlyPattern} />
-              <p className="mt-2 text-xs text-[var(--muted)]">가장 많이 방문하는 시간대가 골드 색으로 표시됩니다.</p>
-            </SectionCard>
+                <SectionCard title="시간대별 방문 패턴">
+                  <HourlyPatternChart data={data.hourlyPattern} />
+                  <p className="mt-2 text-xs text-[var(--muted)]">
+                    가장 많이 방문하는 시간대가 골드 색으로 표시됩니다.
+                  </p>
+                </SectionCard>
 
-            {/* Day of week pattern */}
-            <SectionCard title="요일별 방문 패턴">
-              <DowPatternChart data={data.dowPattern} />
-              <p className="mt-2 text-xs text-[var(--muted)]">가장 많이 방문하는 요일이 골드 색으로 표시됩니다.</p>
-            </SectionCard>
-          </div>
+                <SectionCard title="요일별 방문 패턴">
+                  <DowPatternChart data={data.dowPattern} />
+                  <p className="mt-2 text-xs text-[var(--muted)]">
+                    가장 많이 방문하는 요일이 골드 색으로 표시됩니다.
+                  </p>
+                </SectionCard>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <MetricCard
+                  label="블로그 페이지뷰"
+                  value={blogSummary.pageViews.toLocaleString("ko-KR")}
+                  loading={blogGa4Loading && blogSummary.pageViews === 0}
+                />
+                <MetricCard
+                  label="평균 체류"
+                  value={blogSummary.avgDuration > 0 ? formatDuration(blogSummary.avgDuration) : "—"}
+                  loading={blogGa4Loading && blogSummary.avgDuration === 0}
+                />
+                <MetricCard
+                  label="추적 글 수"
+                  value={blogSummary.trackedPosts.toLocaleString("ko-KR")}
+                  loading={blogGa4Loading && blogSummary.trackedPosts === 0}
+                />
+                <MetricCard
+                  label="블로그 세션"
+                  value={blogAggregateDetail?.summary.sessions.toLocaleString("ko-KR") ?? "—"}
+                />
+              </div>
+
+              {blogGa4Error && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                  블로그 평균 체류 집계 일부를 불러오지 못했습니다. 글별 조회와 드릴다운은 계속 볼 수 있습니다.
+                </div>
+              )}
+
+              <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+                <SectionCard title="블로그 방문 추이">
+                  {blogAggregateDetail ? (
+                    <>
+                      <DailyTrendChart data={blogAggregateDetail.dailyTrend} />
+                      <p className="mt-3 text-xs text-[var(--muted)]">
+                        블로그 전체 `/blog/*` 방문 흐름을 묶어서 보여줍니다.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="py-8 text-center text-sm text-[var(--muted)]">
+                      블로그 추이 데이터가 없습니다.
+                    </p>
+                  )}
+                </SectionCard>
+
+                <SectionCard title="블로그 주요 유입경로">
+                  <div className="space-y-2">
+                    {blogAggregateDetail?.sources.length ? (
+                      blogAggregateDetail.sources.map((item) => (
+                        <div
+                          key={item.source}
+                          className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm"
+                        >
+                          <span className="truncate pr-3 font-medium text-[var(--foreground)]">
+                            {item.source}
+                          </span>
+                          <span className="shrink-0 text-xs text-[var(--muted)]">
+                            {item.sessions.toLocaleString("ko-KR")}세션 · {item.percentage}%
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">
+                        표시할 유입경로 데이터가 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </SectionCard>
+              </div>
+
+              <SectionCard title="많이 본 글 TOP 10">
+                <TopPagesChart
+                  data={blogTopPosts}
+                  selectedPath={activeTopPage}
+                  onSelect={setSelectedTopPage}
+                />
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  막대를 누르면 해당 글의 최근 추이와 주요 유입경로를 더 자세히 볼 수 있습니다.
+                </p>
+              </SectionCard>
+            </>
+          )}
         </>
       )}
 
-      {activeSource && activeSourceDetail && (
+      {view === "overall" && activeSource && activeSourceDetail && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-2 sm:items-center sm:p-4"
           role="dialog"

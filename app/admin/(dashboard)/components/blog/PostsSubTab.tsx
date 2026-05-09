@@ -13,6 +13,7 @@ import { AdminNotice } from "@/components/admin/AdminNotice";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
 import { AiWriteModal } from "./AiWriteModal";
 import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
+import { CategoryDistributionPanel } from "./CategoryDistributionPanel";
 import {
   PostListItem,
   PostsFilterPanel,
@@ -176,6 +177,8 @@ export function PostsSubTab() {
             statusFilter={statusFilter}
             onStatusFilterChange={handleStatusFilterChange}
           />
+
+          <CategoryDistributionPanel posts={posts} today={today} />
 
           <PostsFilterPanel
             filtersOpen={filtersOpen}
