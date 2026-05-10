@@ -3,10 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, BookOpen, FlaskConical } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { getResearchPageFresh, getAllResearchSlugsFresh } from "@/lib/research/papers";
+import { getResearchPageFresh, getResearchPageAdmin, getAllResearchSlugsFresh } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { InlineResearchEditButton } from "@/components/admin/InlineResearchEditButton";
+import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
 
@@ -38,8 +39,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ResearchPageDetail({ params }: Props) {
   const { slug } = await params;
-  const page = await getResearchPageFresh(slug);
-  if (!page) notFound();
+  const isAdmin = await getIsAdminServer();
+
+  let page;
+  let verified: boolean;
+
+  if (isAdmin) {
+    const result = await getResearchPageAdmin(slug);
+    if (!result) notFound();
+    page = result.page;
+    verified = result.verified;
+  } else {
+    page = await getResearchPageFresh(slug);
+    if (!page) notFound();
+    verified = true;
+  }
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -53,7 +67,7 @@ export default async function ResearchPageDetail({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
-      <InlineResearchEditButton page={page} />
+      <InlineResearchEditButton page={page} verified={verified} />
 
       {/* 히어로 */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">

@@ -106,9 +106,10 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
   if (!isAdmin || !isEditMode) {
     return (
       <div className="space-y-10">
-        {blocks.map((block, i) => (
-          <Fragment key={i}>{renderSingleBlock(block, headingIds[i])}</Fragment>
-        ))}
+        {blocks.map((block, i) => {
+          if (!isAdmin && block.type === "researchCallout") return null;
+          return <Fragment key={i}>{renderSingleBlock(block, headingIds[i])}</Fragment>;
+        })}
       </div>
     );
   }

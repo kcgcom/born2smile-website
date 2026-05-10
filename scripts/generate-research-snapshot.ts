@@ -34,6 +34,7 @@ async function main() {
   const { data, error } = await supabase
     .from("research_pages")
     .select("slug, data")
+    .eq("verified", true)
     .order("slug");
 
   if (error) {

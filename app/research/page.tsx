@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FlaskConical, BookOpen, ArrowRight } from "lucide-react";
+import { FlaskConical, BookOpen, ArrowRight, EyeOff } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { getAllResearchSlugsFresh, getResearchPageFresh } from "@/lib/research/papers";
+import { getAllResearchSlugsFresh, getAllResearchSlugsAdmin, getResearchPageFresh, getResearchPageAdmin } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
 
@@ -30,10 +31,31 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 
 export default async function ResearchHubPage() {
-  const slugs = await getAllResearchSlugsFresh();
-  const pages = (
-    await Promise.all(slugs.map((slug) => getResearchPageFresh(slug)))
-  ).filter(Boolean) as Awaited<ReturnType<typeof getResearchPageFresh>>[];
+  const isAdmin = await getIsAdminServer();
+
+  let pages: Array<{ page: NonNullable<Awaited<ReturnType<typeof getResearchPageFresh>>>; verified: boolean }>;
+
+  if (isAdmin) {
+    const slugEntries = await getAllResearchSlugsAdmin();
+    const results = await Promise.all(
+      slugEntries.map(({ slug, verified }) =>
+        getResearchPageAdmin(slug).then((r) =>
+          r ? { page: r.page, verified } : null,
+        ),
+      ),
+    );
+    pages = results.filter(Boolean) as typeof pages;
+  } else {
+    const slugs = await getAllResearchSlugsFresh();
+    const results = await Promise.all(
+      slugs.map((slug) =>
+        getResearchPageFresh(slug).then((page) =>
+          page ? { page, verified: true } : null,
+        ),
+      ),
+    );
+    pages = results.filter(Boolean) as typeof pages;
+  }
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -81,32 +103,42 @@ export default async function ResearchHubPage() {
       <section className="section-padding bg-white">
         <div className="mx-auto max-w-3xl px-4">
           <StaggerContainer className="space-y-4">
-            {pages.map((page) => (
-              <StaggerItem key={page!.slug}>
+            {pages.map(({ page, verified }) => (
+              <StaggerItem key={page.slug}>
                 <Link
-                  href={`/research/${page!.slug}`}
-                  className="group flex flex-col sm:flex-row sm:items-center gap-4 border border-gray-200 rounded-2xl px-6 py-5 hover:border-blue-300 hover:shadow-sm transition-all"
+                  href={`/research/${page.slug}`}
+                  className={`group flex flex-col sm:flex-row sm:items-center gap-4 border rounded-2xl px-6 py-5 hover:shadow-sm transition-all ${
+                    verified
+                      ? "border-gray-200 hover:border-blue-300"
+                      : "border-dashed border-amber-300 bg-amber-50/40 hover:border-amber-400"
+                  }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded ${CATEGORY_COLOR[page!.category] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`text-xs font-semibold px-2 py-0.5 rounded ${CATEGORY_COLOR[page.category] ?? "bg-gray-100 text-gray-600"}`}
                       >
-                        {page!.category}
+                        {page.category}
                       </span>
                       <span className="text-xs text-gray-400">
-                        논문 {page!.papers.length}편
+                        논문 {page.papers.length}편
                       </span>
+                      {!verified && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                          <EyeOff className="w-3 h-3" />
+                          검증 전 (비공개)
+                        </span>
+                      )}
                     </div>
                     <h2 className="text-base font-bold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">
-                      {page!.title}
+                      {page.title}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500 leading-relaxed line-clamp-2">
-                      {page!.description}
+                      {page.description}
                     </p>
                     {/* 핵심 수치 미리보기 */}
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {page!.papers.slice(0, 2).flatMap((paper) =>
+                      {page.papers.slice(0, 2).flatMap((paper) =>
                         paper.keyFindings.slice(0, 1).map((f, i) => (
                           <span
                             key={i}

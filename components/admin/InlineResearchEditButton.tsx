@@ -2,7 +2,7 @@
 
 import { useState, useRef, useLayoutEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Pencil, RotateCcw, Save, X, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, EyeOff, Pencil, RotateCcw, Save, X, Plus, Trash2 } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
@@ -10,9 +10,10 @@ import type { ResearchPage, ResearchPaper, KeyFinding } from "@/lib/research/typ
 
 interface Props {
   page: ResearchPage;
+  verified: boolean;
 }
 
-export function InlineResearchEditButton({ page }: Props) {
+export function InlineResearchEditButton({ page, verified: initialVerified }: Props) {
   const isAdmin = useAdminAuth();
   const router = useRouter();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -24,6 +25,8 @@ export function InlineResearchEditButton({ page }: Props) {
   const [notice, setNotice] = useState<string | null>(null);
   const [metaCollapsed, setMetaCollapsed] = useState(false);
   const [papersCollapsed, setPapersCollapsed] = useState(true);
+  const [verified, setVerified] = useState(initialVerified);
+  const [verifying, setVerifying] = useState(false);
 
   // 편집 상태
   const [title, setTitle] = useState(page.title);
@@ -54,6 +57,33 @@ export function InlineResearchEditButton({ page }: Props) {
     handleReset();
     setIsEditMode(false);
   };
+
+  const handleVerify = useCallback(async (nextVerified: boolean) => {
+    setVerifying(true);
+    setSaveError(null);
+    try {
+      const token = await getAccessToken();
+      const res = await fetch(`/api/admin/research/${page.slug}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ verified: nextVerified }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(json.message ?? "저장에 실패했어요");
+      }
+      setVerified(nextVerified);
+      setNotice(nextVerified ? "검증 완료 — 이 페이지가 공개됩니다." : "비공개 처리됐습니다.");
+      router.refresh();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "저장에 실패했어요");
+    } finally {
+      setVerifying(false);
+    }
+  }, [page.slug, router]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -150,6 +180,31 @@ export function InlineResearchEditButton({ page }: Props) {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {/* 검증 토글 — 항상 표시 */}
+              {verified ? (
+                <AdminActionButton
+                  type="button"
+                  onClick={() => handleVerify(false)}
+                  disabled={verifying}
+                  tone="ghost"
+                  className="rounded-full bg-emerald-500/20 px-3 text-emerald-300 hover:bg-red-500/20 hover:text-red-300"
+                >
+                  <CheckCircle2 size={14} />
+                  {verifying ? "처리 중..." : "공개 중"}
+                </AdminActionButton>
+              ) : (
+                <AdminActionButton
+                  type="button"
+                  onClick={() => handleVerify(true)}
+                  disabled={verifying}
+                  tone="ghost"
+                  className="rounded-full bg-amber-500/20 px-3 text-amber-300 hover:bg-emerald-500/20 hover:text-emerald-300"
+                >
+                  <EyeOff size={14} />
+                  {verifying ? "처리 중..." : "검증 완료"}
+                </AdminActionButton>
+              )}
+
               {isEditMode ? (
                 <>
                   <AdminActionButton
