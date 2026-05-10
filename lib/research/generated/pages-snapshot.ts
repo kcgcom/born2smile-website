@@ -4,6 +4,102 @@ import type { ResearchPage } from "@/lib/research/types";
 
 export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
   {
+    "slug": "implant-survival-rates",
+    "title": "임플란트는 얼마나 오래 쓸 수 있을까",
+    "papers": [
+      {
+        "id": "jung-2019",
+        "year": 2019,
+        "title": "Long-term (10-year) dental implant survival: A systematic review and sensitivity meta-analysis",
+        "journal": "Journal of Dentistry",
+        "summary": "18개의 전향적 관찰 연구를 통합 분석한 메타분석으로, 임플란트의 10년 누적 생존율이 96.4%임을 확인했습니다. 추적 탈락을 보수적으로 고려한 민감도 분석에서도 93.2%로 높은 수준을 유지했습니다. 65세 이상 고령자에서도 91.5%의 생존율을 보여, 연령 자체가 주요 위험 요인이 아님을 시사합니다.",
+        "titleKo": "임플란트 10년 생존율: 체계적 문헌고찰 및 민감도 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/30904559/",
+        "sampleSize": "18개 전향적 관찰 연구 포함",
+        "keyFindings": [
+          {
+            "stat": "96.4%",
+            "label": "10년 임플란트 생존율",
+            "context": "18개 전향적 연구 메타분석 기준"
+          },
+          {
+            "stat": "91.5%",
+            "label": "65세 이상 고령자 10년 생존율",
+            "context": "고령자도 일반 성인과 큰 차이 없이 안정적"
+          }
+        ],
+        "clinicalNote": "10년 생존율 96%는 '임플란트가 반영구적'이라는 통념에 근거를 제공하지만, 민감도 분석(93.2%)이 보여주듯 정기 검진 없이는 이 수치를 기대하기 어렵습니다."
+      },
+      {
+        "id": "rinella-2024",
+        "year": 2024,
+        "title": "How far can we go? A 20-year meta-analysis of dental implant survival rates",
+        "journal": "Clinical Oral Investigations",
+        "summary": "20년 이상 추적 데이터를 보유한 연구들을 통합해 임플란트의 초장기 예후를 분석했습니다. 전향적 연구에서는 92%, 실제 임상 환경에 가까운 후향적 연구에서는 88%의 20년 생존율을 확인했습니다. 추적 탈락 환자까지 포함한 보수적 추정에서는 78%로 낮아져, 장기적인 유지관리가 수명을 결정짓는 핵심임을 보여줍니다.",
+        "titleKo": "임플란트 20년 생존율 메타분석: 장기 예후는?",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/39305362/",
+        "sampleSize": "전향적 연구 237개·후향적 연구 1,440개 임플란트",
+        "keyFindings": [
+          {
+            "stat": "92%",
+            "label": "20년 생존율 (전향적 연구 기준)",
+            "context": "추적 관리가 잘 된 환자군 기준"
+          },
+          {
+            "stat": "88%",
+            "label": "20년 생존율 (후향적 연구 기준)",
+            "context": "실제 임상 환경에 더 가까운 수치"
+          }
+        ],
+        "clinicalNote": "10년 96% → 20년 88%로 약 8%p 감소합니다. 이 차이는 대부분 임플란트 주위염과 같은 관리 실패에서 비롯되며, 꾸준한 검진으로 상당 부분 예방할 수 있습니다."
+      },
+      {
+        "id": "mustapha-2022",
+        "year": 2022,
+        "title": "Smoking and Dental Implants: A Systematic Review and Meta-Analysis",
+        "journal": "Medicina (MDPI)",
+        "summary": "15만 개 이상의 임플란트 데이터를 망라한 대규모 메타분석입니다. 흡연자는 비흡연자에 비해 임플란트 실패 위험이 2.4배 높았으며(OR 2.402), 상악·하악 모두에서 일관된 결과가 나타났습니다. 흡연자는 임플란트 주변 뼈 손실도 0.58mm 더 많아, 장기적으로 임플란트 안정성에 불리하게 작용합니다.",
+        "titleKo": "흡연과 임플란트 실패: 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/35056347/",
+        "sampleSize": "흡연자 35,511개·비흡연자 114,597개 임플란트",
+        "keyFindings": [
+          {
+            "stat": "2.4배",
+            "label": "흡연자의 임플란트 실패 위험",
+            "context": "비흡연자 대비 실패 오즈비 2.402 (p<0.001)"
+          },
+          {
+            "stat": "+0.58mm",
+            "label": "흡연자의 추가 골 손실량",
+            "context": "비흡연자 대비 변연 골손실 차이"
+          }
+        ],
+        "clinicalNote": "흡연량이나 기간과 관계없이 흡연 자체가 독립적인 위험 인자입니다. 임플란트 시술 전후 금연은 수명 연장에 가장 효과적인 단일 개입입니다.",
+        "followUpPeriod": "292개 논문 검토"
+      }
+    ],
+    "category": "임플란트",
+    "subtitle": "10년·20년 생존율과 실패를 결정짓는 요인들",
+    "description": "임플란트 장기 생존율에 관한 대규모 메타분석 결과를 환자 눈높이에 맞게 요약합니다. 10년 96%, 20년 88% 생존율의 근거와, 정기 검진·금연이 수명을 결정하는 이유를 임상 데이터로 확인하세요.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "implant-lifespan-facts",
+        "title": "임플란트 수명, 10년? 30년?",
+        "category": "implant"
+      },
+      {
+        "slug": "peri-implantitis-prevention",
+        "title": "임플란트 주위염 예방",
+        "category": "implant"
+      },
+      {
+        "slug": "smoking-oral-health",
+        "title": "흡연과 구강 건강",
+        "category": "health-tips"
+      }
+    ]
+  },
+  {
     "slug": "post-endodontic-crown",
     "title": "신경치료 후 크라운 수복, 근거는 무엇인가",
     "papers": [
