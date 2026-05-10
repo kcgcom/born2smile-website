@@ -358,6 +358,101 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
     ]
   },
   {
+    "slug": "root-canal-pain-reality",
+    "title": "신경치료, 실제로 얼마나 아플까",
+    "papers": [
+      {
+        "id": "satterthwaite-2018",
+        "year": 2018,
+        "title": "A survey of patients' perceptions about, and their experiences of, root canal treatment",
+        "journal": "Australian Endodontic Journal",
+        "summary": "신경치료를 앞둔 환자의 51%가 통증을 가장 큰 걱정으로 꼽았지만, 실제 치료를 경험한 후에는 향후 신경치료에 대한 불안감이 유의미하게 감소했습니다. 환자들이 예상하는 통증은 실제 경험보다 훨씬 과장되어 있었으며, 이는 주로 타인의 경험담이나 부정적인 이미지에서 비롯된 것으로 나타났습니다.",
+        "titleKo": "신경치료에 대한 환자 인식과 실제 경험 비교 조사 (호주)",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/30341798/",
+        "sampleSize": "호주 퍼스 지역 성인 환자 대상 설문",
+        "keyFindings": [
+          {
+            "stat": "예상 > 실제",
+            "label": "신경치료 전 예상 통증이 실제 경험보다 훨씬 높음",
+            "context": "환자 51%가 시술 전 통증을 가장 걱정 — 치료 후 불안 유의하게 감소"
+          },
+          {
+            "stat": "유의한 감소",
+            "label": "향후 신경치료에 대한 불안감",
+            "context": "한 번 경험한 환자는 다음 치료에 대한 두려움이 크게 줄어듦"
+          }
+        ],
+        "clinicalNote": "신경치료에 대한 두려움의 상당 부분은 '경험 전 상상'에서 옵니다. 실제로 치료를 받은 대부분의 환자는 예상보다 훨씬 괜찮았다고 응답합니다."
+      },
+      {
+        "id": "endopain-mgmt-2022",
+        "year": 2022,
+        "title": "Post-Operative Endodontic Pain Management: An Overview of Systematic Reviews on Post-Operatively Administered Oral Medications and Integrated Evidence-Based Clinical Recommendations",
+        "journal": "Healthcare (MDPI)",
+        "summary": "5개의 체계적 문헌고찰을 종합 분석해 신경치료 후 통증이 시간에 따라 어떻게 변화하는지 추적했습니다. 시술 후 48시간이 지나면 환자의 83%에서 통증이 사라지고, 72시간(3일)이면 95.4%가 통증 없는 상태로 회복됩니다. 첫 24~48시간은 이부프로펜 등 진통제가 효과적이며, 이후에는 약물 없이도 자연 회복되는 것으로 나타났습니다.",
+        "titleKo": "신경치료 후 통증 회복 타임라인: 체계적 문헌고찰 종합 분석",
+        "pubmedUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9141195/",
+        "sampleSize": "5개 체계적 문헌고찰 및 RCT 종합",
+        "keyFindings": [
+          {
+            "stat": "83%",
+            "label": "시술 후 48시간(2일)이면 통증 없음",
+            "context": "VAS(시각통증척도) 기반 — 약복용 없이도 자연 회복"
+          },
+          {
+            "stat": "95.4%",
+            "label": "시술 후 72시간(3일)이면 통증 없음",
+            "context": "나머지 4.6%도 경미한 불편함 수준"
+          }
+        ],
+        "clinicalNote": "신경치료 후 '3일만 버티면 된다'는 말은 임상 데이터로 뒷받침됩니다. 3일이 지나도 강한 통증이 지속된다면 치과에 연락해야 하는 신호입니다."
+      },
+      {
+        "id": "patient-perception-2020",
+        "year": 2020,
+        "title": "An insight into patient's perceptions regarding root canal treatment: A questionnaire-based survey",
+        "journal": "Journal of Family Medicine and Primary Care",
+        "summary": "450명의 환자를 대상으로 신경치료에 대한 인식과 실제 경험을 분석한 설문 연구입니다. 신경치료를 경험한 105명 중 33.3%는 시술 중 통증을 전혀 느끼지 않았으며, 86.7%는 시술 후 6개월 이내에 통증이 완전히 사라졌습니다. 과거의 경험담이나 주변 이야기가 신경치료에 대한 부정적 인식 형성에 큰 영향을 미친다는 점도 확인됐습니다.",
+        "titleKo": "신경치료에 대한 환자 인식 심층 조사: 450명 설문 연구",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/32318461/",
+        "sampleSize": "450명 (신경치료 경험자 105명 포함)",
+        "keyFindings": [
+          {
+            "stat": "86.7%",
+            "label": "신경치료 후 6개월이면 통증 완전 해소",
+            "context": "105명의 신경치료 경험 환자 추적 결과"
+          },
+          {
+            "stat": "33.3%",
+            "label": "신경치료 중 통증을 전혀 느끼지 않은 환자",
+            "context": "마취 하 시술 — 나머지도 대부분 경미한 수준"
+          }
+        ],
+        "clinicalNote": "과거 치과 치료 경험이 나쁠수록 신경치료 공포가 커집니다. 하지만 현대 마취 기술로 시술 중 통증은 크게 줄었으며, 데이터는 '생각보다 괜찮다'는 방향을 가리킵니다."
+      }
+    ],
+    "category": "보존치료",
+    "subtitle": "예상 통증 vs 실제 경험, 시술 후 회복 타임라인 — 환자 데이터로 확인하기",
+    "description": "신경치료에 대한 두려움은 실제 통증보다 훨씬 큰 경우가 많습니다. 시술 전 예상 통증이 실제 경험보다 과장된다는 연구, 시술 후 72시간이면 95%가 통증이 사라진다는 데이터를 임상 연구로 확인하세요.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "root-canal-pain-truth",
+        "title": "신경치료, 정말 아플까요?",
+        "category": "restorative"
+      },
+      {
+        "slug": "root-canal-and-crown",
+        "title": "신경치료 후에는 꼭 크라운을 씌워야 할까요?",
+        "category": "restorative"
+      },
+      {
+        "slug": "dental-anxiety-tips",
+        "title": "치과가 무서워서 못 가겠어요",
+        "category": "health-tips"
+      }
+    ]
+  },
+  {
     "slug": "smoking-dental-effects",
     "title": "흡연이 치아와 잇몸에 미치는 영향",
     "papers": [
