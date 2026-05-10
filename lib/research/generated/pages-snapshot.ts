@@ -52,30 +52,6 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
           }
         ],
         "clinicalNote": "10년 96% → 20년 88%로 약 8%p 감소합니다. 이 차이는 대부분 임플란트 주위염과 같은 관리 실패에서 비롯되며, 꾸준한 검진으로 상당 부분 예방할 수 있습니다."
-      },
-      {
-        "id": "mustapha-2022",
-        "year": 2022,
-        "title": "Smoking and Dental Implants: A Systematic Review and Meta-Analysis",
-        "journal": "Medicina (MDPI)",
-        "summary": "15만 개 이상의 임플란트 데이터를 망라한 대규모 메타분석입니다. 흡연자는 비흡연자에 비해 임플란트 실패 위험이 2.4배 높았으며(OR 2.402), 상악·하악 모두에서 일관된 결과가 나타났습니다. 흡연자는 임플란트 주변 뼈 손실도 0.58mm 더 많아, 장기적으로 임플란트 안정성에 불리하게 작용합니다.",
-        "titleKo": "흡연과 임플란트 실패: 체계적 문헌고찰 및 메타분석",
-        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/35056347/",
-        "sampleSize": "흡연자 35,511개·비흡연자 114,597개 임플란트",
-        "keyFindings": [
-          {
-            "stat": "2.4배",
-            "label": "흡연자의 임플란트 실패 위험",
-            "context": "비흡연자 대비 실패 오즈비 2.402 (p<0.001)"
-          },
-          {
-            "stat": "+0.58mm",
-            "label": "흡연자의 추가 골 손실량",
-            "context": "비흡연자 대비 변연 골손실 차이"
-          }
-        ],
-        "clinicalNote": "흡연량이나 기간과 관계없이 흡연 자체가 독립적인 위험 인자입니다. 임플란트 시술 전후 금연은 수명 연장에 가장 효과적인 단일 개입입니다.",
-        "followUpPeriod": "292개 논문 검토"
       }
     ],
     "category": "임플란트",
@@ -181,6 +157,101 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
       {
         "slug": "after-root-canal-care",
         "title": "신경치료 받은 치아, 오래 쓰려면",
+        "category": "restorative"
+      }
+    ]
+  },
+  {
+    "slug": "smoking-dental-effects",
+    "title": "흡연이 치아와 잇몸에 미치는 영향",
+    "papers": [
+      {
+        "id": "mustapha-2022",
+        "year": 2022,
+        "title": "Smoking and Dental Implants: A Systematic Review and Meta-Analysis",
+        "journal": "Medicina (MDPI)",
+        "summary": "15만 개 이상의 임플란트 데이터를 망라한 대규모 메타분석입니다. 흡연자는 비흡연자에 비해 임플란트 실패 위험이 2.4배 높았으며(OR 2.402), 상악·하악 모두에서 일관된 결과가 나타났습니다. 흡연자는 임플란트 주변 뼈 손실도 0.58mm 더 많아, 장기적으로 임플란트 안정성에 불리하게 작용합니다.",
+        "titleKo": "흡연과 임플란트 실패: 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/35056347/",
+        "sampleSize": "흡연자 35,511개·비흡연자 114,597개 임플란트",
+        "keyFindings": [
+          {
+            "stat": "2.4배",
+            "label": "흡연자의 임플란트 실패 위험",
+            "context": "비흡연자 대비 실패 오즈비 2.402 (p<0.001)"
+          },
+          {
+            "stat": "+0.58mm",
+            "label": "흡연자의 추가 골 손실량",
+            "context": "비흡연자 대비 변연 골손실 차이"
+          }
+        ],
+        "clinicalNote": "흡연량이나 기간과 관계없이 흡연 자체가 독립적인 위험 인자입니다. 임플란트 시술 전후 금연은 생존율 개선에 가장 효과적인 단일 개입입니다."
+      },
+      {
+        "id": "jemal-2022",
+        "year": 2022,
+        "title": "Smoking as a Risk Factor for Alveolar Osteitis (Dry Socket) After Dental Extraction: A Systematic Review and Meta-Analysis",
+        "journal": "Dentistry Journal",
+        "summary": "11개 연구를 통합한 메타분석으로, 흡연이 치아 발치 후 건성 발치와(치조골염) 발생에 미치는 영향을 분석했습니다. 흡연자의 건성 발치와 발생률은 13.2%로, 비흡연자(3.8%)에 비해 약 3.5배 높았습니다. 흡연은 혈전 형성을 방해하고 치유에 필요한 혈류를 감소시켜 발치 후 회복을 지연시킵니다.",
+        "titleKo": "흡연과 건성 발치와(Dry Socket) 위험: 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/35877395/",
+        "sampleSize": "11개 연구 통합 분석",
+        "keyFindings": [
+          {
+            "stat": "3.5배",
+            "label": "흡연자의 건성 발치와 발생 위험",
+            "context": "비흡연자 발생률 3.8% vs 흡연자 13.2%"
+          },
+          {
+            "stat": "13.2%",
+            "label": "흡연자 건성 발치와 발생률",
+            "context": "비흡연자(3.8%) 대비 약 3.5배 높은 수치"
+          }
+        ],
+        "clinicalNote": "발치 후 최소 48~72시간 금연이 권장됩니다. 담배 연기의 부압(흡입 동작)이 혈전을 떼어낼 수 있어, 흡연 자체보다 흡입 행위도 문제가 됩니다."
+      },
+      {
+        "id": "romagna-2018",
+        "year": 2018,
+        "title": "Impact of smoking cessation on the outcomes of non-surgical periodontal therapy: A systematic review and meta-analysis",
+        "journal": "Journal of Clinical Periodontology",
+        "summary": "금연이 비수술적 치주 치료 결과에 미치는 영향을 분석한 체계적 문헌고찰입니다. 금연자는 계속 흡연자에 비해 치주낭 깊이 감소와 임상적 부착 이득 모두에서 유의미한 개선을 보였습니다. 장기 추적에서는 금연 기간이 길수록 비흡연자와 유사한 치주 예후에 도달할 수 있음을 시사합니다.",
+        "titleKo": "금연이 치주 치료 결과에 미치는 영향: 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/30011036/",
+        "sampleSize": "전향적 종단 연구 및 중재 연구 통합",
+        "keyFindings": [
+          {
+            "stat": "유의한 개선",
+            "label": "금연 후 치주 치료 효과",
+            "context": "계속 흡연군 대비 치주낭 깊이 감소·부착 이득 모두 우세"
+          },
+          {
+            "stat": "비흡연자 수준",
+            "label": "금연 후 장기적 치주 건강 회복 가능성",
+            "context": "금연 기간이 길수록 비흡연자와 유사한 치주 예후"
+          }
+        ],
+        "clinicalNote": "흡연으로 인한 치주 손상은 금연만으로도 상당 부분 개선될 수 있습니다. 치주 치료와 금연을 병행하면 치료 효과가 더 크게 나타납니다."
+      }
+    ],
+    "category": "임플란트",
+    "subtitle": "임플란트 실패, 발치 후 합병증, 금연 회복까지 — 임상 수치로 확인하기",
+    "description": "흡연이 구강 건강에 미치는 영향을 수치로 확인합니다. 임플란트 실패 위험 2.4배, 건성 발치와 위험 3.5배, 그리고 금연 후 회복 가능성까지 임상 연구 데이터로 정리했습니다.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "smoking-oral-health",
+        "title": "담배가 치아에 미치는 영향",
+        "category": "health-tips"
+      },
+      {
+        "slug": "implant-lifespan-facts",
+        "title": "임플란트 수명, 10년? 30년?",
+        "category": "implant"
+      },
+      {
+        "slug": "after-tooth-extraction-care",
+        "title": "발치 후 관리 주의사항",
         "category": "restorative"
       }
     ]
