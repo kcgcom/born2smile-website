@@ -930,6 +930,14 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
       return { type: "relatedLinks", items: [{ title: "관련 링크", href: "/" }] };
     case "table":
       return { type: "table", headers: ["항목", "내용"], rows: [["예시", "내용을 입력하세요"]] };
+    case "researchCallout":
+      return {
+        type: "researchCallout",
+        title: "임상 근거가 궁금하신가요?",
+        description: "관련 임상 연구를 정리한 페이지입니다.",
+        href: "/research/",
+        linkText: "연구 자료 보기",
+      };
   }
 }
 

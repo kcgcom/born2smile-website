@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, BookOpenText } from "lucide-react";
+import { ArrowUpRight, BookOpenText, FlaskConical } from "lucide-react";
 import type { BlogBlock } from "@/lib/blog";
 
 // ----------------------------------------------------------------
@@ -213,6 +213,31 @@ export function renderSingleBlock(
               ))}
             </tbody>
           </table>
+        </div>
+      );
+    case "researchCallout":
+      return (
+        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
+              <FlaskConical className="h-4 w-4 text-teal-700" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-headline text-lg font-bold text-gray-900 md:text-xl mb-1.5">
+                {block.title}
+              </h2>
+              <p className="text-base leading-relaxed text-gray-600 mb-4">
+                {block.description}
+              </p>
+              <Link
+                href={block.href}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-800"
+              >
+                {block.linkText}
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
         </div>
       );
     default:

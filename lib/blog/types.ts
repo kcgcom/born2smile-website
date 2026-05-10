@@ -42,6 +42,13 @@ export type BlogBlock =
       type: "table";
       headers: string[];
       rows: string[][];
+    }
+  | {
+      type: "researchCallout";
+      title: string;
+      description: string;
+      href: string;
+      linkText: string;
     };
 
 /** 목록 페이지용 메타데이터 (본문 미포함) */

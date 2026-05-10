@@ -171,6 +171,7 @@ const BLOCK_LABELS: Record<BlogBlock["type"], string> = {
   image: "이미지",
   relatedLinks: "관련 링크",
   table: "표",
+  researchCallout: "연구 자료",
 };
 
 // -------------------------------------------------------------
