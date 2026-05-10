@@ -4,6 +4,101 @@ import type { ResearchPage } from "@/lib/research/types";
 
 export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
   {
+    "slug": "diabetes-and-oral-health",
+    "title": "당뇨와 구강 건강, 서로 영향을 주고받는다",
+    "papers": [
+      {
+        "id": "bidirectional-2021",
+        "year": 2021,
+        "title": "Bidirectional association between periodontal disease and diabetes mellitus: a systematic review and meta-analysis of cohort studies",
+        "journal": "Scientific Reports (Nature)",
+        "summary": "15개 코호트 연구를 통합해 치주질환과 당뇨의 양방향 관계를 분석한 메타분석입니다. 당뇨 환자는 치주질환 발생 위험이 24% 높고, 반대로 치주질환 환자는 당뇨 발생 위험이 26% 높아, 두 질환이 서로를 악화시키는 악순환 구조임을 확인했습니다.",
+        "titleKo": "치주질환과 당뇨의 양방향 연관성: 코호트 연구 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/34211029/",
+        "sampleSize": "15개 코호트 연구 통합",
+        "keyFindings": [
+          {
+            "stat": "26%",
+            "label": "치주질환 환자의 당뇨 발생 위험 증가",
+            "context": "치주질환이 없는 사람 대비 (RR 1.26, 95% CI 1.12–1.41)"
+          },
+          {
+            "stat": "24%",
+            "label": "당뇨 환자의 치주질환 발생 위험 증가",
+            "context": "당뇨가 없는 사람 대비 (RR 1.24, 95% CI 1.13–1.37)"
+          }
+        ],
+        "clinicalNote": "잇몸 건강을 관리하는 것이 혈당 조절에도 도움이 될 수 있습니다. 당뇨 환자라면 구강 검진을 전신 건강 관리의 일부로 포함시키는 것이 중요합니다."
+      },
+      {
+        "id": "hba1c-perio-2013",
+        "year": 2013,
+        "title": "Effect of non-surgical periodontal treatment on HbA1c: a meta-analysis of randomized controlled trials",
+        "journal": "Australian Dental Journal",
+        "summary": "제2형 당뇨와 치주질환을 함께 가진 환자들을 대상으로 한 무작위대조시험들을 통합 분석했습니다. 비수술적 치주 치료(스케일링, 치근 활택) 후 3~4개월 시점에 HbA1c가 평균 0.43% 감소했으며, 스케일링·루트플래닝 단독 시행만으로도 0.72% 감소 효과가 확인됐습니다. HbA1c 1% 감소가 당뇨 합병증 위험을 유의하게 낮춘다는 점을 고려하면 임상적으로 의미 있는 수치입니다.",
+        "titleKo": "비수술적 치주 치료가 당화혈색소(HbA1c)에 미치는 영향: 무작위대조시험 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/23981218/",
+        "sampleSize": "제2형 당뇨 + 치주질환 환자 대상 RCT 통합",
+        "keyFindings": [
+          {
+            "stat": "0.43%",
+            "label": "치주 치료 3~4개월 후 HbA1c 감소",
+            "context": "비치료 대조군 대비 당화혈색소 개선"
+          },
+          {
+            "stat": "0.72%",
+            "label": "스케일링·루트플래닝 단독 시행 3개월 후 HbA1c 감소",
+            "context": "SRP(치석 제거 + 치근 활택) 단독 효과"
+          }
+        ],
+        "clinicalNote": "잇몸 치료가 혈당약을 대체할 수는 없지만, 당뇨 관리의 보조 수단으로 실질적 효과가 있습니다. 당뇨 환자에서 치주 치료를 미루는 것은 혈당 조절 기회를 놓치는 것일 수 있습니다."
+      },
+      {
+        "id": "tan-2021",
+        "year": 2021,
+        "title": "Does glycemic control have a dose-response relationship with implant outcomes? A comprehensive systematic review and meta-analysis",
+        "journal": "International Journal of Oral & Maxillofacial Implants",
+        "summary": "22개 임상 연구를 통합해 혈당 조절 수준과 임플란트 예후의 용량-반응 관계를 분석했습니다. HbA1c 8% 미만으로 혈당이 잘 조절되는 환자에서는 임플란트 생존율이 92~100%로 일반 환자와 큰 차이가 없었습니다. 반면 HbA1c 8% 이상의 비조절군에서는 초기 실패율이 6~8%로 높았고, 임플란트 주위 염증과 골 손실도 유의하게 증가했습니다.",
+        "titleKo": "혈당 조절 수준과 임플란트 예후의 용량-반응 관계: 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/34391557/",
+        "sampleSize": "22개 임상 연구 통합",
+        "keyFindings": [
+          {
+            "stat": "92~100%",
+            "label": "혈당 조절군(HbA1c<8%) 임플란트 초기 생존율",
+            "context": "당뇨가 잘 조절되는 경우 일반 환자와 유사한 예후"
+          },
+          {
+            "stat": "6~8%",
+            "label": "혈당 비조절군(HbA1c≥8%) 초기 임플란트 실패율",
+            "context": "변연골 손실 및 주위 염증 발생률도 22~31%"
+          }
+        ],
+        "clinicalNote": "당뇨 환자라도 혈당을 잘 조절하면 임플란트가 충분히 가능합니다. HbA1c 수치가 임플란트 적합성 판단의 핵심 기준이 되는 이유가 여기에 있습니다."
+      }
+    ],
+    "category": "임플란트",
+    "subtitle": "잇몸병이 혈당을 올리고, 혈당이 잇몸을 망친다 — 임상 수치로 확인하기",
+    "description": "당뇨와 치주질환은 양방향으로 영향을 주고받습니다. 치주질환 환자의 당뇨 발생 위험 26% 증가, 잇몸 치료 후 HbA1c 개선 효과, 혈당 조절과 임플란트 예후의 관계를 메타분석 데이터로 정리했습니다.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "diabetes-and-dental-health",
+        "title": "당뇨가 치아를 망칠 수 있다?",
+        "category": "health-tips"
+      },
+      {
+        "slug": "diabetes-and-implant",
+        "title": "당뇨가 있어도 임플란트 가능할까요?",
+        "category": "implant"
+      },
+      {
+        "slug": "gum-disease-prevention",
+        "title": "잇몸 질환 예방",
+        "category": "prevention"
+      }
+    ]
+  },
+  {
     "slug": "implant-survival-rates",
     "title": "임플란트는 얼마나 오래 쓸 수 있을까",
     "papers": [
