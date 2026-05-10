@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useAdminApi } from "./useAdminApi";
+import { DataTable } from "./DataTable";
 import { MetricCard } from "./MetricCard";
 import { PeriodSelector } from "./PeriodSelector";
 import { AdminErrorState } from "./AdminErrorState";
@@ -10,6 +11,7 @@ import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 import { formatDuration } from "./insight/shared";
 import type { MetricValue } from "./insight/shared";
+import type { AdminBlogPost } from "./blog/blog-helpers";
 
 // ---------------------------------------------------------------
 // Types
@@ -111,10 +113,23 @@ function formatDateLabel(date: string): string {
   return date;
 }
 
+function formatDurationDelta(current: number, baseline: number) {
+  const diff = current - baseline;
+  if (!Number.isFinite(diff) || baseline <= 0 || diff === 0) return "평균과 비슷";
+  return diff > 0
+    ? `평균보다 ${formatDuration(diff)} 길게 읽힘`
+    : `평균보다 ${formatDuration(Math.abs(diff))} 짧게 읽힘`;
+}
+
 function toBlogAnalyticsPeriod(period: Period): "28d" | "90d" | "180d" {
   if (period === "90d") return "90d";
   if (period === "180d") return "180d";
   return "28d";
+}
+
+function getBlogSlugFromPath(path: string) {
+  const match = path.match(/^\/blog\/[^/]+\/([^/]+)\/?$/);
+  return match?.[1] ?? null;
 }
 
 // ---------------------------------------------------------------
@@ -746,9 +761,13 @@ export function TrafficTab() {
   } = useAdminApi<BlogGA4Data>(
     `/api/admin/blog-analytics?period=${toBlogAnalyticsPeriod(period)}`,
   );
+  const { data: blogPostsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const sourceDetails = useMemo(() => data?.sourceDetails ?? {}, [data?.sourceDetails]);
   const topPageDetails = useMemo(() => data?.topPageDetails ?? {}, [data?.topPageDetails]);
   const blogAggregateDetail = data?.topPageDetails["/blog (전체)"] ?? null;
+  const blogTitleMap = useMemo(() => {
+    return new Map((blogPostsData ?? []).map((post) => [post.slug, post.title]));
+  }, [blogPostsData]);
 
   const activeSource = selectedSource && sourceDetails[selectedSource]
     ? selectedSource
@@ -779,7 +798,10 @@ export function TrafficTab() {
       trackedPosts: rows.length,
     };
   }, [blogAggregateDetail?.summary.views, blogGa4Data]);
-  const blogTopPosts = useMemo(() => {
+  const blogGa4Map = useMemo(() => {
+    return new Map((blogGa4Data?.blogPostStats ?? []).map((item) => [item.path, item]));
+  }, [blogGa4Data]);
+  const blogPerformanceRows = useMemo(() => {
     return (blogGa4Data?.blogPostStats ?? [])
       .map((item) => ({
         path: item.path,
@@ -787,9 +809,31 @@ export function TrafficTab() {
         sessions: topPageDetails[item.path]?.summary.sessions ?? 0,
         avgDuration: item.avgDuration,
       }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 10);
+      .sort((a, b) => b.sessions - a.sessions || b.views - a.views);
   }, [blogGa4Data, topPageDetails]);
+  const activeBlogPosts = useMemo(
+    () => (blogGa4Data?.blogPostStats ?? []).filter((item) => item.pageViews > 0).length,
+    [blogGa4Data],
+  );
+  const longestReadPosts = useMemo(() => {
+    return (blogGa4Data?.blogPostStats ?? [])
+      .filter((item) => item.pageViews >= 20)
+      .sort((a, b) => b.avgDuration - a.avgDuration)
+      .slice(0, 5);
+  }, [blogGa4Data]);
+  const shortestReadPosts = useMemo(() => {
+    return (blogGa4Data?.blogPostStats ?? [])
+      .filter((item) => item.pageViews >= 20)
+      .sort((a, b) => a.avgDuration - b.avgDuration)
+      .slice(0, 5);
+  }, [blogGa4Data]);
+  const blogSourceShare = useMemo(() => {
+    return (blogAggregateDetail?.sources ?? []).slice(0, 6);
+  }, [blogAggregateDetail?.sources]);
+  const activeTopPageDuration = activeTopPage ? blogGa4Map.get(activeTopPage)?.avgDuration ?? 0 : 0;
+  const activeTopPageTitle = activeTopPage
+    ? blogTitleMap.get(getBlogSlugFromPath(activeTopPage) ?? "") ?? activeTopPage
+    : "";
 
   return (
     <div className="space-y-6">
@@ -945,9 +989,9 @@ export function TrafficTab() {
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <MetricCard
-                  label="블로그 페이지뷰"
-                  value={blogSummary.pageViews.toLocaleString("ko-KR")}
-                  loading={blogGa4Loading && blogSummary.pageViews === 0}
+                  label="추적 글 수"
+                  value={activeBlogPosts.toLocaleString("ko-KR")}
+                  loading={blogGa4Loading && activeBlogPosts === 0}
                 />
                 <MetricCard
                   label="평균 체류"
@@ -955,14 +999,13 @@ export function TrafficTab() {
                   loading={blogGa4Loading && blogSummary.avgDuration === 0}
                 />
                 <MetricCard
-                  label="추적 글 수"
-                  value={blogSummary.trackedPosts.toLocaleString("ko-KR")}
-                  loading={blogGa4Loading && blogSummary.trackedPosts === 0}
+                  label="세션 수"
+                  value={blogAggregateDetail?.summary.sessions.toLocaleString("ko-KR") ?? "—"}
                 />
                 <MetricCard
-                  label="상위 글 수"
-                  value={blogTopPosts.length.toLocaleString("ko-KR")}
-                  loading={blogGa4Loading && blogTopPosts.length === 0}
+                  label="페이지뷰"
+                  value={blogSummary.pageViews.toLocaleString("ko-KR")}
+                  loading={blogGa4Loading && blogSummary.pageViews === 0}
                 />
               </div>
 
@@ -972,39 +1015,206 @@ export function TrafficTab() {
                 </div>
               )}
 
-              <SectionCard title="많이 본 글 TOP 10">
-                <TopPagesChart
-                  data={blogTopPosts}
-                  selectedPath={activeTopPage}
-                  onSelect={setSelectedTopPage}
-                />
-                <p className="mt-3 text-xs text-[var(--muted)]">
-                  막대를 누르면 해당 글의 최근 추이와 주요 유입경로를 더 자세히 볼 수 있습니다.
-                </p>
-              </SectionCard>
+              <div className="grid gap-6 xl:grid-cols-2">
+                <SectionCard title="오래 읽힌 글">
+                  <div className="space-y-2">
+                    {longestReadPosts.length > 0 ? longestReadPosts.map((item) => (
+                      <button
+                        key={item.path}
+                        type="button"
+                        onClick={() => setSelectedTopPage(item.path)}
+                        className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                      >
+                        <div className="min-w-0 pr-3">
+                          <a
+                            href={item.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className="block truncate text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                          >
+                            {blogTitleMap.get(getBlogSlugFromPath(item.path) ?? "") ?? item.path}
+                          </a>
+                          <p className="mt-1 text-xs text-[var(--muted)]">
+                            평균 체류 {formatDuration(item.avgDuration)} · 페이지뷰 {item.pageViews.toLocaleString("ko-KR")}
+                          </p>
+                          <p className="mt-1 truncate text-[11px] text-[var(--muted)]">
+                            {item.path}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-emerald-600">상세 보기</span>
+                      </button>
+                    )) : (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">
+                        표시할 체류 데이터가 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="짧게 보고 나간 글">
+                  <div className="space-y-2">
+                    {shortestReadPosts.length > 0 ? shortestReadPosts.map((item) => (
+                      <button
+                        key={item.path}
+                        type="button"
+                        onClick={() => setSelectedTopPage(item.path)}
+                        className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                      >
+                        <div className="min-w-0 pr-3">
+                          <a
+                            href={item.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className="block truncate text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                          >
+                            {blogTitleMap.get(getBlogSlugFromPath(item.path) ?? "") ?? item.path}
+                          </a>
+                          <p className="mt-1 text-xs text-[var(--muted)]">
+                            평균 체류 {formatDuration(item.avgDuration)} · 페이지뷰 {item.pageViews.toLocaleString("ko-KR")}
+                          </p>
+                          <p className="mt-1 truncate text-[11px] text-[var(--muted)]">
+                            {item.path}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-amber-600">상세 보기</span>
+                      </button>
+                    )) : (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">
+                        표시할 체류 데이터가 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </SectionCard>
+              </div>
 
               <SectionCard title="글별 방문 성과">
+                <>
+                  <div className="space-y-2 sm:hidden">
+                    {blogPerformanceRows.length > 0 ? blogPerformanceRows.map((item) => (
+                      <button
+                        key={item.path}
+                        type="button"
+                        onClick={() => setSelectedTopPage(item.path)}
+                        className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                      >
+                        <div className="min-w-0 pr-3">
+                          <a
+                            href={item.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className="block truncate text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                          >
+                            {blogTitleMap.get(getBlogSlugFromPath(item.path) ?? "") ?? item.path}
+                          </a>
+                          <p className="mt-1 text-xs text-[var(--muted)]">
+                            세션 {item.sessions.toLocaleString("ko-KR")} · 페이지뷰 {item.views.toLocaleString("ko-KR")} · 평균 체류 {item.avgDuration > 0 ? formatDuration(item.avgDuration) : "—"}
+                          </p>
+                          <p className="mt-1 truncate text-[11px] text-[var(--muted)]">{item.path}</p>
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-[var(--color-primary)]">
+                          상세 보기
+                        </span>
+                      </button>
+                    )) : (
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">
+                        블로그 방문 성과 데이터가 없습니다.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:block">
+                    <DataTable
+                      keyField="path"
+                      rows={blogPerformanceRows as unknown as Record<string, unknown>[]}
+                      columns={[
+                        {
+                          key: "path",
+                          label: "글",
+                          align: "left",
+                          render: (row) => {
+                            const path = String((row as { path: string }).path);
+                            return (
+                              <div className="min-w-0">
+                                <a
+                                  href={path}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="block max-w-[280px] truncate text-left font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+                                  title={path}
+                                >
+                                  {blogTitleMap.get(getBlogSlugFromPath(path) ?? "") ?? path}
+                                </a>
+                                <p className="mt-1 block max-w-[280px] truncate text-left text-[11px] text-[var(--muted)]" title={path}>
+                                  {path}
+                                </p>
+                              </div>
+                            );
+                          },
+                        },
+                        {
+                          key: "sessions",
+                          label: "세션 수",
+                          align: "right",
+                          render: (row) => Number((row as { sessions: number }).sessions).toLocaleString("ko-KR"),
+                        },
+                        {
+                          key: "views",
+                          label: "페이지뷰",
+                          align: "right",
+                          render: (row) => Number((row as { views: number }).views).toLocaleString("ko-KR"),
+                        },
+                        {
+                          key: "avgDuration",
+                          label: "평균 체류",
+                          align: "right",
+                          render: (row) => {
+                            const avgDuration = Number((row as { avgDuration: number }).avgDuration);
+                            return avgDuration > 0 ? formatDuration(avgDuration) : "—";
+                          },
+                        },
+                        {
+                          key: "detail",
+                          label: "",
+                          align: "right",
+                          render: (row) => {
+                            const path = String((row as { path: string }).path);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTopPage(path)}
+                                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+                              >
+                                상세 보기
+                              </button>
+                            );
+                          },
+                        },
+                      ]}
+                      emptyMessage="블로그 방문 성과 데이터가 없습니다."
+                    />
+                  </div>
+                </>
+              </SectionCard>
+
+              <SectionCard title="유입 구조">
                 <div className="space-y-2">
-                  {blogTopPosts.length > 0 ? blogTopPosts.map((item) => (
-                    <button
-                      key={item.path}
-                      type="button"
-                      onClick={() => setSelectedTopPage(item.path)}
-                      className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                  {blogSourceShare.length > 0 ? blogSourceShare.map((item) => (
+                    <div
+                      key={item.source}
+                      className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm"
                     >
-                      <div className="min-w-0 pr-3">
-                        <p className="truncate text-sm font-medium text-[var(--foreground)]">{item.path}</p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">
-                          페이지뷰 {item.views.toLocaleString("ko-KR")} · 평균 체류 {item.avgDuration > 0 ? formatDuration(item.avgDuration) : "—"}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs font-medium text-[var(--color-primary)]">
-                        상세 보기
+                      <span className="truncate pr-3 font-medium text-[var(--foreground)]">{item.source}</span>
+                      <span className="shrink-0 text-xs text-[var(--muted)]">
+                        {item.sessions.toLocaleString("ko-KR")}세션 · {item.percentage}%
                       </span>
-                    </button>
+                    </div>
                   )) : (
                     <p className="py-8 text-center text-sm text-[var(--muted)]">
-                      블로그 방문 성과 데이터가 없습니다.
+                      표시할 유입 구조 데이터가 없습니다.
                     </p>
                   )}
                 </div>
@@ -1112,13 +1322,16 @@ export function TrafficTab() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h4 className="text-base font-semibold text-[var(--foreground)]">
-                  {activeTopPage}
+                  {activeTopPageTitle}
                 </h4>
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   {activeTopPageDetail.isBlogAggregate
                     ? "블로그 전체 유입을 묶어서 보여줍니다."
                     : "해당 페이지 단위의 세부 데이터를 보여줍니다."}
                 </p>
+                {!activeTopPageDetail.isBlogAggregate && (
+                  <p className="mt-1 text-[11px] text-[var(--muted)]">{activeTopPage}</p>
+                )}
               </div>
               <button
                 type="button"
@@ -1135,12 +1348,12 @@ export function TrafficTab() {
                 value={activeTopPageDetail.summary.views.toLocaleString("ko-KR")}
               />
               <MetricCard
-                label="세션"
-                value={activeTopPageDetail.summary.sessions.toLocaleString("ko-KR")}
+                label="평균 체류"
+                value={activeTopPageDuration > 0 ? formatDuration(activeTopPageDuration) : "—"}
               />
               <MetricCard
-                label="세션당 페이지뷰"
-                value={activeTopPageDetail.summary.pageviewsPerSession.toFixed(2)}
+                label="읽힘 비교"
+                value={activeTopPageDuration > 0 ? formatDurationDelta(activeTopPageDuration, blogSummary.avgDuration) : "—"}
               />
             </div>
 
