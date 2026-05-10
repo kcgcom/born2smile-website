@@ -3,9 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, BookOpen, FlaskConical } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { getResearchPage, getAllResearchSlugs } from "@/lib/research/papers";
+import { getResearchPageFresh, getAllResearchSlugs } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { InlineResearchEditButton } from "@/components/admin/InlineResearchEditButton";
+
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -17,7 +20,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const page = getResearchPage(slug);
+  const page = await getResearchPageFresh(slug);
   if (!page) return {};
 
   return {
@@ -34,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ResearchPageDetail({ params }: Props) {
   const { slug } = await params;
-  const page = getResearchPage(slug);
+  const page = await getResearchPageFresh(slug);
   if (!page) notFound();
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
@@ -49,6 +52,7 @@ export default async function ResearchPageDetail({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
+      <InlineResearchEditButton page={page} />
 
       {/* 히어로 */}
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">

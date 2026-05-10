@@ -1,4 +1,5 @@
 import type { ResearchPage } from "./types";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const RESEARCH_PAGES: ResearchPage[] = [
   {
@@ -100,10 +101,30 @@ export const RESEARCH_PAGES: ResearchPage[] = [
   },
 ];
 
+/** 빌드 타임 SSG용 — 정적 데이터 */
 export function getResearchPage(slug: string): ResearchPage | undefined {
   return RESEARCH_PAGES.find((p) => p.slug === slug);
 }
 
 export function getAllResearchSlugs(): string[] {
   return RESEARCH_PAGES.map((p) => p.slug);
+}
+
+/** 런타임용 — Supabase 우선, 정적 데이터 fallback */
+export async function getResearchPageFresh(
+  slug: string,
+): Promise<ResearchPage | undefined> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data } = await supabase
+      .from("research_pages")
+      .select("data")
+      .eq("slug", slug)
+      .single();
+
+    if (data?.data) return data.data as ResearchPage;
+  } catch {
+    // fallback
+  }
+  return getResearchPage(slug);
 }
