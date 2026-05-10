@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { FlaskConical, BookOpen, ArrowRight } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { RESEARCH_HUB_ENABLED } from "@/lib/research/config";
 import { getAllResearchSlugsFresh, getResearchPageFresh } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -32,8 +30,6 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 
 export default async function ResearchHubPage() {
-  if (!RESEARCH_HUB_ENABLED) notFound();
-
   const slugs = await getAllResearchSlugsFresh();
   const pages = (
     await Promise.all(slugs.map((slug) => getResearchPageFresh(slug)))
