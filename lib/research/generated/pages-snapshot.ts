@@ -200,6 +200,102 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
     ]
   },
   {
+    "slug": "implant-surgery-pain",
+    "title": "임플란트 수술, 실제로 얼마나 아플까",
+    "papers": [
+      {
+        "id": "alqutub-2021",
+        "year": 2021,
+        "title": "Pain Experience after Dental Implant Placement Compared to Tooth Extraction",
+        "journal": "체계적 문헌고찰",
+        "summary": "임플란트 수술 후 통증과 발치 후 통증을 VAS(시각통증척도)로 비교한 체계적 문헌고찰입니다. 수술 직후에는 유사한 수준의 불편감이 있지만, 시간이 지날수록 차이가 뚜렷해집니다. 72시간 시점에서 임플란트 통증(VAS 0.27)은 발치 통증(VAS 2.4)보다 훨씬 낮았으며, 진통제 복용 기간도 임플란트가 3일로 발치(7일)보다 훨씬 짧았습니다. '임플란트가 발치보다 아프다'는 통념과 반대되는 결과입니다.",
+        "titleKo": "임플란트 수술 후 통증 vs 발치 후 통증 비교: 체계적 문헌고찰",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/34512757/",
+        "sampleSize": "다수 임상 연구 통합 분석",
+        "keyFindings": [
+          {
+            "stat": "VAS 0.27",
+            "label": "임플란트 수술 72시간 후 통증 점수",
+            "context": "발치 72시간 후 VAS 2.4 대비 — 약 9분의 1 수준"
+          },
+          {
+            "stat": "72시간",
+            "label": "임플란트 진통제 복용 필요 기간",
+            "context": "발치는 7일까지 필요한 반면 임플란트는 3일이면 충분"
+          }
+        ],
+        "clinicalNote": "이미 발치를 경험해 본 분이라면, 임플란트 회복은 그보다 오히려 수월합니다. '임플란트는 더 아플 것'이라는 예상이 실제 경험보다 과장되어 있는 경우가 많습니다."
+      },
+      {
+        "id": "recovery-2021",
+        "year": 2021,
+        "title": "Patients' Perception of Recovery after Dental Implant Placement",
+        "journal": "Medicina (MDPI)",
+        "summary": "임플란트 수술 후 40명의 환자를 7일간 매일 추적 조사한 전향적 연구입니다. 통증이 가장 심한 시점은 수술 후 3일차였으며, 진통제 복용은 평균 2.5일이면 충분했습니다. 수면·삼킴 등 일상 활동은 1.5일, 전반적인 일상 복귀는 2일이면 가능했고, 부종을 포함한 전체 회복은 4일이면 완료됐습니다.",
+        "titleKo": "임플란트 수술 후 회복에 대한 환자 경험 전향적 연구",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/34684148/",
+        "sampleSize": "40명 (수술 후 7일간 일별 추적)",
+        "keyFindings": [
+          {
+            "stat": "2일",
+            "label": "일상생활 복귀까지 걸리는 시간",
+            "context": "수면·식사·대화 등 기본 활동 지장 평균 기간"
+          },
+          {
+            "stat": "4일",
+            "label": "전체 회복 완료 기간",
+            "context": "부종·통증 포함 전반적 불편감이 사라지는 시점"
+          }
+        ],
+        "clinicalNote": "임플란트 수술 후 4일만 일정을 여유 있게 잡으면 대부분 불편 없이 일상에 복귀할 수 있습니다. 수술 다음 날부터 출근이 가능한 분도 많습니다.",
+        "followUpPeriod": "7일"
+      },
+      {
+        "id": "pain-mgmt-meta-2021",
+        "year": 2021,
+        "title": "Post-operative pain management in dental implant surgery: a systematic review and meta-analysis of randomized clinical trials",
+        "journal": "Clinical Oral Implants Research",
+        "summary": "9개의 무작위대조시험을 통합 분석해 임플란트 수술 후 통증 관리 최적 방법을 검토했습니다. 이부프로펜 등 NSAIDs는 수술 후 통증과 추가 진통제 복용량을 유의미하게 줄이는 것으로 확인됐습니다(p<0.05). 통증이 가장 집중되는 72시간 내에 적절한 진통제를 복용하면 이후에는 자연 회복이 가능합니다.",
+        "titleKo": "임플란트 수술 후 통증 관리: 무작위대조시험 체계적 문헌고찰 및 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/33839939/",
+        "sampleSize": "9개 RCT 통합 분석",
+        "keyFindings": [
+          {
+            "stat": "72시간",
+            "label": "집중적 통증 관리가 필요한 기간",
+            "context": "이 시기에 NSAIDs 복용이 가장 효과적 (p<0.05)"
+          },
+          {
+            "stat": "유의한 감소",
+            "label": "적절한 진통제 복용 시 통증 조절 효과",
+            "context": "NSAIDs가 위약 대비 통증 및 진통제 추가 복용량 유의하게 낮춤"
+          }
+        ],
+        "clinicalNote": "처방된 진통제를 첫 3일 동안 규칙적으로 복용하는 것이 핵심입니다. '아프면 먹는다'가 아니라 '예방적으로 복용'하면 전체 불편감이 크게 줄어듭니다."
+      }
+    ],
+    "category": "임플란트",
+    "subtitle": "발치보다 덜 아프다? 회복 타임라인을 데이터로 확인하기",
+    "description": "임플란트 수술 후 통증은 발치보다 훨씬 적습니다. 72시간 시점에서 임플란트 통증 VAS 0.27 vs 발치 2.4, 대부분 4일이면 일상 복귀 — 환자 경험 연구 데이터로 확인하세요.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "implant-pain-myths",
+        "title": "\"임플란트 아프다\"는 말, 진짜일까?",
+        "category": "implant"
+      },
+      {
+        "slug": "after-implant-surgery-care",
+        "title": "임플란트 수술 후 관리",
+        "category": "implant"
+      },
+      {
+        "slug": "implant-lifespan-facts",
+        "title": "임플란트 수명, 10년? 30년?",
+        "category": "implant"
+      }
+    ]
+  },
+  {
     "slug": "implant-survival-rates",
     "title": "임플란트는 얼마나 오래 쓸 수 있을까",
     "papers": [
