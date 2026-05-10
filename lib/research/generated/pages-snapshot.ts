@@ -372,28 +372,27 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
     "title": "신경치료 후 크라운 수복, 근거는 무엇인가",
     "papers": [
       {
-        "id": "zadik-2008",
-        "year": 2008,
+        "id": "fracture-2019",
+        "year": 2019,
         "title": "Endodontically treated posterior teeth restored with or without crown restorations: A 5-year retrospective study of survival rates from fracture",
-        "journal": "Journal of Endodontics",
-        "summary": "근관치료를 받은 구치부(어금니)에서 크라운 수복 여부에 따른 5년 생존율을 비교한 후향적 연구입니다. 크라운을 씌운 군은 94%의 생존율을 보인 반면, 크라운 없이 직접 수복만 한 군은 63%에 그쳤습니다. 파절로 인한 발치 위험이 크라운 미시술군에서 유의미하게 높았으며, 특히 어금니에서 그 차이가 두드러졌습니다.",
-        "titleKo": "근관치료 후 크라운 수복 여부에 따른 5년 파절 생존율 비교 연구",
+        "journal": "Journal of Investigative and Clinical Dentistry",
+        "summary": "신경치료를 받은 구치부(어금니)에서 크라운 수복 여부에 따른 5년 파절 생존율을 비교한 후향적 연구입니다. 크라운을 씌운 군은 92.2%의 생존율을 보인 반면, 직접 레진 수복만 한 군은 77.4%에 그쳤습니다. 두 군의 차이는 통계적으로 유의미하며(p<0.05), 특히 씹는 힘이 집중되는 어금니에서 크라운의 파절 보호 효과가 뚜렷하게 나타났습니다.",
+        "titleKo": "신경치료 후치부 크라운 수복 여부에 따른 5년 파절 생존율 비교",
         "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/31187942/",
-        "sampleSize": "크라운 수복군 vs 직접 수복군 비교",
+        "sampleSize": "크라운 수복군 vs 직접 레진 수복군 비교",
         "keyFindings": [
           {
-            "stat": "94%",
+            "stat": "92.2%",
             "label": "크라운 수복군 5년 생존율",
-            "context": "신경치료 후 크라운을 씌운 어금니"
+            "context": "신경치료 후 크라운을 씌운 어금니 (파절로 인한 발치 기준)"
           },
           {
-            "stat": "63%",
-            "label": "크라운 미시술군 5년 생존율",
-            "context": "신경치료 후 직접 수복(아말감·컴포짓)만 한 어금니"
+            "stat": "77.4%",
+            "label": "레진 직접 수복군 5년 생존율",
+            "context": "신경치료 후 크라운 없이 레진으로만 수복한 어금니"
           }
         ],
-        "clinicalNote": "구치부 근관치료 후 크라운 수복은 선택이 아닌 표준 치료 과정으로 볼 수 있습니다. 직접 수복만으로는 교합력으로부터 치아를 충분히 보호하기 어렵습니다.",
-        "followUpPeriod": "5년"
+        "clinicalNote": "15%p 차이의 생존율은 장기적으로 치아 하나를 지키느냐 잃느냐의 차이로 이어질 수 있습니다. 신경치료 직후 크라운 수복 계획을 세우는 것이 중요한 이유입니다."
       },
       {
         "id": "aquilino-2002",
