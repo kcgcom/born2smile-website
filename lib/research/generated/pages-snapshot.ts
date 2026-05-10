@@ -99,6 +99,107 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
     ]
   },
   {
+    "slug": "fluoride-caries-prevention",
+    "title": "불소 도포, 충치 예방에 실제로 효과 있을까",
+    "papers": [
+      {
+        "id": "weyant-2013",
+        "year": 2013,
+        "title": "Topical fluoride for caries prevention: executive summary of the updated clinical recommendations and supporting systematic review",
+        "journal": "Journal of the American Dental Association",
+        "summary": "미국치과의사협회(ADA)가 71개 임상시험을 체계적으로 분석하여 수립한 불소 도포 임상 권고안입니다. 6세 미만 소아에게는 삼킴 안전성을 고려해 불소 바니시(2.26%)만 권고하며, 6세 이상과 성인에게는 바니시와 APF 젤(1.23%) 모두 우식 예방에 유효한 것으로 확인됐습니다. 우식 위험도가 높은 환자일수록 정기적인 전문가 불소 도포의 효과가 크게 나타났습니다.",
+        "titleKo": "미국치과의사협회(ADA) 불소 도포 임상 권고안: 체계적 문헌고찰 기반",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/24177407/",
+        "sampleSize": "71개 임상시험, 82개 논문 분석 (1946-2012)",
+        "keyFindings": [
+          {
+            "stat": "6세 미만",
+            "label": "불소 바니시만 권장",
+            "context": "삼킴 위험으로 바니시(2.26%)가 유일한 권고 제제"
+          },
+          {
+            "stat": "6세 이상",
+            "label": "바니시·APF 젤 모두 권장",
+            "context": "2.26% 바니시 또는 1.23% APF 젤, 효과 동등"
+          }
+        ],
+        "clinicalNote": "불소 도포 제제의 선택보다 '정기적으로 받는 것'이 더 중요합니다. 6개월마다 전문가 불소 도포를 받는 것이 ADA 권고 기준입니다."
+      },
+      {
+        "id": "kashbour-2020",
+        "year": 2020,
+        "title": "Pit and fissure sealants versus fluoride varnishes for preventing dental decay in children and adolescents",
+        "journal": "Cochrane Database of Systematic Reviews",
+        "summary": "소아·청소년에서 실란트와 불소 바니시의 우식 예방 효과를 비교한 Cochrane 메타분석입니다. 71개 임상시험을 분석한 결과, 두 치료법 사이의 우식 예방 효과에 통계적으로 유의미한 차이가 없었습니다. 다만 실란트와 불소 바니시를 병용할 경우 단독 적용보다 더 높은 예방 효과를 보였습니다. 선택은 임상 상황과 아이의 협조도에 따라 달라질 수 있습니다.",
+        "titleKo": "소아·청소년 충치 예방: 실란트 vs 불소 바니시 Cochrane 메타분석",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/33142363/",
+        "sampleSize": "71개 임상시험 종합 분석",
+        "keyFindings": [
+          {
+            "stat": "동등",
+            "label": "실란트와 불소 바니시의 우식 예방 효과",
+            "context": "통계적 유의 차이 없음 (71개 RCT 메타분석)"
+          },
+          {
+            "stat": "병용 시",
+            "label": "단독보다 더 높은 예방 효과",
+            "context": "실란트 + 불소 병용이 단독 적용보다 우수"
+          }
+        ],
+        "clinicalNote": "홈이 깊고 복잡한 어금니에는 실란트, 전반적인 우식 위험이 높은 아이에게는 불소 도포가 우선될 수 있습니다. 두 치료는 경쟁이 아닌 보완 관계입니다."
+      },
+      {
+        "id": "chan-2022",
+        "year": 2022,
+        "title": "Topical fluorides as a treatment for hypersensitivity and root caries in older adults: a systematic review and meta-analysis",
+        "journal": "Journal of Dentistry",
+        "summary": "60세 이상 고령자를 대상으로 불소 도포가 근면우식(잇몸이 내려간 치아 뿌리 부분의 충치) 예방에 미치는 효과를 분석한 체계적 문헌고찰입니다. 5% 불소 바니시(NaF)가 64%의 근면우식 예방률을 보였으며, 이미 진행 중인 우식도 42%에서 진행이 멈추는 효과를 확인했습니다. 불소 도포는 소아만의 치료가 아니라 치아 뿌리가 노출된 성인·고령자에게도 중요한 예방 처치입니다.",
+        "titleKo": "성인·고령자의 근면우식과 치아 시림: 불소 도포 효과의 체계적 문헌고찰",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/36058347/",
+        "sampleSize": "60세 이상 대상 7개 RCT 포함",
+        "keyFindings": [
+          {
+            "stat": "64%",
+            "label": "불소 바니시(NaF 5%)의 근면우식 예방률",
+            "context": "60세 이상 고령자 대상, 24개월 추적"
+          },
+          {
+            "stat": "42%",
+            "label": "이미 진행된 우식의 진행 정지 비율",
+            "context": "불소 도포 후 멈춤(arrested) 우식 비율"
+          }
+        ],
+        "clinicalNote": "나이가 들수록 잇몸이 내려가 뿌리 면이 노출되고 충치에 취약해집니다. 정기 검진 때 불소 도포를 병행하면 추가 삭제 없이 근면우식을 예방할 수 있습니다.",
+        "followUpPeriod": "24개월"
+      }
+    ],
+    "category": "소아치료",
+    "subtitle": "소아·성인 임상 데이터와 실란트와의 비교 효과",
+    "description": "불소 도포의 충치 예방 효과를 임상 연구로 확인합니다. 미국치과의사협회 권고 기준, 실란트와의 효과 비교, 성인·고령자 근면우식 예방 데이터까지 정리했습니다.",
+    "relatedBlogSlugs": [
+      {
+        "slug": "fluoride-treatment-children",
+        "title": "소아 불소 도포, 꼭 해야 할까요?",
+        "category": "pediatric"
+      },
+      {
+        "slug": "fluoride-vs-sealant-children",
+        "title": "불소 도포 vs 실란트, 뭐가 나을까?",
+        "category": "pediatric"
+      },
+      {
+        "slug": "sealant-for-children",
+        "title": "실란트(홈 메우기)로 충치를 예방해요",
+        "category": "pediatric"
+      },
+      {
+        "slug": "fluoride-treatment-adults",
+        "title": "성인도 불소 도포가 필요할까요?",
+        "category": "prevention"
+      }
+    ]
+  },
+  {
     "slug": "implant-survival-rates",
     "title": "임플란트는 얼마나 오래 쓸 수 있을까",
     "papers": [
