@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FileText, Loader2, Save, Sparkles } from "lucide-react";
+import { Check, Loader2, Save, Sparkles } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { AiWriteModal } from "@/app/admin/(dashboard)/components/blog/AiWriteModal";
 import { BLOG_EDITOR_DRAFT_KEY } from "@/app/admin/(dashboard)/components/blog/blog-editor-draft";
@@ -76,11 +76,6 @@ export function ContentScheduleManager({
     }
   };
 
-  const handleCreate = () => {
-    window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
-    router.push("/admin/content/posts/new");
-  };
-
   if (loading || loadingOverride) {
     return (
       <AdminSurface tone="white" className="rounded-3xl p-6">
@@ -108,26 +103,6 @@ export function ContentScheduleManager({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {!embedded && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setAiWriteOpen(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-gold,#C9930A)] px-4 py-2 text-sm font-semibold text-[var(--color-gold,#C9930A)] transition-colors hover:bg-[var(--color-gold-bg,#FDF3E0)]"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  AI 초안
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                >
-                  <FileText className="h-4 w-4" />
-                  새 글
-                </button>
-              </>
-            )}
             <button
               type="button"
               onClick={handleSave}
