@@ -115,7 +115,7 @@ export default async function ResearchHubPage() {
                   }`}
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span
                         className={`text-xs font-semibold px-2 py-0.5 rounded ${CATEGORY_COLOR[page.category] ?? "bg-gray-100 text-gray-600"}`}
                       >
@@ -137,32 +137,48 @@ export default async function ResearchHubPage() {
                     <p className="mt-1 text-sm text-gray-500 leading-relaxed line-clamp-2">
                       {page.hubSummary ?? page.description}
                     </p>
-                    {/* 핵심 수치 미리보기 */}
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white px-4 py-3">
                       {page.hubHighlightStat && page.hubHighlightLabel ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                          {page.hubHighlightStat} {page.hubHighlightLabel}
-                        </span>
+                        <>
+                          <p className="text-2xl font-bold leading-none text-blue-700">
+                            {page.hubHighlightStat}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">
+                            {page.hubHighlightLabel}
+                          </p>
+                          {page.hubHighlightContext && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {page.hubHighlightContext}
+                            </p>
+                          )}
+                        </>
                       ) : (
-                        page.papers.slice(0, 2).flatMap((paper) =>
-                          paper.keyFindings.slice(0, 1).map((f, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium"
-                            >
-                              {f.stat} {f.label}
-                            </span>
-                          ))
-                        )
-                      )}
-                      {page.hubHighlightContext && (
-                        <span className="inline-flex items-center gap-1 text-xs rounded-full bg-white px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200">
-                          {page.hubHighlightContext}
-                        </span>
+                        (() => {
+                          const fallback = page.papers[0]?.keyFindings[0];
+                          return fallback ? (
+                            <>
+                              <p className="text-2xl font-bold leading-none text-blue-700">
+                                {fallback.stat}
+                              </p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {fallback.label}
+                              </p>
+                              {fallback.context && (
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {fallback.context}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm text-slate-500">
+                              대표 근거를 준비 중입니다.
+                            </p>
+                          );
+                        })()
                       )}
                     </div>
                   </div>
-                  <div className="shrink-0 flex items-center gap-1 text-sm text-blue-600 font-medium group-hover:gap-2 transition-all">
+                  <div className="shrink-0 flex items-center gap-1 self-end text-sm font-medium text-blue-600 transition-all group-hover:gap-2">
                     <BookOpen className="w-4 h-4" />
                     연구 보기
                     <ArrowRight className="w-4 h-4" />
