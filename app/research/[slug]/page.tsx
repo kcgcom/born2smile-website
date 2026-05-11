@@ -12,6 +12,7 @@ import { ResearchPapersView } from "@/components/research/ResearchPapersView";
 import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;

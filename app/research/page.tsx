@@ -8,6 +8,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "임상 연구 자료실",
