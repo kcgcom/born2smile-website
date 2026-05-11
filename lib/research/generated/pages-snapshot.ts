@@ -480,27 +480,27 @@ export const RESEARCH_PAGES_SNAPSHOT: ResearchPage[] = [
         "clinicalNote": "신경치료에 대한 두려움의 상당 부분은 '경험 전 상상'에서 옵니다. 실제로 치료를 받은 대부분의 환자는 예상보다 훨씬 괜찮았다고 응답합니다."
       },
       {
-        "id": "endopain-mgmt-2022",
-        "year": 2022,
-        "title": "Post-Operative Endodontic Pain Management: An Overview of Systematic Reviews on Post-Operatively Administered Oral Medications and Integrated Evidence-Based Clinical Recommendations",
-        "journal": "Healthcare (MDPI)",
-        "summary": "5개의 체계적 문헌고찰을 종합 분석해 신경치료 후 통증이 시간에 따라 어떻게 변화하는지 추적했습니다. 시술 후 48시간이 지나면 환자의 83%에서 통증이 사라지고, 72시간(3일)이면 95.4%가 통증 없는 상태로 회복됩니다. 첫 24~48시간은 이부프로펜 등 진통제가 효과적이며, 이후에는 약물 없이도 자연 회복되는 것으로 나타났습니다.",
-        "titleKo": "신경치료 후 통증 회복 타임라인: 체계적 문헌고찰 종합 분석",
-        "pubmedUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9141195/",
-        "sampleSize": "5개 체계적 문헌고찰 및 RCT 종합",
+        "id": "torabinejad-2011",
+        "year": 2011,
+        "title": "Pain prevalence and severity before, during, and after root canal treatment: a systematic review",
+        "journal": "Journal of Endodontics",
+        "summary": "72개 임상연구를 종합 분석한 대규모 체계적 문헌고찰입니다. 신경치료 시술 전 환자의 VAS 평균 통증 점수는 54점이었지만, 시술 후 24시간이면 60%의 환자가 통증 없는 상태가 되고 VAS 24점으로 감소합니다. 7일이 지나면 89%의 환자가 통증을 느끼지 않으며 VAS 5점(거의 없음) 수준으로 회복됩니다.",
+        "titleKo": "신경치료 전·중·후 통증 유병률과 강도: 72개 임상연구 체계적 문헌고찰",
+        "pubmedUrl": "https://pubmed.ncbi.nlm.nih.gov/21419285/",
+        "sampleSize": "72개 임상연구 체계적 문헌고찰·메타분석",
         "keyFindings": [
           {
-            "stat": "83%",
-            "label": "시술 후 48시간(2일)이면 통증 없음",
-            "context": "VAS(시각통증척도) 기반 — 약복용 없이도 자연 회복"
+            "stat": "60%",
+            "label": "시술 후 24시간이면 통증 없음",
+            "context": "VAS 기반 — 통증 점수 54점(시술 전) → 24점(24시간 후)으로 감소"
           },
           {
-            "stat": "95.4%",
-            "label": "시술 후 72시간(3일)이면 통증 없음",
-            "context": "나머지 4.6%도 경미한 불편함 수준"
+            "stat": "89%",
+            "label": "시술 후 7일이면 통증 없음",
+            "context": "VAS 5점 수준으로 회복 — 나머지도 대부분 경미한 불편함 수준"
           }
         ],
-        "clinicalNote": "신경치료 후 '3일만 버티면 된다'는 말은 임상 데이터로 뒷받침됩니다. 3일이 지나도 강한 통증이 지속된다면 치과에 연락해야 하는 신호입니다."
+        "clinicalNote": "신경치료 후 통증은 대부분 수일 안에 해소됩니다. 첫 24~48시간은 이부프로펜 등 진통제를 적절히 복용하고, 1주일이 지나도 강한 통증이 지속된다면 담당 치과에 연락해야 하는 신호입니다."
       },
       {
         "id": "patient-perception-2020",
