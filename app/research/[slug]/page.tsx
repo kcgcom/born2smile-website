@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, BookOpen, FlaskConical } from "lucide-react";
+import { ExternalLink, FlaskConical } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
 import { getResearchPageFresh, getResearchPageAdmin, getAllResearchSlugsFresh } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
+import { FadeIn } from "@/components/ui/Motion";
 import { InlineResearchEditButton } from "@/components/admin/InlineResearchEditButton";
+import { ResearchEditProvider } from "@/components/admin/ResearchEditContext";
+import { ResearchPapersView } from "@/components/research/ResearchPapersView";
 import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
@@ -62,7 +64,7 @@ export default async function ResearchPageDetail({ params }: Props) {
   ]);
 
   return (
-    <>
+    <ResearchEditProvider>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
@@ -100,108 +102,8 @@ export default async function ResearchPageDetail({ params }: Props) {
 
       {/* 논문 목록 */}
       <section className="section-padding bg-white">
-        <div className="mx-auto max-w-3xl px-4 space-y-16">
-          <StaggerContainer>
-            {page.papers.map((paper, index) => (
-              <StaggerItem key={paper.id}>
-                <article className="border border-gray-200 rounded-2xl overflow-hidden">
-                  {/* 논문 헤더 */}
-                  <div className="bg-gray-50 px-6 py-5 border-b border-gray-200">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                            {paper.journal}
-                          </span>
-                          <span className="text-xs text-gray-400">{paper.year}</span>
-                          {paper.sampleSize && (
-                            <span className="text-xs text-gray-400">
-                              · {paper.sampleSize}
-                            </span>
-                          )}
-                          {paper.followUpPeriod && (
-                            <span className="text-xs text-gray-400">
-                              · 추적 {paper.followUpPeriod}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400 font-mono leading-relaxed">
-                          {paper.title}
-                        </p>
-                        <h2 className="mt-2 text-lg font-bold text-gray-900 leading-snug">
-                          {paper.titleKo}
-                        </h2>
-                      </div>
-                      <span className="shrink-0 text-sm font-semibold text-gray-400">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 핵심 수치 */}
-                  <div className="px-6 py-5 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-                      핵심 수치
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {paper.keyFindings.map((finding, i) => (
-                        <div
-                          key={i}
-                          className="bg-blue-50 rounded-xl px-5 py-4"
-                        >
-                          <p className="text-3xl font-bold text-blue-700 leading-none">
-                            {finding.stat}
-                          </p>
-                          <p className="mt-1.5 text-sm font-medium text-gray-800">
-                            {finding.label}
-                          </p>
-                          {finding.context && (
-                            <p className="mt-1 text-xs text-gray-500 leading-relaxed">
-                              {finding.context}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 요약 */}
-                  <div className="px-6 py-5 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                      연구 요약
-                    </p>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {paper.summary}
-                    </p>
-                  </div>
-
-                  {/* 임상적 시사점 + 원문 링크 */}
-                  <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                    {paper.clinicalNote && (
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
-                          임상적 시사점
-                        </p>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {paper.clinicalNote}
-                        </p>
-                      </div>
-                    )}
-                    <a
-                      href={paper.pubmedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      원문 보기 (PubMed)
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </article>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+        <div className="mx-auto max-w-3xl px-4">
+          <ResearchPapersView page={page} />
         </div>
       </section>
 
@@ -231,6 +133,6 @@ export default async function ResearchPageDetail({ params }: Props) {
           </div>
         </section>
       )}
-    </>
+    </ResearchEditProvider>
   );
 }
