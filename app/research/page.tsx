@@ -135,19 +135,30 @@ export default async function ResearchHubPage() {
                       {page.title}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500 leading-relaxed line-clamp-2">
-                      {page.description}
+                      {page.hubSummary ?? page.description}
                     </p>
                     {/* 핵심 수치 미리보기 */}
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {page.papers.slice(0, 2).flatMap((paper) =>
-                        paper.keyFindings.slice(0, 1).map((f, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium"
-                          >
-                            {f.stat} {f.label}
-                          </span>
-                        ))
+                      {page.hubHighlightStat && page.hubHighlightLabel ? (
+                        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                          {page.hubHighlightStat} {page.hubHighlightLabel}
+                        </span>
+                      ) : (
+                        page.papers.slice(0, 2).flatMap((paper) =>
+                          paper.keyFindings.slice(0, 1).map((f, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium"
+                            >
+                              {f.stat} {f.label}
+                            </span>
+                          ))
+                        )
+                      )}
+                      {page.hubHighlightContext && (
+                        <span className="inline-flex items-center gap-1 text-xs rounded-full bg-white px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200">
+                          {page.hubHighlightContext}
+                        </span>
                       )}
                     </div>
                   </div>

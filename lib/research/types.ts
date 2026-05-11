@@ -23,6 +23,10 @@ export interface ResearchPage {
   title: string;           // 페이지 제목 (한국어)
   subtitle: string;
   description: string;     // SEO meta description
+  hubSummary?: string;     // research 허브 카드 설명
+  hubHighlightStat?: string;
+  hubHighlightLabel?: string;
+  hubHighlightContext?: string;
   category: string;        // "보존치료" | "임플란트" | ...
   papers: ResearchPaper[];
   relatedBlogSlugs: { category: string; slug: string; title: string }[];

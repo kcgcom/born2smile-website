@@ -14,6 +14,7 @@ import { FadeIn } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { formatDate } from "@/lib/format";
 import { getPostBySlugFresh } from "@/lib/blog-supabase";
+import { getResearchPageAdmin } from "@/lib/research/papers";
 import TableOfContents from "@/components/blog/TableOfContents";
 import {
   getHeadingList,
@@ -21,9 +22,32 @@ import {
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
 import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
+import type { BlogBlock } from "@/lib/blog";
 
 // 항상 최신 내용을 반환 (캐시 우회)
 export const dynamic = "force-dynamic";
+
+async function hydrateResearchCallouts(blocks: BlogBlock[]): Promise<BlogBlock[]> {
+  const results = await Promise.all(
+    blocks.map(async (block) => {
+      if (block.type !== "researchCallout") return block;
+      const match = block.href.match(/^\/research\/([^/?#]+)\/?$/);
+      if (!match) return block;
+      const research = await getResearchPageAdmin(match[1]);
+      if (!research) return block;
+      const next = { ...block } satisfies BlogBlock;
+      return research.verified
+        ? next
+        : {
+            ...next,
+            title: `${next.title} (비공개)`,
+            linkText: `${next.linkText} · 비공개`,
+            description: `${next.description} 현재 검증 전 상태라 관리자에게만 보입니다.`,
+          } satisfies BlogBlock;
+    }),
+  );
+  return results;
+}
 
 // ----------------------------------------------------------------
 // 프리뷰 페이지
@@ -41,9 +65,10 @@ export default async function BlogPreviewPage({
 
   const post = await getPostBySlugFresh(slug);
   if (!post) notFound();
+  const hydratedBlocks = await hydrateResearchCallouts(post.blocks);
 
   const categoryLabel = getCategoryLabel(post.category);
-  const headings = getHeadingList(post);
+  const headings = getHeadingList({ blocks: hydratedBlocks });
 
   const relatedTreatmentId = getRelatedTreatmentId(post.category);
   const relatedTreatment = relatedTreatmentId
@@ -53,7 +78,7 @@ export default async function BlogPreviewPage({
   const publicUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
 
   return (
-    <BlogEditProvider initialBlocks={post.blocks}>
+    <BlogEditProvider initialBlocks={hydratedBlocks}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-12 pb-16">

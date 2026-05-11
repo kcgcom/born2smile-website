@@ -41,6 +41,10 @@ export function InlineResearchEditButton({ page, verified: initialVerified }: Pr
   const [title, setTitle] = useState(page.title);
   const [subtitle, setSubtitle] = useState(page.subtitle);
   const [description, setDescription] = useState(page.description);
+  const [hubSummary, setHubSummary] = useState(page.hubSummary ?? "");
+  const [hubHighlightStat, setHubHighlightStat] = useState(page.hubHighlightStat ?? "");
+  const [hubHighlightLabel, setHubHighlightLabel] = useState(page.hubHighlightLabel ?? "");
+  const [hubHighlightContext, setHubHighlightContext] = useState(page.hubHighlightContext ?? "");
 
   useLayoutEffect(() => {
     const el = toolbarRef.current;
@@ -60,6 +64,10 @@ export function InlineResearchEditButton({ page, verified: initialVerified }: Pr
     setTitle(page.title);
     setSubtitle(page.subtitle);
     setDescription(page.description);
+    setHubSummary(page.hubSummary ?? "");
+    setHubHighlightStat(page.hubHighlightStat ?? "");
+    setHubHighlightLabel(page.hubHighlightLabel ?? "");
+    setHubHighlightContext(page.hubHighlightContext ?? "");
     setSaveError(null);
   };
 
@@ -109,8 +117,17 @@ export function InlineResearchEditButton({ page, verified: initialVerified }: Pr
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...page, title, subtitle, description }),
-      });
+          body: JSON.stringify({
+            ...page,
+            title,
+            subtitle,
+            description,
+            hubSummary: hubSummary.trim() || undefined,
+            hubHighlightStat: hubHighlightStat.trim() || undefined,
+            hubHighlightLabel: hubHighlightLabel.trim() || undefined,
+            hubHighlightContext: hubHighlightContext.trim() || undefined,
+          }),
+        });
       if (!res.ok) {
         const json = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(json.message ?? "저장에 실패했어요");
@@ -123,7 +140,7 @@ export function InlineResearchEditButton({ page, verified: initialVerified }: Pr
     } finally {
       setSaving(false);
     }
-  }, [page, title, subtitle, description, router, setIsEditMode]);
+  }, [page, title, subtitle, description, hubSummary, hubHighlightStat, hubHighlightLabel, hubHighlightContext, router, setIsEditMode]);
 
   if (!isAdmin) return null;
 
@@ -276,6 +293,46 @@ export function InlineResearchEditButton({ page, verified: initialVerified }: Pr
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none resize-y"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">허브 카드 설명</label>
+                    <textarea
+                      value={hubSummary}
+                      onChange={(e) => setHubSummary(e.target.value)}
+                      rows={2}
+                      placeholder="research 허브 목록 카드에 노출할 짧은 설명"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none resize-y"
+                    />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-600">허브 하이라이트 수치</label>
+                      <input
+                        value={hubHighlightStat}
+                        onChange={(e) => setHubHighlightStat(e.target.value)}
+                        placeholder="예: 89%"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-600">허브 하이라이트 라벨</label>
+                      <input
+                        value={hubHighlightLabel}
+                        onChange={(e) => setHubHighlightLabel(e.target.value)}
+                        placeholder="예: 시술 후 1주 내 통증 없음"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">허브 하이라이트 보조 문구</label>
+                    <textarea
+                      value={hubHighlightContext}
+                      onChange={(e) => setHubHighlightContext(e.target.value)}
+                      rows={2}
+                      placeholder="예: 통증은 대개 빠르게 줄어듭니다"
                       className="w-full rounded-xl border border-slate-200 bg-slate-50/40 px-3 py-2 text-sm text-slate-900 focus:border-[var(--color-primary)] focus:outline-none resize-y"
                     />
                   </div>

@@ -418,8 +418,8 @@ export function ResearchPapersView({ page }: Props) {
               )}
             </div>
 
-            {/* 임상적 시사점 + 원문 링크 */}
-            <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
+            {/* 임상적 시사점 */}
+            <div className="px-6 py-5 border-b border-gray-100">
               <div className="flex-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
                   임상적 시사점
@@ -440,15 +440,19 @@ export function ResearchPapersView({ page }: Props) {
                   )
                 )}
               </div>
+            </div>
+
+            {/* 원문 링크 */}
+            <div className="px-6 py-4">
               <a
                 href={currentPaper.pubmedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:text-blue-800"
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="h-4 w-4" />
                 원문 보기 (PubMed)
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
           </article>
