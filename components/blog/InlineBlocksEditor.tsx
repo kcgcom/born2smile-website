@@ -365,6 +365,8 @@ function BlockEditForm({ block, saving, onSave, onChangeType, onCancel }: BlockF
       return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "table":
       return <TableEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
+    case "researchCallout":
+      return <ResearchCalloutEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     default:
       return null;
   }
@@ -896,6 +898,92 @@ function TableEditForm({
           </table>
         </div>
       </div>
+      <FormActions saving={saving} onCancel={onCancel} />
+    </form>
+  );
+}
+
+function ResearchCalloutEditForm({
+  block,
+  saving,
+  onSave,
+  onChangeType,
+  onCancel,
+  blockTypeOptions,
+}: BaseFormProps<Extract<BlogBlock, { type: "researchCallout" }>>) {
+  const [title, setTitle] = useState(block.title);
+  const [description, setDescription] = useState(block.description);
+  const [href, setHref] = useState(block.href);
+  const [linkText, setLinkText] = useState(block.linkText);
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave({
+          ...block,
+          title: title.trim(),
+          description: description.trim(),
+          href: href.trim(),
+          linkText: linkText.trim(),
+        });
+      }}
+    >
+      <BlockTypeSelector
+        value={block.type}
+        options={blockTypeOptions}
+        disabled={saving}
+        onChange={onChangeType}
+      />
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">
+            제목
+          </label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+            placeholder="콜아웃 제목"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">
+            설명
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none resize-y"
+            placeholder="연구 요약을 소개하는 짧은 설명"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">
+            링크
+          </label>
+          <input
+            value={href}
+            onChange={(e) => setHref(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+            placeholder="/research/root-canal-pain-reality"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">
+            버튼 문구
+          </label>
+          <input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+            placeholder="연구 요약 보기"
+          />
+        </div>
+      </div>
+
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
   );
