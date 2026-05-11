@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Pencil,
   Plus,
@@ -74,6 +76,66 @@ export function ResearchPapersView({ page }: Props) {
         ? { ...prev, keyFindings: prev.keyFindings.filter((_, i) => i !== fi) }
         : prev,
     );
+
+  const reorderPapers = useCallback(async (from: number, to: number) => {
+    if (to < 0 || to >= page.papers.length || from === to) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updatedPapers = [...page.papers];
+      const [moved] = updatedPapers.splice(from, 1);
+      updatedPapers.splice(to, 0, moved);
+      const token = await getAccessToken();
+      const res = await fetch(`/api/admin/research/${page.slug}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...page, papers: updatedPapers }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(json.message ?? "순서 저장에 실패했어요");
+      }
+      setEditingIndex(null);
+      setDraft(null);
+      router.refresh();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "순서 저장에 실패했어요");
+    } finally {
+      setSaving(false);
+    }
+  }, [page, router]);
+
+  const deletePaper = useCallback(async (index: number) => {
+    if (!window.confirm("이 논문을 연구 요약에서 삭제할까요?")) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updatedPapers = page.papers.filter((_, i) => i !== index);
+      const token = await getAccessToken();
+      const res = await fetch(`/api/admin/research/${page.slug}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...page, papers: updatedPapers }),
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(json.message ?? "논문 삭제에 실패했어요");
+      }
+      setEditingIndex(null);
+      setDraft(null);
+      router.refresh();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "논문 삭제에 실패했어요");
+    } finally {
+      setSaving(false);
+    }
+  }, [page, router]);
 
   const savePaper = useCallback(async () => {
     if (editingIndex === null || !draft) return;
@@ -189,15 +251,51 @@ export function ResearchPapersView({ page }: Props) {
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   {isAdmin && isEditMode && !isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(index)}
-                      className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                      title="이 논문 편집"
-                    >
-                      <Pencil size={12} />
-                      편집
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => reorderPapers(index, index - 1)}
+                        disabled={saving || index === 0}
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="위로 이동"
+                      >
+                        <ChevronUp size={12} />
+                        위로
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => reorderPapers(index, index + 1)}
+                        disabled={saving || index === page.papers.length - 1}
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="아래로 이동"
+                      >
+                        <ChevronDown size={12} />
+                        아래로
+                      </button>
+                    </div>
+                  )}
+                  {isAdmin && isEditMode && !isEditing && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(index)}
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        title="이 논문 편집"
+                      >
+                        <Pencil size={12} />
+                        편집
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deletePaper(index)}
+                        disabled={saving}
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="이 논문 삭제"
+                      >
+                        <Trash2 size={12} />
+                        삭제
+                      </button>
+                    </div>
                   )}
                   {isEditing && (
                     <div className="flex gap-1.5">
