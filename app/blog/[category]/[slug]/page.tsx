@@ -22,6 +22,7 @@ import {
   getAllPublishedPostMetas,
   getRelatedPosts,
 } from "@/lib/blog-supabase";
+import { getResearchPageAdmin, getResearchPageFresh } from "@/lib/research/papers";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
 import type { BlogBlock } from "@/lib/blog";
@@ -32,6 +33,7 @@ import {
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
+import { getIsAdminServer } from "@/lib/server-admin-check";
 
 export const revalidate = 3600;
 
@@ -50,6 +52,35 @@ function getFaqEntries(post: { blocks: BlogBlock[] }) {
   return post.blocks
     .filter((block): block is Extract<BlogBlock, { type: "faq" }> => block.type === "faq")
     .map((block) => ({ q: block.question, a: block.answer }));
+}
+
+async function filterVisibleBlocks(blocks: BlogBlock[], isAdmin: boolean): Promise<BlogBlock[]> {
+  const results = await Promise.all(
+    blocks.map(async (block) => {
+      if (block.type !== "researchCallout") return block;
+
+      const match = block.href.match(/^\/research\/([^/?#]+)\/?$/);
+      if (!match) return block;
+
+      if (isAdmin) {
+        const researchPage = await getResearchPageAdmin(match[1]);
+        if (!researchPage) return null;
+        if (researchPage.verified) return block;
+
+        return {
+          ...block,
+          title: `${block.title} (비공개)`,
+          linkText: `${block.linkText} · 비공개`,
+          description: `${block.description} 현재 검증 전 상태라 관리자에게만 보입니다.`,
+        } satisfies BlogBlock;
+      }
+
+      const researchPage = await getResearchPageFresh(match[1]);
+      return researchPage ? block : null;
+    }),
+  );
+
+  return results.filter((block): block is BlogBlock => block !== null);
 }
 
 function getBlogCtaCopy(slug: string, category: string, relatedTreatmentName?: string | null) {
@@ -179,6 +210,8 @@ export default async function BlogPostPage({
 
   const post = await getPostBySlug(slug);
   if (!post) notFound();
+  const isAdmin = await getIsAdminServer();
+  const visibleBlocks = await filterVisibleBlocks(post.blocks, isAdmin);
   const categoryLabel = getCategoryLabel(post.category);
 
   // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
@@ -191,13 +224,13 @@ export default async function BlogPostPage({
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
 
-  const faqEntries = getFaqEntries({ blocks: post.blocks });
+  const faqEntries = getFaqEntries({ blocks: visibleBlocks });
   const faqJsonLd = faqEntries.length >= 2
     ? getFaqJsonLd(faqEntries)
     : null;
-  const headings = getHeadingList(post);
+  const headings = getHeadingList({ blocks: visibleBlocks });
   const hasManualRelatedLinks =
-    !!post.blocks?.some((block) => block.type === "relatedLinks");
+    !!visibleBlocks?.some((block) => block.type === "relatedLinks");
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -228,7 +261,7 @@ export default async function BlogPostPage({
       )}
 
       {/* 블로그 포스트 */}
-      <BlogEditProvider initialBlocks={post.blocks}>
+      <BlogEditProvider initialBlocks={visibleBlocks}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
