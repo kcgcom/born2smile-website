@@ -6,8 +6,8 @@ import { getAllResearchSlugsFresh, getAllResearchSlugsAdmin, getResearchPageFres
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { getIsAdminServer } from "@/lib/server-admin-check";
+import { ResearchDisclaimer } from "@/components/research/ResearchDisclaimer";
 
-export const revalidate = 3600;
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -26,7 +26,9 @@ export const metadata: Metadata = {
 const CATEGORY_COLOR: Record<string, string> = {
   임플란트: "bg-blue-50 text-blue-700",
   보존치료: "bg-teal-50 text-teal-700",
+  보철치료: "bg-cyan-50 text-cyan-700",
   소아치료: "bg-green-50 text-green-700",
+  치아교정: "bg-indigo-50 text-indigo-700",
   예방관리: "bg-emerald-50 text-emerald-700",
   건강상식: "bg-purple-50 text-purple-700",
 };
@@ -89,20 +91,14 @@ export default async function ResearchHubPage() {
         </div>
       </section>
 
-      {/* 안내 배너 */}
-      <section className="bg-amber-50 border-y border-amber-100 py-4">
-        <div className="mx-auto max-w-3xl px-4">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            이 페이지는 치과 임상가 및 근거 중심 치료에 관심 있는 분들을 위해
-            관련 연구를 요약·소개합니다. 개별 임상 결정은 반드시 담당
-            치과의사와 상담하시기 바랍니다.
-          </p>
-        </div>
-      </section>
+      <ResearchDisclaimer />
 
       {/* 연구 목록 */}
       <section className="section-padding bg-white">
-        <div className="mx-auto max-w-3xl px-4">
+        <div className="mx-auto max-w-5xl px-4">
+          {pages.length === 0 && (
+            <p className="text-center text-gray-400 py-16">연구 자료를 준비 중입니다.</p>
+          )}
           <StaggerContainer className="space-y-4">
             {pages.map(({ page, verified }) => (
               <StaggerItem key={page.slug}>
@@ -137,7 +133,7 @@ export default async function ResearchHubPage() {
                     <p className="mt-1 text-sm text-gray-500 leading-relaxed line-clamp-2">
                       {page.hubSummary ?? page.description}
                     </p>
-                    <div className="mt-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white px-4 py-3">
+                    <div className="mt-4 rounded-xl bg-blue-50/60 px-4 py-3">
                       {page.hubHighlightStat && page.hubHighlightLabel ? (
                         <>
                           <p className="text-2xl font-bold leading-none text-blue-700">
@@ -178,7 +174,7 @@ export default async function ResearchHubPage() {
                       )}
                     </div>
                   </div>
-                  <div className="shrink-0 flex items-center gap-1 self-end text-sm font-medium text-blue-600 transition-all group-hover:gap-2">
+                  <div className="shrink-0 flex items-center gap-1 self-start sm:self-end text-sm font-medium text-blue-600 transition-all group-hover:gap-2">
                     <BookOpen className="w-4 h-4" />
                     연구 보기
                     <ArrowRight className="w-4 h-4" />

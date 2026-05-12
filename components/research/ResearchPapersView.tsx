@@ -169,7 +169,7 @@ export function ResearchPapersView({ page }: Props) {
   }, [editingIndex, draft, page, router]);
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-8">
       {page.papers.map((paper, index) => {
         const isEditing = isEditMode && editingIndex === index;
         const currentPaper = isEditing && draft ? draft : paper;

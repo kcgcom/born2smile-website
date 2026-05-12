@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, FlaskConical } from "lucide-react";
+import { ArrowRight, FlaskConical } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
 import { getResearchPageFresh, getResearchPageAdmin, getAllResearchSlugsFresh } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -9,9 +9,9 @@ import { FadeIn } from "@/components/ui/Motion";
 import { InlineResearchEditButton } from "@/components/admin/InlineResearchEditButton";
 import { ResearchEditProvider } from "@/components/admin/ResearchEditContext";
 import { ResearchPapersView } from "@/components/research/ResearchPapersView";
+import { ResearchDisclaimer } from "@/components/research/ResearchDisclaimer";
 import { getIsAdminServer } from "@/lib/server-admin-check";
 
-export const revalidate = 3600;
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -90,16 +90,7 @@ export default async function ResearchPageDetail({ params }: Props) {
         </div>
       </section>
 
-      {/* 안내 배너 */}
-      <section className="bg-amber-50 border-y border-amber-100 py-4">
-        <div className="mx-auto max-w-3xl px-4">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            이 페이지는 치과 임상가 및 근거 중심 치료에 관심 있는 분들을 위해
-            관련 연구를 요약·소개합니다. 개별 임상 결정은 반드시 담당 치과의사와
-            상담하시기 바랍니다.
-          </p>
-        </div>
-      </section>
+      <ResearchDisclaimer />
 
       {/* 논문 목록 */}
       <section className="section-padding bg-white">
@@ -126,7 +117,7 @@ export default async function ResearchPageDetail({ params }: Props) {
                     <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors">
                       {post.title}
                     </span>
-                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500 shrink-0 transition-colors" />
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 shrink-0 transition-colors" />
                   </Link>
                 ))}
               </div>
