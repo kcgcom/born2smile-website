@@ -815,18 +815,22 @@ export function TrafficTab() {
     () => (blogGa4Data?.blogPostStats ?? []).filter((item) => item.pageViews > 0).length,
     [blogGa4Data],
   );
-  const longestReadPosts = useMemo(() => {
+  const comparableBlogPosts = useMemo(() => {
     return (blogGa4Data?.blogPostStats ?? [])
-      .filter((item) => item.pageViews >= 20)
+      .filter((item) => item.pageViews >= 20 && item.avgDuration > 0);
+  }, [blogGa4Data]);
+  const longestReadPosts = useMemo(() => {
+    return comparableBlogPosts
+      .filter((item) => item.avgDuration > blogSummary.avgDuration)
       .sort((a, b) => b.avgDuration - a.avgDuration)
       .slice(0, 5);
-  }, [blogGa4Data]);
+  }, [blogSummary.avgDuration, comparableBlogPosts]);
   const shortestReadPosts = useMemo(() => {
-    return (blogGa4Data?.blogPostStats ?? [])
-      .filter((item) => item.pageViews >= 20)
+    return comparableBlogPosts
+      .filter((item) => item.avgDuration < blogSummary.avgDuration)
       .sort((a, b) => a.avgDuration - b.avgDuration)
       .slice(0, 5);
-  }, [blogGa4Data]);
+  }, [blogSummary.avgDuration, comparableBlogPosts]);
   const blogSourceShare = useMemo(() => {
     return (blogAggregateDetail?.sources ?? []).slice(0, 6);
   }, [blogAggregateDetail?.sources]);
