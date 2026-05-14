@@ -35,6 +35,8 @@ interface AnalyticsData {
     string,
     {
       isBlogAggregate: boolean;
+      isSectionAggregate: boolean;
+      aggregateLabel: string | null;
       summary: {
         views: number;
         sessions: number;
@@ -42,7 +44,7 @@ interface AnalyticsData {
       };
       dailyTrend: Array<{ date: string; sessions: number; pageviews: number }>;
       sources: Array<{ source: string; sessions: number; percentage: number }>;
-      topBlogPosts: Array<{ path: string; views: number; sessions: number }>;
+      topChildPages: Array<{ path: string; views: number; sessions: number }>;
     }
   >;
   trafficSources: Array<{ source: string; sessions: number; percentage: number }>;
@@ -130,6 +132,13 @@ function toBlogAnalyticsPeriod(period: Period): "28d" | "90d" | "180d" {
 function getBlogSlugFromPath(path: string) {
   const match = path.match(/^\/blog\/[^/]+\/([^/]+)\/?$/);
   return match?.[1] ?? null;
+}
+
+function getTopPageDisplayTitle(path: string, blogTitleMap: Map<string, string>) {
+  if (path === "/blog (전체)") return "블로그 전체";
+  if (path === "/treatments (전체)") return "치료 페이지 전체";
+
+  return blogTitleMap.get(getBlogSlugFromPath(path) ?? "") ?? path;
 }
 
 // ---------------------------------------------------------------
@@ -836,7 +845,7 @@ export function TrafficTab() {
   }, [blogAggregateDetail?.sources]);
   const activeTopPageDuration = activeTopPage ? blogGa4Map.get(activeTopPage)?.avgDuration ?? 0 : 0;
   const activeTopPageTitle = activeTopPage
-    ? blogTitleMap.get(getBlogSlugFromPath(activeTopPage) ?? "") ?? activeTopPage
+    ? getTopPageDisplayTitle(activeTopPage, blogTitleMap)
     : "";
 
   return (
@@ -936,14 +945,14 @@ export function TrafficTab() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <SectionCard title="인기 페이지 TOP 10">
+                <SectionCard title="주요 페이지·섹션">
                   <TopPagesChart
                     data={data.topPages}
                     selectedPath={activeTopPage}
                     onSelect={setSelectedTopPage}
                   />
                   <p className="mt-3 text-xs text-[var(--muted)]">
-                    블로그 글은 `블로그 전체`로 묶었습니다. 막대를 누르면 상세가 열립니다.
+                    블로그와 치료 페이지는 전체 섹션 단위로 먼저 묶은 뒤 비교합니다. 막대를 누르면 상세가 열립니다.
                   </p>
                 </SectionCard>
 
@@ -1331,9 +1340,11 @@ export function TrafficTab() {
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   {activeTopPageDetail.isBlogAggregate
                     ? "블로그 전체 유입을 묶어서 보여줍니다."
-                    : "해당 페이지 단위의 세부 데이터를 보여줍니다."}
+                    : activeTopPageDetail.isSectionAggregate
+                      ? `${activeTopPageDetail.aggregateLabel ?? "섹션"} 유입을 묶어서 보여줍니다.`
+                      : "해당 페이지 단위의 세부 데이터를 보여줍니다."}
                 </p>
-                {!activeTopPageDetail.isBlogAggregate && (
+                {!activeTopPageDetail.isSectionAggregate && (
                   <p className="mt-1 text-[11px] text-[var(--muted)]">{activeTopPage}</p>
                 )}
               </div>
@@ -1393,17 +1404,19 @@ export function TrafficTab() {
               </div>
             </div>
 
-            {activeTopPageDetail.isBlogAggregate && activeTopPageDetail.topBlogPosts.length > 0 && (
+            {activeTopPageDetail.isSectionAggregate && activeTopPageDetail.topChildPages.length > 0 && (
               <div className="mt-4 rounded-2xl bg-[var(--surface)] p-4">
                 <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                  블로그에서 많이 본 글
+                  {activeTopPageDetail.isBlogAggregate ? "블로그에서 많이 본 글" : "치료 페이지에서 많이 본 상세 페이지"}
                 </h5>
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  블로그 전체 안에서 실제 조회를 만든 개별 글입니다. 막대를 누르면 그 글 상세로 이동합니다.
+                  {activeTopPageDetail.isBlogAggregate
+                    ? "블로그 전체 안에서 실제 조회를 만든 개별 글입니다. 막대를 누르면 그 글 상세로 이동합니다."
+                    : "치료 페이지 전체 안에서 실제 조회를 만든 개별 페이지입니다. 막대를 누르면 그 페이지 상세로 이동합니다."}
                 </p>
                 <div className="mt-3">
                   <TopPagesChart
-                    data={activeTopPageDetail.topBlogPosts}
+                    data={activeTopPageDetail.topChildPages}
                     selectedPath={activeTopPage}
                     onSelect={setSelectedTopPage}
                   />

@@ -66,6 +66,19 @@ function normalizeGaDate(raw: string) {
     : raw;
 }
 
+function createPathAggregate(
+  pages: Array<{ path: string; views: number; sessions: number }>,
+  aggregatePath: string,
+) {
+  if (pages.length === 0) return null;
+
+  return {
+    path: aggregatePath,
+    views: pages.reduce((sum, page) => sum + page.views, 0),
+    sessions: pages.reduce((sum, page) => sum + page.sessions, 0),
+  };
+}
+
 export async function fetchGA4Data(period: string) {
   if (!GA4_PROPERTY_ID) {
     throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
@@ -267,24 +280,24 @@ export async function fetchGA4Data(period: string) {
     .filter((p) => !EXCLUDED_PREFIXES.some((prefix) => p.path.startsWith(prefix)));
 
   const blogPages = rawTopPages.filter((page) => page.path.startsWith("/blog/"));
-  const nonBlogPages = rawTopPages.filter((page) => !page.path.startsWith("/blog/"));
-  const blogAggregate = blogPages.length > 0
-    ? {
-      path: "/blog (전체)",
-      views: blogPages.reduce((sum, page) => sum + page.views, 0),
-      sessions: blogPages.reduce((sum, page) => sum + page.sessions, 0),
-    }
-    : null;
-  const topPages = [...nonBlogPages, ...(blogAggregate ? [blogAggregate] : [])]
+  const treatmentPages = rawTopPages.filter((page) => page.path.startsWith("/treatments"));
+  const nonAggregatePages = rawTopPages.filter(
+    (page) => !page.path.startsWith("/blog/") && !page.path.startsWith("/treatments"),
+  );
+  const blogAggregate = createPathAggregate(blogPages, "/blog (전체)");
+  const treatmentAggregate = createPathAggregate(treatmentPages, "/treatments (전체)");
+  const aggregatePages = [blogAggregate, treatmentAggregate].filter((page) => page !== null);
+  const topPages = [...nonAggregatePages, ...aggregatePages]
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
   const trackedPagePaths = Array.from(
     new Set([
-      ...nonBlogPages
+      ...nonAggregatePages
         .slice(0, 12)
         .map((page) => page.path)
         .filter((path) => topPages.some((item) => item.path === path)),
       ...blogPages.slice(0, 10).map((page) => page.path),
+      ...treatmentPages.slice(0, 10).map((page) => page.path),
     ]),
   );
 
@@ -312,9 +325,9 @@ export async function fetchGA4Data(period: string) {
     }),
   ]);
 
-  const [blogDailyReport, blogSourceReport] = blogAggregate
-    ? await Promise.all([
-      client.runReport({
+  const [blogDailyReport, blogSourceReport, treatmentDailyReport, treatmentSourceReport] = await Promise.all([
+    blogAggregate
+      ? client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "date" }],
@@ -326,8 +339,10 @@ export async function fetchGA4Data(period: string) {
           },
         },
         orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
-      }),
-      client.runReport({
+      })
+      : Promise.resolve(null),
+    blogAggregate
+      ? client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,
         dateRanges: [{ startDate: start, endDate: end }],
         dimensions: [{ name: "sessionSource" }],
@@ -340,9 +355,40 @@ export async function fetchGA4Data(period: string) {
         },
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 12,
-      }),
-    ])
-    : [null, null];
+      })
+      : Promise.resolve(null),
+    treatmentAggregate
+      ? client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/treatments" },
+          },
+        },
+        orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+      })
+      : Promise.resolve(null),
+    treatmentAggregate
+      ? client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "sessionSource" }],
+        metrics: [{ name: "sessions" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/treatments" },
+          },
+        },
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 12,
+      })
+      : Promise.resolve(null),
+  ]);
 
   // Parse traffic sources
   const totalSessions = summary.sessions.value || 1;
@@ -426,15 +472,18 @@ export async function fetchGA4Data(period: string) {
   );
 
   const detailPages = [
-    ...topPages.filter((page) => page.path !== "/blog (전체)"),
+    ...topPages.filter((page) => page.path !== "/blog (전체)" && page.path !== "/treatments (전체)"),
     ...blogPages
+      .filter((page) => trackedPagePaths.includes(page.path))
+      .filter((page) => !topPages.some((item) => item.path === page.path)),
+    ...treatmentPages
       .filter((page) => trackedPagePaths.includes(page.path))
       .filter((page) => !topPages.some((item) => item.path === page.path)),
   ];
 
   const topPageDetails = Object.fromEntries(
     [
-      ...(blogAggregate ? [blogAggregate] : []),
+      ...aggregatePages,
       ...detailPages,
     ].map((page) => {
       if (page.path === "/blog (전체)") {
@@ -457,6 +506,8 @@ export async function fetchGA4Data(period: string) {
           page.path,
           {
             isBlogAggregate: true,
+            isSectionAggregate: true,
+            aggregateLabel: "블로그 전체",
             summary: {
               views: page.views,
               sessions: page.sessions,
@@ -465,7 +516,44 @@ export async function fetchGA4Data(period: string) {
             },
             dailyTrend,
             sources,
-            topBlogPosts: blogPages
+            topChildPages: blogPages
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 10),
+          },
+        ];
+      }
+
+      if (page.path === "/treatments (전체)") {
+        const dailyTrend = (treatmentDailyReport?.[0]?.rows ?? []).map((row) => ({
+          date: normalizeGaDate(row.dimensionValues?.[0]?.value ?? ""),
+          sessions: Number(row.metricValues?.[0]?.value ?? 0),
+          pageviews: Number(row.metricValues?.[1]?.value ?? 0),
+        }));
+        const sources = (treatmentSourceReport?.[0]?.rows ?? []).map((row) => {
+          const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+          return {
+            source: row.dimensionValues?.[0]?.value ?? "(unknown)",
+            sessions,
+            percentage:
+              page.sessions > 0 ? Math.round((sessions / page.sessions) * 1000) / 10 : 0,
+          };
+        });
+
+        return [
+          page.path,
+          {
+            isBlogAggregate: false,
+            isSectionAggregate: true,
+            aggregateLabel: "치료 페이지 전체",
+            summary: {
+              views: page.views,
+              sessions: page.sessions,
+              pageviewsPerSession:
+                page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
+            },
+            dailyTrend,
+            sources,
+            topChildPages: treatmentPages
               .sort((a, b) => b.views - a.views)
               .slice(0, 10),
           },
@@ -496,15 +584,17 @@ export async function fetchGA4Data(period: string) {
         page.path,
         {
           isBlogAggregate: false,
+          isSectionAggregate: false,
+          aggregateLabel: null,
           summary: {
             views: page.views,
             sessions: page.sessions,
             pageviewsPerSession:
-              page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
+            page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
           },
           dailyTrend,
           sources,
-          topBlogPosts: [],
+          topChildPages: [],
         },
       ];
     }),
