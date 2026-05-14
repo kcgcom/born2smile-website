@@ -910,7 +910,10 @@ function ResearchCalloutEditForm({
   onChangeType,
   onCancel,
   blockTypeOptions,
-}: BaseFormProps<Extract<BlogBlock, { type: "researchCallout" }>>) {
+}: BlockFormProps & {
+  block: Extract<BlogBlock, { type: "researchCallout" }>;
+  blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[];
+}) {
   const [title, setTitle] = useState(block.title);
   const [description, setDescription] = useState(block.description);
   const [href, setHref] = useState(block.href);
