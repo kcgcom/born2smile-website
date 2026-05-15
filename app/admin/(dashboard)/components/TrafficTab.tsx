@@ -137,6 +137,7 @@ function getBlogSlugFromPath(path: string) {
 function getTopPageDisplayTitle(path: string, blogTitleMap: Map<string, string>) {
   if (path === "/blog (전체)") return "블로그 전체";
   if (path === "/treatments (전체)") return "치료 페이지 전체";
+  if (path === "/research (전체)") return "리서치 전체";
 
   return blogTitleMap.get(getBlogSlugFromPath(path) ?? "") ?? path;
 }
@@ -951,8 +952,8 @@ export function TrafficTab() {
                     selectedPath={activeTopPage}
                     onSelect={setSelectedTopPage}
                   />
-                  <p className="mt-3 text-xs text-[var(--muted)]">
-                    블로그와 치료 페이지는 전체 섹션 단위로 먼저 묶은 뒤 비교합니다. 막대를 누르면 상세가 열립니다.
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                    블로그, 치료 페이지, 리서치는 전체 섹션 단위로 먼저 묶은 뒤 비교합니다. 막대를 누르면 상세가 열립니다.
                   </p>
                 </SectionCard>
 
@@ -1407,12 +1408,18 @@ export function TrafficTab() {
             {activeTopPageDetail.isSectionAggregate && activeTopPageDetail.topChildPages.length > 0 && (
               <div className="mt-4 rounded-2xl bg-[var(--surface)] p-4">
                 <h5 className="text-sm font-semibold text-[var(--foreground)]">
-                  {activeTopPageDetail.isBlogAggregate ? "블로그에서 많이 본 글" : "치료 페이지에서 많이 본 상세 페이지"}
+                  {activeTopPageDetail.isBlogAggregate
+                    ? "블로그에서 많이 본 글"
+                    : activeTopPageDetail.aggregateLabel === "치료 페이지 전체"
+                      ? "치료 페이지에서 많이 본 상세 페이지"
+                      : "리서치에서 많이 본 상세 페이지"}
                 </h5>
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   {activeTopPageDetail.isBlogAggregate
                     ? "블로그 전체 안에서 실제 조회를 만든 개별 글입니다. 막대를 누르면 그 글 상세로 이동합니다."
-                    : "치료 페이지 전체 안에서 실제 조회를 만든 개별 페이지입니다. 막대를 누르면 그 페이지 상세로 이동합니다."}
+                    : activeTopPageDetail.aggregateLabel === "치료 페이지 전체"
+                      ? "치료 페이지 전체 안에서 실제 조회를 만든 개별 페이지입니다. 막대를 누르면 그 페이지 상세로 이동합니다."
+                      : "리서치 전체 안에서 실제 조회를 만든 개별 페이지입니다. 막대를 누르면 그 페이지 상세로 이동합니다."}
                 </p>
                 <div className="mt-3">
                   <TopPagesChart

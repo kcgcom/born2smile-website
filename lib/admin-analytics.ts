@@ -279,14 +279,19 @@ export async function fetchGA4Data(period: string) {
     }))
     .filter((p) => !EXCLUDED_PREFIXES.some((prefix) => p.path.startsWith(prefix)));
 
-  const blogPages = rawTopPages.filter((page) => page.path.startsWith("/blog/"));
+  const blogPages = rawTopPages.filter((page) => page.path.startsWith("/blog"));
   const treatmentPages = rawTopPages.filter((page) => page.path.startsWith("/treatments"));
+  const researchPages = rawTopPages.filter((page) => page.path.startsWith("/research"));
   const nonAggregatePages = rawTopPages.filter(
-    (page) => !page.path.startsWith("/blog/") && !page.path.startsWith("/treatments"),
+    (page) =>
+      !page.path.startsWith("/blog") &&
+      !page.path.startsWith("/treatments") &&
+      !page.path.startsWith("/research"),
   );
   const blogAggregate = createPathAggregate(blogPages, "/blog (전체)");
   const treatmentAggregate = createPathAggregate(treatmentPages, "/treatments (전체)");
-  const aggregatePages = [blogAggregate, treatmentAggregate].filter((page) => page !== null);
+  const researchAggregate = createPathAggregate(researchPages, "/research (전체)");
+  const aggregatePages = [blogAggregate, treatmentAggregate, researchAggregate].filter((page) => page !== null);
   const topPages = [...nonAggregatePages, ...aggregatePages]
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
@@ -298,6 +303,7 @@ export async function fetchGA4Data(period: string) {
         .filter((path) => topPages.some((item) => item.path === path)),
       ...blogPages.slice(0, 10).map((page) => page.path),
       ...treatmentPages.slice(0, 10).map((page) => page.path),
+      ...researchPages.slice(0, 10).map((page) => page.path),
     ]),
   );
 
@@ -325,7 +331,14 @@ export async function fetchGA4Data(period: string) {
     }),
   ]);
 
-  const [blogDailyReport, blogSourceReport, treatmentDailyReport, treatmentSourceReport] = await Promise.all([
+  const [
+    blogDailyReport,
+    blogSourceReport,
+    treatmentDailyReport,
+    treatmentSourceReport,
+    researchDailyReport,
+    researchSourceReport,
+  ] = await Promise.all([
     blogAggregate
       ? client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,
@@ -335,7 +348,7 @@ export async function fetchGA4Data(period: string) {
         dimensionFilter: {
           filter: {
             fieldName: "pagePath",
-            stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+            stringFilter: { matchType: "BEGINS_WITH", value: "/blog" },
           },
         },
         orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
@@ -350,7 +363,7 @@ export async function fetchGA4Data(period: string) {
         dimensionFilter: {
           filter: {
             fieldName: "pagePath",
-            stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+            stringFilter: { matchType: "BEGINS_WITH", value: "/blog" },
           },
         },
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
@@ -382,6 +395,37 @@ export async function fetchGA4Data(period: string) {
           filter: {
             fieldName: "pagePath",
             stringFilter: { matchType: "BEGINS_WITH", value: "/treatments" },
+          },
+        },
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 12,
+      })
+      : Promise.resolve(null),
+    researchAggregate
+      ? client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/research" },
+          },
+        },
+        orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+      })
+      : Promise.resolve(null),
+    researchAggregate
+      ? client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "sessionSource" }],
+        metrics: [{ name: "sessions" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: "/research" },
           },
         },
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
@@ -472,11 +516,19 @@ export async function fetchGA4Data(period: string) {
   );
 
   const detailPages = [
-    ...topPages.filter((page) => page.path !== "/blog (전체)" && page.path !== "/treatments (전체)"),
+    ...topPages.filter(
+      (page) =>
+        page.path !== "/blog (전체)" &&
+        page.path !== "/treatments (전체)" &&
+        page.path !== "/research (전체)",
+    ),
     ...blogPages
       .filter((page) => trackedPagePaths.includes(page.path))
       .filter((page) => !topPages.some((item) => item.path === page.path)),
     ...treatmentPages
+      .filter((page) => trackedPagePaths.includes(page.path))
+      .filter((page) => !topPages.some((item) => item.path === page.path)),
+    ...researchPages
       .filter((page) => trackedPagePaths.includes(page.path))
       .filter((page) => !topPages.some((item) => item.path === page.path)),
   ];
@@ -554,6 +606,43 @@ export async function fetchGA4Data(period: string) {
             dailyTrend,
             sources,
             topChildPages: treatmentPages
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 10),
+          },
+        ];
+      }
+
+      if (page.path === "/research (전체)") {
+        const dailyTrend = (researchDailyReport?.[0]?.rows ?? []).map((row) => ({
+          date: normalizeGaDate(row.dimensionValues?.[0]?.value ?? ""),
+          sessions: Number(row.metricValues?.[0]?.value ?? 0),
+          pageviews: Number(row.metricValues?.[1]?.value ?? 0),
+        }));
+        const sources = (researchSourceReport?.[0]?.rows ?? []).map((row) => {
+          const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+          return {
+            source: row.dimensionValues?.[0]?.value ?? "(unknown)",
+            sessions,
+            percentage:
+              page.sessions > 0 ? Math.round((sessions / page.sessions) * 1000) / 10 : 0,
+          };
+        });
+
+        return [
+          page.path,
+          {
+            isBlogAggregate: false,
+            isSectionAggregate: true,
+            aggregateLabel: "리서치 전체",
+            summary: {
+              views: page.views,
+              sessions: page.sessions,
+              pageviewsPerSession:
+                page.sessions > 0 ? Math.round((page.views / page.sessions) * 100) / 100 : 0,
+            },
+            dailyTrend,
+            sources,
+            topChildPages: researchPages
               .sort((a, b) => b.views - a.views)
               .slice(0, 10),
           },
