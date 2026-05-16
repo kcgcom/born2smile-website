@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
-import { getPostBySlug } from "@/lib/blog-supabase";
+import { getPostBySlugFresh } from "@/lib/blog-supabase";
 import { getBlogPostUrl } from "@/lib/blog";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   revalidateTag("blog-posts-admin", "max");
 
   if (slug) {
-    const post = await getPostBySlug(slug);
+    const post = await getPostBySlugFresh(slug);
     if (!post) {
       return Response.json(
         { error: "NOT_FOUND", message: `포스트를 찾을 수 없습니다: ${slug}` },
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     revalidateTag(`blog-post-${slug}`, "max");
     revalidateTag("blog-posts", "max");
     revalidateTag("blog-slugs", "max");
+    revalidateTag(`blog-related-${post.category}`, "max");
     revalidatePath(getBlogPostUrl(slug, post.category));
     revalidatePath(`/blog/${post.category}`);
     revalidatePath("/blog");

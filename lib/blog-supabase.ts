@@ -16,7 +16,8 @@ import { BLOG_POSTS_SNAPSHOT } from "./blog/generated/posts-snapshot";
 const TABLE = "blog_posts";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
-const PUBLIC_POSTS_CACHE_KEY = "blog-posts-published-full";
+const DEPLOY_CACHE_SEGMENT = process.env.VERCEL_GIT_COMMIT_SHA ?? "local";
+const PUBLIC_POSTS_CACHE_KEY = `blog-posts-published-full-${DEPLOY_CACHE_SEGMENT}`;
 const PUBLIC_BLOG_DATA_SOURCE = process.env.BLOG_PUBLIC_DATA_SOURCE;
 
 function safeRevalidateTag(tag: string) {
@@ -249,7 +250,7 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
         readTime: post.readTime ?? calculateReadTime(post),
       }));
     },
-    ["blog-posts-published"],
+    [`blog-posts-published-${DEPLOY_CACHE_SEGMENT}`],
     { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
   );
 
@@ -300,7 +301,7 @@ export function getPostBySlug(
       const posts = await getAllPublishedPosts();
       return posts.find((post) => post.slug === slug) ?? null;
     },
-    [getBlogPostCacheTag(slug)],
+    [`${getBlogPostCacheTag(slug)}-${DEPLOY_CACHE_SEGMENT}`],
     { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
   )();
 }
@@ -340,7 +341,7 @@ export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
     const posts = await getAllPublishedPosts();
     return posts.map((post) => post.slug);
   },
-  ["blog-slugs"],
+  [`blog-slugs-${DEPLOY_CACHE_SEGMENT}`],
   { revalidate: CACHE_TTL, tags: ["blog-slugs"] },
 );
 
@@ -372,7 +373,7 @@ export function getRelatedPosts(
           readTime: post.readTime ?? calculateReadTime(post),
         }));
     },
-    [getRelatedPostsCacheKey(category, excludeSlug, limit)],
+    [`${getRelatedPostsCacheKey(category, excludeSlug, limit)}-${DEPLOY_CACHE_SEGMENT}`],
     {
       revalidate: CACHE_TTL,
       tags: [getRelatedPostsCacheTag(category)],
