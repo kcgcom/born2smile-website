@@ -23,11 +23,22 @@ const posthogConnectSrc = getCspOrigins(
   process.env.POSTHOG_BASE_URL,
 );
 
+const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseImageOrigins = [
+  "https://*.supabase.co",
+  ...getCspOrigins(supabaseOrigin),
+];
+
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com",
   "style-src 'self' 'unsafe-inline' https://*.i.posthog.com",
-  "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakaocdn.net",
+  [
+    "img-src 'self' data: blob:",
+    "https://*.daumcdn.net",
+    "https://*.kakaocdn.net",
+    ...supabaseImageOrigins,
+  ].join(" "),
   [
     "connect-src 'self'",
     "https://*.supabase.co",
@@ -56,6 +67,12 @@ const nextConfig: NextConfig = {
   },
   images: {
     minimumCacheTTL: 31536000, // 1년 — 정적 이미지 재방문 캐시 효율 극대화
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+    ],
   },
   async headers() {
     return [
