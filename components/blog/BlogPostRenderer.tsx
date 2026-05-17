@@ -29,6 +29,10 @@ export function getReferenceSource(
     const { hostname } = new URL(href);
     const normalized = hostname.replace(/^www\./, "");
 
+    if (normalized === "pubmed.ncbi.nlm.nih.gov")
+      return { label: "PubMed", host: normalized, isOfficial: true };
+    if (normalized === "pmc.ncbi.nlm.nih.gov")
+      return { label: "PMC", host: normalized, isOfficial: true };
     if (normalized.includes("nhs.uk"))
       return { label: "NHS", host: normalized, isOfficial: true };
     if (normalized.includes("fda.gov"))
@@ -38,6 +42,10 @@ export function getReferenceSource(
       normalized.includes("ada.org")
     )
       return { label: "ADA", host: normalized, isOfficial: true };
+    if (normalized.includes("aapd.org"))
+      return { label: "AAPD", host: normalized, isOfficial: true };
+    if (normalized.includes("iadt-dentaltrauma.org"))
+      return { label: "IADT", host: normalized, isOfficial: true };
     if (normalized.includes("diabetes.org"))
       return { label: "미국당뇨병학회", host: normalized, isOfficial: true };
 

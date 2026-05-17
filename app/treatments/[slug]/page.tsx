@@ -306,7 +306,27 @@ export default async function TreatmentDetailPage({
                     />
                   </summary>
                   <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-700">
-                    {item.a}
+                    <p>{item.a}</p>
+                    {item.link ? (
+                      <Link
+                        href={item.link.href}
+                        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        {item.link.label}
+                        <ArrowRight size={14} />
+                      </Link>
+                    ) : null}
+                    {item.source ? (
+                      <Link
+                        href={item.source.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
+                      >
+                        {item.source.label}
+                        <ArrowRight size={14} />
+                      </Link>
+                    ) : null}
                   </div>
                 </details>
               ))}

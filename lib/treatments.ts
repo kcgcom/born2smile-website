@@ -12,7 +12,7 @@ export interface TreatmentDetail {
   highlights?: { label: string; value: string; note?: string }[];
   steps: { title: string; desc: string }[];
   advantages: string[];
-  faq: { q: string; a: string; link?: { href: string; label: string } }[];
+  faq: { q: string; a: string; link?: { href: string; label: string }; source?: { href: string; label: string } }[];
 }
 
 export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
@@ -150,8 +150,8 @@ export const TREATMENT_DETAILS: Record<string, TreatmentDetail> = {
       "성장기 치아 발달 모니터링",
     ],
     faq: [
-      { q: "아이가 처음 치과에 가는 시기는?", a: "첫 유치가 나온 후 6개월 이내, 또는 돌 전후로 첫 검진을 받으시는 것을 권장합니다." },
-      { q: "실란트는 꼭 해야 하나요?", a: "실란트는 어금니 홈을 메워 충치를 예방하는 효과적인 방법입니다. 특히 영구치가 나온 후 빨리 하시면 좋습니다." },
+      { q: "아이가 처음 치과에 가는 시기는?", a: "첫 유치가 나온 후 6개월 이내, 또는 돌 전후로 첫 검진을 받으시는 것을 권장합니다.", source: { href: "https://www.aapd.org/resources/parent/faq/", label: "AAPD 첫 치과 방문 권고 보기" } },
+      { q: "실란트는 꼭 해야 하나요?", a: "실란트는 어금니 홈을 메워 충치를 예방하는 효과적인 방법입니다. 특히 영구치가 나온 후 빨리 하시면 좋습니다.", source: { href: "https://www.aapd.org/research/oral-health-policies--recommendations/pit_and_fissure_sealants/", label: "AAPD 실란트 가이드 보기" } },
       { q: "아이 치과는 어떤 기준으로 골라야 하나요?", a: "소아 환자 경험이 풍부한 의료진, 아이 눈높이에 맞춘 진료 환경, 부모 동행 진료 가능 여부를 확인하세요. 처음 치과 경험이 중요하므로 아이가 편안해하는 분위기가 핵심입니다." },
       { q: "치과 치료 후 집에서 아이를 어떻게 관리해야 하나요?", a: "마취가 풀리는 2~3시간 동안 아이가 입술이나 볼을 깨물지 않도록 옆에서 지켜봐 주세요. 음식은 감각이 돌아온 뒤 미지근하고 부드러운 것부터 시작하세요.", link: { href: "/blog/pediatric/after-child-dental-treatment-care", label: "치료 후 보호자 관리 가이드 보기" } },
     ],
