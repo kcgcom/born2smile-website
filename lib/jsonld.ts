@@ -387,7 +387,7 @@ export function getDoctorJsonLd() {
 }
 
 /**
- * WebSite + SearchAction JSON-LD
+ * WebSite JSON-LD
  * 홈페이지에 삽입하여 사이트를 named entity로 등록합니다.
  */
 export function getWebSiteJsonLd() {

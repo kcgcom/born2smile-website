@@ -22,8 +22,8 @@
 현재 우선순위가 높은 개선 항목은 다음 3가지입니다.
 
 1. SNS/외부 프로필 링크 확장으로 `sameAs` 엔티티 그래프 보강
-2. 진료 상세 페이지의 `HowTo` 스키마 실제 렌더링
-3. 블로그/진료 콘텐츠에 출처, 수치, 저자 신뢰 요소 보강
+2. 블로그/진료 콘텐츠에 출처, 수치, 저자 신뢰 요소 보강
+3. 블로그 저자 신뢰 블록과 내부 엔티티 연결 유지
 
 ---
 
@@ -40,7 +40,10 @@
 - `sitemap.xml` URL 수는 **112개**
 - `robots.txt`는 주요 AI 크롤러를 명시적으로 허용
 - `LINKS.kakaoChannel`, `LINKS.instagram`, `LINKS.naverBlog`는 현재 비어 있음
-- `getHowToJsonLd()`는 구현되어 있으나 실제 페이지에서는 렌더링되지 않음
+- 진료 상세 페이지는 `HowTo` JSON-LD를 실제로 렌더링함
+- `BlogPosting.author.sameAs`는 내부 `/about` 링크만 사용하도록 보수적으로 정리됨
+- `speakable` 스키마는 제거됨
+- `sitemap.xml`의 주요 정적 페이지 `lastmod`는 파일 수정 시각 기반으로 계산됨
 
 ### 검증 결과 stale 또는 오판이었던 항목
 
@@ -62,38 +65,29 @@
    - 현재 `sameAs`는 네이버 지도, 카카오맵, Google Business Profile, 네이버 플레이스 중심
    - 엔티티 그래프 확장 여지가 큼
 
-2. **진료 상세 페이지에 `HowTo` 스키마 미렌더링**
-   - [lib/jsonld.ts](/home/dev/projects/born2smile-website/lib/jsonld.ts:180)에 구현 존재
-   - 하지만 실제 라우트에서 호출되지 않음
-   - 진료 단계 콘텐츠가 있는 페이지에서는 적용 가치가 있음
-
-3. **콘텐츠 출처/근거 링크 부족**
+2. **콘텐츠 출처/근거 링크 부족**
    - 의료 정보형 블로그와 FAQ는 구조가 좋지만, 공공기관/학회/가이드라인 인용이 적음
    - AI 인용성과 신뢰성 모두에서 손해
 
 ### Medium
 
-4. **블로그 저자 신뢰 블록 부재**
-   - 페이지 상단에 저자명과 직함은 노출되지만, 별도 저자 카드나 자격 요약 블록은 없음
-   - E-E-A-T를 더 직접적으로 전달할 수 있음
+3. **외부 저자 프로필 부재**
+   - 블로그 하단 저자 카드와 내부 `/about` 연결은 추가됐지만, 외부에서 동일 인물로 확인 가능한 프로필은 아직 없음
+   - 저자 엔티티 확장은 실제 외부 프로필이 생긴 뒤 진행하는 편이 안전함
 
-5. **FAQ 답변 depth 확장 여지**
+4. **FAQ 답변 depth 확장 여지**
    - FAQ JSON-LD는 잘 되어 있으나, 일부 답변은 짧고 맥락이 적음
    - “언제/왜/어떻게/예외” 구조로 확장하면 AI 인용성이 높아짐
 
-6. **리뷰 작성자 익명 처리**
+5. **리뷰 작성자 익명 처리**
    - Review JSON-LD의 author가 `○○○` 형식
    - 개인정보 보호 측면에서는 이해되지만, 신뢰 시그널은 약해질 수 있음
 
 ### Low
 
-7. **일부 정적 페이지 `lastmod` 고정**
-   - `sitemap.ts`의 일부 값은 실제 수정일 자동 추적이 아니라 수동 날짜
-   - 치명적이진 않지만 운영 정합성 측면에서는 개선 가능
-
-8. **`SpeakableSpecification` 사용**
-   - 현재 블로그/진료 JSON-LD에 포함되어 있음
-   - Google 기준 실효성이 낮아 우선순위는 낮음
+6. **개별 페이지 mtime 기반 `lastmod`의 한계**
+   - 현재는 파일 수정 시각 기준이라 운영상 간단하지만, CMS/환경설정 변경이 항상 반영되는 구조는 아님
+   - 치명적이진 않지만 장기적으로는 콘텐츠 소스 기준 계산이 더 정확함
 
 ---
 
@@ -168,7 +162,7 @@
 | `MedicalWebPage` | 구현됨 |
 | `BreadcrumbList` | 구현됨 |
 | `AggregateRating` + `Review` | 구현됨 |
-| `HowTo` | 함수만 있고 미렌더링 |
+| `HowTo` | 구현 및 렌더링됨 |
 | `WebSite` | 구현됨 |
 | `SearchAction` | 구현 안 됨 |
 
@@ -213,25 +207,24 @@
 
 ### 1주차
 
-- [ ] `HowTo` 스키마 진료 상세에 연결
 - [ ] SNS/채널 실제 운영 여부 확정 후 `LINKS` 반영
 - [ ] 블로그 대표 글 5개에 출처 링크 추가
+- [ ] FAQ 답변 중 짧은 항목부터 보강
 
 ### 2주차
 
-- [ ] 블로그 저자 카드 컴포넌트 추가
+- [ ] 외부 저자 프로필 후보 검토
 - [ ] FAQ 답변 확장
 - [ ] 치료 페이지 수치/판단 기준 문장 정교화
 
 ### 3주차
 
-- [ ] `lastmod` 관리 방식 개선 검토
+- [ ] `lastmod` 계산 기준 고도화 필요 여부 검토
 - [ ] 리뷰 표시 정책 재검토
 - [ ] Search Console 기반 실제 노출 변화 확인
 
 ### 4주차
 
-- [ ] `SpeakableSpecification` 유지/제거 결정
 - [ ] 외부 언급 및 로컬 플랫폼 존재감 별도 조사
 
 ---
@@ -258,4 +251,3 @@
   - [lib/constants.ts](/home/dev/projects/born2smile-website/lib/constants.ts:301)
   - [lib/jsonld.ts](/home/dev/projects/born2smile-website/lib/jsonld.ts:180)
   - [lib/jsonld.ts](/home/dev/projects/born2smile-website/lib/jsonld.ts:404)
-
