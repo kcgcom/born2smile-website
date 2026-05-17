@@ -166,10 +166,6 @@ export function getTreatmentJsonLd(treatmentId: string) {
       name: CLINIC.name,
       telephone: CLINIC.phoneIntl,
     },
-    speakable: {
-      "@type": "SpeakableSpecification",
-      cssSelector: ["h1", ".treatment-description", ".treatment-advantages", "h2"],
-    },
   };
 }
 
@@ -239,14 +235,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
       name: doctor.name,
       jobTitle: doctor.position,
       url: `${BASE_URL}/about`,
-      sameAs: [
-        `${BASE_URL}/about`,
-        LINKS.naverPlace,
-      ].filter(Boolean),
-    },
-    speakable: {
-      "@type": "SpeakableSpecification",
-      cssSelector: ["h1", ".blog-post-excerpt", "article > p:first-of-type"],
+      sameAs: [`${BASE_URL}/about`],
     },
     publisher: {
       "@type": "Organization",
@@ -394,7 +383,6 @@ export function getDoctorJsonLd() {
       name: m,
     })),
     knowsAbout: ["임플란트", "치아교정", "심미보철", "통합치의학", "소아치과", "보존치료"],
-    image: `${BASE_URL}${doctor.image}`,
   };
 }
 

@@ -8,6 +8,26 @@ export const metadata: Metadata = {
   description: `${CLINIC.name} 상담 안내 페이지입니다. 대표전화 ${CLINIC.phone}, ${CLINIC.address}. 요일별 진료시간과 점심시간, 카카오맵 길찾기, 첫 내원 전 준비사항과 예약 문의 방법을 빠르게 확인해 상담을 시작하실 수 있습니다. 체크포인트도 함께 안내합니다.`,
   keywords: ["김포치과 예약", "김포한강신도시 치과 상담", "장기동 치과 전화", "서울본치과 상담"],
   alternates: { canonical: `${BASE_URL}/contact` },
+  openGraph: {
+    title: `상담 안내 | ${CLINIC.name}`,
+    description: `대표전화, 진료시간, 길찾기와 첫 내원 전 확인할 내용을 ${CLINIC.name} 상담 안내 페이지에서 확인하세요.`,
+    siteName: CLINIC.name,
+    locale: "ko_KR",
+    type: "website",
+    url: `${BASE_URL}/contact`,
+    images: [
+      {
+        url: "/images/facility/exterior.jpg",
+        alt: `${CLINIC.name} 오시는 길 안내`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `상담 안내 | ${CLINIC.name}`,
+    description: `대표전화, 진료시간, 길찾기와 첫 내원 전 확인할 내용을 ${CLINIC.name} 상담 안내 페이지에서 확인하세요.`,
+    images: ["/images/facility/exterior.jpg"],
+  },
 };
 
 function getContactJsonLd(

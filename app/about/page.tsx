@@ -24,6 +24,26 @@ export const metadata: Metadata = {
   title: "병원 소개",
   description: `${CLINIC.name} 병원 소개 페이지입니다. 김포 한강신도시 장기동에서 진료 철학, 대표원장 학력·임상경험, 치과위생사 팀 역량, 첨단 장비, 진료시간, 주차와 오시는 길 정보를 한 번에 확인해 내원 전 필요한 내용을 미리 살펴보실 수 있습니다. 방문 전 궁금한 내용을 빨리 확인할 수 있습니다.`,
   alternates: { canonical: `${BASE_URL}/about` },
+  openGraph: {
+    title: `병원 소개 | ${CLINIC.name}`,
+    description: `${CLINIC.name}의 진료 철학, 대표원장 소개, 의료팀, 시설, 장비, 진료시간, 오시는 길을 한 번에 확인하세요.`,
+    siteName: CLINIC.name,
+    locale: "ko_KR",
+    type: "website",
+    url: `${BASE_URL}/about`,
+    images: [
+      {
+        url: "/images/facility/exterior.jpg",
+        alt: `${CLINIC.name} 외관`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `병원 소개 | ${CLINIC.name}`,
+    description: `${CLINIC.name}의 진료 철학, 대표원장 소개, 의료팀, 시설, 장비, 진료시간, 오시는 길을 한 번에 확인하세요.`,
+    images: ["/images/facility/exterior.jpg"],
+  },
 };
 
 export default function AboutPage() {

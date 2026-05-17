@@ -4,7 +4,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
-import { getTreatmentJsonLd, getFaqJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import {
+  getTreatmentJsonLd,
+  getHowToJsonLd,
+  getFaqJsonLd,
+  getBreadcrumbJsonLd,
+  serializeJsonLd,
+} from "@/lib/jsonld";
 import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl, getCategoryLabel } from "@/lib/blog";
 import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
@@ -28,6 +34,7 @@ export async function generateMetadata({
   if (!detail) return {};
 
   const treatmentUrl = `${BASE_URL}/treatments/${slug}`;
+  const ogImageUrl = `${treatmentUrl}/opengraph-image`;
 
   // 스케일링 페이지는 타겟 키워드를 포함한 맞춤 메타데이터 사용
   if (slug === "scaling") {
@@ -51,11 +58,18 @@ export async function generateMetadata({
         siteName: CLINIC.name,
         locale: "ko_KR",
         url: treatmentUrl,
+        images: [
+          {
+            url: ogImageUrl,
+            alt: `안아픈 스케일링 | ${CLINIC.name}`,
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",
         title: scalingOgTitle,
         description: scalingDesc,
+        images: [ogImageUrl],
       },
     };
   }
@@ -77,11 +91,18 @@ export async function generateMetadata({
       siteName: CLINIC.name,
       locale: "ko_KR",
       url: treatmentUrl,
+      images: [
+        {
+          url: ogImageUrl,
+          alt: `${detail.name} | ${CLINIC.name}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description,
+      images: [ogImageUrl],
     },
   };
 }
@@ -101,6 +122,7 @@ export default async function TreatmentDetailPage({
     : [];
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);
+  const howToJsonLd = getHowToJsonLd(slug);
   const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -114,6 +136,12 @@ export default async function TreatmentDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(treatmentJsonLd) }}
+        />
+      )}
+      {howToJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(howToJsonLd) }}
         />
       )}
       {faqJsonLd && (

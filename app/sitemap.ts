@@ -1,18 +1,29 @@
 export const revalidate = 86400;
 
 import type { MetadataRoute } from "next";
+import { stat } from "fs/promises";
+import { join } from "path";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
 
-// 페이지별 실제 최종 수정일 (콘텐츠 변경 시 업데이트)
-const PAGE_MODIFIED = {
-  home: new Date("2026-03-27"),
-  about: new Date("2026-03-27"),
-  treatments: new Date("2026-03-27"),
-  blog: new Date("2026-03-27"),
-  contact: new Date("2026-02-20"),
-} as const;
+const DEFAULT_LAST_MODIFIED = new Date("2026-01-01T00:00:00.000Z");
+
+async function getLatestFileModified(paths: string[]): Promise<Date> {
+  const stats = await Promise.all(
+    paths.map(async (path) => {
+      try {
+        const file = join(process.cwd(), path);
+        const value = await stat(file);
+        return value.mtime;
+      } catch {
+        return DEFAULT_LAST_MODIFIED;
+      }
+    }),
+  );
+
+  return stats.reduce<Date>((latest, current) => (current > latest ? current : latest), DEFAULT_LAST_MODIFIED);
+}
 
 function getPostLastModified(post: { date: string; dateModified?: string }): Date {
   const lastModified = post.dateModified && post.dateModified > post.date
@@ -22,9 +33,18 @@ function getPostLastModified(post: { date: string; dateModified?: string }): Dat
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [homeLastModified, aboutLastModified, treatmentsLastModified, contactLastModified, faqLastModified, privacyLastModified] = await Promise.all([
+    getLatestFileModified(["app/page.tsx", "lib/constants.ts"]),
+    getLatestFileModified(["app/about/page.tsx", "lib/constants.ts"]),
+    getLatestFileModified(["app/treatments/page.tsx", "app/treatments/[slug]/page.tsx", "lib/constants.ts", "lib/treatments.ts"]),
+    getLatestFileModified(["app/contact/layout.tsx", "app/contact/page.tsx", "lib/constants.ts"]),
+    getLatestFileModified(["app/faq/page.tsx", "lib/treatments.ts", "lib/constants.ts"]),
+    getLatestFileModified(["app/privacy/page.tsx"]),
+  ]);
+
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
-    lastModified: PAGE_MODIFIED.treatments,
+    lastModified: treatmentsLastModified,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
@@ -35,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const latestPostDate = publishedPosts.reduce<Date>((max, p) => {
     const d = getPostLastModified(p);
     return d > max ? d : max;
-  }, PAGE_MODIFIED.blog);
+  }, DEFAULT_LAST_MODIFIED);
 
   const latestDateByCategory = new Map<string, Date>();
   for (const p of publishedPosts) {
@@ -47,19 +67,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: BASE_URL,
-      lastModified: PAGE_MODIFIED.home,
+      lastModified: homeLastModified,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${BASE_URL}/about`,
-      lastModified: PAGE_MODIFIED.about,
+      lastModified: aboutLastModified,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/treatments`,
-      lastModified: PAGE_MODIFIED.treatments,
+      lastModified: treatmentsLastModified,
       changeFrequency: "monthly",
       priority: 0.8,
     },
@@ -84,19 +104,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     {
       url: `${BASE_URL}/faq`,
-      lastModified: PAGE_MODIFIED.treatments,
+      lastModified: faqLastModified,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
       url: `${BASE_URL}/contact`,
-      lastModified: PAGE_MODIFIED.contact,
+      lastModified: contactLastModified,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/privacy`,
-      lastModified: new Date("2026-03-28"),
+      lastModified: privacyLastModified,
       changeFrequency: "yearly",
       priority: 0.3,
     },
