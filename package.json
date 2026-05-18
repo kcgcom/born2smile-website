@@ -8,7 +8,7 @@
     "generate-research-snapshot": "tsx scripts/generate-research-snapshot.ts",
     "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",
     "dev": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
-    "build": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && NODE_OPTIONS=--max-old-space-size=4096 next build",
+    "build": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",
