@@ -84,8 +84,8 @@ function validate(form: BlogEditorData): Record<string, string> {
       if (block.type === "faq" && (block.question.length < 5 || block.answer.length < 20)) {
         errors[`block_${i}`] = `블록 ${i + 1} FAQ 내용을 확인해 주세요`;
       }
-      if (block.type === "image" && (!block.src.trim() || (!block.decorative && block.alt.trim().length < 2))) {
-        errors[`block_${i}`] = `블록 ${i + 1} 이미지 경로와 대체 텍스트를 확인해 주세요`;
+      if (block.type === "image" && !block.src.trim()) {
+        errors[`block_${i}`] = `블록 ${i + 1} 이미지 경로를 확인해 주세요`;
       }
       if (block.type === "relatedLinks" && block.items.some((item) => item.title.length < 2 || item.href.length < 1)) {
         errors[`block_${i}`] = `블록 ${i + 1} 관련 링크 정보를 확인해 주세요`;
@@ -152,7 +152,7 @@ function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
     case "faq":
       return { type: "faq", question: "", answer: "" };
     case "image":
-      return { type: "image", src: "/images/blog/example.png", alt: "", caption: "", hidden: false, decorative: false };
+      return { type: "image", src: "/images/blog/example.png", alt: "", hidden: false, decorative: false };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "", href: "", description: "" }] };
     case "table":

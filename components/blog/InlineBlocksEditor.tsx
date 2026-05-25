@@ -784,12 +784,14 @@ function ImageEditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!src.trim() || (!decorative && alt.trim().length < 2)) return;
+        const normalizedAlt = alt.trim();
+        const normalizedCaption = caption.trim();
+        if (!src.trim()) return;
         onSave({
           type: "image",
           src: src.trim(),
-          alt: decorative ? "" : alt.trim(),
-          ...(caption.trim() ? { caption: caption.trim() } : {}),
+          alt: decorative ? "" : normalizedAlt,
+          ...(normalizedCaption ? { caption: normalizedCaption } : {}),
           ...(hidden ? { hidden: true } : {}),
           ...(decorative ? { decorative: true } : {}),
         });
@@ -834,15 +836,18 @@ function ImageEditForm({
         placeholder="/images/blog/prosthetics/crown-materials-chart.png"
         autoFocus
       />
-      <label className="mb-1 block text-sm font-medium text-gray-600">대체 텍스트</label>
+      <label className="mb-1 block text-sm font-medium text-gray-600">대체 텍스트 <span className="text-gray-400">(선택)</span></label>
       <input
         type="text"
         value={alt}
         onChange={(e) => setAlt(e.target.value)}
         className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
-        placeholder={decorative ? "장식용 이미지는 비워둡니다" : "이미지 내용을 설명하는 텍스트"}
+        placeholder={decorative ? "장식용 이미지는 비워둡니다" : "스크린리더와 검색엔진을 위한 이미지 설명"}
         disabled={decorative}
       />
+      {!decorative && alt.trim().length < 2 && (
+        <p className="mb-3 text-xs text-amber-600">대체 텍스트는 선택사항이지만, 정보성 이미지라면 입력하는 편이 좋습니다.</p>
+      )}
       <label className="mb-1 block text-sm font-medium text-gray-600">캡션</label>
       <textarea
         value={caption}
@@ -1120,8 +1125,7 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
       return {
         type: "image",
         src: "/images/blog/example.png",
-        alt: "이미지 설명을 입력하세요",
-        caption: "캡션을 입력하세요",
+        alt: "",
         hidden: false,
         decorative: false,
       };

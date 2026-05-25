@@ -44,14 +44,6 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     caption: z.string().max(200).optional(),
     hidden: z.boolean().optional(),
     decorative: z.boolean().optional(),
-  }).superRefine((value, ctx) => {
-    if (!value.decorative && value.alt.trim().length < 2) {
-      ctx.addIssue({
-        code: "custom",
-        message: "장식용 이미지가 아니면 대체 텍스트를 2자 이상 입력해 주세요",
-        path: ["alt"],
-      });
-    }
   }),
   z.object({
     type: z.literal("relatedLinks"),

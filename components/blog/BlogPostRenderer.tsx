@@ -117,9 +117,9 @@ export function renderSingleBlock(
               className="h-auto w-full object-cover"
             />
           </div>
-          {block.caption && (
+          {block.caption?.trim() && (
             <figcaption className="text-sm leading-relaxed text-gray-500">
-              {block.caption}
+              {block.caption.trim()}
             </figcaption>
           )}
         </figure>
