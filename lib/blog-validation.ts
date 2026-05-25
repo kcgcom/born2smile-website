@@ -54,6 +54,13 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     headers: z.array(z.string().min(1).max(60)).min(2).max(8),
     rows: z.array(z.array(z.string().max(200)).min(2).max(8)).min(1).max(20),
   }),
+  z.object({
+    type: z.literal("researchCallout"),
+    title: z.string().min(2).max(120),
+    description: z.string().min(10).max(300),
+    href: z.string().min(1).max(300),
+    linkText: z.string().min(2).max(80),
+  }),
 ]);
 
 const blogPostBaseSchema = z.object({
