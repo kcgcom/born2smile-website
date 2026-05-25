@@ -17,6 +17,50 @@ const CATEGORY_COLORS: Record<string, string> = {
   "health-tips": "#0F766E",
 };
 
+function splitTitleLines(title: string): string[] {
+  const compactTitle = title.trim();
+  if (!compactTitle) return [];
+
+  const preferredBreaks = [", ", "·", ":", " - ", " — "];
+  for (const separator of preferredBreaks) {
+    if (!compactTitle.includes(separator)) continue;
+    const parts = compactTitle
+      .split(separator)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) {
+      const [first, ...rest] = parts;
+      return [first + separator.trimEnd(), rest.join(" ")].filter(Boolean);
+    }
+  }
+
+  if (compactTitle.length <= 16) return [compactTitle];
+
+  const middle = Math.floor(compactTitle.length / 2);
+  let splitIndex = -1;
+  for (let offset = 0; offset < 6; offset += 1) {
+    const rightIndex = middle + offset;
+    const leftIndex = middle - offset;
+    if (compactTitle[rightIndex] === " ") {
+      splitIndex = rightIndex;
+      break;
+    }
+    if (compactTitle[leftIndex] === " ") {
+      splitIndex = leftIndex;
+      break;
+    }
+  }
+
+  if (splitIndex > 0) {
+    return [
+      compactTitle.slice(0, splitIndex).trim(),
+      compactTitle.slice(splitIndex + 1).trim(),
+    ].filter(Boolean);
+  }
+
+  return [compactTitle];
+}
+
 async function getPostTitle(slug: string): Promise<string | null> {
   try {
     const { BLOG_POSTS_SNAPSHOT } = await import("@/lib/blog/generated/posts-snapshot");
@@ -44,7 +88,13 @@ export default async function Image({
       ? rawTitle.slice(0, 28) + "..."
       : rawTitle
     : categoryLabel + " 정보 · 서울본치과";
-  const fontSize = rawTitle && rawTitle.length <= 18 ? 64 : 54;
+  const titleLines = splitTitleLines(displayTitle);
+  const fontSize =
+    rawTitle && rawTitle.length <= 14
+      ? 62
+      : rawTitle && rawTitle.length <= 24
+        ? 54
+        : 48;
 
   const fontData400 = readFileSync(
     join(process.cwd(), "public/fonts/Pretendard-400.ttf"),
@@ -62,7 +112,9 @@ export default async function Image({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          padding: "56px 80px",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "48px 72px",
           position: "relative",
         }}
       >
@@ -78,20 +130,24 @@ export default async function Image({
           }}
         />
 
-        {/* Top row */}
+        {/* Center content: keep key text inside the square-safe crop area */}
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 10,
+            justifyContent: "center",
+            width: "100%",
+            maxWidth: 620,
+            textAlign: "center",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
+              gap: 12,
+              marginBottom: 24,
             }}
           >
             <div
@@ -112,49 +168,47 @@ export default async function Image({
             >
               서울본치과 · 블로그
             </span>
+            <div
+              style={{
+                background: accentColor,
+                color: "#ffffff",
+                borderRadius: 999,
+                padding: "8px 18px",
+                fontSize: 16,
+                fontFamily: "Pretendard",
+                fontWeight: 500,
+                marginLeft: 8,
+              }}
+            >
+              {categoryLabel}
+            </div>
           </div>
-          <div
-            style={{
-              background: accentColor,
-              color: "#ffffff",
-              borderRadius: 100,
-              padding: "8px 20px",
-              fontSize: 16,
-              fontFamily: "Pretendard",
-              fontWeight: 400,
-            }}
-          >
-            {categoryLabel}
-          </div>
-        </div>
-
-        {/* Middle */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
           <div
             style={{
               color: "#ffffff",
               fontSize: fontSize,
               fontFamily: "Pretendard",
               fontWeight: 700,
-              lineHeight: 1.3,
+              lineHeight: 1.25,
+              letterSpacing: "-0.03em",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 6,
+              textWrap: "balance",
             }}
           >
-            {displayTitle}
+            {titleLines.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
           </div>
           <div
             style={{
               color: "rgba(255,255,255,0.45)",
-              fontSize: 24,
+              fontSize: 22,
               fontFamily: "Pretendard",
               fontWeight: 400,
-              marginTop: 20,
+              marginTop: 18,
             }}
           >
             서울본치과 블로그
@@ -164,8 +218,10 @@ export default async function Image({
         {/* Bottom */}
         <div
           style={{
+            position: "absolute",
+            bottom: 28,
             color: "rgba(255,255,255,0.25)",
-            fontSize: 18,
+            fontSize: 16,
             fontFamily: "Pretendard",
             fontWeight: 400,
           }}
