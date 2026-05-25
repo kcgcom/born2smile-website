@@ -84,7 +84,7 @@ function validate(form: BlogEditorData): Record<string, string> {
       if (block.type === "faq" && (block.question.length < 5 || block.answer.length < 20)) {
         errors[`block_${i}`] = `블록 ${i + 1} FAQ 내용을 확인해 주세요`;
       }
-      if (block.type === "image" && (!block.src.trim() || block.alt.trim().length < 2)) {
+      if (block.type === "image" && (!block.src.trim() || (!block.decorative && block.alt.trim().length < 2))) {
         errors[`block_${i}`] = `블록 ${i + 1} 이미지 경로와 대체 텍스트를 확인해 주세요`;
       }
       if (block.type === "relatedLinks" && block.items.some((item) => item.title.length < 2 || item.href.length < 1)) {
@@ -118,7 +118,7 @@ function calcReadTime(blocks: BlogBlock[] = []): string {
       case "paragraph":
         return sum + block.text.length;
       case "image":
-        return sum + block.src.length + block.alt.length + (block.caption?.length ?? 0);
+        return block.hidden ? sum : sum + (block.caption?.length ?? 0);
       case "list":
         return sum + block.items.reduce((acc, item) => acc + item.length, 0);
       case "faq":
@@ -152,7 +152,7 @@ function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
     case "faq":
       return { type: "faq", question: "", answer: "" };
     case "image":
-      return { type: "image", src: "/images/blog/example.png", alt: "", caption: "" };
+      return { type: "image", src: "/images/blog/example.png", alt: "", caption: "", hidden: false, decorative: false };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "", href: "", description: "" }] };
     case "table":
@@ -929,7 +929,8 @@ function ImageBlockEditor({
         type="text"
         value={block.alt}
         onChange={(e) => setBlock(idx, { ...block, alt: e.target.value })}
-        placeholder="이미지 대체 텍스트 (필수)"
+        placeholder={block.decorative ? "장식용 이미지는 비워둡니다" : "이미지 대체 텍스트 (정보성 이미지일 때 필수)"}
+        disabled={block.decorative ?? false}
         className={inputClass(hasError)}
       />
       <textarea
@@ -939,6 +940,24 @@ function ImageBlockEditor({
         placeholder="이미지 캡션 (선택)"
         className={`${inputClass(false)} resize-y`}
       />
+      <label className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]">
+        <input
+          type="checkbox"
+          checked={block.decorative ?? false}
+          onChange={(e) => setBlock(idx, { ...block, decorative: e.target.checked, alt: e.target.checked ? "" : block.alt })}
+          className="h-4 w-4 rounded border-[var(--border)]"
+        />
+        <span>장식용 이미지로 처리</span>
+      </label>
+      <label className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]">
+        <input
+          type="checkbox"
+          checked={block.hidden ?? false}
+          onChange={(e) => setBlock(idx, { ...block, hidden: e.target.checked })}
+          className="h-4 w-4 rounded border-[var(--border)]"
+        />
+        <span>이 이미지를 본문에서 숨기기</span>
+      </label>
     </div>
   );
 }

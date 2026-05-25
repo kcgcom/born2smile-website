@@ -104,12 +104,13 @@ export function renderSingleBlock(
         </div>
       );
     case "image":
+      if (block.hidden) return null;
       return (
         <figure className="space-y-3">
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
             <Image
               src={block.src}
-              alt={block.alt}
+              alt={block.decorative ? "" : block.alt}
               width={1600}
               height={900}
               sizes="(max-width: 768px) 100vw, 768px"

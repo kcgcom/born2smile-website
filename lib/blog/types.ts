@@ -33,6 +33,8 @@ export type BlogBlock =
       src: string;
       alt: string;
       caption?: string;
+      hidden?: boolean;
+      decorative?: boolean;
     }
   | {
       type: "relatedLinks";

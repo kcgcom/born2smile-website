@@ -11,6 +11,7 @@ import {
   Plus,
   Check,
   X,
+  ImageOff,
 } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { getAccessToken } from "@/lib/supabase";
@@ -331,7 +332,19 @@ function AdminBlockWrapper({
             onClick={onStartEdit}
             className={hovered ? "cursor-pointer" : ""}
           >
-            {renderSingleBlock(block, headingId)}
+            {block.type === "image" && block.hidden ? (
+              <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-5 text-sm text-amber-800">
+                <div className="flex items-center gap-2 font-medium">
+                  <ImageOff size={16} />
+                  숨김 처리된 이미지
+                </div>
+                <p className="mt-1 break-all text-xs text-amber-700">
+                  {block.src || "이미지 경로 없음"}
+                </p>
+              </div>
+            ) : (
+              renderSingleBlock(block, headingId)
+            )}
           </div>
         )}
       </div>
@@ -728,21 +741,90 @@ function ImageEditForm({
   const [src, setSrc] = useState(b.src);
   const [alt, setAlt] = useState(b.alt);
   const [caption, setCaption] = useState(b.caption ?? "");
+  const [hidden, setHidden] = useState(b.hidden ?? false);
+  const [decorative, setDecorative] = useState(b.decorative ?? false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setUploadError("이미지 파일만 업로드 가능합니다");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("파일 크기는 5MB 이하여야 합니다");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const token = await getAccessToken();
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const json = await res.json() as { data?: { url: string }; message?: string };
+      if (!res.ok) {
+        setUploadError(json.message ?? "업로드 실패");
+        return;
+      }
+      setSrc(json.data?.url ?? "");
+    } catch {
+      setUploadError("업로드 중 오류가 발생했습니다");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!src.trim() || alt.trim().length < 2) return;
+        if (!src.trim() || (!decorative && alt.trim().length < 2)) return;
         onSave({
           type: "image",
           src: src.trim(),
-          alt: alt.trim(),
+          alt: decorative ? "" : alt.trim(),
           ...(caption.trim() ? { caption: caption.trim() } : {}),
+          ...(hidden ? { hidden: true } : {}),
+          ...(decorative ? { decorative: true } : {}),
         });
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
+      <div className="mb-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-700">이미지 업로드</p>
+            <p className="text-xs text-gray-500">JPG · PNG · WebP · GIF · 최대 5MB</p>
+          </div>
+          <label className={`inline-flex cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-white ${uploading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
+            {uploading ? "업로드 중..." : "파일 선택"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="sr-only"
+              disabled={uploading || saving}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleUpload(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+        {src.trim() && (
+          <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={alt || "미리보기"} className="max-h-40 w-full object-contain" />
+          </div>
+        )}
+        {uploadError && <p className="mt-2 text-xs text-red-500">{uploadError}</p>}
+      </div>
       <label className="mb-1 block text-sm font-medium text-gray-600">이미지 경로</label>
       <input
         type="text"
@@ -758,7 +840,8 @@ function ImageEditForm({
         value={alt}
         onChange={(e) => setAlt(e.target.value)}
         className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
-        placeholder="이미지 내용을 설명하는 텍스트"
+        placeholder={decorative ? "장식용 이미지는 비워둡니다" : "이미지 내용을 설명하는 텍스트"}
+        disabled={decorative}
       />
       <label className="mb-1 block text-sm font-medium text-gray-600">캡션</label>
       <textarea
@@ -768,6 +851,28 @@ function ImageEditForm({
         className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
         placeholder="캡션 (선택)"
       />
+      <label className="mt-3 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={decorative}
+          onChange={(e) => {
+            const next = e.target.checked;
+            setDecorative(next);
+            if (next) setAlt("");
+          }}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+        <span>장식용 이미지로 처리</span>
+      </label>
+      <label className="mt-3 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={hidden}
+          onChange={(e) => setHidden(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+        <span>이 이미지를 본문에서 숨기기</span>
+      </label>
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
   );
@@ -1017,6 +1122,8 @@ function makeDefaultBlock(type: BlogBlock["type"]): BlogBlock {
         src: "/images/blog/example.png",
         alt: "이미지 설명을 입력하세요",
         caption: "캡션을 입력하세요",
+        hidden: false,
+        decorative: false,
       };
     case "relatedLinks":
       return { type: "relatedLinks", items: [{ title: "관련 링크", href: "/" }] };
