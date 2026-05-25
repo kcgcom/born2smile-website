@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
+  getPostAdminBySlugFresh,
   getPostBySlugFresh,
   updateBlogPost,
   deleteBlogPost,
@@ -26,7 +27,7 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    const post = await getPostBySlugFresh(slug);
+    const post = await getPostAdminBySlugFresh(slug);
     if (!post) {
       return Response.json(
         { error: "NOT_FOUND", message: `포스트를 찾을 수 없습니다: ${slug}` },

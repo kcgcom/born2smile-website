@@ -19,6 +19,8 @@ const CACHE_TTL = 3600; // 1 hour
 const DEPLOY_CACHE_SEGMENT = process.env.VERCEL_GIT_COMMIT_SHA ?? "local";
 const PUBLIC_POSTS_CACHE_KEY = `blog-posts-published-full-${DEPLOY_CACHE_SEGMENT}`;
 const PUBLIC_BLOG_DATA_SOURCE = process.env.BLOG_PUBLIC_DATA_SOURCE;
+const FORCE_PUBLIC_SNAPSHOT = process.env.NODE_ENV !== "production"
+  && PUBLIC_BLOG_DATA_SOURCE === "snapshot";
 
 function safeRevalidateTag(tag: string) {
   try {
@@ -206,7 +208,7 @@ function getSnapshotPost(slug: string): BlogPost | null {
 export const getAllPublishedPosts: () => Promise<BlogPost[]> =
   unstable_cache(
     async (): Promise<BlogPost[]> => {
-      if (PUBLIC_BLOG_DATA_SOURCE === "snapshot") return getSnapshotPublishedPosts();
+      if (FORCE_PUBLIC_SNAPSHOT) return getSnapshotPublishedPosts();
       if (!isSupabaseAdminConfigured) return getSnapshotPublishedPosts();
       try {
         const today = getTodayKST();
@@ -328,6 +330,46 @@ export async function getPostBySlugFresh(slug: string): Promise<BlogPost | null>
   } catch {
     console.warn(`[blog-supabase] Supabase read failed for ${slug}, using snapshot fallback`);
     return getSnapshotPost(slug);
+  }
+}
+
+/**
+ * Fetch a single post for admin editing without caching.
+ * Includes non-public fields such as published state and createdAt.
+ */
+export async function getPostAdminBySlugFresh(slug: string): Promise<BlogPostAdminRecord | null> {
+  const snapshotFallback = () => {
+    const post = getSnapshotPosts().find((entry) => entry.slug === slug);
+    if (!post) return null;
+    return {
+      ...post,
+      createdAt: undefined,
+    };
+  };
+
+  if (!isSupabaseAdminConfigured) return snapshotFallback();
+
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("*")
+      .eq("slug", slug)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return snapshotFallback();
+      throw error;
+    }
+
+    const row = data as DbRow;
+    return {
+      ...rowToPost(row),
+      published: row.published ?? true,
+      createdAt: row.created_at ?? undefined,
+    };
+  } catch (error) {
+    console.warn(`[blog-supabase] Supabase admin read failed for ${slug}, using snapshot fallback`, error);
+    return snapshotFallback();
   }
 }
 

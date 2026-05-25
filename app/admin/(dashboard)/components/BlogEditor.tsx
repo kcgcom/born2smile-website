@@ -207,6 +207,12 @@ export default function BlogEditor({
   const [saving, setSaving] = useState(false);
   const [fetchingContent, setFetchingContent] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const isPublishedPost = mode === "edit" && form.published;
+  const saveButtonLabel = mode === "create"
+    ? "초안 저장"
+    : isPublishedPost
+      ? "변경사항 저장"
+      : "초안 저장";
 
   // List API returns metadata only — fetch full content for editing
   useEffect(() => {
@@ -606,7 +612,7 @@ export default function BlogEditor({
             className="w-full px-5 sm:w-auto"
           >
             <Save className="h-4 w-4" />
-            {saving ? "저장 중..." : "임시저장"}
+            {saving ? "저장 중..." : saveButtonLabel}
           </AdminActionButton>
         </div>
       </AdminSurface>

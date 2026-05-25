@@ -131,7 +131,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     if (mode === "edit" && slug) {
       const { error: saveError } = await mutate(`/api/admin/blog-posts/${slug}`, "PUT", data);
       if (!saveError) {
-        setSaveNotice("포스트를 저장했습니다.");
+        setSaveNotice(data.published ? "발행된 글을 수정했습니다." : "초안을 저장했습니다.");
         if (data.slug !== slug) {
           router.replace(`/admin/content/posts/${data.slug}`);
         } else {
@@ -144,7 +144,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     const { error: saveError } = await mutate("/api/admin/blog-posts", "POST", data);
     if (!saveError) {
       window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
-      setSaveNotice("새 포스트를 저장했습니다.");
+      setSaveNotice(data.published ? "새 포스트를 발행했습니다." : "새 포스트 초안을 저장했습니다.");
       router.replace(`/admin/content/posts/${data.slug}`);
     }
     return { error: saveError };
