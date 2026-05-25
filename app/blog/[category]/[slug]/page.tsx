@@ -387,14 +387,15 @@ export default async function BlogPostPage({
                       {DOCTORS[0].position}
                     </p>
                     <p className="mt-3 text-sm leading-relaxed text-gray-700">
-                      서울본치과 원장으로 임플란트, 치아교정, 심미보철을 중심으로 진료합니다.
-                      환자 상태를 먼저 확인하고 꼭 필요한 치료 기준을 차분히 설명하는 방식으로
-                      상담과 진료를 진행합니다.
+                      김포시 장기동에 위치한 서울본치과의 원장입니다. 마케팅 목적의 자극적인
+                      정보보다 의학적 근거에 기반한 내용을 편안하고 간결하게 전달드리려
+                      노력하고 있습니다. 지역 환자분들은 치료 여부와 관계없이 언제든지
+                      찾아와 궁금한 점을 편하게 물어봐 주세요. 함께 고민하겠습니다.
                     </p>
                   </div>
                   <Link
                     href="/about"
-                    className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-[var(--color-primary)] hover:underline"
                   >
                     병원 소개 보기
                     <ArrowRight size={14} />
