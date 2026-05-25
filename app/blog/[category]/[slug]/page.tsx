@@ -354,9 +354,11 @@ export default async function BlogPostPage({
 
         {/* 본문 */}
         <section className="bg-white px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
-          <FadeIn className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-3xl">
             {headings.length >= 3 && (
-              <TableOfContents headings={headings} />
+              <FadeIn>
+                <TableOfContents headings={headings} />
+              </FadeIn>
             )}
             <div className="space-y-10">
               <InlineBlocksEditor
@@ -371,47 +373,51 @@ export default async function BlogPostPage({
                 }}
               />
             </div>
-            <div className="mt-10 rounded-3xl border border-gray-200 bg-gray-50 p-6">
-              <p className="text-xs font-semibold tracking-[0.16em] text-[var(--color-gold-text)] uppercase">
-                Author
-              </p>
-              <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-lg font-bold text-gray-900">
-                    {DOCTORS[0].name}
-                  </p>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {DOCTORS[0].position}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-700">
-                    서울본치과 원장으로 임플란트, 치아교정, 심미보철을 중심으로 진료합니다.
-                    환자 상태를 먼저 확인하고 꼭 필요한 치료 기준을 차분히 설명하는 방식으로
-                    상담과 진료를 진행합니다.
-                  </p>
-                </div>
-                <Link
-                  href="/about"
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
-                >
-                  병원 소개 보기
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {AUTHOR_HIGHLIGHTS.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200"
+            <FadeIn className="mt-10">
+              <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6">
+                <p className="text-xs font-semibold tracking-[0.16em] text-[var(--color-gold-text)] uppercase">
+                  Author
+                </p>
+                <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">
+                      {DOCTORS[0].name}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {DOCTORS[0].position}
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-gray-700">
+                      서울본치과 원장으로 임플란트, 치아교정, 심미보철을 중심으로 진료합니다.
+                      환자 상태를 먼저 확인하고 꼭 필요한 치료 기준을 차분히 설명하는 방식으로
+                      상담과 진료를 진행합니다.
+                    </p>
+                  </div>
+                  <Link
+                    href="/about"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                   >
-                    {item}
-                  </span>
-                ))}
+                    병원 소개 보기
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {AUTHOR_HIGHLIGHTS.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-            <p className="mt-10 border-t border-gray-100 pt-6 text-xs text-gray-400">
-              이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.
-            </p>
-          </FadeIn>
+            </FadeIn>
+            <FadeIn className="mt-10">
+              <p className="border-t border-gray-100 pt-6 text-xs text-gray-400">
+                이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.
+              </p>
+            </FadeIn>
+          </div>
         </section>
       </article>
       </BlogEditProvider>

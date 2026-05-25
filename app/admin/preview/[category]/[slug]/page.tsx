@@ -137,8 +137,12 @@ export default async function BlogPreviewPage({
 
         {/* 본문 */}
         <section className="bg-white px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
-          <FadeIn className="mx-auto max-w-3xl">
-            {headings.length >= 3 && <TableOfContents headings={headings} />}
+          <div className="mx-auto max-w-3xl">
+            {headings.length >= 3 && (
+              <FadeIn>
+                <TableOfContents headings={headings} />
+              </FadeIn>
+            )}
             <div className="space-y-10">
               <InlineBlocksEditor
                 post={{
@@ -152,7 +156,7 @@ export default async function BlogPreviewPage({
                 }}
               />
             </div>
-          </FadeIn>
+          </div>
         </section>
       </article>
 
