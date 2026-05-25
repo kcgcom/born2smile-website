@@ -106,7 +106,7 @@ export function renderSingleBlock(
     case "image":
       if (block.hidden) return null;
       return (
-        <figure className="space-y-3">
+        <figure className="my-12 space-y-3 md:my-14">
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
             <Image
               src={block.src}
