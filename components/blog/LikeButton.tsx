@@ -21,9 +21,10 @@ function getUserId(): string {
 interface LikeButtonProps {
   slug: string;
   source?: string;
+  className?: string;
 }
 
-export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps) {
+export default function LikeButton({ slug, source = "unknown", className = "" }: LikeButtonProps) {
   const [, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -110,7 +111,7 @@ export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps
     return (
       <button
         disabled
-        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-300 shadow-sm cursor-not-allowed"
+        className={`inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-300 shadow-sm cursor-not-allowed ${className}`}
         aria-label="좋아요 기능을 사용할 수 없습니다"
         title="좋아요 기능 준비 중"
       >
@@ -128,7 +129,7 @@ export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps
         liked
           ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
           : "border-gray-200 bg-white text-gray-700 hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-600"
-      } ${(loading || coolingDown) ? "opacity-50" : ""}`}
+      } ${(loading || coolingDown) ? "opacity-50" : ""} ${className}`}
       aria-label={liked ? "좋아요 취소" : "좋아요"}
     >
       <Heart

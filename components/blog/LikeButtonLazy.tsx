@@ -12,9 +12,11 @@ const LikeButton = dynamic(() => import("./LikeButton"), {
 export default function LikeButtonLazy({
   slug,
   source,
+  className,
 }: {
   slug: string;
   source?: string;
+  className?: string;
 }) {
-  return <LikeButton slug={slug} source={source} />;
+  return <LikeButton slug={slug} source={source} className={className} />;
 }

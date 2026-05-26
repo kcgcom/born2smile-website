@@ -537,7 +537,7 @@ export default async function BlogPostPage({
 
       <AdminDraftBar slug={slug} />
 
-      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-gray-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-blue-100 bg-white/98 px-3 py-2.5 shadow-[0_-10px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold leading-snug text-gray-900">
@@ -547,9 +547,19 @@ export default async function BlogPostPage({
               공감과 공유로 알려주세요
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs">
-            <LikeButtonLazy slug={post.slug} source="mobile_sticky_cta" />
-            <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="mobile_sticky_cta" />
+          <div className="flex shrink-0 items-center gap-2">
+            <LikeButtonLazy
+              slug={post.slug}
+              source="mobile_sticky_cta"
+              className="!border-rose-200 !bg-rose-50 !px-3 !py-2 !text-xs !text-rose-600 hover:!bg-rose-100"
+            />
+            <BlogShareButton
+              slug={post.slug}
+              title={post.title}
+              category={post.category}
+              source="mobile_sticky_cta"
+              className="!border-[var(--color-primary)] !bg-[var(--color-primary)] !px-3 !py-2 !text-xs !text-white hover:!bg-[var(--color-primary-dark)] hover:!text-white"
+            />
           </div>
         </div>
       </div>
