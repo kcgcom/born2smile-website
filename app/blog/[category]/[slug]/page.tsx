@@ -15,6 +15,7 @@ import { getBlogPostJsonLd, getBreadcrumbJsonLd, getFaqJsonLd, serializeJsonLd }
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
+import BlogShareVisitTracker from "@/components/blog/BlogShareVisitTracker";
 import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
 import {
@@ -272,6 +273,7 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
+      <BlogShareVisitTracker slug={post.slug} category={post.category} />
 
       {/* 블로그 포스트 */}
       <BlogEditProvider initialBlocks={visibleBlocks}>

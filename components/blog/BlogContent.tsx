@@ -14,8 +14,9 @@ import {
 import type { BlogCategoryFilter, BlogCategorySlug, BlogTag } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
-import { shareUrl } from "@/lib/share";
+import { buildTrackedShareUrl, shareUrl } from "@/lib/share";
 import { getTodayKST } from "@/lib/date";
+import { captureEvent } from "@/lib/posthog";
 
 const POSTS_PER_PAGE = 12;
 
@@ -230,7 +231,21 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     ) => {
       e.preventDefault();
       e.stopPropagation();
-      const result = await shareUrl(`${BASE_URL}${getBlogPostUrl(slug, category)}`, title);
+      const trackedUrl = buildTrackedShareUrl(
+        `${BASE_URL}${getBlogPostUrl(slug, category)}`,
+        { slug, source: "list_card" },
+      );
+      const result = await shareUrl(trackedUrl, title);
+
+      if (result !== "failed") {
+        captureEvent("blog_post_shared", {
+          blog_slug: slug,
+          category,
+          source: "list_card",
+          method: result,
+        });
+      }
+
       if (result === "copied") {
         setCopiedSlug(slug);
         if (copyTimerRef.current) clearTimeout(copyTimerRef.current);

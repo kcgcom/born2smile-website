@@ -6,50 +6,51 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 const BUCKET = "blog-images";
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
+interface ImageItem {
+  path: string;
+  name: string;
+  url: string;
+  size: number;
+  createdAt: string;
+}
+
+async function listImages(prefix: string, depth = 0): Promise<ImageItem[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list(prefix, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
+
+  if (error) throw error;
+
+  const items = await Promise.all(
+    (data ?? []).map(async (item) => {
+      const path = `${prefix}/${item.name}`;
+
+      if (item.id === null) {
+        if (depth >= 4) return [];
+        return listImages(path, depth + 1);
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      return [{
+        path,
+        name: item.name,
+        url: publicUrl,
+        size: item.metadata?.size ?? 0,
+        createdAt: item.created_at ?? "",
+      }];
+    }),
+  );
+
+  return items.flat();
+}
+
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .list("blog", { limit: 200, sortBy: { column: "created_at", order: "desc" } });
-
-    if (error) throw error;
-
-    const items = await Promise.all(
-      (data ?? []).map(async (item) => {
-        // 연도/월 폴더인 경우 하위 파일 목록 재조회
-        if (item.id === null) {
-          const { data: subData } = await supabase.storage
-            .from(BUCKET)
-            .list(`blog/${item.name}`, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
-          return (subData ?? []).map((sub) => {
-            const path = `blog/${item.name}/${sub.name}`;
-            const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
-            return {
-              path,
-              name: sub.name,
-              url: publicUrl,
-              size: sub.metadata?.size ?? 0,
-              createdAt: sub.created_at ?? "",
-            };
-          });
-        }
-        const path = `blog/${item.name}`;
-        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
-        return [{
-          path,
-          name: item.name,
-          url: publicUrl,
-          size: item.metadata?.size ?? 0,
-          createdAt: item.created_at ?? "",
-        }];
-      }),
-    );
-
-    const images = items.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const images = (await listImages("blog")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return Response.json({ data: images }, { headers: HEADERS });
   } catch (error) {

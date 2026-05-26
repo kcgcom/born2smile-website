@@ -77,6 +77,18 @@ interface BlogGA4Data {
   dataAsOf: string;
 }
 
+interface ConversionData {
+  configured: boolean;
+  period: "7d" | "30d" | "90d" | "180d";
+  summary: {
+    totalShareActions: number;
+    totalShareVisits: number;
+    shareVisitRate: number | null;
+    nativeShareActions: number;
+    copyShareActions: number;
+  };
+}
+
 type Period = "30d" | "90d" | "180d";
 type TrafficView = "overall" | "blog";
 
@@ -771,6 +783,9 @@ export function TrafficTab() {
   } = useAdminApi<BlogGA4Data>(
     `/api/admin/blog-analytics?period=${toBlogAnalyticsPeriod(period)}`,
   );
+  const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>(
+    `/api/admin/posthog/conversion?period=${period}`,
+  );
   const { data: blogPostsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const sourceDetails = useMemo(() => data?.sourceDetails ?? {}, [data?.sourceDetails]);
   const topPageDetails = useMemo(() => data?.topPageDetails ?? {}, [data?.topPageDetails]);
@@ -1020,6 +1035,43 @@ export function TrafficTab() {
                   label="페이지뷰"
                   value={blogSummary.pageViews.toLocaleString("ko-KR")}
                   loading={blogGa4Loading && blogSummary.pageViews === 0}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <MetricCard
+                  label={`${period === "30d" ? "30일" : period === "90d" ? "90일" : "180일"} 공유 시도`}
+                  value={conversionData?.configured ? conversionData.summary.totalShareActions.toLocaleString("ko-KR") : "설정 필요"}
+                  color="text-sky-700"
+                  loading={conversionLoading}
+                />
+                <MetricCard
+                  label={`${period === "30d" ? "30일" : period === "90d" ? "90일" : "180일"} 공유 유입`}
+                  value={conversionData?.configured ? conversionData.summary.totalShareVisits.toLocaleString("ko-KR") : "설정 필요"}
+                  color="text-violet-700"
+                  loading={conversionLoading}
+                />
+                <MetricCard
+                  label="공유 유입률"
+                  value={
+                    conversionData?.configured
+                      ? conversionData.summary.shareVisitRate === null
+                        ? "—"
+                        : `${conversionData.summary.shareVisitRate}%`
+                      : "설정 필요"
+                  }
+                  color="text-emerald-700"
+                  loading={conversionLoading}
+                />
+                <MetricCard
+                  label="네이티브/복사"
+                  value={
+                    conversionData?.configured
+                      ? `${conversionData.summary.nativeShareActions}/${conversionData.summary.copyShareActions}`
+                      : "설정 필요"
+                  }
+                  color="text-[var(--color-gold-dark)]"
+                  loading={conversionLoading}
                 />
               </div>
 

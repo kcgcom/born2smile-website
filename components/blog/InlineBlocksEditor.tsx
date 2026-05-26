@@ -149,6 +149,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
         <AdminBlockWrapper
           key={`${block.type}-${index}`}
           block={block}
+          post={post}
           index={index}
           totalBlocks={blocks.length}
           headingId={headingIds[index]}
@@ -185,6 +186,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
 
 interface AdminBlockWrapperProps {
   block: BlogBlock;
+  post: PostMeta;
   index: number;
   totalBlocks: number;
   headingId?: string;
@@ -202,6 +204,7 @@ interface AdminBlockWrapperProps {
 
 function AdminBlockWrapper({
   block,
+  post,
   index,
   totalBlocks,
   headingId,
@@ -321,6 +324,7 @@ function AdminBlockWrapper({
             </p>
             <BlockEditForm
               block={block}
+              post={post}
               saving={saving}
               onSave={onSave}
               onChangeType={(type) => onSave(makeDefaultBlock(type))}
@@ -356,13 +360,14 @@ function AdminBlockWrapper({
 
 interface BlockFormProps {
   block: BlogBlock;
+  post?: PostMeta;
   saving: boolean;
   onSave: (updated: BlogBlock) => void;
   onChangeType: (type: BlogBlock["type"]) => void;
   onCancel: () => void;
 }
 
-function BlockEditForm({ block, saving, onSave, onChangeType, onCancel }: BlockFormProps) {
+function BlockEditForm({ block, post, saving, onSave, onChangeType, onCancel }: BlockFormProps) {
   switch (block.type) {
     case "heading":
       return <HeadingEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
@@ -373,7 +378,7 @@ function BlockEditForm({ block, saving, onSave, onChangeType, onCancel }: BlockF
     case "faq":
       return <FaqEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "image":
-      return <ImageEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
+      return <ImageEditForm block={block} post={post} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "relatedLinks":
       return <RelatedLinksEditForm block={block} saving={saving} onSave={onSave} onChangeType={onChangeType} onCancel={onCancel} blockTypeOptions={BLOCK_OPTIONS} />;
     case "table":
@@ -731,6 +736,7 @@ function RelatedLinksEditForm({
 
 function ImageEditForm({
   block,
+  post,
   saving,
   onSave,
   onChangeType,
@@ -762,6 +768,10 @@ function ImageEditForm({
       const token = await getAccessToken();
       const fd = new FormData();
       fd.append("file", file);
+      if (post) {
+        fd.append("category", post.category);
+        fd.append("slug", post.slug);
+      }
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

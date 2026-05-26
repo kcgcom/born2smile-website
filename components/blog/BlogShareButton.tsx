@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Share2, Check } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { shareUrl } from "@/lib/share";
+import { buildTrackedShareUrl, shareUrl } from "@/lib/share";
 import { getBlogPostUrl } from "@/lib/blog";
 import type { BlogCategoryValue } from "@/lib/blog/types";
 import { captureEvent } from "@/lib/posthog";
@@ -31,7 +31,11 @@ export default function BlogShareButton({
   }, []);
 
   const handleShare = useCallback(async () => {
-    const result = await shareUrl(`${BASE_URL}${getBlogPostUrl(slug, category)}`, title);
+    const trackedUrl = buildTrackedShareUrl(
+      `${BASE_URL}${getBlogPostUrl(slug, category)}`,
+      { slug, source },
+    );
+    const result = await shareUrl(trackedUrl, title);
 
     if (result !== "failed") {
       captureEvent("blog_post_shared", {

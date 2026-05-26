@@ -19,12 +19,13 @@ interface ConversionData {
   summary: {
     totalCtaClicks: number;
     totalPhoneClicks: number;
+    totalShareActions: number;
   };
 }
 
 export function GrowthOverviewPanel() {
   const { data: searchData, loading: searchLoading } = useAdminApi<SearchConsoleData>("/api/admin/search-console?period=28d");
-  const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>("/api/admin/posthog/conversion?period=7d");
+  const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>("/api/admin/posthog/conversion?period=30d");
   const { data: suggestionData, loading: suggestionLoading } = useAdminApi<AiOpsSuggestionListItem[]>("/api/admin/ai-ops/suggestions?limit=20");
   const { data: briefingData, loading: briefingLoading } = useAdminApi<AiOpsBriefing>("/api/admin/ai-ops/briefing?period=30d");
 
@@ -59,7 +60,7 @@ export function GrowthOverviewPanel() {
         </div>
       </AdminSurface>
 
-      <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 xl:grid-cols-5 xl:[&>*:last-child]:col-span-1">
+      <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 xl:grid-cols-6 xl:[&>*:last-child]:col-span-1">
         <MetricCard
           label="검색 클릭"
           value={searchData?.summary.clicks.value.toLocaleString("ko-KR") ?? "—"}
@@ -79,9 +80,15 @@ export function GrowthOverviewPanel() {
           loading={searchLoading}
         />
         <MetricCard
-          label="CTA 클릭"
+          label="30일 CTA 클릭"
           value={conversionData?.configured ? conversionData.summary.totalCtaClicks.toLocaleString("ko-KR") : "설정 필요"}
           color="text-[var(--color-primary)]"
+          loading={conversionLoading}
+        />
+        <MetricCard
+          label="30일 블로그 공유"
+          value={conversionData?.configured ? conversionData.summary.totalShareActions.toLocaleString("ko-KR") : "설정 필요"}
+          color="text-sky-700"
           loading={conversionLoading}
         />
         <MetricCard

@@ -9,6 +9,12 @@ const hasPostHogConfig = Boolean(
     process.env.NEXT_PUBLIC_POSTHOG_HOST
 );
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 function shouldSkipCapture() {
   if (typeof window === "undefined") return true;
 
@@ -31,10 +37,18 @@ function compactProperties(properties: AnalyticsProps) {
 }
 
 export function captureEvent(event: string, properties: AnalyticsProps = {}) {
-  if (!hasPostHogConfig || shouldSkipCapture()) return;
+  if (shouldSkipCapture()) return;
 
-  posthog.capture(event, compactProperties({
+  const compacted = compactProperties({
     page_path: window.location.pathname,
     ...properties,
-  }));
+  });
+
+  if (hasPostHogConfig) {
+    posthog.capture(event, compacted);
+  }
+
+  if (typeof window.gtag === "function") {
+    window.gtag("event", event, compacted);
+  }
 }

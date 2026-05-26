@@ -61,6 +61,11 @@ export interface ConversionData {
     totalContactClicks: number;
     contactPageViews: number;
     contactToPhoneRate: number | null;
+    totalShareActions: number;
+    totalShareVisits: number;
+    shareVisitRate: number | null;
+    nativeShareActions: number;
+    copyShareActions: number;
   };
   byLocation: Array<{
     ctaLocation: string;
@@ -78,6 +83,20 @@ export interface ConversionData {
     totalClicks: number;
     phoneClicks: number;
     contactClicks: number;
+  }>;
+  topSharedBlogPosts: Array<{
+    slug: string;
+    shareActions: number;
+    shareVisits: number;
+    visitRate: number | null;
+    copiedShares: number;
+    nativeShares: number;
+  }>;
+  shareSources: Array<{
+    shareSource: string;
+    shareActions: number;
+    shareVisits: number;
+    visitRate: number | null;
   }>;
 }
 
@@ -295,17 +314,24 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
         totalContactClicks: 0,
         contactPageViews: 0,
         contactToPhoneRate: null,
+        totalShareActions: 0,
+        totalShareVisits: 0,
+        shareVisitRate: null,
+        nativeShareActions: 0,
+        copyShareActions: 0,
       },
       byLocation: [],
       topPages: [],
       topBlogPosts: [],
+      topSharedBlogPosts: [],
+      shareSources: [],
     };
   }
 
   const days = PERIOD_TO_DAYS[period];
   const intervalClause = `timestamp >= now() - INTERVAL ${days} DAY`;
 
-  const [summaryRows, locationRows, pageRows, blogRows] = await Promise.all([
+  const [summaryRows, locationRows, pageRows, blogRows, shareRows, shareSourceRows] = await Promise.all([
     queryPostHog(
       `
         SELECT
@@ -313,7 +339,11 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
           countIf(event IN ${sqlList(POSTHOG_PHONE_EVENTS)}) AS total_phone_clicks,
           countIf(event IN ${sqlList(POSTHOG_CONTACT_EVENTS)}) AS total_contact_clicks,
           countIf(event = '$pageview' AND properties.$pathname = '/contact') AS contact_page_views,
-          countIf(event = 'contact_phone_click') AS contact_phone_clicks
+          countIf(event = 'contact_phone_click') AS contact_phone_clicks,
+          countIf(event = 'blog_post_shared') AS total_share_actions,
+          countIf(event = 'blog_share_visit') AS total_share_visits,
+          countIf(event = 'blog_post_shared' AND properties.method = 'shared') AS native_share_actions,
+          countIf(event = 'blog_post_shared' AND properties.method = 'copied') AS copy_share_actions
         FROM events
         WHERE ${intervalClause}
       `,
@@ -367,6 +397,39 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
       `,
       `admin_posthog_conversion_blog_${period}`
     ),
+    queryPostHog(
+      `
+        SELECT
+          ifNull(properties.blog_slug, ifNull(properties.slug, '(unknown)')) AS slug,
+          countIf(event = 'blog_post_shared') AS share_actions,
+          countIf(event = 'blog_share_visit') AS share_visits,
+          countIf(event = 'blog_post_shared' AND properties.method = 'copied') AS copied_shares,
+          countIf(event = 'blog_post_shared' AND properties.method = 'shared') AS native_shares
+        FROM events
+        WHERE ${intervalClause}
+          AND event IN ('blog_post_shared', 'blog_share_visit')
+          AND (properties.blog_slug IS NOT NULL OR properties.slug IS NOT NULL)
+        GROUP BY slug
+        ORDER BY share_actions DESC, share_visits DESC
+        LIMIT 15
+      `,
+      `admin_posthog_share_blog_${period}`
+    ),
+    queryPostHog(
+      `
+        SELECT
+          ifNull(properties.share_source, '(unknown)') AS share_source,
+          countIf(event = 'blog_post_shared') AS share_actions,
+          countIf(event = 'blog_share_visit') AS share_visits
+        FROM events
+        WHERE ${intervalClause}
+          AND event IN ('blog_post_shared', 'blog_share_visit')
+        GROUP BY share_source
+        ORDER BY share_actions DESC, share_visits DESC
+        LIMIT 20
+      `,
+      `admin_posthog_share_sources_${period}`
+    ),
   ]);
 
   const summaryRow = summaryRows[0] ?? {};
@@ -375,6 +438,10 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
   const totalContactClicks = toNumber(summaryRow.total_contact_clicks);
   const contactPageViews = toNumber(summaryRow.contact_page_views);
   const contactPhoneClicks = toNumber(summaryRow.contact_phone_clicks);
+  const totalShareActions = toNumber(summaryRow.total_share_actions);
+  const totalShareVisits = toNumber(summaryRow.total_share_visits);
+  const nativeShareActions = toNumber(summaryRow.native_share_actions);
+  const copyShareActions = toNumber(summaryRow.copy_share_actions);
 
   return {
     configured: true,
@@ -388,6 +455,14 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
         contactPageViews > 0
           ? Math.round((contactPhoneClicks / contactPageViews) * 1000) / 10
           : null,
+      totalShareActions,
+      totalShareVisits,
+      shareVisitRate:
+        totalShareActions > 0
+          ? Math.round((totalShareVisits / totalShareActions) * 1000) / 10
+          : null,
+      nativeShareActions,
+      copyShareActions,
     },
     byLocation: locationRows.map((row) => {
       const clicks = toNumber(row.clicks);
@@ -412,6 +487,36 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
       phoneClicks: toNumber(row.phone_clicks),
       contactClicks: toNumber(row.contact_clicks),
     })),
+    topSharedBlogPosts: shareRows.map((row) => {
+      const shareActions = toNumber(row.share_actions);
+      const shareVisits = toNumber(row.share_visits);
+
+      return {
+        slug: String(row.slug ?? "(unknown)"),
+        shareActions,
+        shareVisits,
+        visitRate:
+          shareActions > 0
+            ? Math.round((shareVisits / shareActions) * 1000) / 10
+            : null,
+        copiedShares: toNumber(row.copied_shares),
+        nativeShares: toNumber(row.native_shares),
+      };
+    }),
+    shareSources: shareSourceRows.map((row) => {
+      const shareActions = toNumber(row.share_actions);
+      const shareVisits = toNumber(row.share_visits);
+
+      return {
+        shareSource: String(row.share_source ?? "(unknown)"),
+        shareActions,
+        shareVisits,
+        visitRate:
+          shareActions > 0
+            ? Math.round((shareVisits / shareActions) * 1000) / 10
+            : null,
+      };
+    }),
   };
 }
 

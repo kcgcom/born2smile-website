@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { normalizeBlogCategory } from "@/lib/blog/category-slugs";
 
 const BUCKET = "blog-images";
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -14,6 +15,26 @@ const EXT_MAP: Record<string, string> = {
 };
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
+
+function buildUploadPath(fileType: string, formData: FormData): string {
+  const ext = EXT_MAP[fileType] ?? "jpg";
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  const filename = `${timestamp}-${random}.${ext}`;
+
+  const category = normalizeBlogCategory(String(formData.get("category") ?? ""));
+  const slug = String(formData.get("slug") ?? "").trim().toLowerCase();
+
+  if (category && SLUG_RE.test(slug)) {
+    return `blog/${category}/${slug}/${filename}`;
+  }
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `blog/_library/${year}/${month}/${filename}`;
+}
 
 export async function POST(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
@@ -53,13 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = getSupabaseAdmin();
-    const ext = EXT_MAP[file.type] ?? "jpg";
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const timestamp = now.getTime();
-    const random = Math.random().toString(36).slice(2, 8);
-    const path = `blog/${year}/${month}/${timestamp}-${random}.${ext}`;
+    const path = buildUploadPath(file.type, formData);
 
     const buffer = await file.arrayBuffer();
     const { error: uploadError } = await supabase.storage

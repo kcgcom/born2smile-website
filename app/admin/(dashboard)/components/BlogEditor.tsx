@@ -550,7 +550,10 @@ export default function BlogEditor({
                       <option key={type} value={type}>{label}</option>
                     ))}
                   </select>
-                  {renderBlockEditor(block, idx, setBlock, fieldErrors)}
+                  {renderBlockEditor(block, idx, setBlock, fieldErrors, {
+                    category: form.category,
+                    slug: form.slug,
+                  })}
                   {fieldErrors[`block_${idx}`] && (
                     <p className="mt-1 text-xs text-red-500">{fieldErrors[`block_${idx}`]}</p>
                   )}
@@ -665,6 +668,7 @@ function renderBlockEditor(
   idx: number,
   setBlock: (idx: number, block: BlogBlock) => void,
   fieldErrors: Record<string, string>,
+  uploadContext: { category: BlogCategorySlug; slug: string },
 ) {
   switch (block.type) {
     case "heading":
@@ -805,6 +809,7 @@ function renderBlockEditor(
           idx={idx}
           setBlock={setBlock}
           hasError={!!fieldErrors[`block_${idx}`]}
+          uploadContext={uploadContext}
         />
       );
     case "table":
@@ -826,11 +831,13 @@ function ImageBlockEditor({
   idx,
   setBlock,
   hasError,
+  uploadContext,
 }: {
   block: Extract<BlogBlock, { type: "image" }>;
   idx: number;
   setBlock: (idx: number, block: BlogBlock) => void;
   hasError: boolean;
+  uploadContext: { category: BlogCategorySlug; slug: string };
 }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -851,6 +858,8 @@ function ImageBlockEditor({
       const token = await getAccessToken();
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("category", uploadContext.category);
+      fd.append("slug", uploadContext.slug);
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

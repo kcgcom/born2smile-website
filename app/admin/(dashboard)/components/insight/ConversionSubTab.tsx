@@ -1,7 +1,7 @@
 "use client";
 
 import { MousePointerClick, PhoneCall, Route, ScrollText } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "../DataTable";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -9,6 +9,7 @@ import { MetricCard } from "../MetricCard";
 import { PeriodSelector } from "../PeriodSelector";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { useAdminApi } from "../useAdminApi";
+import type { AdminBlogPost } from "../blog/blog-helpers";
 
 interface ConversionData {
   configured: boolean;
@@ -19,6 +20,11 @@ interface ConversionData {
     totalContactClicks: number;
     contactPageViews: number;
     contactToPhoneRate: number | null;
+    totalShareActions: number;
+    totalShareVisits: number;
+    shareVisitRate: number | null;
+    nativeShareActions: number;
+    copyShareActions: number;
   };
   byLocation: Array<{
     ctaLocation: string;
@@ -37,6 +43,20 @@ interface ConversionData {
     phoneClicks: number;
     contactClicks: number;
   }>;
+  topSharedBlogPosts: Array<{
+    slug: string;
+    shareActions: number;
+    shareVisits: number;
+    visitRate: number | null;
+    copiedShares: number;
+    nativeShares: number;
+  }>;
+  shareSources: Array<{
+    shareSource: string;
+    shareActions: number;
+    shareVisits: number;
+    visitRate: number | null;
+  }>;
 }
 
 const PERIODS = [
@@ -45,11 +65,36 @@ const PERIODS = [
   { value: "180d", label: "6개월" },
 ] as const;
 
+const PERIOD_LABELS: Record<ConversionData["period"], string> = {
+  "30d": "30일",
+  "90d": "90일",
+  "180d": "180일",
+};
+
+const SHARE_SOURCE_LABELS: Record<string, string> = {
+  header_cta: "상단 CTA",
+  footer_cta: "하단 CTA",
+  mobile_sticky_cta: "모바일 고정 CTA",
+  list_card: "목록 카드",
+  "(unknown)": "미확인",
+};
+
 export function ConversionSubTab() {
   const [period, setPeriod] = useState<"30d" | "90d" | "180d">("30d");
   const { data, loading, error, refetch } = useAdminApi<ConversionData>(
     `/api/admin/posthog/conversion?period=${period}`,
   );
+  const { data: postsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
+  const slugToTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const post of postsData ?? []) map.set(post.slug, post.title);
+    return map;
+  }, [postsData]);
+  const slugToCategoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const post of postsData ?? []) map.set(post.slug, post.category);
+    return map;
+  }, [postsData]);
 
   return (
     <div className="space-y-6">
@@ -81,19 +126,19 @@ export function ConversionSubTab() {
 
       {!loading && !error && data?.configured && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             <MetricCard
-              label="총 CTA 클릭"
+              label={`${PERIOD_LABELS[data.period]} CTA 클릭`}
               value={data.summary.totalCtaClicks.toLocaleString("ko-KR")}
               color="text-[var(--color-primary)]"
             />
             <MetricCard
-              label="전화 클릭"
+              label={`${PERIOD_LABELS[data.period]} 전화 클릭`}
               value={data.summary.totalPhoneClicks.toLocaleString("ko-KR")}
               color="text-emerald-700"
             />
             <MetricCard
-              label="상담 페이지뷰"
+              label={`${PERIOD_LABELS[data.period]} 상담 페이지뷰`}
               value={data.summary.contactPageViews.toLocaleString("ko-KR")}
               color="text-[var(--color-gold-dark)]"
             />
@@ -106,7 +151,85 @@ export function ConversionSubTab() {
               }
               color="text-slate-900"
             />
+            <MetricCard
+              label={`${PERIOD_LABELS[data.period]} 공유 시도`}
+              value={data.summary.totalShareActions.toLocaleString("ko-KR")}
+              color="text-sky-700"
+            />
+            <MetricCard
+              label={`${PERIOD_LABELS[data.period]} 공유 유입`}
+              value={data.summary.totalShareVisits.toLocaleString("ko-KR")}
+              color="text-violet-700"
+            />
           </div>
+
+          <section>
+            <SectionTitle
+              icon={Route}
+              title="블로그 공유 성과"
+              subtitle={`${PERIOD_LABELS[data.period]} 기준 공유 시도와 실제 공유 유입을 함께 확인합니다`}
+            />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <MetricCard
+                label="공유 유입률"
+                value={
+                  data.summary.shareVisitRate === null
+                    ? "—"
+                    : `${data.summary.shareVisitRate}%`
+                }
+                color="text-violet-700"
+              />
+              <MetricCard
+                label="네이티브 공유"
+                value={data.summary.nativeShareActions.toLocaleString("ko-KR")}
+                color="text-sky-700"
+              />
+              <MetricCard
+                label="링크 복사"
+                value={data.summary.copyShareActions.toLocaleString("ko-KR")}
+                color="text-[var(--color-gold-dark)]"
+              />
+              <MetricCard
+                label="공유 후 유입"
+                value={data.summary.totalShareVisits.toLocaleString("ko-KR")}
+                color="text-emerald-700"
+              />
+              <MetricCard
+                label="총 공유 시도"
+                value={data.summary.totalShareActions.toLocaleString("ko-KR")}
+                color="text-[var(--color-primary)]"
+              />
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle
+              icon={MousePointerClick}
+              title="공유 버튼 위치별 성과"
+              subtitle="어느 위치의 공유 버튼이 실제로 사용되는지 확인합니다"
+            />
+            <DataTable
+              columns={[
+                {
+                  key: "shareSource",
+                  label: "공유 위치",
+                  align: "left",
+                  render: (row) => SHARE_SOURCE_LABELS[row.shareSource] ?? row.shareSource,
+                },
+                { key: "shareActions", label: "공유 시도", align: "right" },
+                { key: "shareVisits", label: "공유 유입", align: "right" },
+                {
+                  key: "visitRate",
+                  label: "유입률",
+                  align: "right",
+                  render: (row) => row.visitRate === null ? "—" : `${row.visitRate}%`,
+                },
+              ]}
+              rows={data.shareSources}
+              keyField="shareSource"
+              emptyMessage="공유 위치 데이터가 없습니다"
+            />
+          </section>
 
           <section>
             <SectionTitle
@@ -166,6 +289,64 @@ export function ConversionSubTab() {
               rows={data.topBlogPosts}
               keyField="slug"
               emptyMessage="블로그 CTA 클릭 데이터가 없습니다"
+            />
+          </section>
+
+          <section>
+            <SectionTitle
+              icon={ScrollText}
+              title="공유된 블로그 TOP"
+              subtitle="어떤 글이 가장 많이 공유되고 실제 유입까지 이어졌는지 확인합니다"
+            />
+            <DataTable
+              columns={[
+                {
+                  key: "slug",
+                  label: "글 제목",
+                  align: "left",
+                  render: (row) => (
+                    <div className="min-w-0">
+                      <div className="truncate font-medium text-[var(--foreground)]">
+                        {slugToTitleMap.get(row.slug) ?? row.slug}
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        {slugToCategoryMap.get(row.slug) ? (
+                          <a
+                            href={`/blog/${slugToCategoryMap.get(row.slug)}/${row.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[var(--color-primary)] hover:underline"
+                          >
+                            글 보기
+                          </a>
+                        ) : (
+                          <span className="text-[var(--muted)]">글 경로 없음</span>
+                        )}
+                        <span className="text-[var(--border)]">·</span>
+                        <a
+                          href={`/admin/content/posts/${encodeURIComponent(row.slug)}`}
+                          className="text-[var(--color-gold-dark)] hover:underline"
+                        >
+                          수정
+                        </a>
+                      </div>
+                    </div>
+                  ),
+                },
+                { key: "shareActions", label: "공유 시도", align: "right" },
+                { key: "shareVisits", label: "공유 유입", align: "right" },
+                {
+                  key: "visitRate",
+                  label: "유입률",
+                  align: "right",
+                  render: (row) => row.visitRate === null ? "—" : `${row.visitRate}%`,
+                },
+                { key: "copiedShares", label: "복사", align: "right" },
+                { key: "nativeShares", label: "공유", align: "right" },
+              ]}
+              rows={data.topSharedBlogPosts}
+              keyField="slug"
+              emptyMessage="블로그 공유 데이터가 없습니다"
             />
           </section>
         </>
