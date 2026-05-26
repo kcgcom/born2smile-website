@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Copy, Trash2, Check, Upload } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -40,6 +41,12 @@ function formatDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+function getUsageLabel(usage: ImageItem["usage"][number]): string {
+  if (usage.visible) return "공개";
+  if (usage.hidden) return "숨김";
+  return usage.published ? "예약" : "초안";
+}
+
 export function ImagesSubTab() {
   const { data, loading, error, refetch } = useAdminApi<ImageItem[]>("/api/admin/images");
   const { mutate } = useAdminMutation<{ path: string }>();
@@ -56,10 +63,16 @@ export function ImagesSubTab() {
     });
   }, []);
 
-  const handleDelete = useCallback(async (path: string) => {
-    if (!confirm("이 이미지를 삭제하면 해당 이미지를 사용 중인 포스트에서도 표시되지 않습니다. 삭제할까요?")) return;
-    setDeletingPath(path);
-    await mutate(`/api/admin/images?path=${encodeURIComponent(path)}`, "DELETE");
+  const handleDelete = useCallback(async (image: ImageItem) => {
+    if (
+      image.isUsed &&
+      !confirm("이 이미지를 삭제하면 해당 이미지를 사용 중인 포스트에서도 표시되지 않습니다. 삭제할까요?")
+    ) {
+      return;
+    }
+
+    setDeletingPath(image.path);
+    await mutate(`/api/admin/images?path=${encodeURIComponent(image.path)}`, "DELETE");
     setDeletingPath(null);
     refetch();
   }, [mutate, refetch]);
@@ -221,15 +234,30 @@ export function ImagesSubTab() {
                     <p className="mt-0.5 text-[10px] text-[var(--muted)]">
                       {formatBytes(img.size)} · {formatDate(img.createdAt)}
                     </p>
-                    <p
-                      className="mt-1 truncate text-[10px] text-[var(--muted)]"
-                      title={img.usage.map((item) => item.title).join(", ") || img.path}
-                    >
-                      {img.usage.length > 0
-                        ? img.usage.map((item) => item.title).join(", ")
-                        : "사용 중인 포스트 없음"}
+                  {img.usage.length > 0 ? (
+                    <div className="mt-1 space-y-0.5">
+                      {img.usage.slice(0, 2).map((item) => (
+                        <Link
+                          key={`${img.path}-${item.slug}`}
+                          href={`/blog/${item.category}/${item.slug}`}
+                          className="block truncate text-[10px] text-[var(--color-primary)] hover:underline"
+                          title={`${item.title} (${getUsageLabel(item)})`}
+                        >
+                          {item.title} · {getUsageLabel(item)}
+                        </Link>
+                      ))}
+                      {img.usage.length > 2 && (
+                        <p className="text-[10px] text-[var(--muted)]">
+                          외 {img.usage.length - 2}개 글
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={img.path}>
+                      사용 중인 포스트 없음
                     </p>
-                  </div>
+                  )}
+                </div>
 
                   {/* Actions */}
                   <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -244,7 +272,7 @@ export function ImagesSubTab() {
                       }
                     </button>
                     <button
-                      onClick={() => void handleDelete(img.path)}
+                      onClick={() => void handleDelete(img)}
                       disabled={deletingPath === img.path}
                       title="삭제"
                       className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
