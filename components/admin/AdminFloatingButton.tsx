@@ -37,7 +37,7 @@ export function AdminFloatingButton() {
 
   const href = pathname.startsWith("/blog") ? "/admin/content/posts" : "/admin/operations/overview";
   const mobilePositionClass = pathname.startsWith("/blog")
-    ? "bottom-40"
+    ? "bottom-24"
     : "bottom-20";
 
   return (

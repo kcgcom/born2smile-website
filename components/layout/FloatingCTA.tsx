@@ -19,6 +19,8 @@ const NAV_ICONS: Record<string, typeof Home> = {
 
 export function FloatingCTA() {
   const pathname = usePathname();
+  const isBlogPostPage = pathname.split("/").filter(Boolean).length >= 3
+    && pathname.startsWith("/blog/");
 
   const handleNavClick = useCallback(
     (href: string) => {
@@ -35,60 +37,62 @@ export function FloatingCTA() {
   return (
     <>
       {/* 모바일 하단 고정 바 */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-        aria-label="빠른 메뉴"
-      >
-        <div className="grid grid-cols-5">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const isContact = item.href === "/contact";
-            const Icon = NAV_ICONS[item.href] ?? Home;
-            const className = `flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
-              isActive
-                ? "font-medium text-[var(--color-primary)]"
-                : isContact
-                  ? "font-medium text-[var(--color-gold-dark)]"
-                  : "text-gray-600 hover:text-[var(--color-primary)]"
-            }`;
+      {!isBlogPostPage && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white md:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          aria-label="빠른 메뉴"
+        >
+          <div className="grid grid-cols-5">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isContact = item.href === "/contact";
+              const Icon = NAV_ICONS[item.href] ?? Home;
+              const className = `flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
+                isActive
+                  ? "font-medium text-[var(--color-primary)]"
+                  : isContact
+                    ? "font-medium text-[var(--color-gold-dark)]"
+                    : "text-gray-600 hover:text-[var(--color-primary)]"
+              }`;
 
-            if (isContact) {
+              if (isContact) {
+                return (
+                  <TrackedLink
+                    key={item.href}
+                    href={item.href}
+                    event="floating_contact_nav_click"
+                    properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => handleNavClick(item.href)}
+                    className={className}
+                  >
+                    <Icon size={22} aria-hidden="true" />
+                    {item.shortLabel}
+                  </TrackedLink>
+                );
+              }
+
               return (
-                <TrackedLink
+                <Link
                   key={item.href}
                   href={item.href}
-                  event="floating_contact_nav_click"
-                  properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
+                  aria-label={item.shortLabel}
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => handleNavClick(item.href)}
                   className={className}
                 >
                   <Icon size={22} aria-hidden="true" />
                   {item.shortLabel}
-                </TrackedLink>
+                </Link>
               );
-            }
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.shortLabel}
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => handleNavClick(item.href)}
-                className={className}
-              >
-                <Icon size={22} aria-hidden="true" />
-                {item.shortLabel}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+            })}
+          </div>
+        </nav>
+      )}
 
       {/* 데스크톱 플로팅 전화 버튼 + 진료 상태 */}
       <div className="fixed bottom-6 right-6 z-40 hidden md:block">
