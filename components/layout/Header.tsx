@@ -4,16 +4,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X, Phone, Settings } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
   const pathname = usePathname();
+  const isAdmin = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const headerClinicName = CLINIC.name === "서울본치과" ? "서울본치과의원" : CLINIC.name;
+  const adminHref = pathname.startsWith("/blog")
+    ? "/admin/content/posts"
+    : "/admin/operations/overview";
 
   useEffect(() => {
     let ticking = false;
@@ -212,6 +217,16 @@ export function Header() {
                 <Phone size={18} aria-hidden="true" />
                 전화 상담 {CLINIC.phone}
               </TrackedAnchor>
+              {isAdmin && (
+                <Link
+                  href={adminHref}
+                  className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-slate-900 px-5 py-3 text-base font-medium text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Settings size={18} aria-hidden="true" />
+                  관리자 페이지
+                </Link>
+              )}
             </nav>
           </div>
         )}

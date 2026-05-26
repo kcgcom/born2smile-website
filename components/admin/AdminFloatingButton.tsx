@@ -36,15 +36,12 @@ export function AdminFloatingButton() {
   if (!isAdmin || isBlogEditMode || pathname.startsWith("/admin")) return null;
 
   const href = pathname.startsWith("/blog") ? "/admin/content/posts" : "/admin/operations/overview";
-  const mobilePositionClass = pathname.startsWith("/blog")
-    ? "bottom-24"
-    : "bottom-20";
 
   return (
     <AdminActionLink
       href={href}
       tone="ghost"
-      className={`fixed ${mobilePositionClass} left-4 z-50 h-14 w-14 rounded-full !border-slate-600/40 !bg-slate-700/85 p-0 !text-white shadow-lg shadow-slate-950/20 backdrop-blur-md transition-transform hover:scale-110 hover:!bg-slate-600/90 md:bottom-6 md:left-6`}
+      className="fixed bottom-6 left-6 z-50 !hidden h-14 w-14 rounded-full !border-slate-600/40 !bg-slate-700/85 p-0 !text-white shadow-lg shadow-slate-950/20 backdrop-blur-md transition-transform hover:scale-110 hover:!bg-slate-600/90 md:!inline-flex"
       aria-label="관리자 콘솔"
       title="관리자 콘솔"
     >
