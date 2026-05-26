@@ -537,7 +537,7 @@ export default async function BlogPostPage({
 
       <AdminDraftBar slug={slug} />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-gray-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold leading-snug text-gray-900">
@@ -554,7 +554,7 @@ export default async function BlogPostPage({
         </div>
       </div>
 
-      <div className="h-32 md:hidden" />
+      <div className="h-40 md:hidden" />
     </>
   );
 }
