@@ -2,9 +2,22 @@ import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getAllPostDetailsFresh } from "@/lib/blog-supabase";
+import type { BlogBlock, BlogCategoryValue } from "@/lib/blog/types";
+import { getTodayKST } from "@/lib/date";
 
 const BUCKET = "blog-images";
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
+const PUBLIC_PATH_MARKER = `/storage/v1/object/public/${BUCKET}/`;
+
+interface ImageUsage {
+  slug: string;
+  title: string;
+  category: BlogCategoryValue;
+  published: boolean;
+  hidden: boolean;
+  visible: boolean;
+}
 
 interface ImageItem {
   path: string;
@@ -12,6 +25,54 @@ interface ImageItem {
   url: string;
   size: number;
   createdAt: string;
+  usage: ImageUsage[];
+  isVisible: boolean;
+  isUsed: boolean;
+}
+
+function getStoragePathFromPublicUrl(src: string): string | null {
+  try {
+    const url = new URL(src);
+    const markerIndex = url.pathname.indexOf(PUBLIC_PATH_MARKER);
+    if (markerIndex === -1) return null;
+    return decodeURIComponent(url.pathname.slice(markerIndex + PUBLIC_PATH_MARKER.length));
+  } catch {
+    return null;
+  }
+}
+
+function isImageBlock(block: BlogBlock): block is Extract<BlogBlock, { type: "image" }> {
+  return block.type === "image";
+}
+
+async function getImageUsageMap(): Promise<Map<string, ImageUsage[]>> {
+  const today = getTodayKST();
+  const posts = await getAllPostDetailsFresh();
+  const usageMap = new Map<string, ImageUsage[]>();
+
+  for (const post of posts) {
+    for (const block of post.blocks) {
+      if (!isImageBlock(block)) continue;
+
+      const path = getStoragePathFromPublicUrl(block.src);
+      if (!path?.startsWith("blog/")) continue;
+
+      const hidden = block.hidden ?? false;
+      const visible = post.published && post.date <= today && !hidden;
+      const usage: ImageUsage = {
+        slug: post.slug,
+        title: post.title,
+        category: post.category,
+        published: post.published,
+        hidden,
+        visible,
+      };
+
+      usageMap.set(path, [...(usageMap.get(path) ?? []), usage]);
+    }
+  }
+
+  return usageMap;
 }
 
 async function listImages(prefix: string, depth = 0): Promise<ImageItem[]> {
@@ -38,6 +99,9 @@ async function listImages(prefix: string, depth = 0): Promise<ImageItem[]> {
         url: publicUrl,
         size: item.metadata?.size ?? 0,
         createdAt: item.created_at ?? "",
+        usage: [],
+        isVisible: false,
+        isUsed: false,
       }];
     }),
   );
@@ -50,9 +114,23 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
-    const images = (await listImages("blog")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const [images, usageMap] = await Promise.all([
+      listImages("blog"),
+      getImageUsageMap(),
+    ]);
+    const annotatedImages = images
+      .map((image) => {
+        const usage = usageMap.get(image.path) ?? [];
+        return {
+          ...image,
+          usage,
+          isVisible: usage.some((item) => item.visible),
+          isUsed: usage.length > 0,
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-    return Response.json({ data: images }, { headers: HEADERS });
+    return Response.json({ data: annotatedImages }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(

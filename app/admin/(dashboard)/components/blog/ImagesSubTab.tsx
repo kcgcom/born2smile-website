@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Copy, Trash2, Check, Upload } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -14,7 +14,19 @@ interface ImageItem {
   url: string;
   size: number;
   createdAt: string;
+  usage: {
+    slug: string;
+    title: string;
+    category: string;
+    published: boolean;
+    hidden: boolean;
+    visible: boolean;
+  }[];
+  isVisible: boolean;
+  isUsed: boolean;
 }
+
+type ImageFilter = "all" | "used" | "unused";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0B";
@@ -35,6 +47,7 @@ export function ImagesSubTab() {
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ImageFilter>("all");
 
   const handleCopy = useCallback((url: string, path: string) => {
     void navigator.clipboard.writeText(url).then(() => {
@@ -84,7 +97,20 @@ export function ImagesSubTab() {
     }
   }, [refetch]);
 
-  const images = data ?? [];
+  const images = useMemo(() => data ?? [], [data]);
+  const usedCount = useMemo(() => images.filter((img) => img.isUsed).length, [images]);
+  const unusedCount = images.length - usedCount;
+  const filteredImages = useMemo(() => {
+    if (filter === "used") return images.filter((img) => img.isUsed);
+    if (filter === "unused") return images.filter((img) => !img.isUsed);
+    return images;
+  }, [filter, images]);
+
+  const filterOptions: { value: ImageFilter; label: string; count: number }[] = [
+    { value: "all", label: "전체", count: images.length },
+    { value: "used", label: "사용 중", count: usedCount },
+    { value: "unused", label: "미사용", count: unusedCount },
+  ];
 
   return (
     <div className="space-y-6">
@@ -128,57 +154,108 @@ export function ImagesSubTab() {
 
       {!loading && !error && images.length > 0 && (
         <>
-          <p className="text-xs text-[var(--muted)]">총 {images.length}개</p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {images.map((img) => (
-              <div
-                key={img.path}
-                className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-sm"
-              >
-                {/* Thumbnail */}
-                <div className="flex h-36 items-center justify-center bg-[var(--background)] p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url}
-                    alt={img.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-
-                {/* Info */}
-                <div className="border-t border-[var(--border)] px-3 py-2">
-                  <p className="truncate text-xs font-medium text-[var(--foreground)]" title={img.name}>
-                    {img.name}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-[var(--muted)]">
-                    {formatBytes(img.size)} · {formatDate(img.createdAt)}
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={() => handleCopy(img.url, img.path)}
-                    title="URL 복사"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white"
-                  >
-                    {copiedPath === img.path
-                      ? <Check size={13} className="text-green-500" />
-                      : <Copy size={13} className="text-[var(--foreground)]" />
-                    }
-                  </button>
-                  <button
-                    onClick={() => void handleDelete(img.path)}
-                    disabled={deletingPath === img.path}
-                    title="삭제"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
-                  >
-                    <Trash2 size={13} className="text-red-500" />
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilter(option.value)}
+                  className={[
+                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    filter === option.value
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                      : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+                  ].join(" ")}
+                >
+                  {option.label} {option.count.toLocaleString("ko-KR")}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-[var(--muted)]">
+              사용 중 {usedCount.toLocaleString("ko-KR")}개 · 미사용 {unusedCount.toLocaleString("ko-KR")}개
+            </p>
           </div>
+
+          {filteredImages.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--border)] py-16 text-center text-sm text-[var(--muted)]">
+              이 조건에 해당하는 이미지가 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {filteredImages.map((img) => (
+                <div
+                  key={img.path}
+                  className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-sm"
+                >
+                  {/* Thumbnail */}
+                  <div className="flex h-36 items-center justify-center bg-[var(--background)] p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.url}
+                      alt={img.name}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+
+                  {/* Info */}
+                  <div className="border-t border-[var(--border)] px-3 py-2">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span
+                        className={[
+                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          img.isUsed
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500",
+                        ].join(" ")}
+                      >
+                        {img.isUsed ? "사용 중" : "미사용"}
+                      </span>
+                      {img.isUsed && !img.isVisible && (
+                        <span className="text-[10px] text-amber-600">비공개/숨김</span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs font-medium text-[var(--foreground)]" title={img.name}>
+                      {img.name}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                      {formatBytes(img.size)} · {formatDate(img.createdAt)}
+                    </p>
+                    <p
+                      className="mt-1 truncate text-[10px] text-[var(--muted)]"
+                      title={img.usage.map((item) => item.title).join(", ") || img.path}
+                    >
+                      {img.usage.length > 0
+                        ? img.usage.map((item) => item.title).join(", ")
+                        : "사용 중인 포스트 없음"}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => handleCopy(img.url, img.path)}
+                      title="URL 복사"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white"
+                    >
+                      {copiedPath === img.path
+                        ? <Check size={13} className="text-green-500" />
+                        : <Copy size={13} className="text-[var(--foreground)]" />
+                      }
+                    </button>
+                    <button
+                      onClick={() => void handleDelete(img.path)}
+                      disabled={deletingPath === img.path}
+                      title="삭제"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 size={13} className="text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>
