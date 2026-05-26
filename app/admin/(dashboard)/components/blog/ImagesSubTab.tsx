@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Copy, Trash2, Check, Upload } from "lucide-react";
+import { Copy, Trash2, Check, Upload, X } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -55,6 +55,7 @@ export function ImagesSubTab() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ImageFilter>("all");
+  const [previewImage, setPreviewImage] = useState<ImageItem | null>(null);
 
   const handleCopy = useCallback((url: string, path: string) => {
     void navigator.clipboard.writeText(url).then(() => {
@@ -202,14 +203,19 @@ export function ImagesSubTab() {
                   className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-sm"
                 >
                   {/* Thumbnail */}
-                  <div className="flex h-36 items-center justify-center bg-[var(--background)] p-2">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage(img)}
+                    className="flex h-36 w-full cursor-zoom-in items-center justify-center bg-[var(--background)] p-2 transition-colors hover:bg-slate-100"
+                    aria-label={`${img.name} 크게 보기`}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img.url}
                       alt={img.name}
                       className="max-h-full max-w-full object-contain"
                     />
-                  </div>
+                  </button>
 
                   {/* Info */}
                   <div className="border-t border-[var(--border)] px-3 py-2">
@@ -285,6 +291,48 @@ export function ImagesSubTab() {
             </div>
           )}
         </>
+      )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="이미지 크게 보기"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                  {previewImage.name}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
+                  {formatBytes(previewImage.size)} · {previewImage.path}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                aria-label="이미지 미리보기 닫기"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center bg-slate-100 p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewImage.url}
+                alt={previewImage.name}
+                className="max-h-[75vh] max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
