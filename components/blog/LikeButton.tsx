@@ -24,7 +24,7 @@ interface LikeButtonProps {
 }
 
 export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps) {
-  const [count, setCount] = useState(0);
+  const [, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [unavailable, setUnavailable] = useState(!isSupabaseConfigured);
@@ -135,7 +135,7 @@ export default function LikeButton({ slug, source = "unknown" }: LikeButtonProps
         size={17}
         className={`transition-all ${liked ? "fill-rose-500 text-rose-500" : ""}`}
       />
-      <span>{count > 0 ? `${count}명 공감` : "공감해요"}</span>
+      <span>공감해요</span>
     </button>
   );
 }
