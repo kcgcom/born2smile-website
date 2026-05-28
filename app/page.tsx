@@ -94,7 +94,7 @@ export default function Home() {
       />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white">
+        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white pb-16 md:pb-0">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
