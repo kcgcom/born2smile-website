@@ -32,16 +32,19 @@ export function BlogEditProvider({
   children: React.ReactNode;
 }) {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [blocks, setBlocks] = useState<BlogBlock[]>(initialBlocks);
+  const [draftBlocks, setDraftBlocks] = useState<BlogBlock[]>(initialBlocks);
 
   return (
     <BlogEditContext.Provider
       value={{
         isEditMode,
-        enter: () => setIsEditMode(true),
+        enter: () => {
+          setDraftBlocks(initialBlocks);
+          setIsEditMode(true);
+        },
         exit: () => setIsEditMode(false),
-        blocks,
-        setBlocks,
+        blocks: isEditMode ? draftBlocks : initialBlocks,
+        setBlocks: setDraftBlocks,
       }}
     >
       {children}
