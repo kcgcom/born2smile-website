@@ -14,6 +14,9 @@ interface ImageItem {
   name: string;
   url: string;
   size: number;
+  width?: number;
+  height?: number;
+  format?: string;
   createdAt: string;
   usage: {
     slug: string;
@@ -39,6 +42,13 @@ function formatBytes(bytes: number): string {
 function formatDate(iso: string): string {
   if (!iso) return "";
   return iso.slice(0, 10);
+}
+
+function formatImageMeta(image: Pick<ImageItem, "format" | "width" | "height">): string {
+  const parts: string[] = [];
+  if (image.format) parts.push(image.format.toUpperCase());
+  if (image.width && image.height) parts.push(`${image.width}×${image.height}`);
+  return parts.join(" · ");
 }
 
 function getUsageLabel(usage: ImageItem["usage"][number]): string {
@@ -134,7 +144,7 @@ export function ImagesSubTab() {
           <div>
             <h2 className="text-sm font-semibold text-[var(--foreground)]">이미지 라이브러리</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
-              Supabase Storage에 업로드된 블로그 이미지를 관리합니다.
+              JPG · PNG · WebP는 1200×1200 WebP로 자동 최적화되고 GIF는 원본으로 보관됩니다.
             </p>
           </div>
           <label className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity ${uploading ? "cursor-not-allowed bg-gray-400" : "bg-[var(--color-primary)] hover:opacity-90"}`}>
@@ -238,7 +248,7 @@ export function ImagesSubTab() {
                       {img.name}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[var(--muted)]">
-                      {formatBytes(img.size)} · {formatDate(img.createdAt)}
+                      {[formatBytes(img.size), formatImageMeta(img), formatDate(img.createdAt)].filter(Boolean).join(" · ")}
                     </p>
                   {img.usage.length > 0 ? (
                     <div className="mt-1 space-y-0.5">
@@ -311,7 +321,7 @@ export function ImagesSubTab() {
                   {previewImage.name}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
-                  {formatBytes(previewImage.size)} · {previewImage.path}
+                  {[formatBytes(previewImage.size), formatImageMeta(previewImage), previewImage.path].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <button

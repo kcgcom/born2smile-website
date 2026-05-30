@@ -30,6 +30,15 @@ export interface BlogEditorData {
   published: boolean;
 }
 
+interface UploadResponseData {
+  url: string;
+  width?: number;
+  height?: number;
+  size?: number;
+  contentType?: string;
+  optimized?: boolean;
+}
+
 interface BlogEditorProps {
   mode: "create" | "edit";
   presentation?: "drawer" | "page";
@@ -865,12 +874,18 @@ function ImageBlockEditor({
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
-      const json = await res.json() as { data?: { url: string }; message?: string };
+      const json = await res.json() as { data?: UploadResponseData; message?: string };
       if (!res.ok) {
         setUploadError(json.message ?? "업로드 실패");
         return;
       }
-      setBlock(idx, { ...block, src: json.data!.url });
+      setBlock(idx, {
+        ...block,
+        src: json.data!.url,
+        ...(json.data?.width && json.data?.height
+          ? { width: json.data.width, height: json.data.height }
+          : {}),
+      });
     } catch {
       setUploadError("업로드 중 오류가 발생했습니다");
     } finally {
@@ -897,7 +912,7 @@ function ImageBlockEditor({
         ].join(" ")}
       >
         {uploading ? (
-          <span className="text-[var(--muted)]">업로드 중…</span>
+          <span className="text-[var(--muted)]">최적화 중…</span>
         ) : (
           <>
             <span className="text-[var(--muted)]">파일을 드래그하거나</span>
@@ -914,7 +929,7 @@ function ImageBlockEditor({
                 }}
               />
             </label>
-            <span className="text-xs text-[var(--muted)]">JPG · PNG · WebP · GIF · 최대 5MB</span>
+            <span className="text-xs text-[var(--muted)]">JPG · PNG · WebP는 1200×1200 WebP로 자동 최적화 · GIF는 원본 유지 · 최대 5MB</span>
           </>
         )}
         {block.src && !uploading && (
@@ -930,7 +945,12 @@ function ImageBlockEditor({
       <input
         type="text"
         value={block.src}
-        onChange={(e) => setBlock(idx, { ...block, src: e.target.value })}
+        onChange={(e) => setBlock(idx, {
+          ...block,
+          src: e.target.value,
+          width: undefined,
+          height: undefined,
+        })}
         placeholder="또는 이미지 URL 직접 입력"
         className={inputClass(hasError)}
       />

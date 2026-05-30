@@ -42,6 +42,8 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     src: z.string().min(1).max(500),
     alt: z.string().max(150),
     caption: z.string().max(200).optional(),
+    width: z.number().int().positive().max(5000).optional(),
+    height: z.number().int().positive().max(5000).optional(),
     hidden: z.boolean().optional(),
     decorative: z.boolean().optional(),
   }),

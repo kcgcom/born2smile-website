@@ -31,6 +31,15 @@ interface PostMeta {
   date: string;
 }
 
+interface UploadResponseData {
+  url: string;
+  width?: number;
+  height?: number;
+  size?: number;
+  contentType?: string;
+  optimized?: boolean;
+}
+
 // ─── Block type metadata ──────────────────────────────────────────────────────
 
 const BLOCK_OPTIONS: { type: BlogBlock["type"]; label: string; desc: string }[] = [
@@ -747,6 +756,8 @@ function ImageEditForm({
   const [src, setSrc] = useState(b.src);
   const [alt, setAlt] = useState(b.alt);
   const [caption, setCaption] = useState(b.caption ?? "");
+  const [imageWidth, setImageWidth] = useState<number | undefined>(b.width);
+  const [imageHeight, setImageHeight] = useState<number | undefined>(b.height);
   const [hidden, setHidden] = useState(b.hidden ?? false);
   const [decorative, setDecorative] = useState(b.decorative ?? false);
   const [uploading, setUploading] = useState(false);
@@ -777,12 +788,14 @@ function ImageEditForm({
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
-      const json = await res.json() as { data?: { url: string }; message?: string };
+      const json = await res.json() as { data?: UploadResponseData; message?: string };
       if (!res.ok) {
         setUploadError(json.message ?? "업로드 실패");
         return;
       }
       setSrc(json.data?.url ?? "");
+      setImageWidth(json.data?.width);
+      setImageHeight(json.data?.height);
     } catch {
       setUploadError("업로드 중 오류가 발생했습니다");
     } finally {
@@ -802,6 +815,7 @@ function ImageEditForm({
           src: src.trim(),
           alt: decorative ? "" : normalizedAlt,
           ...(normalizedCaption ? { caption: normalizedCaption } : {}),
+          ...(imageWidth && imageHeight ? { width: imageWidth, height: imageHeight } : {}),
           ...(hidden ? { hidden: true } : {}),
           ...(decorative ? { decorative: true } : {}),
         });
@@ -812,7 +826,7 @@ function ImageEditForm({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gray-700">이미지 업로드</p>
-            <p className="text-xs text-gray-500">JPG · PNG · WebP · GIF · 최대 5MB</p>
+            <p className="text-xs text-gray-500">JPG · PNG · WebP는 1200×1200 WebP로 자동 최적화 · GIF는 원본 유지 · 최대 5MB</p>
           </div>
           <label className={`inline-flex cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-white ${uploading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
             {uploading ? "업로드 중..." : "파일 선택"}
@@ -841,7 +855,13 @@ function ImageEditForm({
       <input
         type="text"
         value={src}
-        onChange={(e) => setSrc(e.target.value)}
+        onChange={(e) => {
+          setSrc(e.target.value);
+          if (e.target.value.trim() !== b.src) {
+            setImageWidth(undefined);
+            setImageHeight(undefined);
+          }
+        }}
         className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
         placeholder="/images/blog/prosthetics/crown-materials-chart.png"
         autoFocus
