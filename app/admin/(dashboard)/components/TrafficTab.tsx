@@ -772,6 +772,8 @@ export function TrafficTab() {
   const [view, setView] = useState<TrafficView>("overall");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
+  const [blogSortKey, setBlogSortKey] = useState<"sessions" | "views" | "avgDuration">("sessions");
+  const [blogSortDir, setBlogSortDir] = useState<"asc" | "desc">("desc");
 
   const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
@@ -827,15 +829,25 @@ export function TrafficTab() {
     return new Map((blogGa4Data?.blogPostStats ?? []).map((item) => [item.path, item]));
   }, [blogGa4Data]);
   const blogPerformanceRows = useMemo(() => {
-    return (blogGa4Data?.blogPostStats ?? [])
-      .map((item) => ({
-        path: item.path,
-        views: item.pageViews,
-        sessions: topPageDetails[item.path]?.summary.sessions ?? 0,
-        avgDuration: item.avgDuration,
-      }))
-      .sort((a, b) => b.sessions - a.sessions || b.views - a.views);
-  }, [blogGa4Data, topPageDetails]);
+    const rows = (blogGa4Data?.blogPostStats ?? []).map((item) => ({
+      path: item.path,
+      views: item.pageViews,
+      sessions: topPageDetails[item.path]?.summary.sessions ?? 0,
+      avgDuration: item.avgDuration,
+    }));
+    const dir = blogSortDir === "desc" ? -1 : 1;
+    return rows.sort((a, b) => (b[blogSortKey] - a[blogSortKey]) * dir);
+  }, [blogGa4Data, topPageDetails, blogSortKey, blogSortDir]);
+
+  function handleBlogSort(key: string) {
+    const k = key as "sessions" | "views" | "avgDuration";
+    if (k === blogSortKey) {
+      setBlogSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setBlogSortKey(k);
+      setBlogSortDir("desc");
+    }
+  }
   const activeBlogPosts = useMemo(
     () => (blogGa4Data?.blogPostStats ?? []).filter((item) => item.pageViews > 0).length,
     [blogGa4Data],
@@ -1158,6 +1170,23 @@ export function TrafficTab() {
               <SectionCard title="글별 방문 성과">
                 <>
                   <div className="space-y-2 sm:hidden">
+                    <div className="flex items-center gap-2 pb-1 text-xs text-[var(--muted)]">
+                      <span>정렬:</span>
+                      {(["sessions", "views", "avgDuration"] as const).map((k) => {
+                        const labels = { sessions: "세션수", views: "페이지뷰", avgDuration: "평균체류" };
+                        const active = blogSortKey === k;
+                        return (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => handleBlogSort(k)}
+                            className={`rounded-full px-2 py-0.5 transition-colors ${active ? "bg-[var(--color-primary)] text-white" : "bg-[var(--border)] text-[var(--foreground)] hover:bg-[var(--color-primary)]/20"}`}
+                          >
+                            {labels[k]}{active ? (blogSortDir === "desc" ? " ▼" : " ▲") : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
                     {blogPerformanceRows.length > 0 ? blogPerformanceRows.map((item) => (
                       <button
                         key={item.path}
@@ -1195,6 +1224,9 @@ export function TrafficTab() {
                     <DataTable
                       keyField="path"
                       rows={blogPerformanceRows as unknown as Record<string, unknown>[]}
+                      sortKey={blogSortKey}
+                      sortDirection={blogSortDir}
+                      onSort={handleBlogSort}
                       columns={[
                         {
                           key: "path",
@@ -1225,18 +1257,21 @@ export function TrafficTab() {
                           key: "sessions",
                           label: "세션 수",
                           align: "right",
+                          sortable: true,
                           render: (row) => Number((row as { sessions: number }).sessions).toLocaleString("ko-KR"),
                         },
                         {
                           key: "views",
                           label: "페이지뷰",
                           align: "right",
+                          sortable: true,
                           render: (row) => Number((row as { views: number }).views).toLocaleString("ko-KR"),
                         },
                         {
                           key: "avgDuration",
                           label: "평균 체류",
                           align: "right",
+                          sortable: true,
                           render: (row) => {
                             const avgDuration = Number((row as { avgDuration: number }).avgDuration);
                             return avgDuration > 0 ? formatDuration(avgDuration) : "—";
