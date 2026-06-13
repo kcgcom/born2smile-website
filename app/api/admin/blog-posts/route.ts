@@ -3,7 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import {
-  getAllPostMetas,
+  getAllPostMetasFresh,
   getPostBySlug,
   createBlogPost,
   type CreateBlogPostData,
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
-    const posts = await getAllPostMetas();
+    const posts = await getAllPostMetasFresh();
     return Response.json({ data: posts }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);

@@ -1,29 +1,20 @@
 export const revalidate = 86400;
 
 import type { MetadataRoute } from "next";
-import { stat } from "fs/promises";
-import { join } from "path";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
 
 const DEFAULT_LAST_MODIFIED = new Date("2026-01-01T00:00:00.000Z");
 
-async function getLatestFileModified(paths: string[]): Promise<Date> {
-  const stats = await Promise.all(
-    paths.map(async (path) => {
-      try {
-        const file = join(process.cwd(), path);
-        const value = await stat(file);
-        return value.mtime;
-      } catch {
-        return DEFAULT_LAST_MODIFIED;
-      }
-    }),
-  );
-
-  return stats.reduce<Date>((latest, current) => (current > latest ? current : latest), DEFAULT_LAST_MODIFIED);
-}
+const STATIC_PAGE_LAST_MODIFIED = {
+  home: new Date("2026-06-13T00:00:00.000Z"),
+  about: new Date("2026-06-13T00:00:00.000Z"),
+  treatments: new Date("2026-06-13T00:00:00.000Z"),
+  faq: new Date("2026-06-13T00:00:00.000Z"),
+  contact: new Date("2026-06-13T00:00:00.000Z"),
+  privacy: new Date("2026-02-20T00:00:00.000Z"),
+} as const;
 
 function getPostLastModified(post: { date: string; dateModified?: string }): Date {
   const lastModified = post.dateModified && post.dateModified > post.date
@@ -33,18 +24,9 @@ function getPostLastModified(post: { date: string; dateModified?: string }): Dat
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [homeLastModified, aboutLastModified, treatmentsLastModified, contactLastModified, faqLastModified, privacyLastModified] = await Promise.all([
-    getLatestFileModified(["app/page.tsx", "lib/constants.ts"]),
-    getLatestFileModified(["app/about/page.tsx", "lib/constants.ts"]),
-    getLatestFileModified(["app/treatments/page.tsx", "app/treatments/[slug]/page.tsx", "lib/constants.ts", "lib/treatments.ts"]),
-    getLatestFileModified(["app/contact/layout.tsx", "app/contact/page.tsx", "lib/constants.ts"]),
-    getLatestFileModified(["app/faq/page.tsx", "lib/treatments.ts", "lib/constants.ts"]),
-    getLatestFileModified(["app/privacy/page.tsx"]),
-  ]);
-
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
-    lastModified: treatmentsLastModified,
+    lastModified: STATIC_PAGE_LAST_MODIFIED.treatments,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
@@ -67,19 +49,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: BASE_URL,
-      lastModified: homeLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.home,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${BASE_URL}/about`,
-      lastModified: aboutLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.about,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/treatments`,
-      lastModified: treatmentsLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.treatments,
       changeFrequency: "monthly",
       priority: 0.8,
     },
@@ -104,19 +86,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     {
       url: `${BASE_URL}/faq`,
-      lastModified: faqLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.faq,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
       url: `${BASE_URL}/contact`,
-      lastModified: contactLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.contact,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/privacy`,
-      lastModified: privacyLastModified,
+      lastModified: STATIC_PAGE_LAST_MODIFIED.privacy,
       changeFrequency: "yearly",
       priority: 0.3,
     },
