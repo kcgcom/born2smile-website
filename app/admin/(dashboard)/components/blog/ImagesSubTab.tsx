@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Copy, Trash2, Check, Upload, X } from "lucide-react";
+import { Copy, Trash2, Check, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -129,6 +129,30 @@ export function ImagesSubTab() {
     if (filter === "unused") return images.filter((img) => !img.isUsed);
     return images;
   }, [filter, images]);
+
+  const previewIndex = useMemo(
+    () => (previewImage ? filteredImages.findIndex((img) => img.path === previewImage.path) : -1),
+    [previewImage, filteredImages],
+  );
+
+  const goToPrev = useCallback(() => {
+    if (previewIndex > 0) setPreviewImage(filteredImages[previewIndex - 1]);
+  }, [previewIndex, filteredImages]);
+
+  const goToNext = useCallback(() => {
+    if (previewIndex < filteredImages.length - 1) setPreviewImage(filteredImages[previewIndex + 1]);
+  }, [previewIndex, filteredImages]);
+
+  useEffect(() => {
+    if (!previewImage) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goToPrev();
+      else if (e.key === "ArrowRight") goToNext();
+      else if (e.key === "Escape") setPreviewImage(null);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [previewImage, goToPrev, goToNext]);
 
   const filterOptions: { value: ImageFilter; label: string; count: number }[] = [
     { value: "all", label: "전체", count: images.length },
@@ -324,22 +348,49 @@ export function ImagesSubTab() {
                   {[formatBytes(previewImage.size), formatImageMeta(previewImage), previewImage.path].filter(Boolean).join(" · ")}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setPreviewImage(null)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
-                aria-label="이미지 미리보기 닫기"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {filteredImages.length > 1 && (
+                  <span className="text-xs text-[var(--muted)]">
+                    {previewIndex + 1} / {filteredImages.length}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                  aria-label="이미지 미리보기 닫기"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
-            <div className="flex min-h-0 flex-1 items-center justify-center bg-slate-100 p-4">
+            <div className="relative flex min-h-0 flex-1 items-center justify-center bg-slate-100 p-4">
+              {previewIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={goToPrev}
+                  className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                  aria-label="이전 이미지"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewImage.url}
                 alt={previewImage.name}
                 className="max-h-[75vh] max-w-full object-contain"
               />
+              {previewIndex < filteredImages.length - 1 && (
+                <button
+                  type="button"
+                  onClick={goToNext}
+                  className="absolute right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                  aria-label="다음 이미지"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
             </div>
           </div>
         </div>
