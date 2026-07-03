@@ -9,7 +9,7 @@ import { useAdminApi } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import { CategoryBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
+import { SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { BlogBriefItem, PageBriefItem, StrategyOverviewData } from "./shared";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
@@ -262,7 +262,7 @@ export function StrategySubTab() {
         <AdminSurface tone="white" className="rounded-3xl p-6">
           <h2 className="text-lg font-bold text-[var(--foreground)]">페이지 보강 워크노트</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            브리프 카드에서 "보강 워크노트 열기"를 눌러야 전략 탭 안에서 메모가 열립니다.
+            브리프 카드에서 &ldquo;보강 워크노트 열기&rdquo;를 눌러야 전략 탭 안에서 메모가 열립니다.
           </p>
           <button
             type="button"
