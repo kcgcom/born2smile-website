@@ -70,16 +70,21 @@ app/                          # Next.js App Router pages
     login/page.tsx            # Google OAuth 로그인
     preview/[category]/[slug] # 초안 미리보기
     (dashboard)/
-      page.tsx                # 6탭 관리자 콘솔 컨테이너
+      page.tsx                # 관리자 진입점 → /admin/operations/overview 리다이렉트
+      operations/             # 운영 워크스페이스 (개요, 전환)
+      analysis/               # 트래픽, 검색 성과 페이지
+      content/                # 콘텐츠 워크스페이스 (포스트, 일정, 이미지, 전략, 트렌드)
+      system/                 # 시스템 워크스페이스 (설정, 성능, 현황, 연동 점검, 레퍼런스)
       components/
-        DashboardTab.tsx      # 운영 요약 탭
-        ContentTab.tsx        # 콘텐츠/포스트/발행 일정/성과 탭
-        SeoTab.tsx            # 트래픽/검색 성과/콘텐츠 전략/트렌드 탭
+        GrowthOverviewPanel.tsx # 운영 개요 패널 (MetricCard 6개 + 액션 카드)
         ConversionTab.tsx     # PostHog 전환 리포트 탭
         AdminSettingsTab.tsx  # 사이트 설정 탭
-        DevtoolsTab.tsx       # 현황/성능/레퍼런스/모니터링/AI 로그 탭
-        blog/                 # 콘텐츠 서브탭(PostsSubTab, StatsSubTab, AI 작성 모달)
-        insight/              # SEO/전환 세부 서브탭
+        PerformanceTab.tsx    # PageSpeed Insights 성능 탭
+        MonitoringTab.tsx     # Sentry/PostHog 연동 점검
+        ProjectTab.tsx        # 프로젝트 현황 탭
+        ReferenceTab.tsx      # 레퍼런스 탭
+        blog/                 # 콘텐츠 서브탭 (PostsSubTab, ImagesSubTab, BlogEditorScreen)
+        insight/              # 전략/트렌드 서브탭 (StrategySubTab, TrendSubTab)
   api/
     admin/                    # 관리자용 데이터/API 엔드포인트
     dev/                      # 개발도구 엔드포인트
@@ -183,21 +188,18 @@ supabase/migrations/          # schema, RLS, RPC
 
 ### 관리자 대시보드
 
-**관리자 대시보드 (`/admin`)** — 6탭 구조 (기본 탭: `dashboard`).
+**관리자 대시보드 (`/admin`)** — 3개 워크스페이스 구조 (기본: 운영 > 개요).
 
-- **대시보드**: 요약 카드, 해야 할 일, 핵심 CTA
-- **콘텐츠**: 포스트 관리 / 발행 일정 / 성과
-- **유입·SEO**: 트래픽 / 검색 성과 / 콘텐츠 전략 / 트렌드
-- **전환**: PostHog 기반 CTA·전화·페이지 기여 리포트
-- **사이트 설정**: SNS 링크, 병원 정보, 진료시간 저장
-- **개발도구**: 현황 / 성능 / 레퍼런스 / 모니터링 / AI 로그
+- **운영**: 개요 (MetricCard 6개 + 액션 카드) / 트래픽 (GA4) / 검색 성과 (Search Console) / 전환 (PostHog CTA·전화·공유)
+- **콘텐츠**: 포스트 관리 / 발행 일정 / 이미지 / 콘텐츠 전략 (실행안·브리프) / 검색 트렌드 (네이버 DataLab)
+- **시스템**: 사이트 설정 (SNS·병원정보·진료시간) / 성능 (PageSpeed Insights) / 현황 / 연동 점검 (Sentry·PostHog) / 레퍼런스
 
 추가 메모:
-- 구 URL(예: `?tab=dev`, `?tab=traffic`, `?tab=search`, `?tab=trend`, `?tab=blog`)은 현재 탭 구조로 자동 리다이렉트됩니다.
 - 공통 관리자 API는 Supabase Admin access token 검증 후 응답하며, 대부분 `unstable_cache`와 `Cache-Control: private, no-store`를 사용합니다.
 - `AdminFloatingButton`, `AdminSettingsLink`는 루트 레이아웃에서 로드되지만 `localStorage("born2smile-admin")` 게이트 + 동적 import로 비관리자 번들 영향을 최소화합니다.
 - GA 관리자 트래픽 제외는 `useAdminAuth`가 설정한 localStorage 플래그와 `layout.tsx` 인라인 스크립트로 처리합니다.
-- 개발도구 탭 데이터 소스는 빌드 타임 매니페스트(`lib/dev/generated/dev-manifest.ts`) + 정적 데이터(`lib/dev-data.ts`)입니다.
+- 현황/레퍼런스 탭 데이터 소스는 빌드 타임 매니페스트(`lib/dev/generated/dev-manifest.ts`) + 정적 데이터(`lib/dev-data.ts`)입니다.
+- 콘텐츠 전략의 근거 데이터(콘텐츠 갭 분석, 기회 매트릭스, 추천원리)는 `/admin/content/strategy/evidence`에서 별도 확인할 수 있습니다.
 
 ## Common Tasks
 
