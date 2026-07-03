@@ -835,8 +835,9 @@ export function TrafficTab() {
       sessions: topPageDetails[item.path]?.summary.sessions ?? 0,
       avgDuration: item.avgDuration,
     }));
-    const dir = blogSortDir === "desc" ? -1 : 1;
-    return rows.sort((a, b) => (b[blogSortKey] - a[blogSortKey]) * dir);
+    return rows.sort((a, b) =>
+      blogSortDir === "desc" ? b[blogSortKey] - a[blogSortKey] : a[blogSortKey] - b[blogSortKey]
+    );
   }, [blogGa4Data, topPageDetails, blogSortKey, blogSortDir]);
 
   function handleBlogSort(key: string) {
