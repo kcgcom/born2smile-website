@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function AdminAnalysisPage() {
-  redirect("/admin/analysis/traffic");
+  redirect("/admin/operations/overview");
 }

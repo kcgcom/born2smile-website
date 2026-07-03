@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointerClick, Search, TrendingUp } from "lucide-react";
+import { MousePointerClick, Search, Target, TrendingUp } from "lucide-react";
 import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { MetricCard } from "@/app/admin/(dashboard)/components/MetricCard";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
@@ -50,7 +50,7 @@ export function GrowthOverviewPanel() {
         </div>
       </AdminSurface>
 
-      <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1 xl:grid-cols-6 xl:[&>*:last-child]:col-span-1">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-6">
         <MetricCard
           label="검색 클릭"
           value={searchData?.summary.clicks.value.toLocaleString("ko-KR") ?? "—"}
@@ -76,6 +76,12 @@ export function GrowthOverviewPanel() {
           loading={conversionLoading}
         />
         <MetricCard
+          label="30일 전화 클릭"
+          value={conversionData?.configured ? conversionData.summary.totalPhoneClicks.toLocaleString("ko-KR") : "설정 필요"}
+          color="text-emerald-700"
+          loading={conversionLoading}
+        />
+        <MetricCard
           label="30일 블로그 공유"
           value={conversionData?.configured ? conversionData.summary.totalShareActions.toLocaleString("ko-KR") : "설정 필요"}
           color="text-sky-700"
@@ -83,36 +89,41 @@ export function GrowthOverviewPanel() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <AdminSurface tone="white" className="rounded-3xl p-6">
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-[var(--color-primary)]" />
-            <h3 className="text-base font-bold text-[var(--foreground)]">검색 성과</h3>
-          </div>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Search Console 기반 상위 쿼리, CTR, 순위 변화를 점검합니다.
-          </p>
-          <AdminActionLink tone="dark" href="/admin/analysis/search" className="mt-4 w-full">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminSurface tone="white" className="rounded-3xl p-5">
+          <Search className="h-5 w-5 text-[var(--color-primary)]" />
+          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">검색 성과 분석</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">상위 쿼리, CTR, 순위 변화 점검</p>
+          <AdminActionLink tone="dark" href="/admin/analysis/search" className="mt-3 w-full">
             열기
           </AdminActionLink>
         </AdminSurface>
 
-        <AdminSurface tone="white" className="rounded-3xl p-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" />
-            <h3 className="text-base font-bold text-[var(--foreground)]">검색 트렌드와 콘텐츠 전략</h3>
-          </div>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            검색 수요 변화는 여기서 보고, 실행 우선순위와 브리프는 콘텐츠 전략에서 정리합니다.
-          </p>
-          <div className="mt-4 flex gap-2">
-            <AdminActionLink tone="dark" href="/admin/content/trends" className="flex-1">
-              검색 트렌드
-            </AdminActionLink>
-            <AdminActionLink tone="dark" href="/admin/content/strategy" className="flex-1">
-              콘텐츠 전략
-            </AdminActionLink>
-          </div>
+        <AdminSurface tone="white" className="rounded-3xl p-5">
+          <MousePointerClick className="h-5 w-5 text-[var(--color-primary)]" />
+          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">전환 리포트</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">CTA·전화·공유 전환 상세 분석</p>
+          <AdminActionLink tone="dark" href="/admin/operations/conversion" className="mt-3 w-full">
+            열기
+          </AdminActionLink>
+        </AdminSurface>
+
+        <AdminSurface tone="white" className="rounded-3xl p-5">
+          <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" />
+          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">검색 트렌드</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">검색 수요 변화와 키워드 동향</p>
+          <AdminActionLink tone="dark" href="/admin/content/trends" className="mt-3 w-full">
+            열기
+          </AdminActionLink>
+        </AdminSurface>
+
+        <AdminSurface tone="white" className="rounded-3xl p-5">
+          <Target className="h-5 w-5 text-[var(--color-primary)]" />
+          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">콘텐츠 전략</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">실행 우선순위와 브리프 정리</p>
+          <AdminActionLink tone="dark" href="/admin/content/strategy" className="mt-3 w-full">
+            열기
+          </AdminActionLink>
         </AdminSurface>
       </div>
     </div>

@@ -4,16 +4,20 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Activity,
   BarChart3,
+  BookOpen,
+  ClipboardCheck,
   FileText,
   Gauge,
   Image,
   LayoutDashboard,
-  Activity,
   MousePointerClick,
+  Search,
   Settings,
   Target,
   TrendingUp,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
@@ -46,17 +50,9 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: LayoutDashboard,
     tabs: [
       { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
-    ],
-  },
-  {
-    id: "analysis",
-    href: "/admin/analysis/traffic",
-    label: "분석",
-    icon: TrendingUp,
-    tabs: [
       { href: "/admin/analysis/traffic", label: "트래픽", icon: BarChart3 },
-      { href: "/admin/analysis/search", label: "검색 성과", icon: FileText },
-      { href: "/admin/analysis/conversion", label: "전환", icon: MousePointerClick },
+      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
+      { href: "/admin/operations/conversion", label: "전환", icon: MousePointerClick },
     ],
   },
   {
@@ -79,8 +75,10 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: Settings,
     tabs: [
       { href: "/admin/system/settings", label: "사이트 설정", icon: Settings },
-      { href: "/admin/system/monitoring", label: "모니터링", icon: Activity },
-      { href: "/admin/system/devtools", label: "개발도구", icon: Gauge },
+      { href: "/admin/system/monitoring", label: "성능", icon: Gauge },
+      { href: "/admin/system/devtools/project", label: "현황", icon: ClipboardCheck },
+      { href: "/admin/system/devtools/integrations", label: "연동 점검", icon: Wrench },
+      { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
     ],
   },
 ];

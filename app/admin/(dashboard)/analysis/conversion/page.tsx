@@ -1,5 +1,5 @@
-import { ConversionReportTab } from "../../components/ConversionTab";
+import { redirect } from "next/navigation";
 
 export default function AdminAnalysisConversionPage() {
-  return <ConversionReportTab />;
+  redirect("/admin/operations/conversion");
 }
