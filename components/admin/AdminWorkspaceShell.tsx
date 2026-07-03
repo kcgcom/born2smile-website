@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
-  Bot,
   FileText,
   Gauge,
   Image,
@@ -47,7 +46,6 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: LayoutDashboard,
     tabs: [
       { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
-      { href: "/admin/operations/ai-ops", label: "AI 운영실", icon: Bot },
     ],
   },
   {
