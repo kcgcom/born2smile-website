@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -32,7 +32,6 @@ interface PostsHeroProps {
   refreshing: boolean;
   onRefresh: () => void;
   onCreatePost: () => void;
-  onOpenAiWrite: () => void;
 }
 
 interface PostsSummaryCardsProps {
@@ -188,7 +187,6 @@ export function PostsHero({
   refreshing,
   onRefresh,
   onCreatePost,
-  onOpenAiWrite,
 }: PostsHeroProps) {
   return (
     <AdminSurface tone="white" className="rounded-3xl p-6">
@@ -212,10 +210,6 @@ export function PostsHero({
           <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-10 w-full px-4 py-2 text-sm sm:w-auto">
             <Pencil className="h-4 w-4" />
             새 글 작성
-          </AdminActionButton>
-          <AdminActionButton tone="dark" onClick={onOpenAiWrite} className="min-h-10 w-full px-4 py-2 text-sm sm:w-auto">
-            <Sparkles className="h-4 w-4" />
-            AI 초안
           </AdminActionButton>
           <button
             onClick={onRefresh}

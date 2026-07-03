@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check, Loader2, Save, Sparkles } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
-import { AiWriteModal } from "@/app/admin/(dashboard)/components/blog/AiWriteModal";
-import { BLOG_EDITOR_DRAFT_KEY } from "@/app/admin/(dashboard)/components/blog/blog-editor-draft";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { getTodayKST } from "@/lib/date";
 
@@ -29,7 +26,6 @@ export function ContentScheduleManager({
   initialPosts?: SchedulePostItem[];
   loadingOverride?: boolean;
 }) {
-  const router = useRouter();
   const today = getTodayKST();
   const shouldFetch = !embedded;
   const { data, loading, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule", shouldFetch);
@@ -37,7 +33,6 @@ export function ContentScheduleManager({
   const { mutate, loading: saving } = useAdminMutation();
   const [saved, setSaved] = useState(false);
   const [formEdits, setFormEdits] = useState<number[] | null>(null);
-  const [aiWriteOpen, setAiWriteOpen] = useState(false);
   const [savedPublishDays, setSavedPublishDays] = useState<number[] | null>(null);
 
   const currentPublishDays = embedded ? (savedPublishDays ?? initialPublishDays) : data?.publishDays;
@@ -195,16 +190,6 @@ export function ContentScheduleManager({
         </div>
       </AdminSurface>
 
-      {aiWriteOpen && (
-        <AiWriteModal
-          onClose={() => setAiWriteOpen(false)}
-          onDraftReady={(draft) => {
-            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(draft));
-            setAiWriteOpen(false);
-            router.push("/admin/content/posts/new?draft=1");
-          }}
-        />
-      )}
     </div>
   );
 }

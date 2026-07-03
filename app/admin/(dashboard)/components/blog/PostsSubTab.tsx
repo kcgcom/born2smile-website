@@ -11,7 +11,6 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
-import { AiWriteModal } from "./AiWriteModal";
 import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
 import { CategoryDistributionPanel } from "./CategoryDistributionPanel";
 import {
@@ -58,7 +57,6 @@ export function PostsSubTab() {
   const [rescheduling, setRescheduling] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
-  const [aiWriteOpen, setAiWriteOpen] = useState(false);
 
   const posts = useMemo(() => {
     const raw = postsData ?? [];
@@ -158,7 +156,6 @@ export function PostsSubTab() {
         refreshing={refreshing}
         onRefresh={handleRefreshCache}
         onCreatePost={handleCreate}
-        onOpenAiWrite={() => setAiWriteOpen(true)}
       />
 
       {postsLoading && <AdminLoadingSkeleton variant="table" />}
@@ -256,16 +253,6 @@ export function PostsSubTab() {
         />
       )}
 
-      {aiWriteOpen && (
-        <AiWriteModal
-          onClose={() => setAiWriteOpen(false)}
-          onDraftReady={(draft) => {
-            window.sessionStorage.setItem(BLOG_EDITOR_DRAFT_KEY, JSON.stringify(draft));
-            setAiWriteOpen(false);
-            router.push("/admin/content/posts/new?draft=1");
-          }}
-        />
-      )}
     </div>
   );
 }
