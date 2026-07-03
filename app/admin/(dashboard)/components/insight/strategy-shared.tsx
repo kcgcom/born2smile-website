@@ -30,7 +30,7 @@ export interface ScatterPoint {
 export const OpportunityScatter = dynamic(
   () =>
     import("recharts").then((mod) => {
-      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick: (slug: KeywordCategorySlug) => void }) {
+      function Chart({ data, onPointClick }: { data: ScatterPoint[]; onPointClick?: (slug: KeywordCategorySlug) => void }) {
         if (data.length === 0) {
           return (
             <p className="py-8 text-center text-sm text-[var(--muted)]">
@@ -99,10 +99,10 @@ export const OpportunityScatter = dynamic(
                     fill={CATEGORY_SCATTER_COLORS[cat] ?? "#6B7280"}
                     fillOpacity={0.7}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(point: any) => {
+                    onClick={onPointClick ? (point: any) => {
                       if (point?.slug) onPointClick(point.slug);
-                    }}
-                    cursor="pointer"
+                    } : undefined}
+                    cursor={onPointClick ? "pointer" : "default"}
                   />
                 ))}
                 <mod.Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />

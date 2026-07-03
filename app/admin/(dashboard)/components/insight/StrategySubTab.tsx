@@ -11,15 +11,12 @@ import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { BlogBriefItem, PageBriefItem, StrategyOverviewData } from "./shared";
-import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
-import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
+import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { BLOG_EDITOR_PREFILL_KEY, PAGE_BRIEF_WORKNOTE_KEY } from "../blog/blog-editor-draft";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
-import { PageBriefPanel, StrategyRulesPanel } from "./strategy-panels";
-import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
+import { PageBriefPanel } from "./strategy-panels";
 import { RecommendedActionsSection } from "./strategy-actions";
 import { BriefsSection } from "./strategy-briefs";
-import { EvidenceDataSection } from "./strategy-evidence";
 
 export function StrategySubTab() {
   const router = useRouter();
@@ -80,23 +77,6 @@ export function StrategySubTab() {
     window.sessionStorage.setItem(PAGE_BRIEF_WORKNOTE_KEY, JSON.stringify(brief));
     updatePanel("brief");
   };
-
-  // Scatter data for opportunity matrix
-  const scatterData: ScatterPoint[] = useMemo(
-    () => (overviewData?.contentGap ?? [])
-      .map((item) => ({ ...item, totalVolume: calcTotalVolume(item) }))
-      .filter((g) => g.monthlyVolume != null && g.totalVolume > 0)
-      .map((g) => ({
-        subGroup: g.subGroup,
-        category: g.category,
-        slug: g.slug,
-        x: g.totalVolume,
-        y: g.existingPostCount,
-        z: g.gapScore,
-        searchIntent: g.searchIntent,
-      })),
-    [overviewData?.contentGap],
-  );
 
   const activePanel = searchParams.get("panel");
   const selectedPageBrief = useMemo(() => {
@@ -163,15 +143,9 @@ export function StrategySubTab() {
               </AdminPill>
             </div>
             <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">우선순위와 실행안을 정리합니다.</h2>
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => updatePanel(activePanel === "rules" ? undefined : "rules")}
-                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-              >
-                {activePanel === "rules" ? "추천원리 접기" : "추천원리 보기"}
-              </button>
-            </div>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              검색량 기반 갭 분석과 실행 브리프를 확인합니다.
+            </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[480px]">
             <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
@@ -186,10 +160,14 @@ export function StrategySubTab() {
               <div className="text-xs font-medium text-emerald-700">실행 브리프</div>
               <div className="mt-1 text-lg font-semibold text-emerald-900">{briefCount}건</div>
             </div>
-            <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3">
-              <div className="text-xs font-medium text-fuchsia-700">근거 데이터</div>
-              <div className="mt-1 text-lg font-semibold text-fuchsia-900">{contentGap.length}건</div>
-            </div>
+            <AdminActionLink
+              tone="dark"
+              href="/admin/content/strategy/evidence"
+              className="flex h-full min-h-[72px] flex-col items-center justify-center rounded-2xl"
+            >
+              <div className="text-xs font-medium">근거 데이터</div>
+              <div className="mt-0.5 text-lg font-semibold">{contentGap.length}건</div>
+            </AdminActionLink>
           </div>
         </div>
 
@@ -221,25 +199,6 @@ export function StrategySubTab() {
           </div>
         )}
       </AdminSurface>
-
-      {activePanel === "rules" && (
-        <StrategyRulesPanel embedded onClose={() => updatePanel(undefined)} />
-      )}
-
-      {/* ── Section 1: Opportunity scatter ─────────────── */}
-      {scatterData.length > 0 && (
-        <AdminDisclosureSection
-          title="기회 매트릭스"
-          description="기회 분포"
-          countLabel={`${scatterData.length}개`}
-          collapsedMessage="필요할 때만 펼쳐 봅니다."
-          titleLevel="h2"
-        >
-          <div className="rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-            <OpportunityScatter data={scatterData} onPointClick={handleNewPost} />
-          </div>
-        </AdminDisclosureSection>
-      )}
 
       <RecommendedActionsSection
         insightActions={insightActions}
@@ -273,12 +232,6 @@ export function StrategySubTab() {
           </button>
         </AdminSurface>
       )}
-
-      <EvidenceDataSection
-        contentGap={contentGap}
-        insightActions={insightActions}
-        pageOpportunities={pageOpportunities}
-      />
 
       {/* ── Empty state ───────────────────────────────── */}
       {contentGap.length === 0 && actionableCount === 0 && briefCount === 0 && (
