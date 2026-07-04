@@ -192,6 +192,7 @@ export function SearchTab() {
                 {clustered ? (
                   <ClusteredKeywordTable
                     queries={data.topQueries}
+                    semanticClusters={data.semanticClusters}
                     onSelectQuery={(q) =>
                       setSelectedQuery((current) => (current === q ? null : q))
                     }

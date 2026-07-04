@@ -91,7 +91,25 @@ export interface SearchConsoleData {
       position: number;
     }>
   >;
+  /** Server-computed semantic clusters (null if Gemini not configured) */
+  semanticClusters?: SemanticCluster[] | null;
 }
+
+export type SemanticCluster = {
+  representative: string;
+  keywords: Array<{
+    query: string;
+    similarity: number;
+    impressions: number;
+    clicks: number;
+    ctr: number;
+    position: number;
+  }>;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  position: number;
+};
 
 export type SearchPriorityRow =
   | SearchConsoleData["topPages"][number]

@@ -2,6 +2,7 @@
 
 import { memo, useState, useMemo } from "react";
 import { clusterKeywords, type KeywordCluster, type QueryRow } from "./keyword-cluster";
+import type { SemanticCluster } from "./search-types";
 import { formatCtr } from "./search-utils";
 
 const DEFAULT_THRESHOLD = 0.7;
@@ -140,6 +141,7 @@ const ClusterRow = memo(function ClusterRow({
 
 type Props = {
   queries: QueryRow[];
+  semanticClusters?: SemanticCluster[] | null;
   onSelectQuery?: (query: string) => void;
   selectedQuery?: string | null;
 };
@@ -148,15 +150,37 @@ type Props = {
 // Main component
 // ---------------------------------------------------------------
 
+/** Convert server-side SemanticCluster[] to KeywordCluster[] for rendering */
+function fromSemanticClusters(semantic: SemanticCluster[]): KeywordCluster[] {
+  return semantic.map((sc) => ({
+    representative: sc.representative,
+    keywords: sc.keywords.map((kw) => ({
+      query: kw.query,
+      impressions: kw.impressions,
+      clicks: kw.clicks,
+      ctr: kw.ctr,
+      position: kw.position,
+      similarity: kw.similarity,
+    })),
+    impressions: sc.impressions,
+    clicks: sc.clicks,
+    ctr: sc.ctr,
+    position: sc.position,
+  }));
+}
+
 export function ClusteredKeywordTable({
   queries,
+  semanticClusters,
   onSelectQuery,
   selectedQuery,
 }: Props) {
-  const clusters = useMemo(
-    () => clusterKeywords(queries, DEFAULT_THRESHOLD),
-    [queries],
-  );
+  const usingSemantic = !!semanticClusters && semanticClusters.length > 0;
+
+  const clusters = useMemo(() => {
+    if (usingSemantic) return fromSemanticClusters(semanticClusters!);
+    return clusterKeywords(queries, DEFAULT_THRESHOLD);
+  }, [queries, semanticClusters, usingSemantic]);
 
   const multiCount = useMemo(
     () => clusters.filter((c) => c.keywords.length > 1).length,
@@ -167,6 +191,11 @@ export function ClusteredKeywordTable({
     <div className="space-y-3">
       {multiCount > 0 && (
         <p className="text-xs text-[var(--muted)]">
+          {usingSemantic && (
+            <span className="mr-1.5 inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+              AI
+            </span>
+          )}
           유사 키워드 {multiCount}그룹 발견 — 합산 지표로 실제 검색 의도를 파악합니다.
         </p>
       )}

@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { fetchSearchConsoleData } from "@/lib/admin-search-console";
+import { computeSemanticClusters } from "@/lib/admin-keyword-embeddings";
 
 const VALID_PERIODS = ["7d", "28d", "90d", "180d"];
 
@@ -25,7 +26,14 @@ export async function GET(request: NextRequest) {
       CACHE_TTL.SEARCH_CONSOLE,
     );
     const data = await getData();
-    return Response.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
+
+    // Compute semantic clusters (non-blocking — falls back to null if Gemini unavailable)
+    const semanticClusters = await computeSemanticClusters(data.topQueries).catch(() => null);
+
+    return Response.json(
+      { data: { ...data, semanticClusters } },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (e) {
     Sentry.captureException(e);
     const message = e instanceof Error ? e.message : "Search Console 데이터를 불러올 수 없습니다";
