@@ -13,7 +13,7 @@ const SITE_LINK_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof SiteLinks>;
 
 export function SnsLinksEditor() {
-  const { form, loading, saving, saved, saveError, handleSave, setField } =
+  const { form, loading, saving, saved, dirty, saveError, handleSave, setField } =
     useSettingsEditor<SiteLinks>("/api/admin/site-config/links");
 
   if (loading || !form) return <LoadingPlaceholder />;
@@ -36,6 +36,7 @@ export function SnsLinksEditor() {
       )}
       saving={saving}
       saved={saved}
+      dirty={dirty}
       onSave={handleSave}
       saveError={saveError}
     >

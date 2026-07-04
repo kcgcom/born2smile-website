@@ -14,7 +14,7 @@ function formatExceptionDateLabel(date: string) {
 }
 
 export function HoursEditor() {
-  const { form, loading, saving, saved, saveError, handleSave, updateForm, setField } =
+  const { form, loading, saving, saved, dirty, saveError, handleSave, updateForm, setField } =
     useSettingsEditor<SiteHours>("/api/admin/site-config/hours");
 
   const setScheduleField = (
@@ -80,12 +80,12 @@ export function HoursEditor() {
               </div>
             ))}
           </div>
-          <div className="border-t border-slate-200 pt-2 text-sm text-[var(--muted)]">
+          <div className="border-t border-[var(--border)] pt-2 text-sm text-[var(--muted)]">
             점심시간 {form.lunchTime || "미설정"} · {form.closedDays || "휴진일 미설정"}
             {form.notice ? <span className="block pt-1">{form.notice}</span> : null}
           </div>
           {form.exceptions.length > 0 ? (
-            <div className="border-t border-slate-200 pt-2">
+            <div className="border-t border-[var(--border)] pt-2">
               <div className="mb-2 text-xs font-medium text-[var(--muted)]">운영 예외 / 날짜별 공지</div>
               <div className="space-y-1">
                 {form.exceptions.map((exception, index) => (
@@ -104,16 +104,23 @@ export function HoursEditor() {
       )}
       saving={saving}
       saved={saved}
+      dirty={dirty}
       onSave={handleSave}
       saveError={saveError}
     >
-      <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
+        <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 md:grid md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)]">
+          <span className="text-xs font-medium text-[var(--muted)]">요일</span>
+          <span className="text-xs font-medium text-[var(--muted)]">운영</span>
+          <span className="text-xs font-medium text-[var(--muted)]">시간</span>
+          <span className="text-xs font-medium text-[var(--muted)]">비고</span>
+        </div>
         {form.schedule.map((row, i) => (
           <div
             key={row.day}
             className={`grid gap-3 px-4 py-4 md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)] md:items-center ${
-              i === 0 ? "" : "border-t border-slate-100"
-            } ${row.open ? "bg-white" : "bg-slate-50/90"}`}
+              i === 0 ? "" : "border-t border-[var(--border)]/50"
+            } ${row.open ? "bg-[var(--background)]" : "bg-[var(--background)]/60"}`}
           >
             <div>
               <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
@@ -153,7 +160,6 @@ export function HoursEditor() {
         ))}
       </div>
 
-      {/* Additional fields */}
       <div className="space-y-3">
         <FormField
           label="점심시간"
@@ -175,7 +181,7 @@ export function HoursEditor() {
         />
       </div>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <h4 className="text-sm font-semibold text-[var(--foreground)]">운영 예외 / 날짜별 공지</h4>
@@ -198,13 +204,13 @@ export function HoursEditor() {
             {form.exceptions.map((exception, index) => (
               <div
                 key={`${exception.date || "new"}-${index}`}
-                className="grid gap-3 rounded-xl border border-slate-200 bg-[var(--background)]/72 p-4 md:grid-cols-[160px_96px_minmax(0,1fr)_minmax(0,1fr)_84px] md:items-center"
+                className="grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/72 p-4 md:grid-cols-[160px_96px_minmax(0,1fr)_minmax(0,1fr)_84px] md:items-center"
               >
                 <input
                   type="date"
                   value={exception.date}
                   onChange={(e) => setExceptionField(index, "date", e.target.value)}
-                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
                   aria-label={`예외 일정 ${index + 1} 날짜`}
                 />
                 <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
@@ -221,7 +227,7 @@ export function HoursEditor() {
                   value={exception.time}
                   onChange={(e) => setExceptionField(index, "time", e.target.value)}
                   placeholder={exception.open ? "10:00 - 15:00" : "휴진"}
-                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
                   aria-label={`예외 일정 ${index + 1} 시간`}
                 />
                 <input
@@ -229,7 +235,7 @@ export function HoursEditor() {
                   value={exception.note ?? ""}
                   onChange={(e) => setExceptionField(index, "note", e.target.value)}
                   placeholder="예: 현충일 휴진"
-                  className="rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
                   aria-label={`예외 일정 ${index + 1} 비고`}
                 />
                 <AdminActionButton

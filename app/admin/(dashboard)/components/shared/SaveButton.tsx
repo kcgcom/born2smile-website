@@ -6,16 +6,18 @@ import { AdminActionButton } from "@/components/admin/AdminChrome";
 export function SaveButton({
   saving,
   saved,
+  disabled,
   onClick,
 }: {
   saving: boolean;
   saved: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <AdminActionButton
       onClick={onClick}
-      disabled={saving}
+      disabled={saving || disabled}
       tone="primary"
       className="px-4"
     >

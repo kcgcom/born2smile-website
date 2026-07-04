@@ -8,11 +8,9 @@ import { QuickLinksSection } from "./settings/QuickLinksSection";
 export function SettingsTab() {
   return (
     <div className="grid gap-6">
+      <ClinicInfoEditor />
+      <HoursEditor />
       <SnsLinksEditor />
-      <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-        <ClinicInfoEditor />
-        <HoursEditor />
-      </div>
       <QuickLinksSection />
     </div>
   );

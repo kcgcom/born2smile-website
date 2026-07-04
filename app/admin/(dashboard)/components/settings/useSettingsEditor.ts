@@ -36,5 +36,7 @@ export function useSettingsEditor<T>(endpoint: string) {
   const setField = (key: keyof T) => (value: string) =>
     setFormEdits((prev) => ({ ...(prev ?? data ?? {} as T), [key]: value }));
 
-  return { form, data, loading, saving, saved, saveError, handleSave, updateForm, setField };
+  const dirty = formEdits !== null;
+
+  return { form, data, loading, saving, saved, dirty, saveError, handleSave, updateForm, setField };
 }

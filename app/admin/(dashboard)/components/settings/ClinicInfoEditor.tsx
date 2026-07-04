@@ -6,7 +6,7 @@ import { formatClinicPhoneInput } from "@/lib/constants";
 import type { SiteClinic } from "@/lib/site-config-supabase";
 
 export function ClinicInfoEditor() {
-  const { form, loading, saving, saved, saveError, handleSave, updateForm } =
+  const { form, loading, saving, saved, dirty, saveError, handleSave, updateForm } =
     useSettingsEditor<SiteClinic>("/api/admin/site-config/clinic");
 
   const set = (key: keyof SiteClinic) => (value: string) =>
@@ -38,6 +38,7 @@ export function ClinicInfoEditor() {
       )}
       saving={saving}
       saved={saved}
+      dirty={dirty}
       onSave={handleSave}
       saveError={saveError}
     >

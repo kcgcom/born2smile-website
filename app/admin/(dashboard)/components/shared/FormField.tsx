@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 export function FormField({
   label,
   value,
@@ -13,12 +15,15 @@ export function FormField({
   placeholder?: string;
   type?: string;
 }) {
+  const id = useId();
+
   return (
     <div className="flex flex-col gap-2 rounded-xl bg-[var(--background)]/85 px-3 py-3 sm:flex-row sm:items-center sm:gap-3">
-      <label className="w-28 shrink-0 text-sm font-medium text-[var(--muted)]">
+      <label htmlFor={id} className="w-28 shrink-0 text-sm font-medium text-[var(--muted)]">
         {label}
       </label>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
