@@ -144,50 +144,32 @@ export function BlogSearchConsoleSection({
         </div>
       </AdminSurface>
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
-        <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
-          <h4 className="text-sm font-semibold text-[var(--foreground)]">상위 블로그 유입 쿼리</h4>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            블로그를 찾게 만든 검색어만 따로 확인합니다.
-          </p>
-          {queryRows.length > 0 ? (
-            <div className="mt-4">
-              <KeywordBarChart data={queryRows} />
-            </div>
-          ) : (
-            <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-[var(--muted)]">
-              블로그 유입 쿼리 데이터가 아직 없습니다.
-            </p>
-          )}
-        </div>
-
-        <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
-          <h4 className="text-sm font-semibold text-[var(--foreground)]">블로그 검색 요약</h4>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            페이지와 쿼리 둘 다 블로그 전용으로 묶었습니다.
-          </p>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
-              <dt className="text-[var(--muted)]">검색에 잡힌 블로그 글</dt>
-              <dd className="font-semibold text-[var(--foreground)]">{data.blogPages.length}개</dd>
-            </div>
-            <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
-              <dt className="text-[var(--muted)]">확인된 블로그 쿼리</dt>
-              <dd className="font-semibold text-[var(--foreground)]">{queryRows.length}개</dd>
-            </div>
-            <div className="rounded-xl bg-white/80 px-4 py-3">
-              <dt className="text-[var(--muted)]">대표 검색어</dt>
-              <dd className="mt-1 font-semibold text-[var(--foreground)]">
-                {topBlogQuery?.query ?? "데이터 없음"}
-              </dd>
-              {topBlogQuery && (
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  연결 글 {getBlogPageLabel(topBlogQuery.page)} · CTR {formatCtr(topBlogQuery.ctr)} · 순위 {topBlogQuery.position}
-                </p>
-              )}
-            </div>
-          </dl>
-        </div>
+      <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
+        <h4 className="text-sm font-semibold text-[var(--foreground)]">블로그 검색 요약</h4>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          페이지와 쿼리 둘 다 블로그 전용으로 묶었습니다.
+        </p>
+        <dl className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
+            <dt className="text-[var(--muted)]">검색에 잡힌 블로그 글</dt>
+            <dd className="font-semibold text-[var(--foreground)]">{data.blogPages.length}개</dd>
+          </div>
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
+            <dt className="text-[var(--muted)]">확인된 블로그 쿼리</dt>
+            <dd className="font-semibold text-[var(--foreground)]">{queryRows.length}개</dd>
+          </div>
+          <div className="rounded-xl bg-white/80 px-4 py-3">
+            <dt className="text-[var(--muted)]">대표 검색어</dt>
+            <dd className="mt-1 font-semibold text-[var(--foreground)]">
+              {topBlogQuery?.query ?? "데이터 없음"}
+            </dd>
+            {topBlogQuery && (
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                연결 글 {getBlogPageLabel(topBlogQuery.page)} · CTR {formatCtr(topBlogQuery.ctr)} · 순위 {topBlogQuery.position}
+              </p>
+            )}
+          </div>
+        </dl>
       </div>
 
       <AdminDisclosureSection
@@ -273,6 +255,11 @@ export function BlogSearchConsoleSection({
           </button>
         }
       >
+        {queryRows.length > 0 && !clustered && (
+          <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
+            <KeywordBarChart data={queryRows} />
+          </div>
+        )}
         {clustered ? (
           <ClusteredKeywordTable
             queries={queryRows}
