@@ -4,15 +4,7 @@ import { memo, useState, useMemo } from "react";
 import { clusterKeywords, type KeywordCluster, type QueryRow } from "./keyword-cluster";
 import { formatCtr } from "./search-utils";
 
-// ---------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------
-
-const THRESHOLD_PRESETS = [
-  { value: 0.45, label: "느슨하게" },
-  { value: 0.55, label: "보통" },
-  { value: 0.65, label: "엄격하게" },
-] as const;
+const DEFAULT_THRESHOLD = 0.7;
 
 // ---------------------------------------------------------------
 // SimilarityBadge (memoized)
@@ -161,11 +153,9 @@ export function ClusteredKeywordTable({
   onSelectQuery,
   selectedQuery,
 }: Props) {
-  const [threshold, setThreshold] = useState(0.55);
-
   const clusters = useMemo(
-    () => clusterKeywords(queries, threshold),
-    [queries, threshold],
+    () => clusterKeywords(queries, DEFAULT_THRESHOLD),
+    [queries],
   );
 
   const multiCount = useMemo(
@@ -175,30 +165,11 @@ export function ClusteredKeywordTable({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2 py-1">
-          <span className="text-[11px] text-[var(--muted)]">민감도</span>
-          {THRESHOLD_PRESETS.map((preset) => (
-            <button
-              key={preset.value}
-              type="button"
-              onClick={() => setThreshold(preset.value)}
-              className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                threshold === preset.value
-                  ? "bg-blue-100 text-blue-700"
-                  : "text-[var(--muted)] hover:bg-[var(--surface)]"
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-        {multiCount > 0 && (
-          <p className="text-xs text-[var(--muted)]">
-            유사 키워드 {multiCount}그룹 발견 — 합산 지표로 실제 검색 의도를 파악합니다.
-          </p>
-        )}
-      </div>
+      {multiCount > 0 && (
+        <p className="text-xs text-[var(--muted)]">
+          유사 키워드 {multiCount}그룹 발견 — 합산 지표로 실제 검색 의도를 파악합니다.
+        </p>
+      )}
       <div className="max-h-[36rem] overflow-y-auto rounded-xl border border-[var(--border)]">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-[var(--background)]">
