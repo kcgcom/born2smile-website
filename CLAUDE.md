@@ -213,7 +213,7 @@ supabase/migrations/          # schema, RLS, RPC
 
 **방법 1: 관리자 대시보드 (권장)**
 
-1. `/admin?tab=content&sub=posts`에서 "새 포스트 작성" 버튼 클릭
+1. `/admin/content/posts`에서 "새 포스트 작성" 버튼 클릭
 2. BlogEditor에서 제목, 부제, 요약, 카테고리, 태그, 본문 블록 입력
 3. "임시저장" 클릭 → Supabase에 `published: false` 상태로 저장
 4. 포스트 목록에서 해당 글의 발행/예약 발행 액션 클릭
@@ -231,7 +231,7 @@ supabase/migrations/          # schema, RLS, RPC
 
 ### 병원 정보 수정
 
-**방법 1: 관리자 대시보드** — `/admin?tab=settings`에서 SNS 링크, 병원 정보, 진료시간을 실시간 편집합니다 (Supabase `site_config` 테이블에 저장). 발행 스케줄은 `/admin?tab=content&sub=schedule`에서 편집합니다.
+**방법 1: 관리자 대시보드** — `/admin/system/settings`에서 SNS 링크, 병원 정보, 진료시간을 실시간 편집합니다 (Supabase `site_config` 테이블에 저장). 발행 스케줄은 `/admin/content/schedule`에서 편집합니다.
 
 **방법 2: 코드 수정** — `lib/constants.ts`의 해당 상수만 수정하면 사이트 전체에 반영:
 

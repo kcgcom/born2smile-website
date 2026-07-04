@@ -2,7 +2,7 @@
 
 ## 1. 초안 저장 → 발행 2단계
 
-블로그 운영은 `/admin?tab=content&sub=posts`를 기준으로 진행합니다.
+블로그 운영은 `/admin/content/posts`를 기준으로 진행합니다.
 
 1. **초안 저장/수정**
    - `BlogEditor`에서 새 글을 저장하면 `published: false` 상태로 Supabase `blog_posts`에 저장됩니다.
@@ -26,7 +26,7 @@
    가장 빠른 날짜를 추천
 4. 후보가 없으면 다음 날을 fallback으로 사용
 
-발행 요일 정책은 `/admin?tab=content&sub=schedule`에서 수정합니다.
+발행 요일 정책은 `/admin/content/schedule`에서 수정합니다.
 
 ## 3. 공개 노출 조건
 

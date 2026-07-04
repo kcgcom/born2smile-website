@@ -167,7 +167,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m46", title: "개인정보처리방침 페이지", priority: "MEDIUM", status: "done", description: "개인정보보호법 대응 — /privacy 독립 페이지. Footer 링크 추가. 수집 항목, 보유 기간, 위탁 현황, 열람 청구 절차 포함" },
   { id: "l23", title: "llms.txt AI 모델 가이드", priority: "LOW", status: "done", description: "public/llms.txt 구조화 — AI 크롤러 대상 진료 철학, 카테고리별 블로그 링크, 콘텐츠 구조 안내 (GEO 대응)" },
   { id: "l24", title: "관리자 인증 스피너 최적화", priority: "LOW", status: "done", description: "localStorage 플래그 선확인으로 인증 완료 시 스피너 스킵 — 관리자 페이지 진입 체감 속도 개선" },
-  { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin?tab=content&sub=posts 직접 이동 — 블로그 관리 동선 단축" },
+  { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin/content/posts 직접 이동 — 블로그 관리 동선 단축" },
 ];
 
 export interface ImprovementStats {
