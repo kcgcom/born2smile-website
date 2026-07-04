@@ -13,15 +13,11 @@ import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { BlogSearchConsoleSection } from "./search/BlogSearchConsoleSection";
-import {
-  KeywordBarChart,
-  PageQueryDrilldown,
-  PERIODS,
-  QueryPageDrilldown,
-  formatCtr,
-  useSearchTableSort,
-  type SearchConsoleData,
-} from "./search/shared";
+import type { SearchConsoleData } from "./search/search-types";
+import { formatCtr, PERIODS } from "./search/search-utils";
+import { useSearchTableSort } from "./search/search-hooks";
+import { KeywordBarChart, PageQueryDrilldown, QueryPageDrilldown } from "./search/search-components";
+import { ClusteredKeywordTable } from "./search/ClusteredKeywordTable";
 
 // ---------------------------------------------------------------
 // Main component
@@ -32,6 +28,7 @@ export function SearchTab() {
   const [period, setPeriod] = useState<"28d" | "90d" | "180d">("28d");
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
+  const [clustered, setClustered] = useState(false);
 
   const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
     `/api/admin/search-console?period=${period}`,
@@ -173,61 +170,84 @@ export function SearchTab() {
                 description="키워드와 연결 페이지를 바로 확인합니다."
                 countLabel={`${data.topQueries.length}개`}
                 collapsedMessage="필요할 때만 펼쳐 봅니다."
+                headerRight={
+                  <button
+                    type="button"
+                    onClick={() => setClustered((v) => !v)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      clustered
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+                    }`}
+                  >
+                    {clustered ? "✓ 유사 키워드 묶기" : "유사 키워드 묶기"}
+                  </button>
+                }
               >
-                {data.topQueries.length > 0 && (
+                {data.topQueries.length > 0 && !clustered && (
                   <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
                     <KeywordBarChart data={data.topQueries} />
                   </div>
                 )}
-                <DataTable
-                  columns={[
-                    {
-                      key: "query",
-                      label: "키워드",
-                      align: "left",
-                      render: (row) => {
-                        const query = String((row as { query: string }).query);
-                        const isSelected = selectedQuery === query;
-                        return (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSelectedQuery((current) =>
-                                current === query ? null : query,
-                              )
-                            }
-                            className={`block max-w-[220px] truncate text-left sm:max-w-xs ${
-                              isSelected
-                                ? "font-medium text-[var(--color-primary)]"
-                                : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
-                            }`}
-                            title={query}
-                          >
-                            {query}
-                          </button>
-                        );
+                {clustered ? (
+                  <ClusteredKeywordTable
+                    queries={data.topQueries}
+                    onSelectQuery={(q) =>
+                      setSelectedQuery((current) => (current === q ? null : q))
+                    }
+                    selectedQuery={selectedQuery}
+                  />
+                ) : (
+                  <DataTable
+                    columns={[
+                      {
+                        key: "query",
+                        label: "키워드",
+                        align: "left",
+                        render: (row) => {
+                          const query = String((row as { query: string }).query);
+                          const isSelected = selectedQuery === query;
+                          return (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedQuery((current) =>
+                                  current === query ? null : query,
+                                )
+                              }
+                              className={`block max-w-[220px] truncate text-left sm:max-w-xs ${
+                                isSelected
+                                  ? "font-medium text-[var(--color-primary)]"
+                                  : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
+                              }`}
+                              title={query}
+                            >
+                              {query}
+                            </button>
+                          );
+                        },
                       },
-                    },
-                    { key: "impressions", label: "노출", align: "right", sortable: true },
-                    { key: "clicks", label: "클릭", align: "right", sortable: true },
-                    {
-                      key: "ctr",
-                      label: "CTR (%)",
-                      align: "right",
-                      sortable: true,
-                      render: (row) => formatCtr((row as SearchConsoleData["topQueries"][number]).ctr),
-                    },
-                    { key: "position", label: "순위", align: "right", sortable: true },
-                  ]}
-                  rows={querySort.sortedRows as unknown as Record<string, unknown>[]}
-                  keyField="query"
-                  emptyMessage="검색 키워드 데이터가 없습니다"
-                  sortKey={querySort.sortKey}
-                  sortDirection={querySort.sortDirection}
-                  onSort={querySort.handleSort}
-                  scrollClassName="max-h-[36rem] overflow-y-auto"
-                  stickyHeader={true}
-                />
+                      { key: "impressions", label: "노출", align: "right", sortable: true },
+                      { key: "clicks", label: "클릭", align: "right", sortable: true },
+                      {
+                        key: "ctr",
+                        label: "CTR (%)",
+                        align: "right",
+                        sortable: true,
+                        render: (row) => formatCtr((row as SearchConsoleData["topQueries"][number]).ctr),
+                      },
+                      { key: "position", label: "순위", align: "right", sortable: true },
+                    ]}
+                    rows={querySort.sortedRows as unknown as Record<string, unknown>[]}
+                    keyField="query"
+                    emptyMessage="검색 키워드 데이터가 없습니다"
+                    sortKey={querySort.sortKey}
+                    sortDirection={querySort.sortDirection}
+                    onSort={querySort.handleSort}
+                    scrollClassName="max-h-[36rem] overflow-y-auto"
+                    stickyHeader={true}
+                  />
+                )}
                 {selectedQuery && (
                   <QueryPageDrilldown
                     query={selectedQuery}

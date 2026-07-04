@@ -14,12 +14,11 @@ import { PeriodSelector } from "../PeriodSelector";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import {
-  PageQueryDrilldown,
-  QueryPageDrilldown,
   formatCtr,
   getEditableBlogSlug,
-} from "../search/shared";
-import type { SearchConsoleData } from "../search/shared";
+} from "../search/search-utils";
+import { PageQueryDrilldown, QueryPageDrilldown } from "../search/search-components";
+import type { SearchConsoleData } from "../search/search-types";
 import { ApiSourceBadge } from "../insight/ApiSourceBadge";
 import { CATEGORY_HEX } from "./blog-helpers";
 import type { AdminBlogPost } from "./blog-helpers";

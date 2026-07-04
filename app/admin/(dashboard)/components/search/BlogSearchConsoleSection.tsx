@@ -6,15 +6,11 @@ import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSectio
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
 import { MetricCard } from "../MetricCard";
-import {
-  KeywordBarChart,
-  PageQueryDrilldown,
-  QueryPageDrilldown,
-  formatCtr,
-  getEditableBlogSlug,
-  useSearchTableSort,
-  type SearchConsoleData,
-} from "./shared";
+import type { SearchConsoleData } from "./search-types";
+import { formatCtr, getEditableBlogSlug } from "./search-utils";
+import { useSearchTableSort } from "./search-hooks";
+import { KeywordBarChart, PageQueryDrilldown, QueryPageDrilldown } from "./search-components";
+import { ClusteredKeywordTable } from "./ClusteredKeywordTable";
 
 type BlogQueryRow = {
   query: string;
@@ -43,22 +39,21 @@ export function BlogSearchConsoleSection({
 }: BlogSearchConsoleSectionProps) {
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
+  const [clustered, setClustered] = useState(false);
 
   const pageSort = useSearchTableSort(data.blogPages);
   const queryRows = useMemo<BlogQueryRow[]>(() => {
-    return Object.entries(data.blogQueryTopPages)
-      .map(([query, pages]) => {
-        const topPage = pages[0];
-        return {
-          query,
-          page: topPage?.page ?? "",
-          impressions: topPage?.impressions ?? 0,
-          clicks: topPage?.clicks ?? 0,
-          ctr: topPage?.ctr ?? 0,
-          position: topPage?.position ?? 0,
-        };
-      })
-      .sort((a, b) => b.impressions - a.impressions);
+    return Object.entries(data.blogQueryTopPages).map(([query, pages]) => {
+      const topPage = pages[0];
+      return {
+        query,
+        page: topPage?.page ?? "",
+        impressions: topPage?.impressions ?? 0,
+        clicks: topPage?.clicks ?? 0,
+        ctr: topPage?.ctr ?? 0,
+        position: topPage?.position ?? 0,
+      };
+    });
   }, [data.blogQueryTopPages]);
   const querySort = useSearchTableSort(queryRows);
 
@@ -264,57 +259,80 @@ export function BlogSearchConsoleSection({
         description="블로그 글과 연결된 검색어를 블로그 관점으로만 확인합니다."
         countLabel={`${queryRows.length}개`}
         collapsedMessage="블로그 검색어와 연결 페이지를 펼쳐서 봅니다."
+        headerRight={
+          <button
+            type="button"
+            onClick={() => setClustered((v) => !v)}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+              clustered
+                ? "bg-blue-100 text-blue-700"
+                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+            }`}
+          >
+            {clustered ? "✓ 유사 키워드 묶기" : "유사 키워드 묶기"}
+          </button>
+        }
       >
-        <DataTable
-          columns={[
-            {
-              key: "query",
-              label: "검색어",
-              align: "left",
-              render: (row) => {
-                const query = String((row as { query: string }).query);
-                const representativePage = String((row as { page: string }).page);
-                const isSelected = selectedQuery === query;
+        {clustered ? (
+          <ClusteredKeywordTable
+            queries={queryRows}
+            onSelectQuery={(q) =>
+              setSelectedQuery((current) => (current === q ? null : q))
+            }
+            selectedQuery={selectedQuery}
+          />
+        ) : (
+          <DataTable
+            columns={[
+              {
+                key: "query",
+                label: "검색어",
+                align: "left",
+                render: (row) => {
+                  const query = String((row as { query: string }).query);
+                  const representativePage = String((row as { page: string }).page);
+                  const isSelected = selectedQuery === query;
 
-                return (
-                  <div className="min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedQuery((current) => (current === query ? null : query))}
-                      className={`block max-w-[220px] truncate text-left sm:max-w-xs ${
-                        isSelected
-                          ? "font-medium text-[var(--color-primary)]"
-                          : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
-                      }`}
-                      title={query}
-                    >
-                      {query}
-                    </button>
-                    <p className="mt-1 truncate text-xs text-[var(--muted)]">
-                      연결 글 {getBlogPageLabel(representativePage)}
-                    </p>
-                  </div>
-                );
+                  return (
+                    <div className="min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQuery((current) => (current === query ? null : query))}
+                        className={`block max-w-[220px] truncate text-left sm:max-w-xs ${
+                          isSelected
+                            ? "font-medium text-[var(--color-primary)]"
+                            : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
+                        }`}
+                        title={query}
+                      >
+                        {query}
+                      </button>
+                      <p className="mt-1 truncate text-xs text-[var(--muted)]">
+                        연결 글 {getBlogPageLabel(representativePage)}
+                      </p>
+                    </div>
+                  );
+                },
               },
-            },
-            { key: "impressions", label: "노출", align: "right", sortable: true },
-            { key: "clicks", label: "클릭", align: "right", sortable: true },
-            {
-              key: "ctr",
-              label: "CTR (%)",
-              align: "right",
-              sortable: true,
-              render: (row) => formatCtr((row as BlogQueryRow).ctr),
-            },
-            { key: "position", label: "순위", align: "right", sortable: true },
-          ]}
-          rows={querySort.sortedRows as unknown as Record<string, unknown>[]}
-          keyField="query"
-          emptyMessage="블로그 유입 쿼리 데이터가 없습니다"
-          sortKey={querySort.sortKey}
-          sortDirection={querySort.sortDirection}
-          onSort={querySort.handleSort}
-        />
+              { key: "impressions", label: "노출", align: "right", sortable: true },
+              { key: "clicks", label: "클릭", align: "right", sortable: true },
+              {
+                key: "ctr",
+                label: "CTR (%)",
+                align: "right",
+                sortable: true,
+                render: (row) => formatCtr((row as BlogQueryRow).ctr),
+              },
+              { key: "position", label: "순위", align: "right", sortable: true },
+            ]}
+            rows={querySort.sortedRows as unknown as Record<string, unknown>[]}
+            keyField="query"
+            emptyMessage="블로그 유입 쿼리 데이터가 없습니다"
+            sortKey={querySort.sortKey}
+            sortDirection={querySort.sortDirection}
+            onSort={querySort.handleSort}
+          />
+        )}
         {selectedQuery && (
           <QueryPageDrilldown
             query={selectedQuery}

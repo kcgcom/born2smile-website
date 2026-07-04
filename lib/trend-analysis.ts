@@ -349,7 +349,7 @@ export function analyzeContentGap(
   }
 
   // gapScore 내림차순 정렬
-  return gaps.sort((a, b) => b.gapScore - a.gapScore);
+  return gaps.sort((a, b) => b.gapScore - a.gapScore || (b.monthlyVolume ?? 0) - (a.monthlyVolume ?? 0));
 }
 
 // =============================================================

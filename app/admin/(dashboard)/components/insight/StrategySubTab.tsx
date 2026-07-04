@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lightbulb, Target } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
-import type { KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { useAdminApi } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
@@ -180,7 +180,7 @@ export function StrategySubTab() {
               </div>
               {topGapItem.searchIntent && <SearchIntentBadge intent={topGapItem.searchIntent} />}
             </div>
-            <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{topGapItem.subGroup}</p>
+            <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{getKeywordCategoryLabel(topGapItem.slug)} &gt; {topGapItem.subGroup}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">
               검색량 {calcTotalVolume(topGapItem) ? calcTotalVolume(topGapItem).toLocaleString("ko-KR") : Number(topGapItem.currentAvg).toFixed(1)} · 포스트 {topGapItem.existingPostCount}개 · 갭 점수 {topGapItem.gapScore.toFixed(0)}
             </p>

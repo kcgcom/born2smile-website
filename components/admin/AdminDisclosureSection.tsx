@@ -12,6 +12,7 @@ export function AdminDisclosureSection({
   defaultOpen = false,
   collapsedMessage = "필요할 때만 상세 내용을 펼쳐 볼 수 있습니다.",
   titleLevel = "h3",
+  headerRight,
   children,
 }: {
   title: string;
@@ -20,6 +21,7 @@ export function AdminDisclosureSection({
   defaultOpen?: boolean;
   collapsedMessage?: string;
   titleLevel?: "h2" | "h3";
+  headerRight?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -33,6 +35,7 @@ export function AdminDisclosureSection({
           <p className="mt-1 text-xs text-[var(--muted)]">{description}</p>
         </div>
         <div className="flex items-center gap-2">
+          {headerRight}
           {countLabel && <AdminPill tone="white">{countLabel}</AdminPill>}
           <AdminActionButton
             type="button"
