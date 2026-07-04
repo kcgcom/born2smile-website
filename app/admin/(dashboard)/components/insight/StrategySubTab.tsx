@@ -11,7 +11,7 @@ import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { BlogBriefItem, PageBriefItem, StrategyOverviewData } from "./shared";
-import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { BLOG_EDITOR_PREFILL_KEY, PAGE_BRIEF_WORKNOTE_KEY } from "../blog/blog-editor-draft";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
 import { PageBriefPanel } from "./strategy-panels";
@@ -90,7 +90,7 @@ export function StrategySubTab() {
     }
   }, [activePanel]);
 
-  const updatePanel = (panel?: "rules" | "brief") => {
+  const updatePanel = (panel?: "brief") => {
     const params = new URLSearchParams(searchParams.toString());
     if (panel) params.set("panel", panel);
     else params.delete("panel");
@@ -160,14 +160,14 @@ export function StrategySubTab() {
               <div className="text-xs font-medium text-emerald-700">실행 브리프</div>
               <div className="mt-1 text-lg font-semibold text-emerald-900">{briefCount}건</div>
             </div>
-            <AdminActionLink
-              tone="dark"
+            <a
               href="/admin/content/strategy/evidence"
-              className="flex h-full min-h-[72px] flex-col items-center justify-center rounded-2xl"
+              className="group rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3 transition-colors hover:bg-fuchsia-100"
             >
-              <div className="text-xs font-medium">근거 데이터</div>
-              <div className="mt-0.5 text-lg font-semibold">{contentGap.length}건</div>
-            </AdminActionLink>
+              <div className="text-xs font-medium text-fuchsia-700">근거 데이터</div>
+              <div className="mt-1 text-lg font-semibold text-fuchsia-900">{contentGap.length}건</div>
+              <div className="mt-1 text-[10px] font-medium text-fuchsia-500 group-hover:text-fuchsia-700">상세 보기 →</div>
+            </a>
           </div>
         </div>
 

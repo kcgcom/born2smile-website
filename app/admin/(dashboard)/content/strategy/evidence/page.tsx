@@ -9,7 +9,8 @@ import { EvidenceDataSection } from "../../../components/insight/strategy-eviden
 import { OpportunityScatter, type ScatterPoint } from "../../../components/insight/strategy-shared";
 import { calcTotalVolume } from "../../../components/insight/shared";
 import { useMemo } from "react";
-import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { ArrowLeft } from "lucide-react";
+import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { StrategyRulesPanel } from "../../../components/insight/strategy-panels";
 
 export default function AdminContentStrategyEvidencePage() {
@@ -58,11 +59,19 @@ export default function AdminContentStrategyEvidencePage() {
       <ApiSourceBadge sources={["naverSearchAd"]} />
 
       <AdminSurface tone="white" className="rounded-3xl p-6">
-        <AdminPill tone="white">근거 데이터</AdminPill>
-        <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">콘텐츠 갭 분석과 기회 매트릭스</h2>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          검색량 대비 콘텐츠 부족도를 기반으로 우선순위를 산출합니다.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <AdminPill tone="white">근거 데이터</AdminPill>
+            <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">콘텐츠 갭 분석과 기회 매트릭스</h2>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              검색량 대비 콘텐츠 부족도를 기반으로 우선순위를 산출합니다.
+            </p>
+          </div>
+          <AdminActionLink tone="dark" href="/admin/content/strategy" className="shrink-0">
+            <ArrowLeft className="h-4 w-4" />
+            전략 화면으로
+          </AdminActionLink>
+        </div>
       </AdminSurface>
 
       {scatterData.length > 0 && (
