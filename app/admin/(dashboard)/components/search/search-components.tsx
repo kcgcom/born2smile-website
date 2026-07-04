@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import type {
   KeywordChartItem,
@@ -102,8 +102,13 @@ export function PageQueryDrilldown({
   onEditBlog,
   metrics,
 }: PageQueryDrilldownProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [page]);
+
   return (
-    <div className="mt-4 rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
+    <div ref={ref} className="mt-4 rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-[var(--muted)]">대표 유입 키워드</p>
@@ -191,10 +196,15 @@ export function QueryPageDrilldown({
   onEditBlog,
   onCreatePost,
 }: QueryPageDrilldownProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [query]);
+
   const recommendation = getQueryActionRecommendation(query, pages);
 
   return (
-    <div className="mt-4 rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
+    <div ref={ref} className="mt-4 rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-[var(--muted)]">이 키워드가 연결된 페이지</p>

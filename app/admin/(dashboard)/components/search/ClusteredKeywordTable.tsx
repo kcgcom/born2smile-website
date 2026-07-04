@@ -1,11 +1,9 @@
 "use client";
 
-import { memo, useState, useMemo } from "react";
-import { clusterKeywords, type KeywordCluster, type QueryRow } from "./keyword-cluster";
-import type { SemanticCluster } from "./search-types";
+import { memo, useState, useMemo, useCallback } from "react";
+import type { KeywordCluster, QueryRow } from "./keyword-cluster";
+import type { SemanticCluster, TableSortKey, SortDirection } from "./search-types";
 import { formatCtr } from "./search-utils";
-
-const DEFAULT_THRESHOLD = 0.7;
 
 // ---------------------------------------------------------------
 // SimilarityBadge (memoized)
@@ -169,6 +167,43 @@ function fromSemanticClusters(semantic: SemanticCluster[]): KeywordCluster[] {
   }));
 }
 
+const SORT_COLUMNS: { key: TableSortKey; label: string }[] = [
+  { key: "impressions", label: "노출" },
+  { key: "clicks", label: "클릭" },
+  { key: "ctr", label: "CTR (%)" },
+  { key: "position", label: "순위" },
+];
+
+function SortableHeader({
+  label,
+  sortKey,
+  currentKey,
+  direction,
+  onSort,
+}: {
+  label: string;
+  sortKey: TableSortKey;
+  currentKey: TableSortKey | null;
+  direction: SortDirection;
+  onSort: (key: TableSortKey) => void;
+}) {
+  const isActive = currentKey === sortKey;
+  return (
+    <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-0.5 hover:text-[var(--foreground)]"
+      >
+        {label}
+        {isActive && (
+          <span className="text-[10px]">{direction === "desc" ? "▾" : "▴"}</span>
+        )}
+      </button>
+    </th>
+  );
+}
+
 export function ClusteredKeywordTable({
   queries,
   semanticClusters,
@@ -176,11 +211,43 @@ export function ClusteredKeywordTable({
   selectedQuery,
 }: Props) {
   const usingSemantic = !!semanticClusters && semanticClusters.length > 0;
+  const [sortKey, setSortKey] = useState<TableSortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const handleSort = useCallback((key: TableSortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDirection((d) => (d === "desc" ? "asc" : "desc"));
+        return key;
+      }
+      setSortDirection(key === "position" ? "asc" : "desc");
+      return key;
+    });
+  }, []);
 
   const clusters = useMemo(() => {
     if (usingSemantic) return fromSemanticClusters(semanticClusters!);
-    return clusterKeywords(queries, DEFAULT_THRESHOLD);
+    // 임베딩 데이터 없으면 각 키워드를 단독 클러스터로 표시
+    return queries.map((q) => ({
+      representative: q.query,
+      keywords: [{ ...q, similarity: 1 }],
+      impressions: q.impressions,
+      clicks: q.clicks,
+      ctr: q.ctr,
+      position: q.position,
+    }));
   }, [queries, semanticClusters, usingSemantic]);
+
+  const sortedClusters = useMemo(() => {
+    if (!sortKey) return clusters;
+    const sorted = [...clusters];
+    sorted.sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      return sortDirection === "desc" ? Number(bVal) - Number(aVal) : Number(aVal) - Number(bVal);
+    });
+    return sorted;
+  }, [clusters, sortKey, sortDirection]);
 
   const multiCount = useMemo(
     () => clusters.filter((c) => c.keywords.length > 1).length,
@@ -206,22 +273,20 @@ export function ClusteredKeywordTable({
               <th className="px-3 py-2.5 text-left text-xs font-medium text-[var(--muted)]">
                 키워드
               </th>
-              <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
-                노출
-              </th>
-              <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
-                클릭
-              </th>
-              <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
-                CTR (%)
-              </th>
-              <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
-                순위
-              </th>
+              {SORT_COLUMNS.map((col) => (
+                <SortableHeader
+                  key={col.key}
+                  label={col.label}
+                  sortKey={col.key}
+                  currentKey={sortKey}
+                  direction={sortDirection}
+                  onSort={handleSort}
+                />
+              ))}
             </tr>
           </thead>
           <tbody>
-            {clusters.map((cluster) => (
+            {sortedClusters.map((cluster) => (
               <ClusterRow
                 key={cluster.representative}
                 cluster={cluster}

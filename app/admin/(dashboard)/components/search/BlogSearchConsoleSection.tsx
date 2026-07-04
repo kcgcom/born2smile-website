@@ -9,7 +9,7 @@ import { MetricCard } from "../MetricCard";
 import type { SearchConsoleData } from "./search-types";
 import { formatCtr, getEditableBlogSlug } from "./search-utils";
 import { useSearchTableSort } from "./search-hooks";
-import { KeywordBarChart, PageQueryDrilldown, QueryPageDrilldown } from "./search-components";
+import { PageQueryDrilldown, QueryPageDrilldown } from "./search-components";
 import { ClusteredKeywordTable } from "./ClusteredKeywordTable";
 
 type BlogQueryRow = {
@@ -39,7 +39,7 @@ export function BlogSearchConsoleSection({
 }: BlogSearchConsoleSectionProps) {
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
-  const [clustered, setClustered] = useState(false);
+  const [clustered, setClustered] = useState(true);
 
   const pageSort = useSearchTableSort(data.blogPages);
   const queryRows = useMemo<BlogQueryRow[]>(() => {
@@ -78,7 +78,6 @@ export function BlogSearchConsoleSection({
   }, [data.blogPages]);
 
   const topBlogPage = data.blogPages[0] ?? null;
-  const topBlogQuery = queryRows[0] ?? null;
   const selectedPageQueries = selectedPage ? data.pageTopQueries[selectedPage] ?? [] : [];
   const selectedPageMetrics = selectedPage
     ? data.blogPages.find((item) => item.page === selectedPage)
@@ -98,7 +97,7 @@ export function BlogSearchConsoleSection({
               블로그 글이 검색에서 어떻게 노출되고 클릭되는지 따로 봅니다.
             </h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              전체 사이트 성과와 섞지 않고, 블로그 글과 블로그 유입 쿼리만 분리해서 확인합니다.
+              전체 사이트 성과와 섞지 않고, 블로그 글과 블로그 유입 키워드만 분리해서 확인합니다.
             </p>
             {topBlogPage && (
               <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
@@ -144,34 +143,21 @@ export function BlogSearchConsoleSection({
         </div>
       </AdminSurface>
 
-      <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm ring-1 ring-[var(--border)]/80">
-        <h4 className="text-sm font-semibold text-[var(--foreground)]">블로그 검색 요약</h4>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          페이지와 쿼리 둘 다 블로그 전용으로 묶었습니다.
-        </p>
-        <dl className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
-          <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
-            <dt className="text-[var(--muted)]">검색에 잡힌 블로그 글</dt>
-            <dd className="font-semibold text-[var(--foreground)]">{data.blogPages.length}개</dd>
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminPill tone="white">블로그 검색 상세</AdminPill>
+            <AdminPill tone="white">Search Console</AdminPill>
           </div>
-          <div className="flex items-start justify-between gap-3 rounded-xl bg-white/80 px-4 py-3">
-            <dt className="text-[var(--muted)]">확인된 블로그 쿼리</dt>
-            <dd className="font-semibold text-[var(--foreground)]">{queryRows.length}개</dd>
-          </div>
-          <div className="rounded-xl bg-white/80 px-4 py-3">
-            <dt className="text-[var(--muted)]">대표 검색어</dt>
-            <dd className="mt-1 font-semibold text-[var(--foreground)]">
-              {topBlogQuery?.query ?? "데이터 없음"}
-            </dd>
-            {topBlogQuery && (
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                연결 글 {getBlogPageLabel(topBlogQuery.page)} · CTR {formatCtr(topBlogQuery.ctr)} · 순위 {topBlogQuery.position}
-              </p>
-            )}
-          </div>
-        </dl>
-      </div>
+          <h3 className="mt-3 text-base font-bold text-[var(--foreground)]">
+            블로그 글과 유입 키워드를 개별적으로 확인합니다.
+          </h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            블로그 전용 페이지�� 키워드를 나눠서 검색 성과를 분석합니다.
+          </p>
+        </div>
 
+        <div className="space-y-5">
       <AdminDisclosureSection
         title="블로그 페이지별 검색 성과"
         description="검색에서 노출되는 블로그 글 기준으로 봅니다."
@@ -237,10 +223,10 @@ export function BlogSearchConsoleSection({
       </AdminDisclosureSection>
 
       <AdminDisclosureSection
-        title="블로그 유입 쿼리"
-        description="블로그 글과 연결된 검색어를 블로그 관점으로만 확인합니다."
+        title="블로그 유입 키워드"
+        description="블로그 글과 연결된 키워드를 블로그 관점으로만 확인합니다."
         countLabel={`${queryRows.length}개`}
-        collapsedMessage="블로그 검색어와 연결 페이지를 펼쳐서 봅니다."
+        collapsedMessage="블로그 키워드와 연결 페이지를 펼쳐서 봅니다."
         headerRight={
           <button
             type="button"
@@ -255,11 +241,6 @@ export function BlogSearchConsoleSection({
           </button>
         }
       >
-        {queryRows.length > 0 && !clustered && (
-          <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-            <KeywordBarChart data={queryRows} />
-          </div>
-        )}
         {clustered ? (
           <ClusteredKeywordTable
             queries={queryRows}
@@ -274,7 +255,7 @@ export function BlogSearchConsoleSection({
             columns={[
               {
                 key: "query",
-                label: "검색어",
+                label: "키워드",
                 align: "left",
                 render: (row) => {
                   const query = String((row as { query: string }).query);
@@ -315,7 +296,7 @@ export function BlogSearchConsoleSection({
             ]}
             rows={querySort.sortedRows as unknown as Record<string, unknown>[]}
             keyField="query"
-            emptyMessage="블로그 유입 쿼리 데이터가 없습니다"
+            emptyMessage="블로그 유입 키워드 데이터가 없습니다"
             sortKey={querySort.sortKey}
             sortDirection={querySort.sortDirection}
             onSort={querySort.handleSort}
@@ -331,6 +312,8 @@ export function BlogSearchConsoleSection({
           />
         )}
       </AdminDisclosureSection>
+        </div>
+      </AdminSurface>
     </section>
   );
 }

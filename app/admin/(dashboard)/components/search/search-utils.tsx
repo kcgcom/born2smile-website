@@ -132,7 +132,7 @@ export function buildSuggestedTitles(query: string, category?: BlogCategorySlug 
 
 export function getMetaChecklist(page: string, row: SearchMetricRow) {
   const checklist = [
-    "제목 앞에 핵심 검색어 배치",
+    "제목 앞에 핵심 키워드 배치",
     "메타 설명에 핵심 정보 1개 이상 포함",
   ];
 

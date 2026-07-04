@@ -502,7 +502,7 @@ export function StatsSubTab() {
                   {/* 모바일 카드 */}
                   <div className="sm:hidden space-y-2">
                     {topBlogSearchQueries.length === 0 && (
-                      <p className="py-8 text-center text-sm text-[var(--muted)]">대표 유입 쿼리 데이터가 아직 없습니다</p>
+                      <p className="py-8 text-center text-sm text-[var(--muted)]">대표 유입 키워드 데이터가 아직 없습니다</p>
                     )}
                     {topBlogSearchQueries.map((item) => {
                       return (
@@ -535,7 +535,7 @@ export function StatsSubTab() {
                       columns={[
                         {
                           key: "query",
-                          label: "쿼리",
+                          label: "키워드",
                           render: (row) => (
                             <div className="min-w-0">
                               <p className="truncate font-medium text-[var(--foreground)]" title={(row as typeof topBlogSearchQueries[number]).query}>{(row as typeof topBlogSearchQueries[number]).query}</p>
@@ -551,7 +551,7 @@ export function StatsSubTab() {
                         { key: "ctr", label: "CTR", align: "right", sortable: true, render: (row) => formatCtr((row as typeof topBlogSearchQueries[number]).ctr) },
                         { key: "position", label: "순위", align: "right", sortable: true },
                       ]}
-                      emptyMessage="대표 유입 쿼리 데이터가 아직 없습니다"
+                      emptyMessage="대표 유입 키워드 데이터가 아직 없습니다"
                     />
                   </div>
                   {selectedBlogQuery && (

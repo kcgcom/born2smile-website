@@ -46,6 +46,7 @@ const EMBEDDING_DIMS = 256; // MRL로 축소 — 저장 효율적
 const CACHE_KEY = "keyword-embeddings";
 const CLUSTER_THRESHOLD = 0.88; // 코사인 유사도 임계값 (0.82에서 상향 — 치과 도메인 오병합 방지)
 const MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
+const MIN_MEMBER_SIMILARITY = 0.88; // 클러스터 멤버 최소 유사도 (대표 대비, 체이닝 방지)
 const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
 
 // ---------------------------------------------------------------
@@ -258,20 +259,37 @@ function clusterByEmbeddings(
             ? 1
             : cosineSimilarity(repEmb, embeddings[items[idx].query]),
       }));
-    // 대표 키워드를 맨 앞으로
-    keywords.sort((a, b) => (b.similarity === 1 ? 1 : 0) - (a.similarity === 1 ? 1 : 0));
 
-    const totalImpressions = keywords.reduce((s, k) => s + k.impressions, 0);
-    const totalClicks = keywords.reduce((s, k) => s + k.clicks, 0);
+    // 체이닝 방지: 대표 대비 유사도가 기준 미달인 멤버는 제거 → 단독 클러스터로 분리
+    const kept = keywords.filter((k) => k.similarity >= MIN_MEMBER_SIMILARITY);
+    const ejected = keywords.filter((k) => k.similarity < MIN_MEMBER_SIMILARITY);
+    for (const ej of ejected) {
+      clusters.push({
+        representative: ej.query,
+        keywords: [{ ...ej, similarity: 1 }],
+        impressions: ej.impressions,
+        clicks: ej.clicks,
+        ctr: ej.ctr,
+        position: ej.position,
+      });
+    }
+
+    // 대표 키워드를 맨 앞으로
+    kept.sort((a, b) => (b.similarity === 1 ? 1 : 0) - (a.similarity === 1 ? 1 : 0));
+
+    if (kept.length === 0) continue;
+
+    const totalImpressions = kept.reduce((s, k) => s + k.impressions, 0);
+    const totalClicks = kept.reduce((s, k) => s + k.clicks, 0);
     const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const position =
       totalImpressions > 0
-        ? keywords.reduce((s, k) => s + k.position * k.impressions, 0) / totalImpressions
+        ? kept.reduce((s, k) => s + k.position * k.impressions, 0) / totalImpressions
         : 0;
 
     clusters.push({
-      representative: keywords[0].query,
-      keywords,
+      representative: kept[0].query,
+      keywords: kept,
       impressions: totalImpressions,
       clicks: totalClicks,
       ctr: Math.round(ctr * 100) / 100,
@@ -311,16 +329,21 @@ export async function computeSemanticClusters(
 
     // 3. Embed new keywords if any
     if (newKeywords.length > 0) {
-      const newEmbeddings = await batchEmbed(newKeywords);
-      for (let i = 0; i < newKeywords.length; i++) {
-        cache[newKeywords[i]] = newEmbeddings[i];
+      try {
+        const newEmbeddings = await batchEmbed(newKeywords);
+        for (let i = 0; i < newKeywords.length; i++) {
+          cache[newKeywords[i]] = newEmbeddings[i];
+        }
+        await saveEmbeddingCache(cache);
+      } catch (apiErr) {
+        // API 실패 시 캐시된 임베딩만으로 클러스터링 진행 (새 키워드는 단독 처리)
+        console.warn("[keyword-embeddings] Gemini API failed, using cached embeddings:", apiErr);
       }
-      // Save updated cache
-      await saveEmbeddingCache(cache);
     }
 
-    // 4. Cluster
-    return clusterByEmbeddings(queries, cache, CLUSTER_THRESHOLD);
+    // 4. Cluster (캐시에 있는 키워드만 클러스터링됨)
+    const result = clusterByEmbeddings(queries, cache, CLUSTER_THRESHOLD);
+    return result.length > 0 ? result : null;
   } catch (e) {
     console.error("[keyword-embeddings] Failed:", e);
     return null;

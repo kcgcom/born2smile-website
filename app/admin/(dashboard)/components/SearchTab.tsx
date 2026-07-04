@@ -16,7 +16,7 @@ import { BlogSearchConsoleSection } from "./search/BlogSearchConsoleSection";
 import type { SearchConsoleData } from "./search/search-types";
 import { formatCtr, PERIODS } from "./search/search-utils";
 import { useSearchTableSort } from "./search/search-hooks";
-import { KeywordBarChart, PageQueryDrilldown, QueryPageDrilldown } from "./search/search-components";
+import { PageQueryDrilldown, QueryPageDrilldown } from "./search/search-components";
 import { ClusteredKeywordTable } from "./search/ClusteredKeywordTable";
 
 // ---------------------------------------------------------------
@@ -28,7 +28,7 @@ export function SearchTab() {
   const [period, setPeriod] = useState<"28d" | "90d" | "180d">("28d");
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
-  const [clustered, setClustered] = useState(false);
+  const [clustered, setClustered] = useState(true);
 
   const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
     `/api/admin/search-console?period=${period}`,
@@ -160,11 +160,74 @@ export function SearchTab() {
                 홈페이지, 치료 페이지, 블로그를 모두 합친 검색 성과입니다.
               </h3>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                전체 사이트 기준으로 어떤 검색어와 페이지가 실제 유입을 만들고 있는지 봅니다.
+                전체 사이트 기준으로 어떤 키워드와 페이지가 실제 유입을 만들고 있는지 봅니다.
               </p>
             </div>
 
             <div className="space-y-5">
+              <AdminDisclosureSection
+                title="상위 페이지별 검색 성과"
+                description="주요 페이지 성과를 비교합니다."
+                countLabel={`${data.topPages.length}개`}
+                collapsedMessage="필요할 때만 펼쳐 봅니다."
+              >
+                <DataTable
+                  columns={[
+                    {
+                      key: "page",
+                      label: "페이지",
+                      align: "left",
+                      render: (row) => {
+                        const page = String((row as { page: string }).page);
+                        const isSelected = selectedTopPage === page;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedTopPage((current) =>
+                                current === page ? null : page,
+                              )
+                            }
+                            className={`block max-w-[200px] truncate text-left sm:max-w-xs ${
+                              isSelected
+                                ? "font-medium text-[var(--color-primary)]"
+                                : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
+                            }`}
+                            title={page}
+                          >
+                            {page}
+                          </button>
+                        );
+                      },
+                    },
+                    { key: "impressions", label: "노출", align: "right", sortable: true },
+                    { key: "clicks", label: "클릭", align: "right", sortable: true },
+                    {
+                      key: "ctr",
+                      label: "CTR (%)",
+                      align: "right",
+                      sortable: true,
+                      render: (row) => formatCtr((row as SearchConsoleData["topPages"][number]).ctr),
+                    },
+                    { key: "position", label: "순위", align: "right", sortable: true },
+                  ]}
+                  rows={pageSort.sortedRows as unknown as Record<string, unknown>[]}
+                  keyField="page"
+                  emptyMessage="페이지 데이터가 없습니다"
+                  sortKey={pageSort.sortKey}
+                  sortDirection={pageSort.sortDirection}
+                  onSort={pageSort.handleSort}
+                />
+                {selectedTopPage && (
+                  <PageQueryDrilldown
+                    page={selectedTopPage}
+                    queries={selectedTopPageQueries}
+                    onClose={() => setSelectedTopPage(null)}
+                    metrics={selectedTopPageMetrics}
+                  />
+                )}
+              </AdminDisclosureSection>
+
               <AdminDisclosureSection
                 title="상위 검색 키워드"
                 description="키워드와 연결 페이지를 바로 확인합니다."
@@ -184,11 +247,6 @@ export function SearchTab() {
                   </button>
                 }
               >
-                {data.topQueries.length > 0 && !clustered && (
-                  <div className="mb-4 rounded-xl bg-[var(--surface)] p-4 shadow-sm">
-                    <KeywordBarChart data={data.topQueries} />
-                  </div>
-                )}
                 {clustered ? (
                   <ClusteredKeywordTable
                     queries={data.topQueries}
@@ -256,69 +314,6 @@ export function SearchTab() {
                     onClose={() => setSelectedQuery(null)}
                     onEditBlog={handleEditBlog}
                     onCreatePost={handleCreateRelatedPost}
-                  />
-                )}
-              </AdminDisclosureSection>
-
-              <AdminDisclosureSection
-                title="상위 페이지별 검색 성과"
-                description="주요 페이지 성과를 비교합니다."
-                countLabel={`${data.topPages.length}개`}
-                collapsedMessage="필요할 때만 펼쳐 봅니다."
-              >
-                <DataTable
-                  columns={[
-                    {
-                      key: "page",
-                      label: "페이지",
-                      align: "left",
-                      render: (row) => {
-                        const page = String((row as { page: string }).page);
-                        const isSelected = selectedTopPage === page;
-                        return (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSelectedTopPage((current) =>
-                                current === page ? null : page,
-                              )
-                            }
-                            className={`block max-w-[200px] truncate text-left sm:max-w-xs ${
-                              isSelected
-                                ? "font-medium text-[var(--color-primary)]"
-                                : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
-                            }`}
-                            title={page}
-                          >
-                            {page}
-                          </button>
-                        );
-                      },
-                    },
-                    { key: "impressions", label: "노출", align: "right", sortable: true },
-                    { key: "clicks", label: "클릭", align: "right", sortable: true },
-                    {
-                      key: "ctr",
-                      label: "CTR (%)",
-                      align: "right",
-                      sortable: true,
-                      render: (row) => formatCtr((row as SearchConsoleData["topPages"][number]).ctr),
-                    },
-                    { key: "position", label: "순위", align: "right", sortable: true },
-                  ]}
-                  rows={pageSort.sortedRows as unknown as Record<string, unknown>[]}
-                  keyField="page"
-                  emptyMessage="페이지 데이터가 없습니다"
-                  sortKey={pageSort.sortKey}
-                  sortDirection={pageSort.sortDirection}
-                  onSort={pageSort.handleSort}
-                />
-                {selectedTopPage && (
-                  <PageQueryDrilldown
-                    page={selectedTopPage}
-                    queries={selectedTopPageQueries}
-                    onClose={() => setSelectedTopPage(null)}
-                    metrics={selectedTopPageMetrics}
                   />
                 )}
               </AdminDisclosureSection>
