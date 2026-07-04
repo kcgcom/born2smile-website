@@ -93,6 +93,8 @@ export interface SearchConsoleData {
   >;
   /** Server-computed semantic clusters (null if Gemini not configured) */
   semanticClusters?: SemanticCluster[] | null;
+  /** Blog query semantic clusters */
+  blogSemanticClusters?: SemanticCluster[] | null;
 }
 
 export type SemanticCluster = {

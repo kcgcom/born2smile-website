@@ -263,6 +263,7 @@ export function BlogSearchConsoleSection({
         {clustered ? (
           <ClusteredKeywordTable
             queries={queryRows}
+            semanticClusters={data.blogSemanticClusters}
             onSelectQuery={(q) =>
               setSelectedQuery((current) => (current === q ? null : q))
             }

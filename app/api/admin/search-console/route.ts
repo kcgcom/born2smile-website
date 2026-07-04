@@ -28,10 +28,21 @@ export async function GET(request: NextRequest) {
     const data = await getData();
 
     // Compute semantic clusters (non-blocking — falls back to null if Gemini unavailable)
-    const semanticClusters = await computeSemanticClusters(data.topQueries).catch(() => null);
+    const [semanticClusters, blogSemanticClusters] = await Promise.all([
+      computeSemanticClusters(data.topQueries).catch(() => null),
+      computeSemanticClusters(
+        Object.entries(data.blogQueryTopPages).map(([query, pages]) => ({
+          query,
+          impressions: pages[0]?.impressions ?? 0,
+          clicks: pages[0]?.clicks ?? 0,
+          ctr: pages[0]?.ctr ?? 0,
+          position: pages[0]?.position ?? 0,
+        })),
+      ).catch(() => null),
+    ]);
 
     return Response.json(
-      { data: { ...data, semanticClusters } },
+      { data: { ...data, semanticClusters, blogSemanticClusters } },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (e) {

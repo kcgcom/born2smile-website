@@ -44,7 +44,8 @@ type QueryRow = {
 const GEMINI_MODEL = "gemini-embedding-2";
 const EMBEDDING_DIMS = 256; // MRL로 축소 — 저장 효율적
 const CACHE_KEY = "keyword-embeddings";
-const CLUSTER_THRESHOLD = 0.82; // 코사인 유사도 임계값 (임베딩 기반은 더 높게)
+const CLUSTER_THRESHOLD = 0.88; // 코사인 유사도 임계값 (0.82에서 상향 — 치과 도메인 오병합 방지)
+const MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
 const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
 
 // ---------------------------------------------------------------
@@ -132,6 +133,29 @@ async function saveEmbeddingCache(cache: EmbeddingCache): Promise<void> {
 // Cosine similarity + Clustering
 // ---------------------------------------------------------------
 
+/** 한국어 토큰 추출 (공백 + 조사 제거) */
+function extractTokens(text: string): Set<string> {
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^가-힣a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+  return new Set(tokens);
+}
+
+/** 토큰 Jaccard 유사도 */
+function tokenJaccard(a: string, b: string): number {
+  const setA = extractTokens(a);
+  const setB = extractTokens(b);
+  if (setA.size === 0 && setB.size === 0) return 1;
+  let intersection = 0;
+  for (const t of setA) {
+    if (setB.has(t)) intersection++;
+  }
+  const unionSize = setA.size + setB.size - intersection;
+  return unionSize === 0 ? 0 : intersection / unionSize;
+}
+
 function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0;
   let normA = 0;
@@ -170,7 +194,7 @@ function clusterByEmbeddings(
     if (pa !== pb) parent[pa] = pb;
   }
 
-  // Pairwise cosine similarity
+  // Pairwise cosine similarity + token Jaccard safety check
   for (let i = 0; i < items.length; i++) {
     for (let j = i + 1; j < items.length; j++) {
       const sim = cosineSimilarity(
@@ -178,7 +202,11 @@ function clusterByEmbeddings(
         embeddings[items[j].query],
       );
       if (sim >= threshold) {
-        union(i, j);
+        // 토큰 겹침이 최소 기준 미달이면 병합하지 않음
+        const jaccard = tokenJaccard(items[i].query, items[j].query);
+        if (jaccard >= MIN_TOKEN_JACCARD) {
+          union(i, j);
+        }
       }
     }
   }
@@ -198,17 +226,40 @@ function clusterByEmbeddings(
   // Aggregate
   const clusters: SemanticCluster[] = [];
   for (const indices of clusterMap.values()) {
-    indices.sort((a, b) => items[b].impressions - items[a].impressions);
-    const repIdx = indices[0];
-    const repEmb = embeddings[items[repIdx].query];
+    // Centroid 기반 대표 선정 — 클러스터 평균 벡터에 가장 가까운 키워드
+    const centroid = new Array<number>(EMBEDDING_DIMS).fill(0);
+    for (const idx of indices) {
+      const vec = embeddings[items[idx].query];
+      for (let d = 0; d < EMBEDDING_DIMS; d++) {
+        centroid[d] += vec[d];
+      }
+    }
+    for (let d = 0; d < EMBEDDING_DIMS; d++) {
+      centroid[d] /= indices.length;
+    }
 
-    const keywords = indices.map((idx) => ({
-      ...items[idx],
-      similarity:
-        idx === repIdx
-          ? 1
-          : cosineSimilarity(repEmb, embeddings[items[idx].query]),
-    }));
+    let repIdx = indices[0];
+    let maxSimToCentroid = -1;
+    for (const idx of indices) {
+      const sim = cosineSimilarity(embeddings[items[idx].query], centroid);
+      if (sim > maxSimToCentroid) {
+        maxSimToCentroid = sim;
+        repIdx = idx;
+      }
+    }
+
+    const repEmb = embeddings[items[repIdx].query];
+    const keywords = indices
+      .sort((a, b) => items[b].impressions - items[a].impressions)
+      .map((idx) => ({
+        ...items[idx],
+        similarity:
+          idx === repIdx
+            ? 1
+            : cosineSimilarity(repEmb, embeddings[items[idx].query]),
+      }));
+    // 대표 키워드를 맨 앞으로
+    keywords.sort((a, b) => (b.similarity === 1 ? 1 : 0) - (a.similarity === 1 ? 1 : 0));
 
     const totalImpressions = keywords.reduce((s, k) => s + k.impressions, 0);
     const totalClicks = keywords.reduce((s, k) => s + k.clicks, 0);
