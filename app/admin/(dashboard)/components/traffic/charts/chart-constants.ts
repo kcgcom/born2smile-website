@@ -13,7 +13,13 @@ export const DEVICE_LABELS: Record<string, string> = {
   tablet: "태블릿",
 };
 
+const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
+
 export function formatDateLabel(date: string): string {
-  if (date.length === 10) return date.slice(5).replace("-", ".");
+  if (date.length === 10) {
+    const d = new Date(date + "T00:00:00");
+    const day = DAY_NAMES[d.getDay()];
+    return date.slice(5).replace("-", ".") + `(${day})`;
+  }
   return date;
 }

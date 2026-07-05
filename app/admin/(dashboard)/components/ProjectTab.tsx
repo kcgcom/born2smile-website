@@ -9,6 +9,7 @@ import {
   type ImprovementStatus,
   type SiteConfigStatus,
 } from "@/lib/admin-data";
+import { ENV_GROUP_LABELS, type EnvGroup } from "@/lib/dev-data";
 import { ConfigRow } from "./ConfigRow";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -18,14 +19,17 @@ import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLo
 // 환경변수 API 응답 타입
 // -------------------------------------------------------------
 
+interface EnvStatusVariable {
+  key: string;
+  label: string;
+  configured: boolean;
+  required: boolean;
+  scope: "public" | "private";
+  group: EnvGroup;
+}
+
 interface EnvStatusData {
-  variables: {
-    key: string;
-    label: string;
-    configured: boolean;
-    required: boolean;
-    scope: "public" | "private";
-  }[];
+  variables: EnvStatusVariable[];
   summary: {
     total: number;
     configured: number;
@@ -166,68 +170,69 @@ function EnvHealthSection() {
         </svg>
       </button>
 
-      {/* 아코디언 상세 목록 */}
+      {/* 아코디언 상세 목록 — 서비스 그룹별 */}
       {expanded && (
         <div className="mb-3 space-y-3">
-          {/* 설정됨 */}
-          <div>
-            <p className="mb-1.5 text-xs font-semibold text-green-700">
-              설정됨 ({configuredVars.length}건)
-            </p>
-            <ul className="space-y-1">
-              {configuredVars.map((v) => (
-                <li key={v.key} className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-1.5 text-xs">
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="font-medium text-[var(--foreground)]">{v.label}</span>
-                    <span className="ml-1.5 text-[var(--muted)]">({v.key})</span>
-                  </span>
-                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                    v.scope === "public" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
-                  }`}>
-                    {v.scope}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {Object.entries(ENV_GROUP_LABELS).map(([group, label]) => {
+            const groupVars = envData.variables.filter((v) => v.group === group);
+            if (groupVars.length === 0) return null;
+            const groupConfigured = groupVars.filter((v) => v.configured).length;
+            const allConfigured = groupConfigured === groupVars.length;
 
-          {/* 미설정 */}
-          {missingVars.length > 0 && (
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-amber-700">
-                미설정 ({missingVars.length}건)
-              </p>
-              <ul className="space-y-1">
-                {missingVars.map((v) => (
-                  <li key={v.key} className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs ${
-                    v.required ? "bg-red-50" : "bg-amber-50"
+            return (
+              <div key={group}>
+                <p className={`mb-1.5 flex items-center gap-1.5 text-xs font-semibold ${
+                  allConfigured ? "text-green-700" : "text-[var(--foreground)]"
+                }`}>
+                  <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                    allConfigured ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
                   }`}>
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                      v.required ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                    {allConfigured ? "✓" : groupVars.length - groupConfigured}
+                  </span>
+                  {label}
+                  <span className="font-normal text-[var(--muted)]">
+                    ({groupConfigured}/{groupVars.length})
+                  </span>
+                </p>
+                <ul className="space-y-1">
+                  {groupVars.map((v) => (
+                    <li key={v.key} className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs ${
+                      v.configured ? "bg-green-50" : v.required ? "bg-red-50" : "bg-amber-50"
                     }`}>
-                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="font-medium text-[var(--foreground)]">{v.label}</span>
-                      <span className="ml-1.5 text-[var(--muted)]">({v.key})</span>
-                    </span>
-                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                      v.required ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                    }`}>
-                      {v.required ? "필수" : "선택"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                        v.configured
+                          ? "bg-green-100 text-green-600"
+                          : v.required
+                            ? "bg-red-100 text-red-600"
+                            : "bg-amber-100 text-amber-600"
+                      }`}>
+                        {v.configured ? (
+                          <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="font-medium text-[var(--foreground)]">{v.label}</span>
+                        <span className="ml-1.5 text-[var(--muted)]">({v.key})</span>
+                      </span>
+                      <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        v.configured
+                          ? v.scope === "public" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
+                          : v.required ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {v.configured ? v.scope : v.required ? "필수" : "선택"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       )}
 

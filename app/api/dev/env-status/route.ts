@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     configured: !!process.env[v.key]?.trim(),
     required: v.required,
     scope: v.scope,
+    group: v.group,
   }));
 
   const configured = variables.filter((v) => v.configured).length;

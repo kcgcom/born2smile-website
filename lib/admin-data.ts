@@ -21,10 +21,10 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-04-02
+// 마지막 동기화: 2026-07-05
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
-  // CRITICAL — 4/4 완료
+  // CRITICAL — 4/4 완료 (c1–c4)
   // =================================================================
   { id: "c1", title: "CSP + HTTP 보안 헤더", priority: "CRITICAL", status: "done", description: "CSP, X-Frame-Options, HSTS, nosniff, Referrer-Policy, Permissions-Policy" },
   { id: "c2", title: "JSON-LD 이미지 URL 수정", priority: "CRITICAL", status: "done", description: "/opengraph-image → /images/og-image.jpg 경로 수정" },
@@ -32,7 +32,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "c4", title: "Supabase RLS 보안 규칙 설정", priority: "CRITICAL", status: "done", description: "blog_likes 테이블만 read/write 허용, 나머지 테이블 차단" },
 
   // =================================================================
-  // HIGH — 17/18 완료
+  // HIGH — 27/28 완료 (h1–h28, owner-decision: h18)
   // =================================================================
   { id: "h1", title: "이미지 최적화 (next/image)", priority: "HIGH", status: "done", description: "모든 이미지를 next/image로 변환, lazy loading" },
   { id: "h2", title: "시맨틱 HTML + ARIA", priority: "HIGH", status: "done", description: "시맨틱 태그, ARIA 라벨, skip link, 키보드 접근성" },
@@ -54,7 +54,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "h18", title: "온라인 예약 시스템", priority: "HIGH", status: "owner-decision", description: "온라인 예약 폼 도입 여부 — 현재 전화 상담 안내" },
 
   // =================================================================
-  // MEDIUM — 25/28 완료
+  // MEDIUM — 40/46 완료 (m1–m46, pending: m38·m39·m45, owner-decision: m25·m26·m28)
   // =================================================================
   { id: "m1", title: "블로그 좋아요 기능", priority: "MEDIUM", status: "done", description: "Supabase 기반, optimistic update, UUID 사용자 식별" },
   { id: "m2", title: "카카오맵 통합", priority: "MEDIUM", status: "done", description: "주소 기반 geocoding + 폴백 좌표, HTTPS 명시" },
@@ -86,7 +86,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m28", title: "인스타그램 연동", priority: "MEDIUM", status: "owner-decision", description: "인스타그램 URL 입력 시 Footer 아이콘 활성화" },
 
   // =================================================================
-  // LOW — 15/16 완료
+  // LOW — 24/25 완료 (l1–l25, owner-decision: l16)
   // =================================================================
   { id: "l1", title: "웹마스터 인증", priority: "LOW", status: "done", description: "Bing BingSiteAuth.xml + Naver naver*.html 인증 파일" },
   { id: "l2", title: "Vercel 마이그레이션", priority: "LOW", status: "done", description: "Firebase App Hosting → Vercel 전환 완료" },
@@ -156,7 +156,7 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m43", title: "카테고리 허브 페이지 지역 SEO", priority: "MEDIUM", status: "done", description: "/blog/[category] 허브 페이지 title/desc/keywords에 '김포' 지역 키워드 포함" },
   { id: "m44", title: "검색 의도(Search Intent) 분류", priority: "MEDIUM", status: "done", description: "57개 키워드 서브그룹에 SearchIntent 태깅(정보형/비교검토/전환형/탐색형). 콘텐츠 전략 탭에 의도별 필터·컬럼·산점도 툴팁 추가" },
   { id: "m45", title: "SC 쿼리 × 트렌드 키워드 교차 분석", priority: "MEDIUM", status: "pending", description: "Search Console 유입 쿼리와 DataLab 시장 수요 교차 비교. '수요 높지만 유입 없는' 기회 키워드 식별" },
-  { id: "l20", title: "계절성 트렌드 패턴 감지", priority: "LOW", status: "pending", description: "키워드 시계열 데이터로 연간 패턴 분석. 계절별 콘텐츠 발행 타이밍 추천" },
+  { id: "l20", title: "계절성 트렌드 패턴 감지", priority: "LOW", status: "done", description: "SEASONAL_KEYWORDS 기반 계절성 감지 + strategy-panels 월별 패턴 모멘텀 힌트 + seasonal-campaign 액션 타입 연동" },
   { id: "l22", title: "RSS 피드 + 네이버 서치어드바이저 제출", priority: "LOW", status: "done", description: "/feed.xml RSS 2.0 피드 (최신 50개 블로그, 카테고리 태그, 1시간 ISR). layout.tsx RSS 자동 발견 link 태그 추가" },
   { id: "l21", title: "전체 FAQ 독립 페이지", priority: "LOW", status: "done", description: "6개 진료 과목 FAQ를 모은 /faq 독립 페이지. '치과 자주 묻는 질문' 키워드 타겟" },
 
@@ -168,6 +168,22 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "l23", title: "llms.txt AI 모델 가이드", priority: "LOW", status: "done", description: "public/llms.txt 구조화 — AI 크롤러 대상 진료 철학, 카테고리별 블로그 링크, 콘텐츠 구조 안내 (GEO 대응)" },
   { id: "l24", title: "관리자 인증 스피너 최적화", priority: "LOW", status: "done", description: "localStorage 플래그 선확인으로 인증 완료 시 스피너 스킵 — 관리자 페이지 진입 체감 속도 개선" },
   { id: "l25", title: "블로그 페이지 관리자 버튼 → 블로그 탭 직접 링크", priority: "LOW", status: "done", description: "/blog/* 경로에서 관리자 플로팅 버튼 클릭 시 /admin/content/posts 직접 이동 — 블로그 관리 동선 단축" },
+
+  // =================================================================
+  // 추가 개선 항목 — 2026-04~07 운영·분석·콘텐츠 고도화
+  // =================================================================
+
+  // ── HIGH: 분석 인프라 ──
+  { id: "h29", title: "Gemini Embedding 기반 의미 키워드 클러스터링", priority: "HIGH", status: "done", description: "Search Console 유입 쿼리를 Gemini 임베딩으로 벡터화 → 의미 유사도 기반 자동 클러스터링. 검색성과 탭에서 키워드 그룹별 트렌드 분석 가능" },
+  { id: "h30", title: "관리자 대시보드 3-워크스페이스 구조 개편", priority: "HIGH", status: "done", description: "운영/콘텐츠/시스템 3구조 + URL 기반 라우팅(/admin/operations, /admin/content, /admin/system). 9-Phase 컴포넌트 리팩토링으로 유지보수성 대폭 개선" },
+  { id: "h31", title: "AI 블로그 작성·운영실 기능 제거", priority: "HIGH", status: "done", description: "AI 자동 생성 기능과 운영실 전체 제거 — 수동 에디터 중심 단순화. 불필요 DB 테이블·API·컴포넌트 일괄 정리" },
+
+  // ── MEDIUM: 콘텐츠·이미지 운영 ──
+  { id: "m47", title: "블로그 이미지 WebP 자동 최적화", priority: "MEDIUM", status: "done", description: "업로드 시 자동 WebP 변환. 파일 용량 절감 + Core Web Vitals LCP 개선" },
+  { id: "m48", title: "블로그 공유 추적 및 관리자 리포트", priority: "MEDIUM", status: "done", description: "공유 이벤트 트래킹 + 관리자 대시보드에서 포스트별 공유 현황 리포트 표시" },
+  { id: "m49", title: "블로그 글별 방문 성과 테이블", priority: "MEDIUM", status: "done", description: "GA4 데이터 기반 포스트별 방문수·체류시간 테이블 + 정렬 기능. 콘텐츠 성과 한눈에 파악" },
+  { id: "m50", title: "관리자 이미지 관리 강화", priority: "MEDIUM", status: "done", description: "이미지 확대 미리보기, 이전/다음 탐색, 사용 여부 필터, 삭제 흐름 개선" },
+  { id: "m51", title: "콘텐츠 전략 근거 데이터 분리", priority: "MEDIUM", status: "done", description: "전략 탭을 핵심 실행안 중심으로 단순화하고, 콘텐츠 갭 분석·기회 매트릭스 등 근거 데이터를 별도 페이지(/admin/content/strategy/evidence)로 분리" },
 ];
 
 export interface ImprovementStats {
