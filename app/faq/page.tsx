@@ -109,6 +109,7 @@ export default function FaqPage() {
                         {item.q}
                         <ArrowRight
                           size={16}
+                          aria-hidden="true"
                           className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
                         />
                       </summary>

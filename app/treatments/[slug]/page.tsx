@@ -6,7 +6,6 @@ import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { TREATMENT_DETAILS, RELATED_TREATMENTS } from "@/lib/treatments";
 import {
   getTreatmentJsonLd,
-  getHowToJsonLd,
   getFaqJsonLd,
   getBreadcrumbJsonLd,
   serializeJsonLd,
@@ -122,7 +121,6 @@ export default async function TreatmentDetailPage({
     : [];
 
   const treatmentJsonLd = getTreatmentJsonLd(slug);
-  const howToJsonLd = getHowToJsonLd(slug);
   const faqJsonLd = detail.faq.length > 0 ? getFaqJsonLd(detail.faq) : null;
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -136,12 +134,6 @@ export default async function TreatmentDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(treatmentJsonLd) }}
-        />
-      )}
-      {howToJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(howToJsonLd) }}
         />
       )}
       {faqJsonLd && (
@@ -163,7 +155,7 @@ export default async function TreatmentDetailPage({
               href="/treatments"
               className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={14} aria-hidden="true" />
               진료 안내
             </Link>
             <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
@@ -302,6 +294,7 @@ export default async function TreatmentDetailPage({
                     {item.q}
                     <ArrowRight
                       size={16}
+                      aria-hidden="true"
                       className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
                     />
                   </summary>

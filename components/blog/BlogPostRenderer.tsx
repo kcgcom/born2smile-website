@@ -110,7 +110,7 @@ export function renderSingleBlock(
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
             <Image
               src={block.src}
-              alt={block.decorative ? "" : block.alt}
+              alt={block.decorative ? "" : (block.alt || "")}
               width={block.width ?? 1200}
               height={block.height ?? 1200}
               sizes="(max-width: 768px) 100vw, 768px"

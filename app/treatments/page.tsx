@@ -93,7 +93,7 @@ export default function TreatmentsPage() {
                         : "bg-blue-50 text-[var(--color-primary)]"
                     }`}
                   >
-                    <item.icon size={26} />
+                    <item.icon size={26} aria-hidden="true" />
                   </div>
                   <h3 className="mb-3 text-lg font-bold text-gray-900">
                     {item.title}

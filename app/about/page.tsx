@@ -34,6 +34,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/images/facility/exterior.jpg",
+        width: 1200,
+        height: 630,
         alt: `${CLINIC.name} 외관`,
       },
     ],
@@ -66,7 +68,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(doctorJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
+      <section className="bg-gradient-to-b from-[var(--color-primary)]/5 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
@@ -448,6 +450,7 @@ export default function AboutPage() {
                   />
                   <a
                     href={CLINIC.phoneHref}
+                    aria-label={`전화 상담 ${CLINIC.phone}`}
                     className="font-medium text-[var(--color-primary)]"
                   >
                     {CLINIC.phone}
