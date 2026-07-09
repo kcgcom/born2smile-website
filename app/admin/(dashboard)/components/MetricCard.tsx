@@ -20,7 +20,7 @@ export function MetricCard({
   invertChange = false,
 }: MetricCardProps) {
   return (
-    <AdminSurface tone="white" className="rounded-2xl bg-white/85 p-4 text-center">
+    <AdminSurface tone="white" className="rounded-2xl bg-[var(--background)]/85 p-4 text-center">
       {loading ? (
         <div className="mx-auto h-8 w-16 animate-pulse rounded bg-[var(--border)]" />
       ) : (

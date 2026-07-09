@@ -140,8 +140,8 @@ export function MonitoringTab() {
     return (
       <AdminSurface tone="white" className="rounded-2xl p-6">
         <div className="space-y-2">
-          <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-          <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="h-4 w-32 animate-pulse rounded bg-[var(--border)]" />
+          <div className="h-24 animate-pulse rounded-2xl bg-[var(--background)]" />
         </div>
       </AdminSurface>
     );
@@ -158,11 +158,11 @@ export function MonitoringTab() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-[var(--color-primary)]" />
-              <h3 className="text-base font-semibold text-slate-900">
+              <h3 className="text-base font-semibold text-[var(--foreground)]">
                 Sentry 연동 점검
               </h3>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--muted)]">
               환경변수 설정과 테스트 이벤트 전송으로 계측 연동이 살아 있는지 점검합니다.
             </p>
           </div>
@@ -187,9 +187,9 @@ export function MonitoringTab() {
                 ) : (
                   <TriangleAlert className="h-4 w-4 text-amber-600" />
                 )}
-                <span className="text-sm font-medium text-slate-900">{item.label}</span>
+                <span className="text-sm font-medium text-[var(--foreground)]">{item.label}</span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">{item.key}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">{item.key}</p>
             </div>
           ))}
         </div>
@@ -204,18 +204,18 @@ export function MonitoringTab() {
       <AdminSurface tone="white" className="rounded-2xl p-6">
         <div className="flex items-center gap-2">
           <Siren className="h-5 w-5 text-[var(--color-primary)]" />
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-[var(--foreground)]">
             테스트 이벤트 전송
           </h3>
         </div>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-[var(--muted)]">
           클라이언트/서버 각각에서 Sentry 이벤트를 전송해 실제 수집 여부를 확인합니다.
         </p>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <h4 className="text-sm font-semibold text-slate-900">클라이언트 이벤트</h4>
-            <p className="mt-1 text-sm text-slate-600">
+          <div className="rounded-2xl border border-[var(--border)] p-4">
+            <h4 className="text-sm font-semibold text-[var(--foreground)]">클라이언트 이벤트</h4>
+            <p className="mt-1 text-sm text-[var(--muted)]">
               브라우저 런타임에서 직접 예외를 전송합니다.
             </p>
             <AdminActionButton
@@ -237,9 +237,9 @@ export function MonitoringTab() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <h4 className="text-sm font-semibold text-slate-900">서버 이벤트</h4>
-            <p className="mt-1 text-sm text-slate-600">
+          <div className="rounded-2xl border border-[var(--border)] p-4">
+            <h4 className="text-sm font-semibold text-[var(--foreground)]">서버 이벤트</h4>
+            <p className="mt-1 text-sm text-[var(--muted)]">
               관리자 인증이 필요한 API에서 서버 예외를 전송합니다.
             </p>
             <AdminActionButton
@@ -300,8 +300,8 @@ function PostHogSection({
     return (
       <AdminSurface tone="white" className="rounded-2xl p-6">
         <div className="space-y-2">
-          <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-          <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="h-4 w-32 animate-pulse rounded bg-[var(--border)]" />
+          <div className="h-24 animate-pulse rounded-2xl bg-[var(--background)]" />
         </div>
       </AdminSurface>
     );
@@ -345,11 +345,11 @@ function PostHogSection({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-[var(--color-primary)]" />
-            <h3 className="text-base font-semibold text-slate-900">
+            <h3 className="text-base font-semibold text-[var(--foreground)]">
               PostHog 연동 점검
             </h3>
           </div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[var(--muted)]">
             CTA/상담 이벤트 수집과 관리자 조회용 설정이 연결되어 있는지 확인합니다.
           </p>
         </div>
@@ -374,9 +374,9 @@ function PostHogSection({
               ) : (
                 <TriangleAlert className="h-4 w-4 text-amber-600" />
               )}
-              <span className="text-sm font-medium text-slate-900">{item.label}</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">{item.label}</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">{item.key}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">{item.key}</p>
           </div>
         ))}
       </div>
@@ -411,7 +411,7 @@ function PostHogSection({
       )}
 
       {isReady && !data.summary.healthy && (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)]">
           최근 24시간 내 이벤트가 없습니다. 실제 사이트에서 CTA를 클릭한 뒤 다시 확인해 주세요.
         </div>
       )}
@@ -448,9 +448,9 @@ function PostHogSection({
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="text-xs font-medium text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-slate-900">{value}</div>
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3">
+      <div className="text-xs font-medium text-[var(--muted)]">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-[var(--foreground)]">{value}</div>
     </div>
   );
 }

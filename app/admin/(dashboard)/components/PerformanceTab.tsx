@@ -176,7 +176,7 @@ function ScoreGauge({
 function CWVCard({ metric }: { metric: CWVMetric }) {
   const badge = categoryBadge(metric.category);
   return (
-    <AdminSurface tone="white" className="flex flex-col items-center gap-1 rounded-2xl bg-white/85 p-3 text-center">
+    <AdminSurface tone="white" className="flex flex-col items-center gap-1 rounded-2xl bg-[var(--background)]/85 p-3 text-center">
       <span className="text-lg font-bold text-[var(--foreground)]">
         {formatCWVValue(metric)}
       </span>
@@ -378,7 +378,7 @@ export function PerformanceTab() {
                     }
                     aria-expanded={hasDetails ? isExpanded : undefined}
                     className={`flex w-full items-center justify-between px-4 py-2.5 text-left ${
-                        hasDetails ? "cursor-pointer hover:bg-gray-50/50" : "cursor-default"
+                        hasDetails ? "cursor-pointer hover:bg-[var(--background)]/50" : "cursor-default"
                       }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -422,7 +422,7 @@ export function PerformanceTab() {
 
                   {/* 확장 상세 */}
                   {isExpanded && hasDetails && (
-                    <div className="border-t border-gray-100 px-4 py-3 space-y-3">
+                    <div className="border-t border-[var(--border)] px-4 py-3 space-y-3">
                       {audit.description && (
                         <p className="text-xs leading-relaxed text-[var(--muted)]">
                           {audit.description}
@@ -433,7 +433,7 @@ export function PerformanceTab() {
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
                             관련 리소스
                           </p>
-                          <div className="rounded-md border border-gray-100 divide-y divide-gray-100 text-xs">
+                          <div className="rounded-md border border-[var(--border)] divide-y divide-[var(--border)] text-xs">
                             {audit.items.map((item, i) => (
                               <div
                                 key={i}

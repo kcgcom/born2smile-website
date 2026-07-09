@@ -185,7 +185,7 @@ export function PageBriefPanel({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <CategoryBadge category={brief.slug} />
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+              <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-xs font-medium text-[var(--foreground)]">
                 페이지 보강 워크노트
               </span>
             </div>
@@ -279,7 +279,7 @@ export function PageBriefPanel({
           <ul className="mt-4 space-y-3 text-sm text-[var(--muted)]">
             {brief.faqQuestions.length > 0 ? (
               brief.faqQuestions.map((question) => (
-                <li key={question} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <li key={question} className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3">
                   {question}
                 </li>
               ))
@@ -289,9 +289,9 @@ export function PageBriefPanel({
               </li>
             )}
           </ul>
-          <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+          <div className="mt-6 rounded-2xl bg-[var(--background)] p-4">
             <h4 className="text-sm font-semibold text-[var(--foreground)]">복사용 워크노트</h4>
-            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-white p-4 text-xs text-slate-600">
+            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-[var(--background)] p-4 text-xs text-[var(--muted)]">
               {markdown}
             </pre>
           </div>

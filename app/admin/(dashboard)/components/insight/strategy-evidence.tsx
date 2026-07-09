@@ -186,7 +186,7 @@ export function EvidenceDataSection({
                       if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
                       return (
                         <div className="space-y-1">
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                          <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
                             {ACTION_LABELS[item.actionType]}
                           </span>
                           <div>
@@ -323,7 +323,7 @@ export function EvidenceDataSection({
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {action && (
                             <>
-                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                              <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
                                 {ACTION_LABELS[action.actionType]}
                               </span>
                               <BusinessValueBadge value={action.businessValue} />

@@ -149,7 +149,7 @@ export function ConversionSubTab() {
                   ? "—"
                   : `${data.summary.contactToPhoneRate}%`
               }
-              color="text-slate-900"
+              color="text-[var(--foreground)]"
             />
             <MetricCard
               label={`${PERIOD_LABELS[data.period]} 공유 시도`}

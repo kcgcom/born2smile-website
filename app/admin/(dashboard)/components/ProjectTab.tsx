@@ -222,7 +222,7 @@ function EnvHealthSection() {
                       </span>
                       <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         v.configured
-                          ? v.scope === "public" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
+                          ? v.scope === "public" ? "bg-blue-100 text-blue-700" : "bg-[var(--background)] text-[var(--muted)]"
                           : v.required ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
                       }`}>
                         {v.configured ? v.scope : v.required ? "필수" : "선택"}

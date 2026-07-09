@@ -37,11 +37,11 @@ export function BriefsSection({
           </div>
           <div className="space-y-3">
             {blogBriefs.slice(0, 4).map((item: BlogBriefItem) => (
-              <div key={`${item.slug}-${item.subGroup}-brief`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <div key={`${item.slug}-${item.subGroup}-brief`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                  <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
                     {item.targetReader}
                   </span>
                   </div>
@@ -89,14 +89,14 @@ export function BriefsSection({
           </div>
           <div className="space-y-3">
             {pageBriefs.slice(0, 4).map((item: PageBriefItem) => (
-              <div key={`${item.slug}-${item.subGroup}-page-brief`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <div key={`${item.slug}-${item.subGroup}-page-brief`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
                   <a
                     href={item.targetPage}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-[var(--color-primary)] hover:underline"
+                    className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-primary)] hover:underline"
                   >
                     대상 페이지 열기
                   </a>
@@ -106,7 +106,7 @@ export function BriefsSection({
                 <p className="mt-1 text-xs text-[var(--muted)]">보조 카피: {item.supportingCopy}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {item.blocks.slice(0, 2).map((block) => (
-                    <span key={block} className="rounded bg-white px-2 py-0.5 text-[10px] text-slate-600">{block}</span>
+                    <span key={block} className="rounded bg-[var(--background)] px-2 py-0.5 text-[10px] text-[var(--muted)]">{block}</span>
                   ))}
                 </div>
                 {item.blocks.length > 2 && (
@@ -116,8 +116,8 @@ export function BriefsSection({
                   수정 파일: {item.sourceFiles.join(" · ")}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[var(--muted)]">
-                  <span className="rounded-full bg-white px-2 py-0.5">체크리스트 {item.checklist.length}개</span>
-                  <span className="rounded-full bg-white px-2 py-0.5">FAQ {item.faqQuestions.length}개</span>
+                  <span className="rounded-full bg-[var(--background)] px-2 py-0.5">체크리스트 {item.checklist.length}개</span>
+                  <span className="rounded-full bg-[var(--background)] px-2 py-0.5">FAQ {item.faqQuestions.length}개</span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-xs text-[var(--muted)]">CTA: {item.cta}</p>
                 <div className="mt-3 flex justify-end">

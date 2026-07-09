@@ -244,7 +244,7 @@ export default function BlogEditor({
             )}
             <div className="space-y-4">
               {form.blocks.map((block, idx) => (
-                <div key={idx} className="space-y-3 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
+                <div key={idx} className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-[var(--muted)]">블록 {idx + 1}</span>
                     <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ export default function BlogEditor({
                     key={type}
                     type="button"
                     onClick={() => addBlock(type)}
-                    className="rounded-xl border border-dashed border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   >
                     + {BLOCK_LABELS[type]}
                   </button>

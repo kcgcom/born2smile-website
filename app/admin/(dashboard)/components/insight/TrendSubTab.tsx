@@ -115,12 +115,12 @@ const PERIODS = [
 function TrendIcon({ trend }: { trend: "rising" | "falling" | "stable" }) {
   if (trend === "rising") return <TrendingUp className="h-4 w-4 text-green-600" aria-hidden="true" />;
   if (trend === "falling") return <TrendingDown className="h-4 w-4 text-red-600" aria-hidden="true" />;
-  return <Minus className="h-4 w-4 text-gray-400" aria-hidden="true" />;
+  return <Minus className="h-4 w-4 text-[var(--muted)]" aria-hidden="true" />;
 }
 
 function TrendText({ trend, changeRate }: { trend: "rising" | "falling" | "stable"; changeRate: number }) {
   const colorClass =
-    trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500";
+    trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-[var(--muted)]";
   const sign = changeRate > 0 ? "+" : "";
   return (
     <span className={`text-sm font-semibold tabular-nums ${colorClass}`}>
@@ -190,7 +190,7 @@ function CategoryCard({ cat, isSelected, onClick, onRetry }: CategoryCardProps) 
         <>
           <div className="mt-1 flex items-center gap-1">
             <TrendIcon trend={trend} />
-            <span className={`text-xs tabular-nums ${trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-gray-500"}`}>
+            <span className={`text-xs tabular-nums ${trend === "rising" ? "text-green-600" : trend === "falling" ? "text-red-600" : "text-[var(--muted)]"}`}>
               {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
             </span>
           </div>

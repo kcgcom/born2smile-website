@@ -35,18 +35,18 @@ export function RecommendedActionsSection({
           </div>
           <div className="space-y-3">
             {insightActions.slice(0, 5).map((item: InsightActionItem) => (
-              <div key={`${item.slug}-${item.subGroup}-${item.actionType}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <div key={`${item.slug}-${item.subGroup}-${item.actionType}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
                   <BusinessValueBadge value={item.businessValue} />
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                  <span className="rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
                     {ACTION_LABELS[item.actionType]}
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-[var(--foreground)]">{item.subGroup}</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{item.reason}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-slate-600">신뢰도 {item.confidence}</span>
+                  <span className="text-xs font-semibold text-[var(--muted)]">신뢰도 {item.confidence}</span>
                   <a href={item.targetPage} target="_blank" rel="noreferrer" className="text-xs font-medium text-[var(--color-primary)] hover:underline">
                     대상 페이지 열기
                   </a>
@@ -66,7 +66,7 @@ export function RecommendedActionsSection({
           </div>
           <div className="space-y-3">
             {pageOpportunities.slice(0, 5).map((item: PageUpdateOpportunityItem) => (
-              <div key={`${item.slug}-${item.subGroup}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <div key={`${item.slug}-${item.subGroup}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
                   <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-700">
@@ -100,7 +100,7 @@ export function RecommendedActionsSection({
           </div>
           <div className="space-y-3">
             {faqSuggestions.slice(0, 5).map((item: FaqSuggestionItem) => (
-              <div key={`${item.slug}-${item.subGroup}-${item.question}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <div key={`${item.slug}-${item.subGroup}-${item.question}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
                   <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
@@ -111,7 +111,7 @@ export function RecommendedActionsSection({
                 {item.keywords.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {item.keywords.map((keyword) => (
-                      <span key={keyword} className="rounded bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                      <span key={keyword} className="rounded bg-[var(--background)] px-2 py-0.5 text-[10px] text-[var(--muted)]">
                         {keyword}
                       </span>
                     ))}
