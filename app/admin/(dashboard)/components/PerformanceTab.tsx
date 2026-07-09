@@ -168,6 +168,7 @@ function ScoreGauge({
           {score ?? "—"}
         </text>
       </svg>
+      <span className="sr-only">점수: {score ?? "없음"}</span>
       <span className="text-xs text-[var(--muted)]">{label}</span>
     </div>
   );

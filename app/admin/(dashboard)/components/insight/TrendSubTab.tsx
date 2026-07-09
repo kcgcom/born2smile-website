@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Minus, X, AlertCircle } from "lucide-react";
@@ -328,15 +328,20 @@ export function TrendSubTab() {
     setSelectedCategory(null);
   };
 
+  useEffect(() => {
+    if (selectedCategory) {
+      requestAnimationFrame(() => {
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [selectedCategory]);
+
   const handleCategoryClick = (slug: KeywordCategorySlug) => {
     if (selectedCategory === slug) {
       setSelectedCategory(null);
       return;
     }
     setSelectedCategory(slug);
-    setTimeout(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
   };
 
   // Volume map for selected category drilldown

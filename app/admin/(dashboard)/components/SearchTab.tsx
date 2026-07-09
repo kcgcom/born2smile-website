@@ -78,13 +78,13 @@ export function SearchTab() {
         )}
         {data?.siteUrl && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            🔎 속성: {data.siteUrl}
+            <span aria-hidden="true">🔎</span> 속성: {data.siteUrl}
             {data.configuredSiteUrl !== data.siteUrl ? " (자동 전환)" : ""}
           </span>
         )}
         {data?.dataAsOf && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            ⓘ 데이터 기준: {data.dataAsOf} (2~3일 지연)
+            <span aria-hidden="true">ⓘ</span> 데이터 기준: {data.dataAsOf} (2~3일 지연)
           </span>
         )}
         <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">

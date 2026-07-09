@@ -23,8 +23,8 @@ interface ConversionData {
 }
 
 export function GrowthOverviewPanel() {
-  const { data: searchData, loading: searchLoading } = useAdminApi<SearchConsoleData>("/api/admin/search-console?period=28d");
-  const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>("/api/admin/posthog/conversion?period=30d");
+  const { data: searchData, loading: searchLoading, error: searchError } = useAdminApi<SearchConsoleData>("/api/admin/search-console?period=28d");
+  const { data: conversionData, loading: conversionLoading, error: conversionError } = useAdminApi<ConversionData>("/api/admin/posthog/conversion?period=30d");
 
   return (
     <div className="space-y-6">
@@ -49,6 +49,13 @@ export function GrowthOverviewPanel() {
           </div>
         </div>
       </AdminSurface>
+
+      {(searchError || conversionError) && (
+        <div className="flex flex-wrap gap-3 text-xs text-[var(--muted)]">
+          {searchError && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--background)] px-2.5 py-1 text-red-500">검색 성과 데이터 로드 실패</span>}
+          {conversionError && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--background)] px-2.5 py-1 text-red-500">전환 데이터 로드 실패</span>}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-6">
         <MetricCard

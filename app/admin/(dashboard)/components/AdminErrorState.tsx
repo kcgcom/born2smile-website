@@ -12,7 +12,7 @@ export function AdminErrorState({ message, onRetry }: AdminErrorStateProps) {
   return (
     <AdminSurface
       tone="white"
-      className="flex flex-col items-center gap-3 rounded-2xl border-red-100 bg-[linear-gradient(180deg,#fff7f7_0%,#ffffff_100%)] px-6 py-10 text-center"
+      className="flex flex-col items-center gap-3 rounded-2xl border-red-200 bg-red-50/40 px-6 py-10 text-center"
       role="alert"
     >
       <AlertCircle className="h-8 w-8 text-red-400" aria-hidden="true" />

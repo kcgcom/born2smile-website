@@ -33,18 +33,6 @@ export interface ContentGapItem {
   searchIntent?: SearchIntent;
 }
 
-export interface TopicSuggestionItem {
-  rank: number;
-  category: KeywordCategorySlug;
-  slug: KeywordCategorySlug;
-  suggestedTitle: string;
-  reasoning: string;
-  keywords: string[];
-  trend: "rising" | "falling" | "stable";
-  gapScore: number;
-  priority: "high" | "medium" | "low";
-}
-
 export interface InsightActionItem {
   slug: KeywordCategorySlug;
   subGroup: string;
@@ -120,28 +108,6 @@ export interface TrendSummaryData {
   contentGap: ContentGapItem[];
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
-}
-
-export interface TrendInsightsData {
-  mode: "volume" | "full";
-  period: { start: string; end: string } | null;
-  segmentInsights: Array<{
-    category: KeywordCategorySlug;
-    slug: KeywordCategorySlug;
-    subGroup: string;
-    device: { label: "모바일" | "PC"; momentumScore: number; changeRate: number };
-    gender: { label: "여성" | "남성"; momentumScore: number; changeRate: number };
-    age: { label: string; momentumScore: number; changeRate: number };
-    note: string;
-  }>;
-  seasonalityInsights: Array<{
-    category: KeywordCategorySlug;
-    slug: KeywordCategorySlug;
-    peakMonths: string[];
-    lowMonths: string[];
-    confidence: "high" | "medium" | "low";
-    note: string;
-  }>;
 }
 
 export interface StrategyOverviewData {

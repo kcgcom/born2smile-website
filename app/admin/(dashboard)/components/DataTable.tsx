@@ -75,14 +75,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   key={col.key}
                   className={`px-3 py-2 font-medium text-[var(--muted)] ${alignClass} ${
                     stickyHeader ? "sticky top-0 z-10 bg-[var(--background)]/95 backdrop-blur" : ""
-                  } ${
-                    col.sortable && onSort
-                      ? "cursor-pointer select-none hover:text-[var(--foreground)]"
-                      : ""
                   } ${col.className ?? ""}`}
-                  onClick={
-                    col.sortable && onSort ? () => onSort(col.key) : undefined
-                  }
                   aria-sort={
                     isSorted
                       ? direction === "asc"
@@ -91,12 +84,20 @@ export function DataTable<T extends Record<string, unknown>>({
                       : undefined
                   }
                 >
-                  <span className="inline-flex items-center">
-                    {col.label}
-                    {col.sortable && onSort && (
+                  {col.sortable && onSort ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort(col.key)}
+                      className="inline-flex cursor-pointer select-none items-center bg-transparent border-0 p-0 font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
+                    >
+                      {col.label}
                       <SortIcon direction={direction} />
-                    )}
-                  </span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center">
+                      {col.label}
+                    </span>
+                  )}
                 </th>
               );
             })}

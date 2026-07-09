@@ -71,7 +71,7 @@ export function TrafficTab() {
         )}
         {td.data?.dataAsOf && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            ⓘ 데이터 기준: {td.data.dataAsOf} (어제 기준)
+            <span aria-hidden="true">ⓘ</span> 데이터 기준: {td.data.dataAsOf} (어제 기준)
           </span>
         )}
         <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
@@ -79,11 +79,13 @@ export function TrafficTab() {
         </span>
       </div>
 
-      <div className="flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
+      <div role="tablist" className="flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
         {TRAFFIC_VIEWS.map((item) => (
           <button
             key={item.value}
             type="button"
+            role="tab"
+            aria-selected={view === item.value}
             onClick={() => {
               setView(item.value);
               setSelectedSource(null);

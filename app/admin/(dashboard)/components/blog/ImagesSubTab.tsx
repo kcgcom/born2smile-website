@@ -8,6 +8,7 @@ import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLo
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface ImageItem {
   path: string;
@@ -148,11 +149,12 @@ export function ImagesSubTab() {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") goToPrev();
       else if (e.key === "ArrowRight") goToNext();
-      else if (e.key === "Escape") setPreviewImage(null);
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [previewImage, goToPrev, goToNext]);
+
+  const modalRef = useModalA11y(() => setPreviewImage(null));
 
   const filterOptions: { value: ImageFilter; label: string; count: number }[] = [
     { value: "all", label: "전체", count: images.length },
@@ -337,6 +339,7 @@ export function ImagesSubTab() {
           onClick={() => setPreviewImage(null)}
         >
           <div
+            ref={modalRef}
             className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >

@@ -5,8 +5,9 @@ import { ChevronRight, NotebookPen, Wrench } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
-import { CategoryBadge } from "./shared";
+import { CategoryBadge, SearchIntentBadge } from "./shared";
 import type { BlogBriefItem, PageBriefItem } from "./shared";
+import type { SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 
 const SLICE = 4;
 
@@ -54,7 +55,7 @@ export function BriefsSection({
                     {item.targetReader}
                   </span>
                   </div>
-                  {item.searchIntent && <span className="text-[11px] text-[var(--muted)]">{item.searchIntent}</span>}
+                  {item.searchIntent && <SearchIntentBadge intent={item.searchIntent as SearchIntent} />}
                 </div>
                 <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{item.suggestedTitle}</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">타깃 키워드: {item.targetKeyword}</p>

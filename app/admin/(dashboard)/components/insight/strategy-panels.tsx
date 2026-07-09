@@ -176,6 +176,7 @@ export function PageBriefPanel({
     } catch {
       setNotice("클립보드 복사에 실패했습니다. 직접 선택해 복사해 주세요.");
     }
+    setTimeout(() => setNotice(null), 2500);
   };
 
   return (
