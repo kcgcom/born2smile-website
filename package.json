@@ -13,6 +13,7 @@
     "lint": "eslint",
     "deploy": "vercel --prod",
     "review-status": "tsx scripts/review-status.ts",
+    "revalidate-blog": "node scripts/revalidate-blog-post.mjs",
     "submit-indexnow": "node scripts/submit-indexnow.mjs",
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all",
     "test:e2e": "playwright test",
