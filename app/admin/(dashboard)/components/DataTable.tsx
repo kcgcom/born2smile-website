@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Table } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 
 interface Column<T> {
@@ -48,20 +49,7 @@ export function DataTable<T extends Record<string, unknown>>({
   if (rows.length === 0) {
     return (
       <AdminSurface tone="white" className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 px-4 py-10 text-center">
-        <svg
-          className="h-8 w-8 text-[var(--border)]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
-          />
-        </svg>
+        <Table className="h-8 w-8 text-[var(--border)]" aria-hidden="true" />
         <span className="text-sm text-[var(--muted)]">{emptyMessage}</span>
       </AdminSurface>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, AlertTriangle, Circle, ChevronDown, X } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import {
   IMPROVEMENT_ITEMS,
@@ -66,26 +67,20 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
   if (status === "done") {
     return (
       <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
+        <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
       </span>
     );
   }
   if (status === "owner-decision") {
     return (
       <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
-        </svg>
+        <AlertTriangle className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
       </span>
     );
   }
   return (
     <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-      <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 8 8">
-        <circle cx="4" cy="4" r="3" />
-      </svg>
+      <Circle className="h-2.5 w-2.5" fill="currentColor" aria-hidden="true" />
     </span>
   );
 }
@@ -150,24 +145,18 @@ function EnvHealthSection() {
           }`}
         >
           {hasMissing ? (
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
-            </svg>
+            <AlertTriangle className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           ) : (
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           )}
         </span>
         <span className="flex-1 text-left text-[var(--foreground)]">
           <strong>{envData.summary.configured}/{envData.summary.total}</strong> 설정됨
         </span>
-        <svg
+        <ChevronDown
           className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+          aria-hidden="true"
+        />
       </button>
 
       {/* 아코디언 상세 목록 — 서비스 그룹별 */}
@@ -207,13 +196,9 @@ function EnvHealthSection() {
                             : "bg-amber-100 text-amber-600"
                       }`}>
                         {v.configured ? (
-                          <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
+                          <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
                         ) : (
-                          <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <X className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
@@ -318,12 +303,10 @@ export function ProjectTab() {
                   <span className="w-12 text-right text-[var(--muted)]">
                     {bp.done}/{bp.total}
                   </span>
-                  <svg
+                  <ChevronDown
                     className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
+                    aria-hidden="true"
+                  />
                 </button>
                 {isExpanded && (
                   <ul className="mb-2 ml-1 mt-1 space-y-1.5 border-l-2 border-[var(--border)] pl-3">

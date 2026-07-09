@@ -1,5 +1,6 @@
 // Shared component used by ProjectTab and SettingsTab
 
+import { Check, Minus } from "lucide-react";
 import { AdminPill } from "@/components/admin/AdminChrome";
 
 export interface ConfigItem {
@@ -13,15 +14,11 @@ export function ConfigRow({ item }: { item: ConfigItem }) {
       <div className="flex items-center gap-2">
         {item.configured ? (
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="h-3 w-3" aria-hidden="true" strokeWidth={3} />
           </span>
         ) : (
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--muted-light)]">
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-            </svg>
+            <Minus className="h-3 w-3" aria-hidden="true" strokeWidth={3} />
           </span>
         )}
         <span className={item.configured ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>
