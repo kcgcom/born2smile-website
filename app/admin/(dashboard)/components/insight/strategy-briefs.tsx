@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronRight, NotebookPen, Wrench } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { CategoryBadge } from "./shared";
 import type { BlogBriefItem, PageBriefItem } from "./shared";
+
+const SLICE = 4;
 
 export function BriefsSection({
   blogBriefs,
@@ -18,7 +21,13 @@ export function BriefsSection({
   onStartBriefDraft: (brief: BlogBriefItem) => void;
   onOpenPageBriefWorkspace: (brief: PageBriefItem) => void;
 }) {
+  const [showAllBlog, setShowAllBlog] = useState(false);
+  const [showAllPage, setShowAllPage] = useState(false);
+
   if (blogBriefs.length === 0 && pageBriefs.length === 0) return null;
+
+  const visibleBlog = showAllBlog ? blogBriefs : blogBriefs.slice(0, SLICE);
+  const visiblePage = showAllPage ? pageBriefs : pageBriefs.slice(0, SLICE);
 
   return (
     <AdminDisclosureSection
@@ -36,7 +45,7 @@ export function BriefsSection({
             <h3 className="text-sm font-semibold text-[var(--foreground)]">블로그 초안 브리프</h3>
           </div>
           <div className="space-y-3">
-            {blogBriefs.slice(0, 4).map((item: BlogBriefItem) => (
+            {visibleBlog.map((item: BlogBriefItem) => (
               <div key={`${item.slug}-${item.subGroup}-brief`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -79,6 +88,14 @@ export function BriefsSection({
             {blogBriefs.length === 0 && (
               <p className="py-8 text-center text-sm text-[var(--muted)]">생성된 블로그 브리프가 없습니다.</p>
             )}
+            {blogBriefs.length > SLICE && (
+              <button
+                onClick={() => setShowAllBlog((v) => !v)}
+                className="mt-1 w-full text-center text-xs text-[var(--color-primary)] hover:underline"
+              >
+                {showAllBlog ? "접기" : `더 보기 (${blogBriefs.length - SLICE}건)`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -88,7 +105,7 @@ export function BriefsSection({
             <h3 className="text-sm font-semibold text-[var(--foreground)]">페이지 보강 브리프</h3>
           </div>
           <div className="space-y-3">
-            {pageBriefs.slice(0, 4).map((item: PageBriefItem) => (
+            {visiblePage.map((item: PageBriefItem) => (
               <div key={`${item.slug}-${item.subGroup}-page-brief`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
@@ -135,6 +152,14 @@ export function BriefsSection({
             ))}
             {pageBriefs.length === 0 && (
               <p className="py-8 text-center text-sm text-[var(--muted)]">생성된 페이지 브리프가 없습니다.</p>
+            )}
+            {pageBriefs.length > SLICE && (
+              <button
+                onClick={() => setShowAllPage((v) => !v)}
+                className="mt-1 w-full text-center text-xs text-[var(--color-primary)] hover:underline"
+              >
+                {showAllPage ? "접기" : `더 보기 (${pageBriefs.length - SLICE}건)`}
+              </button>
             )}
           </div>
         </div>

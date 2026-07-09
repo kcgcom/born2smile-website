@@ -32,7 +32,7 @@ export function StatCard({
       : "rounded-xl bg-[var(--background)] p-3 text-center";
 
   const interactive = onClick
-    ? "cursor-pointer transition-all hover:ring-2 hover:ring-[var(--color-primary)]/30"
+    ? "cursor-pointer transition-colors hover:ring-2 hover:ring-[var(--color-primary)]/30"
     : "";
 
   const activeRing = active
@@ -44,7 +44,7 @@ export function StatCard({
   return (
     <AdminSurface
       tone="white"
-      className={`${containerClass} ${variant === "compact" ? "border-[var(--border)] bg-white/80 shadow-none" : ""}`}
+      className={`${containerClass} ${variant === "compact" ? "border-[var(--border)] bg-[var(--background)]/80 shadow-none" : ""}`}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}

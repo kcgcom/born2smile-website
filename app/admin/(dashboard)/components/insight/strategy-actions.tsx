@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { FileQuestion, Sparkles, Wrench } from "lucide-react";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { BusinessValueBadge, CategoryBadge } from "./shared";
 import type { FaqSuggestionItem, InsightActionItem, PageUpdateOpportunityItem } from "./shared";
 import { ACTION_LABELS } from "./strategy-shared";
+
+const SLICE = 5;
 
 export function RecommendedActionsSection({
   insightActions,
@@ -15,8 +18,16 @@ export function RecommendedActionsSection({
   pageOpportunities: PageUpdateOpportunityItem[];
   faqSuggestions: FaqSuggestionItem[];
 }) {
+  const [showAllActions, setShowAllActions] = useState(false);
+  const [showAllPage, setShowAllPage] = useState(false);
+  const [showAllFaq, setShowAllFaq] = useState(false);
+
   const total = insightActions.length + pageOpportunities.length + faqSuggestions.length;
   if (total === 0) return null;
+
+  const visibleActions = showAllActions ? insightActions : insightActions.slice(0, SLICE);
+  const visiblePage = showAllPage ? pageOpportunities : pageOpportunities.slice(0, SLICE);
+  const visibleFaq = showAllFaq ? faqSuggestions : faqSuggestions.slice(0, SLICE);
 
   return (
     <AdminDisclosureSection
@@ -34,7 +45,7 @@ export function RecommendedActionsSection({
             <h3 className="text-sm font-semibold text-[var(--foreground)]">우선 실행 액션</h3>
           </div>
           <div className="space-y-3">
-            {insightActions.slice(0, 5).map((item: InsightActionItem) => (
+            {visibleActions.map((item: InsightActionItem) => (
               <div key={`${item.slug}-${item.subGroup}-${item.actionType}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
@@ -56,6 +67,14 @@ export function RecommendedActionsSection({
             {insightActions.length === 0 && (
               <p className="py-8 text-center text-sm text-[var(--muted)]">추천 액션이 없습니다.</p>
             )}
+            {insightActions.length > SLICE && (
+              <button
+                onClick={() => setShowAllActions((v) => !v)}
+                className="mt-1 w-full text-center text-xs text-[var(--color-primary)] hover:underline"
+              >
+                {showAllActions ? "접기" : `더 보기 (${insightActions.length - SLICE}건)`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -65,7 +84,7 @@ export function RecommendedActionsSection({
             <h3 className="text-sm font-semibold text-[var(--foreground)]">서비스 페이지 보강</h3>
           </div>
           <div className="space-y-3">
-            {pageOpportunities.slice(0, 5).map((item: PageUpdateOpportunityItem) => (
+            {visiblePage.map((item: PageUpdateOpportunityItem) => (
               <div key={`${item.slug}-${item.subGroup}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
@@ -90,6 +109,14 @@ export function RecommendedActionsSection({
             {pageOpportunities.length === 0 && (
               <p className="py-8 text-center text-sm text-[var(--muted)]">보강 후보가 없습니다.</p>
             )}
+            {pageOpportunities.length > SLICE && (
+              <button
+                onClick={() => setShowAllPage((v) => !v)}
+                className="mt-1 w-full text-center text-xs text-[var(--color-primary)] hover:underline"
+              >
+                {showAllPage ? "접기" : `더 보기 (${pageOpportunities.length - SLICE}건)`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -99,7 +126,7 @@ export function RecommendedActionsSection({
             <h3 className="text-sm font-semibold text-[var(--foreground)]">FAQ 추가 추천</h3>
           </div>
           <div className="space-y-3">
-            {faqSuggestions.slice(0, 5).map((item: FaqSuggestionItem) => (
+            {visibleFaq.map((item: FaqSuggestionItem) => (
               <div key={`${item.slug}-${item.subGroup}-${item.question}`} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={item.slug} />
@@ -126,6 +153,14 @@ export function RecommendedActionsSection({
             ))}
             {faqSuggestions.length === 0 && (
               <p className="py-8 text-center text-sm text-[var(--muted)]">FAQ 추천이 없습니다.</p>
+            )}
+            {faqSuggestions.length > SLICE && (
+              <button
+                onClick={() => setShowAllFaq((v) => !v)}
+                className="mt-1 w-full text-center text-xs text-[var(--color-primary)] hover:underline"
+              >
+                {showAllFaq ? "접기" : `더 보기 (${faqSuggestions.length - SLICE}건)`}
+              </button>
             )}
           </div>
         </div>

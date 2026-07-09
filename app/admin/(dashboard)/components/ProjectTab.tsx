@@ -42,6 +42,13 @@ interface EnvStatusData {
 // 우선순위 배지 (Admin 스타일 통일)
 // -------------------------------------------------------------
 
+const PRIORITY_LABELS: Record<string, string> = {
+  CRITICAL: "긴급",
+  HIGH: "높음",
+  MEDIUM: "보통",
+  LOW: "낮음",
+};
+
 function PriorityBadge({ priority }: { priority: string }) {
   const styles: Record<string, string> = {
     CRITICAL: "bg-red-100 text-red-700",
@@ -52,9 +59,9 @@ function PriorityBadge({ priority }: { priority: string }) {
 
   return (
     <span
-      className={`inline-block w-20 rounded px-2 py-0.5 text-center text-xs font-semibold ${styles[priority] ?? styles.LOW}`}
+      className={`inline-block w-14 rounded px-2 py-0.5 text-center text-xs font-semibold ${styles[priority] ?? styles.LOW}`}
     >
-      {priority}
+      {PRIORITY_LABELS[priority] ?? priority}
     </span>
   );
 }

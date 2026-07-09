@@ -35,14 +35,14 @@ export function MetricCard({
             <span className="text-[var(--muted)]">—</span>
           ) : change >= 0 ? (
             invertChange ? (
-              <span className="text-red-600">▼ {change}%</span>
+              <span className="text-red-600" aria-label={`${change}% 감소`}>▼ {change}%</span>
             ) : (
-              <span className="text-green-600">▲ {change}%</span>
+              <span className="text-green-600" aria-label={`${change}% 증가`}>▲ {change}%</span>
             )
           ) : invertChange ? (
-            <span className="text-green-600">▲ {Math.abs(change)}%</span>
+            <span className="text-green-600" aria-label={`${Math.abs(change)}% 증가`}>▲ {Math.abs(change)}%</span>
           ) : (
-            <span className="text-red-600">▼ {Math.abs(change)}%</span>
+            <span className="text-red-600" aria-label={`${Math.abs(change)}% 감소`}>▼ {Math.abs(change)}%</span>
           )}
         </p>
       )}
