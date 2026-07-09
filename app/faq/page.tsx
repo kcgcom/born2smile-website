@@ -66,10 +66,10 @@ export default function FaqPage() {
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
         <div className="mx-auto max-w-3xl px-4">
           <FadeIn>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               자주 묻는 질문
             </h1>
-            <p className="mt-3 text-lg text-gray-600">
+            <p className="mt-3 text-lg text-[var(--muted)]">
               진료 과목별로 궁금한 점을 확인하세요
             </p>
           </FadeIn>
@@ -83,11 +83,11 @@ export default function FaqPage() {
         const treatment = TREATMENTS.find((t) => t.id === id);
 
         return (
-          <section key={id} className="section-padding odd:bg-gray-50 even:bg-white">
+          <section key={id} className="section-padding odd:bg-[var(--background)] even:bg-[var(--surface)]">
             <div className="mx-auto max-w-3xl">
               <FadeIn>
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                  <h2 className="font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                     {detail.name}
                   </h2>
                   {treatment && (
@@ -104,16 +104,16 @@ export default function FaqPage() {
               <StaggerContainer className="space-y-4">
                 {detail.faq.map((item) => (
                   <StaggerItem key={item.q}>
-                    <details className="group rounded-2xl border border-gray-100 bg-white">
-                      <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-gray-900">
+                    <details className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+                      <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-[var(--foreground)]">
                         {item.q}
                         <ArrowRight
                           size={16}
                           aria-hidden="true"
-                          className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
+                          className="shrink-0 text-[var(--muted-light)] transition-transform group-open:rotate-90"
                         />
                       </summary>
-                      <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-700">
+                      <div className="border-t border-[var(--border)] px-5 py-4 text-base leading-relaxed text-[var(--foreground)]">
                         <p>{item.a}</p>
                         {item.link ? (
                           <Link

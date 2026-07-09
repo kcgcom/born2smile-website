@@ -20,7 +20,7 @@ export function ScrollIndicator({ href }: ScrollIndicatorProps) {
     <a
       href={href}
       aria-label="아래로 스크롤"
-      className={`scroll-indicator fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 -translate-x-1/2 text-gray-400 transition-opacity duration-300 hover:text-[var(--color-primary)] md:bottom-8 ${
+      className={`scroll-indicator fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 -translate-x-1/2 text-[var(--muted-light)] transition-opacity duration-300 hover:text-[var(--color-primary)] md:bottom-8 ${
         visible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >

@@ -34,10 +34,10 @@ export default function TreatmentsPage() {
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Treatments
             </p>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               진료 안내
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-gray-600">
+            <p className="mx-auto mt-4 max-w-xl text-[var(--muted)]">
               자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
             </p>
           </FadeIn>
@@ -45,17 +45,17 @@ export default function TreatmentsPage() {
       </section>
 
       {/* ───────────── 진료 철학 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <div className="container-narrow">
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Philosophy
               </p>
-              <h2 className="font-headline mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+              <h2 className="font-headline mb-6 text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                 진료 철학
               </h2>
-              <p className="text-lg leading-relaxed text-gray-600">
+              <p className="text-lg leading-relaxed text-[var(--muted)]">
                 치아는 한번 잃으면 다시 돌아오지 않습니다.
                 <br />
                 그래서 저희는 모든 치료의 시작을
@@ -85,7 +85,7 @@ export default function TreatmentsPage() {
               },
             ].map((item) => (
               <StaggerItem key={item.title}>
-                <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center transition-shadow hover:shadow-md">
+                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-8 text-center transition-shadow hover:shadow-md">
                   <div
                     className={`mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full ${
                       "gold" in item && item.gold
@@ -95,10 +95,10 @@ export default function TreatmentsPage() {
                   >
                     <item.icon size={26} aria-hidden="true" />
                   </div>
-                  <h3 className="mb-3 text-lg font-bold text-gray-900">
+                  <h3 className="mb-3 text-lg font-bold text-[var(--foreground)]">
                     {item.title}
                   </h3>
-                  <p className="text-base leading-relaxed text-gray-700">
+                  <p className="text-base leading-relaxed text-[var(--foreground)]">
                     {item.desc}
                   </p>
                 </div>
@@ -109,13 +109,13 @@ export default function TreatmentsPage() {
       </section>
 
       {/* ───────────── 진료 과목 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Treatments
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               진료 과목
             </h2>
           </FadeIn>
@@ -125,12 +125,12 @@ export default function TreatmentsPage() {
               <StaggerItem key={treatment.id}>
                 <Link
                   href={treatment.href}
-                  className="group block rounded-2xl border border-gray-100 bg-white p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
+                  className="group block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 transition-all hover:border-[var(--color-primary)] hover:shadow-lg"
                 >
-                  <h3 className="mb-2 text-2xl font-bold text-gray-900 group-hover:text-[var(--color-primary)]">
+                  <h3 className="mb-2 text-2xl font-bold text-[var(--foreground)] group-hover:text-[var(--color-primary)]">
                     {treatment.name}
                   </h3>
-                  <p className="mb-6 text-base leading-relaxed text-gray-700">
+                  <p className="mb-6 text-base leading-relaxed text-[var(--foreground)]">
                     {treatment.shortDesc}
                   </p>
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">

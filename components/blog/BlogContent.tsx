@@ -256,14 +256,14 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   );
 
   return (
-    <section className="section-padding bg-white">
+    <section className="section-padding bg-[var(--surface)]">
       <div className="container-narrow">
         {/* 검색 */}
         <div className="mx-auto mb-6 max-w-md">
           <div className="relative">
             <Search
               size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-light)]"
               aria-hidden="true"
             />
             <input
@@ -273,12 +273,12 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               onChange={handleSearchChange}
               placeholder="궁금한 키워드를 검색해보세요"
               aria-label="건강칼럼 검색"
-              className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[var(--color-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              className="w-full rounded-full border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-10 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] transition-colors focus:border-[var(--color-primary)] focus:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--muted-light)] hover:text-[var(--muted)] transition-colors"
                 aria-label="검색어 지우기"
               >
                 <X size={16} />
@@ -295,7 +295,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeCategory === "all" && !activeTag
                 ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
             }`}
           >
             전체
@@ -308,7 +308,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeCategory === cat && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
               }`}
             >
               {getCategoryLabel(cat)}
@@ -326,7 +326,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTag === tag
                   ? "bg-[var(--color-gold)] text-white"
-                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)] hover:text-[var(--foreground)]"
               }`}
             >
               <Tag size={12} />
@@ -337,7 +337,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
         {/* 포스트 그리드 */}
         <div aria-live="polite" aria-atomic="false">
-          <p className="mb-4 text-center text-sm text-gray-500">
+          <p className="mb-4 text-center text-sm text-[var(--muted)]">
             {filteredPosts.length > 0
               ? `${filteredPosts.length}개의 글`
               : null}
@@ -348,30 +348,30 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               const isLikeDisabled = likingSlug === post.slug || coolingSlugs.has(post.slug);
               return (
               <div key={post.slug}>
-                <article className="group relative flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:bg-white hover:shadow-lg md:p-8">
+                <article className="group relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)] hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 읽기 시간 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[categorySlug] ?? "bg-gray-100 text-gray-600"}`}
+                      className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[categorySlug] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
                     >
                       {getCategoryLabel(categorySlug)}
                     </span>
-                    <span className="flex items-center gap-1 text-sm text-gray-400">
+                    <span className="flex items-center gap-1 text-sm text-[var(--muted-light)]">
                       <Clock size={14} />
                       {post.readTime}
                     </span>
                   </div>
 
                   {/* 제목 + 부제 */}
-                  <h2 className="mb-1 text-lg font-bold leading-snug text-gray-900 group-hover:text-[var(--color-primary)]">
+                  <h2 className="mb-1 text-lg font-bold leading-snug text-[var(--foreground)] group-hover:text-[var(--color-primary)]">
                     <Link href={getBlogPostUrl(post.slug, post.category)} className="relative z-10">
                       {post.title}
                     </Link>
                   </h2>
-                  <p className="mb-3 text-sm font-medium text-gray-600">
+                  <p className="mb-3 text-sm font-medium text-[var(--muted)]">
                     {post.subtitle}
                   </p>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-3">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-[var(--foreground)] line-clamp-3">
                     {post.excerpt}
                   </p>
 
@@ -385,7 +385,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                           className={`relative z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
                             activeTag === tag
                               ? "bg-[var(--color-gold)] text-white"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
                           }`}
                         >
                           <Tag size={12} />
@@ -396,7 +396,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   )}
 
                   {/* 하단: 자세히 읽기 + 좋아요 + 공유 */}
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
                     <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
                       <ArrowRight size={14} />
@@ -409,7 +409,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                           className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
                             localLiked.has(post.slug)
                               ? "text-rose-500 hover:bg-rose-50"
-                              : "text-gray-400 hover:bg-gray-100 hover:text-rose-400"
+                              : "text-[var(--muted-light)] hover:bg-[var(--background)] hover:text-rose-400"
                           } ${isLikeDisabled ? "opacity-50" : ""}`}
                           aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
                         >
@@ -419,7 +419,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                       )}
                     <button
                       onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
-                      className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                      className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                       aria-label={`"${post.title}" 공유하기`}
                     >
                       {copiedSlug === post.slug ? (
@@ -452,7 +452,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         </div>
 
         {filteredPosts.length === 0 && (
-          <p className="py-20 text-center text-gray-500" role="status">
+          <p className="py-20 text-center text-[var(--muted)]" role="status">
             {searchQuery.trim()
               ? `"${searchQuery.trim()}"에 대한 검색 결과가 없습니다.`
               : "해당 조건의 글이 아직 없습니다."}
@@ -462,11 +462,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         {/* 무한 스크롤 감지 센티넬 + 로딩 표시 */}
         {hasMore && (
           <div ref={sentinelRef} className="flex items-center justify-center py-8" role="status" aria-label="추가 글 로딩 중">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--color-primary)]" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--color-primary)]" />
           </div>
         )}
         {!hasMore && filteredPosts.length > 0 && (
-          <p className="mt-8 text-center text-sm text-gray-500">
+          <p className="mt-8 text-center text-sm text-[var(--muted)]">
             모든 글을 확인했습니다
           </p>
         )}

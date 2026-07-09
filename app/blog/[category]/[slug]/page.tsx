@@ -295,7 +295,7 @@ export default async function BlogPostPage({
             <FadeIn>
               <Link
                 href={`/blog/${post.category}`}
-                className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
+                className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={14} />
                 {categoryLabel} 목록
@@ -304,29 +304,29 @@ export default async function BlogPostPage({
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Link
                   href={`/blog/${post.category}`}
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category as keyof typeof categoryColors] ?? "bg-gray-100 text-gray-600"}`}
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
                 >
                   {categoryLabel}
                 </Link>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[var(--muted)]">
                   {formatDate(post.date)}
                 </span>
-                <span className="flex items-center gap-1 text-sm text-gray-500">
+                <span className="flex items-center gap-1 text-sm text-[var(--muted)]">
                   <Clock size={13} />
                   {post.readTime ?? "1분"} 읽기
                 </span>
               </div>
 
-              <h1 className="font-headline text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
+              <h1 className="font-headline text-3xl font-bold leading-tight text-[var(--foreground)] sm:text-4xl md:text-5xl">
                 {post.title}
               </h1>
-              <p className="blog-post-excerpt mt-3 text-lg text-gray-600 md:text-xl">
+              <p className="blog-post-excerpt mt-3 text-lg text-[var(--muted)] md:text-xl">
                 {post.subtitle}
               </p>
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-[var(--muted)]">
                 <Link
                   href="/about"
-                  className="font-medium text-gray-700 hover:text-[var(--color-primary)]"
+                  className="font-medium text-[var(--foreground)] hover:text-[var(--color-primary)]"
                 >
                   {CLINIC.name} 원장 {DOCTORS[0].name}
                 </Link>
@@ -334,13 +334,13 @@ export default async function BlogPostPage({
                 {DOCTORS[0].position}
               </p>
 
-              <div className="mt-8 hidden rounded-3xl border border-blue-100 bg-white/85 p-5 shadow-sm backdrop-blur md:block">
+              <div className="mt-8 hidden rounded-3xl border border-blue-100 bg-[var(--surface)]/85 p-5 shadow-sm backdrop-blur md:block">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-primary)]">
                       이 글이 도움이 되셨다면 반응을 남겨주세요
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       공감이나 공유는 더 많은 분들이 필요한 정보를 찾는 데 도움이 됩니다.
                     </p>
                   </div>
@@ -355,7 +355,7 @@ export default async function BlogPostPage({
         </header>
 
         {/* 본문 */}
-        <section className="bg-white px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
+        <section className="bg-[var(--surface)] px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
           <div className="mx-auto max-w-3xl">
             {headings.length >= 3 && (
               <FadeIn>
@@ -376,19 +376,19 @@ export default async function BlogPostPage({
               />
             </div>
             <FadeIn className="mt-10">
-              <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6">
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-6">
                 <p className="text-xs font-semibold tracking-[0.16em] text-[var(--color-gold-text)] uppercase">
                   Author
                 </p>
                 <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-lg font-bold text-[var(--foreground)]">
                       {DOCTORS[0].name}
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       {DOCTORS[0].position}
                     </p>
-                    <p className="mt-3 text-sm leading-relaxed text-gray-700">
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--foreground)]">
                       김포시 장기동에 위치한 서울본치과의 원장입니다. 마케팅 목적의 자극적인
                       정보보다 의학적 근거에 기반한 내용을 편안하고 간결하게 전달드리려
                       노력하고 있습니다. 지역 환자분들은 치료 여부와 관계없이 언제든지
@@ -407,7 +407,7 @@ export default async function BlogPostPage({
                   {AUTHOR_HIGHLIGHTS.map((item) => (
                     <span
                       key={item}
-                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200"
+                      className="rounded-full bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
                     >
                       {item}
                     </span>
@@ -416,7 +416,7 @@ export default async function BlogPostPage({
               </div>
             </FadeIn>
             <FadeIn className="mt-10">
-              <p className="border-t border-gray-100 pt-6 text-xs text-gray-400">
+              <p className="border-t border-[var(--border)] pt-6 text-xs text-[var(--muted-light)]">
                 이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.
               </p>
             </FadeIn>
@@ -427,7 +427,7 @@ export default async function BlogPostPage({
 
       {/* 관련 진료 배너 */}
       {relatedTreatment && (
-        <section className="bg-white px-4 py-4">
+        <section className="bg-[var(--surface)] px-4 py-4">
           <FadeIn className="mx-auto max-w-3xl">
             <Link
               href={relatedTreatment.href}
@@ -437,10 +437,10 @@ export default async function BlogPostPage({
                 <span className="mb-1 block text-sm font-medium text-[var(--color-gold-text)]">
                   관련 진료
                 </span>
-                <span className="text-base font-bold text-gray-900">
+                <span className="text-base font-bold text-[var(--foreground)]">
                   {relatedTreatment.name}
                 </span>
-                <span className="ml-2 text-sm text-gray-500">
+                <span className="ml-2 text-sm text-[var(--muted)]">
                   {relatedTreatment.shortDesc}
                 </span>
               </div>
@@ -453,15 +453,15 @@ export default async function BlogPostPage({
       )}
 
       {/* 좋아요 + 공유 + 목록 돌아가기 */}
-      <section className="bg-white px-4 pt-6 pb-12">
-        <div className="mx-auto max-w-3xl border-t border-gray-100 pt-8">
+      <section className="bg-[var(--surface)] px-4 pt-6 pb-12">
+        <div className="mx-auto max-w-3xl border-t border-[var(--border)] pt-8">
           <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-rose-50/50 p-5 shadow-sm">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-base font-bold text-gray-900">
+                <p className="text-base font-bold text-[var(--foreground)]">
                   도움이 되셨다면 공감 또는 공유를 남겨주세요
                 </p>
-                <p className="mt-1 text-sm leading-relaxed text-gray-600">
+                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
                   반응이 쌓일수록 다른 환자분들도 필요한 건강 정보를 더 쉽게 발견할 수 있습니다.
                 </p>
               </div>
@@ -473,7 +473,7 @@ export default async function BlogPostPage({
             <div className="mt-5 border-t border-white/70 pt-4">
               <Link
                 href={`/blog/${post.category}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-[var(--color-primary)]"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={16} />
                 {categoryLabel} 목록으로
@@ -485,10 +485,10 @@ export default async function BlogPostPage({
 
       {/* 관련 포스트 */}
       {!hasManualRelatedLinks && relatedPosts.length > 0 && (
-        <section className="section-padding bg-gray-50">
+        <section className="section-padding bg-[var(--background)]">
           <div className="container-narrow">
             <FadeIn>
-              <h2 className="font-headline mb-8 text-center text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="font-headline mb-8 text-center text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                 관련 글
               </h2>
             </FadeIn>
@@ -496,22 +496,22 @@ export default async function BlogPostPage({
               {relatedPosts.map((rp) => (
                 <StaggerItem key={rp.slug}>
                   <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
-                    <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-all hover:border-gray-200 hover:shadow-lg">
+                    <article className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 transition-all hover:border-[var(--border)] hover:shadow-lg">
                       <span
-                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
                       >
                         {getCategoryLabel(rp.category)}
                       </span>
-                      <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
+                      <h3 className="mb-1 text-base font-bold leading-snug text-[var(--foreground)]">
                         {rp.title}
                       </h3>
-                      <p className="mb-2 text-sm text-gray-500">
+                      <p className="mb-2 text-sm text-[var(--muted)]">
                         {rp.subtitle}
                       </p>
-                      <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 line-clamp-2">
+                      <p className="mb-4 flex-1 text-sm leading-relaxed text-[var(--foreground)] line-clamp-2">
                         {rp.excerpt}
                       </p>
-                      <div className="flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
+                      <div className="flex items-center gap-3 border-t border-[var(--border)] pt-3 text-sm text-[var(--muted)]">
                         <span>{formatDate(rp.date)}</span>
                         <span className="flex items-center gap-1">
                           <Clock size={14} />
@@ -537,13 +537,13 @@ export default async function BlogPostPage({
 
       <AdminDraftBar slug={slug} />
 
-      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-blue-100 bg-white/98 px-3 py-2.5 shadow-[0_-10px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-blue-100 bg-[var(--surface)]/98 px-3 py-2.5 shadow-[0_-10px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold leading-snug text-gray-900">
+            <p className="text-xs font-semibold leading-snug text-[var(--foreground)]">
               도움이 됐다면
             </p>
-            <p className="mt-0.5 text-[11px] leading-snug text-gray-500">
+            <p className="mt-0.5 text-[11px] leading-snug text-[var(--muted)]">
               공감과 공유로 알려주세요
             </p>
           </div>

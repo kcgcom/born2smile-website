@@ -94,17 +94,17 @@ export default function Home() {
       />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-white pb-16 md:pb-0">
+        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pb-16 md:pb-0">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
             </p>
-            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-gray-900 md:text-5xl lg:text-6xl">
+            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-[var(--foreground)] md:text-5xl lg:text-6xl">
               꼭! 필요한 치료만
               <br />
               오래오래 편안하게
             </h1>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-[var(--muted)] md:text-xl">
               서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
               <br className="hidden sm:inline" />
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
@@ -140,13 +140,13 @@ export default function Home() {
       </section>
 
       {/* ───────────── 인사말 (편지 스타일) ───────────── */}
-      <section id="greeting" className="section-padding bg-white">
+      <section id="greeting" className="section-padding bg-[var(--surface)]">
         <div className="mx-auto max-w-2xl">
           <FadeIn>
             <p className="mb-2 text-center text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Greeting
             </p>
-            <h2 className="mb-6 text-center font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="mb-6 text-center font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               인사말
             </h2>
           </FadeIn>
@@ -157,7 +157,7 @@ export default function Home() {
 
               <div className="px-6 py-10 sm:px-10 md:px-14 md:py-14">
                 {/* 본문 */}
-                <div className="font-greeting font-bold space-y-5 text-lg leading-[1.9] text-gray-700 md:text-xl md:leading-[2]">
+                <div className="font-greeting font-bold space-y-5 text-lg leading-[1.9] text-[var(--foreground)] md:text-xl md:leading-[2]">
                   <p>안녕하세요, {CLINIC.name}입니다.</p>
                   <p>
                     치과가 편한 곳이 되면 좋겠습니다. 오래 미뤄두었던 치료도
@@ -188,10 +188,10 @@ export default function Home() {
                 {/* 서명 */}
                 <div className="mt-10 text-right">
                   <div className="inline-block text-right">
-                    <p className="font-greeting font-bold text-base text-gray-600 md:text-lg">
+                    <p className="font-greeting font-bold text-base text-[var(--muted)] md:text-lg">
                       {CLINIC.name}
                     </p>
-                    <p className="font-greeting mt-1 text-lg font-bold text-gray-800 md:text-xl">
+                    <p className="font-greeting mt-1 text-lg font-bold text-[var(--foreground)] md:text-xl">
                       원장 {DOCTORS[0].name} 드림
                     </p>
                   </div>
@@ -206,13 +206,13 @@ export default function Home() {
       </section>
 
       {/* ───────────── 6가지 약속 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Our Promise
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               {CLINIC.name}의 6가지 약속
             </h2>
           </FadeIn>
@@ -251,14 +251,14 @@ export default function Home() {
               },
             ].map((item) => (
               <StaggerItem key={item.num}>
-                <div className="relative flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-7 transition-shadow hover:shadow-md">
+                <div className="relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-7 transition-shadow hover:shadow-md">
                   <span className="absolute top-5 right-5 font-headline text-3xl font-bold text-[var(--color-gold)]/25">
                     {item.num}
                   </span>
-                  <h3 className="mb-2 text-lg font-bold text-gray-900">
+                  <h3 className="mb-2 text-lg font-bold text-[var(--foreground)]">
                     {item.title}
                   </h3>
-                  <p className="text-base leading-relaxed text-gray-700">
+                  <p className="text-base leading-relaxed text-[var(--foreground)]">
                     {item.desc}
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export default function Home() {
       </section>
 
       {/* ───────────── 면허 치과위생사 신뢰 배너 ───────────── */}
-      <section className="bg-white px-4 py-12 md:py-16">
+      <section className="bg-[var(--surface)] px-4 py-12 md:py-16">
         <FadeIn>
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 rounded-2xl border border-[var(--color-gold)]/20 bg-gradient-to-br from-[var(--color-gold)]/5 to-[var(--color-primary)]/5 px-6 py-8 text-center md:flex-row md:gap-6 md:px-10 md:text-left">
             <ShieldCheck
@@ -277,10 +277,10 @@ export default function Home() {
               className="shrink-0 text-[var(--color-gold)]"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-lg font-bold text-[var(--foreground)]">
                 {STAFF.credential} 전원 보유
               </h3>
-              <p className="mt-1 text-base leading-relaxed text-gray-700">
+              <p className="mt-1 text-base leading-relaxed text-[var(--foreground)]">
                 {STAFF.summary}
               </p>
             </div>
@@ -297,16 +297,16 @@ export default function Home() {
 
       {/* ───────────── 환자분들의 이야기 ───────────── */}
       {REVIEWS.length > 0 && (
-        <section id="reviews" className="section-padding bg-white">
+        <section id="reviews" className="section-padding bg-[var(--surface)]">
           <div className="container-narrow">
             <FadeIn className="mb-12 text-center">
               <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Testimonials
               </p>
-              <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+              <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                 환자분들의 이야기
               </h2>
-              <p className="mt-4 text-gray-600">
+              <p className="mt-4 text-[var(--muted)]">
                 {CLINIC.name}에서 치료받으신 분들의 소중한 후기입니다.
               </p>
             </FadeIn>
@@ -314,27 +314,27 @@ export default function Home() {
             <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {REVIEWS.map((review, index) => (
                 <StaggerItem key={index}>
-                  <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-shadow hover:shadow-md">
+                  <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-shadow hover:shadow-md">
                     {/* 별점 */}
                     <div className="mb-3 flex items-center gap-1" role="img" aria-label={`5점 만점에 ${review.rating}점`}>
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
                           size={16}
-                          className={i < review.rating ? "fill-[var(--color-gold)] text-[var(--color-gold)]" : "text-gray-300"}
+                          className={i < review.rating ? "fill-[var(--color-gold)] text-[var(--color-gold)]" : "text-[var(--muted-light)]"}
                           aria-hidden="true"
                         />
                       ))}
                     </div>
 
                     {/* 후기 내용 */}
-                    <p className="mb-4 flex-1 text-base leading-relaxed text-gray-700">
+                    <p className="mb-4 flex-1 text-base leading-relaxed text-[var(--foreground)]">
                       &ldquo;{review.text}&rdquo;
                     </p>
 
                     {/* 하단: 이름 + 출처 */}
-                    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-                      <span className="text-sm font-medium text-gray-900">{review.name}</span>
+                    <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
+                      <span className="text-sm font-medium text-[var(--foreground)]">{review.name}</span>
                       {review.source === "naver" ? (
                         <span className="flex items-center gap-1 text-sm text-[#03C75A]">
                           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -363,10 +363,10 @@ export default function Home() {
             {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
               <FadeIn className="mt-12">
                 <div className="rounded-2xl bg-gradient-to-br from-[var(--color-gold)]/12 to-[var(--color-primary)]/10 border border-[var(--color-gold)]/20 px-6 py-8 text-center md:px-10 md:py-10">
-                  <h3 className="font-headline mb-2 text-xl font-bold text-gray-900 md:text-2xl">
+                  <h3 className="font-headline mb-2 text-xl font-bold text-[var(--foreground)] md:text-2xl">
                     치료에 만족하셨나요?
                   </h3>
-                  <p className="mb-6 text-base leading-relaxed text-gray-600">
+                  <p className="mb-6 text-base leading-relaxed text-[var(--muted)]">
                     소중한 후기가 다른 분들에게 큰 도움이 됩니다.
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-4">
@@ -420,7 +420,7 @@ export default function Home() {
             <p className="mb-3 text-sm font-medium tracking-[0.24em] text-[var(--color-gold-text)] uppercase">
               Who We Help
             </p>
-            <h2 className="font-headline text-3xl font-bold leading-tight text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold leading-tight text-[var(--foreground)] md:text-4xl">
               함께 고민하겠습니다.
             </h2>
           </FadeIn>
@@ -428,25 +428,25 @@ export default function Home() {
           <StaggerContainer className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2">
             {WHO_WE_SERVE.map((item) => (
               <StaggerItem key={item.title}>
-                <div className="group flex h-full flex-col rounded-[28px] border border-slate-200/80 bg-white p-7 shadow-[0_18px_50px_rgba(15,23,42,0.05)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(37,99,235,0.10)]">
+                <div className="group flex h-full flex-col rounded-[28px] border border-[var(--border)]/80 bg-[var(--surface)] p-7 shadow-[0_18px_50px_rgba(15,23,42,0.05)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(37,99,235,0.10)]">
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div className="flex min-h-12 flex-1 flex-col justify-between">
                       <span className="inline-flex w-fit rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-[var(--color-gold-text)]">
                         {item.label}
                       </span>
-                      <h3 className="mt-2 text-xl font-bold leading-snug text-gray-900">
+                      <h3 className="mt-2 text-xl font-bold leading-snug text-[var(--foreground)]">
                         {item.title}
                       </h3>
                     </div>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.10),rgba(201,150,43,0.14))] ring-1 ring-slate-200/70">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.10),rgba(201,150,43,0.14))] ring-1 ring-[var(--border)]/70">
                       <item.icon size={22} className="text-[var(--color-primary)]" aria-hidden="true" />
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col">
-                    <p className="text-[15px] leading-7 text-gray-600">
+                    <p className="text-[15px] leading-7 text-[var(--muted)]">
                       {item.desc}
                     </p>
-                    <div className="mt-5 border-t border-slate-100 pt-4 text-sm font-medium text-[var(--color-primary)]">
+                    <div className="mt-5 border-t border-[var(--border)] pt-4 text-sm font-medium text-[var(--color-primary)]">
                       {item.note}
                     </div>
                   </div>

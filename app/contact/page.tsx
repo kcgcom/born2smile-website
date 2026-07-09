@@ -19,25 +19,25 @@ export default async function ContactPage() {
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Contact
             </p>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               상담 안내
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-gray-600">
+            <p className="mx-auto mt-4 max-w-xl text-[var(--muted)]">
               전화로 편리하게 상담받으세요. 친절하게 안내해 드리겠습니다.
             </p>
           </FadeIn>
         </div>
       </section>
 
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-2">
             {/* 전화 상담 안내 */}
             <FadeIn direction="left" className="space-y-6">
-              <h2 className="font-headline mb-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--foreground)]">
                 전화 상담
               </h2>
-              <p className="text-gray-700">
+              <p className="text-[var(--foreground)]">
                 진료 예약 및 상담은 전화로 접수하고 있습니다.
                 <br />
                 궁금하신 점이 있으시면 언제든 연락주세요.
@@ -67,22 +67,22 @@ export default async function ContactPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="카카오톡 채널로 상담하기 (새 창)"
-                  className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#FEE500] p-6 text-gray-900 transition-colors hover:bg-[#FDD835]"
+                  className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[#FEE500] p-6 text-[var(--foreground)] transition-colors hover:bg-[#FDD835]"
                 >
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/60">
                     <MessageCircle
                       size={28}
                       aria-hidden="true"
-                      className="text-gray-900"
+                      className="text-[var(--foreground)]"
                     />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-700">카카오톡 상담</div>
+                    <div className="text-sm text-[var(--foreground)]">카카오톡 상담</div>
                     <div className="text-sm font-bold">채널 바로가기</div>
                   </div>
                 </TrackedAnchor>
               ) : (
-                <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-700">
+                <div className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 text-[var(--foreground)]">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-gold-bg)]">
                     <MessageCircle
                       size={28}
@@ -91,15 +91,15 @@ export default async function ContactPage() {
                     />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">카카오톡 상담</div>
+                    <div className="text-sm text-[var(--muted)]">카카오톡 상담</div>
                     <div className="text-sm font-medium">채널 준비 중</div>
                   </div>
                 </div>
               )}
 
               {/* 진료시간 */}
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--foreground)]">
                   <Clock
                     size={18}
                     aria-hidden="true"
@@ -111,7 +111,7 @@ export default async function ContactPage() {
                   {hours.schedule.map((item) => (
                     <li
                       key={item.day}
-                      className="flex justify-between text-gray-700"
+                      className="flex justify-between text-[var(--foreground)]"
                     >
                       <span>
                         {item.day}
@@ -122,30 +122,30 @@ export default async function ContactPage() {
                         )}
                       </span>
                       <span
-                        className={item.open ? "font-medium text-gray-900" : "text-gray-500"}
+                        className={item.open ? "font-medium text-[var(--foreground)]" : "text-[var(--muted)]"}
                       >
                         {item.time}
                       </span>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 text-sm text-gray-500">
+                <p className="mt-3 text-sm text-[var(--muted)]">
                   점심시간: {hours.lunchTime} | {hours.closedDays}
                 </p>
                 {hours.notice && (
-                  <p className="mt-1 text-sm text-gray-500">{hours.notice}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{hours.notice}</p>
                 )}
                 {hours.exceptions.length > 0 && (
-                  <div className="mt-3 border-t border-gray-200 pt-3">
-                    <p className="text-sm font-medium text-gray-700">운영 예외 / 날짜별 공지</p>
-                    <ul className="mt-2 space-y-1.5 text-sm text-gray-600">
+                  <div className="mt-3 border-t border-[var(--border)] pt-3">
+                    <p className="text-sm font-medium text-[var(--foreground)]">운영 예외 / 날짜별 공지</p>
+                    <ul className="mt-2 space-y-1.5 text-sm text-[var(--muted)]">
                       {hours.exceptions.map((exception, index) => (
                         <li key={`${exception.date}-${index}`}>
-                          <span className="font-medium text-gray-800">{exception.date}</span>
+                          <span className="font-medium text-[var(--foreground)]">{exception.date}</span>
                           <span className="ml-2">
                             {exception.time || (exception.open ? "운영시간 미설정" : "휴진")}
                           </span>
-                          {exception.note ? <span className="ml-2 text-gray-500">· {exception.note}</span> : null}
+                          {exception.note ? <span className="ml-2 text-[var(--muted)]">· {exception.note}</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -156,7 +156,7 @@ export default async function ContactPage() {
 
             {/* 오시는 길 + 지도 */}
             <FadeIn direction="right" delay={0.2} className="space-y-6">
-              <h2 className="font-headline mb-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--foreground)]">
                 <MapPin
                   size={22}
                   aria-hidden="true"
@@ -165,9 +165,9 @@ export default async function ContactPage() {
                 오시는 길
               </h2>
               <KakaoMap className="aspect-square md:aspect-[4/3]" />
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-                <p className="font-medium text-gray-900">{clinic.name}</p>
-                <p className="mt-1 text-sm text-gray-600">{clinic.address}</p>
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6">
+                <p className="font-medium text-[var(--foreground)]">{clinic.name}</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">{clinic.address}</p>
                 <TrackedAnchor
                   href={clinic.phoneHref}
                   event="contact_phone_click"

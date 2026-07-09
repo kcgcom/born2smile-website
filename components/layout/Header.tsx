@@ -95,7 +95,7 @@ export function Header() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "bg-white/95 shadow-sm backdrop-blur-sm border-b border-[var(--color-gold-light)]/30"
+            ? "bg-[var(--surface)]/95 shadow-sm backdrop-blur-sm border-b border-[var(--color-gold-light)]/30"
             : "bg-transparent"
         }`}
       >
@@ -130,7 +130,7 @@ export function Header() {
                   className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] md:text-base ${
                     isActive
                       ? "text-[var(--color-primary)]"
-                      : "text-gray-700"
+                      : "text-[var(--foreground)]"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => handleNavClick(item.href)}
@@ -180,7 +180,7 @@ export function Header() {
           <div
             id="mobile-menu"
             ref={menuRef}
-            className="border-t border-gray-100 bg-white md:hidden"
+            className="border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
           >
             <nav className="flex flex-col px-4 py-4" aria-label="모바일 메뉴">
               {NAV_ITEMS.map((item) => {
@@ -192,10 +192,10 @@ export function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex min-h-[44px] items-center border-b border-gray-50 text-base font-medium ${
+                    className={`flex min-h-[44px] items-center border-b border-[var(--background)] text-base font-medium ${
                       isActive
                         ? "text-[var(--color-primary)]"
-                        : "text-gray-700"
+                        : "text-[var(--foreground)]"
                     }`}
                     aria-current={isActive ? "page" : undefined}
                     onClick={() => {
@@ -220,7 +220,7 @@ export function Header() {
               {isAdmin && (
                 <Link
                   href={adminHref}
-                  className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-slate-900 px-5 py-3 text-base font-medium text-white"
+                  className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-slate-900 px-5 py-3 text-base font-medium text-white"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <Settings size={18} aria-hidden="true" />

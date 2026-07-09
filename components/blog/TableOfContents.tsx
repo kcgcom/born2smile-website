@@ -62,13 +62,13 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
         aria-expanded={isOpen}
         aria-controls="toc-list"
       >
-        <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <span className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
           <List size={16} className="text-[var(--color-primary)]" />
           목차
         </span>
         <ChevronDown
           size={16}
-          className={`text-gray-400 transition-transform md:hidden ${isOpen ? "rotate-180" : ""}`}
+          className={`text-[var(--muted-light)] transition-transform md:hidden ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -85,7 +85,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
                   className={`block border-l-2 py-1.5 pl-3 text-sm transition-colors ${
                     isActive
                       ? "border-[var(--color-primary)] font-medium text-[var(--color-primary)]"
-                      : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900"
+                      : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:text-[var(--foreground)]"
                   }`}
                 >
                   {heading}

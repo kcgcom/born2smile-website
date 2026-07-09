@@ -153,23 +153,23 @@ export default async function TreatmentDetailPage({
           <FadeIn>
             <Link
               href="/treatments"
-              className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[var(--color-primary)]"
+              className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
             >
               <ArrowLeft size={14} aria-hidden="true" />
               진료 안내
             </Link>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               {detail.name}
             </h1>
-            <p className="mt-3 text-lg text-gray-600">{detail.subtitle}</p>
+            <p className="mt-3 text-lg text-[var(--muted)]">{detail.subtitle}</p>
           </FadeIn>
         </div>
       </section>
 
       {/* 설명 */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <FadeIn className="mx-auto max-w-3xl">
-          <p className="text-lg leading-relaxed text-gray-700">
+          <p className="text-lg leading-relaxed text-[var(--foreground)]">
             {detail.description}
           </p>
         </FadeIn>
@@ -177,7 +177,7 @@ export default async function TreatmentDetailPage({
 
       {/* 핵심 정보 카드 */}
       {detail.highlights && (
-        <section className="bg-white pb-2 pt-0">
+        <section className="bg-[var(--surface)] pb-2 pt-0">
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -187,8 +187,8 @@ export default async function TreatmentDetailPage({
                     className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-center"
                   >
                     <p className="mb-1 text-xs font-medium text-blue-500">{h.label}</p>
-                    <p className="text-base font-bold text-gray-900">{h.value}</p>
-                    {h.note && <p className="mt-0.5 text-xs text-gray-500">{h.note}</p>}
+                    <p className="text-base font-bold text-[var(--foreground)]">{h.value}</p>
+                    {h.note && <p className="mt-0.5 text-xs text-[var(--muted)]">{h.note}</p>}
                   </div>
                 ))}
               </div>
@@ -199,19 +199,19 @@ export default async function TreatmentDetailPage({
 
       {/* 이런 분께 */}
       {!!detail.audience?.length && (
-        <section className="bg-white pb-8 pt-0">
+        <section className="bg-[var(--surface)] pb-8 pt-0">
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
               <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 md:p-8">
                 <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                   Who It Helps
                 </p>
-                <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+                <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                   이런 분께 도움이 됩니다
                 </h2>
                 <ul className="mt-5 space-y-3">
                   {detail.audience.map((item) => (
-                    <li key={item} className="flex gap-3 text-sm leading-relaxed text-gray-700 md:text-base">
+                    <li key={item} className="flex gap-3 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
                       <span className="mt-0.5 shrink-0 text-[var(--color-primary)]">•</span>
                       <span>{item}</span>
                     </li>
@@ -224,10 +224,10 @@ export default async function TreatmentDetailPage({
       )}
 
       {/* 치료 과정 */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <FadeIn>
-            <h2 className="font-headline mb-10 text-center text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline mb-10 text-center text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               치료 과정
             </h2>
           </FadeIn>
@@ -237,10 +237,10 @@ export default async function TreatmentDetailPage({
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg font-bold text-white">
                   {i + 1}
                 </div>
-                <h3 className="mb-2 text-lg font-bold text-gray-900">
+                <h3 className="mb-2 text-lg font-bold text-[var(--foreground)]">
                   {step.title}
                 </h3>
-                <p className="text-base leading-relaxed text-gray-700">
+                <p className="text-base leading-relaxed text-[var(--foreground)]">
                   {step.desc}
                 </p>
               </StaggerItem>
@@ -250,10 +250,10 @@ export default async function TreatmentDetailPage({
       </section>
 
       {/* 장점 */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <div className="mx-auto max-w-3xl">
           <FadeIn>
-            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline mb-8 text-center text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               장점
             </h2>
           </FadeIn>
@@ -261,7 +261,7 @@ export default async function TreatmentDetailPage({
             {detail.advantages.map((adv) => (
               <StaggerItem
                 key={adv}
-                className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
+                className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] p-4"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-gold-bg)] text-sm text-[var(--color-gold)]">
                   ✓
@@ -277,10 +277,10 @@ export default async function TreatmentDetailPage({
 
       {/* FAQ */}
       {detail.faq.length > 0 && (
-        <section className="section-padding bg-gray-50">
+        <section className="section-padding bg-[var(--background)]">
           <div className="mx-auto max-w-3xl">
             <FadeIn>
-              <h2 className="font-headline mb-8 text-center text-3xl font-bold text-gray-900 md:text-4xl">
+              <h2 className="font-headline mb-8 text-center text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                 자주 묻는 질문
               </h2>
             </FadeIn>
@@ -288,17 +288,17 @@ export default async function TreatmentDetailPage({
               {detail.faq.map((item) => (
                 <details
                   key={item.q}
-                  className="group rounded-2xl border border-gray-100 bg-white"
+                  className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
                 >
-                  <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-gray-900">
+                  <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-[var(--foreground)]">
                     {item.q}
                     <ArrowRight
                       size={16}
                       aria-hidden="true"
-                      className="shrink-0 text-gray-400 transition-transform group-open:rotate-90"
+                      className="shrink-0 text-[var(--muted-light)] transition-transform group-open:rotate-90"
                     />
                   </summary>
-                  <div className="border-t border-gray-100 px-5 py-4 text-base leading-relaxed text-gray-700">
+                  <div className="border-t border-[var(--border)] px-5 py-4 text-base leading-relaxed text-[var(--foreground)]">
                     <p>{item.a}</p>
                     {item.link ? (
                       <Link
@@ -330,14 +330,14 @@ export default async function TreatmentDetailPage({
 
       {/* 관련 진료 */}
       {RELATED_TREATMENTS[slug] && (
-        <section className="section-padding bg-white">
+        <section className="section-padding bg-[var(--surface)]">
           <div className="container-narrow">
             <FadeIn>
               <div className="mb-10 text-center">
                 <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
                   관련 진료
                 </span>
-                <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                   함께 알아보면 좋은 진료
                 </h2>
               </div>
@@ -349,14 +349,14 @@ export default async function TreatmentDetailPage({
                 return (
                   <StaggerItem key={rel.id}>
                     <Link href={t.href} className="block h-full">
-                      <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-blue-200 hover:shadow-lg">
-                        <h3 className="mb-2 text-lg font-bold text-gray-900">
+                      <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-blue-200 hover:shadow-lg">
+                        <h3 className="mb-2 text-lg font-bold text-[var(--foreground)]">
                           {t.name}
                         </h3>
-                        <p className="mb-3 text-sm text-gray-500">
+                        <p className="mb-3 text-sm text-[var(--muted)]">
                           {t.shortDesc}
                         </p>
-                        <p className="mt-auto text-sm leading-relaxed text-gray-700">
+                        <p className="mt-auto text-sm leading-relaxed text-[var(--foreground)]">
                           {rel.reason}
                         </p>
                       </div>
@@ -371,14 +371,14 @@ export default async function TreatmentDetailPage({
 
       {/* 관련 블로그 */}
       {relatedBlogPosts.length > 0 && (
-        <section className="section-padding bg-white">
+        <section className="section-padding bg-[var(--surface)]">
           <div className="container-narrow">
             <FadeIn>
               <div className="mb-10 text-center">
                 <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
                   관련 칼럼
                 </span>
-                <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+                <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
                   {detail.name}에 대해 더 알아보기
                 </h2>
               </div>
@@ -387,19 +387,19 @@ export default async function TreatmentDetailPage({
               {relatedBlogPosts.map((rp) => (
                 <StaggerItem key={rp.slug}>
                   <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
-                    <article className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-gray-200 hover:shadow-lg">
+                    <article className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--border)] hover:shadow-lg">
                       <span
                         className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-gray-100 text-gray-600"}`}
                       >
                         {getCategoryLabel(rp.category)}
                       </span>
-                      <h3 className="mb-1 text-base font-bold leading-snug text-gray-900">
+                      <h3 className="mb-1 text-base font-bold leading-snug text-[var(--foreground)]">
                         {rp.title}
                       </h3>
-                      <p className="mb-3 text-sm text-gray-500">
+                      <p className="mb-3 text-sm text-[var(--muted)]">
                         {rp.subtitle}
                       </p>
-                      <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3 text-sm text-gray-500">
+                      <div className="mt-auto flex items-center gap-3 border-t border-[var(--border)] pt-3 text-sm text-[var(--muted)]">
                         <span>{formatDate(rp.date)}</span>
                         <span className="flex items-center gap-1">
                           <Clock size={14} />

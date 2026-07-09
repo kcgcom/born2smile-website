@@ -36,7 +36,7 @@ export function FloatingCTA() {
     <>
       {/* 모바일 하단 고정 바 */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label="빠른 메뉴"
       >
@@ -53,7 +53,7 @@ export function FloatingCTA() {
                 ? "font-medium text-[var(--color-primary)]"
                 : isContact
                   ? "font-medium text-[var(--color-gold-dark)]"
-                  : "text-gray-600 hover:text-[var(--color-primary)]"
+                  : "text-[var(--muted)] hover:text-[var(--color-primary)]"
             }`;
 
             if (isContact) {
@@ -101,7 +101,7 @@ export function FloatingCTA() {
 const STATUS_STYLES: Record<ClinicStatusInfo["status"], { dot: string; text: string }> = {
   open: { dot: "bg-emerald-400", text: "text-emerald-700" },
   lunch: { dot: "bg-amber-400", text: "text-amber-700" },
-  closed: { dot: "bg-gray-400", text: "text-gray-600" },
+  closed: { dot: "bg-[var(--muted-light)]", text: "text-[var(--muted)]" },
 };
 
 function DesktopPhoneButton() {
@@ -128,7 +128,7 @@ function DesktopPhoneButton() {
   return (
     <div className="flex flex-col items-end gap-2">
       {info && (
-        <div className="flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/95 px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 rounded-full border border-[var(--border)]/70 bg-[var(--surface)]/95 px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm">
           <span className={`inline-block h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
           <span className={style.text}>{info.message}</span>
         </div>

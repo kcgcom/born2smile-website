@@ -66,7 +66,7 @@ export function renderSingleBlock(
       const HeadingTag = block.level === 3 ? "h3" : "h2";
       return (
         <div id={headingId} className="pt-4">
-          <HeadingTag className="font-headline mb-4 text-xl font-bold text-gray-900 md:text-3xl">
+          <HeadingTag className="font-headline mb-4 text-xl font-bold text-[var(--foreground)] md:text-3xl">
             {block.text}
           </HeadingTag>
         </div>
@@ -74,7 +74,7 @@ export function renderSingleBlock(
     }
     case "paragraph":
       return (
-        <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+        <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
           {block.text}
         </p>
       );
@@ -82,7 +82,7 @@ export function renderSingleBlock(
       const ListTag = block.style === "number" ? "ol" : "ul";
       return (
         <ListTag
-          className={`space-y-2 pl-5 text-base leading-relaxed text-gray-700 md:text-lg ${
+          className={`space-y-2 pl-5 text-base leading-relaxed text-[var(--foreground)] md:text-lg ${
             block.style === "number" ? "list-decimal" : "list-disc"
           }`}
         >
@@ -95,10 +95,10 @@ export function renderSingleBlock(
     case "faq":
       return (
         <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
-          <h2 className="font-headline mb-3 text-lg font-bold text-gray-900 md:text-xl">
+          <h2 className="font-headline mb-3 text-lg font-bold text-[var(--foreground)] md:text-xl">
             {block.question}
           </h2>
-          <p className="text-base leading-relaxed text-gray-700 md:text-lg">
+          <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
             {block.answer}
           </p>
         </div>
@@ -107,7 +107,7 @@ export function renderSingleBlock(
       if (block.hidden) return null;
       return (
         <figure className="my-12 space-y-3 md:my-14">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
             <Image
               src={block.src}
               alt={block.decorative ? "" : (block.alt || "")}
@@ -118,7 +118,7 @@ export function renderSingleBlock(
             />
           </div>
           {block.caption?.trim() && (
-            <figcaption className="text-sm leading-relaxed text-gray-500">
+            <figcaption className="text-sm leading-relaxed text-[var(--muted)]">
               {block.caption.trim()}
             </figcaption>
           )}
@@ -131,7 +131,7 @@ export function renderSingleBlock(
       const sectionTitle = allExternal ? "공식 참고 자료" : "함께 읽으면 좋은 글";
       const sectionClasses = allExternal
         ? "rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-indigo-50 p-5"
-        : "rounded-2xl border border-gray-200 bg-gray-50 p-5";
+        : "rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5";
 
       return (
         <div className={sectionClasses}>
@@ -139,7 +139,7 @@ export function renderSingleBlock(
             {allExternal && (
               <BookOpenText className="h-4 w-4 text-sky-700" aria-hidden="true" />
             )}
-            <h2 className="font-headline text-lg font-bold text-gray-900 md:text-xl">
+            <h2 className="font-headline text-lg font-bold text-[var(--foreground)] md:text-xl">
               {sectionTitle}
             </h2>
           </div>
@@ -148,8 +148,8 @@ export function renderSingleBlock(
               const external = isExternalHref(item.href);
               const source = external ? getReferenceSource(item.href) : null;
               const cardClasses = external
-                ? "block rounded-xl border border-sky-100 bg-white/90 p-4 transition-all hover:border-sky-200 hover:shadow-sm"
-                : "block rounded-xl bg-white p-4 transition-shadow hover:shadow-sm";
+                ? "block rounded-xl border border-sky-100 bg-[var(--surface)]/90 p-4 transition-all hover:border-sky-200 hover:shadow-sm"
+                : "block rounded-xl bg-[var(--surface)] p-4 transition-shadow hover:shadow-sm";
 
               return (
                 <Link
@@ -166,12 +166,12 @@ export function renderSingleBlock(
                           <span className="rounded-full bg-sky-100 px-2 py-1 font-medium text-sky-800">
                             {source.label}
                           </span>
-                          <span className="truncate text-gray-500">
+                          <span className="truncate text-[var(--muted)]">
                             {source.host}
                           </span>
                         </div>
                       )}
-                      <p className="font-semibold text-gray-900">{item.title}</p>
+                      <p className="font-semibold text-[var(--foreground)]">{item.title}</p>
                     </div>
                     {external && (
                       <ArrowUpRight
@@ -181,12 +181,12 @@ export function renderSingleBlock(
                     )}
                   </div>
                   {item.description && (
-                    <p className="mt-1 text-sm leading-relaxed text-gray-600">
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
                       {item.description}
                     </p>
                   )}
                   {source?.isOfficial && (
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-[var(--muted)]">
                       새 창에서 열리는 공식 환자 안내 자료입니다.
                     </p>
                   )}
@@ -199,9 +199,9 @@ export function renderSingleBlock(
     }
     case "table":
       return (
-        <div className="overflow-x-auto rounded-2xl border border-gray-200">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
           <table className="w-full text-sm text-left">
-            <thead className="bg-blue-50 text-gray-700">
+            <thead className="bg-blue-50 text-[var(--foreground)]">
               <tr>
                 {block.headers.map((header, i) => (
                   <th key={i} className="px-4 py-3 font-semibold whitespace-nowrap">
@@ -210,11 +210,11 @@ export function renderSingleBlock(
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
+            <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
               {block.rows.map((row, ri) => (
-                <tr key={ri} className="hover:bg-gray-50">
+                <tr key={ri} className="hover:bg-[var(--background)]">
                   {row.map((cell, ci) => (
-                    <td key={ci} className={`px-4 py-3 text-gray-700 leading-relaxed ${ci === 0 ? "font-medium text-gray-900 whitespace-nowrap" : ""}`}>
+                    <td key={ci} className={`px-4 py-3 text-[var(--foreground)] leading-relaxed ${ci === 0 ? "font-medium text-[var(--foreground)] whitespace-nowrap" : ""}`}>
                       {cell}
                     </td>
                   ))}
@@ -232,10 +232,10 @@ export function renderSingleBlock(
               <FlaskConical className="h-4 w-4 text-teal-700" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-headline text-lg font-bold text-gray-900 md:text-xl mb-1.5">
+              <h2 className="font-headline text-lg font-bold text-[var(--foreground)] md:text-xl mb-1.5">
                 {block.title}
               </h2>
-              <p className="text-base leading-relaxed text-gray-600 mb-4">
+              <p className="text-base leading-relaxed text-[var(--muted)] mb-4">
                 {block.description}
               </p>
               <Link

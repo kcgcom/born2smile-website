@@ -159,10 +159,10 @@ export default async function BlogCategoryPage({
               <p className="mb-3 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
                 Health Column Hub
               </p>
-              <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+              <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
                 {hub.heroTitle}
               </h1>
-              <p className="mt-5 text-base leading-relaxed text-gray-700 md:text-lg">
+              <p className="mt-5 text-base leading-relaxed text-[var(--foreground)] md:text-lg">
                 {hub.heroDescription}
               </p>
             </div>
@@ -170,9 +170,9 @@ export default async function BlogCategoryPage({
         </div>
       </section>
 
-      <section className="bg-white px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
+      <section className="bg-[var(--surface)] px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
         <div className="container-narrow">
-          <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5 md:p-8">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-5 md:p-8">
             <div className="flex flex-wrap items-center gap-2 md:gap-2.5">
               {ALL_CATEGORY_SLUGS.map((slug) => {
                 const isActive = slug === categorySlug;
@@ -184,7 +184,7 @@ export default async function BlogCategoryPage({
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-[var(--color-primary)] text-white"
-                        : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100"
+                        : "bg-[var(--surface)] text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-[var(--background)]"
                     }`}
                   >
                     {getCategoryLabel(slug)}
@@ -199,16 +199,16 @@ export default async function BlogCategoryPage({
         </div>
       </section>
 
-      <section className="bg-white px-4 py-8 md:px-6 md:py-10 lg:px-8">
+      <section className="bg-[var(--surface)] px-4 py-8 md:px-6 md:py-10 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm md:p-8">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm md:p-8">
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Who It Helps
             </p>
-            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
               이런 분께 도움이 됩니다
             </h2>
-            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-gray-700 md:text-base">
+            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
               {hub.audience.map((item) => (
                 <li key={item} className="flex gap-3">
                   <span className="mt-0.5 text-[var(--color-primary)]">•</span>
@@ -222,26 +222,26 @@ export default async function BlogCategoryPage({
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Reading Guide
             </p>
-            <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+            <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
               처음 읽는다면 이렇게 보세요
             </h2>
-            <ol className="mt-5 space-y-4 text-sm leading-relaxed text-gray-700 md:text-base">
-              <li><strong className="text-gray-900">1.</strong> Common Questions에서 자주 묻는 질문의 핵심 답을 먼저 확인합니다.</li>
-              <li><strong className="text-gray-900">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
-              <li><strong className="text-gray-900">3.</strong> 전체 글 목록에서 더 깊은 주제를 차근차근 읽어 나갑니다.</li>
+            <ol className="mt-5 space-y-4 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
+              <li><strong className="text-[var(--foreground)]">1.</strong> Common Questions에서 자주 묻는 질문의 핵심 답을 먼저 확인합니다.</li>
+              <li><strong className="text-[var(--foreground)]">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
+              <li><strong className="text-[var(--foreground)]">3.</strong> 전체 글 목록에서 더 깊은 주제를 차근차근 읽어 나갑니다.</li>
             </ol>
           </div>
         </div>
       </section>
 
       {questionCards.length > 0 && (
-        <section className="bg-white px-4 py-8 md:px-6 md:py-10 lg:px-8">
+        <section className="bg-[var(--surface)] px-4 py-8 md:px-6 md:py-10 lg:px-8">
           <div className="container-narrow">
             <div className="mb-5 md:mb-6">
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Common Questions
               </p>
-              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                 자주 찾는 질문부터 읽어보세요
               </h2>
             </div>
@@ -250,20 +250,20 @@ export default async function BlogCategoryPage({
                 <Link
                   key={question}
                   href={getBlogPostUrl(post.slug, post.category)}
-                  className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-gray-200 hover:bg-white hover:shadow-md md:p-5"
+                  className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)] hover:shadow-md md:p-5"
                 >
                   <div className="flex h-full items-start gap-3">
                     <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-primary)] ring-1 ring-blue-100 md:h-9 md:w-9">
                       <CircleHelp size={18} />
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-3">
+                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-[var(--foreground)] group-hover:text-[var(--color-primary)] md:line-clamp-3">
                         {question}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-2">
+                      <p className="mt-2 text-sm leading-relaxed text-[var(--muted)] line-clamp-2">
                         {answer}
                       </p>
-                      <p className="mt-2.5 line-clamp-1 text-sm font-medium text-gray-700">
+                      <p className="mt-2.5 line-clamp-1 text-sm font-medium text-[var(--foreground)]">
                         관련 글: {post.title}
                       </p>
                       <span className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-medium text-[var(--color-primary)]">
@@ -280,22 +280,22 @@ export default async function BlogCategoryPage({
       )}
 
       {groupedSections.length > 0 && (
-        <section className="bg-gray-50 px-4 py-10 md:px-6 md:py-14 lg:px-8">
+        <section className="bg-[var(--background)] px-4 py-10 md:px-6 md:py-14 lg:px-8">
           <div className="container-narrow">
             <div className="mb-6 md:mb-8">
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Curated Paths
               </p>
-              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                 상황별로 읽기
               </h2>
             </div>
             <div className="space-y-7 md:space-y-8">
               {groupedSections.map((section) => (
-                <div key={section.title} className="rounded-3xl border border-gray-100 bg-white p-5 md:p-8">
+                <div key={section.title} className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 md:p-8">
                   <div className="mb-4 max-w-none md:mb-5 lg:max-w-3xl xl:max-w-4xl">
-                    <h3 className="text-xl font-bold text-gray-900 md:text-2xl">{section.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600 md:text-base">
+                    <h3 className="text-xl font-bold text-[var(--foreground)] md:text-2xl">{section.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--muted)] md:text-base">
                       {section.description}
                     </p>
                   </div>
@@ -304,13 +304,13 @@ export default async function BlogCategoryPage({
                       <Link
                         key={post.slug}
                         href={getBlogPostUrl(post.slug, post.category)}
-                        className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-gray-200 hover:bg-white"
+                        className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)]"
                       >
-                        <p className="text-sm font-medium text-gray-500">{post.readTime} 읽기</p>
-                        <h4 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-gray-900 group-hover:text-[var(--color-primary)] md:line-clamp-3">
+                        <p className="text-sm font-medium text-[var(--muted)]">{post.readTime} 읽기</p>
+                        <h4 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-[var(--foreground)] group-hover:text-[var(--color-primary)] md:line-clamp-3">
                           {post.title}
                         </h4>
-                        <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-600 line-clamp-2">{post.excerpt}</p>
+                        <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--muted)] line-clamp-2">{post.excerpt}</p>
                         <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
                           글 바로 읽기
                           <ArrowRight size={14} />
@@ -325,17 +325,17 @@ export default async function BlogCategoryPage({
         </section>
       )}
 
-      <section className="bg-white px-4 pb-6 md:px-6 md:pb-8 lg:px-8">
-        <div className="mx-auto max-w-6xl rounded-3xl border border-gray-100 bg-gradient-to-r from-blue-50 to-white p-5 md:p-8">
+      <section className="bg-[var(--surface)] px-4 pb-6 md:px-6 md:pb-8 lg:px-8">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-[var(--border)] bg-gradient-to-r from-blue-50 to-[var(--surface)] p-5 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="max-w-none lg:max-w-3xl xl:max-w-4xl">
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
                 Next Step
               </p>
-              <h2 className="mt-2 font-headline text-2xl font-bold text-gray-900 md:text-3xl">
+              <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
                 읽은 내용을 진료 안내와 함께 정리해 보세요
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600 md:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-[var(--muted)] md:text-base">
                 {relatedTreatment
                   ? `${relatedTreatment.name} 진료 페이지에서 치료 과정과 상담 포인트를 함께 확인할 수 있습니다.`
                   : "상담 안내 페이지에서 내원 전 준비사항과 연락 방법을 바로 확인할 수 있습니다."}
@@ -353,7 +353,7 @@ export default async function BlogCategoryPage({
               )}
               <Link
                 href="/contact"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-3 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background)] sm:w-auto"
               >
                 상담 안내
                 <ArrowRight size={16} />

@@ -68,16 +68,16 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(doctorJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
-      <section className="bg-gradient-to-b from-[var(--color-primary)]/5 to-white pt-32 pb-16 text-center">
+      <section className="bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pt-32 pb-16 text-center">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               About Us
             </p>
-            <h1 className="font-headline text-4xl font-bold text-gray-900 md:text-5xl">
+            <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               병원 소개
             </h1>
-            <p className="mt-4 text-base text-gray-600 md:text-lg">
+            <p className="mt-4 text-base text-[var(--muted)] md:text-lg">
               서울대 출신 치과전문의가 정성을 다해 진료합니다
             </p>
           </FadeIn>
@@ -85,13 +85,13 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 의료진 상세 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Doctor
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               의료진 소개
             </h2>
           </FadeIn>
@@ -103,25 +103,25 @@ export default function AboutPage() {
                 <p className="text-sm font-medium text-[var(--color-gold)]">
                   {doctor.title}
                 </p>
-                <h3 className="mt-1 text-3xl font-bold text-gray-900">
+                <h3 className="mt-1 text-3xl font-bold text-[var(--foreground)]">
                   {doctor.name}
                 </h3>
-                <p className="mt-1 text-gray-500">{doctor.position}</p>
+                <p className="mt-1 text-[var(--muted)]">{doctor.position}</p>
               </div>
             </div>
 
             {/* 경력 그리드 */}
             <StaggerContainer className="grid gap-6 md:grid-cols-2">
               {/* 학력 */}
-              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
-                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <StaggerItem className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--foreground)]">
                   <GraduationCap
                     size={20}
                     className="text-[var(--color-primary)]"
                   />
                   학력
                 </h4>
-                <ul className="space-y-2 text-base text-gray-700">
+                <ul className="space-y-2 text-base text-[var(--foreground)]">
                   {doctor.education.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -132,15 +132,15 @@ export default function AboutPage() {
               </StaggerItem>
 
               {/* 자격 및 수료 */}
-              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
-                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <StaggerItem className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--foreground)]">
                   <Award
                     size={20}
                     className="text-[var(--color-gold)]"
                   />
                   자격 및 수료
                 </h4>
-                <ul className="space-y-2 text-base text-gray-700">
+                <ul className="space-y-2 text-base text-[var(--foreground)]">
                   {doctor.credentials.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -151,15 +151,15 @@ export default function AboutPage() {
               </StaggerItem>
 
               {/* 학회 활동 */}
-              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
-                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <StaggerItem className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--foreground)]">
                   <Users
                     size={20}
                     className="text-[var(--color-primary)]"
                   />
                   학회 활동
                 </h4>
-                <ul className="space-y-2 text-base text-gray-700">
+                <ul className="space-y-2 text-base text-[var(--foreground)]">
                   {doctor.memberships.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -170,15 +170,15 @@ export default function AboutPage() {
               </StaggerItem>
 
               {/* 현직 */}
-              <StaggerItem className="rounded-2xl border border-gray-100 bg-white p-6">
-                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <StaggerItem className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--foreground)]">
                   <Briefcase
                     size={20}
                     className="text-[var(--color-primary)]"
                   />
                   현직
                 </h4>
-                <ul className="space-y-2 text-base text-gray-700">
+                <ul className="space-y-2 text-base text-[var(--foreground)]">
                   {doctor.currentPositions.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
@@ -193,13 +193,13 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 의료팀 소개 ───────────── */}
-      <section id="our-team" className="section-padding bg-gray-50">
+      <section id="our-team" className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Our Team
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               의료팀 소개
             </h2>
           </FadeIn>
@@ -211,10 +211,10 @@ export default function AboutPage() {
                 size={40}
                 className="mx-auto mb-4 text-[var(--color-gold)]"
               />
-              <h3 className="font-headline text-xl font-bold text-gray-900 md:text-2xl">
+              <h3 className="font-headline text-xl font-bold text-[var(--foreground)] md:text-2xl">
                 {STAFF.credential}
               </h3>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-gray-700">
+              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-[var(--foreground)]">
                 {STAFF.summary}
               </p>
             </div>
@@ -224,11 +224,11 @@ export default function AboutPage() {
           <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {STAFF.highlights.map((item) => (
               <StaggerItem key={item.title}>
-                <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 transition-shadow hover:shadow-md">
-                  <h4 className="mb-2 text-lg font-bold text-gray-900">
+                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 transition-shadow hover:shadow-md">
+                  <h4 className="mb-2 text-lg font-bold text-[var(--foreground)]">
                     {item.title}
                   </h4>
-                  <p className="text-base leading-relaxed text-gray-700">
+                  <p className="text-base leading-relaxed text-[var(--foreground)]">
                     {item.desc}
                   </p>
                 </div>
@@ -239,13 +239,13 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 시설 안내 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Facility
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               시설 안내
             </h2>
           </FadeIn>
@@ -281,16 +281,16 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 주요 장비 소개 ───────────── */}
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-[var(--surface)]">
         <div className="container-narrow">
           <FadeIn className="mb-12 text-center">
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Equipment
             </p>
-            <h2 className="font-headline text-3xl font-bold text-gray-900 md:text-4xl">
+            <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
               주요 장비 소개
             </h2>
-            <p className="mt-4 text-gray-600">
+            <p className="mt-4 text-[var(--muted)]">
               정확한 진단과 편안한 치료를 위해 최신 장비를 갖추고 있습니다
             </p>
           </FadeIn>
@@ -338,21 +338,21 @@ export default function AboutPage() {
               },
             ].map((item) => (
               <StaggerItem key={item.name}>
-                <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-7">
+                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-7">
                   <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
                     <item.icon size={24} className="text-[var(--color-primary)]" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
+                  <h3 className="text-xl font-bold text-[var(--foreground)]">{item.name}</h3>
                   <p className="mb-3 text-sm text-[var(--color-muted)]">{item.nameEn}</p>
                   <p className="mb-1 text-sm font-medium text-[var(--color-gold)]">
                     {item.tagline}
                   </p>
-                  <p className="mb-6 text-base leading-relaxed text-gray-700">
+                  <p className="mb-6 text-base leading-relaxed text-[var(--foreground)]">
                     {item.desc}
                   </p>
                   <ul className="mt-auto space-y-2.5">
                     {item.features.map((f) => (
-                      <li key={f} className="flex gap-2 text-sm text-gray-600">
+                      <li key={f} className="flex gap-2 text-sm text-[var(--muted)]">
                         <Check
                           size={16}
                           className="mt-0.5 shrink-0 text-[var(--color-primary)]"
@@ -369,16 +369,16 @@ export default function AboutPage() {
       </section>
 
       {/* ───────────── 진료시간 + 오시는 길 ───────────── */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-[var(--background)]">
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-2">
             {/* 진료시간 */}
             <div>
-              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-[var(--foreground)]">
                 <Clock size={24} className="text-[var(--color-gold)]" />
                 진료시간
               </h2>
-              <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                 <table className="w-full text-base">
                   <caption className="sr-only">요일별 진료시간표</caption>
                   <thead className="sr-only">
@@ -391,9 +391,9 @@ export default function AboutPage() {
                     {HOURS.schedule.map((item) => (
                       <tr
                         key={item.day}
-                        className="border-b border-gray-50 last:border-0"
+                        className="border-b border-[var(--background)] last:border-0"
                       >
-                        <td className="px-5 py-3 font-medium text-gray-700">
+                        <td className="px-5 py-3 font-medium text-[var(--foreground)]">
                           {item.day}
                           {"note" in item && item.note && (
                             <span className="ml-2 rounded-full bg-[var(--color-gold-bg)] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
@@ -402,7 +402,7 @@ export default function AboutPage() {
                           )}
                         </td>
                         <td
-                          className={`px-5 py-3 text-right ${item.open ? "text-gray-900" : "text-gray-500"}`}
+                          className={`px-5 py-3 text-right ${item.open ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}
                         >
                           {item.time}
                         </td>
@@ -410,7 +410,7 @@ export default function AboutPage() {
                     ))}
                   </tbody>
                 </table>
-                <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-sm text-gray-500">
+                <div className="border-t border-[var(--border)] bg-[var(--background)] px-5 py-3 text-sm text-[var(--muted)]">
                   점심시간: {HOURS.lunchTime} | {HOURS.closedDays}
                   <br />
                   {HOURS.notice}
@@ -420,7 +420,7 @@ export default function AboutPage() {
 
             {/* 오시는 길 */}
             <div>
-              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <h2 className="font-headline mb-6 flex items-center gap-2 text-2xl font-bold text-[var(--foreground)]">
                 <MapPin size={24} className="text-[var(--color-primary)]" />
                 오시는 길
               </h2>
@@ -435,8 +435,8 @@ export default function AboutPage() {
                     className="mt-0.5 shrink-0 text-[var(--color-primary)]"
                   />
                   <div>
-                    <span className="text-gray-700">{CLINIC.address}</span>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <span className="text-[var(--foreground)]">{CLINIC.address}</span>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       한강센트럴자이 아파트 101동 대각선
                       <br />
                       커피빈(김포장기DT점) 맞은편
