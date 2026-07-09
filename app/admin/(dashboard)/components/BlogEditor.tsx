@@ -1,8 +1,10 @@
 "use client";
 
+import React from "react";
 import { X, Trash2, Save, Copy, Send } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { BLOG_TAGS } from "@/lib/blog/types";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog/types";
 import { getCategoryLabel } from "@/lib/blog";
@@ -44,6 +46,7 @@ export default function BlogEditor({
   onClose,
 }: BlogEditorProps) {
   const isPage = presentation === "page";
+  const modalRef = useModalA11y(onClose);
 
   const {
     form,
@@ -68,6 +71,7 @@ export default function BlogEditor({
 
   return (
     <div
+      ref={isPage ? undefined : modalRef}
       className={isPage ? "space-y-6" : "fixed inset-0 z-50 flex items-stretch justify-end"}
       role={isPage ? undefined : "dialog"}
       aria-modal={isPage ? undefined : true}
@@ -354,20 +358,22 @@ interface FieldProps {
   required?: boolean;
   error?: string;
   hint?: string;
-  children: React.ReactNode;
+  children: React.ReactElement<Record<string, unknown>>;
 }
 
 function Field({ label, required, error, hint, children }: FieldProps) {
+  const fieldId = React.useId();
+
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-sm font-semibold text-[var(--foreground)]">
+        <label htmlFor={fieldId} className="text-sm font-semibold text-[var(--foreground)]">
           {label}
           {required && <span className="ml-1 text-red-500">*</span>}
         </label>
         {hint && <span className="text-xs text-[var(--muted)]">{hint}</span>}
       </div>
-      {children}
+      {React.cloneElement(children, { id: fieldId })}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );

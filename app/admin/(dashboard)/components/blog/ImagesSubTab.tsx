@@ -209,6 +209,7 @@ export function ImagesSubTab() {
                   key={option.value}
                   type="button"
                   onClick={() => setFilter(option.value)}
+                  aria-pressed={filter === option.value}
                   className={[
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                     filter === option.value

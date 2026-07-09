@@ -1,5 +1,6 @@
 "use client";
 
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { MetricCard } from "../MetricCard";
 import { formatDuration } from "../insight/shared";
 import { TopPagesChart, DailyTrendChart } from "./charts";
@@ -12,8 +13,11 @@ interface SourceDetailModalProps {
 }
 
 export function SourceDetailModal({ source, detail, onClose }: SourceDetailModalProps) {
+  const modalRef = useModalA11y(onClose);
+
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-2 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
@@ -21,7 +25,7 @@ export function SourceDetailModal({ source, detail, onClose }: SourceDetailModal
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-white p-4 shadow-2xl sm:p-6"
+        className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-[var(--background)] p-4 shadow-2xl sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">

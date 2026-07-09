@@ -132,6 +132,7 @@ export function ImageBlockEditor({
         })}
         placeholder="또는 이미지 URL 직접 입력"
         className={inputClass(hasError)}
+        aria-label={`블록 ${idx + 1} 이미지 URL`}
       />
       <input
         type="text"
@@ -140,6 +141,7 @@ export function ImageBlockEditor({
         placeholder={block.decorative ? "장식용 이미지는 비워둡니다" : "이미지 대체 텍스트 (정보성 이미지일 때 필수)"}
         disabled={block.decorative ?? false}
         className={inputClass(hasError)}
+        aria-label={`블록 ${idx + 1} 이미지 대체 텍스트`}
       />
       <textarea
         value={block.caption ?? ""}
@@ -147,6 +149,7 @@ export function ImageBlockEditor({
         rows={2}
         placeholder="이미지 캡션 (선택)"
         className={`${inputClass(false)} resize-y`}
+        aria-label={`블록 ${idx + 1} 이미지 캡션`}
       />
       <label className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]">
         <input

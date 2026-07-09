@@ -237,6 +237,7 @@ export function SearchTab() {
                   <button
                     type="button"
                     onClick={() => setClustered((v) => !v)}
+                    aria-pressed={clustered}
                     className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                       clustered
                         ? "bg-blue-100 text-blue-700"

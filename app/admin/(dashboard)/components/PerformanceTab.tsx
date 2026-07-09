@@ -266,6 +266,7 @@ export function PerformanceTab() {
           <div className="flex gap-1 rounded-lg bg-[var(--background)] p-1">
             <button
               onClick={() => setStrategy("mobile")}
+              aria-pressed={strategy === "mobile"}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 strategy === "mobile"
                   ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
@@ -277,6 +278,7 @@ export function PerformanceTab() {
             </button>
             <button
               onClick={() => setStrategy("desktop")}
+              aria-pressed={strategy === "desktop"}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 strategy === "desktop"
                   ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
@@ -374,6 +376,7 @@ export function PerformanceTab() {
                       hasDetails &&
                       setExpandedAudit(isExpanded ? null : audit.id)
                     }
+                    aria-expanded={hasDetails ? isExpanded : undefined}
                     className={`flex w-full items-center justify-between px-4 py-2.5 text-left ${
                         hasDetails ? "cursor-pointer hover:bg-gray-50/50" : "cursor-default"
                       }`}

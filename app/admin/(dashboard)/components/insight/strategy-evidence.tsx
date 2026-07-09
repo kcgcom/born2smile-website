@@ -113,6 +113,7 @@ export function EvidenceDataSection({
                       key={opt.value}
                       type="button"
                       onClick={() => setIntentFilter(opt.value)}
+                      aria-pressed={isActive}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         isActive
                           ? "bg-[var(--color-primary)] text-white"

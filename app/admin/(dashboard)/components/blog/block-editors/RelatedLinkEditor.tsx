@@ -15,13 +15,14 @@ export function RelatedLinkEditor({
   onChange: (item: BlogRelatedLinkItem) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-[var(--border)] bg-white p-3">
+    <div className="space-y-2 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
       <div className="flex justify-end">
         {canRemove && (
           <button
             type="button"
             onClick={onRemove}
             className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+            aria-label="링크 삭제"
           >
             삭제
           </button>
@@ -33,6 +34,7 @@ export function RelatedLinkEditor({
         onChange={(e) => onChange({ ...item, title: e.target.value })}
         placeholder="링크 제목"
         className={inputClass(false)}
+        aria-label="링크 제목"
       />
       <input
         type="text"
@@ -40,6 +42,7 @@ export function RelatedLinkEditor({
         onChange={(e) => onChange({ ...item, href: e.target.value })}
         placeholder="/blog/health-tips/example"
         className={inputClass(false)}
+        aria-label="링크 URL"
       />
       <textarea
         value={item.description ?? ""}
@@ -47,6 +50,7 @@ export function RelatedLinkEditor({
         rows={2}
         placeholder="링크 설명 (선택)"
         className={`${inputClass(false)} resize-y`}
+        aria-label="링크 설명"
       />
     </div>
   );

@@ -81,7 +81,7 @@ export function TableBlockEditor({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-        <table className="w-full min-w-[420px] border-collapse bg-white text-sm">
+        <table className="w-full min-w-[420px] border-collapse bg-[var(--background)] text-sm">
           <thead className="bg-[var(--background)]">
             <tr>
               {block.headers.map((header, headerIdx) => (
@@ -93,12 +93,14 @@ export function TableBlockEditor({
                       onChange={(e) => updateHeader(headerIdx, e.target.value)}
                       placeholder={`헤더 ${headerIdx + 1}`}
                       className={inputClass(hasError)}
+                      aria-label={`테이블 헤더 ${headerIdx + 1}`}
                     />
                     {block.headers.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeColumn(headerIdx)}
                         className="shrink-0 rounded px-2 py-2 text-xs text-red-500 hover:bg-red-50"
+                        aria-label={`열 ${headerIdx + 1} 삭제`}
                       >
                         삭제
                       </button>
@@ -120,12 +122,14 @@ export function TableBlockEditor({
                         rows={2}
                         placeholder={`행 ${rowIdx + 1}, 열 ${cellIdx + 1}`}
                         className={`${inputClass(hasError)} resize-y`}
+                        aria-label={`테이블 행 ${rowIdx + 1}, 열 ${cellIdx + 1}`}
                       />
                       {cellIdx === row.length - 1 && block.rows.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeRow(rowIdx)}
                           className="shrink-0 rounded px-2 py-2 text-xs text-red-500 hover:bg-red-50"
+                          aria-label={`행 ${rowIdx + 1} 삭제`}
                         >
                           삭제
                         </button>

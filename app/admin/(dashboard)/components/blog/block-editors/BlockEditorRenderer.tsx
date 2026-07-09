@@ -31,6 +31,7 @@ export function BlockEditorRenderer({
             value={block.level}
             onChange={(e) => setBlock(idx, { ...block, level: Number(e.target.value) as 2 | 3 })}
             className={inputClass(false)}
+            aria-label={`블록 ${idx + 1} 제목 수준`}
           >
             <option value={2}>H2</option>
             <option value={3}>H3</option>
@@ -41,6 +42,7 @@ export function BlockEditorRenderer({
             onChange={(e) => setBlock(idx, { ...block, text: e.target.value })}
             placeholder="제목 텍스트"
             className={inputClass(hasError)}
+            aria-label={`블록 ${idx + 1} 제목 텍스트`}
           />
         </>
       );
@@ -52,6 +54,7 @@ export function BlockEditorRenderer({
           rows={5}
           placeholder="문단 텍스트"
           className={`${inputClass(hasError)} resize-y`}
+          aria-label={`블록 ${idx + 1} 문단 텍스트`}
         />
       );
     case "list":
@@ -61,6 +64,7 @@ export function BlockEditorRenderer({
             value={block.style}
             onChange={(e) => setBlock(idx, { ...block, style: e.target.value as "bullet" | "number" })}
             className={inputClass(false)}
+            aria-label={`블록 ${idx + 1} 리스트 스타일`}
           >
             <option value="bullet">불릿 리스트</option>
             <option value="number">번호 리스트</option>
@@ -76,6 +80,7 @@ export function BlockEditorRenderer({
                 }}
                 placeholder={`목록 항목 ${itemIdx + 1}`}
                 className={inputClass(hasError)}
+                aria-label={`블록 ${idx + 1} 목록 항목 ${itemIdx + 1}`}
               />
               {block.items.length > 2 && (
                 <button
@@ -111,6 +116,7 @@ export function BlockEditorRenderer({
             onChange={(e) => setBlock(idx, { ...block, question: e.target.value })}
             placeholder="질문"
             className={inputClass(hasError)}
+            aria-label={`블록 ${idx + 1} FAQ 질문`}
           />
           <textarea
             value={block.answer}
@@ -118,6 +124,7 @@ export function BlockEditorRenderer({
             rows={4}
             placeholder="답변"
             className={`${inputClass(hasError)} resize-y`}
+            aria-label={`블록 ${idx + 1} FAQ 답변`}
           />
         </div>
       );

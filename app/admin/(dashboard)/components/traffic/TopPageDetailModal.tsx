@@ -1,5 +1,6 @@
 "use client";
 
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { MetricCard } from "../MetricCard";
 import { formatDuration } from "../insight/shared";
 import { TopPagesChart, DailyTrendChart } from "./charts";
@@ -25,8 +26,11 @@ export function TopPageDetailModal({
   onClose,
   onSelectTopPage,
 }: TopPageDetailModalProps) {
+  const modalRef = useModalA11y(onClose);
+
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-2 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
@@ -34,7 +38,7 @@ export function TopPageDetailModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-white p-4 shadow-2xl sm:p-6"
+        className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[1.75rem] bg-[var(--background)] p-4 shadow-2xl sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -95,7 +99,7 @@ export function TopPageDetailModal({
               {detail.sources.length > 0 ? detail.sources.map((item) => (
                 <div
                   key={item.source}
-                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm"
+                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
                 >
                   <span className="truncate pr-3 font-medium text-[var(--foreground)]">{item.source}</span>
                   <span className="shrink-0 text-xs text-[var(--muted)]">

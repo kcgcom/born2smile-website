@@ -55,6 +55,7 @@ const ClusterRow = memo(function ClusterRow({
                 onClick={() => setExpanded(!expanded)}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs text-[var(--muted)] hover:bg-[var(--border)]"
                 aria-label={expanded ? "접기" : "펼치기"}
+                aria-expanded={expanded}
               >
                 {expanded ? "▾" : "▸"}
               </button>
@@ -188,8 +189,9 @@ function SortableHeader({
   onSort: (key: TableSortKey) => void;
 }) {
   const isActive = currentKey === sortKey;
+  const ariaSort = isActive ? (direction === "desc" ? "descending" : "ascending") : "none";
   return (
-    <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]">
+    <th className="px-3 py-2.5 text-right text-xs font-medium text-[var(--muted)]" aria-sort={ariaSort}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}

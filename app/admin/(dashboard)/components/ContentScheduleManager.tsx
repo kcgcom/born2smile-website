@@ -118,6 +118,7 @@ export function ContentScheduleManager({
                 key={index}
                 type="button"
                 onClick={() => toggleDay(index)}
+                aria-pressed={selected}
                 className={`flex h-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
                   selected
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
