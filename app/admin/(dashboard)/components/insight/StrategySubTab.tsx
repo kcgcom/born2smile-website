@@ -172,7 +172,7 @@ export function StrategySubTab() {
         </div>
 
         {topGapItem && (
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
               <Lightbulb className="h-4 w-4 text-[var(--color-primary)]" />

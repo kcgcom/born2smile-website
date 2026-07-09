@@ -146,7 +146,7 @@ export function TrafficBlogView({
                 key={item.path}
                 type="button"
                 onClick={() => onSelectTopPage(item.path)}
-                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
               >
                 <div className="min-w-0 pr-3">
                   <a
@@ -182,7 +182,7 @@ export function TrafficBlogView({
                 key={item.path}
                 type="button"
                 onClick={() => onSelectTopPage(item.path)}
-                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
               >
                 <div className="min-w-0 pr-3">
                   <a
@@ -237,7 +237,7 @@ export function TrafficBlogView({
                 key={item.path}
                 type="button"
                 onClick={() => onSelectTopPage(item.path)}
-                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
+                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
               >
                 <div className="min-w-0 pr-3">
                   <a
@@ -351,7 +351,7 @@ export function TrafficBlogView({
           {blogSourceShare.length > 0 ? blogSourceShare.map((item) => (
             <div
               key={item.source}
-              className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm"
+              className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm"
             >
               <span className="truncate pr-3 font-medium text-[var(--foreground)]">{item.source}</span>
               <span className="shrink-0 text-xs text-[var(--muted)]">

@@ -79,7 +79,7 @@ export function TrafficTab() {
         </span>
       </div>
 
-      <div role="tablist" className="flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
+      <div role="tablist" className="flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
         {TRAFFIC_VIEWS.map((item) => (
           <button
             key={item.value}
@@ -93,7 +93,7 @@ export function TrafficTab() {
             }}
             className={`rounded-lg px-4 py-1.5 text-sm transition-all ${
               view === item.value
-                ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
+                ? "bg-[var(--surface)] font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
           >

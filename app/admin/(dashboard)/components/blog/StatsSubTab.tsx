@@ -363,7 +363,7 @@ export function StatsSubTab() {
         {!searchLoading && !searchError && (
           <div className="space-y-5">
             <div className="grid gap-5 xl:grid-cols-[1.15fr,0.85fr]">
-              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--background)]/70 p-4">
                 <div>
                   <h4 className="text-sm font-semibold text-[var(--foreground)]">검색 성과</h4>
                   <p className="mt-1 text-xs text-[var(--muted)]">
@@ -385,7 +385,7 @@ export function StatsSubTab() {
 
                 <div>
               {/* 탭 전환 */}
-              <div className="mb-4 flex w-fit gap-1 rounded-xl bg-slate-100/80 p-1">
+              <div className="mb-4 flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
                 {(["posts", "queries"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -397,7 +397,7 @@ export function StatsSubTab() {
                     }}
                     className={`rounded-lg px-4 py-1.5 text-sm transition-all ${
                       tableTab === tab
-                        ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
+                        ? "bg-[var(--background)] font-semibold text-[var(--color-primary)] shadow-sm"
                         : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
                     }`}
                   >
@@ -417,7 +417,7 @@ export function StatsSubTab() {
                       const slug = getEditableBlogSlug(item.page);
                       const title = slug ? slugToTitleMap.get(slug) : undefined;
                       return (
-                        <div key={item.page} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                        <div key={item.page} className="rounded-xl bg-[var(--background)]/90 px-4 py-3 shadow-sm">
                           <a href={item.page} target="_blank" rel="noopener noreferrer" className="mb-1.5 block font-medium text-[var(--foreground)] text-sm leading-snug hover:text-[var(--color-primary)] hover:underline">{title ?? slug ?? item.page}</a>
                           {slug && (
                             <div className="mb-2.5">
@@ -429,7 +429,7 @@ export function StatsSubTab() {
                             <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
                             <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
                             <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
-                            <div><span className="text-[var(--muted)]">페이지</span><br /><span className="font-semibold text-slate-700">{title ?? slug ?? "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">페이지</span><br /><span className="font-semibold text-[var(--foreground)]">{title ?? slug ?? "—"}</span></div>
                             <div><span className="text-[var(--muted)]">대표 쿼리</span><br /><span className="font-semibold text-[var(--color-primary)]">{slug ? "확인 가능" : "—"}</span></div>
                           </div>
                           {selectedBlogPage === item.page && (
@@ -506,7 +506,7 @@ export function StatsSubTab() {
                     )}
                     {topBlogSearchQueries.map((item) => {
                       return (
-                        <div key={item.query} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                        <div key={item.query} className="rounded-xl bg-[var(--background)]/90 px-4 py-3 shadow-sm">
                           <p className="mb-1.5 font-medium text-[var(--foreground)] text-sm">{item.query}</p>
                           <div className="mb-2.5 flex gap-3">
                             <button type="button" onClick={() => setSelectedBlogQuery((c) => c === item.query ? null : item.query)} className="text-xs font-medium text-[var(--color-primary)]">연결 페이지 보기</button>
@@ -517,7 +517,7 @@ export function StatsSubTab() {
                             <div><span className="text-[var(--muted)]">클릭</span><br /><span className="font-semibold">{item.clicks.toLocaleString("ko-KR")}</span></div>
                             <div><span className="text-[var(--muted)]">CTR</span><br /><span className="font-semibold">{formatCtr(item.ctr)}</span></div>
                             <div><span className="text-[var(--muted)]">순위</span><br /><span className="font-semibold">{item.position}</span></div>
-                            <div><span className="text-[var(--muted)]">대표 페이지</span><br /><span className="font-semibold text-slate-700">{item.page || "—"}</span></div>
+                            <div><span className="text-[var(--muted)]">대표 페이지</span><br /><span className="font-semibold text-[var(--foreground)]">{item.page || "—"}</span></div>
                             <div><span className="text-[var(--muted)]">연결 페이지</span><br /><span className="font-semibold text-[var(--color-primary)]">확인 가능</span></div>
                           </div>
                         </div>
@@ -575,7 +575,7 @@ export function StatsSubTab() {
                 </div>
               </div>
 
-              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+              <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--background)]/70 p-4">
                 <div>
                   <h4 className="text-sm font-semibold text-[var(--foreground)]">방문 성과</h4>
                   <p className="mt-1 text-xs text-[var(--muted)]">
@@ -598,7 +598,7 @@ export function StatsSubTab() {
                   <h5 className="text-sm font-semibold text-[var(--foreground)]">많이 본 글</h5>
                   <div className="space-y-2">
                     {topVisitedPosts.length > 0 ? topVisitedPosts.slice(0, 8).map((item) => (
-                      <div key={item.path} className="rounded-xl border border-[var(--border)] bg-white px-4 py-3">
+                      <div key={item.path} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3">
                         <a
                           href={item.path}
                           target="_blank"
@@ -618,7 +618,7 @@ export function StatsSubTab() {
                           </div>
                           <div>
                             <span className="text-[var(--muted)]">검색 클릭</span><br />
-                            <span className="font-semibold text-slate-700">{item.searchMetrics ? item.searchMetrics.clicks.toLocaleString("ko-KR") : "—"}</span>
+                            <span className="font-semibold text-[var(--foreground)]">{item.searchMetrics ? item.searchMetrics.clicks.toLocaleString("ko-KR") : "—"}</span>
                           </div>
                         </div>
                       </div>
@@ -632,7 +632,7 @@ export function StatsSubTab() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)]/70 p-4">
               <div className="mb-4">
                 <h4 className="text-sm font-semibold text-[var(--foreground)]">핵심 인사이트</h4>
                 <p className="mt-1 text-xs text-[var(--muted)]">
@@ -691,7 +691,7 @@ function InsightListCard({
       <h5 className="text-sm font-semibold text-[var(--foreground)]">{title}</h5>
       <div className="mt-3 space-y-2">
         {items.length > 0 ? items.map((item) => (
-          <div key={item.key} className="rounded-xl border border-[var(--border)] bg-white px-3 py-3">
+          <div key={item.key} className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-3">
             <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
             <p className="mt-1 text-xs text-[var(--muted)]">{item.meta}</p>
           </div>

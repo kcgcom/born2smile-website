@@ -48,7 +48,7 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   if (rows.length === 0) {
     return (
-      <AdminSurface tone="white" className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 px-4 py-10 text-center">
+      <AdminSurface tone="white" className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--background)]/85 px-4 py-10 text-center">
         <Table className="h-8 w-8 text-[var(--border)]" aria-hidden="true" />
         <span className="text-sm text-[var(--muted)]">{emptyMessage}</span>
       </AdminSurface>
@@ -103,7 +103,7 @@ export function DataTable<T extends Record<string, unknown>>({
             })}
           </tr>
         </thead>
-        <tbody className="bg-white/90">
+        <tbody className="bg-[var(--background)]/90">
           {rows.map((row) => {
             const rowKey = String(row[keyField]);
             const isExpanded = expandedRowKey === rowKey;
@@ -126,7 +126,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   ))}
                 </tr>
                 {isExpanded && renderExpandedRow && (
-                  <tr className="border-b border-[var(--background)] bg-slate-50/80">
+                  <tr className="border-b border-[var(--background)] bg-[var(--background)]/80">
                     <td colSpan={columns.length} className="px-3 py-3">
                       {renderExpandedRow(row)}
                     </td>

@@ -174,7 +174,7 @@ const SEARCH_INTENT_STYLES: Record<SearchIntent, { label: string; className: str
   informational: { label: "정보형", className: "bg-blue-100 text-blue-700" },
   commercial:    { label: "비교/검토", className: "bg-orange-100 text-orange-700" },
   transactional: { label: "전환형", className: "bg-green-100 text-green-700" },
-  navigational:  { label: "탐색형", className: "bg-gray-100 text-gray-600" },
+  navigational:  { label: "탐색형", className: "bg-[var(--background)] text-[var(--muted)]" },
 };
 
 export function SearchIntentBadge({ intent }: { intent: SearchIntent }) {
@@ -203,5 +203,5 @@ export function BusinessValueBadge({ value }: { value: BusinessValue }) {
   if (value === "medium") {
     return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">중간</span>;
   }
-  return <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">탐색형</span>;
+  return <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2.5 py-0.5 text-xs font-semibold text-[var(--foreground)]">탐색형</span>;
 }

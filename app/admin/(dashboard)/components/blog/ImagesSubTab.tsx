@@ -173,7 +173,7 @@ export function ImagesSubTab() {
               JPG · PNG · WebP는 1200×1200 WebP로 자동 최적화되고 GIF는 원본으로 보관됩니다.
             </p>
           </div>
-          <label className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity ${uploading ? "cursor-not-allowed bg-gray-400" : "bg-[var(--color-primary)] hover:opacity-90"}`}>
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity ${uploading ? "cursor-not-allowed bg-[var(--muted)]" : "bg-[var(--color-primary)] hover:opacity-90"}`}>
             <Upload size={15} />
             {uploading ? "업로드 중…" : "이미지 업로드"}
             <input
@@ -216,7 +216,7 @@ export function ImagesSubTab() {
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                     filter === option.value
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                      : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+                      : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                   ].join(" ")}
                 >
                   {option.label} {option.count.toLocaleString("ko-KR")}
@@ -237,13 +237,13 @@ export function ImagesSubTab() {
               {filteredImages.map((img) => (
                 <div
                   key={img.path}
-                  className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-sm"
+                  className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-sm"
                 >
                   {/* Thumbnail */}
                   <button
                     type="button"
                     onClick={() => setPreviewImage(img)}
-                    className="flex h-36 w-full cursor-zoom-in items-center justify-center bg-[var(--background)] p-2 transition-colors hover:bg-slate-100"
+                    className="flex h-36 w-full cursor-zoom-in items-center justify-center bg-[var(--background)] p-2 transition-colors hover:bg-[var(--background)]"
                     aria-label={`${img.name} 크게 보기`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -262,7 +262,7 @@ export function ImagesSubTab() {
                         "rounded-full px-2 py-0.5 text-[10px] font-semibold",
                           img.isUsed
                             ? "bg-emerald-50 text-emerald-700"
-                            : "bg-slate-100 text-slate-500",
+                            : "bg-[var(--background)] text-slate-500",
                         ].join(" ")}
                       >
                         {img.isUsed ? "사용 중" : "미사용"}
@@ -307,7 +307,7 @@ export function ImagesSubTab() {
                     <button
                       onClick={() => handleCopy(img.url, img.path)}
                       title="URL 복사"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--background)]/90 shadow-sm backdrop-blur-sm hover:bg-[var(--background)]"
                     >
                       {copiedPath === img.path
                         ? <Check size={13} className="text-green-500" />
@@ -318,7 +318,7 @@ export function ImagesSubTab() {
                       onClick={() => void handleDelete(img)}
                       disabled={deletingPath === img.path}
                       title="삭제"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--background)]/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
                     >
                       <Trash2 size={13} className="text-red-500" />
                     </button>
@@ -337,10 +337,17 @@ export function ImagesSubTab() {
           aria-modal="true"
           aria-label="이미지 크게 보기"
           onClick={() => setPreviewImage(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setPreviewImage(null);
+            }
+          }}
+          tabIndex={0}
         >
           <div
             ref={modalRef}
-            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[var(--background)] shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-3">
@@ -368,12 +375,12 @@ export function ImagesSubTab() {
                 </button>
               </div>
             </div>
-            <div className="relative flex min-h-0 flex-1 items-center justify-center bg-slate-100 p-4">
+            <div className="relative flex min-h-0 flex-1 items-center justify-center bg-[var(--background)] p-4">
               {previewIndex > 0 && (
                 <button
                   type="button"
                   onClick={goToPrev}
-                  className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                  className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
                   aria-label="이전 이미지"
                 >
                   <ChevronLeft size={20} />
@@ -389,7 +396,7 @@ export function ImagesSubTab() {
                 <button
                   type="button"
                   onClick={goToNext}
-                  className="absolute right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                  className="absolute right-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
                   aria-label="다음 이미지"
                 >
                   <ChevronRight size={20} />

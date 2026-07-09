@@ -72,11 +72,11 @@ export const OpportunityScatter = dynamic(
                       informational: { label: "정보형", className: "bg-blue-100 text-blue-700" },
                       commercial:    { label: "비교/검토", className: "bg-orange-100 text-orange-700" },
                       transactional: { label: "전환형", className: "bg-green-100 text-green-700" },
-                      navigational:  { label: "탐색형", className: "bg-gray-100 text-gray-600" },
+                      navigational:  { label: "탐색형", className: "bg-[var(--background)] text-[var(--muted)]" },
                     };
                     const intentStyle = d.searchIntent ? intentStyles[d.searchIntent] : null;
                     return (
-                      <div className="rounded-lg border border-[var(--border)] bg-white p-2 shadow text-xs">
+                      <div className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-2 shadow text-xs">
                         <p className="font-semibold">{d.subGroup}</p>
                         <p className="text-[var(--muted)]">{d.category}</p>
                         {intentStyle && (

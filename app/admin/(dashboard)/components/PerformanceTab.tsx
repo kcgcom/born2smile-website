@@ -69,7 +69,7 @@ function scoreColor(score: number | null): string {
 }
 
 function scoreBg(score: number | null): string {
-  if (score == null) return "bg-gray-100 text-gray-500";
+  if (score == null) return "bg-[var(--background)] text-[var(--muted)]";
   if (score >= 90) return "bg-green-50 text-green-700";
   if (score >= 50) return "bg-orange-50 text-orange-700";
   return "bg-red-50 text-red-700";
@@ -84,7 +84,7 @@ function categoryBadge(cat: string): { label: string; className: string } {
     case "SLOW":
       return { label: "느림", className: "bg-red-100 text-red-700" };
     default:
-      return { label: "N/A", className: "bg-gray-100 text-gray-500" };
+      return { label: "N/A", className: "bg-[var(--background)] text-[var(--muted)]" };
   }
 }
 
