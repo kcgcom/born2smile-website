@@ -200,13 +200,13 @@ export function PerformanceTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedAudit, setExpandedAudit] = useState<string | null>(null);
 
-  const { data: mobileData, loading: mobileLoading, error: mobileError } =
+  const { data: mobileData, loading: mobileLoading, isValidating: mobileValidating, error: mobileError } =
     useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=mobile");
-  const { data: desktopData, loading: desktopLoading, error: desktopError } =
+  const { data: desktopData, loading: desktopLoading, isValidating: desktopValidating, error: desktopError } =
     useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=desktop");
 
   const currentData = strategy === "mobile" ? mobileData : desktopData;
-  const currentLoading = strategy === "mobile" ? mobileLoading : desktopLoading;
+  const currentLoading = strategy === "mobile" ? (mobileLoading || mobileValidating) : (desktopLoading || desktopValidating);
   const currentError = strategy === "mobile" ? mobileError : desktopError;
 
   const result = currentData?.result ?? null;

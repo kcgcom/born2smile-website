@@ -268,7 +268,7 @@ export function ClusteredKeywordTable({
           유사 키워드 {multiCount}그룹 발견 — 합산 지표로 실제 검색 의도를 파악합니다.
         </p>
       )}
-      <div className="max-h-[36rem] overflow-y-auto rounded-xl border border-[var(--border)]">
+      <div className="max-h-[36rem] overflow-x-auto overflow-y-auto rounded-xl border border-[var(--border)]">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-[var(--background)]">
             <tr className="border-b border-[var(--border)]">

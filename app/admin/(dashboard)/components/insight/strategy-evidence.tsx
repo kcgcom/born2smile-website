@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { KeywordCategorySlug, SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { DataTable } from "../DataTable";
@@ -23,7 +23,7 @@ export function EvidenceDataSection({
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
 
-  const crossKeywords = buildCrossKeywords(contentGap);
+  const crossKeywords = useMemo(() => buildCrossKeywords(contentGap), [contentGap]);
 
   if (contentGap.length === 0 && crossKeywords.length === 0) return null;
 
@@ -31,14 +31,17 @@ export function EvidenceDataSection({
     ? contentGap
     : contentGap.filter((item) => item.searchIntent === intentFilter);
 
-  const gapRows = sortGapRows(filteredGap).map((item) => ({
-    ...item,
-    id: `${item.slug}-${item.subGroup}`,
-  }));
+  const gapRows = useMemo(
+    () => sortGapRows(filteredGap).map((item) => ({
+      ...item,
+      id: `${item.slug}-${item.subGroup}`,
+    })),
+    [filteredGap, sortGapRows],
+  );
 
-  const maxVolume = Math.max(...contentGap.map((g) => calcTotalVolume(g)), 1);
-  const actionByKey = new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item]));
-  const pageOpportunityByKey = new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item]));
+  const maxVolume = useMemo(() => Math.max(...contentGap.map((g) => calcTotalVolume(g)), 1), [contentGap]);
+  const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
+  const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
 
   return (
     <AdminDisclosureSection
