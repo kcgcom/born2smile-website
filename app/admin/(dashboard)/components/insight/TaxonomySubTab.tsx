@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
-  Hash,
   Layers,
   Search,
   Tag,
@@ -590,18 +589,6 @@ export function TaxonomySubTab() {
     return map;
   }, [overviewData, selectedCategory]);
 
-  const stats = useMemo(() => {
-    const totalGroups = CATEGORY_KEYWORDS.reduce(
-      (s, c) => s + c.subGroups.length,
-      0
-    );
-    const totalKw = CATEGORY_KEYWORDS.reduce(
-      (s, c) => s + c.subGroups.reduce((ss, g) => ss + g.keywords.length, 0),
-      0
-    );
-    return { categories: CATEGORY_KEYWORDS.length, totalGroups, totalKw };
-  }, []);
-
   // Sort categories by monthly volume (descending) when data available
   const sortedCategories = useMemo(() => {
     if (trendInfoMap.size === 0) return CATEGORY_KEYWORDS;
@@ -630,13 +617,7 @@ export function TaxonomySubTab() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-lg font-bold">키워드 택소노미</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {stats.categories}개 카테고리 · {stats.totalGroups}개 서브그룹 ·{" "}
-          {stats.totalKw}개 키워드
-        </p>
-      </div>
+      <h2 className="text-lg font-bold">키워드 택소노미</h2>
 
       <ApiSourceBadge sources={["naverDatalab"]} />
 
@@ -653,26 +634,6 @@ export function TaxonomySubTab() {
 
       {/* API error */}
       {overviewError && <AdminErrorState message={overviewError} onRetry={refetchOverview} />}
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "카테고리", value: stats.categories, icon: Hash },
-          { label: "서브그룹", value: stats.totalGroups, icon: Layers },
-          { label: "키워드", value: stats.totalKw, icon: Tag },
-        ].map(({ label, value, icon: StatIcon }) => (
-          <div
-            key={label}
-            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3"
-          >
-            <StatIcon size={18} className="text-primary" />
-            <div>
-              <p className="text-xl font-bold">{value}</p>
-              <p className="text-xs text-gray-500">{label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Category card grid */}
       <section>
