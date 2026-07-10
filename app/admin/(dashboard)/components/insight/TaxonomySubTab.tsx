@@ -208,27 +208,6 @@ function CategoryDetail({
         </div>
       )}
 
-      {/* Topic angles */}
-      {cat.topicAngles.length > 0 && !filter && (
-        <details className="rounded-xl border border-gray-200 bg-white">
-          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-800">
-            토픽 앵글 ({cat.topicAngles.length}개)
-          </summary>
-          <div className="border-t border-gray-100 px-5 py-3 space-y-1.5">
-            {cat.topicAngles.map((ta) => (
-              <div
-                key={ta.template}
-                className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600"
-              >
-                <span className="font-medium">{ta.template}</span>
-                <span className="ml-2 text-gray-400">
-                  → {ta.subGroup} · {ta.aspect}
-                </span>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
     </section>
   );
 }
