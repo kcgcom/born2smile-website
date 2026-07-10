@@ -26,10 +26,8 @@ import {
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { useAdminApi } from "../useAdminApi";
-import { PeriodSelector } from "../PeriodSelector";
-import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
-import { AdminErrorState } from "../AdminErrorState";
-import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
+import type { CategoryTrendData } from "@/lib/trend-analysis";
+import type { TrendSummaryData } from "./shared";
 
 // ---------------------------------------------------------------
 // Constants
@@ -56,41 +54,13 @@ const INTENT_BAR_COLORS: Record<SearchIntent, string> = {
   navigational: "bg-purple-400",
 };
 
-const PERIODS = [
-  { value: "1m", label: "1개월" },
-  { value: "3m", label: "3개월" },
-  { value: "1y", label: "1년" },
-  { value: "3y", label: "3년" },
-  { value: "10y", label: "10년" },
-];
-
 const SUB_GROUP_COLORS = [
   "#2563EB", "#C9962B", "#16A34A", "#9333EA", "#0891B2",
   "#DC2626", "#EA580C", "#D946EF", "#65A30D",
 ];
 
-// ---------------------------------------------------------------
-// Trend types (from TrendSubTab)
-// ---------------------------------------------------------------
-
-interface SubGroupDetail {
-  name: string;
-  trend: "rising" | "falling" | "stable";
-  changeRate: number;
-  currentAvg: number;
-  data: Array<{ period: string; ratio: number }>;
-}
-
-interface CategoryDetailData {
-  category: KeywordCategorySlug;
-  slug: KeywordCategorySlug;
-  period: { start: string; end: string };
-  timeUnit: string;
-  subGroups: SubGroupDetail[];
-}
-
 interface SubGroupChartProps {
-  subGroups: SubGroupDetail[];
+  subGroups: CategoryTrendData["subGroups"];
 }
 
 // ---------------------------------------------------------------
@@ -305,45 +275,46 @@ function SubGroupPanel({
 function TrendView({
   slug,
   volumeMap,
+  categoryDetail,
+  period: summaryPeriod,
 }: {
   slug: KeywordCategorySlug;
   volumeMap: Map<string, number>;
+  categoryDetail: CategoryTrendData[] | undefined;
+  period: { start: string; end: string } | null;
 }) {
   const router = useRouter();
-  const [period, setPeriod] = useState<string>("3m");
-  const { data, loading, error, refetch } = useAdminApi<CategoryDetailData>(
-    `/api/admin/naver-datalab/category/${slug}?period=${period}`,
-  );
 
-  if (loading) return <AdminLoadingSkeleton variant="chart" />;
-  if (error) return <AdminErrorState message={error} onRetry={refetch} />;
-  if (!data) return null;
+  const detail = categoryDetail?.find((c) => c.slug === slug);
+
+  if (!detail || detail.subGroups.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-gray-400">
+        트렌드 데이터가 없습니다.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Period selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector
-          periods={PERIODS}
-          selected={period}
-          onChange={(v) => setPeriod(v)}
-        />
-        <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-          {data.period.start} ~ {data.period.end}
+      {/* Period badge */}
+      {summaryPeriod && (
+        <span className="inline-block rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+          {summaryPeriod.start} ~ {summaryPeriod.end}
         </span>
-      </div>
+      )}
 
       {/* Line chart */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <SubGroupLineChart subGroups={data.subGroups} />
+        <SubGroupLineChart subGroups={detail.subGroups} />
       </div>
 
       {/* SubGroup bars with volume */}
       <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 space-y-2">
         <h4 className="text-xs font-semibold text-[var(--muted)] mb-2">서브그룹별 트렌드</h4>
-        {data.subGroups.map((sg, idx) => {
+        {detail.subGroups.map((sg, idx) => {
           const vol = volumeMap.get(sg.name);
-          const maxAvg = Math.max(...data.subGroups.map((s) => s.currentAvg), 1);
+          const maxAvg = Math.max(...detail.subGroups.map((s) => s.currentAvg), 1);
           const barWidth = `${Math.max((sg.currentAvg / maxAvg) * 100, 2)}%`;
           const barColor = SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length];
 
@@ -411,11 +382,15 @@ function CategoryDetail({
   onBack,
   filter,
   volumeMap,
+  categoryDetail,
+  summaryPeriod,
 }: {
   cat: CategoryKeywords;
   onBack: () => void;
   filter: string;
   volumeMap: Map<string, number>;
+  categoryDetail: CategoryTrendData[] | undefined;
+  summaryPeriod: { start: string; end: string } | null;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
@@ -469,7 +444,7 @@ function CategoryDetail({
 
       {/* Trend view (on demand) */}
       {showTrend && (
-        <TrendView slug={cat.slug} volumeMap={volumeMap} />
+        <TrendView slug={cat.slug} volumeMap={volumeMap} categoryDetail={categoryDetail} period={summaryPeriod} />
       )}
 
       {/* Keywords view */}
@@ -625,6 +600,8 @@ export function TaxonomySubTab() {
             }}
             filter={filter}
             volumeMap={selectedVolumeMap}
+            categoryDetail={overviewData?.categoryDetail}
+            summaryPeriod={overviewData?.period ?? null}
           />
         </section>
       )}

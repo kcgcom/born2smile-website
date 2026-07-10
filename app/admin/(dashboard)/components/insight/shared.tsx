@@ -5,6 +5,7 @@ import {
   type SearchIntent,
 } from "@/lib/admin-naver-datalab-keywords";
 import type { BusinessValue, InsightActionType } from "@/lib/trend-insights";
+import type { CategoryTrendData } from "@/lib/trend-analysis";
 
 // ---------------------------------------------------------------
 // 공유 타입 (insight 서브탭 간 공유)
@@ -106,6 +107,7 @@ export interface TrendSummaryData {
   period: { start: string; end: string } | null;
   categories: TrendOverviewCategory[];
   contentGap: ContentGapItem[];
+  categoryDetail?: CategoryTrendData[];
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
 }

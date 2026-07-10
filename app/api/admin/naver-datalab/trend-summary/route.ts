@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
           period: data.period,
           categories: data.categories,
           contentGap: data.contentGap,
+          categoryDetail: data.successfulCategoryData,
           volumeSource: data.volumeSource,
           volumeCoverage: data.volumeCoverage,
         },
