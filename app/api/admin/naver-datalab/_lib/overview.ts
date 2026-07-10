@@ -211,17 +211,30 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
       const ck = CATEGORY_KEYWORDS[index];
 
       if (result.status === "rejected") {
+        let monthlyTotalVolume: number | null = null;
+        if (volumeData) {
+          let total = 0;
+          let hasAny = false;
+          for (const sg of ck.subGroups) {
+            const volume = volumeData[`${ck.category}:${sg.name}`];
+            if (!volume) continue;
+            total += volume.monthlyTotalQcCnt;
+            hasAny = true;
+          }
+          if (hasAny) monthlyTotalVolume = total;
+        }
+
         return {
           category: ck.category,
           slug: ck.slug,
           overallTrend: null,
           changeRate: null,
           topSubGroup: null,
-          subGroupCount: null,
+          subGroupCount: ck.subGroups.length,
           risingCount: null,
           fallingCount: null,
           stableCount: null,
-          monthlyTotalVolume: undefined,
+          monthlyTotalVolume,
           error: result.reason instanceof Error ? result.reason.message : "데이터를 불러올 수 없습니다",
         };
       }
