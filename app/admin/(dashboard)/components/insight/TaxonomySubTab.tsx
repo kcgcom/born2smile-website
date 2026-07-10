@@ -546,7 +546,7 @@ export function TaxonomySubTab() {
   const detailRef = useRef<HTMLDivElement>(null);
 
   // Fetch trend overview (lazy — only when a category is selected)
-  const { data: overviewData, error: overviewError, refetch: refetchOverview } = useAdminApi<TrendSummaryData>(
+  const { data: overviewData, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useAdminApi<TrendSummaryData>(
     `/api/admin/naver-datalab/trend-summary?period=3m&mode=full`,
     !!selectedCategory,
   );
@@ -610,8 +610,8 @@ export function TaxonomySubTab() {
     }
   }, [selectedCat]);
 
-  // ENV not configured
-  const isEnvMissing = selectedCategory && overviewData === null;
+  // ENV not configured — only show after loading completes with null data
+  const isEnvMissing = selectedCategory && !overviewLoading && !overviewError && overviewData === null;
 
   return (
     <div className="space-y-6">
