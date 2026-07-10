@@ -26,8 +26,10 @@ import {
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { useAdminApi } from "../useAdminApi";
+import { AdminErrorState } from "../AdminErrorState";
 import type { CategoryTrendData } from "@/lib/trend-analysis";
-import type { TrendSummaryData } from "./shared";
+import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
+import { ApiSourceBadge } from "./ApiSourceBadge";
 
 // ---------------------------------------------------------------
 // Constants
@@ -175,10 +177,12 @@ function CategoryCard({
   cat,
   isSelected,
   onClick,
+  trendInfo,
 }: {
   cat: CategoryKeywords;
   isSelected: boolean;
   onClick: () => void;
+  trendInfo?: TrendOverviewCategory;
 }) {
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
 
@@ -195,9 +199,18 @@ function CategoryCard({
       <h3 className="text-sm font-semibold text-[var(--foreground)]">
         {getKeywordCategoryLabel(cat.slug)}
       </h3>
-      <p className="mt-0.5 text-xs text-gray-400">{cat.slug}</p>
 
-      <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+      {/* Monthly volume */}
+      {trendInfo?.monthlyTotalVolume != null ? (
+        <p className="mt-1 text-lg font-bold text-[var(--foreground)] tabular-nums leading-tight">
+          {trendInfo.monthlyTotalVolume.toLocaleString("ko-KR")}
+          <span className="ml-0.5 text-xs font-normal text-[var(--muted)]">/월</span>
+        </p>
+      ) : (
+        <p className="mt-0.5 text-xs text-gray-400">{cat.slug}</p>
+      )}
+
+      <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <Layers size={12} />
           {cat.subGroups.length}개 그룹
@@ -327,22 +340,29 @@ function TrendView({
 
   return (
     <div className="space-y-4">
-      {/* Period selector */}
-      <div className="flex flex-wrap items-center gap-1">
-        {TREND_PERIODS.map((p) => (
-          <button
-            key={p.value}
-            type="button"
-            onClick={() => setSelectedPeriod(p.value)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              selectedPeriod === p.value
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+      {/* Period selector + range */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-1">
+          {TREND_PERIODS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setSelectedPeriod(p.value)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                selectedPeriod === p.value
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {slicedSubGroups[0]?.data.length > 0 && (
+          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+            {slicedSubGroups[0].data[0].period} ~ {slicedSubGroups[0].data[slicedSubGroups[0].data.length - 1].period}
+          </span>
+        )}
       </div>
 
       {/* Line chart */}
@@ -518,11 +538,22 @@ export function TaxonomySubTab() {
   const [filter, setFilter] = useState("");
   const detailRef = useRef<HTMLDivElement>(null);
 
-  // Fetch trend overview for volume data (lazy — only when a category is selected)
-  const { data: overviewData } = useAdminApi<TrendSummaryData>(
+  // Fetch trend overview (lazy — only when a category is selected)
+  const { data: overviewData, error: overviewError, refetch: refetchOverview } = useAdminApi<TrendSummaryData>(
     `/api/admin/naver-datalab/trend-summary?period=3m&mode=full`,
     !!selectedCategory,
   );
+
+  // Category trend info map for cards
+  const trendInfoMap = useMemo(() => {
+    const map = new Map<KeywordCategorySlug, TrendOverviewCategory>();
+    if (overviewData?.categories) {
+      for (const cat of overviewData.categories) {
+        map.set(cat.slug, cat);
+      }
+    }
+    return map;
+  }, [overviewData]);
 
   // Volume map for selected category
   const selectedVolumeMap = useMemo(() => {
@@ -562,6 +593,9 @@ export function TaxonomySubTab() {
     }
   }, [selectedCat]);
 
+  // ENV not configured
+  const isEnvMissing = selectedCategory && overviewData === null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -572,6 +606,22 @@ export function TaxonomySubTab() {
           {stats.totalKw}개 키워드
         </p>
       </div>
+
+      <ApiSourceBadge sources={["naverDatalab"]} />
+
+      {/* ENV warning */}
+      {isEnvMissing && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          네이버 DataLab API 키가 설정되지 않았습니다. 환경변수{" "}
+          <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">NAVER_DATALAB_CLIENT_ID</code>{" "}
+          및{" "}
+          <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">NAVER_DATALAB_CLIENT_SECRET</code>{" "}
+          를 확인하세요.
+        </div>
+      )}
+
+      {/* API error */}
+      {overviewError && <AdminErrorState message={overviewError} onRetry={refetchOverview} />}
 
       {/* Stats cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -604,6 +654,7 @@ export function TaxonomySubTab() {
               key={cat.slug}
               cat={cat}
               isSelected={selectedCategory === cat.slug}
+              trendInfo={trendInfoMap.get(cat.slug)}
               onClick={() => {
                 setSelectedCategory(
                   selectedCategory === cat.slug ? null : cat.slug
