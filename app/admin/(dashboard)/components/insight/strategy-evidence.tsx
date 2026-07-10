@@ -25,11 +25,12 @@ export function EvidenceDataSection({
 
   const crossKeywords = useMemo(() => buildCrossKeywords(contentGap), [contentGap]);
 
-  if (contentGap.length === 0 && crossKeywords.length === 0) return null;
-
-  const filteredGap = intentFilter === "all"
-    ? contentGap
-    : contentGap.filter((item) => item.searchIntent === intentFilter);
+  const filteredGap = useMemo(
+    () => intentFilter === "all"
+      ? contentGap
+      : contentGap.filter((item) => item.searchIntent === intentFilter),
+    [contentGap, intentFilter],
+  );
 
   const gapRows = useMemo(
     () => sortGapRows(filteredGap).map((item) => ({
@@ -42,6 +43,8 @@ export function EvidenceDataSection({
   const maxVolume = useMemo(() => Math.max(...contentGap.map((g) => calcTotalVolume(g)), 1), [contentGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
   const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
+
+  if (contentGap.length === 0 && crossKeywords.length === 0) return null;
 
   return (
     <AdminDisclosureSection
