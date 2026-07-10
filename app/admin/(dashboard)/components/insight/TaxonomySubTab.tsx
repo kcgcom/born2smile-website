@@ -38,7 +38,7 @@ import { ApiSourceBadge } from "./ApiSourceBadge";
 
 const INTENT_LABELS: Record<SearchIntent, string> = {
   informational: "정보",
-  commercial: "상업",
+  commercial: "비교/검토",
   transactional: "전환",
   navigational: "탐색",
 };
