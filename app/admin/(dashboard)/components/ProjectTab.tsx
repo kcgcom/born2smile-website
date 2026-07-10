@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, AlertTriangle, Circle, ChevronDown, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Check, AlertTriangle, Circle, ChevronDown, X, Copy, CheckCheck } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import {
   IMPROVEMENT_ITEMS,
@@ -11,6 +11,7 @@ import {
   type SiteConfigStatus,
 } from "@/lib/admin-data";
 import { ENV_GROUP_LABELS, type EnvGroup } from "@/lib/dev-data";
+import { getAccessToken } from "@/lib/supabase";
 import { ConfigRow } from "./ConfigRow";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
@@ -98,6 +99,26 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
 
 function EnvHealthSection() {
   const [expanded, setExpanded] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyEnvValue = useCallback(async (key: string) => {
+    try {
+      const token = await getAccessToken();
+      const res = await fetch(`/api/dev/env-value?key=${encodeURIComponent(key)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      const json = await res.json();
+      const value: string = json.data?.value ?? "";
+      if (!value) return;
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 1500);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   const {
     data: envData,
     loading: envLoading,
@@ -192,9 +213,12 @@ function EnvHealthSection() {
                 </p>
                 <ul className="space-y-1">
                   {groupVars.map((v) => (
-                    <li key={v.key} className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs ${
-                      v.configured ? "bg-green-50" : v.required ? "bg-red-50" : "bg-amber-50"
-                    }`}>
+                    <li
+                      key={v.key}
+                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs ${
+                        v.configured ? "bg-green-50" : v.required ? "bg-red-50" : "bg-amber-50"
+                      }`}
+                    >
                       <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
                         v.configured
                           ? "bg-green-100 text-green-600"
@@ -212,6 +236,20 @@ function EnvHealthSection() {
                         <span className="font-medium text-[var(--foreground)]">{v.label}</span>
                         <span className="ml-1.5 text-[var(--muted)]">({v.key})</span>
                       </span>
+                      {v.configured && (
+                        <button
+                          onClick={() => copyEnvValue(v.key)}
+                          aria-label={`${v.label} 값 복사`}
+                          title="값 복사"
+                          className="shrink-0 rounded p-1 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                        >
+                          {copiedKey === v.key ? (
+                            <CheckCheck className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                        </button>
+                      )}
                       <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         v.configured
                           ? v.scope === "public" ? "bg-blue-100 text-blue-700" : "bg-[var(--background)] text-[var(--muted)]"
