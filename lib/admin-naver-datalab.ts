@@ -57,8 +57,9 @@ function getPeriodDates(period: string) {
     "90d": { days: 90,   timeUnit: "week" },
     "1m":  { days: 30,   timeUnit: "date" },
     "3m":  { days: 90,   timeUnit: "date" },
+    "6m":  { days: 180,  timeUnit: "date" },
     "1y":  { days: 365,  timeUnit: "week" },
-    "3y":  { days: 1095, timeUnit: "month" },
+    "3y":  { days: 1095, timeUnit: "week" },
     "10y": { days: 3650, timeUnit: "month" },
   };
 

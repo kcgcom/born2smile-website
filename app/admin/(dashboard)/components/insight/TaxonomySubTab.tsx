@@ -272,22 +272,52 @@ function SubGroupPanel({
 // Trend view (loaded on demand inside detail panel)
 // ---------------------------------------------------------------
 
+const TREND_PERIODS = [
+  { value: "1m", label: "1개월", days: 30, source: "short" as const },
+  { value: "3m", label: "3개월", days: 90, source: "short" as const },
+  { value: "1y", label: "1년", days: 365, source: "long" as const },
+  { value: "3y", label: "3년", days: 1095, source: "long" as const },
+];
+
+/** 시계열 데이터에서 최근 N일에 해당하는 데이터만 추출 */
+function sliceTimeSeries(
+  subGroups: CategoryTrendData["subGroups"],
+  days: number,
+): CategoryTrendData["subGroups"] {
+  const cutoff = new Date(Date.now() + 9 * 60 * 60 * 1000); // KST
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  return subGroups.map((sg) => ({
+    ...sg,
+    data: sg.data.filter((d) => d.period >= cutoffStr),
+  }));
+}
+
 function TrendView({
   slug,
   volumeMap,
-  categoryDetail,
-  period: summaryPeriod,
+  shortTermDetail,
+  longTermDetail,
 }: {
   slug: KeywordCategorySlug;
   volumeMap: Map<string, number>;
-  categoryDetail: CategoryTrendData[] | undefined;
-  period: { start: string; end: string } | null;
+  shortTermDetail: CategoryTrendData[] | undefined;
+  longTermDetail: CategoryTrendData[] | undefined;
 }) {
   const router = useRouter();
+  const [selectedPeriod, setSelectedPeriod] = useState("3m");
 
-  const detail = categoryDetail?.find((c) => c.slug === slug);
+  const periodConfig = TREND_PERIODS.find((p) => p.value === selectedPeriod) ?? TREND_PERIODS[1];
+  const sourceData = periodConfig.source === "short" ? shortTermDetail : longTermDetail;
+  const detail = sourceData?.find((c) => c.slug === slug);
 
-  if (!detail || detail.subGroups.length === 0) {
+  const slicedSubGroups = useMemo(() => {
+    if (!detail) return [];
+    return sliceTimeSeries(detail.subGroups, periodConfig.days);
+  }, [detail, periodConfig.days]);
+
+  if (!detail || slicedSubGroups.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-gray-400">
         트렌드 데이터가 없습니다.
@@ -297,24 +327,35 @@ function TrendView({
 
   return (
     <div className="space-y-4">
-      {/* Period badge */}
-      {summaryPeriod && (
-        <span className="inline-block rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-          {summaryPeriod.start} ~ {summaryPeriod.end}
-        </span>
-      )}
+      {/* Period selector */}
+      <div className="flex flex-wrap items-center gap-1">
+        {TREND_PERIODS.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            onClick={() => setSelectedPeriod(p.value)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              selectedPeriod === p.value
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
 
       {/* Line chart */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <SubGroupLineChart subGroups={detail.subGroups} />
+        <SubGroupLineChart subGroups={slicedSubGroups} />
       </div>
 
       {/* SubGroup bars with volume */}
       <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 space-y-2">
         <h4 className="text-xs font-semibold text-[var(--muted)] mb-2">서브그룹별 트렌드</h4>
-        {detail.subGroups.map((sg, idx) => {
+        {slicedSubGroups.map((sg, idx) => {
           const vol = volumeMap.get(sg.name);
-          const maxAvg = Math.max(...detail.subGroups.map((s) => s.currentAvg), 1);
+          const maxAvg = Math.max(...slicedSubGroups.map((s) => s.currentAvg), 1);
           const barWidth = `${Math.max((sg.currentAvg / maxAvg) * 100, 2)}%`;
           const barColor = SUB_GROUP_COLORS[idx % SUB_GROUP_COLORS.length];
 
@@ -382,15 +423,15 @@ function CategoryDetail({
   onBack,
   filter,
   volumeMap,
-  categoryDetail,
-  summaryPeriod,
+  shortTermDetail,
+  longTermDetail,
 }: {
   cat: CategoryKeywords;
   onBack: () => void;
   filter: string;
   volumeMap: Map<string, number>;
-  categoryDetail: CategoryTrendData[] | undefined;
-  summaryPeriod: { start: string; end: string } | null;
+  shortTermDetail: CategoryTrendData[] | undefined;
+  longTermDetail: CategoryTrendData[] | undefined;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
@@ -444,7 +485,7 @@ function CategoryDetail({
 
       {/* Trend view (on demand) */}
       {showTrend && (
-        <TrendView slug={cat.slug} volumeMap={volumeMap} categoryDetail={categoryDetail} period={summaryPeriod} />
+        <TrendView slug={cat.slug} volumeMap={volumeMap} shortTermDetail={shortTermDetail} longTermDetail={longTermDetail} />
       )}
 
       {/* Keywords view */}
@@ -600,8 +641,8 @@ export function TaxonomySubTab() {
             }}
             filter={filter}
             volumeMap={selectedVolumeMap}
-            categoryDetail={overviewData?.categoryDetail}
-            summaryPeriod={overviewData?.period ?? null}
+            shortTermDetail={overviewData?.shortTermDetail}
+            longTermDetail={overviewData?.longTermDetail}
           />
         </section>
       )}

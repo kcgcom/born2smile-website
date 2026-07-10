@@ -107,7 +107,10 @@ export interface TrendSummaryData {
   period: { start: string; end: string } | null;
   categories: TrendOverviewCategory[];
   contentGap: ContentGapItem[];
-  categoryDetail?: CategoryTrendData[];
+  /** 6개월 일별 시계열 (1m/3m 기간 선택용) */
+  shortTermDetail?: CategoryTrendData[];
+  /** 3년 주별 시계열 (1y/3y 기간 선택용) */
+  longTermDetail?: CategoryTrendData[];
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
 }

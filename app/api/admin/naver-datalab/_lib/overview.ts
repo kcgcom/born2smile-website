@@ -28,6 +28,10 @@ export interface TrendOverviewBaseData {
   period: { start: string; end: string } | null;
   categories: TrendOverviewCategory[];
   successfulCategoryData: CategoryTrendData[];
+  /** 6개월 일별 시계열 (1m/3m 기간 선택용) */
+  shortTermDetail: CategoryTrendData[];
+  /** 3년 주별 시계열 (1y/3y 기간 선택용) */
+  longTermDetail: CategoryTrendData[];
   volumeData: Record<string, VolumeDataEntry> | undefined;
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
@@ -169,20 +173,29 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
 export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode): Promise<TrendOverviewBaseData> {
   const isFullMode = mode === "full";
 
-  const [datalabResults, volumeResult] = await Promise.all([
-    isFullMode
-      ? mapSettledWithConcurrencyLimit(CATEGORY_KEYWORDS, 2, async (ck) => {
-          const getData = createCachedFetcher(
-            `naver-trend-${ck.slug}-${period}`,
-            () => fetchNaverDatalabByCategory(ck.subGroups, period),
-            CACHE_TTL.NAVER_DATALAB,
-          );
-          const raw = await getData();
-          return { ck, raw };
-        })
-      : Promise.resolve(null),
+  // 단기(6m 일별) + 장기(3y 주별) 2회 호출, 클라이언트에서 1m/3m/1y/3y 슬라이싱
+  const SHORT_TERM_PERIOD = "6m";
+  const LONG_TERM_PERIOD = "3y";
+
+  const fetchCategoryData = (p: string) =>
+    mapSettledWithConcurrencyLimit(CATEGORY_KEYWORDS, 2, async (ck) => {
+      const getData = createCachedFetcher(
+        `naver-trend-${ck.slug}-${p}`,
+        () => fetchNaverDatalabByCategory(ck.subGroups, p),
+        CACHE_TTL.NAVER_DATALAB,
+      );
+      const raw = await getData();
+      return { ck, raw };
+    });
+
+  const [shortTermResults, longTermResults, volumeResult] = await Promise.all([
+    isFullMode ? fetchCategoryData(SHORT_TERM_PERIOD) : Promise.resolve(null),
+    isFullMode ? fetchCategoryData(LONG_TERM_PERIOD) : Promise.resolve(null),
     fetchVolumeOverviewData(),
   ]);
+
+  // 기본 분석에는 단기(6m) 데이터 사용
+  const datalabResults = shortTermResults;
 
   const volumeData = volumeResult && "data" in volumeResult ? volumeResult.data : undefined;
   const volumeCoverage = volumeResult && "coverage" in volumeResult ? volumeResult.coverage : null;
@@ -326,11 +339,32 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     return Math.abs(b.changeRate ?? 0) - Math.abs(a.changeRate ?? 0);
   });
 
+  // 장기(3y 주별) 시계열 구축
+  let longTermDetail: CategoryTrendData[] = [];
+  if (longTermResults) {
+    longTermDetail = longTermResults
+      .map((result, index) => {
+        if (result.status === "rejected") return null;
+        const ck = CATEGORY_KEYWORDS[index];
+        return {
+          category: ck.category,
+          slug: ck.slug,
+          subGroups: result.value.raw.groups.map((group) => {
+            const { direction, changeRate, currentAvg } = analyzeTrend(group.data);
+            return { name: group.title, trend: direction, changeRate, currentAvg, data: group.data };
+          }),
+        };
+      })
+      .filter((v): v is CategoryTrendData => v != null);
+  }
+
   return {
     mode,
     period: periodDates,
     categories,
     successfulCategoryData,
+    shortTermDetail: successfulCategoryData,
+    longTermDetail,
     volumeData,
     volumeSource: volumeData ? "searchad" : "datalab-fallback",
     volumeCoverage,
