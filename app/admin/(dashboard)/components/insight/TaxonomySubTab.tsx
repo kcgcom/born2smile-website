@@ -327,8 +327,15 @@ function TrendView({
 
   const slicedSubGroups = useMemo(() => {
     if (!detail) return [];
-    return sliceTimeSeries(detail.subGroups, periodConfig.days);
-  }, [detail, periodConfig.days]);
+    const sliced = sliceTimeSeries(detail.subGroups, periodConfig.days);
+    // Sort by volume (descending), fallback to currentAvg
+    return [...sliced].sort((a, b) => {
+      const va = volumeMap.get(a.name) ?? -1;
+      const vb = volumeMap.get(b.name) ?? -1;
+      if (va !== -1 || vb !== -1) return vb - va;
+      return b.currentAvg - a.currentAvg;
+    });
+  }, [detail, periodConfig.days, volumeMap]);
 
   if (!detail || slicedSubGroups.length === 0) {
     return (
@@ -581,6 +588,16 @@ export function TaxonomySubTab() {
     return { categories: CATEGORY_KEYWORDS.length, totalGroups, totalKw };
   }, []);
 
+  // Sort categories by monthly volume (descending) when data available
+  const sortedCategories = useMemo(() => {
+    if (trendInfoMap.size === 0) return CATEGORY_KEYWORDS;
+    return [...CATEGORY_KEYWORDS].sort((a, b) => {
+      const va = trendInfoMap.get(a.slug)?.monthlyTotalVolume ?? -1;
+      const vb = trendInfoMap.get(b.slug)?.monthlyTotalVolume ?? -1;
+      return vb - va;
+    });
+  }, [trendInfoMap]);
+
   const selectedCat = useMemo(
     () => CATEGORY_KEYWORDS.find((c) => c.slug === selectedCategory) ?? null,
     [selectedCategory]
@@ -649,7 +666,7 @@ export function TaxonomySubTab() {
           카테고리 개요
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {CATEGORY_KEYWORDS.map((cat) => (
+          {sortedCategories.map((cat) => (
             <CategoryCard
               key={cat.slug}
               cat={cat}
