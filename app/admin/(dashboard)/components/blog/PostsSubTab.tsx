@@ -44,7 +44,6 @@ export function PostsSubTab() {
   const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
@@ -76,6 +75,13 @@ export function PostsSubTab() {
     } else if (sortKey === "recommended") {
       setSortKey("newest");
     }
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    setSortKey("newest");
   };
 
   const blogStats = useMemo(() => getBlogStats(posts, today), [posts, today]);
@@ -178,17 +184,16 @@ export function PostsSubTab() {
           <CategoryDistributionPanel posts={posts} today={today} />
 
           <PostsFilterPanel
-            filtersOpen={filtersOpen}
             searchQuery={searchQuery}
             filteredCount={filteredPosts.length}
             categoryFilter={categoryFilter}
             statusFilter={statusFilter}
             sortKey={sortKey}
-            onToggleFilters={() => setFiltersOpen((current) => !current)}
             onSearchQueryChange={setSearchQuery}
             onCategoryFilterChange={setCategoryFilter}
             onStatusFilterChange={handleStatusFilterChange}
             onSortKeyChange={setSortKey}
+            onResetFilters={handleResetFilters}
           />
 
           <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">

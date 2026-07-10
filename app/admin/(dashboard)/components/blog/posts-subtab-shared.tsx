@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -41,17 +41,16 @@ interface PostsSummaryCardsProps {
 }
 
 interface PostsFilterPanelProps {
-  filtersOpen: boolean;
   searchQuery: string;
   filteredCount: number;
   categoryFilter: BlogCategoryFilter;
   statusFilter: StatusFilter;
   sortKey: SortKey;
-  onToggleFilters: () => void;
   onSearchQueryChange: (value: string) => void;
   onCategoryFilterChange: (value: BlogCategoryFilter) => void;
   onStatusFilterChange: (value: StatusFilter) => void;
   onSortKeyChange: (value: SortKey) => void;
+  onResetFilters: () => void;
 }
 
 interface PostListItemProps {
@@ -242,81 +241,147 @@ export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChang
 }
 
 export function PostsFilterPanel({
-  filtersOpen,
   searchQuery,
   filteredCount,
   categoryFilter,
   statusFilter,
   sortKey,
-  onToggleFilters,
   onSearchQueryChange,
   onCategoryFilterChange,
   onStatusFilterChange,
   onSortKeyChange,
+  onResetFilters,
 }: PostsFilterPanelProps) {
+  const statusLabels: Record<StatusFilter, string> = {
+    all: "전체 상태",
+    published: "발행",
+    scheduled: "예약",
+    draft: "초안",
+  };
+  const sortLabels: Record<SortKey, string> = {
+    newest: "최신순",
+    oldest: "오래된순",
+    likes: "좋아요순",
+    recommended: "추천순",
+  };
+  const categoryLabel = categoryFilter === "all" ? "전체 카테고리" : getCategoryLabel(categoryFilter);
+  const hasActiveFilters = searchQuery.trim().length > 0 || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
+
   return (
     <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-[var(--foreground)]">목록 필터</h3>
-          <p className="mt-1 text-xs text-[var(--muted)]">필요할 때만 상세 필터를 엽니다.</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">검색, 상태, 카테고리, 정렬을 바로 조정합니다.</p>
         </div>
-        <AdminActionButton tone="dark" onClick={onToggleFilters} className="min-h-8 px-3 py-1 text-xs">
-          {filtersOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {filtersOpen ? "필터 접기" : "필터 열기"}
+        <p className="text-xs font-medium text-[var(--muted)]">{filteredCount.toLocaleString("ko-KR")}개 표시</p>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_140px_140px_auto]">
+        <label className="relative block">
+          <span className="sr-only">제목 검색</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+          <input
+            type="search"
+            placeholder="제목 검색..."
+            value={searchQuery}
+            onChange={(event) => onSearchQueryChange(event.target.value)}
+            className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] pl-9 pr-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          />
+        </label>
+
+        <select
+          value={categoryFilter}
+          onChange={(event) => onCategoryFilterChange(event.target.value as BlogCategoryFilter)}
+          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          aria-label="카테고리 필터"
+        >
+          <option value="all">전체 카테고리</option>
+          {BLOG_CATEGORY_SLUGS.map((category) => (
+            <option key={category} value={category}>{getCategoryLabel(category)}</option>
+          ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(event) => onStatusFilterChange(event.target.value as StatusFilter)}
+          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          aria-label="상태 필터"
+        >
+          <option value="all">전체 상태</option>
+          <option value="published">발행</option>
+          <option value="scheduled">예약</option>
+          <option value="draft">초안</option>
+        </select>
+
+        <select
+          value={sortKey}
+          onChange={(event) => onSortKeyChange(event.target.value as SortKey)}
+          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          aria-label="정렬"
+        >
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된순</option>
+          <option value="likes">좋아요순</option>
+          {statusFilter === "draft" && <option value="recommended">추천순</option>}
+        </select>
+
+        <AdminActionButton
+          type="button"
+          tone="dark"
+          onClick={onResetFilters}
+          disabled={!hasActiveFilters}
+          className="min-h-9 w-full rounded-lg px-3 py-1.5 text-xs lg:w-auto"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          초기화
         </AdminActionButton>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          placeholder="제목 검색..."
-          value={searchQuery}
-          onChange={(event) => onSearchQueryChange(event.target.value)}
-          className="min-w-[160px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15 h-9"
-        />
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-medium text-[var(--muted)]">적용 필터</span>
+        {searchQuery.trim() && (
+          <button
+            type="button"
+            onClick={() => onSearchQueryChange("")}
+            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+          >
+            검색: {searchQuery.trim()}
+            <X className="h-3 w-3 text-[var(--muted)]" />
+          </button>
+        )}
+        {categoryFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => onCategoryFilterChange("all")}
+            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+          >
+            {categoryLabel}
+            <X className="h-3 w-3 text-[var(--muted)]" />
+          </button>
+        )}
+        {statusFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => onStatusFilterChange("all")}
+            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+          >
+            {statusLabels[statusFilter]}
+            <X className="h-3 w-3 text-[var(--muted)]" />
+          </button>
+        )}
+        {sortKey !== "newest" && (
+          <button
+            type="button"
+            onClick={() => onSortKeyChange("newest")}
+            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+          >
+            {sortLabels[sortKey]}
+            <X className="h-3 w-3 text-[var(--muted)]" />
+          </button>
+        )}
+        {!hasActiveFilters && <span className="text-[var(--muted)]">기본 보기</span>}
       </div>
-
-      {filtersOpen && (
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <select
-            value={categoryFilter}
-            onChange={(event) => onCategoryFilterChange(event.target.value as BlogCategoryFilter)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            <option value="all">전체 카테고리</option>
-            {BLOG_CATEGORY_SLUGS.map((category) => (
-              <option key={category} value={category}>{getCategoryLabel(category)}</option>
-            ))}
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(event) => onStatusFilterChange(event.target.value as StatusFilter)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            <option value="all">전체 상태</option>
-            <option value="published">발행</option>
-            <option value="scheduled">예약</option>
-            <option value="draft">초안</option>
-          </select>
-
-          <select
-            value={sortKey}
-            onChange={(event) => onSortKeyChange(event.target.value as SortKey)}
-            className="h-9 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none"
-          >
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-            <option value="likes">좋아요순</option>
-            {statusFilter === "draft" && <option value="recommended">추천순</option>}
-          </select>
-        </div>
-      )}
-
-      <p className="mt-3 text-xs text-[var(--muted)]">
-        {filteredCount}개 · 상태 {statusFilter === "all" ? "전체" : statusFilter} · 정렬 {sortKey}
-      </p>
     </section>
   );
 }
