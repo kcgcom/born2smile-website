@@ -181,6 +181,43 @@ export function BlockEditorRenderer({
           hasError={hasError}
         />
       );
+    case "researchCallout":
+      return (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={block.title}
+            onChange={(e) => setBlock(idx, { ...block, title: e.target.value })}
+            placeholder="자료 제목"
+            className={inputClass(hasError)}
+            aria-label={`블록 ${idx + 1} 연구 자료 제목`}
+          />
+          <textarea
+            value={block.description}
+            onChange={(e) => setBlock(idx, { ...block, description: e.target.value })}
+            rows={3}
+            placeholder="자료 설명"
+            className={`${inputClass(hasError)} resize-y`}
+            aria-label={`블록 ${idx + 1} 연구 자료 설명`}
+          />
+          <input
+            type="text"
+            value={block.href}
+            onChange={(e) => setBlock(idx, { ...block, href: e.target.value })}
+            placeholder="자료 URL"
+            className={inputClass(hasError)}
+            aria-label={`블록 ${idx + 1} 연구 자료 URL`}
+          />
+          <input
+            type="text"
+            value={block.linkText}
+            onChange={(e) => setBlock(idx, { ...block, linkText: e.target.value })}
+            placeholder="링크 버튼 문구"
+            className={inputClass(hasError)}
+            aria-label={`블록 ${idx + 1} 연구 자료 링크 문구`}
+          />
+        </div>
+      );
     default:
       return null;
   }

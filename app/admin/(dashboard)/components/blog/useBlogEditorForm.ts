@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogBlock, BlogCategorySlug, BlogTag } from "@/lib/blog/types";
 import { normalizeBlogCategory } from "@/lib/blog";
+import { MAX_BLOG_BLOCKS, normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { getAccessToken } from "@/lib/supabase";
 import { emptyBlock } from "./block-editors";
 
@@ -60,7 +61,9 @@ function validate(form: BlogEditorData): Record<string, string> {
   if (form.excerpt.length > 500) errors.excerpt = "요약은 500자 이하여야 합니다";
   if (!normalizeBlogCategory(form.category)) errors.category = "유효한 카테고리를 선택해 주세요";
   const blocks = form.blocks;
-  if (blocks.length > 0) {
+  if (blocks.length > MAX_BLOG_BLOCKS) {
+    errors.blocks = `본문 블록은 최대 ${MAX_BLOG_BLOCKS}개까지 저장할 수 있습니다`;
+  } else if (blocks.length > 0) {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
       if (block.type === "heading" && !block.text.trim()) {
@@ -89,6 +92,17 @@ function validate(form: BlogEditorData): Record<string, string> {
         if (hasInvalidHeader || hasInvalidRow) {
           errors[`block_${i}`] = `블록 ${i + 1} 표의 헤더와 셀 내용을 확인해 주세요`;
         }
+      }
+      if (
+        block.type === "researchCallout" &&
+        (
+          block.title.length < 2 ||
+          block.description.length < 10 ||
+          block.href.length < 1 ||
+          block.linkText.length < 2
+        )
+      ) {
+        errors[`block_${i}`] = `블록 ${i + 1} 연구 자료 정보를 확인해 주세요`;
       }
     }
   } else {
@@ -125,6 +139,8 @@ function calcReadTime(blocks: BlogBlock[] = []): string {
             (rowAcc, row) => rowAcc + row.reduce((cellAcc, cell) => cellAcc + cell.length, 0),
             0,
           );
+      case "researchCallout":
+        return sum + block.title.length + block.description.length + block.href.length + block.linkText.length;
       default:
         return sum;
     }
@@ -149,7 +165,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     category: initialCategory,
     tags: initialData?.tags ?? [],
     date: initialData?.date ?? today,
-    blocks: initialData?.blocks?.length ? initialData.blocks : [emptyBlock("paragraph")],
+    blocks: initialData?.blocks?.length ? normalizeBlogBlocks(initialData.blocks) : [emptyBlock("paragraph")],
     published: initialData?.published ?? false,
   });
 
@@ -182,7 +198,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
         setForm((prev) => ({
           ...prev,
           blocks: Array.isArray(post.blocks) && post.blocks.length > 0
-            ? post.blocks
+            ? normalizeBlogBlocks(post.blocks)
             : [emptyBlock("paragraph")],
         }));
       } catch {
@@ -241,7 +257,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
       if (!target) return prev;
       const clone = structuredClone(target);
       blocks.splice(idx + 1, 0, clone);
-      return { ...prev, blocks: blocks.slice(0, 30) };
+      return { ...prev, blocks: blocks.slice(0, MAX_BLOG_BLOCKS) };
     });
   }, []);
 
@@ -274,7 +290,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     }
     setSaving(true);
     setSaveError(null);
-    const payload = { ...form, blocks: form.blocks, published: form.published };
+    const payload = { ...form, blocks: normalizeBlogBlocks(form.blocks), published: form.published };
     const { error } = await onSave(payload);
     setSaving(false);
     if (error) setSaveError(error);
@@ -289,7 +305,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     }
     setPublishing(true);
     setSaveError(null);
-    const payload = { ...form, blocks: form.blocks };
+    const payload = { ...form, blocks: normalizeBlogBlocks(form.blocks) };
     const { error } = await onPublish(payload);
     setPublishing(false);
     if (error) setSaveError(error);

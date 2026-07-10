@@ -9,6 +9,7 @@ import {
   type CreateBlogPostData,
 } from "@/lib/blog-supabase";
 import { blogPostSchema } from "@/lib/blog-validation";
+import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
@@ -45,7 +46,10 @@ export async function POST(request: NextRequest) {
 
   let data: CreateBlogPostData;
   try {
-    data = blogPostSchema.parse(body) as CreateBlogPostData;
+    const normalizedBody = body && typeof body === "object" && "blocks" in body
+      ? { ...body, blocks: normalizeBlogBlocks((body as { blocks: unknown }).blocks) }
+      : body;
+    data = blogPostSchema.parse(normalizedBody) as CreateBlogPostData;
   } catch (error) {
     const issues =
       error instanceof Error && "issues" in error

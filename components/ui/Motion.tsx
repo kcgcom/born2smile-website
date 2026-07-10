@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, type ReactNode } from "react";
+import { useRef, useEffect, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 interface FadeInProps {
   children: ReactNode;
@@ -17,19 +17,28 @@ const directionVars: Record<string, { "--fade-tx": string; "--fade-ty": string }
   right: { "--fade-tx": "-40px", "--fade-ty": "0px" },
 };
 
+const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const mql = window.matchMedia(reducedMotionQuery);
+  mql.addEventListener("change", onStoreChange);
+  return () => mql.removeEventListener("change", onStoreChange);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(reducedMotionQuery).matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
+
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mql.matches);
-
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
-
-  return reduced;
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot,
+  );
 }
 
 /**
@@ -84,7 +93,7 @@ export function FadeIn({
         ...vars,
         "--fade-dur": `${duration}s`,
         "--fade-delay": `${delay}s`,
-      } as React.CSSProperties}
+      } as CSSProperties}
     >
       {children}
     </div>

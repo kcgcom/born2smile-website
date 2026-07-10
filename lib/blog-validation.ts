@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { BLOG_TAGS } from "./blog/types";
 import { normalizeBlogCategory } from "./blog/category-slugs";
+import { MAX_BLOG_BLOCKS } from "./blog/normalize-blocks";
 
 const slugRegex = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 
@@ -29,7 +30,14 @@ const blogBlockSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("list"),
-    style: z.union([z.literal("bullet"), z.literal("number")]),
+    style: z.preprocess(
+      (value) => {
+        if (value === "ordered") return "number";
+        if (value === "unordered" || value === undefined) return "bullet";
+        return value;
+      },
+      z.union([z.literal("bullet"), z.literal("number")]),
+    ),
     items: z.array(z.string().min(2).max(300)).min(2).max(10),
   }),
   z.object({
@@ -74,7 +82,7 @@ const blogPostBaseSchema = z.object({
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  blocks: z.array(blogBlockSchema).min(1).max(30),
+  blocks: z.array(blogBlockSchema).min(1).max(MAX_BLOG_BLOCKS),
   published: z.boolean(),
 });
 

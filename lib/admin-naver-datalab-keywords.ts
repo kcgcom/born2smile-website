@@ -154,6 +154,24 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         volumeKeywords: ["임플란트 주위염", "잇몸재생주사"],
         searchIntent: "informational",
       },
+      {
+        name: "문제/재수술",
+        keywords: [
+          "임플란트 흔들림",
+          "임플란트 빠짐",
+          "임플란트 탈락",
+          "임플란트 재수술",
+          "임플란트 제거",
+          "임플란트 재식립",
+          "임플란트 나사 풀림",
+          "임플란트 보철 흔들림",
+          "임플란트 크라운 흔들림",
+          "오래된 임플란트",
+          "10년 된 임플란트",
+        ],
+        volumeKeywords: ["임플란트 흔들림", "임플란트 재수술", "임플란트 빠짐"],
+        searchIntent: "transactional",
+      },
     ],
     topicAngles: [
       {
@@ -190,6 +208,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 예방과 치료: {aspect}",
         subGroup: "임플란트 잇몸",
         aspect: "주위염부터 잇몸재생까지 완벽 관리법",
+      },
+      {
+        template: "{keyword}, 재수술이 필요할까? {aspect}",
+        subGroup: "문제/재수술",
+        aspect: "나사 풀림과 픽스처 문제 구분부터 치료 순서까지",
       },
     ],
   },

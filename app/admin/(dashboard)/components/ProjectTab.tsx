@@ -151,7 +151,6 @@ function EnvHealthSection() {
   if (!envData) return null;
 
   const hasMissing = envData.summary.missing > 0;
-  const configuredVars = envData.variables.filter((v) => v.configured);
   const missingVars = envData.variables.filter((v) => !v.configured);
 
   return (
