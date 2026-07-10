@@ -51,7 +51,7 @@ export interface ContentGap {
   isEstimated: boolean;
   /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
   relatedKeywords: Array<{ keyword: string; volume: number }>;
-  /** volumeKeywords 개별 검색량 (직접 조회 키워드) */
+  /** 대표 키워드 개별 검색량 (직접 조회 키워드) */
   directKeywords: Array<{ keyword: string; volume: number }>;
   /** 검색 의도 분류 */
   searchIntent: SearchIntent;
@@ -202,7 +202,7 @@ export interface VolumeDataEntry {
   isEstimated: boolean;
   /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
-  /** volumeKeywords 개별 검색량 (직접 조회 키워드) */
+  /** 대표 키워드 개별 검색량 (직접 조회 키워드) */
   directKeywords?: Array<{ keyword: string; volume: number }>;
 }
 

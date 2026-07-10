@@ -4,7 +4,7 @@ import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { createCachedFetcher } from "../../_lib/cache";
 import { isSearchAdConfigured, fetchKeywordSearchVolume } from "@/lib/admin-naver-searchad";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
-import { CATEGORY_KEYWORDS, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { CATEGORY_KEYWORDS, getVolumeKeywords, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 
 /** 24시간 캐시 (월간 검색량은 자주 변하지 않음) */
 const CACHE_TTL_24H = 86400;
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
             allKeywords.push({
               category: ck.category,
               subGroup: sg.name,
-              keywords: sg.volumeKeywords,
+              keywords: getVolumeKeywords(sg),
             });
           }
         }

@@ -1,6 +1,6 @@
 import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
 import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
-import { CATEGORY_KEYWORDS, isRelevantRelatedKeyword, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { CATEGORY_KEYWORDS, getVolumeKeywords, isRelevantRelatedKeyword, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { analyzeTrend, analyzeContentGap, buildSyntheticCategoryData, type CategoryTrendData, type VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache, type SearchAdKeywordData } from "@/lib/admin-naver-searchad";
@@ -79,7 +79,7 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
         allKeywords.push({
           category: ck.category,
           subGroup: sg.name,
-          keywords: sg.volumeKeywords,
+          keywords: getVolumeKeywords(sg),
         });
       }
     }

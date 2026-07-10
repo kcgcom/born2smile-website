@@ -212,15 +212,22 @@ export function buildPageUpdateOpportunities(gaps: ContentGap[]): PageUpdateOppo
     .slice(0, 12);
 }
 
+/** 키워드 중 질문형 패턴 ("~나요", "~인가요", "~할까" 등)을 찾아 FAQ 질문으로 직접 활용 */
+function pickQuestionKeyword(keywords: string[]): string | null {
+  return keywords.find((v) => /[나인할까]요|할까$/.test(v)) ?? null;
+}
+
 export function generateFaqSuggestions(gaps: ContentGap[]): FaqSuggestion[] {
   return gaps
     .map((gap) => {
       const existingFaqCoverage = getExistingFaqCoverage(gap);
       const keyword = getKeywordPool(gap)[0] ?? gap.subGroup;
+      // 자연어 질문형 키워드가 있으면 그대로 활용, 없으면 키워드 기반 생성
+      const naturalQuestion = pickQuestionKeyword(gap.keywords);
       return {
         slug: gap.slug,
         subGroup: gap.subGroup,
-        question: inferQuestion(keyword, gap.searchIntent),
+        question: naturalQuestion ?? inferQuestion(keyword, gap.searchIntent),
         priority: getFaqPriority(gap, existingFaqCoverage),
         keywords: getKeywordPool(gap).slice(0, 4),
         targetPage: getTargetPage(gap.slug),
