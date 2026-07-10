@@ -14,6 +14,7 @@ import {
   Minus,
   BarChart3,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import {
   CATEGORY_KEYWORDS,
@@ -312,11 +313,13 @@ function TrendView({
   volumeMap,
   shortTermDetail,
   longTermDetail,
+  loading,
 }: {
   slug: KeywordCategorySlug;
   volumeMap: Map<string, number>;
   shortTermDetail: CategoryTrendData[] | undefined;
   longTermDetail: CategoryTrendData[] | undefined;
+  loading: boolean;
 }) {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState("3m");
@@ -336,6 +339,15 @@ function TrendView({
       return b.currentAvg - a.currentAvg;
     });
   }, [detail, periodConfig.days, volumeMap]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-8 text-sm text-[var(--muted)]">
+        <Loader2 size={16} className="animate-spin" />
+        트렌드 데이터 로딩 중...
+      </div>
+    );
+  }
 
   if (!detail || slicedSubGroups.length === 0) {
     return (
@@ -452,6 +464,7 @@ function CategoryDetail({
   volumeMap,
   shortTermDetail,
   longTermDetail,
+  loading,
 }: {
   cat: CategoryKeywords;
   onBack: () => void;
@@ -459,6 +472,7 @@ function CategoryDetail({
   volumeMap: Map<string, number>;
   shortTermDetail: CategoryTrendData[] | undefined;
   longTermDetail: CategoryTrendData[] | undefined;
+  loading: boolean;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
@@ -512,7 +526,7 @@ function CategoryDetail({
 
       {/* Trend view (on demand) */}
       {showTrend && (
-        <TrendView slug={cat.slug} volumeMap={volumeMap} shortTermDetail={shortTermDetail} longTermDetail={longTermDetail} />
+        <TrendView slug={cat.slug} volumeMap={volumeMap} shortTermDetail={shortTermDetail} longTermDetail={longTermDetail} loading={loading} />
       )}
 
       {/* Keywords view */}
@@ -683,6 +697,14 @@ export function TaxonomySubTab() {
         </div>
       </section>
 
+      {/* Loading indicator */}
+      {selectedCategory && overviewLoading && (
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white py-4 text-sm text-[var(--muted)]">
+          <Loader2 size={16} className="animate-spin" />
+          트렌드 데이터 로딩 중...
+        </div>
+      )}
+
       {/* Detail panel (shown when a category is selected) */}
       {selectedCat && (
         <section ref={detailRef}>
@@ -711,6 +733,7 @@ export function TaxonomySubTab() {
             volumeMap={selectedVolumeMap}
             shortTermDetail={overviewData?.shortTermDetail}
             longTermDetail={overviewData?.longTermDetail}
+            loading={overviewLoading}
           />
         </section>
       )}
