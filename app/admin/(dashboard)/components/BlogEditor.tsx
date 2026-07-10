@@ -8,6 +8,7 @@ import { useModalA11y } from "@/hooks/useModalA11y";
 import { BLOG_TAGS } from "@/lib/blog/types";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog/types";
 import { getCategoryLabel } from "@/lib/blog";
+import { MAX_BLOG_BLOCKS } from "@/lib/blog/normalize-blocks";
 import { inputClass, emptyBlock, BLOCK_LABELS, BlockEditorRenderer } from "./blog/block-editors";
 import { useBlogEditorForm } from "./blog/useBlogEditorForm";
 import type { BlogEditorData } from "./blog/useBlogEditorForm";
@@ -236,7 +237,7 @@ export default function BlogEditor({
             <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-semibold text-[var(--foreground)]">
                 본문 블록 <span className="text-red-500">*</span>
-                <span className="ml-1 font-normal text-[var(--muted)]">({form.blocks?.length ?? 0}/30)</span>
+                <span className="ml-1 font-normal text-[var(--muted)]">({form.blocks?.length ?? 0}/{MAX_BLOG_BLOCKS})</span>
               </label>
             </div>
             {fieldErrors.blocks && (
@@ -286,7 +287,7 @@ export default function BlogEditor({
                 </div>
               ))}
             </div>
-            {(form.blocks?.length ?? 0) < 30 && (
+            {(form.blocks?.length ?? 0) < MAX_BLOG_BLOCKS && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {(Object.keys(BLOCK_LABELS) as BlogBlock["type"][]).map((type) => (
                   <button

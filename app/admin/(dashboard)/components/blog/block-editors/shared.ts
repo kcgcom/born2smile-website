@@ -26,6 +26,8 @@ export function emptyBlock(type: BlogBlock["type"] = "paragraph"): BlogBlock {
       return { type: "relatedLinks", items: [{ title: "", href: "", description: "" }] };
     case "table":
       return { type: "table", headers: ["", ""], rows: [["", ""]] };
+    case "researchCallout":
+      return { type: "researchCallout", title: "", description: "", href: "", linkText: "" };
     case "paragraph":
     default:
       return { type: "paragraph", text: "" };

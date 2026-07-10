@@ -10,6 +10,7 @@ import {
   type UpdateBlogPostData,
 } from "@/lib/blog-supabase";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
+import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
 import { getTodayKST } from "@/lib/date";
@@ -65,7 +66,10 @@ export async function PUT(
 
   let data: UpdateBlogPostData;
   try {
-    data = blogPostUpdateSchema.parse(body) as UpdateBlogPostData;
+    const normalizedBody = body && typeof body === "object" && "blocks" in body
+      ? { ...body, blocks: normalizeBlogBlocks((body as { blocks: unknown }).blocks) }
+      : body;
+    data = blogPostUpdateSchema.parse(normalizedBody) as UpdateBlogPostData;
   } catch (error) {
     const issues =
       error instanceof Error && "issues" in error

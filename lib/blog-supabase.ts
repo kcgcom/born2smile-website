@@ -82,6 +82,8 @@ function calculateReadTimeFromBlocks(blocks: BlogBlock[]): string {
             (rowAcc, row) => rowAcc + row.reduce((cellAcc, cell) => cellAcc + cell.length, 0),
             0,
           );
+      case "researchCallout":
+        return sum + block.title.length + block.description.length + block.href.length + block.linkText.length;
       default:
         return sum;
     }
