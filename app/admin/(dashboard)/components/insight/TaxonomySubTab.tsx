@@ -672,12 +672,11 @@ export function TaxonomySubTab() {
 
   return (
     <div className="space-y-6">
+      <ApiSourceBadge sources={["naverDatalab"]} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold">키워드 택소노미</h2>
-          <ApiSourceBadge sources={["naverDatalab"]} />
-        </div>
+        <h2 className="text-lg font-bold">키워드 택소노미</h2>
         <button
           type="button"
           onClick={handleForceRefresh}
