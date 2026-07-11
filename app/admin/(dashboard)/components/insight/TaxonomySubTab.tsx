@@ -287,10 +287,10 @@ function SubGroupPanel({
 // ---------------------------------------------------------------
 
 const TREND_PERIODS = [
-  { value: "1m", label: "1개월", days: 30, source: "short" as const },
-  { value: "3m", label: "3개월", days: 90, source: "short" as const },
-  { value: "1y", label: "1년", days: 365, source: "long" as const },
-  { value: "3y", label: "3년", days: 1095, source: "long" as const },
+  { value: "1m", label: "1개월", days: 30, source: "short" as const, unit: "일별" as const },
+  { value: "3m", label: "3개월", days: 90, source: "short" as const, unit: "일별" as const },
+  { value: "1y", label: "1년", days: 365, source: "long" as const, unit: "주별" as const },
+  { value: "3y", label: "3년", days: 1095, source: "long" as const, unit: "주별" as const },
 ];
 
 /** 시계열 데이터에서 최근 N일에 해당하는 데이터만 추출 */
@@ -377,11 +377,19 @@ function TrendView({
             </button>
           ))}
         </div>
-        {slicedSubGroups[0]?.data.length > 0 && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            {slicedSubGroups[0].data[0].period} ~ {slicedSubGroups[0].data[slicedSubGroups[0].data.length - 1].period}
-          </span>
-        )}
+        {slicedSubGroups[0]?.data.length > 0 && (() => {
+          const firstDate = slicedSubGroups[0].data[0].period;
+          const lastDate = slicedSubGroups[0].data[slicedSubGroups[0].data.length - 1].period;
+          // 주별 데이터: 종료일을 주의 마지막날(+6일)로 표시
+          const endDate = periodConfig.unit === "주별"
+            ? new Date(new Date(lastDate).getTime() + 6 * 86400000).toISOString().slice(0, 10)
+            : lastDate;
+          return (
+            <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+              {firstDate} ~ {endDate} · {periodConfig.unit}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Line chart */}
