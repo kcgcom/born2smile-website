@@ -306,18 +306,24 @@ function sliceTimeSeries(
   }));
 }
 
+type TrendSummaryResult = { weightedAvg: number; stdDev: number; count: number } | null;
+
 function TrendView({
   slug,
   volumeMap,
   shortTermDetail,
   longTermDetail,
   loading,
+  shortTermSummary,
+  longTermSummary,
 }: {
   slug: KeywordCategorySlug;
   volumeMap: Map<string, number>;
   shortTermDetail: CategoryTrendData[] | undefined;
   longTermDetail: CategoryTrendData[] | undefined;
   loading: boolean;
+  shortTermSummary: TrendSummaryResult;
+  longTermSummary: TrendSummaryResult;
 }) {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState("3m");
@@ -355,8 +361,27 @@ function TrendView({
     );
   }
 
+  const activeSummary = periodConfig.source === "short" ? shortTermSummary : longTermSummary;
+
   return (
     <div className="space-y-4">
+      {/* Platform trend summary */}
+      {activeSummary && (
+        <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 text-xs">
+          <span className="text-[var(--muted)]">전체 트렌드</span>
+          <span className={`font-semibold tabular-nums ${
+            activeSummary.weightedAvg > 0 ? "text-green-600" : activeSummary.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
+          }`}>
+            {activeSummary.weightedAvg > 0 ? "+" : ""}{activeSummary.weightedAvg.toFixed(1)}%
+          </span>
+          <span className="text-[var(--muted)]">
+            편차 {activeSummary.stdDev.toFixed(1)}%
+            {activeSummary.stdDev < 10 ? " · 균일" : " · 카테고리별 차이 있음"}
+          </span>
+          <span className="text-[var(--muted)]">({activeSummary.count}개)</span>
+        </div>
+      )}
+
       {/* Period selector + range */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex gap-1">
@@ -482,6 +507,8 @@ function CategoryDetail({
   shortTermDetail,
   longTermDetail,
   loading,
+  shortTermSummary,
+  longTermSummary,
 }: {
   cat: CategoryKeywords;
   filter: string;
@@ -489,6 +516,8 @@ function CategoryDetail({
   shortTermDetail: CategoryTrendData[] | undefined;
   longTermDetail: CategoryTrendData[] | undefined;
   loading: boolean;
+  shortTermSummary: TrendSummaryResult;
+  longTermSummary: TrendSummaryResult;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
@@ -534,7 +563,7 @@ function CategoryDetail({
 
       {/* Trend view (on demand) */}
       {showTrend && (
-        <TrendView slug={cat.slug} volumeMap={volumeMap} shortTermDetail={shortTermDetail} longTermDetail={longTermDetail} loading={loading} />
+        <TrendView slug={cat.slug} volumeMap={volumeMap} shortTermDetail={shortTermDetail} longTermDetail={longTermDetail} loading={loading} shortTermSummary={shortTermSummary} longTermSummary={longTermSummary} />
       )}
 
       {/* Keywords view */}
@@ -730,31 +759,7 @@ export function TaxonomySubTab() {
       {/* API error */}
       {overviewError && <AdminErrorState message={overviewError} onRetry={refetchVolume} />}
 
-      {/* Overall trend summary */}
-      {(shortTermSummary || longTermSummary) && (
-        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 space-y-2">
-          {[
-            { label: "단기 (6개월)", data: shortTermSummary },
-            { label: "장기 (3년)", data: longTermSummary },
-          ].map(({ label, data }) => data && (
-            <div key={label} className="flex items-center gap-4 text-sm">
-              <span className="w-24 text-[var(--muted)]">{label}</span>
-              <span className={`font-semibold tabular-nums ${
-                data.weightedAvg > 0 ? "text-green-600" : data.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
-              }`}>
-                {data.weightedAvg > 0 ? "+" : ""}{data.weightedAvg.toFixed(1)}%
-              </span>
-              <span className="text-xs text-[var(--muted)]">
-                편차 {data.stdDev.toFixed(1)}%
-                {data.stdDev < 10
-                  ? " · 균일 (플랫폼 효과 가능성)"
-                  : " · 카테고리별 차이 있음"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">({data.count}개)</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Overall trend summary — TrendView 내부에서 표시 */}
 
       {/* Category card grid */}
       <section>
@@ -812,6 +817,8 @@ export function TaxonomySubTab() {
             shortTermDetail={overviewData?.shortTermDetail}
             longTermDetail={overviewData?.longTermDetail}
             loading={overviewLoading}
+            shortTermSummary={shortTermSummary}
+            longTermSummary={longTermSummary}
           />
         </section>
       )}
