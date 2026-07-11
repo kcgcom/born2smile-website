@@ -328,15 +328,22 @@ export async function fetchNaverDatalabByCategory(
     groups = normalizeBridgedBatches(batches, batchResults);
   }
 
+  // 주별/월별 데이터: 마지막 포인트가 미완성 기간이면 제거
+  // (현재 주/월이 끝나지 않은 경우 비정상적 하락으로 표시됨)
+  const shouldDropLast = timeUnit === "week" || timeUnit === "month";
+
   return {
     period: { start: startDate, end: endDate },
     timeUnit,
-    groups: groups.map((g) => ({
-      title: g.title,
-      data: g.data.map((d) => ({
+    groups: groups.map((g) => {
+      const processed = g.data.map((d) => ({
         period: d.period,
         ratio: Math.round(Math.min(100, d.ratio) * 10) / 10,
-      })),
-    })),
+      }));
+      return {
+        title: g.title,
+        data: shouldDropLast && processed.length > 1 ? processed.slice(0, -1) : processed,
+      };
+    }),
   };
 }
