@@ -660,28 +660,33 @@ export function TaxonomySubTab() {
     [selectedCategory]
   );
 
-  // 전체 카테고리 트렌드 요약 (검색량 가중 평균 변화율 + 표준편차)
-  const trendSummary = useMemo(() => {
-    const items = Array.from(trendInfoMap.values()).filter(
-      (c) => c.changeRate != null && c.monthlyTotalVolume != null && c.monthlyTotalVolume > 0,
-    );
-    if (items.length === 0) return null;
+  // 트렌드 요약 계산 헬퍼
+  const calcSummary = useCallback(
+    (detail: CategoryTrendData[] | undefined) => {
+      if (!detail || detail.length === 0) return null;
+      const items: Array<{ changeRate: number; volume: number }> = [];
+      for (const cat of detail) {
+        const volume = overviewData?.categories?.find((c) => c.slug === cat.slug)?.monthlyTotalVolume;
+        if (volume == null || volume <= 0) continue;
+        // 카테고리 대표 변화율: 서브그룹 중 최대 절대값
+        const changeRate = cat.subGroups.reduce(
+          (max, sg) => (Math.abs(sg.changeRate) > Math.abs(max) ? sg.changeRate : max), 0,
+        );
+        items.push({ changeRate, volume });
+      }
+      if (items.length === 0) return null;
+      const totalVolume = items.reduce((s, i) => s + i.volume, 0);
+      const weightedAvg = items.reduce((s, i) => s + i.changeRate * i.volume, 0) / totalVolume;
+      const simpleAvg = items.reduce((s, i) => s + i.changeRate, 0) / items.length;
+      const variance = items.reduce((s, i) => s + Math.pow(i.changeRate - simpleAvg, 2), 0) / items.length;
+      return { weightedAvg, stdDev: Math.sqrt(variance), count: items.length };
+    },
+    [overviewData?.categories],
+  );
 
-    const totalVolume = items.reduce((s, c) => s + (c.monthlyTotalVolume ?? 0), 0);
-    const weightedAvg = items.reduce(
-      (s, c) => s + (c.changeRate ?? 0) * (c.monthlyTotalVolume ?? 0),
-      0,
-    ) / totalVolume;
-
-    const simpleAvg = items.reduce((s, c) => s + (c.changeRate ?? 0), 0) / items.length;
-    const variance = items.reduce(
-      (s, c) => s + Math.pow((c.changeRate ?? 0) - simpleAvg, 2),
-      0,
-    ) / items.length;
-    const stdDev = Math.sqrt(variance);
-
-    return { weightedAvg, stdDev, count: items.length };
-  }, [trendInfoMap]);
+  // 단기(6m) / 장기(3y) 전체 트렌드 요약
+  const shortTermSummary = useMemo(() => calcSummary(overviewData?.shortTermDetail), [calcSummary, overviewData?.shortTermDetail]);
+  const longTermSummary = useMemo(() => calcSummary(overviewData?.longTermDetail), [calcSummary, overviewData?.longTermDetail]);
 
   // Scroll to detail when category selected
   useEffect(() => {
@@ -726,23 +731,28 @@ export function TaxonomySubTab() {
       {overviewError && <AdminErrorState message={overviewError} onRetry={refetchVolume} />}
 
       {/* Overall trend summary */}
-      {trendSummary && (
-        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-[var(--muted)]">전체 트렌드</span>
-            <span className={`font-semibold tabular-nums ${
-              trendSummary.weightedAvg > 0 ? "text-green-600" : trendSummary.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
-            }`}>
-              {trendSummary.weightedAvg > 0 ? "+" : ""}{trendSummary.weightedAvg.toFixed(1)}%
-            </span>
-            <span className="text-xs text-[var(--muted)]">
-              편차 {trendSummary.stdDev.toFixed(1)}%
-              {trendSummary.stdDev < 10
-                ? " · 균일 (플랫폼 효과 가능성)"
-                : " · 카테고리별 차이 있음"}
-            </span>
-            <span className="text-xs text-[var(--muted)]">({trendSummary.count}개 카테고리 기준)</span>
-          </div>
+      {(shortTermSummary || longTermSummary) && (
+        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 space-y-2">
+          {[
+            { label: "단기 (6개월)", data: shortTermSummary },
+            { label: "장기 (3년)", data: longTermSummary },
+          ].map(({ label, data }) => data && (
+            <div key={label} className="flex items-center gap-4 text-sm">
+              <span className="w-24 text-[var(--muted)]">{label}</span>
+              <span className={`font-semibold tabular-nums ${
+                data.weightedAvg > 0 ? "text-green-600" : data.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
+              }`}>
+                {data.weightedAvg > 0 ? "+" : ""}{data.weightedAvg.toFixed(1)}%
+              </span>
+              <span className="text-xs text-[var(--muted)]">
+                편차 {data.stdDev.toFixed(1)}%
+                {data.stdDev < 10
+                  ? " · 균일 (플랫폼 효과 가능성)"
+                  : " · 카테고리별 차이 있음"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">({data.count}개)</span>
+            </div>
+          ))}
         </div>
       )}
 
