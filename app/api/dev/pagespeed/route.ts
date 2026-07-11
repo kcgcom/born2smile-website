@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import {
   verifyAdminRequest,
@@ -225,10 +225,15 @@ async function fetchPSIWithCache(
 
     const result: PSIResponseData = { mobile, desktop };
 
-    // Supabase에 저장 (비동기, 실패해도 무시)
-    void admin
-      .from("api_cache")
-      .upsert({ key: docId, data: { mobile, desktop }, fetched_at: new Date().toISOString() });
+    // 응답 전에 저장을 완료해 다음 요청이 같은 PSI 분석을 반복하지 않게 한다.
+    try {
+      const { error } = await admin
+        .from("api_cache")
+        .upsert({ key: docId, data: { mobile, desktop }, fetched_at: new Date().toISOString() });
+      if (error) console.error("PSI cache write error:", error);
+    } catch (error) {
+      console.error("PSI cache write error:", error);
+    }
 
     return result;
   } catch (e) {
@@ -257,83 +262,96 @@ interface SinglePSIResponse {
   stale?: boolean;
 }
 
+type PSIStrategy = "mobile" | "desktop";
+
+interface PSICacheRow {
+  key: string;
+  data: unknown;
+}
+
+function getStrategyCacheKey(date: string, strategy: PSIStrategy) {
+  return `psi-homepage-${date}-${strategy}`;
+}
+
+function getCachedStrategyResult(
+  row: PSICacheRow,
+  strategy: PSIStrategy,
+): PSIResult | null {
+  if (row.key.endsWith(`-${strategy}`)) return row.data as PSIResult;
+  return ((row.data as Record<string, unknown> | null)?.[strategy] as PSIResult | undefined) ?? null;
+}
+
+async function saveStrategyCache(
+  strategy: PSIStrategy,
+  date: string,
+  result: PSIResult,
+) {
+  const { error } = await getSupabaseAdmin()
+    .from("api_cache")
+    .upsert({
+      key: getStrategyCacheKey(date, strategy),
+      data: result,
+      fetched_at: new Date().toISOString(),
+    });
+  if (error) throw error;
+}
+
 /**
  * 단일 전략 PSI 호출 (Supabase L2 캐시 + 어제 폴백)
  * unstable_cache 미사용 — stale 응답이 L1에 캐싱되는 문제 방지
  */
 async function fetchSingleStrategyPSI(
-  strategy: "mobile" | "desktop",
+  strategy: PSIStrategy,
   force: boolean,
 ): Promise<SinglePSIResponse> {
   try {
     const admin = getSupabaseAdmin();
     const today = getTodayKST();
-    const todayKey = `psi-homepage-${today}`;
 
     if (!force) {
-      // 1. 오늘 캐시 확인
-      const { data: cached } = await admin
+      // 최신 전략별 캐시와 기존 통합 캐시를 한 번에 조회한다.
+      const { data: rows, error } = await admin
         .from("api_cache")
-        .select("data")
-        .eq("key", todayKey)
-        .single();
-
-      if (cached?.data) {
-        const cachedResult = (cached.data as Record<string, unknown>)[strategy] as PSIResult | undefined;
-        if (cachedResult) return { result: cachedResult };
-      }
-
-      // 2. 과거 캐시 폴백 (가장 최근 데이터)
-      const { data: pastRows } = await admin
-        .from("api_cache")
-        .select("data")
+        .select("key, data")
         .like("key", "psi-homepage-%")
-        .lt("key", `psi-homepage-${today}`)
         .order("key", { ascending: false })
-        .limit(1);
+        .limit(10);
+      if (error) throw error;
 
-      if (pastRows && pastRows.length > 0) {
-        const staleResult = (pastRows[0].data as Record<string, unknown>)?.[strategy] as
-          | PSIResult
-          | undefined;
-        if (staleResult) {
-          // 백그라운드에서 오늘 데이터 fetch → Supabase upsert 저장
-          fetchPSI(strategy)
-            .then(async (fresh) => {
-              if (fresh) {
-                // 기존 데이터와 merge
-                const { data: existing } = await admin
-                  .from("api_cache")
-                  .select("data")
-                  .eq("key", todayKey)
-                  .single();
-                const merged = { ...((existing?.data as Record<string, unknown>) ?? {}), [strategy]: fresh };
-                await admin
-                  .from("api_cache")
-                  .upsert({ key: todayKey, data: merged, fetched_at: new Date().toISOString() });
-              }
-            })
-            .catch(() => {});
+      const cacheRows = (rows ?? []) as PSICacheRow[];
+      const todayKeys = new Set([
+        getStrategyCacheKey(today, strategy),
+        `psi-homepage-${today}`,
+      ]);
+      const todayRow = cacheRows.find((row) => todayKeys.has(row.key));
+      const todayResult = todayRow ? getCachedStrategyResult(todayRow, strategy) : null;
+      if (todayResult) return { result: todayResult };
 
-          return { result: staleResult, stale: true };
-        }
+      const staleResult = cacheRows
+        .map((row) => getCachedStrategyResult(row, strategy))
+        .find((result): result is PSIResult => result !== null);
+      if (staleResult) {
+        after(async () => {
+          try {
+            const fresh = await fetchPSI(strategy);
+            if (fresh) await saveStrategyCache(strategy, today, fresh);
+          } catch (error) {
+            console.error(`PSI background refresh error (${strategy}):`, error);
+          }
+        });
+        return { result: staleResult, stale: true };
       }
     }
 
-    // 3. 캐시 없음 또는 force → PSI API 직접 호출
+    // 캐시 없음 또는 force → PSI API 직접 호출
     const fresh = await fetchPSI(strategy);
     if (!fresh) throw new Error("PSI_FETCH_FAILED");
 
-    // 기존 데이터와 merge하여 저장
-    const { data: existing } = await admin
-      .from("api_cache")
-      .select("data")
-      .eq("key", todayKey)
-      .single();
-    const merged = { ...((existing?.data as Record<string, unknown>) ?? {}), [strategy]: fresh };
-    void admin
-      .from("api_cache")
-      .upsert({ key: todayKey, data: merged, fetched_at: new Date().toISOString() });
+    try {
+      await saveStrategyCache(strategy, today, fresh);
+    } catch (error) {
+      console.error(`PSI cache write error (${strategy}):`, error);
+    }
 
     return { result: fresh };
   } catch (e) {

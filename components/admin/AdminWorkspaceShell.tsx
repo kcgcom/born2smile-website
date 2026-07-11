@@ -23,6 +23,7 @@ import type { LucideIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { signOutAdmin } from "@/lib/admin-auth";
+import { preloadAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 
 interface AdminWorkspaceShellProps {
   children: React.ReactNode;
@@ -40,6 +41,13 @@ interface WorkspaceConfig {
   label: string;
   icon: LucideIcon;
   tabs?: NavItem[];
+}
+
+const PERFORMANCE_PATH = "/admin/system/monitoring";
+const MOBILE_PSI_ENDPOINT = "/api/dev/pagespeed?strategy=mobile";
+
+function preloadTabData(href: string) {
+  if (href === PERFORMANCE_PATH) preloadAdminApi(MOBILE_PSI_ENDPOINT);
 }
 
 const WORKSPACES: WorkspaceConfig[] = [
@@ -159,6 +167,8 @@ function SectionTabs({
             <Link
               key={tab.href}
               href={tab.href}
+              onPointerEnter={() => preloadTabData(tab.href)}
+              onFocus={() => preloadTabData(tab.href)}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] transition-all xl:min-w-[112px] xl:flex-1 xl:gap-1.5 xl:whitespace-nowrap xl:px-3 xl:py-1.5 xl:text-xs ${
                 active

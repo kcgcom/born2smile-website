@@ -202,8 +202,9 @@ export function PerformanceTab() {
 
   const { data: mobileData, loading: mobileLoading, isValidating: mobileValidating, error: mobileError } =
     useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=mobile");
+  const desktopEnabled = strategy === "desktop" || Boolean(mobileData) || Boolean(mobileError);
   const { data: desktopData, loading: desktopLoading, isValidating: desktopValidating, error: desktopError } =
-    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=desktop");
+    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=desktop", desktopEnabled);
 
   const currentData = strategy === "mobile" ? mobileData : desktopData;
   const currentLoading = strategy === "mobile" ? (mobileLoading || mobileValidating) : (desktopLoading || desktopValidating);
