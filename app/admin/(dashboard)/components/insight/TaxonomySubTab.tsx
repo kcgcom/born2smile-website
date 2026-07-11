@@ -638,7 +638,10 @@ export function TaxonomySubTab() {
       ...(volumeData ?? trendShortData)!,
       shortTermDetail: trendShortData?.shortTermDetail ?? volumeData?.shortTermDetail,
       longTermDetail: trendLongData?.longTermDetail ?? trendShortData?.longTermDetail,
-      categories: trendShortData?.categories ?? volumeData?.categories,
+      categories: (trendShortData?.categories ?? volumeData?.categories)?.map((cat) => {
+        const volCat = volumeData?.categories?.find((c) => c.slug === cat.slug);
+        return { ...cat, monthlyTotalVolume: cat.monthlyTotalVolume ?? volCat?.monthlyTotalVolume };
+      }),
     };
   }, [volumeData, trendShortData, trendLongData]);
 
