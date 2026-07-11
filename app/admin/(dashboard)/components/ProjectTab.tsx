@@ -5,6 +5,7 @@ import { Check, AlertTriangle, Circle, ChevronDown, X, Copy, CheckCheck } from "
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import {
   IMPROVEMENT_ITEMS,
+  IMPROVEMENT_LAST_SYNC,
   getImprovementStats,
   getSiteConfigStatus,
   type ImprovementStatus,
@@ -300,9 +301,14 @@ export function ProjectTab() {
     <div className="space-y-6">
       {/* 개선 항목 현황 */}
       <AdminSurface tone="white" className="rounded-2xl p-6">
-        <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-          개선 항목 현황
-        </h3>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-lg font-bold text-[var(--foreground)]">
+            개선 항목 현황
+          </h3>
+          <span className="text-xs text-[var(--muted)]">
+            {IMPROVEMENT_LAST_SYNC} 기준
+          </span>
+        </div>
 
         {/* 전체 진행률 */}
         <div className="mb-4">

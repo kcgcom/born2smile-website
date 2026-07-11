@@ -21,7 +21,9 @@ export interface ImprovementItem {
 }
 
 // 통합 출처: website-audit-2026-02-19.md + website-comprehensive-review-2026-02-20.md
-// 마지막 동기화: 2026-07-05
+// 마지막 동기화: 2026-07-11
+export const IMPROVEMENT_LAST_SYNC = "2026-07-11";
+
 export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   // =================================================================
   // CRITICAL — 4/4 완료 (c1–c4)
@@ -184,6 +186,14 @@ export const IMPROVEMENT_ITEMS: ImprovementItem[] = [
   { id: "m49", title: "블로그 글별 방문 성과 테이블", priority: "MEDIUM", status: "done", description: "GA4 데이터 기반 포스트별 방문수·체류시간 테이블 + 정렬 기능. 콘텐츠 성과 한눈에 파악" },
   { id: "m50", title: "관리자 이미지 관리 강화", priority: "MEDIUM", status: "done", description: "이미지 확대 미리보기, 이전/다음 탐색, 사용 여부 필터, 삭제 흐름 개선" },
   { id: "m51", title: "콘텐츠 전략 근거 데이터 분리", priority: "MEDIUM", status: "done", description: "전략 탭을 핵심 실행안 중심으로 단순화하고, 콘텐츠 갭 분석·기회 매트릭스 등 근거 데이터를 별도 페이지(/admin/content/strategy/evidence)로 분리" },
+
+  // =================================================================
+  // 추가 개선 항목 — 2026-07-11 API·관리자 성능 정리
+  // =================================================================
+  { id: "h32", title: "관리자 성능 탭 PSI 로딩 최적화", priority: "HIGH", status: "done", description: "모바일 우선 로딩, 데스크톱 지연 요청, 메뉴 프리페치, 전략별 Supabase 캐시, Next.js after() 백그라운드 갱신으로 첫 진입 대기 단축" },
+  { id: "m52", title: "관리자 API 중복 제거 및 현황 자동화", priority: "MEDIUM", status: "done", description: "미사용 API 4개 제거, 블로그 캐시 무효화 공통화, 빌드 매니페스트에서 API 메서드·인증 여부 자동 수집" },
+  { id: "m53", title: "트렌드 API 모드 통합", priority: "MEDIUM", status: "done", description: "strategy-overview를 trend-summary로 통합하고 volume·trend·strategy 모드로 정리. 입력 검증과 응답 타입 일치" },
+  { id: "l26", title: "Noto Serif KR LCP 최적화", priority: "LOW", status: "done", description: "히어로 제목용 338KB 폰트 preload 해제. fallback 텍스트를 먼저 표시해 모바일 LCP 개선" },
 ];
 
 export interface ImprovementStats {
