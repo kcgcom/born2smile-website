@@ -380,13 +380,25 @@ function TrendView({
         {slicedSubGroups[0]?.data.length > 0 && (() => {
           const firstDate = slicedSubGroups[0].data[0].period;
           const lastDate = slicedSubGroups[0].data[slicedSubGroups[0].data.length - 1].period;
-          // 주별 데이터: 종료일을 주의 마지막날(+6일)로 표시
-          const endDate = periodConfig.unit === "주별"
-            ? new Date(new Date(lastDate).getTime() + 6 * 86400000).toISOString().slice(0, 10)
-            : lastDate;
+
+          if (periodConfig.unit === "주별") {
+            const toWeekLabel = (dateStr: string) => {
+              const d = new Date(dateStr);
+              const year = d.getFullYear();
+              const month = d.getMonth() + 1;
+              const week = Math.ceil(d.getDate() / 7);
+              return `${year}년 ${month}월 ${week}주`;
+            };
+            return (
+              <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+                {toWeekLabel(firstDate)} ~ {toWeekLabel(lastDate)} · 주별
+              </span>
+            );
+          }
+
           return (
             <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-              {firstDate} ~ {endDate} · {periodConfig.unit}
+              {firstDate} ~ {lastDate} · {periodConfig.unit}
             </span>
           );
         })()}
