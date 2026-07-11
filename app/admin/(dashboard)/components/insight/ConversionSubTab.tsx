@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointerClick, PhoneCall, Route, ScrollText } from "lucide-react";
+import { Activity, MousePointerClick, PhoneCall, Route, ScrollText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../DataTable";
 import { AdminErrorState } from "../AdminErrorState";
@@ -10,6 +10,24 @@ import { PeriodSelector } from "../PeriodSelector";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
+
+interface PostHogHealthSummary {
+  events24h: number | null;
+  ctaEvents24h: number | null;
+  lastEventAt: string | null;
+  healthy: boolean;
+}
+
+interface PostHogHealthData {
+  env: {
+    tokenConfigured: boolean;
+    hostConfigured: boolean;
+    projectIdConfigured: boolean;
+    apiKeyConfigured: boolean;
+  };
+  summary: PostHogHealthSummary;
+  links: Record<string, string | null>;
+}
 
 interface ConversionData {
   configured: boolean;
@@ -84,6 +102,7 @@ export function ConversionSubTab() {
   const { data, loading, error, refetch } = useAdminApi<ConversionData>(
     `/api/admin/posthog/conversion?period=${period}`,
   );
+  const { data: healthData } = useAdminApi<PostHogHealthData>("/api/admin/posthog/health");
   const { data: postsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const slugToTitleMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -121,6 +140,32 @@ export function ConversionSubTab() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
           PostHog 관리자 조회용 환경변수가 없습니다. `POSTHOG_PROJECT_ID`,
           `POSTHOG_API_KEY`, `POSTHOG_BASE_URL`를 설정하면 전환 리포트를 표시합니다.
+        </div>
+      )}
+
+      {!loading && !error && data?.configured && healthData && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-[var(--color-primary)]" />
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">PostHog 계측 상태</h3>
+            <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${healthData.summary.healthy ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {healthData.summary.healthy ? "정상" : "이벤트 없음"}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">24시간 이벤트</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.events24h?.toLocaleString("ko-KR") ?? "—"}</div>
+            </div>
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">24시간 CTA</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.ctaEvents24h?.toLocaleString("ko-KR") ?? "—"}</div>
+            </div>
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">마지막 이벤트</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.lastEventAt ? formatCompactDate(healthData.summary.lastEventAt) : "—"}</div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -378,4 +423,15 @@ function SectionTitle({
       )}
     </div>
   );
+}
+
+function formatCompactDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }

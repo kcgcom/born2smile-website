@@ -18,7 +18,6 @@ import {
   Settings,
   Target,
   TrendingUp,
-  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
@@ -74,7 +73,7 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/content/schedule", label: "발행 일정", icon: Activity },
       { href: "/admin/content/images", label: "이미지", icon: Image },
       { href: "/admin/content/planner", label: "콘텐츠 플래너", icon: KanbanSquare },
-      { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
+      { href: "/admin/content/strategy", label: "기회 분석", icon: Target },
       { href: "/admin/content/trends", label: "검색 트렌드", icon: TrendingUp },
     ],
   },
@@ -87,7 +86,6 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/system/settings", label: "사이트 설정", icon: Settings },
       { href: "/admin/system/monitoring", label: "성능", icon: Gauge },
       { href: "/admin/system/devtools/project", label: "현황", icon: ClipboardCheck },
-      { href: "/admin/system/devtools/integrations", label: "연동 점검", icon: Wrench },
       { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
     ],
   },

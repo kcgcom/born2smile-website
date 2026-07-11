@@ -497,13 +497,15 @@ export function ReferenceTab() {
   return (
     <div className="space-y-3">
       {/* 개발자 빠른 링크 */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {[
           { label: "Vercel", href: "https://vercel.com/born2smile/born2smile-website" },
           { label: "GitHub", href: "https://github.com/kcgcom/born2smile-website" },
           { label: "Analytics", href: "https://analytics.google.com/" },
           { label: "Search Console", href: "https://search.google.com/search-console?resource_id=sc-domain:born2smile.co.kr" },
           { label: "Supabase", href: "https://supabase.com/dashboard/project/wnxsrxqmzevboyoityyn" },
+          { label: "Sentry", href: "https://sentry.io/issues/" },
+          { label: "PostHog", href: "https://us.posthog.com/" },
         ].map((link) => (
           <a
             key={link.label}
