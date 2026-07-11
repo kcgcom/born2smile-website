@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
   const mode = (request.nextUrl.searchParams.get("mode") ?? "full") as TrendOverviewMode;
   const period = request.nextUrl.searchParams.get("period") ?? "3m";
+  const force = request.nextUrl.searchParams.get("force") === "true";
 
   if (!VALID_PERIODS.includes(period as (typeof VALID_PERIODS)[number])) {
     return Response.json(
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getTrendOverviewWithGapData(period, mode);
+    const data = await getTrendOverviewWithGapData(period, mode, force);
 
     return Response.json(
       {

@@ -170,7 +170,7 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
   }
 }
 
-export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode): Promise<TrendOverviewBaseData> {
+export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewBaseData> {
   const isFullMode = mode === "full";
 
   // 단기(6m 일별) + 장기(3y 주별) 2회 호출, 클라이언트에서 1m/3m/1y/3y 슬라이싱
@@ -179,6 +179,10 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
 
   const fetchCategoryData = (p: string) =>
     mapSettledWithConcurrencyLimit(CATEGORY_KEYWORDS, 2, async (ck) => {
+      if (force) {
+        const raw = await fetchNaverDatalabByCategory(ck.subGroups, p);
+        return { ck, raw };
+      }
       const getData = createCachedFetcher(
         `naver-trend-${ck.slug}-${p}`,
         () => fetchNaverDatalabByCategory(ck.subGroups, p),
@@ -384,9 +388,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
   };
 }
 
-export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode): Promise<TrendOverviewWithGapData> {
+export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewWithGapData> {
   const [baseData, publishedPosts] = await Promise.all([
-    getTrendOverviewBaseData(period, mode),
+    getTrendOverviewBaseData(period, mode, force),
     getAllPublishedPostMetas(),
   ]);
 

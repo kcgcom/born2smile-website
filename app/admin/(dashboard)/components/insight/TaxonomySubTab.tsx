@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
@@ -14,6 +14,7 @@ import {
   BarChart3,
   AlertCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import {
   CATEGORY_KEYWORDS,
@@ -25,7 +26,7 @@ import {
 } from "@/lib/admin-naver-datalab-keywords";
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
-import { useAdminApi } from "../useAdminApi";
+import { useAdminApi, forceRefetchAdminApi } from "../useAdminApi";
 import { AdminErrorState } from "../AdminErrorState";
 import type { CategoryTrendData } from "@/lib/trend-analysis";
 import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
@@ -552,16 +553,30 @@ function CategoryDetail({
 // Main component
 // ---------------------------------------------------------------
 
+const TREND_SUMMARY_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=full`;
+
 export function TaxonomySubTab() {
   const [selectedCategory, setSelectedCategory] =
     useState<KeywordCategorySlug | null>(null);
   const [filter, setFilter] = useState("");
+  const [forceLoading, setForceLoading] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
 
   // Fetch trend overview (eager — cards need volume data immediately)
   const { data: overviewData, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useAdminApi<TrendSummaryData>(
-    `/api/admin/naver-datalab/trend-summary?period=3m&mode=full`,
+    TREND_SUMMARY_ENDPOINT,
   );
+
+  const handleForceRefresh = useCallback(async () => {
+    setForceLoading(true);
+    try {
+      await forceRefetchAdminApi<TrendSummaryData>(TREND_SUMMARY_ENDPOINT);
+    } catch {
+      // 에러는 SWR이 처리
+    } finally {
+      setForceLoading(false);
+    }
+  }, []);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {
@@ -616,7 +631,18 @@ export function TaxonomySubTab() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h2 className="text-lg font-bold">키워드 택소노미</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">키워드 택소노미</h2>
+        <button
+          type="button"
+          onClick={handleForceRefresh}
+          disabled={forceLoading || overviewLoading}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={forceLoading ? "animate-spin" : ""} />
+          데이터 갱신
+        </button>
+      </div>
 
       <ApiSourceBadge sources={["naverDatalab"]} />
 

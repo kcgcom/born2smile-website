@@ -97,6 +97,22 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
 }
 
 // -------------------------------------------------------------
+// forceRefetchAdminApi — 서버 캐시까지 우회하여 최신 데이터 가져오기
+// endpoint에 force=true를 붙여 서버 캐시 우회 후, SWR 캐시 + sessionStorage 갱신
+// -------------------------------------------------------------
+
+export async function forceRefetchAdminApi<T>(endpoint: string): Promise<T> {
+  const separator = endpoint.includes("?") ? "&" : "?";
+  const forceEndpoint = `${endpoint}${separator}force=true`;
+  const data = await adminFetcher<T>(forceEndpoint);
+  // SWR 캐시 갱신 (원래 endpoint 키)
+  await globalMutate(endpoint, data, false);
+  // sessionStorage 갱신
+  setSessionData(endpoint, data);
+  return data;
+}
+
+// -------------------------------------------------------------
 // preloadAdminApi — 호버 프리페치용
 // -------------------------------------------------------------
 
