@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
+import { revalidateBlogCaches } from "../_lib/blog-cache";
 import {
   getAllPostMetasFresh,
   getPostBySlug,
@@ -72,9 +72,7 @@ export async function POST(request: NextRequest) {
 
     await createBlogPost(data, auth.email);
 
-    revalidatePath("/blog");
-    revalidatePath("/sitemap.xml");
-    revalidateTag("blog-posts-admin", "max");
+    revalidateBlogCaches({ slug: data.slug, category: data.category });
     if (data.published) {
       void submitBlogPostToIndexNow(data.slug, data.category).catch((error) => {
         console.error("[indexnow] blog post submit failed:", error);

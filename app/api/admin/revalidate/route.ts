@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
+import { revalidateBlogCaches } from "../_lib/blog-cache";
 import { getPostBySlugFresh } from "@/lib/blog-supabase";
-import { getBlogPostUrl } from "@/lib/blog";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -28,8 +27,6 @@ export async function POST(request: NextRequest) {
     // body 없는 POST 요청은 전체 무효화로 처리
   }
 
-  revalidateTag("blog-posts-admin", "max");
-
   if (slug) {
     const post = await getPostBySlugFresh(slug);
     if (!post) {
@@ -39,14 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    revalidateTag(`blog-post-${slug}`, "max");
-    revalidateTag("blog-posts", "max");
-    revalidateTag("blog-slugs", "max");
-    revalidateTag(`blog-related-${post.category}`, "max");
-    revalidatePath(getBlogPostUrl(slug, post.category));
-    revalidatePath(`/blog/${post.category}`);
-    revalidatePath("/blog");
-    revalidatePath("/sitemap.xml");
+    revalidateBlogCaches({ slug, category: post.category });
 
     return Response.json(
       {
@@ -62,10 +52,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  revalidateTag("blog-posts", "max");
-  revalidateTag("blog-slugs", "max");
-  revalidatePath("/blog");
-  revalidatePath("/sitemap.xml");
+  revalidateBlogCaches();
 
   return Response.json(
     { data: { revalidated: true, mode: "all", timestamp: new Date().toISOString() } },

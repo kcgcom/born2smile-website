@@ -57,6 +57,20 @@ interface RouteEntry {
   path: string;
   type: "page" | "api";
   rendering: "SSG" | "SSG+ISR" | "Client" | "Server";
+  methods?: string[];
+  auth?: boolean;
+}
+
+const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+
+function collectApiMetadata(filePath: string): Pick<RouteEntry, "methods" | "auth"> {
+  const content = fs.readFileSync(filePath, "utf-8");
+  const methods = HTTP_METHODS.filter((method) =>
+    new RegExp(`export\\s+(?:async\\s+)?function\\s+${method}\\b|export\\s+const\\s+${method}\\b`).test(content),
+  );
+  const auth = /verifyAdminRequest\s*\(|headers\.get\(["']authorization["']\)/i.test(content);
+
+  return { methods, auth };
 }
 
 function detectRendering(filePath: string, isApi: boolean): RouteEntry["rendering"] {
@@ -127,6 +141,7 @@ function scanRoutes(): {
           path: routePath,
           type: "api",
           rendering: "Server",
+          ...collectApiMetadata(fullPath),
         });
       }
     }

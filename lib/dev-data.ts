@@ -70,116 +70,6 @@ export const DATABASE_TABLES: DatabaseTable[] = [
 ];
 
 // -------------------------------------------------------------
-// API 엔드포인트 목록
-// -------------------------------------------------------------
-
-export interface ApiEndpoint {
-  path: string;
-  methods: string[];
-  auth: boolean;
-  description: string;
-}
-
-export const API_ENDPOINTS: ApiEndpoint[] = [
-  {
-    path: "/api/admin/analytics",
-    methods: ["GET"],
-    auth: true,
-    description: "GA4 트래픽 데이터 (7d/30d/90d)",
-  },
-  {
-    path: "/api/admin/search-console",
-    methods: ["GET"],
-    auth: true,
-    description: "Search Console 검색 성과",
-  },
-  {
-    path: "/api/admin/blog-likes",
-    methods: ["GET"],
-    auth: true,
-    description: "블로그 좋아요 집계",
-  },
-  {
-    path: "/api/admin/blog-posts",
-    methods: ["GET", "POST"],
-    auth: true,
-    description: "블로그 포스트 목록/생성 (Zod 검증)",
-  },
-  {
-    path: "/api/admin/blog-posts/[slug]",
-    methods: ["GET", "PUT", "DELETE"],
-    auth: true,
-    description: "블로그 포스트 상세/수정/삭제",
-  },
-  {
-    path: "/api/admin/site-config/[type]",
-    methods: ["GET", "PUT"],
-    auth: true,
-    description: "사이트 설정 (links|clinic|hours|schedule)",
-  },
-  {
-    path: "/api/admin/naver-datalab",
-    methods: ["GET"],
-    auth: true,
-    description: "네이버 DataLab 검색 트렌드",
-  },
-  {
-    path: "/api/admin/naver-datalab/trend-summary",
-    methods: ["GET"],
-    auth: true,
-    description: "검색 트렌드 요약 (카테고리/갭)",
-  },
-  {
-    path: "/api/admin/naver-datalab/trend-insights",
-    methods: ["GET"],
-    auth: true,
-    description: "검색 트렌드 보조 인사이트 (세그먼트/시즌성)",
-  },
-  {
-    path: "/api/admin/naver-datalab/strategy-overview",
-    methods: ["GET"],
-    auth: true,
-    description: "콘텐츠 전략 데이터 (실행안/브리프)",
-  },
-  {
-    path: "/api/admin/naver-datalab/category/[slug]",
-    methods: ["GET"],
-    auth: true,
-    description: "카테고리별 상세 트렌드",
-  },
-  {
-    path: "/api/admin/naver-searchad/volume",
-    methods: ["GET"],
-    auth: true,
-    description: "네이버 검색광고 키워드 검색량",
-  },
-  {
-    path: "/api/dev/env-status",
-    methods: ["GET"],
-    auth: true,
-    description: "환경변수 설정 상태",
-  },
-  {
-    path: "/api/dev/pagespeed",
-    methods: ["GET"],
-    auth: true,
-    description: "PageSpeed Insights 성능 분석",
-  },
-  {
-    path: "/api/dev/sentry-test",
-    methods: ["POST"],
-    auth: true,
-    description: "Sentry 서버 테스트 이벤트 전송",
-  },
-  {
-    path: "/api/cron/rebuild",
-    methods: ["GET"],
-    auth: true,
-    description: "예약 발행 ISR 재검증 (Vercel Cron)",
-  },
-];
-
-// -------------------------------------------------------------
 // 캐시 TTL 정보
 // -------------------------------------------------------------
 
@@ -192,7 +82,7 @@ export interface CacheTtlEntry {
 export const CACHE_TTLS: CacheTtlEntry[] = [
   { key: "GA4", seconds: 3600, label: "1시간" },
   { key: "SEARCH_CONSOLE", seconds: 21600, label: "6시간" },
-  { key: "NAVER_DATALAB", seconds: 21600, label: "6시간" },
+  { key: "NAVER_DATALAB", seconds: 86400, label: "24시간" },
   { key: "NAVER_SEARCHAD", seconds: 86400, label: "24시간" },
   { key: "PAGESPEED", seconds: 86400, label: "24시간" },
   { key: "BLOG_LIKES", seconds: 300, label: "5분" },

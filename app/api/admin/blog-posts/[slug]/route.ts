@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
+import { revalidateBlogCaches } from "../../_lib/blog-cache";
 import {
   getPostAdminBySlugFresh,
   getPostBySlugFresh,
@@ -11,7 +11,6 @@ import {
 } from "@/lib/blog-supabase";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
-import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
 import { getTodayKST } from "@/lib/date";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
@@ -117,17 +116,8 @@ export async function PUT(
 
     await updateBlogPost(slug, updateData, auth.email);
 
-    // 카테고리 결정: 업데이트된 카테고리 또는 기존 카테고리
     const category = updateData.category ?? existing.category;
-    revalidatePath("/blog");
-    revalidatePath(getBlogPostUrl(slug, category));
-    revalidatePath(`/blog/${getCategorySlug(category)}`);
-    // 카테고리가 변경된 경우 이전 카테고리 허브도 무효화
-    if (updateData.category && updateData.category !== existing.category) {
-      revalidatePath(`/blog/${getCategorySlug(existing.category)}`);
-    }
-    revalidatePath("/sitemap.xml");
-    revalidateTag("blog-posts-admin", "max");
+    revalidateBlogCaches({ slug, category, previousCategory: existing.category });
     const becamePublished = !previousPublished && updateData.published === true;
     if (becamePublished || publishedAndDatedTodayOrPast) {
       void submitBlogPostToIndexNow(slug, category).catch((error) => {
@@ -165,9 +155,7 @@ export async function DELETE(
 
     await deleteBlogPost(slug);
 
-    revalidatePath("/blog");
-    revalidatePath("/sitemap.xml");
-    revalidateTag("blog-posts-admin", "max");
+    revalidateBlogCaches({ slug, category: existing.category });
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
   } catch (error) {

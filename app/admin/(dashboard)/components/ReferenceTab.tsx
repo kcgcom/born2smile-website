@@ -8,7 +8,6 @@ import {
   ESLINT_CONFIG,
   NEXTJS_CONFIG,
   DATABASE_TABLES,
-  API_ENDPOINTS,
   CACHE_TTLS,
 } from "@/lib/dev-data";
 import { StatCard } from "@/app/admin/(dashboard)/components/StatCard";
@@ -368,6 +367,7 @@ function DatabaseContent() {
 // -------------------------------------------------------------
 
 function ApiCacheContent() {
+  const apiEndpoints = DEV_MANIFEST.routes.filter((route) => route.type === "api");
   const apiColumns = [
     { key: "path", label: "경로", sortable: true },
     {
@@ -402,7 +402,6 @@ function ApiCacheContent() {
           <span className="text-[var(--muted-light)]">—</span>
         ),
     },
-    { key: "description", label: "설명" },
   ];
 
   return (
@@ -410,11 +409,11 @@ function ApiCacheContent() {
       {/* API 엔드포인트 */}
       <div>
         <h4 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
-          API 엔드포인트 ({API_ENDPOINTS.length}개)
+          API 엔드포인트 ({apiEndpoints.length}개)
         </h4>
         <DataTable
           columns={apiColumns}
-          rows={API_ENDPOINTS as unknown as Record<string, unknown>[]}
+          rows={apiEndpoints as unknown as Record<string, unknown>[]}
           keyField="path"
         />
       </div>
@@ -450,6 +449,7 @@ export function ReferenceTab() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const { dependencies, routes } = DEV_MANIFEST;
+  const apiCount = routes.filter((route) => route.type === "api").length;
 
   const toggle = (id: string) => {
     setExpanded((prev) => (prev === id ? null : id));
@@ -489,7 +489,7 @@ export function ReferenceTab() {
     {
       id: "api-cache",
       title: "API & 캐시",
-      summary: `${API_ENDPOINTS.length}개 엔드포인트`,
+      summary: `${apiCount}개 엔드포인트`,
       content: <ApiCacheContent />,
     },
   ];
