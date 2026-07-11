@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   const period = request.nextUrl.searchParams.get("period") ?? "30d";
+  const scope = request.nextUrl.searchParams.get("scope") === "basic" ? "basic" as const : "full" as const;
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
       { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d, 180d)" },
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const getData = createCachedFetcher(
-      `ga4-${period}`,
-      () => fetchGA4Data(period),
+      `ga4-${period}-${scope}`,
+      () => fetchGA4Data(period, scope),
       secondsUntilMidnightKST,
     );
     const data = await getData();

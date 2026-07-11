@@ -1,15 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
 import type { AnalyticsData, BlogGA4Data, ConversionData, Period, TopPageDetail, SourceDetail } from "./types";
 import { toBlogAnalyticsPeriod } from "./types";
 
 export function useTrafficData(period: Period) {
-  const { data, loading, error, refetch } = useAdminApi<AnalyticsData>(
+  // 점진적 로딩: basic(Stage 1)을 먼저 표시, full이 오면 상세 데이터 병합
+  const { data: basicData, loading: basicLoading, error: basicError, refetch: refetchBasic } = useAdminApi<AnalyticsData>(
+    `/api/admin/analytics?period=${period}&scope=basic`,
+  );
+  const { data: fullData, loading: fullLoading, error: fullError, refetch: refetchFull } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
+  const data = fullData ?? basicData;
+  const loading = basicLoading;
+  const error = fullError ?? basicError;
+  const refetch = useCallback(() => { refetchBasic(); refetchFull(); }, [refetchBasic, refetchFull]);
   const {
     data: blogGa4Data,
     loading: blogGa4Loading,

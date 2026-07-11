@@ -79,7 +79,7 @@ function createPathAggregate(
   };
 }
 
-export async function fetchGA4Data(period: string) {
+export async function fetchGA4Data(period: string, scope: "basic" | "full" = "full") {
   if (!GA4_PROPERTY_ID) {
     throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
   }
@@ -189,6 +189,115 @@ export async function fetchGA4Data(period: string) {
     .filter((row) => row.source && row.sessions > 0);
   const trackedSources = topSourceRows.map((row) => row.source);
 
+  // Parse summary (basic/full 공통)
+  const cur = currentReport[0]?.rows?.[0]?.metricValues ?? [];
+  const prev = compareReport[0]?.rows?.[0]?.metricValues ?? [];
+  const getVal = (arr: typeof cur, i: number) => Number(arr[i]?.value ?? 0);
+
+  const summary = {
+    sessions: {
+      value: Math.round(getVal(cur, 0)),
+      change: calcChange(getVal(cur, 0), getVal(prev, 0)),
+    },
+    users: {
+      value: Math.round(getVal(cur, 1)),
+      change: calcChange(getVal(cur, 1), getVal(prev, 1)),
+    },
+    pageviews: {
+      value: Math.round(getVal(cur, 2)),
+      change: calcChange(getVal(cur, 2), getVal(prev, 2)),
+    },
+    avgDuration: {
+      value: Math.round(getVal(cur, 3)),
+      change: calcChange(getVal(cur, 3), getVal(prev, 3)),
+    },
+    bounceRate: {
+      value: Math.round(getVal(cur, 4) * 10) / 10,
+      change: calcChange(getVal(cur, 4), getVal(prev, 4)),
+    },
+  };
+
+  // --- basic scope: Stage 1만으로 조기 반환 (상세 쿼리 생략) ---
+  if (scope === "basic") {
+    const totalSessions = summary.sessions.value || 1;
+    const trafficSources = topSourceRows.map((row) => ({
+      source: row.source,
+      sessions: row.sessions,
+      percentage: Math.round((row.sessions / totalSessions) * 1000) / 10,
+    }));
+
+    const EXCLUDED_PREFIXES = ["/admin", "/api/"];
+    const rawTopPages = (pagesReport[0]?.rows ?? [])
+      .map((row) => ({
+        path: row.dimensionValues?.[0]?.value ?? "",
+        views: Number(row.metricValues?.[0]?.value ?? 0),
+        sessions: Number(row.metricValues?.[1]?.value ?? 0),
+      }))
+      .filter((p) => !EXCLUDED_PREFIXES.some((prefix) => p.path.startsWith(prefix)));
+
+    const blogPages = rawTopPages.filter((page) => page.path.startsWith("/blog"));
+    const treatmentPages = rawTopPages.filter((page) => page.path.startsWith("/treatments"));
+    const researchPages = rawTopPages.filter((page) => page.path.startsWith("/research"));
+    const nonAggregatePages = rawTopPages.filter(
+      (page) => !page.path.startsWith("/blog") && !page.path.startsWith("/treatments") && !page.path.startsWith("/research"),
+    );
+    const aggregatePages = [
+      createPathAggregate(blogPages, "/blog (전체)"),
+      createPathAggregate(treatmentPages, "/treatments (전체)"),
+      createPathAggregate(researchPages, "/research (전체)"),
+    ].filter((page) => page !== null);
+    const topPages = [...nonAggregatePages, ...aggregatePages].sort((a, b) => b.views - a.views).slice(0, 10);
+
+    const devices = (devicesReport[0]?.rows ?? []).map((row) => {
+      const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+      return { category: row.dimensionValues?.[0]?.value ?? "unknown", sessions, percentage: Math.round((sessions / totalSessions) * 1000) / 10 };
+    });
+    const dailyTrend = (dailyReport[0]?.rows ?? []).map((row) => ({
+      date: normalizeGaDate(row.dimensionValues?.[0]?.value ?? ""),
+      sessions: Number(row.metricValues?.[0]?.value ?? 0),
+      pageviews: Number(row.metricValues?.[1]?.value ?? 0),
+    }));
+    const cities = (cityReport[0]?.rows ?? [])
+      .map((row) => ({ city: row.dimensionValues?.[0]?.value ?? "(unknown)", sessions: Number(row.metricValues?.[0]?.value ?? 0) }))
+      .filter((c) => c.city !== "(not set)")
+      .map((c) => ({ ...c, percentage: Math.round((c.sessions / totalSessions) * 1000) / 10 }));
+    const returningRaw = returningReport[0]?.rows ?? [];
+    const newSessions = Number(returningRaw.find((r) => r.dimensionValues?.[0]?.value === "new")?.metricValues?.[0]?.value ?? 0);
+    const returningSessions = Number(returningRaw.find((r) => r.dimensionValues?.[0]?.value === "returning")?.metricValues?.[0]?.value ?? 0);
+    const newVsReturning = [
+      { label: "신규", sessions: newSessions, percentage: Math.round((newSessions / totalSessions) * 1000) / 10 },
+      { label: "재방문", sessions: returningSessions, percentage: Math.round((returningSessions / totalSessions) * 1000) / 10 },
+    ];
+    const hourlyMap = new Map<number, number>();
+    for (let h = 0; h < 24; h++) hourlyMap.set(h, 0);
+    for (const row of hourReport[0]?.rows ?? []) hourlyMap.set(parseInt(row.dimensionValues?.[0]?.value ?? "0", 10), Number(row.metricValues?.[0]?.value ?? 0));
+    const hourlyPattern = Array.from(hourlyMap.entries()).map(([hour, sessions]) => ({ hour: `${String(hour).padStart(2, "0")}시`, sessions }));
+    const DOW_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+    const dowMap = new Map<number, number>();
+    for (let d = 0; d < 7; d++) dowMap.set(d, 0);
+    for (const row of dayOfWeekReport[0]?.rows ?? []) dowMap.set(parseInt(row.dimensionValues?.[0]?.value ?? "0", 10), Number(row.metricValues?.[0]?.value ?? 0));
+    const dowPattern = [1, 2, 3, 4, 5, 6, 0].map((d) => ({ day: DOW_LABELS[d], sessions: dowMap.get(d) ?? 0 }));
+
+    return {
+      propertyId: GA4_PROPERTY_ID,
+      analyticsUrl: `https://analytics.google.com/analytics/web/#/p${GA4_PROPERTY_ID}/reports/intelligenthome`,
+      dataAsOf: end,
+      period: { start, end },
+      comparePeriod: { start: compareStart, end: compareEnd },
+      summary,
+      topPages,
+      topPageDetails: {} as Record<string, never>,
+      trafficSources,
+      sourceDetails: {} as Record<string, never>,
+      devices,
+      dailyTrend,
+      cities,
+      newVsReturning,
+      hourlyPattern,
+      dowPattern,
+    };
+  }
+
   const [sourceSummaryReport, sourceLandingReport, sourceDailyReport, sourceDeviceReport] =
     trackedSources.length > 0
       ? await Promise.all([
@@ -240,34 +349,6 @@ export async function fetchGA4Data(period: string) {
         }),
       ])
       : [null, null, null, null];
-
-  // Parse summary
-  const cur = currentReport[0]?.rows?.[0]?.metricValues ?? [];
-  const prev = compareReport[0]?.rows?.[0]?.metricValues ?? [];
-  const getVal = (arr: typeof cur, i: number) => Number(arr[i]?.value ?? 0);
-
-  const summary = {
-    sessions: {
-      value: Math.round(getVal(cur, 0)),
-      change: calcChange(getVal(cur, 0), getVal(prev, 0)),
-    },
-    users: {
-      value: Math.round(getVal(cur, 1)),
-      change: calcChange(getVal(cur, 1), getVal(prev, 1)),
-    },
-    pageviews: {
-      value: Math.round(getVal(cur, 2)),
-      change: calcChange(getVal(cur, 2), getVal(prev, 2)),
-    },
-    avgDuration: {
-      value: Math.round(getVal(cur, 3)),
-      change: calcChange(getVal(cur, 3), getVal(prev, 3)),
-    },
-    bounceRate: {
-      value: Math.round(getVal(cur, 4) * 10) / 10,
-      change: calcChange(getVal(cur, 4), getVal(prev, 4)),
-    },
-  };
 
   // Parse top pages (exclude admin/dev paths)
   const EXCLUDED_PREFIXES = ["/admin", "/api/"];
