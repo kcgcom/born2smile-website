@@ -9,7 +9,6 @@ import {
   BookOpen,
   ClipboardCheck,
   FileText,
-  FlaskConical,
   Gauge,
   Image,
   LayoutDashboard,
@@ -67,7 +66,6 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/content/images", label: "이미지", icon: Image },
       { href: "/admin/content/strategy", label: "콘텐츠 전략", icon: Target },
       { href: "/admin/content/trends", label: "검색 트렌드", icon: TrendingUp },
-      { href: "/admin/content/test", label: "테스트", icon: FlaskConical },
     ],
   },
   {

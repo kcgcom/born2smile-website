@@ -1,5 +1,5 @@
-import { TrendSubTab } from "../../components/insight/TrendSubTab";
+import { TaxonomySubTab } from "../../components/insight/TaxonomySubTab";
 
 export default function AdminContentTrendsPage() {
-  return <TrendSubTab />;
+  return <TaxonomySubTab />;
 }
