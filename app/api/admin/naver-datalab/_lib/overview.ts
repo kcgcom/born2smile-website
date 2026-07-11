@@ -7,7 +7,7 @@ import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache, type SearchAdK
 
 export const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"] as const;
 
-export type TrendOverviewMode = "volume" | "full";
+export type TrendOverviewMode = "volume" | "trend" | "full";
 
 export interface TrendOverviewCategory {
   category: KeywordCategorySlug;
@@ -171,7 +171,8 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
 }
 
 export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewBaseData> {
-  const isFullMode = mode === "full";
+  const fetchDatalab = mode === "full" || mode === "trend";
+  const fetchVolume = mode === "full" || mode === "volume";
 
   // 단기(6m 일별) + 장기(3y 주별) 2회 호출, 클라이언트에서 1m/3m/1y/3y 슬라이싱
   const SHORT_TERM_PERIOD = "6m";
@@ -193,9 +194,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     });
 
   const [shortTermResults, longTermResults, volumeResult] = await Promise.all([
-    isFullMode ? fetchCategoryData(SHORT_TERM_PERIOD) : Promise.resolve(null),
-    isFullMode ? fetchCategoryData(LONG_TERM_PERIOD) : Promise.resolve(null),
-    fetchVolumeOverviewData(),
+    fetchDatalab ? fetchCategoryData(SHORT_TERM_PERIOD) : Promise.resolve(null),
+    fetchDatalab ? fetchCategoryData(LONG_TERM_PERIOD) : Promise.resolve(null),
+    fetchVolume ? fetchVolumeOverviewData() : Promise.resolve(undefined),
   ]);
 
   // 기본 분석에는 단기(6m) 데이터 사용
@@ -389,17 +390,22 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
 }
 
 export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewWithGapData> {
+  const isFullMode = mode === "full";
+
   const [baseData, publishedPosts] = await Promise.all([
     getTrendOverviewBaseData(period, mode, force),
-    getAllPublishedPostMetas(),
+    isFullMode ? getAllPublishedPostMetas() : Promise.resolve([]),
   ]);
 
-  const contentGap = analyzeContentGap(
-    baseData.successfulCategoryData,
-    publishedPosts,
-    CATEGORY_KEYWORDS,
-    baseData.volumeData,
-  );
+  // contentGap은 full 모드에서만 정확한 계산 가능 (DataLab + SearchAd 필요)
+  const contentGap = isFullMode
+    ? analyzeContentGap(
+        baseData.successfulCategoryData,
+        publishedPosts,
+        CATEGORY_KEYWORDS,
+        baseData.volumeData,
+      )
+    : [];
 
   return {
     ...baseData,

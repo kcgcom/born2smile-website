@@ -573,7 +573,8 @@ function CategoryDetail({
 // Main component
 // ---------------------------------------------------------------
 
-const TREND_SUMMARY_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=full`;
+const VOLUME_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=volume`;
+const TREND_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend`;
 
 export function TaxonomySubTab() {
   const [selectedCategory, setSelectedCategory] =
@@ -582,15 +583,36 @@ export function TaxonomySubTab() {
   const [forceLoading, setForceLoading] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
 
-  // Fetch trend overview (eager — cards need volume data immediately)
-  const { data: overviewData, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useAdminApi<TrendSummaryData>(
-    TREND_SUMMARY_ENDPOINT,
+  // Phase 1: SearchAd 검색량 (eager — 카드 즉시 표시)
+  const { data: volumeData, loading: volumeLoading, error: volumeError, refetch: refetchVolume } = useAdminApi<TrendSummaryData>(
+    VOLUME_ENDPOINT,
   );
+
+  // Phase 2: DataLab 트렌드 (background — 트렌드 차트용)
+  const { data: trendData, loading: trendLoading } = useAdminApi<TrendSummaryData>(
+    TREND_ENDPOINT,
+  );
+
+  // 두 결과를 병합
+  const overviewData = useMemo(() => {
+    if (!volumeData && !trendData) return null;
+    return {
+      ...(volumeData ?? trendData)!,
+      shortTermDetail: trendData?.shortTermDetail ?? volumeData?.shortTermDetail,
+      longTermDetail: trendData?.longTermDetail ?? volumeData?.longTermDetail,
+    };
+  }, [volumeData, trendData]);
+
+  const overviewLoading = volumeLoading;
+  const overviewError = volumeError;
 
   const handleForceRefresh = useCallback(async () => {
     setForceLoading(true);
     try {
-      await forceRefetchAdminApi<TrendSummaryData>(TREND_SUMMARY_ENDPOINT);
+      await Promise.all([
+        forceRefetchAdminApi<TrendSummaryData>(VOLUME_ENDPOINT),
+        forceRefetchAdminApi<TrendSummaryData>(TREND_ENDPOINT),
+      ]);
     } catch {
       // 에러는 SWR이 처리
     } finally {
@@ -678,7 +700,7 @@ export function TaxonomySubTab() {
       )}
 
       {/* API error */}
-      {overviewError && <AdminErrorState message={overviewError} onRetry={refetchOverview} />}
+      {overviewError && <AdminErrorState message={overviewError} onRetry={refetchVolume} />}
 
       {/* Category card grid */}
       <section>

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (mode === "full" && (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET)) {
+  if ((mode === "full" || mode === "trend") && (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET)) {
     return Response.json({ data: null }, { headers: { "Cache-Control": "private, no-store" } });
   }
 
