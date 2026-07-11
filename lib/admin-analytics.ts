@@ -307,7 +307,17 @@ export async function fetchGA4Data(period: string) {
     ]),
   );
 
-  const [pageDailyReport, pageSourceReport] = await Promise.all([
+  // Stage 2(페이지 상세) + Stage 3(섹션 집계)를 병렬 실행 — Stage 3은 Stage 2에 의존하지 않음
+  const [
+    pageDailyReport,
+    pageSourceReport,
+    blogDailyReport,
+    blogSourceReport,
+    treatmentDailyReport,
+    treatmentSourceReport,
+    researchDailyReport,
+    researchSourceReport,
+  ] = await Promise.all([
     client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate: start, endDate: end }],
@@ -329,16 +339,6 @@ export async function fetchGA4Data(period: string) {
       orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
       limit: 500,
     }),
-  ]);
-
-  const [
-    blogDailyReport,
-    blogSourceReport,
-    treatmentDailyReport,
-    treatmentSourceReport,
-    researchDailyReport,
-    researchSourceReport,
-  ] = await Promise.all([
     blogAggregate
       ? client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,

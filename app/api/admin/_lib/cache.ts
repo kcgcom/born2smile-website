@@ -3,14 +3,23 @@ import { unstable_cache } from "next/cache";
 export function createCachedFetcher<T>(
   key: string,
   fetcher: () => Promise<T>,
-  revalidateSeconds: number,
+  revalidateSeconds: number | (() => number),
 ) {
-  return unstable_cache(fetcher, [key], { revalidate: revalidateSeconds });
+  const ttl = typeof revalidateSeconds === "function" ? revalidateSeconds() : revalidateSeconds;
+  return unstable_cache(fetcher, [key], { revalidate: ttl });
+}
+
+/** KST 자정까지 남은 초 (최소 600초 = 10분) */
+export function secondsUntilMidnightKST(): number {
+  const now = new Date();
+  const kst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  const midnight = new Date(kst);
+  midnight.setDate(midnight.getDate() + 1);
+  midnight.setHours(0, 0, 0, 0);
+  return Math.max(600, Math.floor((midnight.getTime() - kst.getTime()) / 1000));
 }
 
 export const CACHE_TTL = {
-  GA4_SUMMARY: 3600,      // 1 hour
-  GA4_DAILY: 21600,        // 6 hours
   SEARCH_CONSOLE: 21600,   // 6 hours
   NAVER_DATALAB: 86400,    // 24 hours — 트렌드 데이터는 일별/주별이므로 하루 1회 갱신 충분
   BLOG_LIKES: 300,         // 5 minutes

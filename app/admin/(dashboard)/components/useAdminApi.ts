@@ -21,10 +21,12 @@ async function adminFetcher<T>(endpoint: string): Promise<T> {
   return (json.data ?? json) as T;
 }
 
-// PageSpeed 등 느린 엔드포인트 판별
+// 느린 엔드포인트 — sessionStorage 캐시 + 긴 deduping으로 재방문 즉시 표시
 const SLOW_ENDPOINTS = [
   "/api/dev/pagespeed",
   "/api/admin/naver-datalab/trend-summary",
+  "/api/admin/analytics",
+  "/api/admin/blog-analytics",
 ];
 
 function isSlowEndpoint(endpoint: string): boolean {

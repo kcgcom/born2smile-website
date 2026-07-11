@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
-import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
+import { createCachedFetcher, secondsUntilMidnightKST } from "../_lib/cache";
 import { fetchBlogPostGA4Data } from "@/lib/admin-analytics";
 
 const VALID_PERIODS = ["28d", "90d", "180d"];
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const getData = createCachedFetcher(
       `blog-ga4-${period}`,
       () => fetchBlogPostGA4Data(period),
-      CACHE_TTL.GA4_SUMMARY,
+      secondsUntilMidnightKST,
     );
     const data = await getData();
     return Response.json(
