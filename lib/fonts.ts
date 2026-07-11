@@ -28,7 +28,7 @@ export const notoSerifKR = localFont({
   ],
   variable: "--font-noto-serif",
   display: "swap",
-  // preload: true (기본값) — 히어로 h1(font-bold=700)의 FOUT 방지
+  preload: false, // LCP 텍스트는 fallback으로 먼저 표시하고 338KB 폰트는 후순위 로드
   // 400 weight 제거: font-headline은 font-bold(700)만 사용하므로 불필요 (322KB 절약)
   fallback: ["Georgia", "serif"],
 });
