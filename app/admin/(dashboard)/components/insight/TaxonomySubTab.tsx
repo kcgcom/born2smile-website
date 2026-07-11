@@ -455,19 +455,33 @@ function TrendView({
               <span className="w-16 shrink-0 text-right text-xs text-[var(--muted)] tabular-nums">
                 {vol != null ? vol.toLocaleString("ko-KR") : sg.currentAvg.toFixed(1)}
               </span>
-              <TrendIcon trend={sg.trend} />
               <span
                 className={`w-14 shrink-0 text-right text-xs tabular-nums ${
-                  sg.trend === "rising"
-                    ? "text-green-600"
-                    : sg.trend === "falling"
-                      ? "text-red-600"
-                      : "text-gray-400"
+                  sg.changeRate > 0 ? "text-green-600" : sg.changeRate < 0 ? "text-red-600" : "text-gray-400"
                 }`}
               >
                 {sg.changeRate > 0 ? "+" : ""}
                 {sg.changeRate.toFixed(1)}%
               </span>
+              {(() => {
+                const normPct = activeSummary
+                  ? ((1 + sg.changeRate / 100) / (1 + activeSummary.weightedAvg / 100) - 1) * 100
+                  : sg.changeRate;
+                const normTrend = normPct > 0.5 ? "rising" : normPct < -0.5 ? "falling" : "stable";
+                return (
+                  <>
+                    <span
+                      className={`w-16 shrink-0 text-right text-xs tabular-nums ${
+                        normTrend === "rising" ? "text-blue-600" : normTrend === "falling" ? "text-orange-500" : "text-gray-400"
+                      }`}
+                      title="플랫폼 대비 정규화 변화율"
+                    >
+                      {normPct > 0 ? "+" : ""}{normPct.toFixed(1)}%
+                    </span>
+                    <TrendIcon trend={normTrend} />
+                  </>
+                );
+              })()}
             </div>
           );
         })}
