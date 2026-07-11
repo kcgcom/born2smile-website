@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getTrendOverviewWithGapData(period, "volume");
+    const data = await getTrendOverviewWithGapData(period, "full");
     const insightActions = deriveInsightActions(data.contentGap);
     const faqSuggestions = generateFaqSuggestions(data.contentGap);
     const pageOpportunities = buildPageUpdateOpportunities(data.contentGap);
