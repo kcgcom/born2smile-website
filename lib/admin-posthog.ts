@@ -27,6 +27,11 @@ export const POSTHOG_CONTACT_EVENTS = [
   "contact_kakao_click",
 ] as const;
 
+const POSTHOG_SHARE_EVENTS = ["blog_post_shared", "blog_share_visit"] as const;
+const POSTHOG_CONVERSION_QUERY_EVENTS = [
+  ...new Set([...POSTHOG_CTA_EVENTS, ...POSTHOG_SHARE_EVENTS, "$pageview"]),
+] as const;
+
 export const POSTHOG_PERIODS = ["7d", "30d", "90d", "180d"] as const;
 
 export type PostHogPeriod = (typeof POSTHOG_PERIODS)[number];
@@ -55,6 +60,11 @@ export interface PostHogHealthData {
 export interface ConversionData {
   configured: boolean;
   period: PostHogPeriod;
+  warnings: string[];
+  meta: {
+    fetchedAt: string;
+    partial: boolean;
+  };
   summary: {
     totalCtaClicks: number;
     totalPhoneClicks: number;
@@ -185,6 +195,7 @@ async function queryPostHog(sql: string, name: string): Promise<Array<Record<str
     throw new Error("PostHog 조회용 환경변수가 설정되지 않았습니다");
   }
 
+  const startedAt = Date.now();
   const response = await fetch(`${config.baseUrl}/api/projects/${config.projectId}/query/`, {
     method: "POST",
     headers: {
@@ -205,12 +216,17 @@ async function queryPostHog(sql: string, name: string): Promise<Array<Record<str
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     throw new Error(
-      `PostHog API 요청 실패 (${response.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`
+      `PostHog 쿼리 실패 [${name}] (${response.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`
     );
   }
 
   const payload = (await response.json()) as PostHogQueryResponse;
-  return normalizeRows(payload);
+  const rows = normalizeRows(payload);
+  const elapsedMs = Date.now() - startedAt;
+  if (elapsedMs >= 3000) {
+    console.warn(`[posthog] 느린 쿼리 ${name}: ${elapsedMs}ms, ${rows.length}행`);
+  }
+  return rows;
 }
 
 function buildLinks(config: PostHogConfig) {
@@ -308,6 +324,11 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
     return {
       configured: false,
       period,
+      warnings: [],
+      meta: {
+        fetchedAt: new Date().toISOString(),
+        partial: false,
+      },
       summary: {
         totalCtaClicks: 0,
         totalPhoneClicks: 0,
@@ -331,7 +352,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
   const days = PERIOD_TO_DAYS[period];
   const intervalClause = `timestamp >= now() - INTERVAL ${days} DAY`;
 
-  const [summaryRows, locationRows, pageRows, blogRows, shareRows, shareSourceRows] = await Promise.all([
+  const queryResults = await Promise.allSettled([
     queryPostHog(
       `
         SELECT
@@ -346,6 +367,8 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
           countIf(event = 'blog_post_shared' AND properties.method = 'copied') AS copy_share_actions
         FROM events
         WHERE ${intervalClause}
+          AND event IN ${sqlList(POSTHOG_CONVERSION_QUERY_EVENTS)}
+          AND (event != '$pageview' OR properties.$pathname = '/contact')
       `,
       `admin_posthog_conversion_summary_${period}`
     ),
@@ -432,6 +455,28 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
     ),
   ]);
 
+  const [summaryResult, locationResult, pageResult, blogResult, shareResult, shareSourceResult] = queryResults;
+  if (summaryResult.status === "rejected") throw summaryResult.reason;
+
+  const warnings: string[] = [];
+  const optionalRows = (
+    result: PromiseSettledResult<Array<Record<string, unknown>>>,
+    label: string,
+  ): Array<Record<string, unknown>> => {
+    if (result.status === "fulfilled") return result.value;
+    const message = result.reason instanceof Error ? result.reason.message : "알 수 없는 오류";
+    console.warn(`[posthog] ${label} 상세 조회 실패`, result.reason);
+    warnings.push(`${label} 데이터를 불러오지 못했습니다: ${message}`);
+    return [];
+  };
+
+  const summaryRows = summaryResult.value;
+  const locationRows = optionalRows(locationResult, "CTA 위치별");
+  const pageRows = optionalRows(pageResult, "페이지별");
+  const blogRows = optionalRows(blogResult, "블로그별");
+  const shareRows = optionalRows(shareResult, "공유 글별");
+  const shareSourceRows = optionalRows(shareSourceResult, "공유 위치별");
+
   const summaryRow = summaryRows[0] ?? {};
   const totalCtaClicks = toNumber(summaryRow.total_cta_clicks);
   const totalPhoneClicks = toNumber(summaryRow.total_phone_clicks);
@@ -446,6 +491,11 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
   return {
     configured: true,
     period,
+    warnings,
+    meta: {
+      fetchedAt: new Date().toISOString(),
+      partial: warnings.length > 0,
+    },
     summary: {
       totalCtaClicks,
       totalPhoneClicks,

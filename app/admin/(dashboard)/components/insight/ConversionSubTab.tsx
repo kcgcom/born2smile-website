@@ -8,8 +8,9 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { MetricCard } from "../MetricCard";
 import { PeriodSelector } from "../PeriodSelector";
 import { ApiSourceBadge } from "./ApiSourceBadge";
-import { useAdminApi } from "../useAdminApi";
+import { forceRefetchAdminApi, useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 
 interface PostHogHealthSummary {
   events24h: number | null;
@@ -32,6 +33,12 @@ interface PostHogHealthData {
 interface ConversionData {
   configured: boolean;
   period: "30d" | "90d" | "180d";
+  warnings: string[];
+  meta: {
+    fetchedAt: string;
+    partial: boolean;
+    cacheTtlSeconds: number;
+  };
   summary: {
     totalCtaClicks: number;
     totalPhoneClicks: number;
@@ -99,8 +106,11 @@ const SHARE_SOURCE_LABELS: Record<string, string> = {
 
 export function ConversionSubTab() {
   const [period, setPeriod] = useState<"30d" | "90d" | "180d">("30d");
-  const { data, loading, error, refetch } = useAdminApi<ConversionData>(
-    `/api/admin/posthog/conversion?period=${period}`,
+  const [retryingDetails, setRetryingDetails] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const endpoint = `/api/admin/posthog/conversion?period=${period}`;
+  const { data, loading, isValidating, error, refetch } = useAdminApi<ConversionData>(
+    endpoint,
   );
   const { data: healthData } = useAdminApi<PostHogHealthData>("/api/admin/posthog/health");
   const { data: postsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
@@ -123,14 +133,65 @@ export function ConversionSubTab() {
         <PeriodSelector
           periods={PERIODS.map((item) => ({ value: item.value, label: item.label }))}
           selected={period}
-          onChange={(value) => setPeriod(value as "30d" | "90d" | "180d")}
+          disabled={isValidating || retryingDetails}
+          onChange={(value) => {
+            setRetryError(null);
+            setPeriod(value as "30d" | "90d" | "180d");
+          }}
         />
         {data && (
           <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            ⓘ PostHog 이벤트 기준 · {period}
+            ⓘ 현재 {PERIOD_LABELS[data.period]} 데이터 · {formatFetchedAt(data.meta.fetchedAt)} 조회
+          </span>
+        )}
+        {isValidating && !loading && (
+          <span className="text-xs font-medium text-[var(--color-primary)]">
+            {data?.period !== period ? `${PERIOD_LABELS[period]} 데이터 불러오는 중…` : "최신 데이터 확인 중…"}
           </span>
         )}
       </div>
+
+      {data && data.warnings.length > 0 && (
+        <AdminNotice tone="warning">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">일부 상세 데이터를 불러오지 못했습니다.</p>
+              <ul className="mt-1 space-y-1 text-xs">{data.warnings.map((warning) => <li key={warning}>• {warning}</li>)}</ul>
+            </div>
+            <button
+              type="button"
+              disabled={retryingDetails}
+              onClick={async () => {
+                setRetryingDetails(true);
+                setRetryError(null);
+                try {
+                  await forceRefetchAdminApi<ConversionData>(endpoint);
+                } catch (retryFailure) {
+                  setRetryError(
+                    retryFailure instanceof Error
+                      ? retryFailure.message
+                      : "상세 데이터를 다시 불러오지 못했습니다.",
+                  );
+                } finally {
+                  setRetryingDetails(false);
+                }
+              }}
+              className="rounded-xl border border-amber-300 bg-white/70 px-3 py-2 text-xs font-semibold hover:bg-white disabled:opacity-50"
+            >
+              {retryingDetails ? "다시 불러오는 중…" : "상세 데이터 다시 시도"}
+            </button>
+          </div>
+        </AdminNotice>
+      )}
+
+      {retryError && (
+        <AdminNotice tone="error">
+          <div>
+            <p className="font-semibold">상세 데이터 재시도에 실패했습니다.</p>
+            <p className="mt-1 text-xs">{retryError}</p>
+          </div>
+        </AdminNotice>
+      )}
 
       {error && <AdminErrorState message={error} onRetry={refetch} />}
 
@@ -434,4 +495,14 @@ function formatCompactDate(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatFetchedAt(value: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }

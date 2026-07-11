@@ -29,8 +29,16 @@ const SLOW_ENDPOINTS = [
   "/api/admin/blog-analytics",
 ];
 
+const KEEP_PREVIOUS_ENDPOINTS = [
+  "/api/admin/posthog/conversion",
+];
+
 function isSlowEndpoint(endpoint: string): boolean {
   return SLOW_ENDPOINTS.some((p) => endpoint.startsWith(p));
+}
+
+function shouldKeepPreviousData(endpoint: string): boolean {
+  return isSlowEndpoint(endpoint) || KEEP_PREVIOUS_ENDPOINTS.some((path) => endpoint.startsWith(path));
 }
 
 // -------------------------------------------------------------
@@ -65,6 +73,7 @@ function setSessionData(endpoint: string, data: unknown) {
 
 export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   const slow = isSlowEndpoint(endpoint);
+  const keepPrevious = shouldKeepPreviousData(endpoint);
 
   const { data, error: swrError, isLoading, isValidating, mutate } = useSWR<T>(
     enabled ? endpoint : null,
@@ -72,7 +81,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
     {
       dedupingInterval: slow ? 6 * 60 * 60 * 1000 : 30_000,
       revalidateOnFocus: !slow,
-      ...(slow && {
+      ...(keepPrevious && {
         keepPreviousData: true,
         fallbackData: getSessionData<T>(endpoint),
         onSuccess: (d: T) => setSessionData(endpoint, d),
@@ -88,7 +97,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
 
   return {
     data: data ?? null,
-    loading: isLoading,
+    loading: isLoading && data === undefined,
     isValidating,
     error: swrError ? (swrError instanceof Error ? swrError.message : "알 수 없는 오류") : null,
     refetch,
