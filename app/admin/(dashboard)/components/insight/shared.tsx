@@ -99,6 +99,7 @@ export interface TrendOverviewCategory {
   fallingCount?: number | null;
   stableCount?: number | null;
   monthlyTotalVolume?: number | null;
+  subGroupVolumes?: Record<string, number> | null;
   error: string | null;
 }
 

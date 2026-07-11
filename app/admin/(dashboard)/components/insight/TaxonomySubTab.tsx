@@ -367,18 +367,30 @@ function TrendView({
     <div className="space-y-4">
       {/* Platform trend summary */}
       {activeSummary && (
-        <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 text-xs">
-          <span className="text-[var(--muted)]">전체 트렌드</span>
-          <span className={`font-semibold tabular-nums ${
-            activeSummary.weightedAvg > 0 ? "text-green-600" : activeSummary.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
-          }`}>
-            {activeSummary.weightedAvg > 0 ? "+" : ""}{activeSummary.weightedAvg.toFixed(1)}%
-          </span>
-          <span className="text-[var(--muted)]">
-            편차 {activeSummary.stdDev.toFixed(1)}%
-            {activeSummary.stdDev < 10 ? " · 균일" : " · 카테고리별 차이 있음"}
-          </span>
-          <span className="text-[var(--muted)]">({activeSummary.count}개)</span>
+        <div className={`rounded-xl border-2 px-4 py-3 ${
+          activeSummary.weightedAvg > 0
+            ? "border-green-200 bg-green-50"
+            : activeSummary.weightedAvg < 0
+              ? "border-red-200 bg-red-50"
+              : "border-gray-200 bg-gray-50"
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">네이버 검색 트렌드</span>
+            <span className={`text-2xl font-bold tabular-nums ${
+              activeSummary.weightedAvg > 0 ? "text-green-600" : activeSummary.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
+            }`}>
+              {activeSummary.weightedAvg > 0 ? "▲" : activeSummary.weightedAvg < 0 ? "▼" : "—"}{" "}
+              {activeSummary.weightedAvg > 0 ? "+" : ""}{activeSummary.weightedAvg.toFixed(1)}%
+            </span>
+            <span className="text-xs text-[var(--muted)]">
+              편차 {activeSummary.stdDev.toFixed(1)}%
+              {activeSummary.stdDev < 10 ? " · 균일" : " · 편차 큼"}
+            </span>
+            <span className="text-xs text-[var(--muted)]">서브그룹 {activeSummary.count}개</span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
+            네이버 DataLab 상대 트렌드 변화율을 검색광고 API 월간 검색량으로 가중평균한 추정치입니다. 검색량이 많은 키워드의 변화가 더 크게 반영됩니다.
+          </p>
         </div>
       )}
 
@@ -523,6 +535,8 @@ function CategoryDetail({
   loading,
   shortTermSummary,
   longTermSummary,
+  changeRate,
+  platformAvg,
 }: {
   cat: CategoryKeywords;
   filter: string;
@@ -532,6 +546,8 @@ function CategoryDetail({
   loading: boolean;
   shortTermSummary: TrendSummaryResult;
   longTermSummary: TrendSummaryResult;
+  changeRate?: number;
+  platformAvg?: number;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
@@ -551,12 +567,49 @@ function CategoryDetail({
       {/* Detail header */}
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          <h3 className="text-base font-bold">
-            {getKeywordCategoryLabel(cat.slug)}
-            <span className="ml-2 text-sm font-normal text-gray-400">
-              {cat.slug}
-            </span>
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold">
+              {getKeywordCategoryLabel(cat.slug)}
+              <span className="ml-2 text-sm font-normal text-gray-400">
+                {cat.slug}
+              </span>
+            </h3>
+            {changeRate != null && (() => {
+              const normPct = platformAvg != null
+                ? ((1 + changeRate / 100) / (1 + platformAvg / 100) - 1) * 100
+                : null;
+              const normTrend = normPct != null
+                ? (normPct > 0.5 ? "rising" : normPct < -0.5 ? "falling" : "stable")
+                : null;
+              return (
+                <div className="flex items-center gap-1.5">
+                  <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums ${
+                    changeRate > 0
+                      ? "bg-green-100 text-green-700"
+                      : changeRate < 0
+                        ? "bg-red-100 text-red-700"
+                        : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {changeRate > 0 ? "+" : ""}{changeRate.toFixed(1)}%
+                  </span>
+                  {normPct != null && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
+                        normTrend === "rising"
+                          ? "bg-blue-50 text-blue-600"
+                          : normTrend === "falling"
+                            ? "bg-orange-50 text-orange-500"
+                            : "bg-gray-50 text-gray-400"
+                      }`}
+                      title="전체 대비 정규화 변화율"
+                    >
+                      {normPct > 0 ? "+" : ""}{normPct.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
           <p className="text-xs text-gray-500">
             {cat.subGroups.length}개 서브그룹 · {totalKw}개 키워드
           </p>
@@ -640,7 +693,11 @@ export function TaxonomySubTab() {
       longTermDetail: trendLongData?.longTermDetail ?? trendShortData?.longTermDetail,
       categories: (trendShortData?.categories ?? volumeData?.categories)?.map((cat) => {
         const volCat = volumeData?.categories?.find((c) => c.slug === cat.slug);
-        return { ...cat, monthlyTotalVolume: cat.monthlyTotalVolume ?? volCat?.monthlyTotalVolume };
+        return {
+          ...cat,
+          monthlyTotalVolume: cat.monthlyTotalVolume ?? volCat?.monthlyTotalVolume,
+          subGroupVolumes: cat.subGroupVolumes ?? volCat?.subGroupVolumes,
+        };
       }),
     };
   }, [volumeData, trendShortData, trendLongData]);
@@ -673,6 +730,28 @@ export function TaxonomySubTab() {
       for (const cat of overviewData.categories) {
         map.set(cat.slug, cat);
       }
+    }
+    return map;
+  }, [overviewData]);
+
+  // Per-category weighted average change rate (서브그룹 검색량 가중평균)
+  const catChangeRateMap = useMemo(() => {
+    const map = new Map<KeywordCategorySlug, number>();
+    const detail = overviewData?.shortTermDetail;
+    if (!detail) return map;
+    for (const catData of detail) {
+      const catOverview = overviewData?.categories?.find((c) => c.slug === catData.slug);
+      const sgVolumes = catOverview?.subGroupVolumes;
+      if (!sgVolumes) continue;
+      let totalVol = 0;
+      let weightedSum = 0;
+      for (const sg of catData.subGroups) {
+        const vol = sgVolumes[sg.name] ?? 0;
+        if (vol <= 0) continue;
+        weightedSum += sg.changeRate * vol;
+        totalVol += vol;
+      }
+      if (totalVol > 0) map.set(catData.slug, weightedSum / totalVol);
     }
     return map;
   }, [overviewData]);
@@ -712,13 +791,14 @@ export function TaxonomySubTab() {
       if (!detail || detail.length === 0) return null;
       const items: Array<{ changeRate: number; volume: number }> = [];
       for (const cat of detail) {
-        const volume = overviewData?.categories?.find((c) => c.slug === cat.slug)?.monthlyTotalVolume;
-        if (volume == null || volume <= 0) continue;
-        // 카테고리 대표 변화율: 서브그룹 중 최대 절대값
-        const changeRate = cat.subGroups.reduce(
-          (max, sg) => (Math.abs(sg.changeRate) > Math.abs(max) ? sg.changeRate : max), 0,
-        );
-        items.push({ changeRate, volume });
+        const catOverview = overviewData?.categories?.find((c) => c.slug === cat.slug);
+        if (!catOverview) continue;
+        const volumeMap = catOverview.subGroupVolumes;
+        for (const sg of cat.subGroups) {
+          const volume = volumeMap?.[sg.name] ?? 0;
+          if (volume <= 0) continue;
+          items.push({ changeRate: sg.changeRate, volume });
+        }
       }
       if (items.length === 0) return null;
       const totalVolume = items.reduce((s, i) => s + i.volume, 0);
@@ -836,6 +916,8 @@ export function TaxonomySubTab() {
             loading={overviewLoading}
             shortTermSummary={shortTermSummary}
             longTermSummary={longTermSummary}
+            changeRate={catChangeRateMap.get(selectedCat.slug)}
+            platformAvg={shortTermSummary?.weightedAvg}
           />
         </section>
       )}

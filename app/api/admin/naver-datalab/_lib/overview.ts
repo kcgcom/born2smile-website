@@ -155,6 +155,28 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
 
 export type TrendDetailScope = "both" | "short" | "long";
 
+/** 서브그룹별 검색량 맵 추출 */
+function buildSubGroupVolumes(
+  category: string,
+  subGroupNames: string[],
+  volumeData: Record<string, VolumeDataEntry> | undefined,
+): { monthlyTotalVolume: number | null; subGroupVolumes: Record<string, number> | null } {
+  if (!volumeData) return { monthlyTotalVolume: null, subGroupVolumes: null };
+  let total = 0;
+  let hasAny = false;
+  const sgMap: Record<string, number> = {};
+  for (const name of subGroupNames) {
+    const vol = volumeData[`${category}:${name}`];
+    if (!vol) continue;
+    total += vol.monthlyTotalQcCnt;
+    sgMap[name] = vol.monthlyTotalQcCnt;
+    hasAny = true;
+  }
+  return hasAny
+    ? { monthlyTotalVolume: total, subGroupVolumes: sgMap }
+    : { monthlyTotalVolume: null, subGroupVolumes: null };
+}
+
 export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewBaseData> {
   const fetchDatalab = mode === "strategy" || mode === "trend";
   const fetchVolume = mode === "strategy" || mode === "volume";
@@ -225,18 +247,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
       const ck = CATEGORY_KEYWORDS[index];
 
       if (result.status === "rejected") {
-        let monthlyTotalVolume: number | null = null;
-        if (volumeData) {
-          let total = 0;
-          let hasAny = false;
-          for (const sg of ck.subGroups) {
-            const volume = volumeData[`${ck.category}:${sg.name}`];
-            if (!volume) continue;
-            total += volume.monthlyTotalQcCnt;
-            hasAny = true;
-          }
-          if (hasAny) monthlyTotalVolume = total;
-        }
+        const { monthlyTotalVolume, subGroupVolumes } = buildSubGroupVolumes(
+          ck.category, ck.subGroups.map((sg) => sg.name), volumeData,
+        );
 
         return {
           category: ck.category,
@@ -249,6 +262,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
           fallingCount: null,
           stableCount: null,
           monthlyTotalVolume,
+          subGroupVolumes,
           error: result.reason instanceof Error ? result.reason.message : "데이터를 불러올 수 없습니다",
         };
       }
@@ -290,18 +304,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
         subGroups: enrichedSubGroups,
       });
 
-      let monthlyTotalVolume: number | null = null;
-      if (volumeData) {
-        let total = 0;
-        let hasAny = false;
-        for (const sg of enrichedSubGroups) {
-          const volume = volumeData[`${ck.category}:${sg.name}`];
-          if (!volume) continue;
-          total += volume.monthlyTotalQcCnt;
-          hasAny = true;
-        }
-        if (hasAny) monthlyTotalVolume = total;
-      }
+      const { monthlyTotalVolume, subGroupVolumes } = buildSubGroupVolumes(
+        ck.category, enrichedSubGroups.map((sg) => sg.name), volumeData,
+      );
 
       return {
         category: ck.category,
@@ -314,6 +319,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
         fallingCount,
         stableCount,
         monthlyTotalVolume,
+        subGroupVolumes,
         error: null,
       };
     });
@@ -326,18 +332,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     successfulCategoryData = buildSyntheticCategoryData(CATEGORY_KEYWORDS);
 
     categories = CATEGORY_KEYWORDS.map((ck) => {
-      let monthlyTotalVolume: number | null = null;
-      if (volumeData) {
-        let total = 0;
-        let hasAny = false;
-        for (const sg of ck.subGroups) {
-          const volume = volumeData[`${ck.category}:${sg.name}`];
-          if (!volume) continue;
-          total += volume.monthlyTotalQcCnt;
-          hasAny = true;
-        }
-        if (hasAny) monthlyTotalVolume = total;
-      }
+      const { monthlyTotalVolume, subGroupVolumes } = buildSubGroupVolumes(
+        ck.category, ck.subGroups.map((sg) => sg.name), volumeData,
+      );
 
       return {
         category: ck.category,
@@ -350,6 +347,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
         fallingCount: null,
         stableCount: null,
         monthlyTotalVolume,
+        subGroupVolumes,
         error: null,
       };
     });
