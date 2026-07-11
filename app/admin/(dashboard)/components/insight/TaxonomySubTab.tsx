@@ -674,7 +674,10 @@ export function TaxonomySubTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">키워드 택소노미</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold">키워드 택소노미</h2>
+          <ApiSourceBadge sources={["naverDatalab"]} />
+        </div>
         <button
           type="button"
           onClick={handleForceRefresh}
@@ -685,8 +688,6 @@ export function TaxonomySubTab() {
           데이터 갱신
         </button>
       </div>
-
-      <ApiSourceBadge sources={["naverDatalab"]} />
 
       {/* ENV warning */}
       {isEnvMissing && (
