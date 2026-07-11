@@ -496,7 +496,7 @@ export default async function BlogPostPage({
               {relatedPosts.map((rp) => (
                 <StaggerItem key={rp.slug}>
                   <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
-                    <article className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 transition-all hover:border-[var(--border)] hover:shadow-lg">
+                    <article className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 transition-all hover:border-[var(--color-primary)]/20 hover:shadow-lg">
                       <span
                         className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
                       >
@@ -551,20 +551,21 @@ export default async function BlogPostPage({
             <LikeButtonLazy
               slug={post.slug}
               source="mobile_sticky_cta"
-              className="!border-rose-200 !bg-rose-50 !px-3 !py-2 !text-xs !text-rose-600 hover:!bg-rose-100"
+              size="compact"
             />
             <BlogShareButton
               slug={post.slug}
               title={post.title}
               category={post.category}
               source="mobile_sticky_cta"
-              className="!border-[var(--color-primary)] !bg-[var(--color-primary)] !px-3 !py-2 !text-xs !text-white hover:!bg-[var(--color-primary-dark)] hover:!text-white"
+              size="compact"
+              variant="filled"
             />
           </div>
         </div>
       </div>
 
-      <div className="h-40 md:hidden" />
+      <div className="h-20 md:hidden" />
     </>
   );
 }

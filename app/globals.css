@@ -87,6 +87,12 @@ body {
   @apply mx-auto max-w-6xl;
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 /* 제목 줄바꿈 자연스럽게 유지 */
 h1, h2, h3, h4 {
   text-wrap: pretty;

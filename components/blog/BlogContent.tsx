@@ -288,14 +288,14 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         </div>
 
         {/* 카테고리 필터 */}
-        <div className="mb-4 flex flex-wrap justify-center gap-2">
+        <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-1 md:flex-wrap md:justify-center md:overflow-visible md:px-0">
           <button
             onClick={() => handleCategoryClick("all")}
             aria-pressed={activeCategory === "all" && !activeTag}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeCategory === "all" && !activeTag
                 ? "bg-[var(--color-primary)] text-white"
-                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
+                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
             }`}
           >
             전체
@@ -305,10 +305,10 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               key={cat}
               onClick={() => handleCategoryClick(cat)}
               aria-pressed={activeCategory === cat && !activeTag}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeCategory === cat && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
-                  : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
+                  : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
               }`}
             >
               {getCategoryLabel(cat)}
@@ -326,7 +326,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTag === tag
                   ? "bg-[var(--color-gold)] text-white"
-                  : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)] hover:text-[var(--foreground)]"
+                  : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
               }`}
             >
               <Tag size={12} />
@@ -348,7 +348,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               const isLikeDisabled = likingSlug === post.slug || coolingSlugs.has(post.slug);
               return (
               <div key={post.slug}>
-                <article className="group relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)] hover:shadow-lg md:p-8">
+                <article className="group relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)] hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 읽기 시간 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
@@ -385,7 +385,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                           className={`relative z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
                             activeTag === tag
                               ? "bg-[var(--color-gold)] text-white"
-                              : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--background)]"
+                              : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
                           }`}
                         >
                           <Tag size={12} />
@@ -452,17 +452,28 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         </div>
 
         {filteredPosts.length === 0 && (
-          <p className="py-20 text-center text-[var(--muted)]" role="status">
-            {searchQuery.trim()
-              ? `"${searchQuery.trim()}"에 대한 검색 결과가 없습니다.`
-              : "해당 조건의 글이 아직 없습니다."}
-          </p>
+          <div className="py-20 text-center" role="status">
+            <p className="text-[var(--muted)]">
+              {searchQuery.trim()
+                ? `"${searchQuery.trim()}"에 대한 검색 결과가 없습니다.`
+                : "해당 조건의 글이 아직 없습니다."}
+            </p>
+            {(activeCategory !== "all" || activeTag || searchQuery.trim()) && (
+              <button
+                onClick={() => { setActiveCategory("all"); setActiveTag(null); clearSearch(); }}
+                className="mt-4 rounded-full border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"
+              >
+                필터 초기화
+              </button>
+            )}
+          </div>
         )}
 
         {/* 무한 스크롤 감지 센티넬 + 로딩 표시 */}
         {hasMore && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-8" role="status" aria-label="추가 글 로딩 중">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--color-primary)]" />
+          <div ref={sentinelRef} className="flex items-center justify-center gap-3 py-8" role="status" aria-label="추가 글 로딩 중">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--color-primary)]" />
+            <span className="text-sm text-[var(--muted)]">글을 더 불러오는 중…</span>
           </div>
         )}
         {!hasMore && filteredPosts.length > 0 && (

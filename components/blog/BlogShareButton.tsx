@@ -13,6 +13,8 @@ interface BlogShareButtonProps {
   title: string;
   category: BlogCategoryValue;
   source?: string;
+  size?: "default" | "compact";
+  variant?: "outline" | "filled";
   className?: string;
 }
 
@@ -21,6 +23,8 @@ export default function BlogShareButton({
   title,
   category,
   source = "unknown",
+  size = "default",
+  variant = "outline",
   className = "",
 }: BlogShareButtonProps) {
   const [copied, setCopied] = useState(false);
@@ -58,7 +62,13 @@ export default function BlogShareButton({
   return (
     <button
       onClick={handleShare}
-      className={`inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-[var(--color-primary)]/20 hover:bg-blue-50/70 hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/25 ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border font-semibold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/25 ${
+        size === "compact" ? "px-3 py-2 text-xs" : "px-4 py-2.5 text-sm"
+      } ${
+        variant === "filled"
+          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
+          : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--color-primary)]/20 hover:bg-blue-50/70 hover:text-[var(--color-primary)]"
+      } ${className}`}
       aria-label="이 글 공유하기"
     >
       {copied ? (

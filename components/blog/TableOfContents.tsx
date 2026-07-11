@@ -81,7 +81,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
               <li key={i}>
                 <a
                   href={`#section-${i}`}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => { if (window.innerWidth < 768) setIsOpen(false); }}
                   className={`block border-l-2 py-1.5 pl-3 text-sm transition-colors ${
                     isActive
                       ? "border-[var(--color-primary)] font-medium text-[var(--color-primary)]"

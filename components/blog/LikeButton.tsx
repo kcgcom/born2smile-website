@@ -21,10 +21,12 @@ function getUserId(): string {
 interface LikeButtonProps {
   slug: string;
   source?: string;
+  size?: "default" | "compact";
   className?: string;
 }
 
-export default function LikeButton({ slug, source = "unknown", className = "" }: LikeButtonProps) {
+export default function LikeButton({ slug, source = "unknown", size = "default", className = "" }: LikeButtonProps) {
+  const sizeClass = size === "compact" ? "px-3 py-2 text-xs" : "px-4 py-2.5 text-sm";
   const [, setCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -111,7 +113,7 @@ export default function LikeButton({ slug, source = "unknown", className = "" }:
     return (
       <button
         disabled
-        className={`inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 text-sm font-semibold text-[var(--muted-light)] shadow-sm cursor-not-allowed ${className}`}
+        className={`inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] ${sizeClass} font-semibold text-[var(--muted-light)] shadow-sm cursor-not-allowed ${className}`}
         aria-label="좋아요 기능을 사용할 수 없습니다"
         title="좋아요 기능 준비 중"
       >
@@ -125,7 +127,7 @@ export default function LikeButton({ slug, source = "unknown", className = "" }:
     <button
       onClick={handleToggle}
       disabled={loading || coolingDown}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/25 ${
+      className={`inline-flex items-center gap-2 rounded-full border ${sizeClass} font-semibold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/25 ${
         liked
           ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
           : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-600"

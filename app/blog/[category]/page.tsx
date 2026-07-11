@@ -173,7 +173,7 @@ export default async function BlogCategoryPage({
       <section className="bg-[var(--surface)] px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
         <div className="container-narrow">
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-5 md:p-8">
-            <div className="flex flex-wrap items-center gap-2 md:gap-2.5">
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto md:flex-wrap md:gap-2.5 md:overflow-visible">
               {ALL_CATEGORY_SLUGS.map((slug) => {
                 const isActive = slug === categorySlug;
                 return (
@@ -181,10 +181,10 @@ export default async function BlogCategoryPage({
                     key={slug}
                     href={`/blog/${slug}`}
                     aria-current={isActive ? "page" : undefined}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-[var(--color-primary)] text-white"
-                        : "bg-[var(--surface)] text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-[var(--background)]"
+                        : "bg-[var(--surface)] text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-[var(--color-primary)]/10"
                     }`}
                   >
                     {getCategoryLabel(slug)}
@@ -250,10 +250,10 @@ export default async function BlogCategoryPage({
                 <Link
                   key={question}
                   href={getBlogPostUrl(post.slug, post.category)}
-                  className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)] hover:shadow-md md:p-5"
+                  className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)] hover:shadow-md md:p-5"
                 >
                   <div className="flex h-full items-start gap-3">
-                    <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-primary)] ring-1 ring-blue-100 md:h-9 md:w-9">
+                    <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--background)] text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/15 md:h-9 md:w-9">
                       <CircleHelp size={18} />
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col">
@@ -304,7 +304,7 @@ export default async function BlogCategoryPage({
                       <Link
                         key={post.slug}
                         href={getBlogPostUrl(post.slug, post.category)}
-                        className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--border)] hover:bg-[var(--surface)]"
+                        className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)]"
                       >
                         <p className="text-sm font-medium text-[var(--muted)]">{post.readTime} 읽기</p>
                         <h4 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-[var(--foreground)] group-hover:text-[var(--color-primary)] md:line-clamp-3">
