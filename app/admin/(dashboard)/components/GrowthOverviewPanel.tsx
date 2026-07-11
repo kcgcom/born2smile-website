@@ -126,7 +126,7 @@ export function GrowthOverviewPanel() {
 
         <AdminSurface tone="white" className="rounded-3xl p-5">
           <Target className="h-5 w-5 text-[var(--color-primary)]" />
-          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">콘텐츠 전략</h3>
+          <h3 className="mt-2 text-sm font-bold text-[var(--foreground)]">기회 분석</h3>
           <p className="mt-1 text-xs text-[var(--muted)]">실행 우선순위와 브리프 정리</p>
           <AdminActionLink tone="dark" href="/admin/content/strategy" className="mt-3 w-full">
             열기

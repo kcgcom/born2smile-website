@@ -162,7 +162,7 @@ export function ContentPlannerSubTab() {
           <div>
             <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={recommended.length ? "warning" : "white"}>{recommended.length ? `결정할 후보 ${recommended.length}개` : "새 후보 검토 완료"}</AdminPill></div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기존 콘텐츠 전략 탭은 근거 탐색용으로 유지됩니다.</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기회 분석 탭에서 검색 수요와 콘텐츠 근거를 자세히 확인할 수 있습니다.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]"><Metric label="추천 후보" value={recommended.length} /><Metric label="진행 작업" value={boardItems.filter((item) => item.status !== "published").length} /><Metric label="보류" value={deferredCount} /></div>
         </div>
