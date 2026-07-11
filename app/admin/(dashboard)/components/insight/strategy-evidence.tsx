@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { KeywordCategorySlug, SearchIntent } from "@/lib/admin-naver-datalab-keywords";
+import { getKeywordCategoryLabel, type KeywordCategorySlug, type SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
 import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
@@ -19,17 +19,30 @@ export function EvidenceDataSection({
   insightActions,
   pageOpportunities,
 }: EvidenceDataSectionProps) {
+  const [categoryFilter, setCategoryFilter] = useState<KeywordCategorySlug | "all">("all");
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
 
   const crossKeywords = useMemo(() => buildCrossKeywords(contentGap), [contentGap]);
 
+  const categoryOptions = useMemo(() => {
+    const counts = new Map<KeywordCategorySlug, number>();
+    contentGap.forEach((item) => counts.set(item.slug, (counts.get(item.slug) ?? 0) + 1));
+    return Array.from(counts, ([value, count]) => ({
+      value,
+      label: getKeywordCategoryLabel(value),
+      count,
+    }));
+  }, [contentGap]);
+
   const filteredGap = useMemo(
-    () => intentFilter === "all"
-      ? contentGap
-      : contentGap.filter((item) => item.searchIntent === intentFilter),
-    [contentGap, intentFilter],
+    () => contentGap.filter((item) => {
+      if (categoryFilter !== "all" && item.slug !== categoryFilter) return false;
+      if (intentFilter !== "all" && item.searchIntent !== intentFilter) return false;
+      return true;
+    }),
+    [categoryFilter, contentGap, intentFilter],
   );
 
   const gapRows = useMemo(
@@ -40,7 +53,7 @@ export function EvidenceDataSection({
     [filteredGap, sortGapRows],
   );
 
-  const maxVolume = useMemo(() => Math.max(...contentGap.map((g) => g.monthlyVolume ?? 0), 1), [contentGap]);
+  const maxVolume = useMemo(() => Math.max(...filteredGap.map((g) => g.monthlyVolume ?? 0), 1), [filteredGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
   const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
 
@@ -104,7 +117,44 @@ export function EvidenceDataSection({
                 &nbsp;·&nbsp;
                 <span className="text-green-600 font-medium">LOW(&lt;40)</span>
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex items-start gap-2">
+                <span className="w-14 shrink-0 pt-1 text-xs font-medium text-[var(--muted)]">카테고리</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter("all")}
+                    aria-pressed={categoryFilter === "all"}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      categoryFilter === "all"
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+                    }`}
+                  >
+                    전체 <span className="opacity-70">({contentGap.length})</span>
+                  </button>
+                  {categoryOptions.map((option) => {
+                    const isActive = categoryFilter === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setCategoryFilter(option.value)}
+                        aria-pressed={isActive}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          isActive
+                            ? "bg-[var(--color-primary)] text-white"
+                            : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--border)]"
+                        }`}
+                      >
+                        {option.label} <span className="opacity-70">({option.count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-2 flex items-start gap-2">
+                <span className="w-14 shrink-0 pt-1 text-xs font-medium text-[var(--muted)]">검색 의도</span>
+                <div className="flex flex-wrap gap-1.5">
                 {INTENT_FILTER_OPTIONS.map((opt) => {
                   const isActive = intentFilter === opt.value;
                   return (
@@ -120,12 +170,13 @@ export function EvidenceDataSection({
                       }`}
                     >
                       {opt.label}
-                      {isActive && intentFilter !== "all" && (
+                      {isActive && (intentFilter !== "all" || categoryFilter !== "all") && (
                         <span className="ml-1 opacity-70">({filteredGap.length})</span>
                       )}
                     </button>
                   );
                 })}
+                </div>
               </div>
             </div>
             <div className="hidden sm:block rounded-xl bg-[var(--surface)] shadow-sm overflow-hidden">
