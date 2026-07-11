@@ -4,7 +4,6 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-  ArrowLeft,
   Layers,
   Search,
   Tag,
@@ -479,7 +478,6 @@ function TrendView({
 
 function CategoryDetail({
   cat,
-  onBack,
   filter,
   volumeMap,
   shortTermDetail,
@@ -487,7 +485,6 @@ function CategoryDetail({
   loading,
 }: {
   cat: CategoryKeywords;
-  onBack: () => void;
   filter: string;
   volumeMap: Map<string, number>;
   shortTermDetail: CategoryTrendData[] | undefined;
@@ -511,14 +508,6 @@ function CategoryDetail({
     <section className="space-y-4">
       {/* Detail header */}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-        >
-          <ArrowLeft size={16} />
-          전체
-        </button>
         <div className="flex-1">
           <h3 className="text-base font-bold">
             {getKeywordCategoryLabel(cat.slug)}
@@ -753,10 +742,6 @@ export function TaxonomySubTab() {
 
           <CategoryDetail
             cat={selectedCat}
-            onBack={() => {
-              setSelectedCategory(null);
-              setFilter("");
-            }}
             filter={filter}
             volumeMap={selectedVolumeMap}
             shortTermDetail={overviewData?.shortTermDetail}
