@@ -25,7 +25,6 @@ async function adminFetcher<T>(endpoint: string): Promise<T> {
 const SLOW_ENDPOINTS = [
   "/api/dev/pagespeed",
   "/api/admin/naver-datalab/trend-summary",
-  "/api/admin/naver-datalab/strategy-overview",
 ];
 
 function isSlowEndpoint(endpoint: string): boolean {

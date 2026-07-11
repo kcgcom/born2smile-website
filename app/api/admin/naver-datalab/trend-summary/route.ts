@@ -1,15 +1,29 @@
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
+import { buildPageUpdateOpportunities, deriveInsightActions, generateFaqSuggestions } from "@/lib/trend-insights";
+import { generateBlogBriefSuggestions, generatePageImprovementBriefs } from "@/lib/trend-briefs";
 import { getTrendOverviewWithGapData, VALID_PERIODS, type TrendOverviewMode } from "../_lib/overview";
+
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  const mode = (request.nextUrl.searchParams.get("mode") ?? "full") as TrendOverviewMode;
+  const requestedMode = request.nextUrl.searchParams.get("mode") ?? "full";
+  const validModes = ["volume", "trend", "full", "strategy"] as const;
+  if (!validModes.includes(requestedMode as (typeof validModes)[number])) {
+    return Response.json(
+      { error: "BAD_REQUEST", message: "유효하지 않은 모드입니다 (volume, trend, full, strategy)" },
+      { status: 400, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
+  const strategyMode = requestedMode === "strategy";
+  const mode: TrendOverviewMode = strategyMode ? "full" : requestedMode as TrendOverviewMode;
   const period = request.nextUrl.searchParams.get("period") ?? "3m";
   const force = request.nextUrl.searchParams.get("force") === "true";
+  const detail = (request.nextUrl.searchParams.get("detail") ?? "both") as import("../_lib/overview").TrendDetailScope;
 
   if (!VALID_PERIODS.includes(period as (typeof VALID_PERIODS)[number])) {
     return Response.json(
@@ -23,7 +37,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getTrendOverviewWithGapData(period, mode, force);
+    const data = await getTrendOverviewWithGapData(period, mode, force, detail);
+
+    if (strategyMode) {
+      const insightActions = deriveInsightActions(data.contentGap);
+      const faqSuggestions = generateFaqSuggestions(data.contentGap);
+      const pageOpportunities = buildPageUpdateOpportunities(data.contentGap);
+
+      return Response.json(
+        {
+          data: {
+            mode: "strategy",
+            period: data.period,
+            contentGap: data.contentGap,
+            insightActions,
+            faqSuggestions,
+            pageOpportunities,
+            blogBriefs: generateBlogBriefSuggestions(data.contentGap),
+            pageBriefs: generatePageImprovementBriefs(pageOpportunities, faqSuggestions),
+            volumeSource: data.volumeSource,
+            volumeCoverage: data.volumeCoverage,
+          },
+        },
+        { headers: { "Cache-Control": "private, no-store" } },
+      );
+    }
 
     return Response.json(
       {

@@ -121,6 +121,7 @@ async function postDatalabRequest(
         "X-Naver-Client-Secret": clientSecret,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (res.ok) {

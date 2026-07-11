@@ -27,7 +27,7 @@ export function StrategySubTab() {
     data: overviewData,
     loading: overviewLoading,
     error: overviewError,
-  } = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/strategy-overview");
+  } = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
   const insightActions = overviewData?.insightActions ?? [];
   const faqSuggestions = overviewData?.faqSuggestions ?? [];
   const pageOpportunities = overviewData?.pageOpportunities ?? [];

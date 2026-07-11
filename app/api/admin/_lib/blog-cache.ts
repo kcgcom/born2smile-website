@@ -14,21 +14,25 @@ function revalidateCategory(category: BlogCategoryValue) {
   revalidatePath(`/blog/${categorySlug}`);
 }
 
-export function revalidateBlogCaches(target: BlogCacheTarget = {}) {
+export function revalidateBlogCaches(target: BlogCacheTarget | BlogCacheTarget[] = {}) {
+  const targets = Array.isArray(target) ? target : [target];
+
   revalidateTag("blog-posts-admin", "max");
   revalidateTag("blog-posts", "max");
   revalidateTag("blog-slugs", "max");
   revalidatePath("/blog");
   revalidatePath("/sitemap.xml");
 
-  if (target.slug) revalidateTag(`blog-post-${target.slug}`, "max");
+  for (const item of targets) {
+    if (item.slug) revalidateTag(`blog-post-${item.slug}`, "max");
 
-  if (target.category) {
-    revalidateCategory(target.category);
-    if (target.slug) revalidatePath(getBlogPostUrl(target.slug, target.category));
-  }
+    if (item.category) {
+      revalidateCategory(item.category);
+      if (item.slug) revalidatePath(getBlogPostUrl(item.slug, item.category));
+    }
 
-  if (target.previousCategory && target.previousCategory !== target.category) {
-    revalidateCategory(target.previousCategory);
+    if (item.previousCategory && item.previousCategory !== item.category) {
+      revalidateCategory(item.previousCategory);
+    }
   }
 }

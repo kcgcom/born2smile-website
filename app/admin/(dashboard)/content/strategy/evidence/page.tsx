@@ -18,7 +18,7 @@ export default function AdminContentStrategyEvidencePage() {
     data: overviewData,
     loading,
     error,
-  } = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/strategy-overview");
+  } = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
 
   const contentGap = useMemo(() => overviewData?.contentGap ?? [], [overviewData?.contentGap]);
   const insightActions = overviewData?.insightActions ?? [];

@@ -1,6 +1,6 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { revalidateBlogCaches } from "../../admin/_lib/blog-cache";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { submitIndexNowUrls } from "@/lib/indexnow";
 import { BASE_URL } from "@/lib/constants";
@@ -13,8 +13,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  revalidatePath("/blog", "layout");
-  revalidatePath("/sitemap.xml");
   const today = getTodayKST();
 
   try {
@@ -26,11 +24,10 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    for (const post of data ?? []) {
-      const categorySlug = getCategorySlug(post.category);
-      revalidatePath(`/blog/${categorySlug}`);
-      revalidatePath(`/blog/${categorySlug}/${post.slug}`);
-    }
+    revalidateBlogCaches((data ?? []).map((post) => ({
+      slug: post.slug,
+      category: post.category,
+    })));
 
     const urls = (data ?? []).flatMap((post) => [
       `${BASE_URL}/blog/${getCategorySlug(post.category)}/${post.slug}`,

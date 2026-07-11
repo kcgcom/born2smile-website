@@ -11,7 +11,6 @@ import {
   TrendingDown,
   Minus,
   BarChart3,
-  AlertCircle,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -563,7 +562,8 @@ function CategoryDetail({
 // ---------------------------------------------------------------
 
 const VOLUME_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=volume`;
-const TREND_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend`;
+const TREND_SHORT_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend&detail=short`;
+const TREND_LONG_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend&detail=long`;
 
 export function TaxonomySubTab() {
   const [selectedCategory, setSelectedCategory] =
@@ -577,20 +577,27 @@ export function TaxonomySubTab() {
     VOLUME_ENDPOINT,
   );
 
-  // Phase 2: DataLab 트렌드 (background — 트렌드 차트용)
-  const { data: trendData, loading: trendLoading } = useAdminApi<TrendSummaryData>(
-    TREND_ENDPOINT,
+  // Phase 2: DataLab 단기 트렌드 (background — 카드 트렌드 방향 + 1m/3m 차트)
+  const { data: trendShortData } = useAdminApi<TrendSummaryData>(
+    TREND_SHORT_ENDPOINT,
   );
 
-  // 두 결과를 병합
+  // Phase 3: DataLab 장기 트렌드 (shortTerm 완료 후 자동 시작)
+  const { data: trendLongData } = useAdminApi<TrendSummaryData>(
+    TREND_LONG_ENDPOINT,
+    !!trendShortData,
+  );
+
+  // 세 결과를 병합
   const overviewData = useMemo(() => {
-    if (!volumeData && !trendData) return null;
+    if (!volumeData && !trendShortData) return null;
     return {
-      ...(volumeData ?? trendData)!,
-      shortTermDetail: trendData?.shortTermDetail ?? volumeData?.shortTermDetail,
-      longTermDetail: trendData?.longTermDetail ?? volumeData?.longTermDetail,
+      ...(volumeData ?? trendShortData)!,
+      shortTermDetail: trendShortData?.shortTermDetail ?? volumeData?.shortTermDetail,
+      longTermDetail: trendLongData?.longTermDetail ?? trendShortData?.longTermDetail,
+      categories: trendShortData?.categories ?? volumeData?.categories,
     };
-  }, [volumeData, trendData]);
+  }, [volumeData, trendShortData, trendLongData]);
 
   const overviewLoading = volumeLoading;
   const overviewError = volumeError;
@@ -598,16 +605,20 @@ export function TaxonomySubTab() {
   const handleForceRefresh = useCallback(async () => {
     setForceLoading(true);
     try {
-      await Promise.all([
+      const promises = [
         forceRefetchAdminApi<TrendSummaryData>(VOLUME_ENDPOINT),
-        forceRefetchAdminApi<TrendSummaryData>(TREND_ENDPOINT),
-      ]);
+        forceRefetchAdminApi<TrendSummaryData>(TREND_SHORT_ENDPOINT),
+      ];
+      if (trendShortData) {
+        promises.push(forceRefetchAdminApi<TrendSummaryData>(TREND_LONG_ENDPOINT));
+      }
+      await Promise.all(promises);
     } catch {
       // 에러는 SWR이 처리
     } finally {
       setForceLoading(false);
     }
-  }, []);
+  }, [trendShortData]);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {

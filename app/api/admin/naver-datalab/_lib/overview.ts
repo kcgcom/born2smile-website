@@ -41,35 +41,18 @@ export interface TrendOverviewWithGapData extends TrendOverviewBaseData {
   contentGap: ReturnType<typeof analyzeContentGap>;
 }
 
-async function mapSettledWithConcurrencyLimit<T, R>(
+async function mapSettledSequential<T, R>(
   items: T[],
-  limit: number,
   worker: (item: T, index: number) => Promise<R>,
 ): Promise<PromiseSettledResult<R>[]> {
-  const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function run() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex++;
-      try {
-        results[currentIndex] = {
-          status: "fulfilled",
-          value: await worker(items[currentIndex], currentIndex),
-        };
-      } catch (error) {
-        results[currentIndex] = {
-          status: "rejected",
-          reason: error,
-        };
-      }
+  const results: PromiseSettledResult<R>[] = [];
+  for (let i = 0; i < items.length; i++) {
+    try {
+      results.push({ status: "fulfilled", value: await worker(items[i], i) });
+    } catch (error) {
+      results.push({ status: "rejected", reason: error });
     }
   }
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, () => run()),
-  );
-
   return results;
 }
 
@@ -170,34 +153,60 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
   }
 }
 
-export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewBaseData> {
+export type TrendDetailScope = "both" | "short" | "long";
+
+export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewBaseData> {
   const fetchDatalab = mode === "full" || mode === "trend";
   const fetchVolume = mode === "full" || mode === "volume";
 
-  // 단기(6m 일별) + 장기(3y 주별) 2회 호출, 클라이언트에서 1m/3m/1y/3y 슬라이싱
+  // 단기(6m 일별) + 장기(3y 주별), 클라이언트에서 1m/3m/1y/3y 슬라이싱
   const SHORT_TERM_PERIOD = "6m";
   const LONG_TERM_PERIOD = "3y";
 
+  // API 속도 제한 방지: 실제 API 호출 시에만 500ms 딜레이 (캐시 히트 시 스킵)
+  let lastApiCallTime = 0;
+  const RATE_LIMIT_DELAY = 500;
+
   const fetchCategoryData = (p: string) =>
-    mapSettledWithConcurrencyLimit(CATEGORY_KEYWORDS, 2, async (ck) => {
+    mapSettledSequential(CATEGORY_KEYWORDS, async (ck) => {
       if (force) {
+        const elapsed = Date.now() - lastApiCallTime;
+        if (lastApiCallTime > 0 && elapsed < RATE_LIMIT_DELAY) {
+          await new Promise((r) => setTimeout(r, RATE_LIMIT_DELAY - elapsed));
+        }
+        lastApiCallTime = Date.now();
         const raw = await fetchNaverDatalabByCategory(ck.subGroups, p);
         return { ck, raw };
       }
       const getData = createCachedFetcher(
         `naver-trend-${ck.slug}-${p}`,
-        () => fetchNaverDatalabByCategory(ck.subGroups, p),
+        () => {
+          // unstable_cache 미스 → 실제 API 호출 전 딜레이
+          const elapsed = Date.now() - lastApiCallTime;
+          const delayNeeded = lastApiCallTime > 0 && elapsed < RATE_LIMIT_DELAY
+            ? new Promise((r) => setTimeout(r, RATE_LIMIT_DELAY - elapsed))
+            : Promise.resolve();
+          lastApiCallTime = Date.now();
+          return delayNeeded.then(() => {
+            lastApiCallTime = Date.now();
+            return fetchNaverDatalabByCategory(ck.subGroups, p);
+          });
+        },
         CACHE_TTL.NAVER_DATALAB,
       );
       const raw = await getData();
       return { ck, raw };
     });
 
-  const [shortTermResults, longTermResults, volumeResult] = await Promise.all([
-    fetchDatalab ? fetchCategoryData(SHORT_TERM_PERIOD) : Promise.resolve(null),
-    fetchDatalab ? fetchCategoryData(LONG_TERM_PERIOD) : Promise.resolve(null),
-    fetchVolume ? fetchVolumeOverviewData() : Promise.resolve(undefined),
-  ]);
+  const needShort = fetchDatalab && (detail === "both" || detail === "short");
+  const needLong = fetchDatalab && (detail === "both" || detail === "long");
+
+  // DataLab 단기/장기를 직렬 호출 (API 속도 제한 방지)
+  // SearchAd 볼륨은 독립 API이므로 병렬 가능
+  const volumeResultPromise = fetchVolume ? fetchVolumeOverviewData() : Promise.resolve(undefined);
+  const shortTermResults = needShort ? await fetchCategoryData(SHORT_TERM_PERIOD) : null;
+  const longTermResults = needLong ? await fetchCategoryData(LONG_TERM_PERIOD) : null;
+  const volumeResult = await volumeResultPromise;
 
   // 기본 분석에는 단기(6m) 데이터 사용
   const datalabResults = shortTermResults;
@@ -389,11 +398,11 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
   };
 }
 
-export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode, force = false): Promise<TrendOverviewWithGapData> {
+export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewWithGapData> {
   const isFullMode = mode === "full";
 
   const [baseData, publishedPosts] = await Promise.all([
-    getTrendOverviewBaseData(period, mode, force),
+    getTrendOverviewBaseData(period, mode, force, detail),
     isFullMode ? getAllPublishedPostMetas() : Promise.resolve([]),
   ]);
 
