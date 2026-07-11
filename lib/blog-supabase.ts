@@ -19,8 +19,9 @@ const CACHE_TTL = 3600; // 1 hour
 const DEPLOY_CACHE_SEGMENT = process.env.VERCEL_GIT_COMMIT_SHA ?? "local";
 const PUBLIC_POSTS_CACHE_KEY = `blog-posts-published-full-${DEPLOY_CACHE_SEGMENT}`;
 const PUBLIC_BLOG_DATA_SOURCE = process.env.BLOG_PUBLIC_DATA_SOURCE;
-const FORCE_PUBLIC_SNAPSHOT = process.env.NODE_ENV !== "production"
-  && PUBLIC_BLOG_DATA_SOURCE === "snapshot";
+// 빌드 명령에만 이 값을 주입한다. 배포된 Serverless 런타임에는 값이 없으므로
+// ISR과 관리자 수정 후 재검증은 계속 Supabase 최신 데이터를 우선 조회한다.
+const FORCE_PUBLIC_SNAPSHOT = PUBLIC_BLOG_DATA_SOURCE === "snapshot";
 
 function safeRevalidateTag(tag: string) {
   try {

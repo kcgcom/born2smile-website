@@ -123,8 +123,12 @@ async function main() {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const snapshotRequired = process.env.BLOG_SNAPSHOT_REQUIRED === "true";
 
   if (!url || !key) {
+    if (snapshotRequired) {
+      throw new Error("빌드에 필요한 Supabase 환경변수가 없어 최신 blog snapshot을 생성할 수 없습니다.");
+    }
     if (fs.existsSync(outFile)) {
       console.warn("⚠ Supabase 환경변수가 없어 기존 blog snapshot 파일을 유지합니다.");
       return;
@@ -168,6 +172,7 @@ export const BLOG_POSTS_SNAPSHOT: BlogSnapshotPost[] = [];
     .order("date", { ascending: false });
 
   if (error) {
+    if (snapshotRequired) throw error;
     if (fs.existsSync(outFile)) {
       console.warn(`⚠ Snapshot 갱신 실패(${error.message}). 기존 blog snapshot 파일을 유지합니다.`);
       return;

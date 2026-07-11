@@ -1,0 +1,203 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, Check, ChevronRight, Clock3, FilePenLine, LayoutList, Pause, Sparkles, X } from "lucide-react";
+import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
+import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import type { ContentPlannerItem, PlannerStatus } from "@/lib/content-planner";
+import { isBlogCategorySlug } from "@/lib/blog";
+import type { BlogBlock, BlogTag } from "@/lib/blog/types";
+import { AdminErrorState } from "../AdminErrorState";
+import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
+import { useAdminApi, useAdminMutation } from "../useAdminApi";
+import { BLOG_EDITOR_PREFILL_KEY } from "../blog/blog-editor-draft";
+import type { BlogBriefItem, ContentGapItem, PageBriefItem, StrategyOverviewData } from "../insight/shared";
+import { CategoryBadge, SearchIntentBadge, calcTotalVolume } from "../insight/shared";
+
+interface PlannerCandidate {
+  key: string;
+  itemType: "blog" | "page";
+  title: string;
+  slug: KeywordCategorySlug;
+  targetPage: string;
+  rationale: string;
+  demandLabel: string;
+  confidence: "높음" | "보통" | "낮음";
+  effort: string;
+  brief: BlogBriefItem | PageBriefItem;
+  sourceSnapshot: Record<string, unknown>;
+}
+
+const STATUS_LABELS: Record<PlannerStatus, string> = {
+  approved: "승인",
+  in_progress: "작성 중",
+  review: "검수 필요",
+  scheduled: "발행 예약",
+  published: "발행됨",
+  deferred: "보류",
+  dismissed: "제외",
+};
+const BOARD_STATUSES: PlannerStatus[] = ["approved", "in_progress", "review", "scheduled", "published"];
+
+function findGap(gaps: ContentGapItem[], slug: KeywordCategorySlug, subGroup: string) {
+  return gaps.find((gap) => gap.slug === slug && gap.subGroup === subGroup);
+}
+
+function demandLabel(gap?: ContentGapItem) {
+  if (!gap) return "수요 확인 필요";
+  const volume = calcTotalVolume(gap);
+  return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : `상대 ${gap.currentAvg.toFixed(1)}`;
+}
+
+function confidence(gap?: ContentGapItem): PlannerCandidate["confidence"] {
+  if (gap?.monthlyVolume != null) return "높음";
+  if (gap && gap.currentAvg > 0) return "보통";
+  return "낮음";
+}
+
+function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
+  const blogs = data.blogBriefs.map((brief) => {
+    const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
+    return {
+      key: `blog:${brief.slug}:${brief.subGroup}`,
+      itemType: "blog" as const,
+      title: brief.suggestedTitle,
+      slug: brief.slug,
+      targetPage: brief.targetPage,
+      rationale: gap ? `${demandLabel(gap)} · 관련 포스트 ${gap.existingPostCount}개 · 갭 ${gap.gapScore}` : "새 콘텐츠 기회",
+      demandLabel: demandLabel(gap),
+      confidence: confidence(gap),
+      effort: "약 90분",
+      brief,
+      sourceSnapshot: gap ? { gap } : {},
+    };
+  });
+  const pages = data.pageBriefs.map((brief) => {
+    const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
+    const opportunity = data.pageOpportunities.find((item) => item.slug === brief.slug && item.subGroup === brief.subGroup);
+    return {
+      key: `page:${brief.slug}:${brief.subGroup}`,
+      itemType: "page" as const,
+      title: `${getKeywordCategoryLabel(brief.slug)} ${brief.subGroup} 페이지 보강`,
+      slug: brief.slug,
+      targetPage: brief.targetPage,
+      rationale: opportunity ? `${demandLabel(gap)} · 보강 ${opportunity.pageUpdateScore} · ${opportunity.missingSections.join(" · ")}` : "서비스 페이지 보강 기회",
+      demandLabel: demandLabel(gap),
+      confidence: confidence(gap),
+      effort: "약 45분",
+      brief,
+      sourceSnapshot: { ...(gap ? { gap } : {}), ...(opportunity ? { opportunity } : {}) },
+    };
+  });
+  return [...blogs, ...pages].slice(0, 12);
+}
+
+function makeBlogPrefill(brief: BlogBriefItem) {
+  const tags: BlogTag[] = brief.searchIntent === "commercial" ? ["비교가이드"] : brief.searchIntent === "transactional" ? ["증상가이드"] : ["팩트체크"];
+  const blocks: BlogBlock[] = [
+    { type: "paragraph", text: `${brief.targetKeyword}이 궁금한 환자를 위해 서울본치과 관점에서 핵심 내용을 먼저 정리합니다.` },
+    ...brief.outline.flatMap<BlogBlock>((item) => [
+      { type: "heading", level: 2, text: item },
+      { type: "paragraph", text: `${item}에 대해 환자분들이 궁금해하는 기준과 내원 전에 확인할 내용을 중심으로 설명합니다.` },
+    ]),
+    { type: "paragraph", text: brief.cta },
+  ];
+  return { title: brief.suggestedTitle, subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`, excerpt: brief.metaDescription, category: brief.slug, tags, blocks };
+}
+
+export function ContentPlannerSubTab() {
+  const router = useRouter();
+  const [notice, setNotice] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const { mutate, error: mutationError } = useAdminMutation<ContentPlannerItem>();
+  const strategy = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
+  const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
+
+  const candidates = useMemo(() => strategy.data ? buildCandidates(strategy.data) : [], [strategy.data]);
+  const itemByKey = useMemo(() => new Map((planner.data ?? []).map((item) => [item.opportunityKey, item])), [planner.data]);
+  const recommended = candidates.filter((candidate) => !itemByKey.has(candidate.key)).slice(0, 5);
+  const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
+  const deferredCount = (planner.data ?? []).filter((item) => item.status === "deferred").length;
+
+  const saveCandidate = async (candidate: PlannerCandidate, status: "approved" | "deferred" | "dismissed") => {
+    setSavingKey(candidate.key);
+    const result = await mutate("/api/admin/content-planner", "POST", {
+      opportunityKey: candidate.key, itemType: candidate.itemType, title: candidate.title,
+      category: candidate.slug, targetPage: candidate.targetPage, status,
+      priority: status === "approved" ? "now" : "watch", rationale: candidate.rationale,
+      brief: candidate.brief, sourceSnapshot: candidate.sourceSnapshot, dueDate: null,
+    });
+    if (!result.error) {
+      planner.refetch();
+      setNotice(status === "approved" ? "작업 보드에 추가했습니다." : status === "deferred" ? "후보를 보류했습니다." : "후보를 제외했습니다.");
+      window.setTimeout(() => setNotice(null), 2500);
+    }
+    setSavingKey(null);
+  };
+
+  const updateItem = async (item: ContentPlannerItem, updates: { status?: PlannerStatus; dueDate?: string | null }) => {
+    setSavingKey(item.id);
+    const result = await mutate(`/api/admin/content-planner/${item.id}`, "PUT", updates);
+    if (!result.error) planner.refetch();
+    setSavingKey(null);
+  };
+
+  const startDraft = (item: ContentPlannerItem) => {
+    if (item.itemType !== "blog" || !isBlogCategorySlug(item.category) || typeof window === "undefined") return;
+    window.sessionStorage.setItem(BLOG_EDITOR_PREFILL_KEY, JSON.stringify(makeBlogPrefill(item.brief as unknown as BlogBriefItem)));
+    void updateItem(item, { status: "in_progress" });
+    router.push(`/admin/content/posts/new?category=${item.category}&prefill=brief`);
+  };
+
+  if (strategy.loading || planner.loading) return <AdminLoadingSkeleton variant="full" />;
+  if (strategy.error) return <AdminErrorState message={strategy.error} />;
+  if (planner.error) return <AdminErrorState message={planner.error} />;
+
+  return (
+    <div className="space-y-8">
+      <AdminSurface tone="white" className="rounded-3xl p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={recommended.length ? "warning" : "white"}>{recommended.length ? `결정할 후보 ${recommended.length}개` : "새 후보 검토 완료"}</AdminPill></div>
+            <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기존 콘텐츠 전략 탭은 근거 탐색용으로 유지됩니다.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]"><Metric label="추천 후보" value={recommended.length} /><Metric label="진행 작업" value={boardItems.filter((item) => item.status !== "published").length} /><Metric label="보류" value={deferredCount} /></div>
+        </div>
+      </AdminSurface>
+      {notice && <AdminNotice tone="success">{notice}</AdminNotice>}
+      {mutationError && <AdminNotice tone="error">{mutationError}</AdminNotice>}
+
+      <section className="space-y-4">
+        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.</p></div>
+        {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
+          <AdminSurface key={candidate.key} tone="white" className="rounded-3xl p-5">
+            <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{candidate.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
+            <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
+            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="검색 수요" value={candidate.demandLabel} /><Fact label="데이터 신뢰" value={candidate.confidence} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
+          </AdminSurface>
+        ))}</div> : <Empty icon={Check} title="현재 추천 후보를 모두 검토했습니다." description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">작업 보드</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
+        {boardItems.length ? <div className="space-y-3">{boardItems.map((item) => (
+          <AdminSurface key={item.id} tone="white" className="rounded-2xl p-5"><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><AdminPill tone="white">{item.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[item.status]}</span></div><h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p></div>
+            <div className="flex flex-wrap items-center gap-2"><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
+              <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
+              {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}
+            </div>
+          </div></AdminSurface>
+        ))}</div> : <Empty icon={Clock3} title="진행 중인 작업이 없습니다." description="추천 후보를 승인하면 작업 보드에 나타납니다." />}
+      </section>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) { return <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-3 text-center"><div className="text-xs text-[var(--muted)]">{label}</div><div className="mt-1 text-xl font-bold text-[var(--foreground)]">{value}</div></div>; }
+function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-[var(--background)] px-3 py-2"><div className="text-[10px] text-[var(--muted)]">{label}</div><div className="mt-1 text-xs font-semibold text-[var(--foreground)]">{value}</div></div>; }
+function Empty({ icon: Icon, title, description }: { icon: typeof Check; title: string; description: string }) { return <AdminSurface tone="white" className="rounded-3xl p-8 text-center"><Icon className="mx-auto h-8 w-8 text-[var(--muted)]" /><p className="mt-3 text-sm font-semibold text-[var(--foreground)]">{title}</p><p className="mt-1 text-xs text-[var(--muted)]">{description}</p></AdminSurface>; }
