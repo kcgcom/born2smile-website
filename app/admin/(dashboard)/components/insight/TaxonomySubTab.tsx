@@ -649,6 +649,29 @@ export function TaxonomySubTab() {
     [selectedCategory]
   );
 
+  // 전체 카테고리 트렌드 요약 (검색량 가중 평균 변화율 + 표준편차)
+  const trendSummary = useMemo(() => {
+    const items = Array.from(trendInfoMap.values()).filter(
+      (c) => c.changeRate != null && c.monthlyTotalVolume != null && c.monthlyTotalVolume > 0,
+    );
+    if (items.length === 0) return null;
+
+    const totalVolume = items.reduce((s, c) => s + (c.monthlyTotalVolume ?? 0), 0);
+    const weightedAvg = items.reduce(
+      (s, c) => s + (c.changeRate ?? 0) * (c.monthlyTotalVolume ?? 0),
+      0,
+    ) / totalVolume;
+
+    const simpleAvg = items.reduce((s, c) => s + (c.changeRate ?? 0), 0) / items.length;
+    const variance = items.reduce(
+      (s, c) => s + Math.pow((c.changeRate ?? 0) - simpleAvg, 2),
+      0,
+    ) / items.length;
+    const stdDev = Math.sqrt(variance);
+
+    return { weightedAvg, stdDev, count: items.length };
+  }, [trendInfoMap]);
+
   // Scroll to detail when category selected
   useEffect(() => {
     if (selectedCat && detailRef.current) {
@@ -690,6 +713,27 @@ export function TaxonomySubTab() {
 
       {/* API error */}
       {overviewError && <AdminErrorState message={overviewError} onRetry={refetchVolume} />}
+
+      {/* Overall trend summary */}
+      {trendSummary && (
+        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-[var(--muted)]">전체 트렌드</span>
+            <span className={`font-semibold tabular-nums ${
+              trendSummary.weightedAvg > 0 ? "text-green-600" : trendSummary.weightedAvg < 0 ? "text-red-600" : "text-gray-500"
+            }`}>
+              {trendSummary.weightedAvg > 0 ? "+" : ""}{trendSummary.weightedAvg.toFixed(1)}%
+            </span>
+            <span className="text-xs text-[var(--muted)]">
+              편차 {trendSummary.stdDev.toFixed(1)}%
+              {trendSummary.stdDev < 10
+                ? " · 균일 (플랫폼 효과 가능성)"
+                : " · 카테고리별 차이 있음"}
+            </span>
+            <span className="text-xs text-[var(--muted)]">({trendSummary.count}개 카테고리 기준)</span>
+          </div>
+        </div>
+      )}
 
       {/* Category card grid */}
       <section>
