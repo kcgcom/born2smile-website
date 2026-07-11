@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
           data: {
             mode: "strategy",
             period: data.period,
+            meta: { fetchedAt: new Date().toISOString() },
             contentGap: data.contentGap,
             insightActions,
             faqSuggestions,

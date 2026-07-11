@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import type { KeywordCategorySlug, SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import type { ContentGapItem, InsightActionItem } from "./shared";
-import { calcTotalVolume } from "./shared";
 
 export const CATEGORY_SCATTER_COLORS: Record<KeywordCategorySlug, string> = {
   implant: "#2563EB",
@@ -147,11 +146,11 @@ export function useGapTableSort(initial: GapSortKey = "gapScore") {
       [...rows].sort((a, b) => {
         const av =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (calcTotalVolume(a) || a.currentAvg)
+            ? (a.monthlyVolume ?? a.currentAvg)
             : (a[sortKey] as number);
         const bv =
           sortKey === "currentAvg" || sortKey === "monthlyVolume"
-            ? (calcTotalVolume(b) || b.currentAvg)
+            ? (b.monthlyVolume ?? b.currentAvg)
             : (b[sortKey] as number);
         const dir = sortDirection === "asc" ? 1 : -1;
         return (av < bv ? -1 : av > bv ? 1 : 0) * dir;

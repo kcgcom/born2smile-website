@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { KeywordCategorySlug, SearchIntent } from "@/lib/admin-naver-datalab-keywords";
-import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
+import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
 import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
 import type { ContentGapItem, InsightActionItem, PageUpdateOpportunityItem } from "./shared";
@@ -40,24 +40,17 @@ export function EvidenceDataSection({
     [filteredGap, sortGapRows],
   );
 
-  const maxVolume = useMemo(() => Math.max(...contentGap.map((g) => calcTotalVolume(g)), 1), [contentGap]);
+  const maxVolume = useMemo(() => Math.max(...contentGap.map((g) => g.monthlyVolume ?? 0), 1), [contentGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
   const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
 
   if (contentGap.length === 0 && crossKeywords.length === 0) return null;
 
   return (
-    <AdminDisclosureSection
-      title="근거 데이터"
-      description="왜 이 주제가 중요한지 검색 수요와 교차 신호를 함께 봅니다."
-      countLabel={`${gapRows.length}개`}
-      defaultOpen={false}
-      collapsedMessage="필요할 때만 펼쳐 봅니다."
-      titleLevel="h2"
-    >
-      <div className="space-y-6">
+    <AdminSurface tone="white" className="rounded-3xl p-6">
+      <div className="flex flex-col gap-6">
         {crossKeywords.length > 0 && (
-          <section className="space-y-3">
+          <section className="order-2 space-y-3">
             <div>
               <h3 className="text-sm font-semibold text-[var(--foreground)]">교차 키워드</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">여러 카테고리에 걸쳐 반복되는 키워드는 허브 글이나 FAQ 공통 보강 후보입니다.</p>
@@ -99,11 +92,11 @@ export function EvidenceDataSection({
         )}
 
         {contentGap.length > 0 && (
-          <section>
+          <section className="order-1">
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">콘텐츠 갭 분석</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                갭 점수 = 검색량(70%) + 콘텐츠 부족도(25%)
+                갭 점수 = 대표 검색량(75%) + 콘텐츠 부족도(25%) · 검색 추이는 점수에 반영하지 않음
                 &nbsp;·&nbsp;
                 <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
                 &nbsp;·&nbsp;
@@ -204,20 +197,19 @@ export function EvidenceDataSection({
                   },
                   {
                     key: "monthlyVolume",
-                    label: "검색량",
+                    label: "대표 검색량",
                     align: "right",
                     sortable: true,
                     render: (row) => {
                       const mv = row.monthlyVolume as number | null;
-                      const totalVolume = mv != null ? calcTotalVolume(row as unknown as ContentGapItem) : null;
-                      const barPct = totalVolume != null ? Math.min(100, (totalVolume / maxVolume) * 100) : 0;
+                      const barPct = mv != null ? Math.min(100, (mv / maxVolume) * 100) : 0;
                       return (
                         <div>
                           <span className="tabular-nums font-medium text-[var(--foreground)]">
-                            {totalVolume != null ? (
+                            {mv != null ? (
                               <>
                                 {row.isEstimated ? "≈ " : ""}
-                                {totalVolume.toLocaleString("ko-KR")}
+                                {mv.toLocaleString("ko-KR")}
                                 <span className="ml-0.5 text-[10px] font-normal text-[var(--muted)]">/월</span>
                               </>
                             ) : (
@@ -227,13 +219,23 @@ export function EvidenceDataSection({
                               </span>
                             )}
                           </span>
-                          {totalVolume != null && (
+                          {mv != null && (
                             <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
                               <div className="h-1.5 rounded-full bg-blue-400" style={{ width: `${barPct}%` }} />
                             </div>
                           )}
                         </div>
                       );
+                    },
+                  },
+                  {
+                    key: "relatedVolume",
+                    label: "연관 포함",
+                    align: "right",
+                    render: (row) => {
+                      const item = row as unknown as ContentGapItem;
+                      if (item.monthlyVolume == null) return <span className="text-[var(--muted)]">-</span>;
+                      return <span className="tabular-nums text-[var(--muted)]">{calcTotalVolume(item).toLocaleString("ko-KR")}/월</span>;
                     },
                   },
                   {
@@ -277,7 +279,7 @@ export function EvidenceDataSection({
             <div className="block sm:hidden space-y-2">
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {([
-                  { key: "monthlyVolume", label: "검색량" },
+                  { key: "monthlyVolume", label: "대표 검색량" },
                   { key: "gapScore", label: "갭 점수" },
                 ] as const).map((chip) => {
                   const isActive = gapSortKey === chip.key;
@@ -316,8 +318,8 @@ export function EvidenceDataSection({
                         <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">{item.subGroup}</span>
                         <span className="flex shrink-0 items-center gap-1">
                           <span className="text-xs tabular-nums text-[var(--foreground)]">
-                            {totalVolume != null ? (
-                              <>{item.isEstimated ? "≈" : ""}{totalVolume.toLocaleString("ko-KR")}<span className="text-[var(--muted)]">/월</span></>
+                            {item.monthlyVolume != null ? (
+                              <>{item.isEstimated ? "≈" : ""}{item.monthlyVolume.toLocaleString("ko-KR")}<span className="text-[var(--muted)]">/월</span></>
                             ) : (
                               <span className="text-[var(--muted)]">{item.currentAvg.toFixed(1)}<span className="text-[9px]">(상대)</span></span>
                             )}
@@ -325,6 +327,9 @@ export function EvidenceDataSection({
                           <GapScoreBadge score={item.gapScore} />
                         </span>
                       </div>
+                      {item.monthlyVolume != null && totalVolume != null && totalVolume !== item.monthlyVolume && (
+                        <p className="mt-1 text-[10px] text-[var(--muted)]">연관 포함 {totalVolume.toLocaleString("ko-KR")}/월</p>
+                      )}
                       {(action || pageOpportunity) && (
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {action && (
@@ -366,6 +371,6 @@ export function EvidenceDataSection({
           </section>
         )}
       </div>
-    </AdminDisclosureSection>
+    </AdminSurface>
   );
 }

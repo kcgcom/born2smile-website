@@ -79,8 +79,7 @@ export interface TopicSuggestion {
 
 /**
  * DataLab API 호출 없이 키워드 분류체계만으로 CategoryTrendData[]를 생성한다.
- * analyzeContentGap()이 이 데이터를 사용하면 trendBonus=0이 되어
- * gapScore = volumeScore*0.7 + contentLack*0.25 로 산출된다.
+ * 검색 추이 보정 없이 검색 수요와 콘텐츠 부족도만으로 갭 점수를 계산한다.
  */
 export function buildSyntheticCategoryData(
   categoryKeywords: CategoryKeywords[],
@@ -209,20 +208,14 @@ export interface VolumeDataEntry {
 /**
  * 트렌드 데이터와 발행된 블로그 포스트를 교차 분석하여 콘텐츠 갭을 식별한다.
  *
- * v3 gapScore 공식 (절대 검색량 중심):
+ * v4 gapScore 공식 (절대 검색량 중심, 검색 추이 보정 없음):
  *
- * 트렌드 포함 (full 모드):
  *   volumeScore = min(100, log10(monthlyTotal + 1) × 25)
- *   trendBonus = clamp(-4, 6, changeRate > 0 ? changeRate × 0.15 : changeRate × 0.08)
  *   contentLack = round(100 × exp(-existingPostCount / 2.5))
- *   gapScore = clamp(0, 100, volumeScore × 0.7 + trendBonus × 0.05 + contentLack × 0.25)
- *
- * 트렌드 미포함 (volume 모드):
  *   gapScore = clamp(0, 100, volumeScore × 0.75 + contentLack × 0.25)
  *
- * 폴백 공식 (검색광고 미연동):
- *   volumeScore = normalizedTrendScore (카테고리 내 정규화)
- *   나머지 동일
+ * 검색량이 없는 경우 volumeScore는 0으로 처리한다.
+ * DataLab의 상대 검색 추이는 갭 점수의 대체값으로도 사용하지 않는다.
  *
  * 키워드-포스트 매칭:
  * - title + subtitle + excerpt + tags (v2 추가) 기반
@@ -235,8 +228,6 @@ export function analyzeContentGap(
   volumeData?: Record<string, VolumeDataEntry>,
 ): ContentGap[] {
   const gaps: ContentGap[] = [];
-  const hasVolumeData = volumeData && Object.keys(volumeData).length > 0;
-
   for (const catData of categoryData) {
     // 전체 포스트 대상으로 키워드 매칭 (카테고리 무관하게 콘텐츠 커버리지 측정)
     const categoryPosts = publishedPosts;
@@ -252,7 +243,6 @@ export function analyzeContentGap(
       changeRate: number;
       currentAvg: number;
       existingPostCount: number;
-      rawTrendScore: number;
       monthlyVolume: number | null;
       isEstimated: boolean;
       relatedKeywords: Array<{ keyword: string; volume: number }>;
@@ -275,10 +265,6 @@ export function analyzeContentGap(
         return text.includes(sg.name);
       }).length;
 
-      // rawTrendScore: 폴백용 (카테고리 내 정규화에 사용)
-      const changeComponent = Math.min(100, Math.max(0, 50 + sg.changeRate));
-      const rawTrendScore = sg.currentAvg * 0.9 + changeComponent * 0.1;
-
       // 검색광고 검색량 조회 (key = "카테고리:서브그룹")
       const volumeKey = `${catData.category}:${sg.name}`;
       const vol = volumeData?.[volumeKey];
@@ -290,7 +276,6 @@ export function analyzeContentGap(
         changeRate: sg.changeRate,
         currentAvg: sg.currentAvg,
         existingPostCount,
-        rawTrendScore,
         monthlyVolume: vol?.monthlyTotalQcCnt ?? null,
         isEstimated: vol?.isEstimated ?? false,
         relatedKeywords: vol?.relatedKeywords ?? [],
@@ -299,33 +284,16 @@ export function analyzeContentGap(
       });
     }
 
-    // 카테고리 내 정규화 (폴백용: 최고 서브그룹 = 100)
-    const maxRaw = Math.max(...catGaps.map((g) => g.rawTrendScore), 1);
-
     for (const g of catGaps) {
-      // gapScore v3 공식 (절대 검색량 중심)
-      let volumeScore: number;
-      if (hasVolumeData && g.monthlyVolume != null) {
-        // 정규 공식: 로그 스케일 검색량
-        volumeScore = Math.min(100, Math.log10(g.monthlyVolume + 1) * 25);
-      } else {
-        // 폴백: 카테고리 내 정규화된 트렌드 점수
-        volumeScore = (g.rawTrendScore / maxRaw) * 100;
-      }
-
-      // trendBonus: 상승 최대 +6, 하락 최대 -4 (보조 지표)
-      const rawTrendBonus =
-        g.changeRate > 0 ? g.changeRate * 0.15 : g.changeRate * 0.08;
-      const trendBonus = Math.min(6, Math.max(-4, rawTrendBonus));
-      const hasTrend = g.changeRate !== 0 || g.trend !== "stable";
+      // gapScore v4 공식 (절대 검색량 중심, 검색 추이 보정 없음)
+      const volumeScore = g.monthlyVolume != null
+        ? Math.min(100, Math.log10(g.monthlyVolume + 1) * 25)
+        : 0;
 
       const contentLack = calcContentLack(g.existingPostCount);
 
-      // 최종 점수: clamp [0, 100]
-      // 트렌드 데이터 없으면 가중치 재분배: volume 0.75 + content 0.25 (합계 1.0)
-      const rawScore = hasTrend
-        ? volumeScore * 0.7 + trendBonus * 0.05 + contentLack * 0.25
-        : volumeScore * 0.75 + contentLack * 0.25;
+      // 최종 점수: 검색 수요 75% + 콘텐츠 부족도 25%, clamp [0, 100]
+      const rawScore = volumeScore * 0.75 + contentLack * 0.25;
       const gapScore = Math.round(Math.min(100, Math.max(0, rawScore)));
 
       gaps.push({
@@ -339,7 +307,7 @@ export function analyzeContentGap(
         existingPostCount: g.existingPostCount,
         gapScore,
         monthlyVolume: g.monthlyVolume,
-        volumeSource: hasVolumeData && g.monthlyVolume != null ? "searchad" : "datalab-fallback",
+        volumeSource: g.monthlyVolume != null ? "searchad" : "datalab-fallback",
         isEstimated: g.isEstimated,
         relatedKeywords: g.relatedKeywords,
         directKeywords: g.directKeywords,

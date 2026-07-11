@@ -119,6 +119,7 @@ export interface TrendSummaryData {
 export interface StrategyOverviewData {
   mode: "strategy";
   period: { start: string; end: string } | null;
+  meta: { fetchedAt: string };
   contentGap: ContentGapItem[];
   insightActions: InsightActionItem[];
   faqSuggestions: FaqSuggestionItem[];
