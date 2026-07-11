@@ -12,7 +12,7 @@ export const CACHE_TTL = {
   GA4_SUMMARY: 3600,      // 1 hour
   GA4_DAILY: 21600,        // 6 hours
   SEARCH_CONSOLE: 21600,   // 6 hours
-  NAVER_DATALAB: 21600,    // 6 hours
+  NAVER_DATALAB: 86400,    // 24 hours — 트렌드 데이터는 일별/주별이므로 하루 1회 갱신 충분
   BLOG_LIKES: 300,         // 5 minutes
   POSTHOG: 300,            // 5 minutes — CTA/전환 모니터링
   SEARCHAD_VOLUME: 86400,  // 24 hours — 검색량은 월간 데이터이므로 하루 1회 갱신 충분

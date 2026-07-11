@@ -35,6 +35,31 @@ function isSlowEndpoint(endpoint: string): boolean {
 }
 
 // -------------------------------------------------------------
+// sessionStorage 캐시 — 새로고침 후에도 슬로우 엔드포인트 즉시 표시
+// -------------------------------------------------------------
+
+const SESSION_CACHE_PREFIX = "swr:";
+
+function getSessionData<T>(endpoint: string): T | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = sessionStorage.getItem(SESSION_CACHE_PREFIX + endpoint);
+    if (!raw) return undefined;
+    return JSON.parse(raw) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+function setSessionData(endpoint: string, data: unknown) {
+  try {
+    sessionStorage.setItem(SESSION_CACHE_PREFIX + endpoint, JSON.stringify(data));
+  } catch {
+    // 용량 초과 시 무시
+  }
+}
+
+// -------------------------------------------------------------
 // useAdminApi — 기존 인터페이스 완전 보존
 // { data: T | null, loading: boolean, error: string | null, refetch: () => void }
 // -------------------------------------------------------------
@@ -48,7 +73,11 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
     {
       dedupingInterval: slow ? 6 * 60 * 60 * 1000 : 30_000,
       revalidateOnFocus: !slow,
-      ...(slow && { keepPreviousData: true }),
+      ...(slow && {
+        keepPreviousData: true,
+        fallbackData: getSessionData<T>(endpoint),
+        onSuccess: (d: T) => setSessionData(endpoint, d),
+      }),
     },
   );
 
