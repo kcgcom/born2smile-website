@@ -3,7 +3,12 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { buildPageUpdateOpportunities, deriveInsightActions, generateFaqSuggestions } from "@/lib/trend-insights";
 import { generateBlogBriefSuggestions, generatePageImprovementBriefs } from "@/lib/trend-briefs";
-import { getTrendOverviewWithGapData, VALID_PERIODS, type TrendOverviewMode } from "../_lib/overview";
+import {
+  getTrendOverviewWithGapData,
+  VALID_PERIODS,
+  type TrendDetailScope,
+  type TrendOverviewMode,
+} from "../_lib/overview";
 
 export const maxDuration = 30;
 
@@ -11,19 +16,27 @@ export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
 
-  const requestedMode = request.nextUrl.searchParams.get("mode") ?? "full";
-  const validModes = ["volume", "trend", "full", "strategy"] as const;
+  const requestedMode = request.nextUrl.searchParams.get("mode") ?? "volume";
+  const validModes = ["volume", "trend", "strategy"] as const;
   if (!validModes.includes(requestedMode as (typeof validModes)[number])) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 모드입니다 (volume, trend, full, strategy)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 모드입니다 (volume, trend, strategy)" },
       { status: 400, headers: { "Cache-Control": "private, no-store" } },
     );
   }
   const strategyMode = requestedMode === "strategy";
-  const mode: TrendOverviewMode = strategyMode ? "full" : requestedMode as TrendOverviewMode;
+  const mode = requestedMode as TrendOverviewMode;
   const period = request.nextUrl.searchParams.get("period") ?? "3m";
   const force = request.nextUrl.searchParams.get("force") === "true";
-  const detail = (request.nextUrl.searchParams.get("detail") ?? "both") as import("../_lib/overview").TrendDetailScope;
+  const requestedDetail = request.nextUrl.searchParams.get("detail") ?? "both";
+  const validDetails = ["both", "short", "long"] as const;
+  if (!validDetails.includes(requestedDetail as (typeof validDetails)[number])) {
+    return Response.json(
+      { error: "BAD_REQUEST", message: "유효하지 않은 상세 범위입니다 (both, short, long)" },
+      { status: 400, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
+  const detail = requestedDetail as TrendDetailScope;
 
   if (!VALID_PERIODS.includes(period as (typeof VALID_PERIODS)[number])) {
     return Response.json(
@@ -32,7 +45,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if ((mode === "full" || mode === "trend") && (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET)) {
+  if ((mode === "strategy" || mode === "trend") && (!process.env.NAVER_DATALAB_CLIENT_ID || !process.env.NAVER_DATALAB_CLIENT_SECRET)) {
     return Response.json({ data: null }, { headers: { "Cache-Control": "private, no-store" } });
   }
 

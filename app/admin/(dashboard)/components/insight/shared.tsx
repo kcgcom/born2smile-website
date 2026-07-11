@@ -103,7 +103,7 @@ export interface TrendOverviewCategory {
 }
 
 export interface TrendSummaryData {
-  mode: "volume" | "full";
+  mode: "volume" | "trend";
   period: { start: string; end: string } | null;
   categories: TrendOverviewCategory[];
   contentGap: ContentGapItem[];
@@ -116,7 +116,7 @@ export interface TrendSummaryData {
 }
 
 export interface StrategyOverviewData {
-  mode: "volume" | "full";
+  mode: "strategy";
   period: { start: string; end: string } | null;
   contentGap: ContentGapItem[];
   insightActions: InsightActionItem[];

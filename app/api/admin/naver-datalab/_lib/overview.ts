@@ -7,7 +7,7 @@ import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache, type SearchAdK
 
 export const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"] as const;
 
-export type TrendOverviewMode = "volume" | "trend" | "full";
+export type TrendOverviewMode = "volume" | "trend" | "strategy";
 
 export interface TrendOverviewCategory {
   category: KeywordCategorySlug;
@@ -156,8 +156,8 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
 export type TrendDetailScope = "both" | "short" | "long";
 
 export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewBaseData> {
-  const fetchDatalab = mode === "full" || mode === "trend";
-  const fetchVolume = mode === "full" || mode === "volume";
+  const fetchDatalab = mode === "strategy" || mode === "trend";
+  const fetchVolume = mode === "strategy" || mode === "volume";
 
   // 단기(6m 일별) + 장기(3y 주별), 클라이언트에서 1m/3m/1y/3y 슬라이싱
   const SHORT_TERM_PERIOD = "6m";
@@ -399,15 +399,15 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
 }
 
 export async function getTrendOverviewWithGapData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewWithGapData> {
-  const isFullMode = mode === "full";
+  const isStrategyMode = mode === "strategy";
 
   const [baseData, publishedPosts] = await Promise.all([
     getTrendOverviewBaseData(period, mode, force, detail),
-    isFullMode ? getAllPublishedPostMetas() : Promise.resolve([]),
+    isStrategyMode ? getAllPublishedPostMetas() : Promise.resolve([]),
   ]);
 
-  // contentGap은 full 모드에서만 정확한 계산 가능 (DataLab + SearchAd 필요)
-  const contentGap = isFullMode
+  // contentGap은 strategy 모드에서만 정확한 계산 가능 (DataLab + SearchAd 필요)
+  const contentGap = isStrategyMode
     ? analyzeContentGap(
         baseData.successfulCategoryData,
         publishedPosts,
