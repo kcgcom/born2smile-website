@@ -12,6 +12,7 @@ import {
 } from "@/lib/keyword-taxonomy/generated/active-snapshot";
 import { isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
+import { validateKeywordCandidateBatchSize } from "@/lib/keyword-candidate-triage";
 
 const topicAngleSchema = z.object({
   template: z.string().min(1),
@@ -579,7 +580,7 @@ export async function batchReviewKeywordTaxonomyCandidates(
   items: Array<{ id: string; action: "approve" | "defer" | "reject"; category?: KeywordCategorySlug; subgroup?: string }>,
   reviewedBy: string,
 ): Promise<void> {
-  if (items.length < 1 || items.length > 100) throw new Error("한 번에 1~100개 후보를 처리할 수 있습니다.");
+  validateKeywordCandidateBatchSize(items.length);
 
   const admin = getSupabaseAdmin();
   const { data: candidates, error } = await admin

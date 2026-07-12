@@ -1,5 +1,13 @@
 import { isRelevantRelatedKeyword } from "./admin-naver-datalab-keywords";
 
+export const KEYWORD_CANDIDATE_BATCH_LIMIT = 500;
+
+export function validateKeywordCandidateBatchSize(count: number): void {
+  if (count < 1 || count > KEYWORD_CANDIDATE_BATCH_LIMIT) {
+    throw new Error(`한 번에 1~${KEYWORD_CANDIDATE_BATCH_LIMIT}개 후보를 처리할 수 있습니다.`);
+  }
+}
+
 export type CandidateTriageKind = "approve-suggested" | "defer-suggested" | "exclude-suggested" | "reclassify" | "review";
 
 export interface CandidateTriageInput {

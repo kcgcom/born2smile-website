@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-keyword-taxonomy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { KEYWORD_CATEGORY_SLUGS } from "@/lib/admin-naver-datalab-keywords";
+import { KEYWORD_CANDIDATE_BATCH_LIMIT } from "@/lib/keyword-candidate-triage";
 
 const reviewSchema = z.discriminatedUnion("action", [
   z.object({
@@ -44,7 +45,7 @@ const reviewSchema = z.discriminatedUnion("action", [
       decision: z.enum(["approve", "defer", "reject"]),
       category: z.enum(KEYWORD_CATEGORY_SLUGS).optional(),
       subgroup: z.string().min(1).max(30).optional(),
-    })).min(1).max(500),
+    })).min(1).max(KEYWORD_CANDIDATE_BATCH_LIMIT),
   }),
 ]);
 

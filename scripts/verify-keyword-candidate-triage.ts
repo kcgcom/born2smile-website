@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { triageKeywordCandidate } from "../lib/keyword-candidate-triage";
+import { KEYWORD_CANDIDATE_BATCH_LIMIT, triageKeywordCandidate, validateKeywordCandidateBatchSize } from "../lib/keyword-candidate-triage";
 
 const base = { monthlyVolume: 2_000, seenCount: 5, seenInLatestSnapshot: true, subgroupExists: true };
 
@@ -14,5 +14,8 @@ assert.equal(triageKeywordCandidate({ ...base, keyword: "치아교정기간", mo
 assert.equal(triageKeywordCandidate({ ...base, keyword: "송도어린이치과" }).kind, "review");
 assert.equal(triageKeywordCandidate({ ...base, keyword: "연세어린이치과" }).kind, "review");
 assert.equal(triageKeywordCandidate({ ...base, keyword: "안면비대칭교정" }).kind, "review");
+assert.equal(KEYWORD_CANDIDATE_BATCH_LIMIT, 500);
+assert.doesNotThrow(() => validateKeywordCandidateBatchSize(107));
+assert.throws(() => validateKeywordCandidateBatchSize(501), /1~500개/);
 
-console.log("Keyword candidate triage verified: 11 recommendation cases");
+console.log("Keyword candidate triage verified: 11 recommendation cases and batch limit");
