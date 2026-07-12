@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin-naver-datalab-keywords";
 import type { BusinessValue, InsightActionType } from "@/lib/trend-insights";
 import type { CategoryTrendData } from "@/lib/trend-analysis";
+import type { CategoryKeywords } from "@/lib/admin-naver-datalab-keywords";
 
 // ---------------------------------------------------------------
 // 공유 타입 (insight 서브탭 간 공유)
@@ -114,12 +115,18 @@ export interface TrendSummaryData {
   longTermDetail?: CategoryTrendData[];
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
+  keywordTaxonomy: CategoryKeywords[];
+  taxonomyMeta: { version: number | null; source: "supabase" | "code-fallback"; createdAt: string | null };
 }
 
 export interface StrategyOverviewData {
   mode: "strategy";
   period: { start: string; end: string } | null;
-  meta: { fetchedAt: string };
+  meta: {
+    fetchedAt: string;
+    taxonomyVersion?: number | null;
+    taxonomySource?: "supabase" | "code-fallback";
+  };
   contentGap: ContentGapItem[];
   insightActions: InsightActionItem[];
   faqSuggestions: FaqSuggestionItem[];
@@ -139,8 +146,9 @@ const KEYWORD_CATEGORY_BADGE_COLORS: Record<KeywordCategorySlug, string> = {
 // 공유 유틸리티
 // ---------------------------------------------------------------
 
-export function calcTotalVolume(item: Pick<ContentGapItem, "monthlyVolume" | "relatedKeywords">): number {
-  return (item.monthlyVolume ?? 0) + (item.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
+export function calcRelatedVolume(item: Pick<ContentGapItem, "relatedKeywords">, limit?: number): number {
+  const keywords = limit == null ? (item.relatedKeywords ?? []) : (item.relatedKeywords ?? []).slice(0, limit);
+  return keywords.reduce((sum, keyword) => sum + keyword.volume, 0);
 }
 
 // ---------------------------------------------------------------

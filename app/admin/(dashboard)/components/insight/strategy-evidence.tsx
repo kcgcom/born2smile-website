@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { getKeywordCategoryLabel, type KeywordCategorySlug, type SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
-import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcTotalVolume } from "./shared";
+import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcRelatedVolume } from "./shared";
 import type { ContentGapItem, InsightActionItem, PageUpdateOpportunityItem } from "./shared";
 import { ACTION_LABELS, INTENT_FILTER_OPTIONS, buildCrossKeywords, useGapTableSort } from "./strategy-shared";
 
@@ -21,6 +21,7 @@ export function EvidenceDataSection({
 }: EvidenceDataSectionProps) {
   const [categoryFilter, setCategoryFilter] = useState<KeywordCategorySlug | "all">("all");
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
+  const [expandedRelated, setExpandedRelated] = useState<Set<string>>(() => new Set());
   const { sortKey: gapSortKey, sortDirection: gapSortDir, handleSort: handleGapSort, sort: sortGapRows } =
     useGapTableSort("monthlyVolume");
 
@@ -109,7 +110,7 @@ export function EvidenceDataSection({
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">콘텐츠 갭 분석</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                갭 점수 = 대표 검색량(75%) + 콘텐츠 부족도(25%) · 검색 추이는 점수에 반영하지 않음
+                갭 점수 = 주제 검색량(75%) + 콘텐츠 부족도(25%) · 검색 추이와 연관 키워드는 점수에 반영하지 않음
                 &nbsp;·&nbsp;
                 <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
                 &nbsp;·&nbsp;
@@ -189,6 +190,9 @@ export function EvidenceDataSection({
                     render: (row) => {
                       const direct = (row.directKeywords ?? []) as Array<{ keyword: string; volume: number }>;
                       const related = (row.relatedKeywords ?? []) as Array<{ keyword: string; volume: number }>;
+                      const rowKey = `${String(row.slug)}:${String(row.subGroup)}`;
+                      const isExpanded = expandedRelated.has(rowKey);
+                      const visibleRelated = isExpanded ? related : related.slice(0, 10);
                       const hasKeywords = direct.length > 0 || related.length > 0;
                       return (
                         <div>
@@ -201,12 +205,26 @@ export function EvidenceDataSection({
                                   <span className="ml-0.5 text-blue-400 tabular-nums">{dk.volume >= 1000 ? `${(dk.volume / 1000).toFixed(1)}k` : dk.volume}</span>
                                 </span>
                               ))}
-                              {related.map((rk) => (
-                                <span key={rk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700" title={`월 ${rk.volume.toLocaleString("ko-KR")}회`}>
+                              {visibleRelated.map((rk) => (
+                                <span key={rk.keyword} className="inline-flex items-center rounded bg-violet-50 px-1.5 py-0.5 text-[10px] text-violet-700" title={`연관 키워드 · 월 ${rk.volume.toLocaleString("ko-KR")}회`}>
                                   {rk.keyword}
-                                  <span className="ml-0.5 text-blue-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
+                                  <span className="ml-0.5 text-violet-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
                                 </span>
                               ))}
+                              {related.length > 10 && (
+                                <button
+                                  type="button"
+                                  className="rounded bg-[var(--background)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-primary)] hover:underline"
+                                  onClick={() => setExpandedRelated((current) => {
+                                    const next = new Set(current);
+                                    if (next.has(rowKey)) next.delete(rowKey);
+                                    else next.add(rowKey);
+                                    return next;
+                                  })}
+                                >
+                                  {isExpanded ? "연관 키워드 접기" : `연관 키워드 ${related.length - 10}개 더 보기`}
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -248,7 +266,7 @@ export function EvidenceDataSection({
                   },
                   {
                     key: "monthlyVolume",
-                    label: "대표 검색량",
+                    label: "주제 검색량",
                     align: "right",
                     sortable: true,
                     render: (row) => {
@@ -281,12 +299,21 @@ export function EvidenceDataSection({
                   },
                   {
                     key: "relatedVolume",
-                    label: "연관 포함",
+                    label: "연관 키워드",
                     align: "right",
                     render: (row) => {
                       const item = row as unknown as ContentGapItem;
-                      if (item.monthlyVolume == null) return <span className="text-[var(--muted)]">-</span>;
-                      return <span className="tabular-nums text-[var(--muted)]">{calcTotalVolume(item).toLocaleString("ko-KR")}/월</span>;
+                      const relatedCount = item.relatedKeywords?.length ?? 0;
+                      const topCount = Math.min(10, relatedCount);
+                      const topVolume = calcRelatedVolume(item, 10);
+                      return relatedCount > 0
+                        ? (
+                            <div className="text-right text-[11px] text-[var(--muted)]">
+                              <div>{relatedCount.toLocaleString("ko-KR")}개</div>
+                              <div className="tabular-nums">상위 {topCount}개 {topVolume.toLocaleString("ko-KR")}/월</div>
+                            </div>
+                          )
+                        : <span className="text-[var(--muted)]">-</span>;
                     },
                   },
                   {
@@ -330,7 +357,7 @@ export function EvidenceDataSection({
             <div className="block sm:hidden space-y-2">
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {([
-                  { key: "monthlyVolume", label: "대표 검색량" },
+                  { key: "monthlyVolume", label: "주제 검색량" },
                   { key: "gapScore", label: "갭 점수" },
                 ] as const).map((chip) => {
                   const isActive = gapSortKey === chip.key;
@@ -355,9 +382,13 @@ export function EvidenceDataSection({
                 <p className="py-8 text-center text-sm text-[var(--muted)]">콘텐츠 갭 데이터가 없습니다</p>
               ) : (
                 gapRows.map((item) => {
-                  const totalVolume = item.monthlyVolume != null ? calcTotalVolume(item) : null;
                   const direct = item.directKeywords ?? [];
                   const related = item.relatedKeywords ?? [];
+                  const rowKey = `${item.slug}:${item.subGroup}`;
+                  const isExpanded = expandedRelated.has(rowKey);
+                  const visibleRelated = isExpanded ? related : related.slice(0, 10);
+                  const topRelatedCount = Math.min(10, related.length);
+                  const topRelatedVolume = calcRelatedVolume(item, 10);
                   const hasKeywords = direct.length > 0 || related.length > 0;
                   const action = actionByKey.get(`${item.slug}:${item.subGroup}`);
                   const pageOpportunity = pageOpportunityByKey.get(`${item.slug}:${item.subGroup}`);
@@ -378,8 +409,10 @@ export function EvidenceDataSection({
                           <GapScoreBadge score={item.gapScore} />
                         </span>
                       </div>
-                      {item.monthlyVolume != null && totalVolume != null && totalVolume !== item.monthlyVolume && (
-                        <p className="mt-1 text-[10px] text-[var(--muted)]">연관 포함 {totalVolume.toLocaleString("ko-KR")}/월</p>
+                      {related.length > 0 && (
+                        <p className="mt-1 text-[10px] text-[var(--muted)]">
+                          연관 키워드 {related.length}개 · 상위 {topRelatedCount}개 {topRelatedVolume.toLocaleString("ko-KR")}/월
+                        </p>
                       )}
                       {(action || pageOpportunity) && (
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -406,12 +439,26 @@ export function EvidenceDataSection({
                               <span className="ml-0.5 text-blue-400 tabular-nums">{dk.volume >= 1000 ? `${(dk.volume / 1000).toFixed(1)}k` : dk.volume}</span>
                             </span>
                           ))}
-                          {related.map((rk) => (
-                            <span key={rk.keyword} className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">
+                          {visibleRelated.map((rk) => (
+                            <span key={rk.keyword} className="inline-flex items-center rounded bg-violet-50 px-1.5 py-0.5 text-[10px] text-violet-700">
                               {rk.keyword}
-                              <span className="ml-0.5 text-blue-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
+                              <span className="ml-0.5 text-violet-400 tabular-nums">{rk.volume >= 1000 ? `${(rk.volume / 1000).toFixed(1)}k` : rk.volume}</span>
                             </span>
                           ))}
+                          {related.length > 10 && (
+                            <button
+                              type="button"
+                              className="rounded bg-[var(--background)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-primary)] hover:underline"
+                              onClick={() => setExpandedRelated((current) => {
+                                const next = new Set(current);
+                                if (next.has(rowKey)) next.delete(rowKey);
+                                else next.add(rowKey);
+                                return next;
+                              })}
+                            >
+                              {isExpanded ? "접기" : `${related.length - 10}개 더 보기`}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -1,22 +1,46 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, RefreshCw } from "lucide-react";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
-import { forceRefetchAdminApi, useAdminApi } from "../useAdminApi";
+import { forceRefetchAdminApi, useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import type { StrategyOverviewData } from "./shared";
 import { EvidenceDataSection } from "./strategy-evidence";
 import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
+import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
 
 export function StrategySubTab() {
   const endpoint = "/api/admin/naver-datalab/trend-summary?mode=strategy&detail=short";
+  const syncEndpoint = "/api/admin/naver-searchad/sync";
   const strategy = useAdminApi<StrategyOverviewData>(endpoint);
-  const [refreshing, setRefreshing] = useState(false);
+  const sync = useAdminApi<SearchAdSyncState>(syncEndpoint);
+  const { mutate: startSync, loading: startingSync, error: syncMutationError } = useAdminMutation<SearchAdSyncState>();
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const observedActiveJob = useRef<string | null>(null);
+
+  const syncIsActive = sync.data?.status === "queued" || sync.data?.status === "running";
+  const syncJobId = sync.data?.jobId ?? null;
+  const refetchSync = sync.refetch;
+
+  useEffect(() => {
+    if (!syncIsActive) return;
+    observedActiveJob.current = syncJobId;
+    const timer = window.setInterval(() => refetchSync(), 3_000);
+    return () => window.clearInterval(timer);
+  }, [refetchSync, syncIsActive, syncJobId]);
+
+  useEffect(() => {
+    if (sync.data?.status !== "completed" || !sync.data.jobId) return;
+    if (observedActiveJob.current !== sync.data.jobId) return;
+    observedActiveJob.current = null;
+    void forceRefetchAdminApi<StrategyOverviewData>(endpoint).catch((error) => {
+      setRefreshError(error instanceof Error ? error.message : "새 스냅샷을 반영하지 못했습니다.");
+    });
+  }, [endpoint, sync.data?.jobId, sync.data?.status]);
 
   const contentGap = useMemo(() => strategy.data?.contentGap ?? [], [strategy.data?.contentGap]);
   const scatterData = useMemo<ScatterPoint[]>(() => contentGap
@@ -62,30 +86,32 @@ export function StrategySubTab() {
             </p>
             <p className="mt-2 text-xs text-[var(--muted)]">
               {strategy.data.period?.end ? `DataLab ${strategy.data.period.end} 기준` : "DataLab 기준일 확인 불가"}
-              {strategy.data.volumeCoverage != null ? ` · 검색량 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : " · 검색량 커버리지 확인 불가"}
+              {strategy.data.volumeCoverage != null ? ` · 주제 검색량 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : " · 검색량 스냅샷 없음"}
               {` · ${formatFetchedAt(strategy.data.meta.fetchedAt)} 분석`}
             </p>
+            {sync.data?.snapshotCreatedAt && (
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                통합 분석 스냅샷 {formatFetchedAt(sync.data.snapshotCreatedAt)} · 핵심 키워드 {sync.data.snapshotKeywordCount?.toLocaleString("ko-KR")}개
+              </p>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="primary" href="/admin/content/planner">
                 콘텐츠 플래너 열기
               </AdminActionLink>
               <AdminActionButton
                 tone="dark"
-                disabled={refreshing || strategy.isValidating}
+                disabled={startingSync || syncIsActive}
                 onClick={async () => {
-                  setRefreshing(true);
                   setRefreshError(null);
-                  try {
-                    await forceRefetchAdminApi<StrategyOverviewData>(endpoint);
-                  } catch (error) {
-                    setRefreshError(error instanceof Error ? error.message : "최신 데이터를 불러오지 못했습니다.");
-                  } finally {
-                    setRefreshing(false);
+                  const result = await startSync(syncEndpoint, "POST");
+                  if (result.data?.jobId) {
+                    observedActiveJob.current = result.data.jobId;
+                    sync.refetch();
                   }
                 }}
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                {refreshing ? "최신 데이터 확인 중…" : "최신 데이터 확인"}
+                <RefreshCw className={`h-4 w-4 ${startingSync || syncIsActive ? "animate-spin" : ""}`} />
+                {startingSync ? "갱신 시작 중…" : syncIsActive ? "통합 데이터 수집 중…" : "최신 데이터 확인"}
               </AdminActionButton>
             </div>
           </div>
@@ -97,7 +123,9 @@ export function StrategySubTab() {
         </div>
       </AdminSurface>
 
-      {refreshError && <AdminNotice tone="error">{refreshError}</AdminNotice>}
+      {(refreshError || syncMutationError || sync.data?.error) && (
+        <AdminNotice tone="error">{refreshError ?? syncMutationError ?? sync.data?.error}</AdminNotice>
+      )}
 
       {scatterData.length > 0 && (
         <AdminSurface tone="white" className="rounded-3xl p-6">

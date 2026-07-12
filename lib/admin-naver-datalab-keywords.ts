@@ -26,13 +26,8 @@ export type SearchIntent = "informational" | "commercial" | "transactional" | "n
 
 export interface KeywordSubGroup {
   name: string;             // 서브그룹명 (예: "비용/가격")
-  keywords: string[];       // 핵심 키워드 5~8개 (네이버 DataLab API 그룹당 최대 20개), 앞 2개 = 검색량 조회 대표
+  keywords: string[];       // DataLab 분석과 SearchAd 주제 검색량에 함께 사용하는 핵심 키워드 5~8개
   searchIntent: SearchIntent; // 검색 의도 분류
-}
-
-/** keywords 배열의 앞 2개를 검색광고 API 검색량 조회용 대표 키워드로 반환 */
-export function getVolumeKeywords(sg: KeywordSubGroup): string[] {
-  return sg.keywords.slice(0, 2);
 }
 
 export interface TopicAngle {
@@ -988,7 +983,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
 
 /** 비치과 산업 용어 (명확한 비치과 키워드 즉시 차단) */
 const NON_DENTAL_PATTERN =
-  /방수|우레탄|방화|실리콘|코킹|건축|타일|방습|접착|페인트|도장|배관|창호|외벽|지붕|바닥재|에폭시|폴리|몰탈|줄눈|커튼월|욕실|창틀|레진아트|레진공예|레진테이블|피부스케일링|피부 스케일링/;
+  /방수|우레탄|방화|실리콘|코킹|건축|타일|방습|접착|페인트|도장|배관|창호|외벽|지붕|바닥재|에폭시|폴리|몰탈|줄눈|커튼월|욕실|창틀|레진아트|레진공예|레진테이블|피부스케일링|피부 스케일링|도요타|토요타|자동차/;
 
 /** 동음이의어 — "실란트", "레진" 등 치과 외 산업에서도 쓰이는 단어 */
 const AMBIGUOUS_BASE_PATTERN = /실란트|레진/;
@@ -1048,7 +1043,7 @@ export function validateCategoryKeywords(): void {
       if (sg.keywords.length < 2) {
         throw new Error(
           `[admin-naver-datalab-keywords] "${categoryLabel}" > "${sg.name}" 서브그룹의 키워드가 ${sg.keywords.length}개입니다. ` +
-            "검색량 조회를 위해 최소 2개가 필요합니다.",
+            "주제 분석을 위해 최소 2개가 필요합니다.",
         );
       }
     }

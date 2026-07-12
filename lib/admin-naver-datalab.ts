@@ -113,16 +113,24 @@ async function postDatalabRequest(
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
-    const res = await fetch("https://openapi.naver.com/v1/datalab/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Naver-Client-Id": clientId,
-        "X-Naver-Client-Secret": clientSecret,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(10_000),
-    });
+    let res: Response;
+    try {
+      res = await fetch("https://openapi.naver.com/v1/datalab/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Naver-Client-Id": clientId,
+          "X-Naver-Client-Secret": clientSecret,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("네이버 DataLab 네트워크 요청에 실패했습니다");
+      if (attempt === retryDelays.length) throw lastError;
+      await delay(retryDelays[attempt]);
+      continue;
+    }
 
     if (res.ok) {
       return res;

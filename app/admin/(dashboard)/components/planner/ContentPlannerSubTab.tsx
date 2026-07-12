@@ -14,7 +14,7 @@ import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { BLOG_EDITOR_PREFILL_KEY } from "../blog/blog-editor-draft";
 import type { BlogBriefItem, ContentGapItem, PageBriefItem, StrategyOverviewData } from "../insight/shared";
-import { CategoryBadge, SearchIntentBadge, calcTotalVolume } from "../insight/shared";
+import { CategoryBadge, SearchIntentBadge } from "../insight/shared";
 
 interface PlannerCandidate {
   key: string;
@@ -47,7 +47,7 @@ function findGap(gaps: ContentGapItem[], slug: KeywordCategorySlug, subGroup: st
 
 function demandLabel(gap?: ContentGapItem) {
   if (!gap) return "수요 확인 필요";
-  const volume = calcTotalVolume(gap);
+  const volume = gap.monthlyVolume ?? 0;
   return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : `상대 ${gap.currentAvg.toFixed(1)}`;
 }
 

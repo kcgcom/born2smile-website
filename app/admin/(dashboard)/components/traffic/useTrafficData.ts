@@ -11,7 +11,7 @@ export function useTrafficData(period: Period) {
   const { data: basicData, loading: basicLoading, error: basicError, refetch: refetchBasic } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}&scope=basic`,
   );
-  const { data: fullData, loading: fullLoading, error: fullError, refetch: refetchFull } = useAdminApi<AnalyticsData>(
+  const { data: fullData, error: fullError, refetch: refetchFull } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
   const data = fullData ?? basicData;

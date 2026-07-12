@@ -62,7 +62,11 @@ export async function GET(request: NextRequest) {
           data: {
             mode: "strategy",
             period: data.period,
-            meta: { fetchedAt: new Date().toISOString() },
+            meta: {
+              fetchedAt: new Date().toISOString(),
+              taxonomyVersion: data.taxonomyMeta.version,
+              taxonomySource: data.taxonomyMeta.source,
+            },
             contentGap: data.contentGap,
             insightActions,
             faqSuggestions,
@@ -88,6 +92,8 @@ export async function GET(request: NextRequest) {
           longTermDetail: data.longTermDetail,
           volumeSource: data.volumeSource,
           volumeCoverage: data.volumeCoverage,
+          keywordTaxonomy: data.keywordTaxonomy,
+          taxonomyMeta: data.taxonomyMeta,
         },
       },
       { headers: { "Cache-Control": "private, no-store" } },

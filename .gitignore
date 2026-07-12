@@ -44,6 +44,7 @@ lib/blog/generated/
 
 # auto-generated dev manifest
 lib/dev/generated/
+lib/keyword-taxonomy/generated/
 
 # Playwright
 test-results/

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/rebuild",
       "schedule": "5 15 * * *"
+    },
+    {
+      "path": "/api/cron/searchad-sync",
+      "schedule": "35 15 * * *"
     }
   ]
 }

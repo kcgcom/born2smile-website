@@ -24,11 +24,14 @@ import {
 } from "@/lib/admin-naver-datalab-keywords";
 import { isBlogCategorySlug } from "@/lib/blog";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
-import { useAdminApi, forceRefetchAdminApi } from "../useAdminApi";
+import { AdminNotice } from "@/components/admin/AdminNotice";
+import { useAdminApi, forceRefetchAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminErrorState } from "../AdminErrorState";
 import type { CategoryTrendData } from "@/lib/trend-analysis";
 import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
 import { ApiSourceBadge } from "./ApiSourceBadge";
+import { KeywordCandidateReview } from "./KeywordCandidateReview";
+import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
 
 // ---------------------------------------------------------------
 // Constants
@@ -47,6 +50,16 @@ const INTENT_COLORS: Record<SearchIntent, string> = {
   transactional: "bg-green-100 text-green-700",
   navigational: "bg-purple-100 text-purple-700",
 };
+
+function formatSnapshotDate(value: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 const INTENT_BAR_COLORS: Record<SearchIntent, string> = {
   informational: "bg-blue-400",
@@ -201,10 +214,13 @@ function CategoryCard({
 
       {/* Monthly volume */}
       {trendInfo?.monthlyTotalVolume != null ? (
-        <p className="mt-1 text-lg font-bold text-[var(--foreground)] tabular-nums leading-tight">
-          {trendInfo.monthlyTotalVolume.toLocaleString("ko-KR")}
-          <span className="ml-0.5 text-xs font-normal text-[var(--muted)]">/월</span>
-        </p>
+        <div className="mt-1" title="카테고리 내 모든 핵심 키워드의 주제 검색량 합계">
+          <span className="text-[10px] font-medium text-[var(--muted)]">주제 검색량</span>
+          <p className="text-lg font-bold text-[var(--foreground)] tabular-nums leading-tight">
+            {trendInfo.monthlyTotalVolume.toLocaleString("ko-KR")}
+            <span className="ml-0.5 text-xs font-normal text-[var(--muted)]">/월</span>
+          </p>
+        </div>
       ) : (
         <p className="mt-0.5 text-xs text-gray-400">{cat.slug}</p>
       )}
@@ -254,17 +270,15 @@ function SubGroupPanel({
 
       <div className="border-t border-gray-100 px-5 py-3">
         <div className="flex flex-wrap gap-1.5">
-          {sg.keywords.map((kw, i) => {
+          {sg.keywords.map((kw) => {
             const isMatch = q && kw.toLowerCase().includes(q);
             return (
               <span
                 key={kw}
                 className={`inline-block rounded-md px-2 py-1 text-xs ${
-                  i < 2
-                    ? "bg-primary/10 text-primary font-medium border border-primary/20"
-                    : isMatch
-                      ? "bg-yellow-100 text-yellow-800 font-medium"
-                      : "bg-gray-100 text-gray-600"
+                  isMatch
+                    ? "bg-yellow-100 text-yellow-800 font-medium"
+                    : "bg-primary/10 text-primary font-medium border border-primary/20"
                 }`}
               >
                 {kw}
@@ -273,7 +287,7 @@ function SubGroupPanel({
           })}
         </div>
         <p className="mt-2 text-[11px] text-gray-400">
-          ★ 앞 2개 = 검색량 조회 대표 키워드
+          모든 핵심 키워드의 검색량을 합산해 주제 검색량을 계산합니다.
         </p>
       </div>
     </div>
@@ -446,7 +460,10 @@ function TrendView({
 
       {/* SubGroup bars with volume */}
       <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 space-y-2">
-        <h4 className="text-xs font-semibold text-[var(--muted)] mb-2">서브그룹별 트렌드</h4>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h4 className="text-xs font-semibold text-[var(--muted)]">서브그룹별 트렌드</h4>
+          <span className="text-[10px] text-[var(--muted)]">검색량 숫자 = 핵심 키워드 전체의 주제 검색량</span>
+        </div>
         {slicedSubGroups.map((sg, idx) => {
           const vol = volumeMap.get(sg.name);
           const maxAvg = Math.max(...slicedSubGroups.map((s) => s.currentAvg), 1);
@@ -660,13 +677,22 @@ function CategoryDetail({
 const VOLUME_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=volume`;
 const TREND_SHORT_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend&detail=short`;
 const TREND_LONG_ENDPOINT = `/api/admin/naver-datalab/trend-summary?period=3m&mode=trend&detail=long`;
+const SEARCHAD_SYNC_ENDPOINT = "/api/admin/naver-searchad/sync";
+
+interface TaxonomyGovernanceSummary {
+  active: { version: number | null; keywords: number; subgroups: number };
+  pending: { version: number; keywords: number; subgroups: number } | null;
+  pendingCandidateCount: number;
+}
 
 export function TaxonomySubTab() {
+  const [workspace, setWorkspace] = useState<"taxonomy" | "candidates">("taxonomy");
   const [selectedCategory, setSelectedCategory] =
     useState<KeywordCategorySlug | null>(null);
   const [filter, setFilter] = useState("");
   const [forceLoading, setForceLoading] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
+  const observedActiveJob = useRef<string | null>(null);
 
   // Phase 1: SearchAd 검색량 (eager — 카드 즉시 표시)
   const { data: volumeData, loading: volumeLoading, error: volumeError, refetch: refetchVolume } = useAdminApi<TrendSummaryData>(
@@ -683,6 +709,36 @@ export function TaxonomySubTab() {
     TREND_LONG_ENDPOINT,
     !!trendShortData,
   );
+  const searchAdSync = useAdminApi<SearchAdSyncState>(SEARCHAD_SYNC_ENDPOINT);
+  const taxonomyGovernance = useAdminApi<TaxonomyGovernanceSummary>("/api/admin/keyword-taxonomy/state");
+  const refetchTaxonomyGovernance = taxonomyGovernance.refetch;
+  const {
+    mutate: startSearchAdSync,
+    loading: startingSearchAdSync,
+    error: searchAdSyncMutationError,
+  } = useAdminMutation<SearchAdSyncState>();
+  const searchAdSyncActive = searchAdSync.data?.status === "queued" || searchAdSync.data?.status === "running";
+  const searchAdJobId = searchAdSync.data?.jobId ?? null;
+  const refetchSearchAdSync = searchAdSync.refetch;
+
+  useEffect(() => {
+    if (!searchAdSyncActive) return;
+    observedActiveJob.current = searchAdJobId;
+    const timer = window.setInterval(() => refetchSearchAdSync(), 3_000);
+    return () => window.clearInterval(timer);
+  }, [refetchSearchAdSync, searchAdJobId, searchAdSyncActive]);
+
+  useEffect(() => {
+    if (searchAdSync.data?.status !== "completed" || !searchAdSync.data.jobId) return;
+    if (observedActiveJob.current !== searchAdSync.data.jobId) return;
+    observedActiveJob.current = null;
+    refetchTaxonomyGovernance();
+    void Promise.all([
+      forceRefetchAdminApi<TrendSummaryData>(VOLUME_ENDPOINT),
+      forceRefetchAdminApi<TrendSummaryData>(TREND_SHORT_ENDPOINT),
+      forceRefetchAdminApi<TrendSummaryData>(TREND_LONG_ENDPOINT),
+    ]);
+  }, [refetchTaxonomyGovernance, searchAdSync.data?.jobId, searchAdSync.data?.status]);
 
   // 세 결과를 병합
   const overviewData = useMemo(() => {
@@ -704,24 +760,22 @@ export function TaxonomySubTab() {
 
   const overviewLoading = volumeLoading;
   const overviewError = volumeError;
+  const keywordTaxonomy = overviewData?.keywordTaxonomy ?? CATEGORY_KEYWORDS;
 
   const handleForceRefresh = useCallback(async () => {
     setForceLoading(true);
     try {
-      const promises = [
-        forceRefetchAdminApi<TrendSummaryData>(VOLUME_ENDPOINT),
-        forceRefetchAdminApi<TrendSummaryData>(TREND_SHORT_ENDPOINT),
-      ];
-      if (trendShortData) {
-        promises.push(forceRefetchAdminApi<TrendSummaryData>(TREND_LONG_ENDPOINT));
+      const syncResult = await startSearchAdSync(SEARCHAD_SYNC_ENDPOINT, "POST");
+      if (syncResult.data?.jobId) {
+        observedActiveJob.current = syncResult.data.jobId;
+        refetchSearchAdSync();
       }
-      await Promise.all(promises);
     } catch {
       // 에러는 SWR이 처리
     } finally {
       setForceLoading(false);
     }
-  }, [trendShortData]);
+  }, [refetchSearchAdSync, startSearchAdSync]);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {
@@ -762,8 +816,7 @@ export function TaxonomySubTab() {
     if (overviewData && selectedCategory) {
       for (const gap of overviewData.contentGap) {
         if (gap.slug === selectedCategory && gap.monthlyVolume != null) {
-          const relatedSum = (gap.relatedKeywords ?? []).reduce((s, rk) => s + rk.volume, 0);
-          map.set(gap.subGroup, gap.monthlyVolume + relatedSum);
+          map.set(gap.subGroup, gap.monthlyVolume);
         }
       }
     }
@@ -772,17 +825,17 @@ export function TaxonomySubTab() {
 
   // Sort categories by monthly volume (descending) when data available
   const sortedCategories = useMemo(() => {
-    if (trendInfoMap.size === 0) return CATEGORY_KEYWORDS;
-    return [...CATEGORY_KEYWORDS].sort((a, b) => {
+    if (trendInfoMap.size === 0) return keywordTaxonomy;
+    return [...keywordTaxonomy].sort((a, b) => {
       const va = trendInfoMap.get(a.slug)?.monthlyTotalVolume ?? -1;
       const vb = trendInfoMap.get(b.slug)?.monthlyTotalVolume ?? -1;
       return vb - va;
     });
-  }, [trendInfoMap]);
+  }, [keywordTaxonomy, trendInfoMap]);
 
   const selectedCat = useMemo(
-    () => CATEGORY_KEYWORDS.find((c) => c.slug === selectedCategory) ?? null,
-    [selectedCategory]
+    () => keywordTaxonomy.find((c) => c.slug === selectedCategory) ?? null,
+    [keywordTaxonomy, selectedCategory]
   );
 
   // 트렌드 요약 계산 헬퍼
@@ -823,10 +876,46 @@ export function TaxonomySubTab() {
 
   // ENV not configured — only show after loading completes with null data
   const isEnvMissing = !overviewLoading && !overviewError && overviewData === null;
+  const snapshotIsStale = searchAdSync.data?.snapshotCreatedAt
+    ? Date.now() - new Date(searchAdSync.data.snapshotCreatedAt).getTime() > 26 * 60 * 60 * 1000
+    : false;
+  const snapshotVersionMismatch = taxonomyGovernance.data?.active.version != null
+    && searchAdSync.data?.snapshotTaxonomyVersion != null
+    && taxonomyGovernance.data.active.version !== searchAdSync.data.snapshotTaxonomyVersion;
 
   return (
     <div className="space-y-6">
-      <ApiSourceBadge sources={["naverDatalab"]} />
+      <ApiSourceBadge sources={["naverDatalab", "naverSearchAd"]} />
+
+      <div className="flex gap-2 border-b border-[var(--border)] pb-3">
+        <button type="button" onClick={() => setWorkspace("taxonomy")} className={`rounded-lg px-4 py-2 text-sm font-medium ${workspace === "taxonomy" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--background)] text-[var(--muted)]"}`}>
+          키워드·트렌드
+        </button>
+        <button type="button" onClick={() => setWorkspace("candidates")} className={`rounded-lg px-4 py-2 text-sm font-medium ${workspace === "candidates" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--background)] text-[var(--muted)]"}`}>
+          후보 검토{taxonomyGovernance.data ? ` (${taxonomyGovernance.data.pendingCandidateCount})` : ""}
+          {taxonomyGovernance.data?.pending && <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">v{taxonomyGovernance.data.pending.version} 대기</span>}
+        </button>
+      </div>
+
+      {searchAdSync.data?.status === "failed" && (
+        <AdminNotice tone="error">최근 통합 수집에 실패했습니다. 기존 활성 데이터는 유지되고 있습니다: {searchAdSync.data.error ?? "원인을 확인할 수 없습니다."}</AdminNotice>
+      )}
+      {overviewData?.taxonomyMeta.source === "code-fallback" && (
+        <AdminNotice tone="warning">Supabase 활성 택소노미를 불러오지 못해 빌드 시점 fallback을 사용하고 있습니다. 통합 데이터 갱신 전에 연결 상태를 확인하세요.</AdminNotice>
+      )}
+      {snapshotVersionMismatch && (
+        <AdminNotice tone="warning">활성 택소노미 v{taxonomyGovernance.data?.active.version}와 분석 스냅샷 v{searchAdSync.data?.snapshotTaxonomyVersion}가 다릅니다. 데이터 갱신을 실행하세요.</AdminNotice>
+      )}
+      {snapshotIsStale && (
+        <AdminNotice tone="warning">마지막 통합 수집 후 26시간 이상 지났습니다. Cron 상태를 확인하거나 데이터 갱신을 실행하세요.</AdminNotice>
+      )}
+      {searchAdSync.data?.candidateAnalysisStatus === "failed" && (
+        <AdminNotice tone="warning">통합 데이터는 정상 게시됐지만 키워드 후보 자동 분석에 실패했습니다. 후보 검토 탭의 ‘후보 다시 분석’을 실행하세요: {searchAdSync.data.candidateAnalysisError ?? "원인을 확인할 수 없습니다."}</AdminNotice>
+      )}
+
+      {workspace === "candidates" ? (
+        <KeywordCandidateReview taxonomy={keywordTaxonomy} />
+      ) : <>
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -834,13 +923,27 @@ export function TaxonomySubTab() {
         <button
           type="button"
           onClick={handleForceRefresh}
-          disabled={forceLoading || overviewLoading}
+          disabled={forceLoading || startingSearchAdSync || searchAdSyncActive || overviewLoading}
           className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
         >
-          <RefreshCw size={14} className={forceLoading ? "animate-spin" : ""} />
-          데이터 갱신
+          <RefreshCw size={14} className={forceLoading || startingSearchAdSync || searchAdSyncActive ? "animate-spin" : ""} />
+          {startingSearchAdSync ? "갱신 시작 중" : searchAdSyncActive ? "통합 데이터 수집 중" : "데이터 갱신"}
         </button>
       </div>
+
+      {searchAdSync.data?.snapshotCreatedAt && (
+        <p className="-mt-4 text-right text-[11px] text-[var(--muted)]">
+          택소노미 {overviewData?.taxonomyMeta.version ? `v${overviewData.taxonomyMeta.version}` : "코드 fallback"}
+          {` · 통합 스냅샷 ${formatSnapshotDate(searchAdSync.data.snapshotCreatedAt)} · 핵심 키워드 ${searchAdSync.data.snapshotKeywordCount?.toLocaleString("ko-KR")}개`}
+          {searchAdSync.data.candidateAnalyzedAt ? ` · 후보 분석 ${formatSnapshotDate(searchAdSync.data.candidateAnalyzedAt)}` : ""}
+        </p>
+      )}
+
+      {(searchAdSyncMutationError || searchAdSync.data?.error) && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {searchAdSyncMutationError ?? searchAdSync.data?.error}
+        </div>
+      )}
 
       {/* ENV warning */}
       {isEnvMissing && (
@@ -921,6 +1024,7 @@ export function TaxonomySubTab() {
           />
         </section>
       )}
+      </>}
     </div>
   );
 }

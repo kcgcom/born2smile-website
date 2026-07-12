@@ -49,9 +49,9 @@ export interface ContentGap {
   volumeSource: "searchad" | "datalab-fallback";
   /** "< 10" 추정값 포함 여부 */
   isEstimated: boolean;
-  /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
+  /** 서브그룹에 매칭된 전체 연관 키워드 (검색량 내림차순, 점수 미반영) */
   relatedKeywords: Array<{ keyword: string; volume: number }>;
-  /** 대표 키워드 개별 검색량 (직접 조회 키워드) */
+  /** 주제에 등록된 핵심 키워드별 검색량 */
   directKeywords: Array<{ keyword: string; volume: number }>;
   /** 검색 의도 분류 */
   searchIntent: SearchIntent;
@@ -199,16 +199,16 @@ export function analyzeTrend(data: Array<{ period: string; ratio: number }>): Tr
 export interface VolumeDataEntry {
   monthlyTotalQcCnt: number;
   isEstimated: boolean;
-  /** 서브그룹에 매칭된 연관 키워드 (검색량 내림차순, 최대 5개) */
+  /** 서브그룹에 매칭된 전체 연관 키워드 (검색량 내림차순, 점수 미반영) */
   relatedKeywords?: Array<{ keyword: string; volume: number }>;
-  /** 대표 키워드 개별 검색량 (직접 조회 키워드) */
+  /** 주제에 등록된 핵심 키워드별 검색량 */
   directKeywords?: Array<{ keyword: string; volume: number }>;
 }
 
 /**
  * 트렌드 데이터와 발행된 블로그 포스트를 교차 분석하여 콘텐츠 갭을 식별한다.
  *
- * v4 gapScore 공식 (절대 검색량 중심, 검색 추이 보정 없음):
+ * v5 gapScore 공식 (핵심 키워드 전체의 주제 검색량, 검색 추이·연관어 보정 없음):
  *
  *   volumeScore = min(100, log10(monthlyTotal + 1) × 25)
  *   contentLack = round(100 × exp(-existingPostCount / 2.5))
@@ -285,7 +285,7 @@ export function analyzeContentGap(
     }
 
     for (const g of catGaps) {
-      // gapScore v4 공식 (절대 검색량 중심, 검색 추이 보정 없음)
+      // gapScore v5 공식 (주제 검색량 중심, 검색 추이·연관어 보정 없음)
       const volumeScore = g.monthlyVolume != null
         ? Math.min(100, Math.log10(g.monthlyVolume + 1) * 25)
         : 0;

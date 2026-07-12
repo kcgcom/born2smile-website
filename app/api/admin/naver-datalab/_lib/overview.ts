@@ -1,9 +1,12 @@
 import { createCachedFetcher, CACHE_TTL } from "../../_lib/cache";
-import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
-import { CATEGORY_KEYWORDS, getVolumeKeywords, isRelevantRelatedKeyword, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { fetchNaverDatalabByCategory, type NaverDatalabData } from "@/lib/admin-naver-datalab";
+import { isRelevantRelatedKeyword, type CategoryKeywords, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { getActiveKeywordTaxonomy } from "@/lib/admin-keyword-taxonomy";
 import { analyzeTrend, analyzeContentGap, buildSyntheticCategoryData, type CategoryTrendData, type VolumeDataEntry } from "@/lib/trend-analysis";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
-import { isSearchAdConfigured, fetchKeywordSearchVolumeWithCache, type SearchAdKeywordData } from "@/lib/admin-naver-searchad";
+import { getActiveSearchAdSnapshotRecord } from "@/lib/admin-searchad-snapshots";
+import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const VALID_PERIODS = ["1m", "3m", "1y", "3y", "10y"] as const;
 
@@ -35,6 +38,8 @@ export interface TrendOverviewBaseData {
   volumeData: Record<string, VolumeDataEntry> | undefined;
   volumeSource: "searchad" | "datalab-fallback";
   volumeCoverage: number | null;
+  keywordTaxonomy: CategoryKeywords[];
+  taxonomyMeta: { version: number | null; source: "supabase" | "code-fallback"; createdAt: string | null };
 }
 
 export interface TrendOverviewWithGapData extends TrendOverviewBaseData {
@@ -56,25 +61,23 @@ async function mapSettledSequential<T, R>(
   return results;
 }
 
-async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> {
-  if (!isSearchAdConfigured()) return { error: "ENV_NOT_SET" };
-
+async function fetchVolumeOverviewData(keywordTaxonomy: CategoryKeywords[], taxonomyVersion: number | null): Promise<{ data: Record<string, VolumeDataEntry>; coverage: number } | { error: string } | undefined> {
   try {
     const allKeywords: Array<{ category: KeywordCategorySlug; subGroup: string; keywords: string[] }> = [];
-    for (const ck of CATEGORY_KEYWORDS) {
+    for (const ck of keywordTaxonomy) {
       for (const sg of ck.subGroups) {
         allKeywords.push({
           category: ck.category,
           subGroup: sg.name,
-          keywords: getVolumeKeywords(sg),
+          keywords: sg.keywords,
         });
       }
     }
 
-    const flatKeywords = [...new Set(allKeywords.flatMap((item) => item.keywords))];
-    const volumeResults: SearchAdKeywordData[] | null = await fetchKeywordSearchVolumeWithCache(flatKeywords);
+    const activeSnapshot = await getActiveSearchAdSnapshotRecord();
+    const volumeResults: SearchAdKeywordData[] | null = activeSnapshot?.data ?? null;
 
-    if (!volumeResults || volumeResults.length === 0) {
+    if (!volumeResults || volumeResults.length === 0 || (taxonomyVersion != null && activeSnapshot?.taxonomyVersion !== taxonomyVersion)) {
       return { error: "EMPTY_RESULTS" };
     }
 
@@ -121,8 +124,7 @@ async function fetchVolumeOverviewData(): Promise<{ data: Record<string, VolumeD
       }
 
       const topRelated = Array.from(groupRelatedMap.values())
-        .sort((a, b) => b.volume - a.volume)
-        .slice(0, 5);
+        .sort((a, b) => b.volume - a.volume);
 
       if (hasData) {
         matched++;
@@ -177,7 +179,50 @@ function buildSubGroupVolumes(
     : { monthlyTotalVolume: null, subGroupVolumes: null };
 }
 
+type DatalabSettledResults = PromiseSettledResult<{ ck: CategoryKeywords; raw: NaverDatalabData }>[];
+
+async function getActiveDatalabSnapshot(taxonomyVersion: number): Promise<{
+  shortTerm: DatalabSettledResults;
+  longTerm: DatalabSettledResults;
+} | null> {
+  const admin = getSupabaseAdmin();
+  const { data: pointer, error: pointerError } = await admin
+    .from("datalab_snapshot_pointer")
+    .select("snapshot_id")
+    .eq("singleton", true)
+    .maybeSingle();
+  if (pointerError) {
+    if (pointerError.code === "42P01") return null;
+    throw pointerError;
+  }
+  if (!pointer?.snapshot_id) return null;
+
+  const { data, error } = await admin
+    .from("datalab_snapshots")
+    .select("taxonomy_version,short_term_data,long_term_data")
+    .eq("id", pointer.snapshot_id)
+    .single();
+  if (error) throw error;
+  if (data.taxonomy_version !== taxonomyVersion) return null;
+
+  const taxonomy = (await getActiveKeywordTaxonomy()).taxonomy;
+  const toSettled = (rows: Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>): DatalabSettledResults =>
+    taxonomy.map((ck) => {
+      const row = rows.find((item) => item.slug === ck.slug);
+      return row
+        ? { status: "fulfilled" as const, value: { ck, raw: row.raw } }
+        : { status: "rejected" as const, reason: new Error(`${ck.slug} DataLab 스냅샷 누락`) };
+    });
+
+  return {
+    shortTerm: toSettled(data.short_term_data as Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>),
+    longTerm: toSettled(data.long_term_data as Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>),
+  };
+}
+
 export async function getTrendOverviewBaseData(period: string, mode: TrendOverviewMode, force = false, detail: TrendDetailScope = "both"): Promise<TrendOverviewBaseData> {
+  const activeTaxonomy = await getActiveKeywordTaxonomy();
+  const keywordTaxonomy = activeTaxonomy.taxonomy;
   const fetchDatalab = mode === "strategy" || mode === "trend";
   const fetchVolume = mode === "strategy" || mode === "volume";
 
@@ -190,7 +235,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
   const RATE_LIMIT_DELAY = 500;
 
   const fetchCategoryData = (p: string) =>
-    mapSettledSequential(CATEGORY_KEYWORDS, async (ck) => {
+    mapSettledSequential(keywordTaxonomy, async (ck) => {
       if (force) {
         const elapsed = Date.now() - lastApiCallTime;
         if (lastApiCallTime > 0 && elapsed < RATE_LIMIT_DELAY) {
@@ -201,7 +246,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
         return { ck, raw };
       }
       const getData = createCachedFetcher(
-        `naver-trend-${ck.slug}-${p}`,
+        `naver-trend-${ck.slug}-${p}-taxonomy-${activeTaxonomy.version ?? "code"}`,
         () => {
           // unstable_cache 미스 → 실제 API 호출 전 딜레이
           const elapsed = Date.now() - lastApiCallTime;
@@ -225,9 +270,18 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
 
   // DataLab 단기/장기를 직렬 호출 (API 속도 제한 방지)
   // SearchAd 볼륨은 독립 API이므로 병렬 가능
-  const volumeResultPromise = fetchVolume ? fetchVolumeOverviewData() : Promise.resolve(undefined);
-  const shortTermResults = needShort ? await fetchCategoryData(SHORT_TERM_PERIOD) : null;
-  const longTermResults = needLong ? await fetchCategoryData(LONG_TERM_PERIOD) : null;
+  const storedDatalab = fetchDatalab && activeTaxonomy.version != null
+    ? await getActiveDatalabSnapshot(activeTaxonomy.version)
+    : null;
+  const volumeResultPromise = fetchVolume
+    ? fetchVolumeOverviewData(keywordTaxonomy, activeTaxonomy.version)
+    : Promise.resolve(undefined);
+  const shortTermResults = needShort
+    ? storedDatalab?.shortTerm ?? await fetchCategoryData(SHORT_TERM_PERIOD)
+    : null;
+  const longTermResults = needLong
+    ? storedDatalab?.longTerm ?? await fetchCategoryData(LONG_TERM_PERIOD)
+    : null;
   const volumeResult = await volumeResultPromise;
 
   // 기본 분석에는 단기(6m) 데이터 사용
@@ -244,7 +298,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     successfulCategoryData = [];
 
     categories = datalabResults.map((result, index) => {
-      const ck = CATEGORY_KEYWORDS[index];
+      const ck = keywordTaxonomy[index];
 
       if (result.status === "rejected") {
         const { monthlyTotalVolume, subGroupVolumes } = buildSubGroupVolumes(
@@ -329,9 +383,9 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
       periodDates = firstSuccess.value.raw.period;
     }
   } else {
-    successfulCategoryData = buildSyntheticCategoryData(CATEGORY_KEYWORDS);
+    successfulCategoryData = buildSyntheticCategoryData(keywordTaxonomy);
 
-    categories = CATEGORY_KEYWORDS.map((ck) => {
+    categories = keywordTaxonomy.map((ck) => {
       const { monthlyTotalVolume, subGroupVolumes } = buildSubGroupVolumes(
         ck.category, ck.subGroups.map((sg) => sg.name), volumeData,
       );
@@ -370,7 +424,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     longTermDetail = longTermResults
       .map((result, index) => {
         if (result.status === "rejected") return null;
-        const ck = CATEGORY_KEYWORDS[index];
+        const ck = keywordTaxonomy[index];
         return {
           category: ck.category,
           slug: ck.slug,
@@ -393,6 +447,12 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
     volumeData,
     volumeSource: volumeData ? "searchad" : "datalab-fallback",
     volumeCoverage,
+    keywordTaxonomy,
+    taxonomyMeta: {
+      version: activeTaxonomy.version,
+      source: activeTaxonomy.source,
+      createdAt: activeTaxonomy.createdAt,
+    },
   };
 }
 
@@ -409,7 +469,7 @@ export async function getTrendOverviewWithGapData(period: string, mode: TrendOve
     ? analyzeContentGap(
         baseData.successfulCategoryData,
         publishedPosts,
-        CATEGORY_KEYWORDS,
+        baseData.keywordTaxonomy,
         baseData.volumeData,
       )
     : [];
