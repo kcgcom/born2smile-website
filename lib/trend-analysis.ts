@@ -43,7 +43,7 @@ export interface ContentGap {
   existingPostCount: number;
   /** 0~100, 높을수록 현재 콘텐츠의 실질 커버리지가 부족함 */
   contentGapScore: number;
-  /** 규칙 기반 전체 본문 유효 커버리지 (0~1.5) */
+  /** 규칙 기반 전체 본문 유효 커버리지 (0~100) */
   contentCoverage: number;
   /** 관련성이 높은 기존 콘텐츠 근거 */
   coverageEvidence: Array<{ slug: string; title: string; strength: number }>;
@@ -130,6 +130,39 @@ function normalizeCoverageText(value: string): string {
   return value.replace(/\s+/g, "").toLowerCase();
 }
 
+const CONCEPT_ALIASES = {
+  cost: ["비용", "가격", "금액", "보험", "건강보험"],
+  symptom: ["증상", "통증", "아픔", "붓기", "부기", "출혈", "시림"],
+  cause: ["원인", "이유", "왜"],
+  process: ["과정", "방법", "순서", "어떻게", "시술"],
+  recovery: ["회복", "기간", "며칠", "일상생활"],
+  risk: ["부작용", "위험", "주의", "문제", "합병증"],
+  care: ["관리", "양치", "식사", "예방"],
+  suitability: ["대상", "가능", "필요", "적합", "시기"],
+  comparison: ["비교", "차이", "장단점", "종류"],
+} as const;
+
+type ConceptKey = keyof typeof CONCEPT_ALIASES | "topic";
+
+function includedConcepts(value: string, keywords: string[], subGroup: string): Set<ConceptKey> {
+  const normalized = normalizeCoverageText(value);
+  const concepts = new Set<ConceptKey>();
+  for (const [concept, aliases] of Object.entries(CONCEPT_ALIASES) as Array<[keyof typeof CONCEPT_ALIASES, readonly string[]]>) {
+    if (aliases.some((alias) => normalized.includes(normalizeCoverageText(alias)))) concepts.add(concept);
+  }
+  if ([...keywords, subGroup].some((keyword) => {
+    const needle = normalizeCoverageText(keyword);
+    return needle.length >= 2 && normalized.includes(needle);
+  })) concepts.add("topic");
+  return concepts;
+}
+
+function expectedConcepts(keywords: string[], subGroup: string): Set<ConceptKey> {
+  const concepts = includedConcepts(`${subGroup} ${keywords.join(" ")}`, [], "");
+  concepts.add("topic");
+  return concepts;
+}
+
 function freshnessFactor(post: BlogPost): number {
   const value = post.dateModified ?? post.date;
   const ageYears = (Date.now() - new Date(`${value}T00:00:00+09:00`).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
@@ -138,38 +171,65 @@ function freshnessFactor(post: BlogPost): number {
   return 0.6;
 }
 
-function coverageStrength(post: BlogPost, keywords: string[], subGroup: string): number {
+function coverageStrength(post: BlogPost, keywords: string[], subGroup: string) {
   const genericTerms = new Set(["치과", "치료", "병원", "정보", "추천", "김포", "서울본치과"]);
   const needles = [...new Set([...keywords, subGroup])]
     .map(normalizeCoverageText)
     .filter((value) => value.length >= 2 && !genericTerms.has(value));
-  if (needles.length === 0) return 0;
+  if (needles.length === 0) return { strength: 0, concepts: new Set<ConceptKey>() };
   const includesNeedle = (value: string) => {
     const normalized = normalizeCoverageText(value);
     return needles.some((needle) => normalized.includes(needle));
   };
-  let strength = 0;
-  if (includesNeedle(post.title)) strength = Math.max(strength, 1);
-  if (post.blocks.some((block) => block.type === "heading" && includesNeedle(block.text))) strength = Math.max(strength, 0.8);
-  const bodyMatches = post.blocks.filter((block) => includesNeedle(blockText(block))).length;
-  if (bodyMatches >= 3) strength = Math.max(strength, 0.55);
-  else if (bodyMatches > 0) strength = Math.max(strength, 0.35);
-  if (includesNeedle(`${post.subtitle} ${post.excerpt}`)) strength = Math.max(strength, 0.3);
-  if (includesNeedle(post.tags.join(" "))) strength = Math.max(strength, 0.15);
-  return Math.round(strength * freshnessFactor(post) * 100) / 100;
+  const titleMatch = includesNeedle(post.title);
+  const headingMatches = post.blocks.filter((block) => block.type === "heading" && includesNeedle(block.text)).length;
+  const bodyMatches = post.blocks.filter((block) => block.type !== "relatedLinks" && includesNeedle(blockText(block))).length;
+  const summaryMatch = includesNeedle(`${post.subtitle} ${post.excerpt}`);
+  const tagMatch = includesNeedle(post.tags.join(" "));
+  if (!titleMatch && headingMatches === 0 && bodyMatches === 0 && !summaryMatch && !tagMatch) {
+    return { strength: 0, concepts: new Set<ConceptKey>() };
+  }
+
+  // 제목에 한 번 등장한 긴 글보다 전용 소제목과 여러 본문 블록에서 설명한 글을 높게 평가한다.
+  const directness = titleMatch ? 100 : headingMatches > 0 ? 75 : summaryMatch ? 45 : bodyMatches > 0 ? 25 : 10;
+  const depth = Math.min(100,
+    Math.min(headingMatches, 2) * 20
+    + Math.min(bodyMatches, 5) * 12
+    + (post.blocks.some((block) => block.type === "faq" && includesNeedle(blockText(block))) ? 15 : 0),
+  );
+  const relevantTexts = [post.title, post.subtitle, post.excerpt, post.tags.join(" "), ...post.blocks.map(blockText)]
+    .filter(includesNeedle);
+  const concepts = includedConcepts(relevantTexts.join(" "), keywords, subGroup);
+  const expected = expectedConcepts(keywords, subGroup);
+  const conceptCoverage = expected.size === 0 ? 0 : [...expected].filter((concept) => concepts.has(concept)).length / expected.size * 100;
+  const freshness = freshnessFactor(post) * 100;
+  const strength = directness * 0.35 + depth * 0.35 + conceptCoverage * 0.2 + freshness * 0.1;
+  return { strength: Math.round(strength), concepts };
 }
 
 function analyzeCoverage(posts: BlogPost[], keywords: string[], subGroup: string) {
   const evidence = posts
-    .map((post) => ({ slug: post.slug, title: post.title, strength: coverageStrength(post, keywords, subGroup) }))
+    .map((post) => ({ slug: post.slug, title: post.title, ...coverageStrength(post, keywords, subGroup) }))
     .filter((item) => item.strength > 0)
     .sort((a, b) => b.strength - a.strength);
-  const coverage = Math.min(1.5, evidence.reduce((sum, item, index) => {
-    const weight = index === 0 ? 1 : index === 1 ? 0.4 : 0.15;
-    return sum + item.strength * weight;
-  }, 0));
-  const contentGapScore = Math.round(Math.max(10, 100 - (coverage / 1.5) * 90));
-  return { evidence: evidence.slice(0, 5), matchCount: evidence.length, coverage: Math.round(coverage * 100) / 100, contentGapScore };
+  const coveredConcepts = new Set<ConceptKey>();
+  let coverage = 0;
+  evidence.slice(0, 3).forEach((item, index) => {
+    const novelConcepts = [...item.concepts].filter((concept) => !coveredConcepts.has(concept));
+    item.concepts.forEach((concept) => coveredConcepts.add(concept));
+    const novelty = item.concepts.size === 0 ? 0 : novelConcepts.length / item.concepts.size;
+    const weight = index === 0 ? 0.8 : index === 1 ? 0.15 : 0.05;
+    // 후속 글은 새로운 개념을 보완할 때만 의미 있게 기여한다.
+    coverage += item.strength * weight * (index === 0 ? 1 : 0.25 + novelty * 0.75);
+  });
+  const roundedCoverage = Math.min(100, Math.round(coverage));
+  const contentGapScore = 100 - roundedCoverage;
+  return {
+    evidence: evidence.slice(0, 5).map(({ slug, title, strength }) => ({ slug, title, strength })),
+    matchCount: evidence.length,
+    coverage: roundedCoverage,
+    contentGapScore,
+  };
 }
 
 // =============================================================

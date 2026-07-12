@@ -148,7 +148,7 @@ export function EvidenceDataSection({
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">콘텐츠 갭 분석</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                콘텐츠 공백 = 전체 본문의 주제 관련성·최신성·대표 콘텐츠 강도 · 검색량과 검색 추이는 공백 점수에 반영하지 않음
+                콘텐츠 공백 = 대표 콘텐츠의 주제 직접성·본문 깊이·개념 다양성·최신성 · 검색량과 검색 추이는 공백 점수에 반영하지 않음
                 &nbsp;·&nbsp;
                 <span className="text-red-600 font-medium">HIGH(≥70): 큰 공백</span>
                 &nbsp;·&nbsp;

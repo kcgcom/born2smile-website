@@ -45,6 +45,11 @@ async function main() {
   console.log(JSON.stringify({
     topics: evaluations.length,
     posts: posts.length,
+    contentGapDistribution: Object.fromEntries(
+      [...new Set(gaps.map((gap) => gap.contentGapScore))]
+        .sort((a, b) => a - b)
+        .map((score) => [score, gaps.filter((gap) => gap.contentGapScore === score).length]),
+    ),
     eligible: actions.length,
     byType: Object.fromEntries((["blog", "page", "faq"] as const).map((type) => [type, actions.filter((action) => action.type === type).length])),
     pagePlanCount: pagePlans.length,
