@@ -13,7 +13,7 @@ import { EvidenceDataSection } from "./strategy-evidence";
 import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
 import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
 import type { ContentPlannerItem } from "@/lib/content-planner";
-import { CONTENT_GAP_LARGE_THRESHOLD } from "@/lib/trend-analysis";
+import { CONTENT_GAP_LARGE_THRESHOLD, isContentGapApplicable } from "@/lib/trend-analysis";
 
 export function StrategySubTab() {
   const endpoint = "/api/admin/naver-datalab/trend-summary?mode=strategy&detail=short";
@@ -46,8 +46,12 @@ export function StrategySubTab() {
   }, [endpoint, sync.data?.jobId, sync.data?.status]);
 
   const contentGap = useMemo(() => strategy.data?.contentGap ?? [], [strategy.data?.contentGap]);
+  const evaluatedContentGap = useMemo(
+    () => contentGap.filter((gap) => isContentGapApplicable(gap.category, gap.subGroup)),
+    [contentGap],
+  );
   const opportunityEvaluations = useMemo(() => strategy.data?.opportunityEvaluations ?? [], [strategy.data?.opportunityEvaluations]);
-  const scatterData = useMemo<ScatterPoint[]>(() => contentGap
+  const scatterData = useMemo<ScatterPoint[]>(() => evaluatedContentGap
     .filter((gap) => gap.monthlyVolume != null && gap.monthlyVolume > 0)
     .map((gap) => ({
       subGroup: gap.subGroup,
@@ -56,7 +60,7 @@ export function StrategySubTab() {
       x: gap.monthlyVolume ?? 0,
       y: gap.contentGapScore,
       searchIntent: gap.searchIntent,
-    })), [contentGap]);
+    })), [evaluatedContentGap]);
 
   if (strategy.loading) return <AdminLoadingSkeleton variant="full" />;
   if (strategy.error) return <AdminErrorState message={strategy.error} />;
@@ -69,7 +73,7 @@ export function StrategySubTab() {
   const actionableBlogKeys = new Set(opportunityEvaluations
     .filter((item) => item.actions.some((action) => action.actionType === "blog" && action.eligibility === "eligible"))
     .map((item) => item.key));
-  const unmetDemand = contentGap
+  const unmetDemand = evaluatedContentGap
     .filter((item) => item.contentGapScore >= CONTENT_GAP_LARGE_THRESHOLD && actionableBlogKeys.has(`${item.slug}:${item.subGroup}`))
     .reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
   const hasMeasuredDemand = contentGap.some((item) => item.monthlyVolume != null);
@@ -143,7 +147,7 @@ export function StrategySubTab() {
       )}
 
       <EvidenceDataSection
-        contentGap={contentGap}
+        contentGap={evaluatedContentGap}
         insightActions={strategy.data.insightActions ?? []}
         pageOpportunities={strategy.data.pageOpportunities ?? []}
         candidateKeys={new Set([

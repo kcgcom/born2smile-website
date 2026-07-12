@@ -34,7 +34,7 @@ export interface ContentGapItem {
   existingPostCount: number;
   contentGapScore: number;
   contentCoverage: number;
-  coverageEvidence: Array<{ slug: string; title: string; strength: number }>;
+  coverageEvidence: Array<{ slug: string; title: string; strength: number; reasons: string[] }>;
   monthlyVolume: number | null;
   volumeSource: "searchad" | "datalab-fallback";
   isEstimated: boolean;

@@ -336,12 +336,22 @@ export function EvidenceDataSection({
                     label: "콘텐츠 공백",
                     align: "right",
                     sortable: true,
-                    render: (row) => (
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span className="tabular-nums text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
-                        <ValueScoreBadge score={Number(row.contentGapScore)} />
+                    render: (row) => {
+                      const evidence = (row.coverageEvidence as ContentGapItem["coverageEvidence"] | undefined)?.[0];
+                      return (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="tabular-nums text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
+                          <ValueScoreBadge score={Number(row.contentGapScore)} />
+                        </div>
+                        {evidence && (
+                          <span className="max-w-52 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · 강도 ${evidence.strength} · ${evidence.reasons.join(" · ")}`}>
+                            근거 {evidence.strength} · {evidence.reasons.join(" · ")}
+                          </span>
+                        )}
                       </div>
-                    ),
+                      );
+                    },
                   },
                   {
                     key: "pageValueScore",
@@ -435,6 +445,11 @@ export function EvidenceDataSection({
                       {related.length > 0 && (
                         <p className="mt-1 text-[10px] text-[var(--muted)]">
                           연관 키워드 {related.length}개 · 상위 {topRelatedCount}개 {topRelatedVolume.toLocaleString("ko-KR")}/월
+                        </p>
+                      )}
+                      {item.coverageEvidence[0] && (
+                        <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${item.coverageEvidence[0].title} · ${item.coverageEvidence[0].reasons.join(" · ")}`}>
+                          근거 {item.coverageEvidence[0].strength} · {item.coverageEvidence[0].reasons.join(" · ")}
                         </p>
                       )}
                       {(action || pageOpportunity) && (
