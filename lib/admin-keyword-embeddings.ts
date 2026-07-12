@@ -50,7 +50,6 @@ export const KEYWORD_CLUSTER_THRESHOLD = 0.97; // 실제 SC 평가 최적값 —
 export const KEYWORD_MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
 const CLUSTER_THRESHOLD = KEYWORD_CLUSTER_THRESHOLD;
 const MIN_TOKEN_JACCARD = KEYWORD_MIN_TOKEN_JACCARD;
-const MIN_MEMBER_SIMILARITY = 0.88; // 클러스터 멤버 최소 유사도 (대표 대비, 체이닝 방지)
 const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
 
 // ---------------------------------------------------------------
@@ -96,10 +95,24 @@ export async function embedKeywordsForClustering(texts: string[]): Promise<numbe
       throw new Error(`Gemini Embedding API error (${res.status}): ${errorText}`);
     }
 
-    const data = await res.json();
-    const embeddings = data.embeddings as Array<{ values: number[] }>;
-    for (const emb of embeddings) {
-      allEmbeddings.push(emb.values);
+    const data = await res.json() as { embeddings?: Array<{ values?: unknown }> };
+    if (!Array.isArray(data.embeddings) || data.embeddings.length !== batch.length) {
+      throw new Error(
+        `Gemini Embedding API response count mismatch: requested ${batch.length}, received ${data.embeddings?.length ?? 0}`,
+      );
+    }
+    for (const [index, embedding] of data.embeddings.entries()) {
+      const values = embedding.values;
+      if (
+        !Array.isArray(values) ||
+        values.length !== EMBEDDING_DIMS ||
+        !values.every((value): value is number => typeof value === "number" && Number.isFinite(value))
+      ) {
+        throw new Error(
+          `Gemini Embedding API invalid vector at index ${index}: expected ${EMBEDDING_DIMS} finite numbers`,
+        );
+      }
+      allEmbeddings.push(values);
     }
   }
 
@@ -341,8 +354,8 @@ function clusterByEmbeddings(
       }));
 
     // 체이닝 방지: 대표 대비 유사도가 기준 미달인 멤버는 제거 → 단독 클러스터로 분리
-    const kept = keywords.filter((k) => k.similarity >= MIN_MEMBER_SIMILARITY);
-    const ejected = keywords.filter((k) => k.similarity < MIN_MEMBER_SIMILARITY);
+    const kept = keywords.filter((k) => k.similarity >= threshold);
+    const ejected = keywords.filter((k) => k.similarity < threshold);
     for (const ej of ejected) {
       clusters.push({
         representative: ej.query,
