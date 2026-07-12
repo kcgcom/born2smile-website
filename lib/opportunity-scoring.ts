@@ -104,7 +104,7 @@ const PAGE_CONFIRMATION_TOPICS = new Set(["implant:첨단/디지털"]);
 const PAGE_STATUS_OVERRIDES: Partial<Record<string, PageContentStatus>> = {
   "implant:대상/조건": "covered",
   "orthodontics:대상/나이": "covered",
-  "pediatric:소아진료": "covered",
+  "pediatric:소아치과/진정": "covered",
 };
 
 function normalize(value: string): string {

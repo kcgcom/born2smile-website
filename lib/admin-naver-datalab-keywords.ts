@@ -80,10 +80,18 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "과정/기간",
         keywords: [
           "임플란트 과정", "임플란트 기간", "임플란트 수술",
-          "뼈이식", "임플란트 식립", "임플란트뼈이식",
-          "뼈이식 임플란트",
+          "임플란트 식립",
         ],
         searchIntent: "informational",
+      },
+      {
+        name: "뼈이식/골증대",
+        keywords: [
+          "임플란트뼈이식", "임플란트 뼈이식 비용", "뼈이식 임플란트",
+          "뼈이식", "상악동 거상술", "치조골 이식",
+          "임플란트 뼈이식 통증", "임플란트 뼈이식 기간",
+        ],
+        searchIntent: "commercial",
       },
       {
         name: "부작용/관리",
@@ -149,6 +157,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword}, 꼭 알아야 할 {count}가지",
         subGroup: "과정/기간",
         aspect: "",
+      },
+      {
+        template: "{keyword} 필요 조건과 과정: {aspect}",
+        subGroup: "뼈이식/골증대",
+        aspect: "비용·통증·기간과 상악동 거상술이 필요한 경우",
       },
       {
         template: "{keyword} 비교: {aspect}",
@@ -504,7 +517,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     slug: "pediatric",
     subGroups: [
       {
-        name: "소아진료",
+        name: "소아치과/진정",
         keywords: [
           "소아치과", "어린이 충치", "어린이 치과",
           "아이 치과", "소아 충치 치료", "소아 치과 진정치료",
@@ -530,7 +543,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "informational",
       },
       {
-        name: "습관/예방",
+        name: "구강습관/발달",
         keywords: [
           "손가락 빨기", "어린이 칫솔질", "구강 호흡",
           "이갈기 아이", "아이 치아 관리", "젖병 충치",
@@ -569,7 +582,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     topicAngles: [
       {
         template: "아이 {keyword} 언제 가야 할까? {aspect}",
-        subGroup: "소아진료",
+        subGroup: "소아치과/진정",
         aspect: "연령별 소아 치과 방문 가이드",
       },
       {
@@ -584,7 +597,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "우리 아이 {keyword}, {aspect}",
-        subGroup: "습관/예방",
+        subGroup: "구강습관/발달",
         aspect: "올바른 구강 습관 만들기 가이드",
       },
       {
@@ -622,7 +635,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "commercial",
       },
       {
-        name: "잇몸질환",
+        name: "잇몸질환/치료",
         keywords: [
           "잇몸질환", "치주염", "치은염",
           "잇몸 치료", "잇몸치료비용", "잇몸 붓기",
@@ -681,7 +694,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 초기 증상 {count}가지와 치료법",
-        subGroup: "잇몸질환",
+        subGroup: "잇몸질환/치료",
         aspect: "",
       },
       {
@@ -773,7 +786,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "informational",
       },
       {
-        name: "약/부작용",
+        name: "약물/치과치료 주의",
         keywords: [
           "치과 항생제", "치과 진통제", "혈압약 치과",
           "혈액희석제 발치", "골다공증약 임플란트", "아스피린 발치",
@@ -815,7 +828,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 치과 치료 시 주의사항: {aspect}",
-        subGroup: "약/부작용",
+        subGroup: "약물/치과치료 주의",
         aspect: "복용 약별 치과 치료 전 체크리스트",
       },
     ],
