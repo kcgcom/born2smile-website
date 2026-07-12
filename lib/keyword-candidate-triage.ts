@@ -17,11 +17,13 @@ export interface CandidateTriage {
 }
 
 const PRODUCT_OR_BRAND_PATTERN =
-  /추천|치약|칫솔|칫솔모|세정제|세척기|제거제|사탕|영양제|케이스|오랄비|워터픽|아쿠아픽|오아구강|화이트랩스|crest/i;
+  /추천|셀프|세척|관리|운동|방지|치약|칫솔|칫솔모|세정제|세척기|제거제|사탕|영양제|케이스|오랄비|워터픽|아쿠아픽|오아구강|화이트랩스|오스템|덴티움|스트라우만|crest/i;
 const DENTAL_TREATMENT_PATTERN =
   /치과|치아|충치|신경치료|크라운|임플란트|교정|잇몸|치주|구강|스케일링|라미네이트|틀니|인레이|사랑니|뼈이식|상악동/;
 const OBVIOUS_FALSE_POSITIVE_PATTERN =
   /팔꿈치|엉치통증|에어플로우센서|지르코니아볼|도요다크라운|해슬리나인브릿지/;
+const REGIONAL_OR_MIXED_INTENT_PATTERN =
+  /연세.*치과|송도|수성|수지|산본|마곡|얼굴비대칭|안면비대칭/;
 
 export function triageKeywordCandidate(input: CandidateTriageInput): CandidateTriage {
   if (!input.subgroupExists) {
@@ -35,6 +37,9 @@ export function triageKeywordCandidate(input: CandidateTriageInput): CandidateTr
   }
   if (PRODUCT_OR_BRAND_PATTERN.test(input.keyword)) {
     return { kind: "defer-suggested", decision: "defer", reason: "제품·브랜드 탐색 의도가 강해 핵심 키워드보다 콘텐츠 후보로 검토하는 편이 적합합니다." };
+  }
+  if (REGIONAL_OR_MIXED_INTENT_PATTERN.test(input.keyword)) {
+    return { kind: "review", decision: null, reason: "타 지역·특정 병원 탐색 또는 치과 외 진료 의도가 섞일 수 있어 직접 확인해야 합니다." };
   }
   if (input.seenCount >= 3 && input.monthlyVolume >= 1_000 && DENTAL_TREATMENT_PATTERN.test(input.keyword)) {
     return { kind: "approve-suggested", decision: "approve", reason: "반복 관측되고 검색량과 치과 진료 관련성이 모두 높은 후보입니다." };
