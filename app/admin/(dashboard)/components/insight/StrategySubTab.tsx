@@ -81,9 +81,6 @@ export function StrategySubTab() {
           <div>
             <div className="flex flex-wrap gap-2">
               <AdminPill tone="white">기회 분석</AdminPill>
-              <AdminPill tone={urgentCount > 0 ? "warning" : "white"}>
-                {urgentCount > 0 ? `고가치 기회 ${urgentCount}개` : "고가치 기회 없음"}
-              </AdminPill>
             </div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">
               검색 수요와 현재 콘텐츠의 차이를 분석합니다.
@@ -93,15 +90,8 @@ export function StrategySubTab() {
             </p>
             <p className="mt-2 text-xs text-[var(--muted)]">
               {strategy.data.period?.end ? `DataLab ${strategy.data.period.end} 기준` : "DataLab 기준일 확인 불가"}
-              {strategy.data.volumeCoverage != null ? ` · 주제 검색량 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : " · 검색량 스냅샷 없음"}
-              {` · ${formatFetchedAt(strategy.data.meta.fetchedAt)} 분석`}
-              {` · ${strategy.data.meta.scoringModelVersion}`}
+              {strategy.data.volumeCoverage != null ? ` · 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : ""}
             </p>
-            {sync.data?.snapshotCreatedAt && (
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                통합 분석 스냅샷 {formatFetchedAt(sync.data.snapshotCreatedAt)} · 핵심 키워드 {sync.data.snapshotKeywordCount?.toLocaleString("ko-KR")}개
-              </p>
-            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="primary" href="/admin/content/planner">
                 콘텐츠 플래너 열기
@@ -179,14 +169,4 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function formatMonthlyDemand(value: number, available: boolean): string {
   return available ? `${value.toLocaleString("ko-KR")}/월` : "확인 불가";
-}
-
-function formatFetchedAt(value: string): string {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }

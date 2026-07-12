@@ -270,12 +270,6 @@ export function EvidenceDataSection({
                     },
                   },
                   {
-                    key: "category",
-                    label: "카테고리",
-                    align: "left",
-                    render: (row) => <CategoryBadge category={row.category as KeywordCategorySlug} />,
-                  },
-                  {
                     key: "searchIntent",
                     label: "검색 의도",
                     align: "left",
@@ -291,12 +285,9 @@ export function EvidenceDataSection({
                       const item = actionByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
                       if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
                       return (
-                        <div className="space-y-1">
-                          <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
-                            {ACTION_LABELS[item.actionType]} · {item.valueScore}
-                          </span>
-                          <div className="text-[10px] text-[var(--muted)]">신뢰도 {item.confidence}</div>
-                        </div>
+                        <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
+                          {ACTION_LABELS[item.actionType]} · {item.valueScore}
+                        </span>
                       );
                     },
                   },
@@ -331,25 +322,6 @@ export function EvidenceDataSection({
                           )}
                         </div>
                       );
-                    },
-                  },
-                  {
-                    key: "relatedVolume",
-                    label: "연관 키워드",
-                    align: "right",
-                    render: (row) => {
-                      const item = row as unknown as ContentGapItem;
-                      const relatedCount = item.relatedKeywords?.length ?? 0;
-                      const topCount = Math.min(10, relatedCount);
-                      const topVolume = calcRelatedVolume(item, 10);
-                      return relatedCount > 0
-                        ? (
-                            <div className="text-right text-[11px] text-[var(--muted)]">
-                              <div>{relatedCount.toLocaleString("ko-KR")}개</div>
-                              <div className="tabular-nums">상위 {topCount}개 {topVolume.toLocaleString("ko-KR")}/월</div>
-                            </div>
-                          )
-                        : <span className="text-[var(--muted)]">-</span>;
                     },
                   },
                   {
@@ -468,12 +440,9 @@ export function EvidenceDataSection({
                       {(action || pageOpportunity) && (
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {action && (
-                            <>
-                              <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
-                                {ACTION_LABELS[action.actionType]} · {action.valueScore}
-                              </span>
-                              <span className="text-[10px] text-[var(--muted)]">신뢰도 {action.confidence}</span>
-                            </>
+                            <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
+                              {ACTION_LABELS[action.actionType]} · {action.valueScore}
+                            </span>
                           )}
                           {pageOpportunity && (
                             <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">
