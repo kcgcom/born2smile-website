@@ -63,10 +63,10 @@ export function EvidenceDataSection({
   const maxVolume = useMemo(() => Math.max(...filteredGap.map((g) => g.monthlyVolume ?? 0), 1), [filteredGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
   const pageOpportunityByKey = useMemo(() => new Map(
-    pageOpportunities.flatMap((item) => item.contributingTopics.map((topic) => [topic.topicKey, item] as const)),
+    pageOpportunities.flatMap((item) => (item.contributingTopics ?? []).map((topic) => [topic.topicKey, item] as const)),
   ), [pageOpportunities]);
   const confirmationPageByKey = useMemo(() => new Map(
-    pageOpportunities.flatMap((item) => item.confirmationTopics.map((topic) => [topic.topicKey, item] as const)),
+    pageOpportunities.flatMap((item) => (item.confirmationTopics ?? []).map((topic) => [topic.topicKey, item] as const)),
   ), [pageOpportunities]);
 
   const getPlannerKeys = (slug: KeywordCategorySlug, subGroup: string) => {

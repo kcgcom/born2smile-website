@@ -45,7 +45,8 @@ export function StrategySubTab() {
   }, [endpoint, sync.data?.jobId, sync.data?.status]);
 
   const contentGap = useMemo(() => strategy.data?.contentGap ?? [], [strategy.data?.contentGap]);
-  const evaluationByKey = useMemo(() => new Map((strategy.data?.opportunityEvaluations ?? []).map((item) => [item.key, item])), [strategy.data?.opportunityEvaluations]);
+  const opportunityEvaluations = useMemo(() => strategy.data?.opportunityEvaluations ?? [], [strategy.data?.opportunityEvaluations]);
+  const evaluationByKey = useMemo(() => new Map(opportunityEvaluations.map((item) => [item.key, item])), [opportunityEvaluations]);
   const scatterData = useMemo<ScatterPoint[]>(() => contentGap
     .filter((gap) => gap.monthlyVolume != null && gap.monthlyVolume > 0)
     .map((gap) => ({
@@ -64,7 +65,7 @@ export function StrategySubTab() {
     return <AdminErrorState message="네이버 DataLab API 설정이 없어 기회 분석 데이터를 만들 수 없습니다." />;
   }
 
-  const urgentCount = strategy.data.opportunityEvaluations.filter((item) => item.actions.some((action) => action.eligibility === "eligible" && (action.valueScore ?? 0) >= 70)).length;
+  const urgentCount = opportunityEvaluations.filter((item) => item.actions.some((action) => action.eligibility === "eligible" && (action.valueScore ?? 0) >= 70)).length;
   const measuredDemand = contentGap.reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
   const unmetDemand = contentGap
     .filter((item) => item.contentGapScore >= 70)
@@ -151,12 +152,12 @@ export function StrategySubTab() {
 
       <EvidenceDataSection
         contentGap={contentGap}
-        insightActions={strategy.data.insightActions}
-        pageOpportunities={strategy.data.pageOpportunities}
+        insightActions={strategy.data.insightActions ?? []}
+        pageOpportunities={strategy.data.pageOpportunities ?? []}
         candidateKeys={new Set([
-          ...strategy.data.blogBriefs.map((brief) => `blog:${brief.slug}:${brief.subGroup}`),
-          ...strategy.data.pageBriefs.map((brief) => `page:${brief.targetPage}`),
-          ...strategy.data.faqSuggestions.map((brief) => `faq:${brief.slug}:${brief.subGroup}`),
+          ...(strategy.data.blogBriefs ?? []).map((brief) => `blog:${brief.slug}:${brief.subGroup}`),
+          ...(strategy.data.pageBriefs ?? []).map((brief) => `page:${brief.targetPage}`),
+          ...(strategy.data.faqSuggestions ?? []).map((brief) => `faq:${brief.slug}:${brief.subGroup}`),
         ])}
         plannedKeys={new Set((planner.data ?? []).map((item) => item.opportunityKey))}
         visiblePlanKeys={new Set((planner.data ?? [])
