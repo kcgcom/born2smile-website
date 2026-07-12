@@ -16,10 +16,10 @@ export interface TaxonomyRefreshState {
 export type TaxonomyRefreshPlan = "refresh" | "stage-and-refresh" | "refresh-pending" | "conflict";
 
 export function getTaxonomyRefreshPlan(state: TaxonomyRefreshState): TaxonomyRefreshPlan {
-  if (state.codeMatchesActive) return "refresh";
-  if (state.pendingVersion == null) return "stage-and-refresh";
-  if (state.codeMatchesPending) return "refresh-pending";
-  return "conflict";
+  if (state.pendingVersion != null) {
+    return state.codeMatchesPending ? "refresh-pending" : "conflict";
+  }
+  return state.codeMatchesActive ? "refresh" : "stage-and-refresh";
 }
 
 export function getTaxonomyDiffCount(diff: TaxonomyCodeDiff): { added: number; removed: number } {

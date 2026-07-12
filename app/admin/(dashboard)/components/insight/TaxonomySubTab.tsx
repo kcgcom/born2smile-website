@@ -700,9 +700,18 @@ interface TaxonomyGovernanceSummary {
   active: { version: number | null; keywords: number; subgroups: number };
   pending: { version: number; keywords: number; subgroups: number } | null;
   pendingCandidateCount: number;
+  diff: TaxonomyCodeDiff | null;
   codeDiff: TaxonomyCodeDiff;
   codeMatchesActive: boolean;
   codeMatchesPending: boolean;
+}
+
+interface RefreshConfirmation {
+  kind: "stage-code" | "pending";
+  isConflict: boolean;
+  version: number | null;
+  title: string;
+  diff: TaxonomyCodeDiff;
 }
 
 export function TaxonomySubTab() {
@@ -712,6 +721,7 @@ export function TaxonomySubTab() {
   const [filter, setFilter] = useState("");
   const [forceLoading, setForceLoading] = useState(false);
   const [completedVersion, setCompletedVersion] = useState<number | null>(null);
+  const [refreshConfirmation, setRefreshConfirmation] = useState<RefreshConfirmation | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const observedActiveJob = useRef<string | null>(null);
 
@@ -767,6 +777,12 @@ export function TaxonomySubTab() {
     ]);
   }, [refetchTaxonomyGovernance, searchAdSync.data?.jobId, searchAdSync.data?.snapshotTaxonomyVersion, searchAdSync.data?.status]);
 
+  useEffect(() => {
+    if (completedVersion == null) return;
+    const timer = window.setTimeout(() => setCompletedVersion(null), 8_000);
+    return () => window.clearTimeout(timer);
+  }, [completedVersion]);
+
   // 세 결과를 병합
   const overviewData = useMemo(() => {
     // taxonomyMeta가 없는 응답은 유효하지 않으므로 무시
@@ -792,33 +808,11 @@ export function TaxonomySubTab() {
   const overviewError = volumeError;
   const keywordTaxonomy = overviewData?.keywordTaxonomy ?? CATEGORY_KEYWORDS;
 
-  const handleForceRefresh = useCallback(async () => {
-    const governance = taxonomyGovernance.data;
-    if (!governance || taxonomyGovernance.error) return;
-
+  const runRefresh = useCallback(async (stageCode: boolean) => {
     setForceLoading(true);
     setCompletedVersion(null);
     try {
-      const plan = getTaxonomyRefreshPlan({
-        pendingVersion: governance.pending?.version ?? null,
-        codeMatchesActive: governance.codeMatchesActive,
-        codeMatchesPending: governance.codeMatchesPending,
-      });
-
-      if (plan === "conflict") {
-        window.alert(`v${governance.pending?.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 기존 대기 변경을 먼저 적용하거나 취소해 주세요.`);
-        setWorkspace("candidates");
-        return;
-      }
-
-      if (plan === "stage-and-refresh") {
-        const { added, removed } = getTaxonomyDiffCount(governance.codeDiff);
-        const summary = [added > 0 ? `추가 ${added}건` : "", removed > 0 ? `삭제 ${removed}건` : ""]
-          .filter(Boolean)
-          .join(" · ");
-        const lines = getTaxonomyDiffLines(governance.codeDiff, getKeywordCategoryLabel);
-        const detail = lines.length > 0 ? `\n\n${lines.join("\n")}` : "";
-        if (!window.confirm(`새 키워드 분류 변경${summary ? ` (${summary})` : ""}을 적용하고 데이터를 갱신할까요?${detail}`)) return;
+      if (stageCode) {
         const stageResult = await stageCodeTaxonomy("/api/admin/keyword-taxonomy/state", "POST", { action: "stage-code" });
         if (stageResult.error) return;
         await refetchTaxonomyGovernance();
@@ -834,7 +828,36 @@ export function TaxonomySubTab() {
     } finally {
       setForceLoading(false);
     }
-  }, [refetchSearchAdSync, refetchTaxonomyGovernance, stageCodeTaxonomy, startSearchAdSync, taxonomyGovernance.data, taxonomyGovernance.error]);
+  }, [refetchSearchAdSync, refetchTaxonomyGovernance, stageCodeTaxonomy, startSearchAdSync]);
+
+  const handleForceRefresh = useCallback(() => {
+    const governance = taxonomyGovernance.data;
+    if (!governance || taxonomyGovernance.error) return;
+
+    const plan = getTaxonomyRefreshPlan({
+      pendingVersion: governance.pending?.version ?? null,
+      codeMatchesActive: governance.codeMatchesActive,
+      codeMatchesPending: governance.codeMatchesPending,
+    });
+
+    if (plan === "refresh") {
+      void runRefresh(false);
+      return;
+    }
+
+    const isStageCode = plan === "stage-and-refresh";
+    setRefreshConfirmation({
+      kind: isStageCode ? "stage-code" : "pending",
+      isConflict: plan === "conflict",
+      version: governance.pending?.version ?? null,
+      title: isStageCode
+        ? "새 키워드 분류를 적용할까요?"
+        : plan === "refresh-pending"
+          ? `대기 중인 택소노미 v${governance.pending?.version}을 적용할까요?`
+          : `코드와 다른 택소노미 v${governance.pending?.version}이 대기 중입니다`,
+      diff: isStageCode ? governance.codeDiff : governance.diff ?? governance.codeDiff,
+    });
+  }, [runRefresh, taxonomyGovernance.data, taxonomyGovernance.error]);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {
@@ -941,10 +964,61 @@ export function TaxonomySubTab() {
   const snapshotVersionMismatch = taxonomyGovernance.data?.active.version != null
     && searchAdSync.data?.snapshotTaxonomyVersion != null
     && taxonomyGovernance.data.active.version !== searchAdSync.data.snapshotTaxonomyVersion;
+  const confirmationCount = refreshConfirmation ? getTaxonomyDiffCount(refreshConfirmation.diff) : null;
+  const confirmationLines = refreshConfirmation
+    ? getTaxonomyDiffLines(refreshConfirmation.diff, getKeywordCategoryLabel)
+    : [];
 
   return (
     <div className="space-y-6">
       <ApiSourceBadge sources={["naverDatalab", "naverSearchAd"]} />
+
+      {refreshConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="taxonomy-refresh-title"
+            className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
+          >
+            <h2 id="taxonomy-refresh-title" className="text-lg font-bold text-[var(--foreground)]">
+              {refreshConfirmation.title}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {confirmationCount && `추가 ${confirmationCount.added}건 · 삭제 ${confirmationCount.removed}건 · `}
+              데이터 수집이 성공한 뒤에만 이 버전이 활성화됩니다.
+            </p>
+            <div className="mt-4 max-h-72 space-y-1 overflow-y-auto rounded-2xl bg-slate-50 p-4 text-xs text-slate-700">
+              {confirmationLines.length > 0 ? confirmationLines.map((line, index) => (
+                <p key={`${index}-${line}`} className={line.startsWith("+") ? "text-emerald-700" : "text-red-700"}>{line}</p>
+              )) : <p className="text-[var(--muted)]">검색 의도나 콘텐츠 템플릿 등 구성 정보가 변경되었습니다.</p>}
+            </div>
+            {refreshConfirmation.isConflict && (
+              <p className="mt-3 text-xs text-amber-700">
+                코드와 다른 대기 변경입니다. 목록을 확인한 뒤 적용하거나 후보 검토에서 수정하세요.
+              </p>
+            )}
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <AdminActionButton tone="dark" onClick={() => setRefreshConfirmation(null)}>취소</AdminActionButton>
+              {refreshConfirmation.isConflict && (
+                <AdminActionButton tone="dark" onClick={() => {
+                  setRefreshConfirmation(null);
+                  setWorkspace("candidates");
+                }}>
+                  후보 검토로 이동
+                </AdminActionButton>
+              )}
+              <AdminActionButton tone="primary" onClick={() => {
+                const stageCode = refreshConfirmation.kind === "stage-code";
+                setRefreshConfirmation(null);
+                void runRefresh(stageCode);
+              }}>
+                변경 적용 및 데이터 갱신
+              </AdminActionButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 border-b border-[var(--border)] pb-3">
         <button type="button" onClick={() => setWorkspace("taxonomy")} className={`rounded-lg px-4 py-2 text-sm font-medium ${workspace === "taxonomy" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--background)] text-[var(--muted)]"}`}>
@@ -971,13 +1045,13 @@ export function TaxonomySubTab() {
       {searchAdSync.data?.candidateAnalysisStatus === "failed" && (
         <AdminNotice tone="warning">통합 데이터는 정상 게시됐지만 키워드 후보 자동 분석에 실패했습니다. 후보 검토 탭의 ‘후보 다시 분석’을 실행하세요: {searchAdSync.data.candidateAnalysisError ?? "원인을 확인할 수 없습니다."}</AdminNotice>
       )}
-      {workspace === "taxonomy" && taxonomyGovernance.data && !taxonomyGovernance.data.codeMatchesActive && (
+      {workspace === "taxonomy" && taxonomyGovernance.data && (taxonomyGovernance.data.pending || !taxonomyGovernance.data.codeMatchesActive) && (
         <AdminNotice tone={taxonomyGovernance.data.pending && !taxonomyGovernance.data.codeMatchesPending ? "warning" : "info"}>
-          {taxonomyGovernance.data.pending && !taxonomyGovernance.data.codeMatchesPending
-            ? `v${taxonomyGovernance.data.pending.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 먼저 확인해 주세요.`
-            : taxonomyGovernance.data.codeMatchesPending
-              ? `새 키워드 분류가 v${taxonomyGovernance.data.pending?.version} 적용 대기 중입니다. 데이터 갱신을 실행하면 자동으로 적용됩니다.`
-              : "새 키워드 분류가 배포되었습니다. 데이터 갱신 한 번으로 변경 적용과 통합 수집을 진행할 수 있습니다."}
+          {taxonomyGovernance.data.pending
+            ? taxonomyGovernance.data.codeMatchesPending
+              ? `새 키워드 분류가 v${taxonomyGovernance.data.pending.version} 적용 대기 중입니다. 데이터 갱신 전 변경 내용을 확인할 수 있습니다.`
+              : `코드와 다른 택소노미 v${taxonomyGovernance.data.pending.version}이 적용 대기 중입니다. 데이터 갱신 전 반드시 변경 내용을 확인해 주세요.`
+            : "새 키워드 분류가 배포되었습니다. 데이터 갱신 한 번으로 변경 적용과 통합 수집을 진행할 수 있습니다."}
         </AdminNotice>
       )}
       {workspace === "taxonomy" && completedVersion != null && (
@@ -986,7 +1060,14 @@ export function TaxonomySubTab() {
           </AdminNotice>
         )}
       {workspace === "taxonomy" && taxonomyGovernance.error && (
-        <AdminNotice tone="error">키워드 분류 상태를 확인하지 못해 데이터 갱신을 잠시 중단했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.</AdminNotice>
+        <AdminNotice tone="error">
+          <div className="flex flex-wrap items-center gap-3">
+            <span>키워드 분류 상태를 확인하지 못해 데이터 갱신을 잠시 중단했습니다.</span>
+            <button type="button" onClick={() => refetchTaxonomyGovernance()} className="rounded-lg border border-red-300 px-2.5 py-1 text-xs font-semibold hover:bg-red-100">
+              다시 시도
+            </button>
+          </div>
+        </AdminNotice>
       )}
 
       {workspace === "candidates" ? (
@@ -1011,7 +1092,7 @@ export function TaxonomySubTab() {
               ? "갱신 시작 중"
               : searchAdSyncActive
                 ? "통합 데이터 수집 중"
-                : taxonomyGovernance.data && !taxonomyGovernance.data.codeMatchesActive
+                : taxonomyGovernance.data && (taxonomyGovernance.data.pending || !taxonomyGovernance.data.codeMatchesActive)
                   ? "변경 적용 및 데이터 갱신"
                   : "데이터 갱신"}
         </button>
