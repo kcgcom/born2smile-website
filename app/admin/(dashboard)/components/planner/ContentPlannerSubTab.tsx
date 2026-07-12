@@ -25,7 +25,7 @@ interface PlannerCandidate {
   rationale: string;
   effort: string;
   effortMinutes: number;
-  valueScore: number;
+  valueScore: number | null;
   brief: BlogBriefItem | PageBriefItem | FaqSuggestionItem;
   sourceSnapshot: Record<string, unknown>;
 }
@@ -93,6 +93,10 @@ function valueLabel(type: PlannerItemType): string {
   return "FAQ 가치";
 }
 
+function scoreLabel(score: number | null): string {
+  return score == null ? "평가 없음" : `${score}점`;
+}
+
 function itemMeta(item: ContentPlannerItem): { valueScore: number | null; effort: string } {
   const stored = item.sourceSnapshot.plannerMeta;
   if (stored && typeof stored === "object") {
@@ -122,14 +126,14 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
     const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`);
     const action = evaluation?.actions?.find((item) => item.actionType === "blog");
-    const actionValue = action?.valueScore ?? 0;
+    const actionValue = action?.valueScore ?? null;
     return {
       key: `blog:${brief.slug}:${brief.subGroup}`,
       itemType: "blog" as const,
       title: brief.suggestedTitle,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${actionValue}` : "새 콘텐츠 기회",
+      rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${scoreLabel(actionValue)}` : "새 콘텐츠 기회",
       effort: "약 90분",
       effortMinutes: 90,
       valueScore: actionValue,
@@ -150,10 +154,10 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       title: `${getKeywordCategoryLabel(brief.slug)} 페이지 통합 보강`,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: `페이지 가치 ${opportunity?.pageValueScore ?? 0} · 근거 주제 ${topics.length}개 · ${(opportunity?.missingSections ?? []).join(" · ")}`,
+      rationale: `페이지 가치 ${scoreLabel(opportunity?.pageValueScore ?? null)} · 근거 주제 ${topics.length}개 · ${(opportunity?.missingSections ?? []).join(" · ")}`,
       effort: `약 ${effortMinutes}분`,
       effortMinutes,
-      valueScore: opportunity?.pageValueScore ?? 0,
+      valueScore: opportunity?.pageValueScore ?? null,
       brief,
       sourceSnapshot: { opportunity, evaluations: contributingEvaluations },
     };
@@ -204,6 +208,7 @@ export function ContentPlannerSubTab({
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [showArchive, setShowArchive] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [expandedBriefKeys, setExpandedBriefKeys] = useState<Set<string>>(() => new Set());
   const { mutate, error: mutationError } = useAdminMutation<ContentPlannerItem>();
   const strategy = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
   const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
@@ -217,7 +222,7 @@ export function ContentPlannerSubTab({
   );
   const unreviewedCandidates = useMemo(() => allUnreviewedCandidates
     .filter((candidate) => candidate.itemType === activeItemType)
-    .sort((a, b) => b.valueScore - a.valueScore || a.effortMinutes - b.effortMinutes),
+    .sort((a, b) => (b.valueScore ?? -1) - (a.valueScore ?? -1) || a.effortMinutes - b.effortMinutes),
   [activeItemType, allUnreviewedCandidates]);
   const boardItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && ACTIVE_BOARD_STATUSES.includes(item.status));
   const completedItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && item.status === "published");
@@ -246,6 +251,7 @@ export function ContentPlannerSubTab({
     setActiveItemType(type);
     setShowArchive(false);
     setShowCompleted(false);
+    setExpandedBriefKeys(new Set());
     router.replace(`/admin/content/planner?type=${type}`, { scroll: false });
   };
 
@@ -342,7 +348,7 @@ export function ContentPlannerSubTab({
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
             <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3"><Fact label="추천 액션" value={itemTypeLabel(candidate.itemType)} /><Fact label={valueLabel(candidate.itemType)} value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3"><Fact label="추천 액션" value={itemTypeLabel(candidate.itemType)} /><Fact label={valueLabel(candidate.itemType)} value={scoreLabel(candidate.valueScore)} /><Fact label="예상 작업량" value={candidate.effort} /></div>
             <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
           </AdminSurface>
         ))}</div> : <Empty icon={Check} title={`${activeTab.label} 후보를 모두 검토했습니다.`} description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
@@ -381,9 +387,9 @@ export function ContentPlannerSubTab({
                       <div className="flex flex-wrap items-center gap-2">
                         <select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[item.itemType][s]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
                         <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
-                        {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}
+                        {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <><AdminActionButton tone="dark" onClick={() => setExpandedBriefKeys((current) => { const next = new Set(current); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}>작업 지침<ChevronDown className={`h-4 w-4 transition-transform ${expandedBriefKeys.has(item.id) ? "rotate-180" : ""}`} /></AdminActionButton><a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a></>}
                       </div>
-                    </div></AdminSurface>
+                    </div>{expandedBriefKeys.has(item.id) && item.itemType !== "blog" && <WorkInstructions item={item} />}</AdminSurface>
                   ))}</div>
                 </div>
               );
@@ -438,6 +444,64 @@ export function ContentPlannerSubTab({
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+function WorkInstructions({ item }: { item: ContentPlannerItem }) {
+  if (item.itemType === "page") {
+    const brief = item.brief as unknown as PageBriefItem;
+    const blocks = Array.isArray(brief.blocks) ? brief.blocks : [];
+    const checklist = Array.isArray(brief.checklist) ? brief.checklist : [];
+    const faqQuestions = Array.isArray(brief.faqQuestions) ? brief.faqQuestions : [];
+    return (
+      <div className="mt-4 border-t border-[var(--border)] pt-4">
+        <h4 className="text-xs font-bold text-[var(--foreground)]">페이지 보강 지침</h4>
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <InstructionList title="추가·수정할 블록" items={blocks} empty="권장 블록이 없습니다." />
+          <InstructionList title="완료 체크리스트" items={checklist} empty="체크리스트가 없습니다." ordered />
+        </div>
+        {(brief.heroCopy || brief.supportingCopy) && (
+          <div className="mt-4 rounded-xl bg-[var(--background)] p-3">
+            <p className="text-[10px] font-semibold text-[var(--muted)]">권장 문구</p>
+            {brief.heroCopy && <p className="mt-1 text-sm font-medium text-[var(--foreground)]">{brief.heroCopy}</p>}
+            {brief.supportingCopy && <p className="mt-1 text-xs text-[var(--muted)]">{brief.supportingCopy}</p>}
+          </div>
+        )}
+        {faqQuestions.length > 0 && <div className="mt-4"><InstructionList title="함께 검토할 FAQ" items={faqQuestions} empty="" /></div>}
+      </div>
+    );
+  }
+
+  const brief = item.brief as unknown as FaqSuggestionItem;
+  const keywords = Array.isArray(brief.keywords) ? brief.keywords : [];
+  return (
+    <div className="mt-4 border-t border-[var(--border)] pt-4">
+      <h4 className="text-xs font-bold text-[var(--foreground)]">FAQ 보강 지침</h4>
+      <div className="mt-3 rounded-xl bg-[var(--background)] p-3">
+        <p className="text-[10px] font-semibold text-[var(--muted)]">추가할 질문</p>
+        <p className="mt-1 text-sm font-medium text-[var(--foreground)]">{brief.question ?? item.title}</p>
+      </div>
+      {keywords.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold text-[var(--muted)]">답변에 반영할 검색 표현</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">{keywords.map((keyword) => <span key={keyword} className="rounded-full bg-[var(--background)] px-2 py-1 text-xs text-[var(--foreground)]">{keyword}</span>)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InstructionList({ title, items, empty, ordered = false }: { title: string; items: string[]; empty: string; ordered?: boolean }) {
+  const List = ordered ? "ol" : "ul";
+  return (
+    <div>
+      <p className="text-[10px] font-semibold text-[var(--muted)]">{title}</p>
+      {items.length > 0 ? (
+        <List className={`mt-1.5 space-y-1 text-xs text-[var(--foreground)] ${ordered ? "list-decimal" : "list-disc"} pl-4`}>
+          {items.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+        </List>
+      ) : <p className="mt-1.5 text-xs text-[var(--muted)]">{empty}</p>}
     </div>
   );
 }
