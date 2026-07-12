@@ -43,7 +43,7 @@ const reviewSchema = z.discriminatedUnion("action", [
       decision: z.enum(["approve", "defer", "reject"]),
       category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]).optional(),
       subgroup: z.string().min(1).max(30).optional(),
-    })).min(1).max(100),
+    })).min(1).max(500),
   }),
 ]);
 
