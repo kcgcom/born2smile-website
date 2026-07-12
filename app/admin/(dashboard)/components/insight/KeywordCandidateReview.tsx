@@ -35,14 +35,6 @@ interface TaxonomyStateSummary {
     addedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
     removedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
   } | null;
-  codeDiff: {
-    addedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
-    removedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
-    addedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
-    removedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
-  };
-  codeMatchesActive: boolean;
-  codeMatchesPending: boolean;
 }
 
 type Decision = "approve" | "defer" | "reject";
@@ -214,43 +206,6 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
       {(error || candidates.error) && <AdminNotice tone="error">{error ?? candidates.error}</AdminNotice>}
 
       {taxonomyStateError && <AdminNotice tone="error">{taxonomyStateError}</AdminNotice>}
-
-      {taxonomyState.data && !taxonomyState.data.codeMatchesActive && !taxonomyState.data.codeMatchesPending && (
-        <AdminSurface tone="white" className="rounded-2xl border border-sky-200 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-sky-800">코드 택소노미 변경 감지</h3>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                코드에 정의된 카테고리와 키워드를 다음 통합 수집에 사용할 대기 버전으로 준비합니다. 수집에 실패하면 현재 활성 버전은 유지됩니다.
-              </p>
-            </div>
-            <AdminActionButton
-              tone="primary"
-              disabled={taxonomyStateLoading || taxonomyState.data.pending !== null}
-              onClick={async () => {
-                const diff = taxonomyState.data?.codeDiff;
-                const changeCount = (diff?.addedKeywords.length ?? 0) + (diff?.removedKeywords.length ?? 0)
-                  + (diff?.addedSubgroups.length ?? 0) + (diff?.removedSubgroups.length ?? 0);
-                const changeLabel = changeCount > 0 ? `${changeCount}건` : "검색 의도·주제 템플릿 등의 구성 변경";
-                if (!window.confirm(`코드 택소노미 ${changeLabel}을 다음 수집용으로 준비할까요?`)) return;
-                const result = await mutateTaxonomyState("/api/admin/keyword-taxonomy/state", "POST", { action: "stage-code" });
-                if (!result.error) taxonomyState.refetch();
-              }}
-            >
-              코드 변경 적용 준비
-            </AdminActionButton>
-          </div>
-          {taxonomyState.data.pending && (
-            <p className="mt-3 text-xs text-amber-700">기존 대기 v{taxonomyState.data.pending.version}을 먼저 수집·적용하거나 전체 취소해야 코드 변경을 준비할 수 있습니다.</p>
-          )}
-          <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
-            <DiffList title="코드 추가 키워드" items={taxonomyState.data.codeDiff.addedKeywords.map((item) => `${getKeywordCategoryLabel(item.category)} / ${item.subgroup} / ${item.keyword}`)} />
-            <DiffList title="코드 삭제 키워드" items={taxonomyState.data.codeDiff.removedKeywords.map((item) => `${getKeywordCategoryLabel(item.category)} / ${item.subgroup} / ${item.keyword}`)} />
-            <DiffList title="코드 새 서브그룹" items={taxonomyState.data.codeDiff.addedSubgroups.map((item) => `${getKeywordCategoryLabel(item.category)} / ${item.subgroup}`)} />
-            <DiffList title="코드 삭제 서브그룹" items={taxonomyState.data.codeDiff.removedSubgroups.map((item) => `${getKeywordCategoryLabel(item.category)} / ${item.subgroup}`)} />
-          </div>
-        </AdminSurface>
-      )}
 
       {taxonomyState.data?.pending && (
         <AdminSurface tone="white" className="rounded-2xl border border-amber-200 p-5">

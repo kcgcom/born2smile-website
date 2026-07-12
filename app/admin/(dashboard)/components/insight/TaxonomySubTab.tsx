@@ -694,6 +694,14 @@ interface TaxonomyGovernanceSummary {
   active: { version: number | null; keywords: number; subgroups: number };
   pending: { version: number; keywords: number; subgroups: number } | null;
   pendingCandidateCount: number;
+  codeDiff: {
+    addedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
+    removedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
+    addedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
+    removedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
+  };
+  codeMatchesActive: boolean;
+  codeMatchesPending: boolean;
 }
 
 export function TaxonomySubTab() {
@@ -728,6 +736,11 @@ export function TaxonomySubTab() {
     loading: startingSearchAdSync,
     error: searchAdSyncMutationError,
   } = useAdminMutation<SearchAdSyncState>();
+  const {
+    mutate: stageCodeTaxonomy,
+    loading: stagingCodeTaxonomy,
+    error: stageCodeTaxonomyError,
+  } = useAdminMutation<{ ok: boolean }>();
   const searchAdSyncActive = searchAdSync.data?.status === "queued" || searchAdSync.data?.status === "running";
   const searchAdJobId = searchAdSync.data?.jobId ?? null;
   const refetchSearchAdSync = searchAdSync.refetch;
@@ -779,6 +792,28 @@ export function TaxonomySubTab() {
   const handleForceRefresh = useCallback(async () => {
     setForceLoading(true);
     try {
+      const governance = taxonomyGovernance.data;
+      if (governance && !governance.codeMatchesActive) {
+        if (governance.pending && !governance.codeMatchesPending) {
+          window.alert(`v${governance.pending.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 기존 대기 변경을 먼저 적용하거나 취소해 주세요.`);
+          setWorkspace("candidates");
+          return;
+        }
+
+        if (!governance.pending) {
+          const diff = governance.codeDiff;
+          const added = diff.addedKeywords.length + diff.addedSubgroups.length;
+          const removed = diff.removedKeywords.length + diff.removedSubgroups.length;
+          const summary = [added > 0 ? `추가 ${added}건` : "", removed > 0 ? `삭제 ${removed}건` : ""]
+            .filter(Boolean)
+            .join(" · ");
+          if (!window.confirm(`새 키워드 분류 변경${summary ? ` (${summary})` : ""}을 적용하고 데이터를 갱신할까요?`)) return;
+          const stageResult = await stageCodeTaxonomy("/api/admin/keyword-taxonomy/state", "POST", { action: "stage-code" });
+          if (stageResult.error) return;
+          await refetchTaxonomyGovernance();
+        }
+      }
+
       const syncResult = await startSearchAdSync(SEARCHAD_SYNC_ENDPOINT, "POST");
       if (syncResult.data?.jobId) {
         observedActiveJob.current = syncResult.data.jobId;
@@ -789,7 +824,7 @@ export function TaxonomySubTab() {
     } finally {
       setForceLoading(false);
     }
-  }, [refetchSearchAdSync, startSearchAdSync]);
+  }, [refetchSearchAdSync, refetchTaxonomyGovernance, stageCodeTaxonomy, startSearchAdSync, taxonomyGovernance.data]);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {
@@ -926,6 +961,24 @@ export function TaxonomySubTab() {
       {searchAdSync.data?.candidateAnalysisStatus === "failed" && (
         <AdminNotice tone="warning">통합 데이터는 정상 게시됐지만 키워드 후보 자동 분석에 실패했습니다. 후보 검토 탭의 ‘후보 다시 분석’을 실행하세요: {searchAdSync.data.candidateAnalysisError ?? "원인을 확인할 수 없습니다."}</AdminNotice>
       )}
+      {workspace === "taxonomy" && taxonomyGovernance.data && !taxonomyGovernance.data.codeMatchesActive && (
+        <AdminNotice tone={taxonomyGovernance.data.pending && !taxonomyGovernance.data.codeMatchesPending ? "warning" : "info"}>
+          {taxonomyGovernance.data.pending && !taxonomyGovernance.data.codeMatchesPending
+            ? `v${taxonomyGovernance.data.pending.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 먼저 확인해 주세요.`
+            : taxonomyGovernance.data.codeMatchesPending
+              ? `새 키워드 분류가 v${taxonomyGovernance.data.pending?.version} 적용 대기 중입니다. 데이터 갱신을 실행하면 자동으로 적용됩니다.`
+              : "새 키워드 분류가 배포되었습니다. 데이터 갱신 한 번으로 변경 적용과 통합 수집을 진행할 수 있습니다."}
+        </AdminNotice>
+      )}
+      {workspace === "taxonomy"
+        && searchAdSync.data?.status === "completed"
+        && taxonomyGovernance.data?.active.version != null
+        && taxonomyGovernance.data.active.version === searchAdSync.data.snapshotTaxonomyVersion
+        && (
+          <AdminNotice tone="success">
+            택소노미 v{taxonomyGovernance.data.active.version}와 검색 데이터가 적용되었습니다.
+          </AdminNotice>
+        )}
 
       {workspace === "candidates" ? (
         <KeywordCandidateReview taxonomy={keywordTaxonomy} />
@@ -937,11 +990,19 @@ export function TaxonomySubTab() {
         <button
           type="button"
           onClick={handleForceRefresh}
-          disabled={forceLoading || startingSearchAdSync || searchAdSyncActive || overviewLoading}
+          disabled={forceLoading || stagingCodeTaxonomy || startingSearchAdSync || searchAdSyncActive || overviewLoading}
           className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
         >
-          <RefreshCw size={14} className={forceLoading || startingSearchAdSync || searchAdSyncActive ? "animate-spin" : ""} />
-          {startingSearchAdSync ? "갱신 시작 중" : searchAdSyncActive ? "통합 데이터 수집 중" : "데이터 갱신"}
+          <RefreshCw size={14} className={forceLoading || stagingCodeTaxonomy || startingSearchAdSync || searchAdSyncActive ? "animate-spin" : ""} />
+          {stagingCodeTaxonomy
+            ? "변경 적용 준비 중"
+            : startingSearchAdSync
+              ? "갱신 시작 중"
+              : searchAdSyncActive
+                ? "통합 데이터 수집 중"
+                : taxonomyGovernance.data && !taxonomyGovernance.data.codeMatchesActive
+                  ? "변경 적용 및 데이터 갱신"
+                  : "데이터 갱신"}
         </button>
       </div>
 
@@ -953,9 +1014,9 @@ export function TaxonomySubTab() {
         </p>
       )}
 
-      {(searchAdSyncMutationError || searchAdSync.data?.error) && (
+      {(stageCodeTaxonomyError || searchAdSyncMutationError || searchAdSync.data?.error) && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {searchAdSyncMutationError ?? searchAdSync.data?.error}
+          {stageCodeTaxonomyError ?? searchAdSyncMutationError ?? searchAdSync.data?.error}
         </div>
       )}
 
