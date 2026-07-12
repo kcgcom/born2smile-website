@@ -46,7 +46,6 @@ export function StrategySubTab() {
 
   const contentGap = useMemo(() => strategy.data?.contentGap ?? [], [strategy.data?.contentGap]);
   const opportunityEvaluations = useMemo(() => strategy.data?.opportunityEvaluations ?? [], [strategy.data?.opportunityEvaluations]);
-  const evaluationByKey = useMemo(() => new Map(opportunityEvaluations.map((item) => [item.key, item])), [opportunityEvaluations]);
   const scatterData = useMemo<ScatterPoint[]>(() => contentGap
     .filter((gap) => gap.monthlyVolume != null && gap.monthlyVolume > 0)
     .map((gap) => ({
@@ -55,9 +54,8 @@ export function StrategySubTab() {
       slug: gap.slug,
       x: gap.monthlyVolume ?? 0,
       y: gap.contentGapScore,
-      z: evaluationByKey.get(`${gap.slug}:${gap.subGroup}`)?.actions.find((item) => item.actionType === "blog")?.valueScore ?? 0,
       searchIntent: gap.searchIntent,
-    })), [contentGap, evaluationByKey]);
+    })), [contentGap]);
 
   if (strategy.loading) return <AdminLoadingSkeleton variant="full" />;
   if (strategy.error) return <AdminErrorState message={strategy.error} />;

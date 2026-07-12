@@ -23,7 +23,6 @@ export interface ScatterPoint {
   slug: KeywordCategorySlug;
   x: number;
   y: number;
-  z: number;
   searchIntent?: SearchIntent;
 }
 
@@ -62,7 +61,7 @@ export const OpportunityScatter = dynamic(
                   tick={{ fontSize: 11, fill: "#6B7280" }}
                   label={{ value: "콘텐츠 공백", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
                 />
-                <mod.ZAxis type="number" dataKey="z" domain={[0, 100]} range={[40, 500]} />
+                <mod.ZAxis type="number" range={[80, 80]} />
                 <mod.Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
                   content={({ payload }) => {
@@ -86,7 +85,6 @@ export const OpportunityScatter = dynamic(
                         )}
                         <p>검색량: {d.x.toLocaleString("ko-KR")}/월</p>
                         <p>콘텐츠 공백: {d.y.toFixed(0)}</p>
-                        <p>신규 글 가치: {d.z.toFixed(0)}</p>
                       </div>
                     );
                   }}
