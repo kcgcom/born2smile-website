@@ -61,7 +61,7 @@ export const OpportunityScatter = dynamic(
                   tick={{ fontSize: 11, fill: "#6B7280" }}
                   label={{ value: "콘텐츠 공백", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
                 />
-                <mod.ZAxis type="number" dataKey="z" range={[60, 400]} />
+                <mod.ZAxis type="number" dataKey="z" domain={[0, 100]} range={[40, 500]} />
                 <mod.Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
                   content={({ payload }) => {
