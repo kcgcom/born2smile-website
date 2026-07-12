@@ -150,11 +150,11 @@ export function EvidenceDataSection({
               <p className="mt-1 text-xs text-[var(--muted)]">
                 콘텐츠 공백 = 대표 콘텐츠의 주제 직접성·본문 깊이·개념 다양성·최신성 · 검색량과 검색 추이는 공백 점수에 반영하지 않음
                 &nbsp;·&nbsp;
-                <span className="text-red-600 font-medium">HIGH(≥70): 큰 공백</span>
+                <span className="text-red-600 font-medium">HIGH(≥55): 큰 공백</span>
                 &nbsp;·&nbsp;
-                <span className="text-yellow-600 font-medium">MED(≥40): 부분 공백</span>
+                <span className="text-yellow-600 font-medium">MED(≥25): 부분 공백</span>
                 &nbsp;·&nbsp;
-                <span className="text-green-600 font-medium">LOW(&lt;40): 대체로 충족</span>
+                <span className="text-green-600 font-medium">LOW(&lt;25): 대체로 충족</span>
               </p>
               <div className="mt-3 flex items-start gap-2">
                 <span className="w-14 shrink-0 pt-1 text-xs font-medium text-[var(--muted)]">카테고리</span>

@@ -1,8 +1,8 @@
 import type { KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-keywords";
-import type { ContentGap } from "./trend-analysis";
+import { CONTENT_GAP_COVERED_THRESHOLD, type ContentGap } from "./trend-analysis";
 import { TREATMENT_DETAILS } from "./treatments";
 
-export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.7" as const;
+export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.8" as const;
 
 export type OpportunityActionType = "blog" | "page" | "faq";
 export type OpportunityConfidence = "B" | "C";
@@ -266,7 +266,7 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
 
     const blogEligibility: OpportunityEligibility = !allowed.includes("blog")
       ? "not-applicable"
-      : needsData ? "needs-data" : gap.contentGapScore < 25 ? "covered" : "eligible";
+      : needsData ? "needs-data" : gap.contentGapScore < CONTENT_GAP_COVERED_THRESHOLD ? "covered" : "eligible";
     const blogScore = blogEligibility === "eligible"
       ? demand! * 0.35 + gap.contentGapScore * 0.35 + business * 0.2 + strategic * 0.1
       : null;

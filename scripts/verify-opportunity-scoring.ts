@@ -1,7 +1,21 @@
 import assert from "node:assert/strict";
 import { evaluateOpportunities, getActionEvaluation, OPPORTUNITY_MODEL_VERSION } from "../lib/opportunity-scoring";
 import { buildPageUpdateOpportunities } from "../lib/trend-insights";
-import type { ContentGap } from "../lib/trend-analysis";
+import { analyzeContentCoverage, type ContentGap } from "../lib/trend-analysis";
+import type { BlogBlock, BlogPost } from "../lib/blog/types";
+
+function post(slug: string, title: string, blocks: BlogBlock[] = []): BlogPost {
+  return {
+    slug,
+    category: "implant",
+    tags: [],
+    title,
+    subtitle: "",
+    excerpt: "",
+    date: "2026-01-01",
+    blocks,
+  };
+}
 
 function gap(overrides: Partial<ContentGap> & Pick<ContentGap, "subGroup" | "monthlyVolume" | "contentGapScore">): ContentGap {
   return {
@@ -48,6 +62,51 @@ assert.equal(getActionEvaluation(byKey.get("general-care:발치/사랑니")!, "p
 assert.equal(getActionEvaluation(byKey.get("general-care:발치/사랑니")!, "faq")?.eligibility, "eligible", "환자 교육 주제는 페이지가 없어도 전체 FAQ 커버리지를 기준으로 FAQ 후보가 될 수 있어야 합니다.");
 assert.equal(byKey.get("general-care:발치/사랑니")?.demandScore, 50, "4개 미만 카테고리는 내부 백분위를 섞지 않아야 합니다.");
 assert.equal(getActionEvaluation(byKey.get("prosthetics:라미네이트")!, "faq")?.eligibility, "eligible", "본문에서 다루고 FAQ가 없는 주제는 FAQ 후보여야 합니다.");
+
+const sameContext = analyzeContentCoverage([
+  post("same-context", "임플란트 안내", [{ type: "paragraph", text: "임플란트 치료를 결정할 때 전체 비용을 확인합니다." }]),
+], ["임플란트 비용"], "비용/가격");
+assert.ok(sameContext.contentGapScore < 100, "같은 문맥의 핵심 토큰을 연속 문자열이 아니라는 이유로 놓치면 안 됩니다.");
+
+const splitContext = analyzeContentCoverage([
+  post("split-context", "치과 안내", [
+    { type: "paragraph", text: "임플란트 치료를 설명합니다." },
+    { type: "paragraph", text: "별도의 일반 비용 안내입니다." },
+  ]),
+], ["임플란트 비용"], "비용/가격");
+assert.equal(splitContext.contentGapScore, 100, "서로 다른 문단에 흩어진 토큰을 하나의 주제 근거로 합치면 안 됩니다.");
+
+const shallowCoverage = analyzeContentCoverage([
+  post("shallow", "임플란트 비용 안내"),
+], ["임플란트 비용"], "비용/가격");
+const deepCoverage = analyzeContentCoverage([
+  post("deep", "임플란트 비용 안내", [
+    { type: "heading", level: 2, text: "임플란트 비용을 결정하는 요소" },
+    { type: "paragraph", text: "임플란트 비용은 뼈와 보철 상태에 따라 달라집니다." },
+    { type: "paragraph", text: "임플란트 비용과 보험 적용 범위를 함께 확인합니다." },
+    { type: "faq", question: "임플란트 비용은 얼마인가요?", answer: "검진 후 비용 범위를 안내합니다." },
+  ]),
+], ["임플란트 비용"], "비용/가격");
+assert.ok(deepCoverage.contentGapScore < shallowCoverage.contentGapScore, "제목만 언급한 글보다 본문과 FAQ가 충실한 글의 공백이 작아야 합니다.");
+
+const primary = post("primary", "임플란트 비용 안내", [{ type: "paragraph", text: "임플란트 비용과 보험을 설명합니다." }]);
+const duplicate = post("duplicate", "임플란트 가격 안내", [{ type: "paragraph", text: "임플란트 가격과 비용을 설명합니다." }]);
+const novel = post("novel", "임플란트 관리 안내", [{ type: "paragraph", text: "임플란트 관리와 양치 방법을 설명합니다." }]);
+const duplicateCoverage = analyzeContentCoverage([primary, duplicate], ["임플란트 비용", "임플란트 관리"], "비용/관리");
+const novelCoverage = analyzeContentCoverage([primary, novel], ["임플란트 비용", "임플란트 관리"], "비용/관리");
+assert.ok(novelCoverage.contentGapScore < duplicateCoverage.contentGapScore, "중복 글보다 새로운 개념을 보완하는 글의 추가 기여가 커야 합니다.");
+
+const noCoverage = analyzeContentCoverage([
+  post("unrelated", "올바른 칫솔 선택법"),
+], ["임플란트 비용"], "비용/가격");
+assert.equal(noCoverage.contentGapScore, 100, "관련 콘텐츠가 없으면 공백은 100이어야 합니다.");
+
+const thresholdEvaluations = evaluateOpportunities([
+  gap({ subGroup: "경계-충족", monthlyVolume: 100, contentGapScore: 24 }),
+  gap({ subGroup: "경계-후보", monthlyVolume: 100, contentGapScore: 25 }),
+]);
+assert.equal(getActionEvaluation(thresholdEvaluations[0], "blog")?.eligibility, "covered", "공백 24는 충족 상태여야 합니다.");
+assert.equal(getActionEvaluation(thresholdEvaluations[1], "blog")?.eligibility, "eligible", "공백 25는 신규 글 후보여야 합니다.");
 
 const pagePlans = buildPageUpdateOpportunities([], evaluations);
 assert.equal(new Set(pagePlans.map((item) => item.targetPage)).size, pagePlans.length, "대상 페이지마다 실행 계획은 하나만 생성되어야 합니다.");

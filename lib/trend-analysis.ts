@@ -8,6 +8,9 @@ import type { CategoryKeywords, KeywordCategorySlug, SearchIntent } from "./admi
 
 export type TrendDirection = "rising" | "falling" | "stable";
 
+export const CONTENT_GAP_COVERED_THRESHOLD = 25;
+export const CONTENT_GAP_LARGE_THRESHOLD = 55;
+
 export interface TrendResult {
   direction: TrendDirection;
   /** 전기 대비 변화율 (%), 소수점 1자리 */
@@ -130,6 +133,22 @@ function normalizeCoverageText(value: string): string {
   return value.replace(/\s+/g, "").toLowerCase();
 }
 
+function coverageTokens(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/[\s/·,+()[\]{}]+/)
+    .map((token) => token.replace(/[^0-9a-z가-힣]/g, ""))
+    .filter((token) => token.length >= 2);
+}
+
+function includesCoveragePhrase(normalizedText: string, phrase: string): boolean {
+  const normalizedPhrase = normalizeCoverageText(phrase);
+  if (normalizedPhrase.length < 2) return false;
+  if (normalizedText.includes(normalizedPhrase)) return true;
+  const tokens = coverageTokens(phrase);
+  return tokens.length >= 2 && tokens.every((token) => normalizedText.includes(token));
+}
+
 const CONCEPT_ALIASES = {
   cost: ["비용", "가격", "금액", "보험", "건강보험"],
   symptom: ["증상", "통증", "아픔", "붓기", "부기", "출혈", "시림"],
@@ -151,8 +170,7 @@ function includedConcepts(value: string, keywords: string[], subGroup: string): 
     if (aliases.some((alias) => normalized.includes(normalizeCoverageText(alias)))) concepts.add(concept);
   }
   if ([...keywords, subGroup].some((keyword) => {
-    const needle = normalizeCoverageText(keyword);
-    return needle.length >= 2 && normalized.includes(needle);
+    return includesCoveragePhrase(normalized, keyword);
   })) concepts.add("topic");
   return concepts;
 }
@@ -174,12 +192,14 @@ function freshnessFactor(post: BlogPost): number {
 function coverageStrength(post: BlogPost, keywords: string[], subGroup: string) {
   const genericTerms = new Set(["치과", "치료", "병원", "정보", "추천", "김포", "서울본치과"]);
   const needles = [...new Set([...keywords, subGroup])]
-    .map(normalizeCoverageText)
-    .filter((value) => value.length >= 2 && !genericTerms.has(value));
+    .filter((value) => {
+      const normalized = normalizeCoverageText(value);
+      return normalized.length >= 2 && !genericTerms.has(normalized);
+    });
   if (needles.length === 0) return { strength: 0, concepts: new Set<ConceptKey>() };
   const includesNeedle = (value: string) => {
     const normalized = normalizeCoverageText(value);
-    return needles.some((needle) => normalized.includes(needle));
+    return needles.some((needle) => includesCoveragePhrase(normalized, needle));
   };
   const titleMatch = includesNeedle(post.title);
   const headingMatches = post.blocks.filter((block) => block.type === "heading" && includesNeedle(block.text)).length;
@@ -207,7 +227,7 @@ function coverageStrength(post: BlogPost, keywords: string[], subGroup: string) 
   return { strength: Math.round(strength), concepts };
 }
 
-function analyzeCoverage(posts: BlogPost[], keywords: string[], subGroup: string) {
+export function analyzeContentCoverage(posts: BlogPost[], keywords: string[], subGroup: string) {
   const evidence = posts
     .map((post) => ({ slug: post.slug, title: post.title, ...coverageStrength(post, keywords, subGroup) }))
     .filter((item) => item.strength > 0)
@@ -343,7 +363,7 @@ export function analyzeContentGap(
       const subGroupDef = catKw?.subGroups.find((s) => s.name === sg.name);
       const keywords = subGroupDef?.keywords ?? [];
 
-      const coverage = analyzeCoverage(categoryPosts, keywords, sg.name);
+      const coverage = analyzeContentCoverage(categoryPosts, keywords, sg.name);
 
       // 검색광고 검색량 조회 (key = "카테고리:서브그룹")
       const volumeKey = `${catData.category}:${sg.name}`;

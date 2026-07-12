@@ -13,6 +13,7 @@ import { EvidenceDataSection } from "./strategy-evidence";
 import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
 import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
 import type { ContentPlannerItem } from "@/lib/content-planner";
+import { CONTENT_GAP_LARGE_THRESHOLD } from "@/lib/trend-analysis";
 
 export function StrategySubTab() {
   const endpoint = "/api/admin/naver-datalab/trend-summary?mode=strategy&detail=short";
@@ -65,8 +66,11 @@ export function StrategySubTab() {
 
   const urgentCount = opportunityEvaluations.filter((item) => item.actions.some((action) => action.eligibility === "eligible" && (action.valueScore ?? 0) >= 70)).length;
   const measuredDemand = contentGap.reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
+  const actionableBlogKeys = new Set(opportunityEvaluations
+    .filter((item) => item.actions.some((action) => action.actionType === "blog" && action.eligibility === "eligible"))
+    .map((item) => item.key));
   const unmetDemand = contentGap
-    .filter((item) => item.contentGapScore >= 70)
+    .filter((item) => item.contentGapScore >= CONTENT_GAP_LARGE_THRESHOLD && actionableBlogKeys.has(`${item.slug}:${item.subGroup}`))
     .reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
   const hasMeasuredDemand = contentGap.some((item) => item.monthlyVolume != null);
 

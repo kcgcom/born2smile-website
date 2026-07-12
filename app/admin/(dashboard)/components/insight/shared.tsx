@@ -7,7 +7,11 @@ import {
 } from "@/lib/admin-naver-datalab-keywords";
 import type { InsightAction } from "@/lib/trend-insights";
 import type { OpportunityEvaluation } from "@/lib/opportunity-scoring";
-import type { CategoryTrendData } from "@/lib/trend-analysis";
+import {
+  CONTENT_GAP_COVERED_THRESHOLD,
+  CONTENT_GAP_LARGE_THRESHOLD,
+  type CategoryTrendData,
+} from "@/lib/trend-analysis";
 import type { CategoryKeywords } from "@/lib/admin-naver-datalab-keywords";
 
 // ---------------------------------------------------------------
@@ -194,10 +198,10 @@ export function CategoryBadge({ category }: { category: KeywordCategorySlug }) {
 }
 
 export function ValueScoreBadge({ score }: { score: number }) {
-  if (score >= 70) {
+  if (score >= CONTENT_GAP_LARGE_THRESHOLD) {
     return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
   }
-  if (score >= 40) {
+  if (score >= CONTENT_GAP_COVERED_THRESHOLD) {
     return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
   return <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">LOW</span>;

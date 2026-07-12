@@ -50,6 +50,14 @@ async function main() {
         .sort((a, b) => a - b)
         .map((score) => [score, gaps.filter((gap) => gap.contentGapScore === score).length]),
     ),
+    contentGapAudit: gaps.map((gap) => ({
+      key: `${gap.category}:${gap.subGroup}`,
+      score: gap.contentGapScore,
+      coverage: gap.contentCoverage,
+      monthlyVolume: gap.monthlyVolume,
+      matchedPosts: gap.existingPostCount,
+      evidence: gap.coverageEvidence,
+    })),
     eligible: actions.length,
     byType: Object.fromEntries((["blog", "page", "faq"] as const).map((type) => [type, actions.filter((action) => action.type === type).length])),
     pagePlanCount: pagePlans.length,
