@@ -139,7 +139,7 @@ export function useAdminMutation<T = unknown>() {
 
   const mutate = useCallback(async (
     endpoint: string,
-    method: "POST" | "PUT" | "DELETE",
+    method: "POST" | "PUT" | "PATCH" | "DELETE",
     body?: unknown,
   ): Promise<{ data: T | null; error: string | null }> => {
     setLoading(true);

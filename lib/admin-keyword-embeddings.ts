@@ -6,6 +6,13 @@
  */
 
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
+import {
+  embedGeminiTexts,
+  GEMINI_EMBEDDING_DIMS,
+  GEMINI_EMBEDDING_MODEL as SHARED_GEMINI_EMBEDDING_MODEL,
+  isGeminiEmbeddingConfigured,
+  isValidGeminiEmbedding,
+} from "./gemini-embeddings";
 
 // ---------------------------------------------------------------
 // Types
@@ -41,8 +48,8 @@ type QueryRow = {
 // Config
 // ---------------------------------------------------------------
 
-export const GEMINI_EMBEDDING_MODEL = "gemini-embedding-2";
-export const KEYWORD_EMBEDDING_DIMS = 768; // Google 권장 MRL 차원 — 품질과 저장 효율의 균형
+export const GEMINI_EMBEDDING_MODEL = SHARED_GEMINI_EMBEDDING_MODEL;
+export const KEYWORD_EMBEDDING_DIMS = GEMINI_EMBEDDING_DIMS; // Google 권장 MRL 차원 — 품질과 저장 효율의 균형
 const GEMINI_MODEL = GEMINI_EMBEDDING_MODEL;
 const EMBEDDING_DIMS = KEYWORD_EMBEDDING_DIMS;
 const CACHE_KEY = `keyword-embeddings:${GEMINI_MODEL}:${EMBEDDING_DIMS}`;
@@ -50,75 +57,20 @@ export const KEYWORD_CLUSTER_THRESHOLD = 0.97; // 실제 SC 평가 최적값 —
 export const KEYWORD_MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
 const CLUSTER_THRESHOLD = KEYWORD_CLUSTER_THRESHOLD;
 const MIN_TOKEN_JACCARD = KEYWORD_MIN_TOKEN_JACCARD;
-const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
-
 function isValidEmbeddingVector(value: unknown): value is number[] {
-  return Array.isArray(value) &&
-    value.length === EMBEDDING_DIMS &&
-    value.every((item): item is number => typeof item === "number" && Number.isFinite(item));
+  return isValidGeminiEmbedding(value);
 }
 
 // ---------------------------------------------------------------
 // Gemini API
 // ---------------------------------------------------------------
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
-
 export function isGeminiConfigured(): boolean {
-  return GEMINI_API_KEY.length > 0;
+  return isGeminiEmbeddingConfigured();
 }
 
 export async function embedKeywordsForClustering(texts: string[]): Promise<number[][]> {
-  if (texts.length === 0) return [];
-
-  const batches: string[][] = [];
-  for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-    batches.push(texts.slice(i, i + BATCH_SIZE));
-  }
-
-  const allEmbeddings: number[][] = [];
-
-  for (const batch of batches) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:batchEmbedContents?key=${GEMINI_API_KEY}`;
-    const body = {
-      requests: batch.map((text) => ({
-        model: `models/${GEMINI_MODEL}`,
-        content: {
-          parts: [{ text: `task: clustering | query: ${text}` }],
-        },
-        outputDimensionality: EMBEDDING_DIMS,
-      })),
-    };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Gemini Embedding API error (${res.status}): ${errorText}`);
-    }
-
-    const data = await res.json() as { embeddings?: Array<{ values?: unknown }> };
-    if (!Array.isArray(data.embeddings) || data.embeddings.length !== batch.length) {
-      throw new Error(
-        `Gemini Embedding API response count mismatch: requested ${batch.length}, received ${data.embeddings?.length ?? 0}`,
-      );
-    }
-    for (const [index, embedding] of data.embeddings.entries()) {
-      const values = embedding.values;
-      if (!isValidEmbeddingVector(values)) {
-        throw new Error(
-          `Gemini Embedding API invalid vector at index ${index}: expected ${EMBEDDING_DIMS} finite numbers`,
-        );
-      }
-      allEmbeddings.push(values);
-    }
-  }
-
-  return allEmbeddings;
+  return embedGeminiTexts(texts.map((text) => `task: clustering | query: ${text}`));
 }
 
 // ---------------------------------------------------------------
