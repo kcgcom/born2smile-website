@@ -60,8 +60,8 @@ function itemTypeLabel(type: PlannerCandidate["itemType"]): string {
 }
 
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
-  const evaluations = new Map(data.opportunityEvaluations.map((item) => [item.key, item]));
-  const blogs = data.blogBriefs.map((brief) => {
+  const evaluations = new Map((data.opportunityEvaluations ?? []).map((item) => [item.key, item]));
+  const blogs = (data.blogBriefs ?? []).map((brief) => {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
     const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
     const action = evaluation.actions.find((item) => item.actionType === "blog")!;
@@ -81,29 +81,30 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       sourceSnapshot: { ...(gap ? { gap } : {}), evaluation },
     };
   });
-  const pages = data.pageBriefs.map((brief) => {
-    const opportunity = data.pageOpportunities.find((item) => item.targetPage === brief.targetPage)!;
-    const contributingEvaluations = brief.contributingTopics
+  const pages = (data.pageBriefs ?? []).map((brief) => {
+    const opportunity = (data.pageOpportunities ?? []).find((item) => item.targetPage === brief.targetPage)!;
+    const contributingEvaluations = (brief.contributingTopics ?? [])
       .map((topic) => evaluations.get(topic.topicKey))
       .filter((item): item is NonNullable<typeof item> => item != null);
-    const effortMinutes = Math.min(120, 45 + Math.max(0, brief.contributingTopics.length - 1) * 15);
+    const topics = brief.contributingTopics ?? [];
+    const effortMinutes = Math.min(120, 45 + Math.max(0, topics.length - 1) * 15);
     return {
       key: `page:${brief.targetPage}`,
       itemType: "page" as const,
       title: `${getKeywordCategoryLabel(brief.slug)} 페이지 통합 보강`,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: `페이지 가치 ${opportunity.pageValueScore} · 근거 주제 ${brief.contributingTopics.length}개 · ${opportunity.missingSections.join(" · ")}`,
-      demandLabel: `${brief.contributingTopics.length}개 주제 근거`,
+      rationale: `페이지 가치 ${opportunity?.pageValueScore ?? 0} · 근거 주제 ${topics.length}개 · ${(opportunity?.missingSections ?? []).join(" · ")}`,
+      demandLabel: `${topics.length}개 주제 근거`,
       confidence: contributingEvaluations.some((item) => item.confidence === "C") ? "C" as const : "B" as const,
       effort: `약 ${effortMinutes}분`,
       effortMinutes,
-      valueScore: opportunity.pageValueScore,
+      valueScore: opportunity?.pageValueScore ?? 0,
       brief,
       sourceSnapshot: { opportunity, evaluations: contributingEvaluations },
     };
   });
-  const faqs = data.faqSuggestions.map((brief) => {
+  const faqs = (data.faqSuggestions ?? []).map((brief) => {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
     const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
     return {
@@ -178,9 +179,9 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
   );
   const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
   const deferredCount = (planner.data ?? []).filter((item) => item.status === "deferred").length;
-  const blogOpportunityCount = strategy.data?.blogBriefs.length ?? 0;
-  const pageOpportunityCount = strategy.data?.pageOpportunities.length ?? 0;
-  const faqOpportunityCount = strategy.data?.faqSuggestions.length ?? 0;
+  const blogOpportunityCount = strategy.data?.blogBriefs?.length ?? 0;
+  const pageOpportunityCount = strategy.data?.pageOpportunities?.length ?? 0;
+  const faqOpportunityCount = strategy.data?.faqSuggestions?.length ?? 0;
   const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
 
   useEffect(() => {
