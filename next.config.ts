@@ -53,6 +53,7 @@ const CSP = [
     "https://*.posthog.com",
     "https://us.posthog.com",
     "https://eu.posthog.com",
+    "https://wcs.naver.com",
     ...posthogConnectSrc,
   ].join(" "),
   "font-src 'self'",
