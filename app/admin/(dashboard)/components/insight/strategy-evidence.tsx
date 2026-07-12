@@ -310,8 +310,6 @@ export function EvidenceDataSection({
                 sortKey={gapSortKey}
                 sortDirection={gapSortDir}
                 onSort={handleGapSort}
-                scrollClassName="max-h-[70vh] overflow-y-auto"
-                stickyHeader
               />
             </div>
             <div className="block sm:hidden space-y-2">

@@ -646,11 +646,17 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "구강위생",
         keywords: [
-          "치실 사용법", "전동칫솔", "치간칫솔",
-          "워터픽", "올바른 칫솔질", "구강 세정기",
+          "치실 사용법", "치간칫솔", "올바른 칫솔질",
           "치아 관리 방법",
         ],
         searchIntent: "informational",
+      },
+      {
+        name: "구강관리제품",
+        keywords: [
+          "전동칫솔", "워터픽", "구강 세정기",
+        ],
+        searchIntent: "commercial",
       },
       {
         name: "구취",
@@ -701,6 +707,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 올바른 사용법: {aspect}",
         subGroup: "구강위생",
         aspect: "치과 의사가 알려주는 구강 관리 루틴",
+      },
+      {
+        template: "{keyword} 선택과 사용법: {aspect}",
+        subGroup: "구강관리제품",
+        aspect: "제품별 장단점과 내 구강 상태에 맞는 선택 기준",
       },
       {
         template: "{keyword} 원인별 해결법: {aspect}",

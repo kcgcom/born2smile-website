@@ -92,6 +92,7 @@ const TOPIC_ACTION_OVERRIDES: Record<string, OpportunityActionType[]> = {
   "health-tips:증상/내원판단": ["blog", "faq"],
   "dental-choice:브랜드검색": [],
   "prevention:구강위생": ["blog"],
+  "prevention:구강관리제품": ["blog"],
   "prevention:구강건조/타액": ["blog"],
   "pediatric:교정시기": ["blog"],
 };
