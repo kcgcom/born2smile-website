@@ -31,7 +31,7 @@ export function SearchTab() {
   const [clustered, setClustered] = useState(true);
 
   const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
-    `/api/admin/search-console?period=${period}`,
+    `/api/admin/search-console?period=${period}&includeClusters=true`,
   );
 
   const querySort = useSearchTableSort(data?.topQueries ?? []);

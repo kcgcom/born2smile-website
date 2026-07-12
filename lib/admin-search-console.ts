@@ -422,6 +422,35 @@ export async function fetchSearchConsoleData(period: string) {
     ]),
   );
 
+  const blogQueryMetrics = Object.fromEntries(
+    Array.from(
+      blogPageQueryRows.reduce((acc, row) => {
+        const current = acc.get(row.query) ?? {
+          impressions: 0,
+          clicks: 0,
+          weightedPosition: 0,
+        };
+        current.impressions += row.impressions;
+        current.clicks += row.clicks;
+        current.weightedPosition += row.position * row.impressions;
+        acc.set(row.query, current);
+        return acc;
+      }, new Map<string, { impressions: number; clicks: number; weightedPosition: number }>()),
+    ).map(([query, metrics]) => [
+      query,
+      {
+        impressions: metrics.impressions,
+        clicks: metrics.clicks,
+        ctr: metrics.impressions > 0
+          ? Math.round((metrics.clicks / metrics.impressions) * 1000) / 10
+          : 0,
+        position: metrics.impressions > 0
+          ? Math.round((metrics.weightedPosition / metrics.impressions) * 10) / 10
+          : 0,
+      },
+    ]),
+  );
+
   const queryTopPages = Object.fromEntries(
     Array.from(
       pageQueryRows.reduce((acc, row) => {
@@ -462,5 +491,6 @@ export async function fetchSearchConsoleData(period: string) {
     pageTopQueries,
     queryTopPages,
     blogQueryTopPages,
+    blogQueryMetrics,
   };
 }

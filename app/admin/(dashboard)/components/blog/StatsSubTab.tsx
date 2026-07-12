@@ -170,18 +170,18 @@ export function StatsSubTab() {
 
   const topBlogSearchQueries = useMemo(() => {
     if (!searchData?.blogQueryTopPages) return [];
-    // blogQueryTopPages: query → [{page, impressions, ...}]
-    // Flatten to one row per query (pick the page with highest impressions as representative)
+    // 대표 페이지는 노출 1위로 유지하고 지표는 검색어의 모든 연결 페이지를 합산합니다.
     return Object.entries(searchData.blogQueryTopPages)
       .map(([query, pages]) => {
         const top = pages[0];
+        const metrics = searchData.blogQueryMetrics[query];
         return {
           query,
           page: top?.page ?? "",
-          impressions: top?.impressions ?? 0,
-          clicks: top?.clicks ?? 0,
-          ctr: top?.ctr ?? 0,
-          position: top?.position ?? 0,
+          impressions: metrics?.impressions ?? 0,
+          clicks: metrics?.clicks ?? 0,
+          ctr: metrics?.ctr ?? 0,
+          position: metrics?.position ?? 0,
         };
       })
       .sort((a, b) => b.impressions - a.impressions);

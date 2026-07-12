@@ -91,6 +91,7 @@ export interface SearchConsoleData {
       position: number;
     }>
   >;
+  blogQueryMetrics: Record<string, SearchMetricRow>;
   /** Server-computed semantic clusters (null if Gemini not configured) */
   semanticClusters?: SemanticCluster[] | null;
   /** Blog query semantic clusters */

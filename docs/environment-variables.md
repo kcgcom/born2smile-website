@@ -6,7 +6,7 @@
 ## 빠른 기준
 
 - **필수 코어**: Supabase, 관리자 이메일
-- **기능별 선택**: GA4 / Search Console / Naver / PageSpeed / PostHog / Sentry / LLM gateway
+- **기능별 선택**: GA4 / Search Console / Gemini / Naver / PageSpeed / PostHog / Sentry / LLM gateway
 - **운영 자동화**: `CRON_SECRET`, `INDEXNOW_KEY`
 
 ## 변수 목록
@@ -27,6 +27,7 @@
 | `NAVER_SEARCHAD_SECRET_KEY` | 검색광고 Secret Key | 절대 검색량 사용 시 |
 | `NAVER_SEARCHAD_CUSTOMER_ID` | 검색광고 고객 ID | 절대 검색량 사용 시 |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API 키 | 개발도구 > 성능 사용 시 |
+| `GEMINI_API_KEY` | Gemini Embedding API 키 | 검색 성과의 의미 기반 키워드 클러스터링 사용 시 |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry 클라이언트 DSN | 에러 모니터링 사용 시 |
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | 공개 환경명 | Sentry 사용 시 |
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | 클라이언트 trace 샘플링 | Sentry 사용 시 |

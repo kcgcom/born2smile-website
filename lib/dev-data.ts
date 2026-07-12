@@ -98,7 +98,7 @@ export type EnvGroup = "supabase" | "auth" | "google" | "naver" | "posthog" | "s
 export const ENV_GROUP_LABELS: Record<EnvGroup, string> = {
   supabase: "Supabase",
   auth: "인증",
-  google: "Google (GA4·SC·PSI)",
+  google: "Google (GA4·SC·PSI·Gemini)",
   naver: "네이버 (DataLab·검색광고)",
   posthog: "PostHog",
   sentry: "Sentry",
@@ -128,6 +128,7 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "GA4_PROPERTY_ID", label: "GA4 속성 ID", required: false, scope: "private", group: "google" },
   { key: "SEARCH_CONSOLE_SITE_URL", label: "Search Console URL", required: false, scope: "private", group: "google" },
   { key: "PAGESPEED_API_KEY", label: "PageSpeed Insights API Key", required: false, scope: "private", group: "google" },
+  { key: "GEMINI_API_KEY", label: "Gemini API Key", required: false, scope: "private", group: "google" },
 
   // ── 네이버 ──
   { key: "NAVER_DATALAB_CLIENT_ID", label: "네이버 DataLab Client ID", required: false, scope: "private", group: "naver" },
@@ -158,4 +159,5 @@ export const ENV_VARIABLES: EnvVariable[] = [
 
   // ── 인프라 ──
   { key: "CRON_SECRET", label: "Vercel Cron 인증 토큰", required: true, scope: "private", group: "infra" },
+  { key: "INDEXNOW_KEY", label: "IndexNow API Key", required: false, scope: "private", group: "infra" },
 ];

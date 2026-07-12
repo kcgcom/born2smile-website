@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { fetchSearchConsoleData } from "@/lib/admin-search-console";
-import { computeSemanticClusters } from "@/lib/admin-keyword-embeddings";
+import { computeSemanticClusterGroups } from "@/lib/admin-keyword-embeddings";
 
 const VALID_PERIODS = ["7d", "28d", "90d", "180d"];
 
@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   const period = request.nextUrl.searchParams.get("period") ?? "28d";
+  const includeClusters = request.nextUrl.searchParams.get("includeClusters") === "true";
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
       { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 90d, 180d)" },
@@ -27,19 +28,20 @@ export async function GET(request: NextRequest) {
     );
     const data = await getData();
 
-    // Compute semantic clusters (non-blocking — falls back to null if Gemini unavailable)
-    const [semanticClusters, blogSemanticClusters] = await Promise.all([
-      computeSemanticClusters(data.topQueries).catch(() => null),
-      computeSemanticClusters(
-        Object.entries(data.blogQueryTopPages).map(([query, pages]) => ({
-          query,
-          impressions: pages[0]?.impressions ?? 0,
-          clicks: pages[0]?.clicks ?? 0,
-          ctr: pages[0]?.ctr ?? 0,
-          position: pages[0]?.position ?? 0,
-        })),
-      ).catch(() => null),
-    ]);
+    let semanticClusters = null;
+    let blogSemanticClusters = null;
+
+    if (includeClusters) {
+      const blogQueries = Object.entries(data.blogQueryMetrics).map(([query, metrics]) => ({
+        query,
+        ...metrics,
+      }));
+
+      [semanticClusters, blogSemanticClusters] = await computeSemanticClusterGroups([
+        data.topQueries,
+        blogQueries,
+      ]);
+    }
 
     return Response.json(
       { data: { ...data, semanticClusters, blogSemanticClusters } },

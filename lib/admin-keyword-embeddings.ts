@@ -11,7 +11,7 @@ import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 // Types
 // ---------------------------------------------------------------
 
-type EmbeddingCache = Record<string, number[]>; // query → vector
+export type EmbeddingCache = Record<string, number[]>; // query → vector
 
 export type SemanticCluster = {
   representative: string;
@@ -41,11 +41,15 @@ type QueryRow = {
 // Config
 // ---------------------------------------------------------------
 
-const GEMINI_MODEL = "gemini-embedding-2";
-const EMBEDDING_DIMS = 256; // MRL로 축소 — 저장 효율적
-const CACHE_KEY = "keyword-embeddings";
-const CLUSTER_THRESHOLD = 0.88; // 코사인 유사도 임계값 (0.82에서 상향 — 치과 도메인 오병합 방지)
-const MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
+export const GEMINI_EMBEDDING_MODEL = "gemini-embedding-2";
+export const KEYWORD_EMBEDDING_DIMS = 768; // Google 권장 MRL 차원 — 품질과 저장 효율의 균형
+const GEMINI_MODEL = GEMINI_EMBEDDING_MODEL;
+const EMBEDDING_DIMS = KEYWORD_EMBEDDING_DIMS;
+const CACHE_KEY = `keyword-embeddings:${GEMINI_MODEL}:${EMBEDDING_DIMS}`;
+export const KEYWORD_CLUSTER_THRESHOLD = 0.97; // 실제 SC 평가 최적값 — 오병합 억제 우선
+export const KEYWORD_MIN_TOKEN_JACCARD = 0.3; // 토큰 겹침 최소 기준 (임베딩만으로는 다른 주제가 묶이는 것 방지)
+const CLUSTER_THRESHOLD = KEYWORD_CLUSTER_THRESHOLD;
+const MIN_TOKEN_JACCARD = KEYWORD_MIN_TOKEN_JACCARD;
 const MIN_MEMBER_SIMILARITY = 0.88; // 클러스터 멤버 최소 유사도 (대표 대비, 체이닝 방지)
 const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
 
@@ -59,7 +63,7 @@ export function isGeminiConfigured(): boolean {
   return GEMINI_API_KEY.length > 0;
 }
 
-async function batchEmbed(texts: string[]): Promise<number[][]> {
+export async function embedKeywordsForClustering(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   const batches: string[][] = [];
@@ -74,8 +78,9 @@ async function batchEmbed(texts: string[]): Promise<number[][]> {
     const body = {
       requests: batch.map((text) => ({
         model: `models/${GEMINI_MODEL}`,
-        content: { parts: [{ text }] },
-        taskType: "CLUSTERING",
+        content: {
+          parts: [{ text: `task: clustering | query: ${text}` }],
+        },
         outputDimensionality: EMBEDDING_DIMS,
       })),
     };
@@ -109,11 +114,13 @@ async function loadEmbeddingCache(): Promise<EmbeddingCache> {
   if (!isSupabaseAdminConfigured) return {};
 
   const admin = getSupabaseAdmin();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("api_cache")
     .select("data")
     .eq("key", CACHE_KEY)
-    .single();
+    .maybeSingle();
+
+  if (error) throw error;
 
   if (!data?.data) return {};
   return (data.data as { embeddings: EmbeddingCache }).embeddings ?? {};
@@ -123,11 +130,17 @@ async function saveEmbeddingCache(cache: EmbeddingCache): Promise<void> {
   if (!isSupabaseAdminConfigured) return;
 
   const admin = getSupabaseAdmin();
-  await admin.from("api_cache").upsert({
+  const { error } = await admin.from("api_cache").upsert({
     key: CACHE_KEY,
-    data: { embeddings: cache },
+    data: {
+      model: GEMINI_MODEL,
+      dimensions: EMBEDDING_DIMS,
+      embeddings: cache,
+    },
     fetched_at: new Date().toISOString(),
   });
+
+  if (error) throw error;
 }
 
 // ---------------------------------------------------------------
@@ -144,8 +157,17 @@ function extractTokens(text: string): Set<string> {
   return new Set(tokens);
 }
 
+/** 공백 차이만 있는 검색어를 판별하기 위한 보수적 정규화 */
+function compactWhitespaceVariant(text: string): string {
+  return text.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+}
+
 /** 토큰 Jaccard 유사도 */
-function tokenJaccard(a: string, b: string): number {
+export function tokenJaccard(a: string, b: string): number {
+  const compactA = compactWhitespaceVariant(a);
+  const compactB = compactWhitespaceVariant(b);
+  if (compactA.length > 0 && compactA === compactB) return 1;
+
   const setA = extractTokens(a);
   const setB = extractTokens(b);
   if (setA.size === 0 && setB.size === 0) return 1;
@@ -157,7 +179,7 @@ function tokenJaccard(a: string, b: string): number {
   return unionSize === 0 ? 0 : intersection / unionSize;
 }
 
-function cosineSimilarity(a: number[], b: number[]): number {
+export function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0;
   let normA = 0;
   let normB = 0;
@@ -168,6 +190,49 @@ function cosineSimilarity(a: number[], b: number[]): number {
   }
   const denom = Math.sqrt(normA) * Math.sqrt(normB);
   return denom === 0 ? 0 : dot / denom;
+}
+
+export function shouldMergeKeywordPair(
+  a: string,
+  b: string,
+  embeddingA: number[],
+  embeddingB: number[],
+  threshold = CLUSTER_THRESHOLD,
+): { merge: boolean; similarity: number; tokenJaccard: number } {
+  const similarity = cosineSimilarity(embeddingA, embeddingB);
+  const jaccard = tokenJaccard(a, b);
+  return {
+    merge: similarity >= threshold && jaccard >= MIN_TOKEN_JACCARD,
+    similarity,
+    tokenJaccard: jaccard,
+  };
+}
+
+function calculateGeneralityScores(items: QueryRow[], indices: number[]): Map<number, number> {
+  const tokenFrequency = new Map<string, number>();
+  const tokensByIndex = new Map<number, Set<string>>();
+  for (const index of indices) {
+    const tokens = extractTokens(items[index].query);
+    tokensByIndex.set(index, tokens);
+    for (const token of tokens) {
+      tokenFrequency.set(token, (tokenFrequency.get(token) ?? 0) + 1);
+    }
+  }
+
+  const scores = new Map<number, number>();
+  for (const index of indices) {
+    const tokens = tokensByIndex.get(index) ?? new Set<string>();
+    if (tokens.size === 0) {
+      scores.set(index, 0);
+      continue;
+    }
+    const prevalence = Array.from(tokens).reduce(
+      (sum, token) => sum + (tokenFrequency.get(token) ?? 0) / indices.length,
+      0,
+    );
+    scores.set(index, prevalence / tokens.size);
+  }
+  return scores;
 }
 
 function clusterByEmbeddings(
@@ -198,16 +263,15 @@ function clusterByEmbeddings(
   // Pairwise cosine similarity + token Jaccard safety check
   for (let i = 0; i < items.length; i++) {
     for (let j = i + 1; j < items.length; j++) {
-      const sim = cosineSimilarity(
+      const pair = shouldMergeKeywordPair(
+        items[i].query,
+        items[j].query,
         embeddings[items[i].query],
         embeddings[items[j].query],
+        threshold,
       );
-      if (sim >= threshold) {
-        // 토큰 겹침이 최소 기준 미달이면 병합하지 않음
-        const jaccard = tokenJaccard(items[i].query, items[j].query);
-        if (jaccard >= MIN_TOKEN_JACCARD) {
-          union(i, j);
-        }
+      if (pair.merge) {
+        union(i, j);
       }
     }
   }
@@ -239,12 +303,28 @@ function clusterByEmbeddings(
       centroid[d] /= indices.length;
     }
 
+    const generalityScores = calculateGeneralityScores(items, indices);
+    const maxLogImpressions = Math.max(
+      1,
+      ...indices.map((idx) => Math.log1p(items[idx].impressions)),
+    );
     let repIdx = indices[0];
-    let maxSimToCentroid = -1;
+    let maxRepresentativeScore = -1;
     for (const idx of indices) {
-      const sim = cosineSimilarity(embeddings[items[idx].query], centroid);
-      if (sim > maxSimToCentroid) {
-        maxSimToCentroid = sim;
+      const centroidSimilarity = cosineSimilarity(embeddings[items[idx].query], centroid);
+      const normalizedImpressions = Math.log1p(items[idx].impressions) / maxLogImpressions;
+      const generality = generalityScores.get(idx) ?? 0;
+      const score = centroidSimilarity * 0.6 + normalizedImpressions * 0.25 + generality * 0.15;
+      const current = items[idx];
+      const representative = items[repIdx];
+      if (
+        score > maxRepresentativeScore ||
+        (score === maxRepresentativeScore && current.impressions > representative.impressions) ||
+        (score === maxRepresentativeScore &&
+          current.impressions === representative.impressions &&
+          current.query.length < representative.query.length)
+      ) {
+        maxRepresentativeScore = score;
         repIdx = idx;
       }
     }
@@ -301,21 +381,40 @@ function clusterByEmbeddings(
   return clusters;
 }
 
+/** 품질 평가 도구에서 운영 클러스터링 전체 경로를 재사용합니다. */
+export function clusterKeywordQueriesForEvaluation(
+  queries: string[],
+  embeddings: EmbeddingCache,
+  threshold = CLUSTER_THRESHOLD,
+  impressions: Record<string, number> = {},
+): string[][] {
+  const rows: QueryRow[] = queries.map((query) => ({
+    query,
+    impressions: impressions[query] ?? 1,
+    clicks: 0,
+    ctr: 0,
+    position: 0,
+  }));
+  return clusterByEmbeddings(rows, embeddings, threshold).map((cluster) =>
+    cluster.keywords.map((keyword) => keyword.query),
+  );
+}
+
 // ---------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------
 
 /**
- * Compute semantic keyword clusters using Gemini embeddings.
+ * Compute semantic keyword clusters for multiple query groups using one cache cycle.
  * - Loads cached embeddings from Supabase
- * - Only embeds new keywords via Gemini API
- * - Returns clusters or null if Gemini is not configured
+ * - Deduplicates and embeds new keywords once across all groups
+ * - Returns one cluster result per input group
  */
-export async function computeSemanticClusters(
-  queries: QueryRow[],
-): Promise<SemanticCluster[] | null> {
+export async function computeSemanticClusterGroups(
+  queryGroups: QueryRow[][],
+): Promise<Array<SemanticCluster[] | null>> {
   if (!isGeminiConfigured() || !isSupabaseAdminConfigured) {
-    return null;
+    return queryGroups.map(() => null);
   }
 
   try {
@@ -323,14 +422,15 @@ export async function computeSemanticClusters(
     const cache = await loadEmbeddingCache();
 
     // 2. Find new keywords
-    const newKeywords = queries
-      .map((q) => q.query)
+    const newKeywords = Array.from(
+      new Set(queryGroups.flatMap((queries) => queries.map((q) => q.query))),
+    )
       .filter((q) => !cache[q]);
 
     // 3. Embed new keywords if any
     if (newKeywords.length > 0) {
       try {
-        const newEmbeddings = await batchEmbed(newKeywords);
+        const newEmbeddings = await embedKeywordsForClustering(newKeywords);
         for (let i = 0; i < newKeywords.length; i++) {
           cache[newKeywords[i]] = newEmbeddings[i];
         }
@@ -342,10 +442,19 @@ export async function computeSemanticClusters(
     }
 
     // 4. Cluster (캐시에 있는 키워드만 클러스터링됨)
-    const result = clusterByEmbeddings(queries, cache, CLUSTER_THRESHOLD);
-    return result.length > 0 ? result : null;
+    return queryGroups.map((queries) => {
+      const result = clusterByEmbeddings(queries, cache, CLUSTER_THRESHOLD);
+      return result.length > 0 ? result : null;
+    });
   } catch (e) {
     console.error("[keyword-embeddings] Failed:", e);
-    return null;
+    return queryGroups.map(() => null);
   }
+}
+
+export async function computeSemanticClusters(
+  queries: QueryRow[],
+): Promise<SemanticCluster[] | null> {
+  const [result] = await computeSemanticClusterGroups([queries]);
+  return result;
 }

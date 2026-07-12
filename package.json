@@ -11,6 +11,7 @@
     "verify-keyword-taxonomy-contract": "tsx scripts/verify-keyword-taxonomy-contract.ts",
     "verify-opportunity-scoring": "tsx scripts/verify-opportunity-scoring.ts",
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",
+    "evaluate-keyword-embeddings": "tsx scripts/evaluate-keyword-embeddings.ts",
     "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",
     "dev": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && tsx scripts/generate-keyword-taxonomy-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
     "build": "BLOG_SNAPSHOT_REQUIRED=true tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && tsx scripts/generate-keyword-taxonomy-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot NODE_OPTIONS=--max-old-space-size=4096 next build",

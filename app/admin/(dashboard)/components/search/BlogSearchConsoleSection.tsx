@@ -45,16 +45,17 @@ export function BlogSearchConsoleSection({
   const queryRows = useMemo<BlogQueryRow[]>(() => {
     return Object.entries(data.blogQueryTopPages).map(([query, pages]) => {
       const topPage = pages[0];
+      const metrics = data.blogQueryMetrics[query];
       return {
         query,
         page: topPage?.page ?? "",
-        impressions: topPage?.impressions ?? 0,
-        clicks: topPage?.clicks ?? 0,
-        ctr: topPage?.ctr ?? 0,
-        position: topPage?.position ?? 0,
+        impressions: metrics?.impressions ?? 0,
+        clicks: metrics?.clicks ?? 0,
+        ctr: metrics?.ctr ?? 0,
+        position: metrics?.position ?? 0,
       };
     });
-  }, [data.blogQueryTopPages]);
+  }, [data.blogQueryMetrics, data.blogQueryTopPages]);
   const querySort = useSearchTableSort(queryRows);
 
   const blogSummary = useMemo(() => {
