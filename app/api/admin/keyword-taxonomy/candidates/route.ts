@@ -8,6 +8,7 @@ import {
   reviewKeywordTaxonomyCandidate,
   createTaxonomySubgroupFromCandidates,
   approveKeywordTaxonomyCandidates,
+  batchReviewKeywordTaxonomyCandidates,
 } from "@/lib/admin-keyword-taxonomy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -34,6 +35,15 @@ const reviewSchema = z.discriminatedUnion("action", [
       category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]),
       subgroup: z.string().min(1).max(30),
     })).min(1).max(50),
+  }),
+  z.object({
+    action: z.literal("batch-review"),
+    items: z.array(z.object({
+      id: z.string().uuid(),
+      decision: z.enum(["approve", "defer", "reject"]),
+      category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]).optional(),
+      subgroup: z.string().min(1).max(30).optional(),
+    })).min(1).max(100),
   }),
 ]);
 
@@ -98,6 +108,16 @@ export async function POST(request: NextRequest) {
       );
     } else if (input.action === "batch-approve") {
       await approveKeywordTaxonomyCandidates(input.items, auth.email);
+    } else if (input.action === "batch-review") {
+      await batchReviewKeywordTaxonomyCandidates(
+        input.items.map((item) => ({
+          id: item.id,
+          action: item.decision,
+          category: item.category,
+          subgroup: item.subgroup,
+        })),
+        auth.email,
+      );
     } else {
       await reviewKeywordTaxonomyCandidate(
         input.id,

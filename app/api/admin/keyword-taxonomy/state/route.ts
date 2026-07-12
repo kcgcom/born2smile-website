@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { unauthorizedResponse, verifyAdminRequest } from "../../_lib/auth";
 import {
   discardPendingKeywordTaxonomy,
+  getKeywordTaxonomyByVersion,
   getKeywordTaxonomyState,
   getPendingKeywordTaxonomyDiff,
   listKeywordTaxonomyVersions,
@@ -20,6 +21,26 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   try {
+    // ?view=taxonomy&version=N → 특정 버전의 전체 택소노미 반환
+    const viewParam = request.nextUrl.searchParams.get("view");
+    const versionParam = request.nextUrl.searchParams.get("version");
+    if (viewParam === "taxonomy") {
+      const vNum = versionParam ? Number(versionParam) : null;
+      const state = await getKeywordTaxonomyState();
+      let target;
+      if (vNum && state.pending?.version === vNum) target = state.pending;
+      else if (vNum && state.active.version === vNum) target = state.active;
+      else if (vNum) target = await getKeywordTaxonomyByVersion(vNum);
+      else target = state.active;
+      return Response.json({
+        data: {
+          version: target.version,
+          taxonomy: target.taxonomy,
+          activeTaxonomy: state.active.taxonomy,
+        },
+      }, { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } });
+    }
+
     const [state, versions, diff, pendingCandidateCount] = await Promise.all([
       getKeywordTaxonomyState(),
       listKeywordTaxonomyVersions(),

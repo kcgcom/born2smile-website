@@ -181,10 +181,20 @@ export async function getKeywordTaxonomyByVersion(version: number): Promise<Acti
 async function savePendingKeywordTaxonomy(
   taxonomy: CategoryKeywords[],
   createdBy: string,
-  summary: string,
+  _summary: string,
   candidateIds: string[],
 ): Promise<number> {
   const validated = validateKeywordTaxonomy(taxonomy);
+  // 활성 택소노미 대비 diff 기반으로 요약 자동 생성
+  const active = await getActiveKeywordTaxonomy();
+  const diff = diffTaxonomies(active.taxonomy, taxonomy);
+  const parts: string[] = [];
+  if (diff.addedKeywords.length) parts.push(`키워드 +${diff.addedKeywords.length}`);
+  if (diff.removedKeywords.length) parts.push(`키워드 -${diff.removedKeywords.length}`);
+  if (diff.addedSubgroups.length) parts.push(`서브그룹 +${diff.addedSubgroups.length}`);
+  if (diff.removedSubgroups.length) parts.push(`서브그룹 -${diff.removedSubgroups.length}`);
+  const summary = parts.length > 0 ? `활성 대비: ${parts.join(", ")}` : "변경 없음";
+
   const { data, error } = await getSupabaseAdmin().rpc("save_pending_keyword_taxonomy", {
     p_taxonomy: validated,
     p_created_by: createdBy,
@@ -526,6 +536,73 @@ export async function approveKeywordTaxonomyCandidates(
     `핵심 키워드 ${items.length}개 승인 · ${summaries.join(", ")}`,
     items.map((item) => item.id),
   );
+}
+
+export async function batchReviewKeywordTaxonomyCandidates(
+  items: Array<{ id: string; action: "approve" | "defer" | "reject"; category?: KeywordCategorySlug; subgroup?: string }>,
+  reviewedBy: string,
+): Promise<void> {
+  if (items.length < 1 || items.length > 100) throw new Error("한 번에 1~100개 후보를 처리할 수 있습니다.");
+
+  const admin = getSupabaseAdmin();
+  const { data: candidates, error } = await admin
+    .from("keyword_taxonomy_candidates")
+    .select("id,keyword,suggested_category,suggested_subgroup")
+    .in("id", items.map((item) => item.id))
+    .eq("status", "pending");
+  if (error) throw error;
+  if (!candidates || candidates.length !== items.length) {
+    throw new Error("선택한 후보 중 이미 처리됐거나 찾을 수 없는 항목이 있습니다.");
+  }
+
+  const candidateById = new Map(candidates.map((c) => [c.id, c]));
+  const approvals = items.filter((item) => item.action === "approve");
+  const deferIds = items.filter((item) => item.action === "defer").map((item) => item.id);
+  const rejectIds = items.filter((item) => item.action === "reject").map((item) => item.id);
+
+  // 1. Process approvals → single taxonomy version
+  if (approvals.length > 0) {
+    const state = await getKeywordTaxonomyState();
+    const next = structuredClone(state.pending?.taxonomy ?? state.active.taxonomy);
+    const summaries: string[] = [];
+
+    for (const item of approvals) {
+      const candidate = candidateById.get(item.id)!;
+      const targetCategory = item.category ?? candidate.suggested_category;
+      const targetSubgroup = item.subgroup ?? candidate.suggested_subgroup;
+      const category = next.find((entry) => entry.slug === targetCategory);
+      const subgroup = category?.subGroups.find((entry) => entry.name === targetSubgroup);
+      if (!category || !subgroup) throw new Error(`${targetCategory}/${targetSubgroup}을 찾을 수 없습니다.`);
+      if (subgroup.keywords.some((kw) => normalizeTaxonomyKeyword(kw) === normalizeTaxonomyKeyword(candidate.keyword))) continue;
+      if (subgroup.keywords.length >= 20) throw new Error(`${targetCategory}/${targetSubgroup}의 키워드 20개 제한을 초과합니다.`);
+      subgroup.keywords.push(candidate.keyword);
+      summaries.push(`${targetCategory}/${targetSubgroup}: ${candidate.keyword}`);
+    }
+
+    await savePendingKeywordTaxonomy(
+      next,
+      reviewedBy,
+      `일괄 검토: 승인 ${approvals.length}개${deferIds.length ? `, 보류 ${deferIds.length}개` : ""}${rejectIds.length ? `, 제외 ${rejectIds.length}개` : ""} · ${summaries.join(", ")}`,
+      approvals.map((item) => item.id),
+    );
+  }
+
+  // 2. Batch update defer/reject statuses
+  const now = new Date().toISOString();
+  if (deferIds.length > 0) {
+    const { error: deferError } = await admin
+      .from("keyword_taxonomy_candidates")
+      .update({ status: "deferred", reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .in("id", deferIds);
+    if (deferError) throw deferError;
+  }
+  if (rejectIds.length > 0) {
+    const { error: rejectError } = await admin
+      .from("keyword_taxonomy_candidates")
+      .update({ status: "rejected", reviewed_by: reviewedBy, reviewed_at: now, updated_at: now })
+      .in("id", rejectIds);
+    if (rejectError) throw rejectError;
+  }
 }
 
 export function normalizeTaxonomyKeyword(keyword: string): string {
