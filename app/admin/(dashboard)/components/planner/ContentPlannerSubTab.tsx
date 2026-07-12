@@ -63,22 +63,23 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
   const evaluations = new Map((data.opportunityEvaluations ?? []).map((item) => [item.key, item]));
   const blogs = (data.blogBriefs ?? []).map((brief) => {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
-    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
-    const action = evaluation.actions.find((item) => item.actionType === "blog")!;
+    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`);
+    const action = evaluation?.actions?.find((item) => item.actionType === "blog");
+    const actionValue = action?.valueScore ?? 0;
     return {
       key: `blog:${brief.slug}:${brief.subGroup}`,
       itemType: "blog" as const,
       title: brief.suggestedTitle,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${action.valueScore}` : "새 콘텐츠 기회",
+      rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${actionValue}` : "새 콘텐츠 기회",
       demandLabel: demandLabel(gap),
-      confidence: evaluation.confidence,
+      confidence: evaluation?.confidence ?? "C",
       effort: "약 90분",
       effortMinutes: 90,
-      valueScore: action.valueScore ?? 0,
+      valueScore: actionValue,
       brief,
-      sourceSnapshot: { ...(gap ? { gap } : {}), evaluation },
+      sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
     };
   });
   const pages = (data.pageBriefs ?? []).map((brief) => {
@@ -106,7 +107,7 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
   });
   const faqs = (data.faqSuggestions ?? []).map((brief) => {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
-    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
+    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`);
     return {
       key: `faq:${brief.slug}:${brief.subGroup}`,
       itemType: "faq" as const,
@@ -115,12 +116,12 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       targetPage: brief.targetPage,
       rationale: `${demandLabel(gap)} · FAQ 가치 ${brief.valueScore}`,
       demandLabel: demandLabel(gap),
-      confidence: evaluation.confidence,
+      confidence: evaluation?.confidence ?? "C",
       effort: "약 20분",
       effortMinutes: 20,
       valueScore: brief.valueScore,
       brief,
-      sourceSnapshot: { ...(gap ? { gap } : {}), evaluation },
+      sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
     };
   });
   return [...blogs, ...pages, ...faqs];
