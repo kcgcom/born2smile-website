@@ -38,16 +38,38 @@ const ITEM_TYPE_TABS: Array<{ value: PlannerItemType; label: string; description
   { value: "faq", label: "FAQ 보강", description: "자주 묻는 질문을 대상 페이지별로 묶어 반영합니다." },
 ];
 
-const STATUS_LABELS: Record<PlannerStatus, string> = {
-  approved: "승인",
-  in_progress: "작성 중",
-  review: "검수 필요",
-  scheduled: "발행 예약",
-  published: "발행됨",
-  deferred: "보류",
-  dismissed: "제외",
-};
 const BOARD_STATUSES: PlannerStatus[] = ["approved", "in_progress", "review", "scheduled", "published"];
+const ACTIVE_BOARD_STATUSES: PlannerStatus[] = ["approved", "in_progress", "review", "scheduled"];
+
+const STATUS_LABELS: Record<PlannerItemType, Record<PlannerStatus, string>> = {
+  blog: {
+    approved: "승인",
+    in_progress: "작성 중",
+    review: "검수 필요",
+    scheduled: "발행 예약",
+    published: "발행됨",
+    deferred: "보류",
+    dismissed: "제외",
+  },
+  page: {
+    approved: "승인",
+    in_progress: "수정 중",
+    review: "검수 필요",
+    scheduled: "반영 예정",
+    published: "완료",
+    deferred: "보류",
+    dismissed: "제외",
+  },
+  faq: {
+    approved: "승인",
+    in_progress: "작성 중",
+    review: "검수 필요",
+    scheduled: "반영 예정",
+    published: "완료",
+    deferred: "보류",
+    dismissed: "제외",
+  },
+};
 
 function findGap(gaps: ContentGapItem[], slug: KeywordCategorySlug, subGroup: string) {
   return gaps.find((gap) => gap.slug === slug && gap.subGroup === subGroup);
@@ -69,6 +91,29 @@ function valueLabel(type: PlannerItemType): string {
   if (type === "blog") return "신규 글 가치";
   if (type === "page") return "페이지 가치";
   return "FAQ 가치";
+}
+
+function itemMeta(item: ContentPlannerItem): { valueScore: number | null; effort: string } {
+  const stored = item.sourceSnapshot.plannerMeta;
+  if (stored && typeof stored === "object") {
+    const meta = stored as Record<string, unknown>;
+    return {
+      valueScore: typeof meta.valueScore === "number" ? meta.valueScore : null,
+      effort: typeof meta.effort === "string" ? meta.effort : item.itemType === "blog" ? "약 90분" : item.itemType === "faq" ? "약 20분" : "확인 필요",
+    };
+  }
+  if (item.itemType === "page") {
+    const opportunity = item.sourceSnapshot.opportunity as Record<string, unknown> | undefined;
+    const topics = Array.isArray(item.brief.contributingTopics) ? item.brief.contributingTopics.length : 0;
+    const effortMinutes = Math.min(120, 45 + Math.max(0, topics - 1) * 15);
+    return { valueScore: typeof opportunity?.pageValueScore === "number" ? opportunity.pageValueScore : null, effort: `약 ${effortMinutes}분` };
+  }
+  if (item.itemType === "faq") {
+    return { valueScore: typeof item.brief.valueScore === "number" ? item.brief.valueScore : null, effort: "약 20분" };
+  }
+  const evaluation = item.sourceSnapshot.evaluation as { actions?: Array<{ actionType?: string; valueScore?: number | null }> } | undefined;
+  const action = evaluation?.actions?.find((candidate) => candidate.actionType === "blog");
+  return { valueScore: typeof action?.valueScore === "number" ? action.valueScore : null, effort: "약 90분" };
 }
 
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
@@ -158,6 +203,7 @@ export function ContentPlannerSubTab({
   const [notice, setNotice] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [showArchive, setShowArchive] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const { mutate, error: mutationError } = useAdminMutation<ContentPlannerItem>();
   const strategy = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
   const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
@@ -173,20 +219,22 @@ export function ContentPlannerSubTab({
     .filter((candidate) => candidate.itemType === activeItemType)
     .sort((a, b) => b.valueScore - a.valueScore || a.effortMinutes - b.effortMinutes),
   [activeItemType, allUnreviewedCandidates]);
-  const boardItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && BOARD_STATUSES.includes(item.status));
+  const boardItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && ACTIVE_BOARD_STATUSES.includes(item.status));
+  const completedItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && item.status === "published");
   const archivedItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && (item.status === "deferred" || item.status === "dismissed"));
   const deferredCount = archivedItems.filter((item) => item.status === "deferred").length;
   const dismissedCount = archivedItems.filter((item) => item.status === "dismissed").length;
-  const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
-  const publishedCount = boardItems.filter((item) => item.status === "published").length;
-  const boardByStatus = BOARD_STATUSES.reduce((acc, status) => { acc[status] = boardItems.filter((item) => item.status === status); return acc; }, {} as Record<PlannerStatus, ContentPlannerItem[]>);
+  const activeWorkCount = boardItems.length;
+  const publishedCount = completedItems.length;
+  const boardByStatus = ACTIVE_BOARD_STATUSES.reduce((acc, status) => { acc[status] = boardItems.filter((item) => item.status === status); return acc; }, {} as Record<PlannerStatus, ContentPlannerItem[]>);
   const activeTab = ITEM_TYPE_TABS.find((tab) => tab.value === activeItemType)!;
 
   const typeCounts = useMemo(() => Object.fromEntries(ITEM_TYPE_TABS.map((tab) => {
     const unreviewed = allUnreviewedCandidates.filter((candidate) => candidate.itemType === tab.value).length;
-    const active = (planner.data ?? []).filter((item) => item.itemType === tab.value && BOARD_STATUSES.includes(item.status) && item.status !== "published").length;
-    return [tab.value, { unreviewed, active }];
-  })) as Record<PlannerItemType, { unreviewed: number; active: number }>, [allUnreviewedCandidates, planner.data]);
+    const active = (planner.data ?? []).filter((item) => item.itemType === tab.value && ACTIVE_BOARD_STATUSES.includes(item.status)).length;
+    const completed = (planner.data ?? []).filter((item) => item.itemType === tab.value && item.status === "published").length;
+    return [tab.value, { unreviewed, active, completed }];
+  })) as Record<PlannerItemType, { unreviewed: number; active: number; completed: number }>, [allUnreviewedCandidates, planner.data]);
 
   useEffect(() => {
     if (!requestedOpportunityKey || strategy.loading || planner.loading) return;
@@ -197,6 +245,7 @@ export function ContentPlannerSubTab({
   const selectItemType = (type: PlannerItemType) => {
     setActiveItemType(type);
     setShowArchive(false);
+    setShowCompleted(false);
     router.replace(`/admin/content/planner?type=${type}`, { scroll: false });
   };
 
@@ -206,7 +255,9 @@ export function ContentPlannerSubTab({
       opportunityKey: candidate.key, itemType: candidate.itemType, title: candidate.title,
       category: candidate.slug, targetPage: candidate.targetPage, status,
       priority: status === "approved" ? "now" : "watch", rationale: candidate.rationale,
-      brief: candidate.brief, sourceSnapshot: candidate.sourceSnapshot, dueDate: null,
+      brief: candidate.brief,
+      sourceSnapshot: { ...candidate.sourceSnapshot, plannerMeta: { valueScore: candidate.valueScore, effort: candidate.effort } },
+      dueDate: null,
     });
     if (!result.error) {
       planner.refetch();
@@ -279,7 +330,7 @@ export function ContentPlannerSubTab({
           return (
             <button key={tab.value} type="button" aria-current={isActive ? "page" : undefined} onClick={() => selectItemType(tab.value)} className={`rounded-2xl border px-4 py-4 text-left transition-colors ${isActive ? "border-[var(--color-primary)] bg-[var(--surface)] ring-1 ring-[var(--color-primary)]" : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)]"}`}>
               <span className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-[var(--foreground)]">{tab.label}</span><span className="text-xs font-semibold text-[var(--color-primary)]">미검토 {counts.unreviewed}</span></span>
-              <span className="mt-1 block text-xs text-[var(--muted)]">진행 {counts.active}개</span>
+              <span className="mt-1 block text-xs text-[var(--muted)]">진행 {counts.active}개 · 완료 {counts.completed}개</span>
             </button>
           );
         })}
@@ -298,21 +349,21 @@ export function ContentPlannerSubTab({
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">작업 보드</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
+        <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">진행 작업</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
 
-        {boardItems.length > 0 && (
-          <ProgressBar total={boardItems.length} published={publishedCount} active={activeWorkCount} />
+        {(boardItems.length > 0 || completedItems.length > 0) && (
+          <ProgressBar total={boardItems.length + completedItems.length} published={publishedCount} active={activeWorkCount} completedLabel={STATUS_LABELS[activeItemType].published} />
         )}
 
         {boardItems.length ? (
           <div className="space-y-6">
-            {BOARD_STATUSES.map((status) => {
+            {ACTIVE_BOARD_STATUSES.map((status) => {
               const items = boardByStatus[status];
               if (!items || items.length === 0) return null;
               return (
                 <div key={status}>
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[status]}</span>
+                    <span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[activeItemType][status]}</span>
                     <span className="text-xs text-[var(--muted)]">{items.length}개</span>
                   </div>
                   <div className="space-y-3">{items.map((item) => (
@@ -325,9 +376,10 @@ export function ContentPlannerSubTab({
                         </div>
                         <h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3>
                         <p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p>
+                        {(() => { const meta = itemMeta(item); return <div className="mt-2 flex flex-wrap gap-2 text-[10px]"><span className="rounded-full bg-[var(--background)] px-2 py-1 font-semibold text-[var(--foreground)]">{valueLabel(item.itemType)} {meta.valueScore != null ? `${meta.valueScore}점` : "평가 없음"}</span><span className="rounded-full bg-[var(--background)] px-2 py-1 text-[var(--muted)]">예상 작업량 {meta.effort}</span></div>; })()}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
+                        <select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[item.itemType][s]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
                         <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
                         {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}
                       </div>
@@ -339,6 +391,21 @@ export function ContentPlannerSubTab({
           </div>
         ) : <Empty icon={Clock3} title="진행 중인 작업이 없습니다." description="추천 후보를 승인하면 작업 보드에 나타납니다." />}
       </section>
+
+      {completedItems.length > 0 && (
+        <section className="space-y-3">
+          <button type="button" onClick={() => setShowCompleted(!showCompleted)} className="flex items-center gap-2 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
+            <Check className="h-4 w-4" />
+            <span>{STATUS_LABELS[activeItemType].published} 작업</span>
+            <AdminPill tone="white">{completedItems.length}개</AdminPill>
+            <ChevronDown className={`h-4 w-4 transition-transform ${showCompleted ? "rotate-180" : ""}`} />
+          </button>
+          {showCompleted && <div className="space-y-2">{completedItems.map((item) => {
+            const meta = itemMeta(item);
+            return <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className="rounded-2xl p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-emerald-600">{STATUS_LABELS[item.itemType].published}</span><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs text-[var(--muted)]">{valueLabel(item.itemType)} {meta.valueScore != null ? `${meta.valueScore}점` : "평가 없음"}</span></div><h3 className="mt-1 truncate text-sm font-medium text-[var(--foreground)]">{item.title}</h3></div><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[item.itemType][status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select></div></AdminSurface>;
+          })}</div>}
+        </section>
+      )}
 
       {archivedItems.length > 0 && (
         <section className="space-y-4">
@@ -357,7 +424,7 @@ export function ContentPlannerSubTab({
                       <div className="flex flex-wrap items-center gap-2">
                         <AdminPill tone="white">{itemTypeLabel(item.itemType)}</AdminPill>
                         <span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span>
-                        <span className={`text-xs font-semibold ${item.status === "deferred" ? "text-amber-500" : "text-[var(--muted)]"}`}>{STATUS_LABELS[item.status]}</span>
+                        <span className={`text-xs font-semibold ${item.status === "deferred" ? "text-amber-500" : "text-[var(--muted)]"}`}>{STATUS_LABELS[item.itemType][item.status]}</span>
                       </div>
                       <h3 className="mt-1 truncate text-sm text-[var(--foreground)]">{item.title}</h3>
                     </div>
@@ -375,7 +442,7 @@ export function ContentPlannerSubTab({
   );
 }
 
-function ProgressBar({ total, published, active }: { total: number; published: number; active: number }) {
+function ProgressBar({ total, published, active, completedLabel }: { total: number; published: number; active: number; completedLabel: string }) {
   const publishedPct = total > 0 ? Math.round((published / total) * 100) : 0;
   const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
   return (
@@ -391,7 +458,7 @@ function ProgressBar({ total, published, active }: { total: number; published: n
         </div>
       </div>
       <div className="mt-1.5 flex gap-4 text-[10px] text-[var(--muted)]">
-        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />발행됨</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />{completedLabel}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-[var(--color-primary)]" />진행 중</span>
       </div>
     </div>
