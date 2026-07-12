@@ -17,6 +17,10 @@ interface EvidenceDataSectionProps {
   visiblePlanKeys: Set<string>;
 }
 
+function evidenceReasonText(evidence: ContentGapItem["coverageEvidence"][number]): string {
+  return evidence.reasons?.length ? evidence.reasons.join(" · ") : evidence.title;
+}
+
 export function EvidenceDataSection({
   contentGap,
   insightActions,
@@ -345,8 +349,8 @@ export function EvidenceDataSection({
                           <ValueScoreBadge score={Number(row.contentGapScore)} />
                         </div>
                         {evidence && (
-                          <span className="max-w-52 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · 강도 ${evidence.strength} · ${evidence.reasons.join(" · ")}`}>
-                            근거 {evidence.strength} · {evidence.reasons.join(" · ")}
+                          <span className="max-w-52 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · 강도 ${evidence.strength} · ${evidenceReasonText(evidence)}`}>
+                            근거 {evidence.strength} · {evidenceReasonText(evidence)}
                           </span>
                         )}
                       </div>
@@ -448,8 +452,8 @@ export function EvidenceDataSection({
                         </p>
                       )}
                       {item.coverageEvidence[0] && (
-                        <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${item.coverageEvidence[0].title} · ${item.coverageEvidence[0].reasons.join(" · ")}`}>
-                          근거 {item.coverageEvidence[0].strength} · {item.coverageEvidence[0].reasons.join(" · ")}
+                        <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${item.coverageEvidence[0].title} · ${evidenceReasonText(item.coverageEvidence[0])}`}>
+                          근거 {item.coverageEvidence[0].strength} · {evidenceReasonText(item.coverageEvidence[0])}
                         </p>
                       )}
                       {(action || pageOpportunity) && (
