@@ -18,7 +18,8 @@ async function adminFetcher<T>(endpoint: string): Promise<T> {
     throw new Error(err.message ?? "데이터를 불러올 수 없습니다");
   }
   const json = await res.json();
-  return (json.data ?? json) as T;
+  // "data" 키가 있으면 그 값을 반환 (null 포함), 없으면 전체 json 반환
+  return ("data" in json ? json.data : json) as T;
 }
 
 // 느린 엔드포인트 — sessionStorage 캐시 + 긴 deduping으로 재방문 즉시 표시

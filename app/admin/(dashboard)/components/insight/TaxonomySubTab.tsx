@@ -742,13 +742,16 @@ export function TaxonomySubTab() {
 
   // 세 결과를 병합
   const overviewData = useMemo(() => {
-    if (!volumeData && !trendShortData) return null;
+    // taxonomyMeta가 없는 응답은 유효하지 않으므로 무시
+    const validVolume = volumeData?.taxonomyMeta ? volumeData : null;
+    const validShort = trendShortData?.taxonomyMeta ? trendShortData : null;
+    if (!validVolume && !validShort) return null;
     return {
-      ...(volumeData ?? trendShortData)!,
-      shortTermDetail: trendShortData?.shortTermDetail ?? volumeData?.shortTermDetail,
-      longTermDetail: trendLongData?.longTermDetail ?? trendShortData?.longTermDetail,
-      categories: (trendShortData?.categories ?? volumeData?.categories)?.map((cat) => {
-        const volCat = volumeData?.categories?.find((c) => c.slug === cat.slug);
+      ...(validVolume ?? validShort)!,
+      shortTermDetail: validShort?.shortTermDetail ?? validVolume?.shortTermDetail,
+      longTermDetail: trendLongData?.longTermDetail ?? validShort?.longTermDetail,
+      categories: (validShort?.categories ?? validVolume?.categories)?.map((cat) => {
+        const volCat = validVolume?.categories?.find((c) => c.slug === cat.slug);
         return {
           ...cat,
           monthlyTotalVolume: cat.monthlyTotalVolume ?? volCat?.monthlyTotalVolume,
@@ -900,7 +903,7 @@ export function TaxonomySubTab() {
       {searchAdSync.data?.status === "failed" && (
         <AdminNotice tone="error">최근 통합 수집에 실패했습니다. 기존 활성 데이터는 유지되고 있습니다: {searchAdSync.data.error ?? "원인을 확인할 수 없습니다."}</AdminNotice>
       )}
-      {overviewData?.taxonomyMeta.source === "code-fallback" && (
+      {overviewData?.taxonomyMeta?.source === "code-fallback" && (
         <AdminNotice tone="warning">Supabase 활성 택소노미를 불러오지 못해 빌드 시점 fallback을 사용하고 있습니다. 통합 데이터 갱신 전에 연결 상태를 확인하세요.</AdminNotice>
       )}
       {snapshotVersionMismatch && (
@@ -933,7 +936,7 @@ export function TaxonomySubTab() {
 
       {searchAdSync.data?.snapshotCreatedAt && (
         <p className="-mt-4 text-right text-[11px] text-[var(--muted)]">
-          택소노미 {overviewData?.taxonomyMeta.version ? `v${overviewData.taxonomyMeta.version}` : "코드 fallback"}
+          택소노미 {overviewData?.taxonomyMeta?.version ? `v${overviewData.taxonomyMeta.version}` : "코드 fallback"}
           {` · 통합 스냅샷 ${formatSnapshotDate(searchAdSync.data.snapshotCreatedAt)} · 핵심 키워드 ${searchAdSync.data.snapshotKeywordCount?.toLocaleString("ko-KR")}개`}
           {searchAdSync.data.candidateAnalyzedAt ? ` · 후보 분석 ${formatSnapshotDate(searchAdSync.data.candidateAnalyzedAt)}` : ""}
         </p>

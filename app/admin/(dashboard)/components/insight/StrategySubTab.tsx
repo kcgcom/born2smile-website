@@ -12,12 +12,14 @@ import type { StrategyOverviewData } from "./shared";
 import { EvidenceDataSection } from "./strategy-evidence";
 import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
 import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
+import type { ContentPlannerItem } from "@/lib/content-planner";
 
 export function StrategySubTab() {
   const endpoint = "/api/admin/naver-datalab/trend-summary?mode=strategy&detail=short";
   const syncEndpoint = "/api/admin/naver-searchad/sync";
   const strategy = useAdminApi<StrategyOverviewData>(endpoint);
   const sync = useAdminApi<SearchAdSyncState>(syncEndpoint);
+  const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
   const { mutate: startSync, loading: startingSync, error: syncMutationError } = useAdminMutation<SearchAdSyncState>();
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const observedActiveJob = useRef<string | null>(null);
@@ -62,8 +64,11 @@ export function StrategySubTab() {
   }
 
   const urgentCount = contentGap.filter((item) => item.gapScore >= 70).length;
-  const uncoveredCount = contentGap.filter((item) => item.existingPostCount === 0).length;
-  const pageOpportunityCount = strategy.data.pageOpportunities.length;
+  const measuredDemand = contentGap.reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
+  const unmetDemand = contentGap
+    .filter((item) => item.existingPostCount === 0)
+    .reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
+  const hasMeasuredDemand = contentGap.some((item) => item.monthlyVolume != null);
 
   return (
     <div className="space-y-8">
@@ -116,9 +121,9 @@ export function StrategySubTab() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]">
-            <Metric label="분석 주제" value={contentGap.length} />
-            <Metric label="콘텐츠 없음" value={uncoveredCount} />
-            <Metric label="페이지 보강" value={pageOpportunityCount} />
+            <Metric label="전체 검색 수요" value={formatMonthlyDemand(measuredDemand, hasMeasuredDemand)} />
+            <Metric label="블로그 미충족 수요" value={formatMonthlyDemand(unmetDemand, hasMeasuredDemand)} />
+            <Metric label="고우선 기회" value={`${urgentCount}개`} />
           </div>
         </div>
       </AdminSurface>
@@ -146,18 +151,30 @@ export function StrategySubTab() {
         contentGap={contentGap}
         insightActions={strategy.data.insightActions}
         pageOpportunities={strategy.data.pageOpportunities}
+        candidateKeys={new Set([
+          ...strategy.data.blogBriefs.map((brief) => `blog:${brief.slug}:${brief.subGroup}`),
+          ...strategy.data.pageBriefs.map((brief) => `page:${brief.slug}:${brief.subGroup}`),
+        ])}
+        plannedKeys={new Set((planner.data ?? []).map((item) => item.opportunityKey))}
+        visiblePlanKeys={new Set((planner.data ?? [])
+          .filter((item) => ["approved", "in_progress", "review", "scheduled", "published"].includes(item.status))
+          .map((item) => item.opportunityKey))}
       />
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-3 text-center">
       <div className="text-xs text-[var(--muted)]">{label}</div>
       <div className="mt-1 text-xl font-bold text-[var(--foreground)]">{value}</div>
     </div>
   );
+}
+
+function formatMonthlyDemand(value: number, available: boolean): string {
+  return available ? `${value.toLocaleString("ko-KR")}/월` : "확인 불가";
 }
 
 function formatFetchedAt(value: string): string {

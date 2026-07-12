@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, ChevronRight, Clock3, FilePenLine, LayoutList, Pause, Sparkles, X } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
@@ -26,6 +26,7 @@ interface PlannerCandidate {
   demandLabel: string;
   confidence: "높음" | "보통" | "낮음";
   effort: string;
+  priorityScore: number;
   brief: BlogBriefItem | PageBriefItem;
   sourceSnapshot: Record<string, unknown>;
 }
@@ -48,7 +49,12 @@ function findGap(gaps: ContentGapItem[], slug: KeywordCategorySlug, subGroup: st
 function demandLabel(gap?: ContentGapItem) {
   if (!gap) return "수요 확인 필요";
   const volume = gap.monthlyVolume ?? 0;
-  return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : `상대 ${gap.currentAvg.toFixed(1)}`;
+  return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : "확인 불가";
+}
+
+function demandPriority(gap?: ContentGapItem): number {
+  if (!gap?.monthlyVolume || gap.monthlyVolume <= 0) return 0;
+  return Math.min(100, Math.log10(gap.monthlyVolume + 1) * 22);
 }
 
 function confidence(gap?: ContentGapItem): PlannerCandidate["confidence"] {
@@ -70,6 +76,7 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       demandLabel: demandLabel(gap),
       confidence: confidence(gap),
       effort: "약 90분",
+      priorityScore: (gap?.gapScore ?? 0) * 0.8 + demandPriority(gap) * 0.2,
       brief,
       sourceSnapshot: gap ? { gap } : {},
     };
@@ -87,11 +94,36 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       demandLabel: demandLabel(gap),
       confidence: confidence(gap),
       effort: "약 45분",
+      priorityScore: (gap?.gapScore ?? 0) * 0.45 + (opportunity?.pageUpdateScore ?? 0) * 0.45 + demandPriority(gap) * 0.1,
       brief,
       sourceSnapshot: { ...(gap ? { gap } : {}), ...(opportunity ? { opportunity } : {}) },
     };
   });
-  return [...blogs, ...pages].slice(0, 12);
+  return [...blogs, ...pages];
+}
+
+function selectBalancedRecommendations(
+  candidates: PlannerCandidate[],
+  requestedOpportunityKey: string | null,
+  limit = 5,
+): PlannerCandidate[] {
+  const sorted = [...candidates].sort((a, b) => b.priorityScore - a.priorityScore || a.title.localeCompare(b.title, "ko"));
+  const requested = sorted.find((candidate) => candidate.key === requestedOpportunityKey);
+  const selected = requested ? [requested] : [];
+  const remaining = sorted.filter((candidate) => candidate.key !== requested?.key);
+  const hasBothTypes = new Set(sorted.map((candidate) => candidate.itemType)).size > 1;
+  const maxPerType = Math.ceil(limit / 2);
+
+  while (selected.length < limit && remaining.length > 0) {
+    const counts = {
+      blog: selected.filter((candidate) => candidate.itemType === "blog").length,
+      page: selected.filter((candidate) => candidate.itemType === "page").length,
+    };
+    let index = remaining.findIndex((candidate) => !hasBothTypes || counts[candidate.itemType] < maxPerType);
+    if (index < 0) index = 0;
+    selected.push(remaining.splice(index, 1)[0]);
+  }
+  return selected;
 }
 
 function makeBlogPrefill(brief: BlogBriefItem) {
@@ -107,7 +139,7 @@ function makeBlogPrefill(brief: BlogBriefItem) {
   return { title: brief.suggestedTitle, subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`, excerpt: brief.metaDescription, category: brief.slug, tags, blocks };
 }
 
-export function ContentPlannerSubTab() {
+export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpportunityKey: string | null }) {
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -117,9 +149,23 @@ export function ContentPlannerSubTab() {
 
   const candidates = useMemo(() => strategy.data ? buildCandidates(strategy.data) : [], [strategy.data]);
   const itemByKey = useMemo(() => new Map((planner.data ?? []).map((item) => [item.opportunityKey, item])), [planner.data]);
-  const recommended = candidates.filter((candidate) => !itemByKey.has(candidate.key)).slice(0, 5);
+  const requestedPlannerItem = requestedOpportunityKey ? itemByKey.get(requestedOpportunityKey) : undefined;
+  const unreviewedCandidates = candidates.filter((candidate) => !itemByKey.has(candidate.key));
+  const recommended = useMemo(
+    () => selectBalancedRecommendations(unreviewedCandidates, requestedOpportunityKey),
+    [requestedOpportunityKey, unreviewedCandidates],
+  );
   const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
   const deferredCount = (planner.data ?? []).filter((item) => item.status === "deferred").length;
+  const uncoveredCount = strategy.data?.contentGap.filter((item) => item.existingPostCount === 0).length ?? 0;
+  const pageOpportunityCount = strategy.data?.pageOpportunities.length ?? 0;
+  const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
+
+  useEffect(() => {
+    if (!requestedOpportunityKey || strategy.loading || planner.loading) return;
+    const targetId = requestedPlannerItem ? `planner-item-${requestedPlannerItem.id}` : "weekly-recommendations";
+    window.requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }, [planner.loading, requestedOpportunityKey, requestedPlannerItem, strategy.loading]);
 
   const saveCandidate = async (candidate: PlannerCandidate, status: "approved" | "deferred" | "dismissed") => {
     setSavingKey(candidate.key);
@@ -160,20 +206,37 @@ export function ContentPlannerSubTab() {
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={recommended.length ? "warning" : "white"}>{recommended.length ? `결정할 후보 ${recommended.length}개` : "새 후보 검토 완료"}</AdminPill></div>
+            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `미검토 후보 ${unreviewedCandidates.length}개` : "새 후보 검토 완료"}</AdminPill></div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기회 분석 탭에서 검색 수요와 콘텐츠 근거를 자세히 확인할 수 있습니다.</p>
           </div>
-          <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]"><Metric label="추천 후보" value={recommended.length} /><Metric label="진행 작업" value={boardItems.filter((item) => item.status !== "published").length} /><Metric label="보류" value={deferredCount} /></div>
+          <div className="space-y-3 lg:min-w-[520px]">
+            <MetricGroup
+              label="실행 후보 구성"
+              metrics={[
+                { label: "분석 주제", value: strategy.data?.contentGap.length ?? 0 },
+                { label: "신규 필요", value: uncoveredCount },
+                { label: "페이지 보강", value: pageOpportunityCount },
+              ]}
+            />
+            <MetricGroup
+              label="작업 현황"
+              metrics={[
+                { label: "미검토 후보", value: unreviewedCandidates.length },
+                { label: "진행 작업", value: activeWorkCount },
+                { label: "보류", value: deferredCount },
+              ]}
+            />
+          </div>
         </div>
       </AdminSurface>
       {notice && <AdminNotice tone="success">{notice}</AdminNotice>}
       {mutationError && <AdminNotice tone="error">{mutationError}</AdminNotice>}
 
-      <section className="space-y-4">
+      <section id="weekly-recommendations" className="scroll-mt-6 space-y-4">
         <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.</p></div>
         {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
-          <AdminSurface key={candidate.key} tone="white" className="rounded-3xl p-5">
+          <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
             <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{candidate.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
             <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="검색 수요" value={candidate.demandLabel} /><Fact label="데이터 신뢰" value={candidate.confidence} /><Fact label="예상 작업량" value={candidate.effort} /></div>
@@ -185,7 +248,7 @@ export function ContentPlannerSubTab() {
       <section className="space-y-4">
         <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">작업 보드</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
         {boardItems.length ? <div className="space-y-3">{boardItems.map((item) => (
-          <AdminSurface key={item.id} tone="white" className="rounded-2xl p-5"><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className={`scroll-mt-6 rounded-2xl p-5 ${item.opportunityKey === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><AdminPill tone="white">{item.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[item.status]}</span></div><h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p></div>
             <div className="flex flex-wrap items-center gap-2"><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
               <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
@@ -199,5 +262,6 @@ export function ContentPlannerSubTab() {
 }
 
 function Metric({ label, value }: { label: string; value: number }) { return <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-3 py-3 text-center"><div className="text-xs text-[var(--muted)]">{label}</div><div className="mt-1 text-xl font-bold text-[var(--foreground)]">{value}</div></div>; }
+function MetricGroup({ label, metrics }: { label: string; metrics: Array<{ label: string; value: number }> }) { return <div><p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{label}</p><div className="grid grid-cols-3 gap-2">{metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</div></div>; }
 function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-[var(--background)] px-3 py-2"><div className="text-[10px] text-[var(--muted)]">{label}</div><div className="mt-1 text-xs font-semibold text-[var(--foreground)]">{value}</div></div>; }
 function Empty({ icon: Icon, title, description }: { icon: typeof Check; title: string; description: string }) { return <AdminSurface tone="white" className="rounded-3xl p-8 text-center"><Icon className="mx-auto h-8 w-8 text-[var(--muted)]" /><p className="mt-3 text-sm font-semibold text-[var(--foreground)]">{title}</p><p className="mt-1 text-xs text-[var(--muted)]">{description}</p></AdminSurface>; }

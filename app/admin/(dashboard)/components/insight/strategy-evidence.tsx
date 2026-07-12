@@ -12,12 +12,18 @@ interface EvidenceDataSectionProps {
   contentGap: ContentGapItem[];
   insightActions: InsightActionItem[];
   pageOpportunities: PageUpdateOpportunityItem[];
+  candidateKeys: Set<string>;
+  plannedKeys: Set<string>;
+  visiblePlanKeys: Set<string>;
 }
 
 export function EvidenceDataSection({
   contentGap,
   insightActions,
   pageOpportunities,
+  candidateKeys,
+  plannedKeys,
+  visiblePlanKeys,
 }: EvidenceDataSectionProps) {
   const [categoryFilter, setCategoryFilter] = useState<KeywordCategorySlug | "all">("all");
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
@@ -57,6 +63,14 @@ export function EvidenceDataSection({
   const maxVolume = useMemo(() => Math.max(...filteredGap.map((g) => g.monthlyVolume ?? 0), 1), [filteredGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
   const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
+
+  const getPlannerKey = (slug: KeywordCategorySlug, subGroup: string) => {
+    const pageKey = `page:${slug}:${subGroup}`;
+    const blogKey = `blog:${slug}:${subGroup}`;
+    if (candidateKeys.has(pageKey)) return pageKey;
+    if (candidateKeys.has(blogKey)) return blogKey;
+    return null;
+  };
 
   if (contentGap.length === 0 && crossKeywords.length === 0) return null;
 
@@ -345,6 +359,26 @@ export function EvidenceDataSection({
                       return <span className="tabular-nums text-[var(--foreground)]">{item.pageUpdateScore}</span>;
                     },
                   },
+                  {
+                    key: "planner",
+                    label: "실행",
+                    align: "right",
+                    render: (row) => {
+                      const plannerKey = getPlannerKey(row.slug as KeywordCategorySlug, String(row.subGroup));
+                      if (!plannerKey) return <span className="text-xs text-[var(--muted)]">-</span>;
+                      if (plannedKeys.has(plannerKey) && !visiblePlanKeys.has(plannerKey)) {
+                        return <span className="whitespace-nowrap text-xs text-[var(--muted)]">검토 완료</span>;
+                      }
+                      return (
+                        <a
+                          href={`/admin/content/planner?opportunity=${encodeURIComponent(plannerKey)}#weekly-recommendations`}
+                          className="whitespace-nowrap text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                        >
+                          {visiblePlanKeys.has(plannerKey) ? "기존 계획 보기" : "플래너에서 검토"}
+                        </a>
+                      );
+                    },
+                  },
                 ]}
                 rows={gapRows as unknown as Record<string, unknown>[]}
                 keyField="id"
@@ -431,6 +465,21 @@ export function EvidenceDataSection({
                           )}
                         </div>
                       )}
+                      {(() => {
+                        const plannerKey = getPlannerKey(item.slug, item.subGroup);
+                        if (!plannerKey) return null;
+                        if (plannedKeys.has(plannerKey) && !visiblePlanKeys.has(plannerKey)) {
+                          return <span className="mt-2 inline-flex text-xs font-medium text-[var(--muted)]">검토 완료</span>;
+                        }
+                        return (
+                          <a
+                            href={`/admin/content/planner?opportunity=${encodeURIComponent(plannerKey)}#weekly-recommendations`}
+                            className="mt-2 inline-flex text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                          >
+                            {visiblePlanKeys.has(plannerKey) ? "기존 계획 보기" : "플래너에서 검토"}
+                          </a>
+                        );
+                      })()}
                       {hasKeywords && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {direct.map((dk) => (

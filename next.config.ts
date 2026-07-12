@@ -31,7 +31,7 @@ const supabaseImageOrigins = [
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com https://wcs.pstatic.net",
+  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com https://wcs.pstatic.net https://ssl.pstatic.net",
   "style-src 'self' 'unsafe-inline' https://*.i.posthog.com",
   [
     "img-src 'self' data: blob:",
