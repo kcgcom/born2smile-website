@@ -12,10 +12,6 @@ interface EvidenceDataSectionProps {
   contentGap: ContentGapItem[];
 }
 
-function evidenceReasonText(evidence: ContentGapItem["coverageEvidence"][number]): string {
-  return evidence.reasons?.length ? evidence.reasons.join(" · ") : evidence.title;
-}
-
 export function EvidenceDataSection({
   contentGap,
 }: EvidenceDataSectionProps) {
@@ -107,14 +103,13 @@ export function EvidenceDataSection({
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">콘텐츠 갭 분석</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                콘텐츠 공백 = 대표 콘텐츠의 주제 직접성·본문 깊이·개념 다양성·최신성 · 검색량과 검색 추이는 공백 점수에 반영하지 않음
-                &nbsp;·&nbsp;
-                <span className="text-red-600 font-medium">HIGH(≥55): 큰 공백</span>
-                &nbsp;·&nbsp;
-                <span className="text-yellow-600 font-medium">MED(≥25): 부분 공백</span>
-                &nbsp;·&nbsp;
-                <span className="text-green-600 font-medium">LOW(&lt;25): 대체로 충족</span>
+                공백 점수는 대표 콘텐츠의 주제 직접성·본문 깊이·개념 다양성·최신성을 평가합니다. 검색량과 검색 추이는 반영하지 않습니다.
               </p>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-medium">
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-700">HIGH ≥55 · 큰 공백</span>
+                <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-yellow-700">MED ≥25 · 부분 공백</span>
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-700">LOW &lt;25 · 대체로 충족</span>
+              </div>
               <div className="mt-3 flex items-start gap-2">
                 <span className="w-14 shrink-0 pt-1 text-xs font-medium text-[var(--muted)]">카테고리</span>
                 <div className="flex flex-wrap gap-1.5">
@@ -193,7 +188,10 @@ export function EvidenceDataSection({
                       const hasKeywords = direct.length > 0 || related.length > 0;
                       return (
                         <div>
-                          <span className="font-medium text-[var(--foreground)]">{String(row.subGroup)}</span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <CategoryBadge category={row.slug as KeywordCategorySlug} />
+                            <span className="font-medium text-[var(--foreground)]">{String(row.subGroup)}</span>
+                          </div>
                           {hasKeywords && (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {direct.map((dk) => (
@@ -232,6 +230,7 @@ export function EvidenceDataSection({
                     key: "searchIntent",
                     label: "검색 의도",
                     align: "left",
+                    className: "w-24 whitespace-nowrap",
                     render: (row) => row.searchIntent
                       ? <SearchIntentBadge intent={row.searchIntent as SearchIntent} />
                       : null,
@@ -241,6 +240,7 @@ export function EvidenceDataSection({
                     label: "주제 검색량",
                     align: "right",
                     sortable: true,
+                    className: "w-32 whitespace-nowrap",
                     render: (row) => {
                       const mv = row.monthlyVolume as number | null;
                       const barPct = mv != null ? Math.min(100, (mv / maxVolume) * 100) : 0;
@@ -274,6 +274,7 @@ export function EvidenceDataSection({
                     label: "콘텐츠 근거",
                     align: "right",
                     sortable: true,
+                    className: "w-36 whitespace-nowrap",
                     render: (row) => {
                       const direct = Number(row.directEvidenceCount ?? 0);
                       const indirect = Number(row.indirectEvidenceCount ?? 0);
@@ -289,28 +290,16 @@ export function EvidenceDataSection({
                   },
                   {
                     key: "contentGapScore",
-                    label: "콘텐츠 공백",
+                    label: "공백 점수",
                     align: "right",
                     sortable: true,
+                    className: "w-32 whitespace-nowrap",
                     render: (row) => {
-                      const evidence = (row.coverageEvidence as ContentGapItem["coverageEvidence"] | undefined)?.find((item) => item.matchType === "direct");
-                      const indirectCount = Number(row.indirectEvidenceCount ?? 0);
                       return (
-                      <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center justify-end gap-1.5">
-                          <span className="tabular-nums text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
+                          <span className="tabular-nums font-semibold text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
                           <ValueScoreBadge score={Number(row.contentGapScore)} />
                         </div>
-                        {evidence ? (
-                          <span className="max-w-52 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · 강도 ${evidence.strength} · ${evidenceReasonText(evidence)}`}>
-                            직접 근거 {evidence.strength} · {evidenceReasonText(evidence)}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium text-amber-700">
-                            직접 근거 없음{indirectCount > 0 ? ` · 간접 ${indirectCount}` : ""}
-                          </span>
-                        )}
-                      </div>
                       );
                     },
                   },
@@ -321,13 +310,15 @@ export function EvidenceDataSection({
                 sortKey={gapSortKey}
                 sortDirection={gapSortDir}
                 onSort={handleGapSort}
+                scrollClassName="max-h-[70vh] overflow-y-auto"
+                stickyHeader
               />
             </div>
             <div className="block sm:hidden space-y-2">
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {([
                   { key: "monthlyVolume", label: "주제 검색량" },
-                  { key: "contentGapScore", label: "콘텐츠 공백" },
+                  { key: "contentGapScore", label: "공백 점수" },
                 ] as const).map((chip) => {
                   const isActive = gapSortKey === chip.key;
                   return (
@@ -373,6 +364,7 @@ export function EvidenceDataSection({
                               <span className="text-[var(--muted)]">{item.currentAvg.toFixed(1)}<span className="text-[9px]">(상대)</span></span>
                             )}
                           </span>
+                          <span className="text-xs font-semibold tabular-nums text-[var(--foreground)]">{item.contentGapScore.toFixed(0)}</span>
                           <ValueScoreBadge score={item.contentGapScore} />
                         </span>
                       </div>
@@ -381,18 +373,10 @@ export function EvidenceDataSection({
                           연관 키워드 {related.length}개 · 상위 {topRelatedCount}개 {topRelatedVolume.toLocaleString("ko-KR")}/월
                         </p>
                       )}
-                      {(() => {
-                        const evidence = item.coverageEvidence.find((candidate) => candidate.matchType === "direct");
-                        return evidence ? (
-                          <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · ${evidenceReasonText(evidence)}`}>
-                            직접 근거 {evidence.strength} · {evidenceReasonText(evidence)}
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-[10px] font-medium text-amber-700">
-                            직접 근거 없음{item.indirectEvidenceCount > 0 ? ` · 간접 언급 ${item.indirectEvidenceCount}개` : ""}
-                          </p>
-                        );
-                      })()}
+                      <p className={`mt-1 text-[10px] tabular-nums ${item.directEvidenceCount > 0 ? "text-[var(--muted)]" : "font-medium text-amber-700"}`}>
+                        콘텐츠 근거 · {item.directEvidenceCount > 0 ? `직접 ${item.directEvidenceCount}` : "직접 없음"}
+                        {item.indirectEvidenceCount > 0 ? ` · 간접 ${item.indirectEvidenceCount}` : ""}
+                      </p>
                       {hasKeywords && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {direct.map((dk) => (
