@@ -52,6 +52,12 @@ const CLUSTER_THRESHOLD = KEYWORD_CLUSTER_THRESHOLD;
 const MIN_TOKEN_JACCARD = KEYWORD_MIN_TOKEN_JACCARD;
 const BATCH_SIZE = 100; // Gemini batchEmbedContents 최대
 
+function isValidEmbeddingVector(value: unknown): value is number[] {
+  return Array.isArray(value) &&
+    value.length === EMBEDDING_DIMS &&
+    value.every((item): item is number => typeof item === "number" && Number.isFinite(item));
+}
+
 // ---------------------------------------------------------------
 // Gemini API
 // ---------------------------------------------------------------
@@ -103,11 +109,7 @@ export async function embedKeywordsForClustering(texts: string[]): Promise<numbe
     }
     for (const [index, embedding] of data.embeddings.entries()) {
       const values = embedding.values;
-      if (
-        !Array.isArray(values) ||
-        values.length !== EMBEDDING_DIMS ||
-        !values.every((value): value is number => typeof value === "number" && Number.isFinite(value))
-      ) {
+      if (!isValidEmbeddingVector(values)) {
         throw new Error(
           `Gemini Embedding API invalid vector at index ${index}: expected ${EMBEDDING_DIMS} finite numbers`,
         );
@@ -136,7 +138,24 @@ async function loadEmbeddingCache(): Promise<EmbeddingCache> {
   if (error) throw error;
 
   if (!data?.data) return {};
-  return (data.data as { embeddings: EmbeddingCache }).embeddings ?? {};
+  const rawEmbeddings = (data.data as { embeddings?: unknown }).embeddings;
+  if (!rawEmbeddings || typeof rawEmbeddings !== "object" || Array.isArray(rawEmbeddings)) {
+    return {};
+  }
+
+  const cache: EmbeddingCache = {};
+  let invalidCount = 0;
+  for (const [query, vector] of Object.entries(rawEmbeddings)) {
+    if (isValidEmbeddingVector(vector)) {
+      cache[query] = vector;
+    } else {
+      invalidCount++;
+    }
+  }
+  if (invalidCount > 0) {
+    console.warn(`[keyword-embeddings] Ignored ${invalidCount} invalid cached vectors`);
+  }
+  return cache;
 }
 
 async function saveEmbeddingCache(cache: EmbeddingCache): Promise<void> {
