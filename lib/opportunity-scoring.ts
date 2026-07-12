@@ -2,7 +2,7 @@ import type { KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-ke
 import type { ContentGap } from "./trend-analysis";
 import { TREATMENT_DETAILS } from "./treatments";
 
-export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.4" as const;
+export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.5" as const;
 
 export type OpportunityActionType = "blog" | "page" | "faq";
 export type OpportunityConfidence = "B" | "C";
@@ -89,11 +89,17 @@ const TOPIC_ACTION_OVERRIDES: Record<string, OpportunityActionType[]> = {
   "general-care:턱관절/이갈이": ["blog", "faq"],
   "general-care:발치/사랑니": ["blog", "faq"],
   "general-care:잇몸재생": ["blog", "faq"],
+  "health-tips:증상/내원판단": ["blog", "faq"],
   "prevention:구강위생": ["blog"],
   "prevention:구강건조/타액": ["blog"],
   "pediatric:교정시기": ["blog"],
 };
-const EDUCATION_FAQ_TOPICS = new Set(["general-care:턱관절/이갈이", "general-care:발치/사랑니", "general-care:잇몸재생"]);
+const EDUCATION_FAQ_TOPICS = new Set([
+  "general-care:턱관절/이갈이",
+  "general-care:발치/사랑니",
+  "general-care:잇몸재생",
+  "health-tips:증상/내원판단",
+]);
 const PAGE_CONFIRMATION_TOPICS = new Set(["implant:첨단/디지털"]);
 const PAGE_STATUS_OVERRIDES: Partial<Record<string, PageContentStatus>> = {
   "implant:대상/조건": "covered",

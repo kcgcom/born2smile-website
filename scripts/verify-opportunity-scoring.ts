@@ -61,6 +61,12 @@ const [gumRegeneration] = evaluateOpportunities([
 ]);
 assert.equal(getActionEvaluation(gumRegeneration, "page")?.eligibility, "not-applicable", "잇몸재생을 진료 페이지 보강으로 추천하면 안 됩니다.");
 assert.notEqual(getActionEvaluation(gumRegeneration, "faq")?.eligibility, "not-applicable", "잇몸재생은 전체 FAQ 기준 평가 대상이어야 합니다.");
+
+const [symptomGuidance] = evaluateOpportunities([
+  gap({ category: "health-tips", slug: "health-tips", subGroup: "증상/내원판단", monthlyVolume: 1_000, contentGapScore: 80, keywords: ["치통", "이가 흔들려요"] }),
+]);
+assert.equal(getActionEvaluation(symptomGuidance, "page")?.eligibility, "not-applicable", "증상 안내를 단일 진료 페이지 보강으로 추천하면 안 됩니다.");
+assert.notEqual(getActionEvaluation(symptomGuidance, "faq")?.eligibility, "not-applicable", "증상 안내는 전체 FAQ 기준 평가 대상이어야 합니다.");
 const contributingScores = implantPlan.contributingTopics.map((item) => item.valueScore).sort((a, b) => b - a);
 const nextScores = contributingScores.slice(1, 3);
 const nextAverage = nextScores.length ? nextScores.reduce((sum, score) => sum + score, 0) / nextScores.length : contributingScores[0];

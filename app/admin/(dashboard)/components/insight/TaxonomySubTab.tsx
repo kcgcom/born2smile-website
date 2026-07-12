@@ -980,7 +980,7 @@ export function TaxonomySubTab() {
         <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)]">
           카테고리 개요
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {sortedCategories.map((cat) => (
             <CategoryCard
               key={cat.slug}

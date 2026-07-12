@@ -208,11 +208,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "commercial",
       },
       {
-        name: "부작용/관리",
+        name: "통증/부작용",
         keywords: [
-          "교정 통증", "교정 부작용", "교정 후 관리",
-          "교정 주의사항", "교정 중 음식", "교정기 관리",
-          "교정 후 후퇴", "유지장치",
+          "교정 통증", "교정 부작용", "교정 주의사항",
+          "교정 후 후퇴", "교정 치근 흡수", "교정 잇몸 퇴축",
+          "교정 블랙트라이앵글",
         ],
         searchIntent: "informational",
       },
@@ -225,11 +225,20 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "informational",
       },
       {
-        name: "생활/관리",
+        name: "교정 중 생활관리",
         keywords: [
-          "교정 칫솔질", "교정 중 관리", "교정 식사",
+          "교정 칫솔질", "교정 중 관리", "교정 식사", "교정 중 음식",
           "교정 구강위생", "교정 칫솔", "교정 치간칫솔",
-          "유지장치세척", "교정 리테이너",
+          "교정기 관리",
+        ],
+        searchIntent: "informational",
+      },
+      {
+        name: "유지장치/재교정",
+        keywords: [
+          "유지장치", "유지장치세척", "교정 리테이너",
+          "교정 후 관리", "재교정", "교정 후 재발",
+          "유지장치 기간",
         ],
         searchIntent: "informational",
       },
@@ -265,7 +274,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 극복하는 {count}가지 방법",
-        subGroup: "부작용/관리",
+        subGroup: "통증/부작용",
         aspect: "",
       },
       {
@@ -275,8 +284,13 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} 중 꼭 알아야 할 생활 관리법 {count}가지",
-        subGroup: "생활/관리",
+        subGroup: "교정 중 생활관리",
         aspect: "",
+      },
+      {
+        template: "{keyword} 관리 가이드: {aspect}",
+        subGroup: "유지장치/재교정",
+        aspect: "유지 기간과 세척법, 재발했을 때 확인할 기준",
       },
       {
         template: "{keyword} 전후 변화: {aspect}",
@@ -301,7 +315,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "크라운",
         keywords: [
-          "치아 크라운", "크라운 비용",
+          "치아 크라운", "크라운 비용", "크라운 가격",
           "크라운 수명", "크라운 치료", "크라운 과정",
           "크라운 통증",
         ],
@@ -340,14 +354,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "치아 미백", "치아미백 비용", "자가미백",
           "전문미백", "치아미백 효과", "치아미백 부작용",
           "치아 변색", "치아 착색",
-        ],
-        searchIntent: "commercial",
-      },
-      {
-        name: "비용",
-        keywords: [
-          "보철 비용", "크라운 가격", "치아 보철 가격",
-          "보험 적용 보철", "보철 건강보험", "보철 본인부담",
         ],
         searchIntent: "commercial",
       },
@@ -400,11 +406,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 완벽 가이드: {aspect}",
         subGroup: "치아미백",
         aspect: "자가미백 vs 전문미백, 효과와 비용 비교",
-      },
-      {
-        template: "{year}년 {keyword} 현실 가이드: {aspect}",
-        subGroup: "비용",
-        aspect: "건강보험 적용 범위와 실제 부담 비용",
       },
       {
         template: "{keyword} 치료 옵션 비교: {aspect}",
@@ -465,15 +466,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         ],
         searchIntent: "informational",
       },
-      {
-        name: "증상/자가진단",
-        keywords: [
-          "이가 시려요", "이가 아파요", "잇몸에서 피나요",
-          "이가 흔들려요", "이가 깨졌어요", "잇몸이 부었어요",
-          "이가 욱신거려요",
-        ],
-        searchIntent: "informational",
-      },
     ],
     topicAngles: [
       {
@@ -500,11 +492,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 원인과 해결법: {aspect}",
         subGroup: "시림/균열",
         aspect: "시린 이 원인별 치료와 예방법",
-      },
-      {
-        template: "{keyword}? 증상별 원인과 대처법: {aspect}",
-        subGroup: "증상/자가진단",
-        aspect: "치과 가기 전 셀프 체크 가이드",
       },
     ],
   },
@@ -733,10 +720,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     slug: "health-tips",
     subGroups: [
       {
-        name: "구강건강",
+        name: "증상/내원판단",
         keywords: [
-          "구강건강", "치아 건강", "구강 관리",
-          "건강한 치아", "치아 수명", "구강 건강 관리",
+          "치통", "이가 시려요", "이가 아파요", "잇몸에서 피나요",
+          "이가 흔들려요", "이가 깨졌어요", "잇몸이 부었어요",
+          "이가 욱신거려요", "치아 깨짐", "치아 빠짐", "잇몸 부음",
         ],
         searchIntent: "informational",
       },
@@ -796,9 +784,9 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
     ],
     topicAngles: [
       {
-        template: "{keyword} {count}가지 핵심 습관: {aspect}",
-        subGroup: "구강건강",
-        aspect: "치과 의사가 직접 실천하는 방법",
+        template: "{keyword}, 언제 치과에 가야 할까? {aspect}",
+        subGroup: "증상/내원판단",
+        aspect: "응급 신호와 진료 시기를 구분하는 환자 안내",
       },
       {
         template: "{keyword}: {aspect}",
@@ -904,19 +892,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "navigational",
       },
       {
-        name: "신뢰/선택",
+        name: "신뢰/후기/선택",
         keywords: [
           "치과 고르는 법", "치과 추천", "좋은 치과 특징",
-          "동네치과 대학병원", "치과 선택 기준", "과잉진료",
-          "세컨드오피니언 치과", "양심치과",
-        ],
-        searchIntent: "commercial",
-      },
-      {
-        name: "긴급/증상",
-        keywords: [
-          "치통 응급", "이가 아플때", "치아 깨짐", "밤에 치통",
-          "치아 빠짐", "잇몸 부음",
+          "치과 선택 기준", "과잉진료", "세컨드오피니언 치과",
+          "양심치과", "치과 후기", "치과 리뷰", "치과 평판",
         ],
         searchIntent: "transactional",
       },
@@ -930,19 +910,11 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         searchIntent: "commercial",
       },
       {
-        name: "후기/평판",
-        keywords: [
-          "치과 후기", "치과 리뷰", "치과 평판",
-          "치과 만족도", "치과 추천 후기", "치과 블로그 후기",
-        ],
-        searchIntent: "commercial",
-      },
-      {
-        name: "야간/주말/편의",
+        name: "응급/진료시간",
         keywords: [
           "김포 야간치과", "김포 주말치과", "응급 치과",
-          "야간 치과 진료", "주말 치과 진료", "공휴일 치과",
-          "김포 일요일 치과",
+          "야간 치과 진료", "주말 치과 진료", "치통 응급",
+          "밤에 치통",
         ],
         searchIntent: "transactional",
       },
@@ -964,13 +936,8 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       },
       {
         template: "{keyword} {count}가지 핵심 기준: {aspect}",
-        subGroup: "신뢰/선택",
-        aspect: "과잉진료 피하고 좋은 치과 고르는 조건",
-      },
-      {
-        template: "{keyword} 대처법: {aspect}",
-        subGroup: "긴급/증상",
-        aspect: "치과 가기 전 응급 처치와 방문 타이밍",
+        subGroup: "신뢰/후기/선택",
+        aspect: "과잉진료를 피하고 신뢰할 수 있는 후기와 치과를 구분하는 기준",
       },
       {
         template: "{year}년 {keyword} 총정리: {aspect}",
@@ -978,14 +945,9 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         aspect: "건강보험·실비 적용 범위부터 실제 부담 비용까지",
       },
       {
-        template: "{keyword} 제대로 보는 법: {aspect}",
-        subGroup: "후기/평판",
-        aspect: "신뢰할 수 있는 치과 후기 구별 가이드",
-      },
-      {
         template: "{keyword} 찾기: {aspect}",
-        subGroup: "야간/주말/편의",
-        aspect: "김포 지역 야간·주말·응급 진료 안내",
+        subGroup: "응급/진료시간",
+        aspect: "화요일 야간·토요일 진료와 응급 증상별 방문 타이밍",
       },
       {
         template: "{keyword} 진료 안내: {aspect}",
