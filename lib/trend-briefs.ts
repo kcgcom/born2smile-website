@@ -1,6 +1,7 @@
 import type { KeywordCategorySlug } from "./admin-naver-datalab-keywords";
 import type { ContentGap } from "./trend-analysis";
 import type { FaqSuggestion, PageUpdateOpportunity } from "./trend-insights";
+import { getActionEvaluation, type OpportunityEvaluation } from "./opportunity-scoring";
 
 export interface BlogBriefSuggestion {
   slug: KeywordCategorySlug;
@@ -26,6 +27,8 @@ export interface PageImprovementBrief {
   cta: string;
   sourceFiles: string[];
   checklist: string[];
+  contributingTopics: PageUpdateOpportunity["contributingTopics"];
+  confirmationTopics: PageUpdateOpportunity["confirmationTopics"];
 }
 
 function getPrimaryKeyword(gap: ContentGap): string {
@@ -62,9 +65,15 @@ function buildMetaDescription(gap: ContentGap): string {
   return `${primaryKeyword}이 궁금한 환자를 위해 ${gap.subGroup} 핵심 기준, 치료 전후 체크포인트, 상담 시 꼭 물어볼 질문을 서울본치과 관점에서 정리했습니다.`;
 }
 
-export function generateBlogBriefSuggestions(gaps: ContentGap[]): BlogBriefSuggestion[] {
+export function generateBlogBriefSuggestions(gaps: ContentGap[], evaluations: OpportunityEvaluation[]): BlogBriefSuggestion[] {
+  const evaluationByKey = new Map(evaluations.map((item) => [item.key, item]));
   return gaps
-    .slice(0, 8)
+    .filter((gap) => getActionEvaluation(evaluationByKey.get(`${gap.slug}:${gap.subGroup}`)!, "blog")?.eligibility === "eligible")
+    .sort((a, b) => {
+      const aScore = getActionEvaluation(evaluationByKey.get(`${a.slug}:${a.subGroup}`)!, "blog")?.valueScore ?? 0;
+      const bScore = getActionEvaluation(evaluationByKey.get(`${b.slug}:${b.subGroup}`)!, "blog")?.valueScore ?? 0;
+      return bScore - aScore;
+    })
     .map((gap) => {
       const primaryKeyword = getPrimaryKeyword(gap);
       return {
@@ -83,7 +92,7 @@ export function generateBlogBriefSuggestions(gaps: ContentGap[]): BlogBriefSugge
 }
 
 function buildHeroCopy(item: PageUpdateOpportunity): string {
-  return `${item.subGroup}이 궁금한 환자도 첫 화면에서 바로 이해할 수 있도록 핵심 답변을 먼저 보여주세요.`;
+  return `${item.contributingTopics.map((topic) => topic.subGroup).join(", ")}을 찾는 환자가 첫 화면에서 필요한 답을 찾도록 핵심 안내를 통합해 보여주세요.`;
 }
 
 function buildSupportingCopy(item: PageUpdateOpportunity): string {
@@ -119,6 +128,9 @@ function buildChecklist(item: PageUpdateOpportunity, faqQuestions: string[]): st
   if (item.missingSections.some((section) => section.includes("비용") || section.includes("보험"))) {
     checklist.push("비용·보험 관련 표현이 과장 없이 명확한지 검수");
   }
+  if (item.confirmationTopics.length > 0) {
+    checklist.push(`${item.confirmationTopics.map((topic) => topic.subGroup).join(", ")}의 현재 페이지 반영 여부를 먼저 확인`);
+  }
 
   return checklist.slice(0, 5);
 }
@@ -135,9 +147,10 @@ export function generatePageImprovementBriefs(
     faqMap.set(key, list);
   }
 
-  return opportunities.slice(0, 8).map((item) => {
-    const key = `${item.slug}:${item.subGroup}`;
-    const faqQuestions = (faqMap.get(key) ?? []).slice(0, 3);
+  return opportunities.map((item) => {
+    const faqQuestions = item.contributingTopics
+      .flatMap((topic) => faqMap.get(topic.topicKey) ?? [])
+      .slice(0, 3);
     return {
       slug: item.slug,
       subGroup: item.subGroup,
@@ -149,6 +162,8 @@ export function generatePageImprovementBriefs(
       cta: "전화 상담·빠른 예약 버튼을 상단 요약 아래에 배치해 다음 행동을 명확히 보여주세요.",
       sourceFiles: getSourceFiles(item.targetPage),
       checklist: buildChecklist(item, faqQuestions),
+      contributingTopics: item.contributingTopics,
+      confirmationTopics: item.confirmationTopics,
     } satisfies PageImprovementBrief;
   });
 }

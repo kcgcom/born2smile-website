@@ -4,7 +4,8 @@ import {
   type KeywordCategorySlug,
   type SearchIntent,
 } from "@/lib/admin-naver-datalab-keywords";
-import type { BusinessValue, InsightActionType } from "@/lib/trend-insights";
+import type { InsightAction } from "@/lib/trend-insights";
+import type { OpportunityEvaluation } from "@/lib/opportunity-scoring";
 import type { CategoryTrendData } from "@/lib/trend-analysis";
 import type { CategoryKeywords } from "@/lib/admin-naver-datalab-keywords";
 
@@ -26,7 +27,9 @@ export interface ContentGapItem {
   changeRate: number;
   currentAvg: number;
   existingPostCount: number;
-  gapScore: number;
+  contentGapScore: number;
+  contentCoverage: number;
+  coverageEvidence: Array<{ slug: string; title: string; strength: number }>;
   monthlyVolume: number | null;
   volumeSource: "searchad" | "datalab-fallback";
   isEstimated: boolean;
@@ -38,9 +41,9 @@ export interface ContentGapItem {
 export interface InsightActionItem {
   slug: KeywordCategorySlug;
   subGroup: string;
-  actionType: InsightActionType;
-  businessValue: BusinessValue;
-  confidence: number;
+  actionType: InsightAction["actionType"];
+  valueScore: number;
+  confidence: "B" | "C";
   reason: string;
   targetPage: string;
 }
@@ -49,7 +52,7 @@ export interface FaqSuggestionItem {
   slug: KeywordCategorySlug;
   subGroup: string;
   question: string;
-  priority: number;
+  valueScore: number;
   keywords: string[];
   targetPage: string;
 }
@@ -58,9 +61,17 @@ export interface PageUpdateOpportunityItem {
   slug: KeywordCategorySlug;
   subGroup: string;
   targetPage: string;
-  pageUpdateScore: number;
+  pageValueScore: number;
   missingSections: string[];
   recommendedBlocks: string[];
+  contributingTopics: Array<{
+    topicKey: string;
+    subGroup: string;
+    valueScore: number;
+    status: "promote-from-faq" | "missing";
+    missingSections: string[];
+  }>;
+  confirmationTopics: Array<{ topicKey: string; subGroup: string }>;
 }
 
 export interface BlogBriefItem {
@@ -87,6 +98,8 @@ export interface PageBriefItem {
   cta: string;
   sourceFiles: string[];
   checklist: string[];
+  contributingTopics: PageUpdateOpportunityItem["contributingTopics"];
+  confirmationTopics: PageUpdateOpportunityItem["confirmationTopics"];
 }
 
 export interface TrendOverviewCategory {
@@ -126,8 +139,10 @@ export interface StrategyOverviewData {
     fetchedAt: string;
     taxonomyVersion?: number | null;
     taxonomySource?: "supabase" | "code-fallback";
+    scoringModelVersion: string;
   };
   contentGap: ContentGapItem[];
+  opportunityEvaluations: OpportunityEvaluation[];
   insightActions: InsightActionItem[];
   faqSuggestions: FaqSuggestionItem[];
   pageOpportunities: PageUpdateOpportunityItem[];
@@ -175,7 +190,7 @@ export function CategoryBadge({ category }: { category: KeywordCategorySlug }) {
   );
 }
 
-export function GapScoreBadge({ score }: { score: number }) {
+export function ValueScoreBadge({ score }: { score: number }) {
   if (score >= 70) {
     return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">HIGH</span>;
   }
@@ -209,14 +224,4 @@ export function PriorityBadge({ priority }: { priority: "high" | "medium" | "low
     return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">MED</span>;
   }
   return <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">LOW</span>;
-}
-
-export function BusinessValueBadge({ value }: { value: BusinessValue }) {
-  if (value === "high") {
-    return <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">고가치</span>;
-  }
-  if (value === "medium") {
-    return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-700">중간</span>;
-  }
-  return <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2.5 py-0.5 text-xs font-semibold text-[var(--foreground)]">탐색형</span>;
 }

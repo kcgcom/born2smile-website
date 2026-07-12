@@ -203,6 +203,25 @@ function getSnapshotPost(slug: string): BlogPost | null {
 // Read functions (cached)
 // ---------------------------------------------------------------------------
 
+/** 관리자 분석·검증 작업용 전체 게시글 직접 조회. Next.js 캐시 컨텍스트 밖에서도 사용할 수 있다. */
+export async function getAllPublishedPostsUncached(): Promise<BlogPost[]> {
+  if (!isSupabaseAdminConfigured) return getSnapshotPublishedPosts();
+  try {
+    const today = getTodayKST();
+    const { data, error } = await getSupabaseAdmin()
+      .from(TABLE)
+      .select("*")
+      .eq("published", true)
+      .lte("date", today)
+      .order("date", { ascending: false });
+    if (error) throw error;
+    return (data as DbRow[]).map((row) => rowToPost(row));
+  } catch (error) {
+    console.warn("[blog-supabase] Direct query failed, using snapshot fallback", error);
+    return getSnapshotPublishedPosts();
+  }
+}
+
 /**
  * All published posts visible to site visitors (date <= today KST), including full blocks.
  * Ordered by date DESC.

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { getKeywordCategoryLabel, type KeywordCategorySlug, type SearchIntent } from "@/lib/admin-naver-datalab-keywords";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
-import { BusinessValueBadge, CategoryBadge, GapScoreBadge, SearchIntentBadge, calcRelatedVolume } from "./shared";
+import { CategoryBadge, ValueScoreBadge, SearchIntentBadge, calcRelatedVolume } from "./shared";
 import type { ContentGapItem, InsightActionItem, PageUpdateOpportunityItem } from "./shared";
 import { ACTION_LABELS, INTENT_FILTER_OPTIONS, buildCrossKeywords, useGapTableSort } from "./strategy-shared";
 
@@ -62,14 +62,38 @@ export function EvidenceDataSection({
 
   const maxVolume = useMemo(() => Math.max(...filteredGap.map((g) => g.monthlyVolume ?? 0), 1), [filteredGap]);
   const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
-  const pageOpportunityByKey = useMemo(() => new Map(pageOpportunities.map((item) => [`${item.slug}:${item.subGroup}`, item])), [pageOpportunities]);
+  const pageOpportunityByKey = useMemo(() => new Map(
+    pageOpportunities.flatMap((item) => item.contributingTopics.map((topic) => [topic.topicKey, item] as const)),
+  ), [pageOpportunities]);
+  const confirmationPageByKey = useMemo(() => new Map(
+    pageOpportunities.flatMap((item) => item.confirmationTopics.map((topic) => [topic.topicKey, item] as const)),
+  ), [pageOpportunities]);
 
-  const getPlannerKey = (slug: KeywordCategorySlug, subGroup: string) => {
-    const pageKey = `page:${slug}:${subGroup}`;
-    const blogKey = `blog:${slug}:${subGroup}`;
-    if (candidateKeys.has(pageKey)) return pageKey;
-    if (candidateKeys.has(blogKey)) return blogKey;
-    return null;
+  const getPlannerKeys = (slug: KeywordCategorySlug, subGroup: string) => {
+    const topicKey = `${slug}:${subGroup}`;
+    const pageOpportunity = pageOpportunityByKey.get(topicKey);
+    return ([
+      { type: "blog" as const, key: `blog:${topicKey}` },
+      ...(pageOpportunity ? [{ type: "page" as const, key: `page:${pageOpportunity.targetPage}` }] : []),
+      { type: "faq" as const, key: `faq:${topicKey}` },
+    ])
+    .filter((item) => candidateKeys.has(item.key));
+  };
+
+  const plannerLink = ({ type, key }: { type: "blog" | "page" | "faq"; key: string }) => {
+    const label = type === "blog" ? "새 글" : type === "page" ? "페이지" : "FAQ";
+    if (plannedKeys.has(key) && !visiblePlanKeys.has(key)) {
+      return <span key={key} className="whitespace-nowrap text-xs text-[var(--muted)]">{label} 검토 완료</span>;
+    }
+    return (
+      <a
+        key={key}
+        href={`/admin/content/planner?opportunity=${encodeURIComponent(key)}#weekly-recommendations`}
+        className="whitespace-nowrap text-xs font-semibold text-[var(--color-primary)] hover:underline"
+      >
+        {visiblePlanKeys.has(key) ? `${label} 계획 보기` : `${label} 검토`}
+      </a>
+    );
   };
 
   if (contentGap.length === 0 && crossKeywords.length === 0) return null;
@@ -124,13 +148,13 @@ export function EvidenceDataSection({
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">콘텐츠 갭 분석</h3>
               <p className="mt-1 text-xs text-[var(--muted)]">
-                갭 점수 = 주제 검색량(75%) + 콘텐츠 부족도(25%) · 검색 추이와 연관 키워드는 점수에 반영하지 않음
+                콘텐츠 공백 = 전체 본문의 주제 관련성·최신성·대표 콘텐츠 강도 · 검색량과 검색 추이는 공백 점수에 반영하지 않음
                 &nbsp;·&nbsp;
-                <span className="text-red-600 font-medium">HIGH(≥70): 시급</span>
+                <span className="text-red-600 font-medium">HIGH(≥70): 큰 공백</span>
                 &nbsp;·&nbsp;
-                <span className="text-yellow-600 font-medium">MED(≥40): 권장</span>
+                <span className="text-yellow-600 font-medium">MED(≥40): 부분 공백</span>
                 &nbsp;·&nbsp;
-                <span className="text-green-600 font-medium">LOW(&lt;40)</span>
+                <span className="text-green-600 font-medium">LOW(&lt;40): 대체로 충족</span>
               </p>
               <div className="mt-3 flex items-start gap-2">
                 <span className="w-14 shrink-0 pt-1 text-xs font-medium text-[var(--muted)]">카테고리</span>
@@ -269,11 +293,9 @@ export function EvidenceDataSection({
                       return (
                         <div className="space-y-1">
                           <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
-                            {ACTION_LABELS[item.actionType]}
+                            {ACTION_LABELS[item.actionType]} · {item.valueScore}
                           </span>
-                          <div>
-                            <BusinessValueBadge value={item.businessValue} />
-                          </div>
+                          <div className="text-[10px] text-[var(--muted)]">신뢰도 {item.confidence}</div>
                         </div>
                       );
                     },
@@ -338,25 +360,27 @@ export function EvidenceDataSection({
                     render: (row) => <span className="tabular-nums text-[var(--foreground)]">{Number(row.existingPostCount)}</span>,
                   },
                   {
-                    key: "gapScore",
-                    label: "갭 점수",
+                    key: "contentGapScore",
+                    label: "콘텐츠 공백",
                     align: "right",
                     sortable: true,
                     render: (row) => (
                       <div className="flex items-center justify-end gap-1.5">
-                        <span className="tabular-nums text-[var(--foreground)]">{Number(row.gapScore).toFixed(0)}</span>
-                        <GapScoreBadge score={Number(row.gapScore)} />
+                        <span className="tabular-nums text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
+                        <ValueScoreBadge score={Number(row.contentGapScore)} />
                       </div>
                     ),
                   },
                   {
-                    key: "pageUpdateScore",
-                    label: "페이지 보강",
+                    key: "pageValueScore",
+                    label: "페이지 가치",
                     align: "right",
                     render: (row) => {
                       const item = pageOpportunityByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
+                      const confirmation = confirmationPageByKey.has(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
+                      if (confirmation) return <span className="text-xs font-medium text-amber-700">확인 필요</span>;
                       if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
-                      return <span className="tabular-nums text-[var(--foreground)]">{item.pageUpdateScore}</span>;
+                      return <span className="tabular-nums text-[var(--foreground)]">{item.pageValueScore}</span>;
                     },
                   },
                   {
@@ -364,19 +388,10 @@ export function EvidenceDataSection({
                     label: "실행",
                     align: "right",
                     render: (row) => {
-                      const plannerKey = getPlannerKey(row.slug as KeywordCategorySlug, String(row.subGroup));
-                      if (!plannerKey) return <span className="text-xs text-[var(--muted)]">-</span>;
-                      if (plannedKeys.has(plannerKey) && !visiblePlanKeys.has(plannerKey)) {
-                        return <span className="whitespace-nowrap text-xs text-[var(--muted)]">검토 완료</span>;
-                      }
-                      return (
-                        <a
-                          href={`/admin/content/planner?opportunity=${encodeURIComponent(plannerKey)}#weekly-recommendations`}
-                          className="whitespace-nowrap text-xs font-semibold text-[var(--color-primary)] hover:underline"
-                        >
-                          {visiblePlanKeys.has(plannerKey) ? "기존 계획 보기" : "플래너에서 검토"}
-                        </a>
-                      );
+                      const plannerKeys = getPlannerKeys(row.slug as KeywordCategorySlug, String(row.subGroup));
+                      return plannerKeys.length
+                        ? <div className="flex flex-col items-end gap-1">{plannerKeys.map(plannerLink)}</div>
+                        : <span className="text-xs text-[var(--muted)]">-</span>;
                     },
                   },
                 ]}
@@ -392,7 +407,7 @@ export function EvidenceDataSection({
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {([
                   { key: "monthlyVolume", label: "주제 검색량" },
-                  { key: "gapScore", label: "갭 점수" },
+                  { key: "contentGapScore", label: "콘텐츠 공백" },
                 ] as const).map((chip) => {
                   const isActive = gapSortKey === chip.key;
                   return (
@@ -425,7 +440,9 @@ export function EvidenceDataSection({
                   const topRelatedVolume = calcRelatedVolume(item, 10);
                   const hasKeywords = direct.length > 0 || related.length > 0;
                   const action = actionByKey.get(`${item.slug}:${item.subGroup}`);
-                  const pageOpportunity = pageOpportunityByKey.get(`${item.slug}:${item.subGroup}`);
+                  const topicKey = `${item.slug}:${item.subGroup}`;
+                  const pageOpportunity = pageOpportunityByKey.get(topicKey);
+                  const needsPageConfirmation = confirmationPageByKey.has(topicKey);
                   return (
                     <div key={item.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
@@ -440,7 +457,7 @@ export function EvidenceDataSection({
                               <span className="text-[var(--muted)]">{item.currentAvg.toFixed(1)}<span className="text-[9px]">(상대)</span></span>
                             )}
                           </span>
-                          <GapScoreBadge score={item.gapScore} />
+                          <ValueScoreBadge score={item.contentGapScore} />
                         </span>
                       </div>
                       {related.length > 0 && (
@@ -453,32 +470,26 @@ export function EvidenceDataSection({
                           {action && (
                             <>
                               <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
-                                {ACTION_LABELS[action.actionType]}
+                                {ACTION_LABELS[action.actionType]} · {action.valueScore}
                               </span>
-                              <BusinessValueBadge value={action.businessValue} />
+                              <span className="text-[10px] text-[var(--muted)]">신뢰도 {action.confidence}</span>
                             </>
                           )}
                           {pageOpportunity && (
                             <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">
-                              페이지 {pageOpportunity.pageUpdateScore}
+                              페이지 {pageOpportunity.pageValueScore}
+                            </span>
+                          )}
+                          {needsPageConfirmation && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                              페이지 반영 확인 필요
                             </span>
                           )}
                         </div>
                       )}
                       {(() => {
-                        const plannerKey = getPlannerKey(item.slug, item.subGroup);
-                        if (!plannerKey) return null;
-                        if (plannedKeys.has(plannerKey) && !visiblePlanKeys.has(plannerKey)) {
-                          return <span className="mt-2 inline-flex text-xs font-medium text-[var(--muted)]">검토 완료</span>;
-                        }
-                        return (
-                          <a
-                            href={`/admin/content/planner?opportunity=${encodeURIComponent(plannerKey)}#weekly-recommendations`}
-                            className="mt-2 inline-flex text-xs font-semibold text-[var(--color-primary)] hover:underline"
-                          >
-                            {visiblePlanKeys.has(plannerKey) ? "기존 계획 보기" : "플래너에서 검토"}
-                          </a>
-                        );
+                        const plannerKeys = getPlannerKeys(item.slug, item.subGroup);
+                        return plannerKeys.length ? <div className="mt-2 flex flex-wrap gap-2">{plannerKeys.map(plannerLink)}</div> : null;
                       })()}
                       {hasKeywords && (
                         <div className="mt-1.5 flex flex-wrap gap-1">

@@ -13,21 +13,22 @@ import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { BLOG_EDITOR_PREFILL_KEY } from "../blog/blog-editor-draft";
-import type { BlogBriefItem, ContentGapItem, PageBriefItem, StrategyOverviewData } from "../insight/shared";
+import type { BlogBriefItem, ContentGapItem, FaqSuggestionItem, PageBriefItem, StrategyOverviewData } from "../insight/shared";
 import { CategoryBadge, SearchIntentBadge } from "../insight/shared";
 
 interface PlannerCandidate {
   key: string;
-  itemType: "blog" | "page";
+  itemType: "blog" | "page" | "faq";
   title: string;
   slug: KeywordCategorySlug;
   targetPage: string;
   rationale: string;
   demandLabel: string;
-  confidence: "높음" | "보통" | "낮음";
+  confidence: "B" | "C";
   effort: string;
-  priorityScore: number;
-  brief: BlogBriefItem | PageBriefItem;
+  effortMinutes: number;
+  valueScore: number;
+  brief: BlogBriefItem | PageBriefItem | FaqSuggestionItem;
   sourceSnapshot: Record<string, unknown>;
 }
 
@@ -52,54 +53,76 @@ function demandLabel(gap?: ContentGapItem) {
   return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : "확인 불가";
 }
 
-function demandPriority(gap?: ContentGapItem): number {
-  if (!gap?.monthlyVolume || gap.monthlyVolume <= 0) return 0;
-  return Math.min(100, Math.log10(gap.monthlyVolume + 1) * 22);
-}
-
-function confidence(gap?: ContentGapItem): PlannerCandidate["confidence"] {
-  if (gap?.monthlyVolume != null) return "높음";
-  if (gap && gap.currentAvg > 0) return "보통";
-  return "낮음";
+function itemTypeLabel(type: PlannerCandidate["itemType"]): string {
+  if (type === "blog") return "새 글";
+  if (type === "page") return "페이지 보강";
+  return "FAQ 보강";
 }
 
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
+  const evaluations = new Map(data.opportunityEvaluations.map((item) => [item.key, item]));
   const blogs = data.blogBriefs.map((brief) => {
     const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
+    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
+    const action = evaluation.actions.find((item) => item.actionType === "blog")!;
     return {
       key: `blog:${brief.slug}:${brief.subGroup}`,
       itemType: "blog" as const,
       title: brief.suggestedTitle,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: gap ? `${demandLabel(gap)} · 관련 포스트 ${gap.existingPostCount}개 · 갭 ${gap.gapScore}` : "새 콘텐츠 기회",
+      rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${action.valueScore}` : "새 콘텐츠 기회",
       demandLabel: demandLabel(gap),
-      confidence: confidence(gap),
+      confidence: evaluation.confidence,
       effort: "약 90분",
-      priorityScore: (gap?.gapScore ?? 0) * 0.8 + demandPriority(gap) * 0.2,
+      effortMinutes: 90,
+      valueScore: action.valueScore ?? 0,
       brief,
-      sourceSnapshot: gap ? { gap } : {},
+      sourceSnapshot: { ...(gap ? { gap } : {}), evaluation },
     };
   });
   const pages = data.pageBriefs.map((brief) => {
-    const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
-    const opportunity = data.pageOpportunities.find((item) => item.slug === brief.slug && item.subGroup === brief.subGroup);
+    const opportunity = data.pageOpportunities.find((item) => item.targetPage === brief.targetPage)!;
+    const contributingEvaluations = brief.contributingTopics
+      .map((topic) => evaluations.get(topic.topicKey))
+      .filter((item): item is NonNullable<typeof item> => item != null);
+    const effortMinutes = Math.min(120, 45 + Math.max(0, brief.contributingTopics.length - 1) * 15);
     return {
-      key: `page:${brief.slug}:${brief.subGroup}`,
+      key: `page:${brief.targetPage}`,
       itemType: "page" as const,
-      title: `${getKeywordCategoryLabel(brief.slug)} ${brief.subGroup} 페이지 보강`,
+      title: `${getKeywordCategoryLabel(brief.slug)} 페이지 통합 보강`,
       slug: brief.slug,
       targetPage: brief.targetPage,
-      rationale: opportunity ? `${demandLabel(gap)} · 보강 ${opportunity.pageUpdateScore} · ${opportunity.missingSections.join(" · ")}` : "서비스 페이지 보강 기회",
-      demandLabel: demandLabel(gap),
-      confidence: confidence(gap),
-      effort: "약 45분",
-      priorityScore: (gap?.gapScore ?? 0) * 0.45 + (opportunity?.pageUpdateScore ?? 0) * 0.45 + demandPriority(gap) * 0.1,
+      rationale: `페이지 가치 ${opportunity.pageValueScore} · 근거 주제 ${brief.contributingTopics.length}개 · ${opportunity.missingSections.join(" · ")}`,
+      demandLabel: `${brief.contributingTopics.length}개 주제 근거`,
+      confidence: contributingEvaluations.some((item) => item.confidence === "C") ? "C" as const : "B" as const,
+      effort: `약 ${effortMinutes}분`,
+      effortMinutes,
+      valueScore: opportunity.pageValueScore,
       brief,
-      sourceSnapshot: { ...(gap ? { gap } : {}), ...(opportunity ? { opportunity } : {}) },
+      sourceSnapshot: { opportunity, evaluations: contributingEvaluations },
     };
   });
-  return [...blogs, ...pages];
+  const faqs = data.faqSuggestions.map((brief) => {
+    const gap = findGap(data.contentGap, brief.slug, brief.subGroup);
+    const evaluation = evaluations.get(`${brief.slug}:${brief.subGroup}`)!;
+    return {
+      key: `faq:${brief.slug}:${brief.subGroup}`,
+      itemType: "faq" as const,
+      title: brief.question,
+      slug: brief.slug,
+      targetPage: brief.targetPage,
+      rationale: `${demandLabel(gap)} · FAQ 가치 ${brief.valueScore}`,
+      demandLabel: demandLabel(gap),
+      confidence: evaluation.confidence,
+      effort: "약 20분",
+      effortMinutes: 20,
+      valueScore: brief.valueScore,
+      brief,
+      sourceSnapshot: { ...(gap ? { gap } : {}), evaluation },
+    };
+  });
+  return [...blogs, ...pages, ...faqs];
 }
 
 function selectBalancedRecommendations(
@@ -107,19 +130,17 @@ function selectBalancedRecommendations(
   requestedOpportunityKey: string | null,
   limit = 5,
 ): PlannerCandidate[] {
-  const sorted = [...candidates].sort((a, b) => b.priorityScore - a.priorityScore || a.title.localeCompare(b.title, "ko"));
+  const sorted = [...candidates].sort((a, b) => b.valueScore - a.valueScore || a.effortMinutes - b.effortMinutes || a.title.localeCompare(b.title, "ko"));
   const requested = sorted.find((candidate) => candidate.key === requestedOpportunityKey);
   const selected = requested ? [requested] : [];
   const remaining = sorted.filter((candidate) => candidate.key !== requested?.key);
-  const hasBothTypes = new Set(sorted.map((candidate) => candidate.itemType)).size > 1;
-  const maxPerType = Math.ceil(limit / 2);
-
   while (selected.length < limit && remaining.length > 0) {
-    const counts = {
-      blog: selected.filter((candidate) => candidate.itemType === "blog").length,
-      page: selected.filter((candidate) => candidate.itemType === "page").length,
-    };
-    let index = remaining.findIndex((candidate) => !hasBothTypes || counts[candidate.itemType] < maxPerType);
+    const top = remaining[0];
+    const sameTypeCount = selected.filter((candidate) => candidate.itemType === top.itemType).length;
+    let index = sameTypeCount >= 3
+      ? remaining.findIndex((candidate) => candidate.itemType !== top.itemType && top.valueScore - candidate.valueScore <= 10)
+      : -1;
+    if (index < 0 && remaining[1] && top.valueScore - remaining[1].valueScore <= 10 && remaining[1].effortMinutes < top.effortMinutes) index = 1;
     if (index < 0) index = 0;
     selected.push(remaining.splice(index, 1)[0]);
   }
@@ -157,8 +178,9 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
   );
   const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
   const deferredCount = (planner.data ?? []).filter((item) => item.status === "deferred").length;
-  const uncoveredCount = strategy.data?.contentGap.filter((item) => item.existingPostCount === 0).length ?? 0;
+  const blogOpportunityCount = strategy.data?.blogBriefs.length ?? 0;
   const pageOpportunityCount = strategy.data?.pageOpportunities.length ?? 0;
+  const faqOpportunityCount = strategy.data?.faqSuggestions.length ?? 0;
   const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
 
   useEffect(() => {
@@ -214,9 +236,9 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
             <MetricGroup
               label="실행 후보 구성"
               metrics={[
-                { label: "분석 주제", value: strategy.data?.contentGap.length ?? 0 },
-                { label: "신규 필요", value: uncoveredCount },
+                { label: "새 글", value: blogOpportunityCount },
                 { label: "페이지 보강", value: pageOpportunityCount },
+                { label: "FAQ 보강", value: faqOpportunityCount },
               ]}
             />
             <MetricGroup
@@ -237,9 +259,9 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
         <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.</p></div>
         {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
-            <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{candidate.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
+            <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{itemTypeLabel(candidate.itemType)}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="검색 수요" value={candidate.demandLabel} /><Fact label="데이터 신뢰" value={candidate.confidence} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="기회 가치" value={`${candidate.valueScore}점`} /><Fact label="신뢰도" value={candidate.confidence} /><Fact label="예상 작업량" value={candidate.effort} /></div>
             <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
           </AdminSurface>
         ))}</div> : <Empty icon={Check} title="현재 추천 후보를 모두 검토했습니다." description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
@@ -249,7 +271,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
         <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">작업 보드</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
         {boardItems.length ? <div className="space-y-3">{boardItems.map((item) => (
           <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className={`scroll-mt-6 rounded-2xl p-5 ${item.opportunityKey === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><AdminPill tone="white">{item.itemType === "blog" ? "새 글" : "페이지 보강"}</AdminPill><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[item.status]}</span></div><h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p></div>
+            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><AdminPill tone="white">{itemTypeLabel(item.itemType)}</AdminPill><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[item.status]}</span></div><h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p></div>
             <div className="flex flex-wrap items-center gap-2"><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
               <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
               {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}

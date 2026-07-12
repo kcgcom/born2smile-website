@@ -3,7 +3,7 @@
 // analyzeTrend, analyzeContentGap, generateTopicSuggestions
 // =============================================================
 
-import type { BlogPostMeta } from "./blog/types";
+import type { BlogBlock, BlogPost } from "./blog/types";
 import type { CategoryKeywords, KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-keywords";
 
 export type TrendDirection = "rising" | "falling" | "stable";
@@ -41,8 +41,12 @@ export interface ContentGap {
   currentAvg: number;
   /** title/subtitle/excerpt/tags 키워드 매칭된 포스트 수 */
   existingPostCount: number;
-  /** 0~100, 높을수록 콘텐츠 필요 */
-  gapScore: number;
+  /** 0~100, 높을수록 현재 콘텐츠의 실질 커버리지가 부족함 */
+  contentGapScore: number;
+  /** 규칙 기반 전체 본문 유효 커버리지 (0~1.5) */
+  contentCoverage: number;
+  /** 관련성이 높은 기존 콘텐츠 근거 */
+  coverageEvidence: Array<{ slug: string; title: string; strength: number }>;
   /** 월간 검색량 (검색광고 API 연동 시), null이면 미연동 */
   monthlyVolume: number | null;
   /** 데이터 출처 */
@@ -57,29 +61,13 @@ export interface ContentGap {
   searchIntent: SearchIntent;
 }
 
-export interface TopicSuggestion {
-  rank: number;
-  category: KeywordCategorySlug;
-  /** 영어 카테고리 슬러그 */
-  slug: KeywordCategorySlug;
-  /** topicAngle 템플릿 + 트렌드 키워드 조합으로 생성된 제목 */
-  suggestedTitle: string;
-  /** 추천 이유 (한국어) */
-  reasoning: string;
-  /** 관련 키워드 */
-  keywords: string[];
-  trend: TrendDirection;
-  gapScore: number;
-  priority: "high" | "medium" | "low";
-}
-
 // =============================================================
 // buildSyntheticCategoryData — DataLab 없이 분류체계만으로 카테고리 데이터 생성
 // =============================================================
 
 /**
  * DataLab API 호출 없이 키워드 분류체계만으로 CategoryTrendData[]를 생성한다.
- * 검색 추이 보정 없이 검색 수요와 콘텐츠 부족도만으로 갭 점수를 계산한다.
+ * 검색 추이 없이 택소노미 구조만 생성한다. 콘텐츠 공백과 행동별 가치는 별도 단계에서 계산한다.
  */
 export function buildSyntheticCategoryData(
   categoryKeywords: CategoryKeywords[],
@@ -128,13 +116,60 @@ function weightedAvg(values: number[]): number {
   return valueSum / weightSum;
 }
 
-/**
- * 콘텐츠 부족도 — 지수 감소 함수
- * 0개=100, 1개=67, 2개=45, 3개=30, 4개=20, 5개=14, 10개=2
- * 선형(100-n*25)의 4개 cliff 제거
- */
-function calcContentLack(postCount: number): number {
-  return Math.round(100 * Math.exp(-postCount / 2.5));
+function blockText(block: BlogBlock): string {
+  if (block.type === "heading" || block.type === "paragraph") return block.text;
+  if (block.type === "list") return block.items.join(" ");
+  if (block.type === "faq") return `${block.question} ${block.answer}`;
+  if (block.type === "image") return `${block.alt} ${block.caption ?? ""}`;
+  if (block.type === "relatedLinks") return block.items.map((item) => `${item.title} ${item.description ?? ""}`).join(" ");
+  if (block.type === "table") return `${block.headers.join(" ")} ${block.rows.flat().join(" ")}`;
+  return `${block.title} ${block.description}`;
+}
+
+function normalizeCoverageText(value: string): string {
+  return value.replace(/\s+/g, "").toLowerCase();
+}
+
+function freshnessFactor(post: BlogPost): number {
+  const value = post.dateModified ?? post.date;
+  const ageYears = (Date.now() - new Date(`${value}T00:00:00+09:00`).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  if (ageYears <= 2) return 1;
+  if (ageYears <= 4) return 0.8;
+  return 0.6;
+}
+
+function coverageStrength(post: BlogPost, keywords: string[], subGroup: string): number {
+  const genericTerms = new Set(["치과", "치료", "병원", "정보", "추천", "김포", "서울본치과"]);
+  const needles = [...new Set([...keywords, subGroup])]
+    .map(normalizeCoverageText)
+    .filter((value) => value.length >= 2 && !genericTerms.has(value));
+  if (needles.length === 0) return 0;
+  const includesNeedle = (value: string) => {
+    const normalized = normalizeCoverageText(value);
+    return needles.some((needle) => normalized.includes(needle));
+  };
+  let strength = 0;
+  if (includesNeedle(post.title)) strength = Math.max(strength, 1);
+  if (post.blocks.some((block) => block.type === "heading" && includesNeedle(block.text))) strength = Math.max(strength, 0.8);
+  const bodyMatches = post.blocks.filter((block) => includesNeedle(blockText(block))).length;
+  if (bodyMatches >= 3) strength = Math.max(strength, 0.55);
+  else if (bodyMatches > 0) strength = Math.max(strength, 0.35);
+  if (includesNeedle(`${post.subtitle} ${post.excerpt}`)) strength = Math.max(strength, 0.3);
+  if (includesNeedle(post.tags.join(" "))) strength = Math.max(strength, 0.15);
+  return Math.round(strength * freshnessFactor(post) * 100) / 100;
+}
+
+function analyzeCoverage(posts: BlogPost[], keywords: string[], subGroup: string) {
+  const evidence = posts
+    .map((post) => ({ slug: post.slug, title: post.title, strength: coverageStrength(post, keywords, subGroup) }))
+    .filter((item) => item.strength > 0)
+    .sort((a, b) => b.strength - a.strength);
+  const coverage = Math.min(1.5, evidence.reduce((sum, item, index) => {
+    const weight = index === 0 ? 1 : index === 1 ? 0.4 : 0.15;
+    return sum + item.strength * weight;
+  }, 0));
+  const contentGapScore = Math.round(Math.max(10, 100 - (coverage / 1.5) * 90));
+  return { evidence: evidence.slice(0, 5), matchCount: evidence.length, coverage: Math.round(coverage * 100) / 100, contentGapScore };
 }
 
 // =============================================================
@@ -208,22 +243,12 @@ export interface VolumeDataEntry {
 /**
  * 트렌드 데이터와 발행된 블로그 포스트를 교차 분석하여 콘텐츠 갭을 식별한다.
  *
- * v5 gapScore 공식 (핵심 키워드 전체의 주제 검색량, 검색 추이·연관어 보정 없음):
- *
- *   volumeScore = min(100, log10(monthlyTotal + 1) × 25)
- *   contentLack = round(100 × exp(-existingPostCount / 2.5))
- *   gapScore = clamp(0, 100, volumeScore × 0.75 + contentLack × 0.25)
- *
- * 검색량이 없는 경우 volumeScore는 0으로 처리한다.
- * DataLab의 상대 검색 추이는 갭 점수의 대체값으로도 사용하지 않는다.
- *
- * 키워드-포스트 매칭:
- * - title + subtitle + excerpt + tags (v2 추가) 기반
- * - 동일 카테고리 포스트만 대상
+ * opportunity-v1.0 콘텐츠 공백 분석.
+ * 검색량과 검색 추이는 섞지 않고 전체 본문의 주제 커버리지만 계산한다.
  */
 export function analyzeContentGap(
   categoryData: CategoryTrendData[],
-  publishedPosts: BlogPostMeta[],
+  publishedPosts: BlogPost[],
   categoryKeywords?: CategoryKeywords[],
   volumeData?: Record<string, VolumeDataEntry>,
 ): ContentGap[] {
@@ -243,6 +268,9 @@ export function analyzeContentGap(
       changeRate: number;
       currentAvg: number;
       existingPostCount: number;
+      contentGapScore: number;
+      contentCoverage: number;
+      coverageEvidence: Array<{ slug: string; title: string; strength: number }>;
       monthlyVolume: number | null;
       isEstimated: boolean;
       relatedKeywords: Array<{ keyword: string; volume: number }>;
@@ -255,15 +283,7 @@ export function analyzeContentGap(
       const subGroupDef = catKw?.subGroups.find((s) => s.name === sg.name);
       const keywords = subGroupDef?.keywords ?? [];
 
-      // B-4: 키워드-포스트 매칭 (tags 포함)
-      const existingPostCount = categoryPosts.filter((post) => {
-        const text = `${post.title} ${post.subtitle} ${post.excerpt} ${(post.tags ?? []).join(" ")}`;
-        if (keywords.length > 0) {
-          return keywords.some((kw) => text.includes(kw));
-        }
-        // 키워드 정의 없을 경우 서브그룹명으로 단순 매칭
-        return text.includes(sg.name);
-      }).length;
+      const coverage = analyzeCoverage(categoryPosts, keywords, sg.name);
 
       // 검색광고 검색량 조회 (key = "카테고리:서브그룹")
       const volumeKey = `${catData.category}:${sg.name}`;
@@ -275,7 +295,10 @@ export function analyzeContentGap(
         trend: sg.trend,
         changeRate: sg.changeRate,
         currentAvg: sg.currentAvg,
-        existingPostCount,
+        existingPostCount: coverage.matchCount,
+        contentGapScore: coverage.contentGapScore,
+        contentCoverage: coverage.coverage,
+        coverageEvidence: coverage.evidence,
         monthlyVolume: vol?.monthlyTotalQcCnt ?? null,
         isEstimated: vol?.isEstimated ?? false,
         relatedKeywords: vol?.relatedKeywords ?? [],
@@ -285,17 +308,6 @@ export function analyzeContentGap(
     }
 
     for (const g of catGaps) {
-      // gapScore v5 공식 (주제 검색량 중심, 검색 추이·연관어 보정 없음)
-      const volumeScore = g.monthlyVolume != null
-        ? Math.min(100, Math.log10(g.monthlyVolume + 1) * 25)
-        : 0;
-
-      const contentLack = calcContentLack(g.existingPostCount);
-
-      // 최종 점수: 검색 수요 75% + 콘텐츠 부족도 25%, clamp [0, 100]
-      const rawScore = volumeScore * 0.75 + contentLack * 0.25;
-      const gapScore = Math.round(Math.min(100, Math.max(0, rawScore)));
-
       gaps.push({
         category: catData.category,
         slug: catData.slug,
@@ -305,7 +317,9 @@ export function analyzeContentGap(
         changeRate: g.changeRate,
         currentAvg: g.currentAvg,
         existingPostCount: g.existingPostCount,
-        gapScore,
+        contentGapScore: g.contentGapScore,
+        contentCoverage: g.contentCoverage,
+        coverageEvidence: g.coverageEvidence,
         monthlyVolume: g.monthlyVolume,
         volumeSource: g.monthlyVolume != null ? "searchad" : "datalab-fallback",
         isEstimated: g.isEstimated,
@@ -316,93 +330,5 @@ export function analyzeContentGap(
     }
   }
 
-  // gapScore 내림차순 정렬
-  return gaps.sort((a, b) => b.gapScore - a.gapScore || (b.monthlyVolume ?? 0) - (a.monthlyVolume ?? 0));
-}
-
-// =============================================================
-// generateTopicSuggestions — 블로그 주제 추천
-// =============================================================
-
-/**
- * 콘텐츠 갭과 TopicAngle 템플릿을 결합하여 구체적인 블로그 주제를 추천한다.
- *
- * v2 개선: 검색광고 연동 시 월간 검색량 표시, 미연동 시 상대 검색량 표시
- */
-export function generateTopicSuggestions(
-  gaps: ContentGap[],
-  categoryKeywords: CategoryKeywords[],
-): TopicSuggestion[] {
-  const currentYear = new Date().getFullYear().toString();
-  const suggestions: TopicSuggestion[] = [];
-
-  for (const gap of gaps) {
-    // 카테고리에 해당하는 CategoryKeywords 조회
-    const catKw = categoryKeywords.find((ck) => ck.category === gap.category);
-    if (!catKw) continue;
-
-    // 서브그룹에 매칭되는 TopicAngle 조회
-    const angle = catKw.topicAngles.find((ta) => ta.subGroup === gap.subGroup);
-    if (!angle) continue;
-
-    // 키워드: gap에 이미 있으면 사용, 없으면 CategoryKeywords에서 조회
-    const subGroupDef = catKw.subGroups.find((sg) => sg.name === gap.subGroup);
-    const keywords = gap.keywords.length > 0 ? gap.keywords : (subGroupDef?.keywords ?? []);
-    const firstKeyword = keywords[0] ?? gap.subGroup;
-
-    // 템플릿 변수 치환
-    const suggestedTitle = angle.template
-      .replace(/\{keyword\}/g, firstKeyword)
-      .replace(/\{year\}/g, currentYear)
-      .replace(/\{aspect\}/g, angle.aspect)
-      .replace(/\{count\}/g, "5");
-
-    // 추천 이유 생성 (한국어) — v2: 검색량 출처에 따라 다른 표현
-    const trendLabel =
-      gap.trend === "rising" ? "상승" : gap.trend === "falling" ? "하락" : "보합";
-
-    let volumePart: string;
-    if (gap.monthlyVolume != null) {
-      // 검색광고 연동: 월간 절대 검색량
-      const volumeStr = gap.isEstimated
-        ? `≈${gap.monthlyVolume.toLocaleString("ko-KR")}`
-        : gap.monthlyVolume.toLocaleString("ko-KR");
-      volumePart = `월 ${volumeStr}회 검색`;
-    } else {
-      // 미연동: 상대 검색량 수준
-      const volumeLabel = gap.currentAvg >= 60 ? "높은" : gap.currentAvg >= 30 ? "중간" : "낮은";
-      volumePart = `${volumeLabel} 검색량(${gap.currentAvg.toFixed(0)})`;
-    }
-
-    const hasTrendData = gap.changeRate !== 0 || gap.trend !== "stable";
-    const trendPart = hasTrendData
-      ? ` · 트렌드 ${trendLabel}(${gap.changeRate > 0 ? "+" : ""}${gap.changeRate}%)`
-      : "";
-
-    const reasoning =
-      gap.existingPostCount === 0
-        ? `'${gap.subGroup}' ${volumePart}${trendPart} · 관련 포스트 없음`
-        : `'${gap.subGroup}' ${volumePart}${trendPart} · 포스트 ${gap.existingPostCount}개`;
-
-    const priority: TopicSuggestion["priority"] =
-      gap.gapScore >= 70 ? "high" : gap.gapScore >= 40 ? "medium" : "low";
-
-    suggestions.push({
-      rank: 0, // 정렬 후 채움
-      category: gap.category,
-      slug: gap.slug,
-      suggestedTitle,
-      reasoning,
-      keywords,
-      trend: gap.trend,
-      gapScore: gap.gapScore,
-      priority,
-    });
-  }
-
-  // gapScore 내림차순 정렬 후 rank 부여, 상위 15개만 반환
-  return suggestions
-    .sort((a, b) => b.gapScore - a.gapScore)
-    .slice(0, 15)
-    .map((s, i) => ({ ...s, rank: i + 1 }));
+  return gaps.sort((a, b) => b.contentGapScore - a.contentGapScore || (b.monthlyVolume ?? 0) - (a.monthlyVolume ?? 0));
 }

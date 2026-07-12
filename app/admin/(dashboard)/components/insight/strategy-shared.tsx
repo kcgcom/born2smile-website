@@ -57,9 +57,9 @@ export const OpportunityScatter = dynamic(
                 <mod.YAxis
                   type="number"
                   dataKey="y"
-                  name="포스트 수"
+                  name="콘텐츠 공백"
                   tick={{ fontSize: 11, fill: "#6B7280" }}
-                  label={{ value: "포스트 수", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
+                  label={{ value: "콘텐츠 공백", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#6B7280" }}
                 />
                 <mod.ZAxis type="number" dataKey="z" range={[60, 400]} />
                 <mod.Tooltip
@@ -84,8 +84,8 @@ export const OpportunityScatter = dynamic(
                           </span>
                         )}
                         <p>검색량: {d.x.toLocaleString("ko-KR")}/월</p>
-                        <p>포스트: {d.y}개</p>
-                        <p>갭 점수: {d.z.toFixed(0)}</p>
+                        <p>콘텐츠 공백: {d.y.toFixed(0)}</p>
+                        <p>신규 글 가치: {d.z.toFixed(0)}</p>
                       </div>
                     );
                   }}
@@ -108,7 +108,7 @@ export const OpportunityScatter = dynamic(
               </mod.ScatterChart>
             </mod.ResponsiveContainer>
             <p className="mt-2 text-center text-xs text-[var(--muted)]">
-              우측 하단(검색량 높음 + 포스트 적음) = 기회 영역 · 점 크기 = 갭 점수 · 클릭하면 새 포스트 작성
+              우측 상단은 검색 수요와 콘텐츠 공백이 모두 큰 영역입니다. 점 크기는 신규 글 가치를 나타냅니다.
             </p>
           </div>
         );
@@ -122,9 +122,9 @@ export const OpportunityScatter = dynamic(
 // Sort state management for content gap table
 // ---------------------------------------------------------------
 
-export type GapSortKey = "gapScore" | "existingPostCount" | "currentAvg" | "monthlyVolume";
+export type GapSortKey = "contentGapScore" | "existingPostCount" | "currentAvg" | "monthlyVolume";
 
-export function useGapTableSort(initial: GapSortKey = "gapScore") {
+export function useGapTableSort(initial: GapSortKey = "contentGapScore") {
   const [sortKey, setSortKey] = useState<GapSortKey>(initial);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -174,11 +174,9 @@ export const INTENT_FILTER_OPTIONS: Array<{ value: SearchIntent | "all"; label: 
 ];
 
 export const ACTION_LABELS: Record<InsightActionItem["actionType"], string> = {
-  "new-post": "새 글 작성",
-  "update-service-page": "서비스 페이지 보강",
-  "expand-faq": "FAQ 확장",
-  "strengthen-cta": "CTA 강화",
-  "seasonal-campaign": "시즌 캠페인",
+  blog: "새 글 작성",
+  page: "서비스 페이지 보강",
+  faq: "FAQ 확장",
 };
 
 export function buildCrossKeywords(contentGap: ContentGapItem[]) {

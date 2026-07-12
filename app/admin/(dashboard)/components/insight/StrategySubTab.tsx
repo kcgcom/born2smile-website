@@ -45,6 +45,7 @@ export function StrategySubTab() {
   }, [endpoint, sync.data?.jobId, sync.data?.status]);
 
   const contentGap = useMemo(() => strategy.data?.contentGap ?? [], [strategy.data?.contentGap]);
+  const evaluationByKey = useMemo(() => new Map((strategy.data?.opportunityEvaluations ?? []).map((item) => [item.key, item])), [strategy.data?.opportunityEvaluations]);
   const scatterData = useMemo<ScatterPoint[]>(() => contentGap
     .filter((gap) => gap.monthlyVolume != null && gap.monthlyVolume > 0)
     .map((gap) => ({
@@ -52,10 +53,10 @@ export function StrategySubTab() {
       category: gap.category,
       slug: gap.slug,
       x: gap.monthlyVolume ?? 0,
-      y: gap.existingPostCount,
-      z: gap.gapScore,
+      y: gap.contentGapScore,
+      z: evaluationByKey.get(`${gap.slug}:${gap.subGroup}`)?.actions.find((item) => item.actionType === "blog")?.valueScore ?? 0,
       searchIntent: gap.searchIntent,
-    })), [contentGap]);
+    })), [contentGap, evaluationByKey]);
 
   if (strategy.loading) return <AdminLoadingSkeleton variant="full" />;
   if (strategy.error) return <AdminErrorState message={strategy.error} />;
@@ -63,10 +64,10 @@ export function StrategySubTab() {
     return <AdminErrorState message="네이버 DataLab API 설정이 없어 기회 분석 데이터를 만들 수 없습니다." />;
   }
 
-  const urgentCount = contentGap.filter((item) => item.gapScore >= 70).length;
+  const urgentCount = strategy.data.opportunityEvaluations.filter((item) => item.actions.some((action) => action.eligibility === "eligible" && (action.valueScore ?? 0) >= 70)).length;
   const measuredDemand = contentGap.reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
   const unmetDemand = contentGap
-    .filter((item) => item.existingPostCount === 0)
+    .filter((item) => item.contentGapScore >= 70)
     .reduce((sum, item) => sum + (item.monthlyVolume ?? 0), 0);
   const hasMeasuredDemand = contentGap.some((item) => item.monthlyVolume != null);
 
@@ -80,7 +81,7 @@ export function StrategySubTab() {
             <div className="flex flex-wrap gap-2">
               <AdminPill tone="white">기회 분석</AdminPill>
               <AdminPill tone={urgentCount > 0 ? "warning" : "white"}>
-                {urgentCount > 0 ? `시급한 갭 ${urgentCount}개` : "시급한 갭 없음"}
+                {urgentCount > 0 ? `고가치 기회 ${urgentCount}개` : "고가치 기회 없음"}
               </AdminPill>
             </div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">
@@ -93,6 +94,7 @@ export function StrategySubTab() {
               {strategy.data.period?.end ? `DataLab ${strategy.data.period.end} 기준` : "DataLab 기준일 확인 불가"}
               {strategy.data.volumeCoverage != null ? ` · 주제 검색량 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : " · 검색량 스냅샷 없음"}
               {` · ${formatFetchedAt(strategy.data.meta.fetchedAt)} 분석`}
+              {` · ${strategy.data.meta.scoringModelVersion}`}
             </p>
             {sync.data?.snapshotCreatedAt && (
               <p className="mt-1 text-xs text-[var(--muted)]">
@@ -153,7 +155,8 @@ export function StrategySubTab() {
         pageOpportunities={strategy.data.pageOpportunities}
         candidateKeys={new Set([
           ...strategy.data.blogBriefs.map((brief) => `blog:${brief.slug}:${brief.subGroup}`),
-          ...strategy.data.pageBriefs.map((brief) => `page:${brief.slug}:${brief.subGroup}`),
+          ...strategy.data.pageBriefs.map((brief) => `page:${brief.targetPage}`),
+          ...strategy.data.faqSuggestions.map((brief) => `faq:${brief.slug}:${brief.subGroup}`),
         ])}
         plannedKeys={new Set((planner.data ?? []).map((item) => item.opportunityKey))}
         visiblePlanKeys={new Set((planner.data ?? [])

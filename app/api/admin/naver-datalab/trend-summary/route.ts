@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { buildPageUpdateOpportunities, deriveInsightActions, generateFaqSuggestions } from "@/lib/trend-insights";
 import { generateBlogBriefSuggestions, generatePageImprovementBriefs } from "@/lib/trend-briefs";
+import { evaluateOpportunities, OPPORTUNITY_MODEL_VERSION } from "@/lib/opportunity-scoring";
 import {
   getTrendOverviewWithGapData,
   VALID_PERIODS,
@@ -53,9 +54,10 @@ export async function GET(request: NextRequest) {
     const data = await getTrendOverviewWithGapData(period, mode, force, detail);
 
     if (strategyMode) {
-      const insightActions = deriveInsightActions(data.contentGap);
-      const faqSuggestions = generateFaqSuggestions(data.contentGap);
-      const pageOpportunities = buildPageUpdateOpportunities(data.contentGap);
+      const opportunityEvaluations = evaluateOpportunities(data.contentGap);
+      const insightActions = deriveInsightActions(opportunityEvaluations);
+      const faqSuggestions = generateFaqSuggestions(data.contentGap, opportunityEvaluations);
+      const pageOpportunities = buildPageUpdateOpportunities(data.contentGap, opportunityEvaluations);
 
       return Response.json(
         {
@@ -66,12 +68,14 @@ export async function GET(request: NextRequest) {
               fetchedAt: new Date().toISOString(),
               taxonomyVersion: data.taxonomyMeta.version,
               taxonomySource: data.taxonomyMeta.source,
+              scoringModelVersion: OPPORTUNITY_MODEL_VERSION,
             },
             contentGap: data.contentGap,
+            opportunityEvaluations,
             insightActions,
             faqSuggestions,
             pageOpportunities,
-            blogBriefs: generateBlogBriefSuggestions(data.contentGap),
+            blogBriefs: generateBlogBriefSuggestions(data.contentGap, opportunityEvaluations),
             pageBriefs: generatePageImprovementBriefs(pageOpportunities, faqSuggestions),
             volumeSource: data.volumeSource,
             volumeCoverage: data.volumeCoverage,

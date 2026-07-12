@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-export const plannerItemTypes = ["blog", "page"] as const;
+export const plannerItemTypes = ["blog", "page", "faq"] as const;
 export const plannerStatuses = [
   "approved",
   "in_progress",

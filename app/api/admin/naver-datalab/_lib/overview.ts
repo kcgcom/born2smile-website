@@ -3,7 +3,7 @@ import { fetchNaverDatalabByCategory, type NaverDatalabData } from "@/lib/admin-
 import { isRelevantRelatedKeyword, type CategoryKeywords, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import { getActiveKeywordTaxonomy } from "@/lib/admin-keyword-taxonomy";
 import { analyzeTrend, analyzeContentGap, buildSyntheticCategoryData, type CategoryTrendData, type VolumeDataEntry } from "@/lib/trend-analysis";
-import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
+import { getAllPublishedPosts } from "@/lib/blog-supabase";
 import { getActiveSearchAdSnapshotRecord } from "@/lib/admin-searchad-snapshots";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
@@ -461,7 +461,7 @@ export async function getTrendOverviewWithGapData(period: string, mode: TrendOve
 
   const [baseData, publishedPosts] = await Promise.all([
     getTrendOverviewBaseData(period, mode, force, detail),
-    isStrategyMode ? getAllPublishedPostMetas() : Promise.resolve([]),
+    isStrategyMode ? getAllPublishedPosts() : Promise.resolve([]),
   ]);
 
   // contentGap은 strategy 모드에서만 정확한 계산 가능 (DataLab + SearchAd 필요)
