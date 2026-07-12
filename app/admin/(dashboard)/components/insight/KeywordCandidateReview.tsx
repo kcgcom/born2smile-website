@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Check, Clock3, Eye, RefreshCw, RotateCcw, X } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
@@ -12,6 +12,7 @@ import {
   type CategoryKeywords,
 } from "@/lib/admin-naver-datalab-keywords";
 import type { KeywordTaxonomyCandidate } from "@/lib/admin-keyword-taxonomy";
+import { triageKeywordCandidate, type CandidateTriageKind } from "@/lib/keyword-candidate-triage";
 import { TaxonomyViewer } from "./TaxonomyViewer";
 import { forceRefetchAdminApi, useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -24,6 +25,30 @@ const STATUS_LABELS: Record<KeywordTaxonomyCandidate["status"], string> = {
   deferred: "보류",
   rejected: "제외",
 };
+
+const TRIAGE_LABELS: Record<CandidateTriageKind, string> = {
+  "approve-suggested": "승인 추천",
+  "defer-suggested": "보류 추천",
+  "exclude-suggested": "제외 추천",
+  reclassify: "재분류 필요",
+  review: "직접 검토",
+};
+
+const TRIAGE_CLASSES: Record<CandidateTriageKind, string> = {
+  "approve-suggested": "bg-emerald-100 text-emerald-700",
+  "defer-suggested": "bg-amber-100 text-amber-700",
+  "exclude-suggested": "bg-red-100 text-red-700",
+  reclassify: "bg-violet-100 text-violet-700",
+  review: "bg-slate-100 text-slate-600",
+};
+
+const TRIAGE_ORDER: CandidateTriageKind[] = [
+  "approve-suggested",
+  "reclassify",
+  "review",
+  "defer-suggested",
+  "exclude-suggested",
+];
 
 interface TaxonomyStateSummary {
   active: { version: number | null; keywords: number; subgroups: number };
@@ -57,10 +82,31 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
   const [newTopicAspect, setNewTopicAspect] = useState("");
   const [targetById, setTargetById] = useState<Record<string, string>>({});
 
-  const filtered = useMemo(
-    () => (candidates.data ?? []).filter((candidate) => candidate.status === status),
-    [candidates.data, status],
-  );
+  const triageById = useMemo(() => {
+    const groups = new Set(taxonomy.flatMap((category) =>
+      category.subGroups.map((subgroup) => `${category.slug}:${subgroup.name}`),
+    ));
+    return new Map((candidates.data ?? []).map((candidate) => [
+      candidate.id,
+      triageKeywordCandidate({
+        keyword: candidate.keyword,
+        monthlyVolume: candidate.monthlyVolume,
+        seenCount: candidate.seenCount,
+        seenInLatestSnapshot: candidate.seenInLatestSnapshot,
+        subgroupExists: groups.has(`${candidate.suggestedCategory}:${candidate.suggestedSubgroup}`),
+      }),
+    ]));
+  }, [candidates.data, taxonomy]);
+  const filtered = useMemo(() => (candidates.data ?? [])
+    .filter((candidate) => candidate.status === status)
+    .sort((a, b) => {
+      if (status === "pending") {
+        const aOrder = TRIAGE_ORDER.indexOf(triageById.get(a.id)!.kind);
+        const bOrder = TRIAGE_ORDER.indexOf(triageById.get(b.id)!.kind);
+        if (aOrder !== bOrder) return aOrder - bOrder;
+      }
+      return b.monthlyVolume - a.monthlyVolume;
+    }), [candidates.data, status, triageById]);
   const counts = useMemo(() => {
     const result = { pending: 0, approved: 0, deferred: 0, rejected: 0 };
     for (const candidate of candidates.data ?? []) result[candidate.status]++;
@@ -109,6 +155,17 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
     setDecisions((current) => {
       const next = { ...current };
       delete next[id];
+      return next;
+    });
+  };
+
+  const selectSuggestedDecisions = (group: KeywordTaxonomyCandidate[]) => {
+    setDecisions((current) => {
+      const next = { ...current };
+      for (const candidate of group) {
+        const decision = triageById.get(candidate.id)?.decision;
+        if (decision) next[candidate.id] = decision;
+      }
       return next;
     });
   };
@@ -201,6 +258,7 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
             </button>
           ))}
         </div>
+        {status === "pending" && <p className="mt-4 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">추천별로 묶고 각 그룹 안에서 월 검색량이 높은 순서로 표시합니다. 추천 선택 후 일괄 적용해야 저장됩니다.</p>}
       </AdminSurface>
 
       {(error || candidates.error) && <AdminNotice tone="error">{error ?? candidates.error}</AdminNotice>}
@@ -381,11 +439,30 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
           <AdminSurface tone="white" className="rounded-2xl p-8 text-center text-sm text-[var(--muted)]">
             이 상태의 키워드 후보가 없습니다.
           </AdminSurface>
-        ) : filtered.map((candidate) => {
+        ) : filtered.map((candidate, index) => {
           const currentDecision = decisions[candidate.id] as Decision | undefined;
+          const triage = triageById.get(candidate.id)!;
+          const previousTriage = index > 0 ? triageById.get(filtered[index - 1].id) : null;
+          const startsGroup = status === "pending" && previousTriage?.kind !== triage.kind;
+          const groupCandidates = startsGroup
+            ? filtered.filter((item) => triageById.get(item.id)?.kind === triage.kind)
+            : [];
           return (
+            <Fragment key={candidate.id}>
+            {startsGroup && (
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 first:pt-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--foreground)]">{TRIAGE_LABELS[triage.kind]}</h3>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${TRIAGE_CLASSES[triage.kind]}`}>{groupCandidates.length}개</span>
+                </div>
+                {triage.decision && (
+                  <AdminActionButton tone="dark" onClick={() => selectSuggestedDecisions(groupCandidates)}>
+                    이 그룹 추천대로 선택
+                  </AdminActionButton>
+                )}
+              </div>
+            )}
             <AdminSurface
-              key={candidate.id}
               tone="white"
               className={`rounded-2xl p-5 transition-colors ${
                 currentDecision === "approve" ? "ring-2 ring-emerald-400/60" :
@@ -420,6 +497,7 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
                     )}
                   </div>
                   <p className="mt-2 text-sm text-[var(--muted)]">{candidate.reason}</p>
+                  {candidate.status === "pending" && <p className="mt-1 text-xs font-medium text-slate-600">추천 근거 · {triage.reason}</p>}
                   <p className="mt-1 text-xs font-medium tabular-nums text-[var(--foreground)]">
                     월 {candidate.monthlyVolume.toLocaleString("ko-KR")}회
                   </p>
@@ -452,6 +530,7 @@ export function KeywordCandidateReview({ taxonomy }: { taxonomy: CategoryKeyword
                 )}
               </div>
             </AdminSurface>
+            </Fragment>
           );
         })}
       </div>

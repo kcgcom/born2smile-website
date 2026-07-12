@@ -59,6 +59,7 @@ export interface KeywordTaxonomyCandidate {
   firstSeenAt: string;
   lastSeenAt: string;
   seenCount: number;
+  seenInLatestSnapshot: boolean;
 }
 
 export interface KeywordTaxonomyVersionSummary {
@@ -304,13 +305,18 @@ async function getCandidateSourceSnapshot(): Promise<{ id: string; data: SearchA
 }
 
 export async function listKeywordTaxonomyCandidates(): Promise<KeywordTaxonomyCandidate[]> {
-  const { data, error } = await getSupabaseAdmin()
-    .from("keyword_taxonomy_candidates")
-    .select("id,keyword,monthly_volume,suggested_category,suggested_subgroup,status,reason,created_at,first_seen_at,last_seen_at,seen_count")
-    .order("seen_count", { ascending: false })
-    .order("monthly_volume", { ascending: false })
-    .limit(500);
+  const admin = getSupabaseAdmin();
+  const [{ data, error }, { data: pointer, error: pointerError }] = await Promise.all([
+    admin
+      .from("keyword_taxonomy_candidates")
+      .select("id,keyword,monthly_volume,suggested_category,suggested_subgroup,status,reason,created_at,first_seen_at,last_seen_at,seen_count,source_snapshot_id")
+      .order("seen_count", { ascending: false })
+      .order("monthly_volume", { ascending: false })
+      .limit(500),
+    admin.from("searchad_snapshot_pointer").select("snapshot_id").eq("singleton", true).maybeSingle(),
+  ]);
   if (error) throw error;
+  if (pointerError) throw pointerError;
   return (data ?? []).map((row) => ({
     id: row.id,
     keyword: row.keyword,
@@ -323,6 +329,7 @@ export async function listKeywordTaxonomyCandidates(): Promise<KeywordTaxonomyCa
     firstSeenAt: row.first_seen_at,
     lastSeenAt: row.last_seen_at,
     seenCount: row.seen_count,
+    seenInLatestSnapshot: row.source_snapshot_id === pointer?.snapshot_id,
   }));
 }
 
