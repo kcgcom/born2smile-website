@@ -61,6 +61,20 @@ const [gumRegeneration] = evaluateOpportunities([
 ]);
 assert.equal(getActionEvaluation(gumRegeneration, "page")?.eligibility, "not-applicable", "잇몸재생을 진료 페이지 보강으로 추천하면 안 됩니다.");
 assert.notEqual(getActionEvaluation(gumRegeneration, "faq")?.eligibility, "not-applicable", "잇몸재생은 전체 FAQ 기준 평가 대상이어야 합니다.");
+const educationFaq = byKey.get("general-care:발치/사랑니")!;
+assert.equal(getActionEvaluation(educationFaq, "faq")?.valueScore, Math.round(
+  educationFaq.questionSignal * 0.25
+  + educationFaq.faqGapScore! * 0.25
+  + educationFaq.demandScore! * 0.15
+  + educationFaq.patientBusinessValue * 0.2
+  + educationFaq.strategicFit * 0.15
+), "FAQ 점수에 전략 적합성이 반영되어야 합니다.");
+
+const [brandSearch] = evaluateOpportunities([
+  gap({ category: "dental-choice", slug: "dental-choice", subGroup: "브랜드검색", monthlyVolume: 2_000, contentGapScore: 100, keywords: ["서울본치과"] }),
+]);
+assert.equal(getActionEvaluation(brandSearch, "blog")?.eligibility, "not-applicable", "브랜드 탐색 의도를 신규 블로그 후보로 추천하면 안 됩니다.");
+assert.equal(getActionEvaluation(brandSearch, "blog")?.valueScore, null);
 
 const [symptomGuidance] = evaluateOpportunities([
   gap({ category: "health-tips", slug: "health-tips", subGroup: "증상/내원판단", monthlyVolume: 1_000, contentGapScore: 80, keywords: ["치통", "이가 흔들려요"] }),

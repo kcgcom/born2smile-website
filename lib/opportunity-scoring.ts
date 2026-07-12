@@ -2,7 +2,7 @@ import type { KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-ke
 import type { ContentGap } from "./trend-analysis";
 import { TREATMENT_DETAILS } from "./treatments";
 
-export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.5" as const;
+export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.6" as const;
 
 export type OpportunityActionType = "blog" | "page" | "faq";
 export type OpportunityConfidence = "B" | "C";
@@ -90,6 +90,7 @@ const TOPIC_ACTION_OVERRIDES: Record<string, OpportunityActionType[]> = {
   "general-care:발치/사랑니": ["blog", "faq"],
   "general-care:잇몸재생": ["blog", "faq"],
   "health-tips:증상/내원판단": ["blog", "faq"],
+  "dental-choice:브랜드검색": [],
   "prevention:구강위생": ["blog"],
   "prevention:구강건조/타액": ["blog"],
   "pediatric:교정시기": ["blog"],
@@ -263,7 +264,9 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
             ? "promote-from-faq"
             : "missing");
 
-    const blogEligibility: OpportunityEligibility = needsData ? "needs-data" : gap.contentGapScore < 25 ? "covered" : "eligible";
+    const blogEligibility: OpportunityEligibility = !allowed.includes("blog")
+      ? "not-applicable"
+      : needsData ? "needs-data" : gap.contentGapScore < 25 ? "covered" : "eligible";
     const blogScore = blogEligibility === "eligible"
       ? demand! * 0.35 + gap.contentGapScore * 0.35 + business * 0.2 + strategic * 0.1
       : null;
@@ -281,7 +284,7 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
           : (page.pageCoverage ?? 0) < 40 ? "not-applicable"
             : question < 60 || (page.faqCoverage ?? 0) >= 70 ? "covered" : "eligible";
     const faqScore = faqEligibility === "eligible"
-      ? question * 0.3 + faqGap! * 0.3 + demand! * 0.2 + business * 0.2
+      ? question * 0.25 + faqGap! * 0.25 + demand! * 0.15 + business * 0.2 + strategic * 0.15
       : null;
 
     return {
@@ -302,10 +305,12 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
       missingSections: page.missing,
       recommendedBlocks: page.blocks,
       actions: [
-        action("blog", blogScore, blogEligibility, [
-          `검색 수요 ${demand ?? "확인 불가"}`,
-          `콘텐츠 공백 ${gap.contentGapScore}`,
-        ]),
+        action("blog", blogScore, blogEligibility, blogEligibility === "not-applicable"
+          ? ["신규 글 추천 대상 아님"]
+          : [
+              `검색 수요 ${demand ?? "확인 불가"}`,
+              `콘텐츠 공백 ${gap.contentGapScore}`,
+            ]),
         action("page", pageScore, pageEligibility, page.missing.length ? page.missing : ["페이지 공백 없음"]),
         action("faq", faqScore, faqEligibility, [
           `질문 신호 ${question}`,
