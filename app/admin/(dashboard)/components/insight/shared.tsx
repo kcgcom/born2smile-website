@@ -1,4 +1,5 @@
 import { categoryColors } from "@/lib/blog/category-colors";
+import type { BlogCategorySlug } from "@/lib/blog/types";
 import {
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
@@ -76,6 +77,7 @@ export interface PageUpdateOpportunityItem {
 
 export interface BlogBriefItem {
   slug: KeywordCategorySlug;
+  contentCategory: BlogCategorySlug;
   subGroup: string;
   suggestedTitle: string;
   targetKeyword: string;
@@ -154,6 +156,7 @@ export interface StrategyOverviewData {
 
 const KEYWORD_CATEGORY_BADGE_COLORS: Record<KeywordCategorySlug, string> = {
   ...categoryColors,
+  "general-care": "bg-amber-100 text-amber-800",
   "dental-choice": "bg-fuchsia-100 text-fuchsia-700",
 };
 

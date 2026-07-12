@@ -13,6 +13,7 @@ export const CATEGORY_SCATTER_COLORS: Record<KeywordCategorySlug, string> = {
   prevention: "#0891B2",
   pediatric: "#DC2626",
   "health-tips": "#EA580C",
+  "general-care": "#B45309",
   "dental-choice": "#D946EF",
 };
 

@@ -8,6 +8,7 @@
     "generate-research-snapshot": "tsx scripts/generate-research-snapshot.ts",
     "generate-keyword-taxonomy-snapshot": "tsx scripts/generate-keyword-taxonomy-snapshot.ts",
     "verify-keyword-taxonomy": "tsx scripts/verify-keyword-taxonomy-state.ts",
+    "verify-keyword-taxonomy-contract": "tsx scripts/verify-keyword-taxonomy-contract.ts",
     "verify-opportunity-scoring": "tsx scripts/verify-opportunity-scoring.ts",
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",
     "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",

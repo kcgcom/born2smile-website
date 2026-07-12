@@ -11,18 +11,19 @@ import {
   batchReviewKeywordTaxonomyCandidates,
 } from "@/lib/admin-keyword-taxonomy";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { KEYWORD_CATEGORY_SLUGS } from "@/lib/admin-naver-datalab-keywords";
 
 const reviewSchema = z.discriminatedUnion("action", [
   z.object({
     id: z.string().uuid(),
     action: z.enum(["approve", "defer", "reject"]),
-    targetCategory: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]).optional(),
+    targetCategory: z.enum(KEYWORD_CATEGORY_SLUGS).optional(),
     targetSubgroup: z.string().min(1).max(30).optional(),
   }),
   z.object({
     action: z.literal("create-subgroup"),
     candidateIds: z.array(z.string().uuid()).min(2).max(20),
-    category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]),
+    category: z.enum(KEYWORD_CATEGORY_SLUGS),
     subgroupName: z.string().trim().min(2).max(30),
     searchIntent: z.enum(["informational", "commercial", "transactional", "navigational"]),
     topicTemplate: z.string().trim().min(5).max(120).refine((value) => value.includes("{keyword}"), "제목 템플릿에 {keyword}가 필요합니다."),
@@ -32,7 +33,7 @@ const reviewSchema = z.discriminatedUnion("action", [
     action: z.literal("batch-approve"),
     items: z.array(z.object({
       id: z.string().uuid(),
-      category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]),
+      category: z.enum(KEYWORD_CATEGORY_SLUGS),
       subgroup: z.string().min(1).max(30),
     })).min(1).max(50),
   }),
@@ -41,7 +42,7 @@ const reviewSchema = z.discriminatedUnion("action", [
     items: z.array(z.object({
       id: z.string().uuid(),
       decision: z.enum(["approve", "defer", "reject"]),
-      category: z.enum(["implant", "orthodontics", "prosthetics", "restorative", "prevention", "pediatric", "health-tips", "dental-choice"]).optional(),
+      category: z.enum(KEYWORD_CATEGORY_SLUGS).optional(),
       subgroup: z.string().min(1).max(30).optional(),
     })).min(1).max(500),
   }),

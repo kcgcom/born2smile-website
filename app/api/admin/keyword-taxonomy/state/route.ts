@@ -6,14 +6,19 @@ import {
   discardPendingKeywordTaxonomy,
   getKeywordTaxonomyByVersion,
   getKeywordTaxonomyState,
+  getCodeKeywordTaxonomyDiff,
   getPendingKeywordTaxonomyDiff,
   listKeywordTaxonomyVersions,
+  isCodeKeywordTaxonomyActive,
+  isCodeKeywordTaxonomyPending,
   restoreKeywordTaxonomyVersion,
+  stageCodeKeywordTaxonomy,
 } from "@/lib/admin-keyword-taxonomy";
 
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("discard-pending") }),
   z.object({ action: z.literal("restore-version"), version: z.number().int().positive() }),
+  z.object({ action: z.literal("stage-code") }),
 ]);
 
 export async function GET(request: NextRequest) {
@@ -41,10 +46,13 @@ export async function GET(request: NextRequest) {
       }, { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } });
     }
 
-    const [state, versions, diff, pendingCandidateCount] = await Promise.all([
+    const [state, versions, diff, codeDiff, codeMatchesActive, codeMatchesPending, pendingCandidateCount] = await Promise.all([
       getKeywordTaxonomyState(),
       listKeywordTaxonomyVersions(),
       getPendingKeywordTaxonomyDiff(),
+      getCodeKeywordTaxonomyDiff(),
+      isCodeKeywordTaxonomyActive(),
+      isCodeKeywordTaxonomyPending(),
       countPendingCandidates(),
     ]);
     const summarize = (taxonomy: typeof state.active.taxonomy) => ({
@@ -60,6 +68,9 @@ export async function GET(request: NextRequest) {
           : null,
         versions,
         diff,
+        codeDiff,
+        codeMatchesActive,
+        codeMatchesPending,
         pendingCandidateCount,
       },
     }, { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } });
@@ -89,7 +100,8 @@ export async function POST(request: NextRequest) {
   try {
     const input = actionSchema.parse(await request.json());
     if (input.action === "discard-pending") await discardPendingKeywordTaxonomy();
-    else await restoreKeywordTaxonomyVersion(input.version, auth.email);
+    else if (input.action === "restore-version") await restoreKeywordTaxonomyVersion(input.version, auth.email);
+    else await stageCodeKeywordTaxonomy(auth.email);
     return Response.json({ data: { ok: true } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     Sentry.captureException(error);

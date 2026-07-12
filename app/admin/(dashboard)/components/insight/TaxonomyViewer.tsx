@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
-import { getKeywordCategoryLabel, type CategoryKeywords, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
+import { getKeywordCategoryLabel, type CategoryKeywords } from "@/lib/admin-naver-datalab-keywords";
 
 interface TaxonomyViewerProps {
   /** 보여줄 택소노미 */

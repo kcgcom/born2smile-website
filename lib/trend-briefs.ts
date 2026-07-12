@@ -1,10 +1,12 @@
-import type { KeywordCategorySlug } from "./admin-naver-datalab-keywords";
+import { getBlogCategoryForKeywordTopic, type KeywordCategorySlug } from "./admin-naver-datalab-keywords";
+import type { BlogCategorySlug } from "./blog/types";
 import type { ContentGap } from "./trend-analysis";
 import type { FaqSuggestion, PageUpdateOpportunity } from "./trend-insights";
 import { getActionEvaluation, type OpportunityEvaluation } from "./opportunity-scoring";
 
 export interface BlogBriefSuggestion {
   slug: KeywordCategorySlug;
+  contentCategory: BlogCategorySlug;
   subGroup: string;
   suggestedTitle: string;
   targetKeyword: string;
@@ -78,6 +80,7 @@ export function generateBlogBriefSuggestions(gaps: ContentGap[], evaluations: Op
       const primaryKeyword = getPrimaryKeyword(gap);
       return {
         slug: gap.slug,
+        contentCategory: getBlogCategoryForKeywordTopic(gap.slug, gap.subGroup),
         subGroup: gap.subGroup,
         suggestedTitle: `${primaryKeyword} 가이드: ${gap.subGroup} 환자가 먼저 확인할 것`,
         targetKeyword: primaryKeyword,
@@ -86,7 +89,7 @@ export function generateBlogBriefSuggestions(gaps: ContentGap[], evaluations: Op
         outline: buildOutline(gap),
         cta: `${primaryKeyword} 상담이 필요하다면 치료 전 체크포인트를 확인한 뒤 문의로 연결`,
         metaDescription: buildMetaDescription(gap),
-        targetPage: `/blog/${gap.slug}`,
+        targetPage: `/blog/${getBlogCategoryForKeywordTopic(gap.slug, gap.subGroup)}`,
       } satisfies BlogBriefSuggestion;
     });
 }

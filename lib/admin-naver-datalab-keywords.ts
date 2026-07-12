@@ -1,18 +1,31 @@
 // =============================================================
 // 네이버 DataLab 키워드 택소노미
-// 8개 카테고리 × 최대 15개 서브그룹 (브릿지 배칭으로 5개 제한 해제)
+// 9개 카테고리 × 최대 15개 서브그룹 (브릿지 배칭으로 5개 제한 해제)
 // =============================================================
 
 import { BLOG_CATEGORY_LABELS } from "./blog";
-import type { BlogCategoryLabel, BlogCategorySlug } from "./blog/types";
+import { BLOG_CATEGORY_SLUGS, type BlogCategoryLabel, type BlogCategorySlug } from "./blog/types";
 
-export type KeywordCategorySlug = BlogCategorySlug | "dental-choice";
-export type KeywordCategoryLabel = BlogCategoryLabel | "치과선택";
+export const KEYWORD_CATEGORY_SLUGS = [
+  ...BLOG_CATEGORY_SLUGS,
+  "general-care",
+  "dental-choice",
+] as const;
+export type KeywordCategorySlug = (typeof KEYWORD_CATEGORY_SLUGS)[number];
+export type KeywordCategoryLabel = BlogCategoryLabel | "기타 진료" | "치과선택";
 
 export const KEYWORD_CATEGORY_LABELS: Record<KeywordCategorySlug, KeywordCategoryLabel> = {
   ...BLOG_CATEGORY_LABELS,
+  "general-care": "기타 진료",
   "dental-choice": "치과선택",
 };
+
+/** 분석 주제를 실제 공개 블로그 카테고리로 변환한다. */
+export function getBlogCategoryForKeywordTopic(category: KeywordCategorySlug, subGroup: string): BlogCategorySlug {
+  if (category === "general-care" && subGroup === "잇몸재생") return "prevention";
+  if (category === "general-care" || category === "dental-choice") return "health-tips";
+  return category;
+}
 
 export function isKeywordCategorySlug(value: string): value is KeywordCategorySlug {
   return value in KEYWORD_CATEGORY_LABELS;
@@ -44,7 +57,7 @@ export interface CategoryKeywords {
 }
 
 // =============================================================
-// CATEGORY_KEYWORDS — 8개 카테고리 키워드 택소노미
+// CATEGORY_KEYWORDS — 9개 카테고리 키워드 택소노미
 // =============================================================
 
 export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
@@ -67,7 +80,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "과정/기간",
         keywords: [
           "임플란트 과정", "임플란트 기간", "임플란트 수술",
-          "뼈이식", "임플란트 식립", "임플란트 치유기간",
+          "뼈이식", "임플란트 식립", "임플란트뼈이식",
           "뼈이식 임플란트",
         ],
         searchIntent: "informational",
@@ -111,7 +124,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "임플란트 잇몸",
         keywords: [
-          "임플란트 주위염", "임플란트 잇몸 염증", "잇몸 이식",
+          "임플란트 주위염", "임플란트 잇몸 염증",
           "임플란트 잇몸 관리", "임플란트 잇몸 퇴축", "임플란트 점막염",
         ],
         searchIntent: "informational",
@@ -216,7 +229,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         keywords: [
           "교정 칫솔질", "교정 중 관리", "교정 식사",
           "교정 구강위생", "교정 칫솔", "교정 치간칫솔",
-          "교정 후 유지", "교정 리테이너",
+          "유지장치세척", "교정 리테이너",
         ],
         searchIntent: "informational",
       },
@@ -288,7 +301,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "크라운",
         keywords: [
-          "치아 크라운", "크라운 비용", "크라운",
+          "치아 크라운", "크라운 비용",
           "크라운 수명", "크라운 치료", "크라운 과정",
           "크라운 통증",
         ],
@@ -297,7 +310,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "브릿지",
         keywords: [
-          "치아 브릿지", "브릿지 비용", "브릿지",
+          "치아 브릿지", "브릿지 비용",
           "브릿지 수명", "브릿지 치료", "브릿지 종류",
           "임플란트 브릿지 비교",
         ],
@@ -315,7 +328,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "라미네이트",
         keywords: [
-          "라미네이트", "라미네이트 비용", "라미네이트 수명",
+          "치아 라미네이트", "라미네이트 비용", "라미네이트 수명",
           "앞니 라미네이트", "라미네이트 부작용", "치아 성형",
           "심미 보철",
         ],
@@ -350,7 +363,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "앞니치료",
         keywords: [
-          "앞니 크라운", "앞니 깨짐", "앞니 레진",
+          "앞니 크라운", "앞니 깨짐",
           "앞니 보철", "앞니 임플란트", "앞니 치료 비용",
           "앞니 브릿지",
         ],
@@ -411,7 +424,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "충치치료",
         keywords: [
-          "충치치료", "충치 비용", "충치 초기",
+          "충치치료", "충치치료비용", "충치 초기",
           "충치 증상", "충치 방치", "충치 치료 과정",
           "2차 충치", "충치 단계",
         ],
@@ -422,14 +435,14 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         keywords: [
           "신경치료", "신경치료 비용", "신경치료 과정",
           "신경치료 통증", "신경치료 기간", "신경치료 후 크라운",
-          "치수염", "신경치료 후 관리",
+          "치수염", "신경치료후통증",
         ],
         searchIntent: "informational",
       },
       {
         name: "레진",
         keywords: [
-          "레진 치료", "레진 비용", "레진",
+          "레진 치료", "레진 비용", "치아 레진",
           "레진 수명", "레진 변색", "레진 탈락",
           "앞니 레진",
         ],
@@ -448,16 +461,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "시림/균열",
         keywords: [
           "치아 시림", "지각과민", "시린이",
-          "치아 균열", "크랙 치아", "시린이 치약",
-        ],
-        searchIntent: "informational",
-      },
-      {
-        name: "턱관절/이갈이",
-        keywords: [
-          "턱관절", "이갈이", "턱관절 치료",
-          "이갈이 마우스피스", "턱관절 소리", "턱관절 통증",
-          "이갈이 원인",
+          "치아 균열", "시린이치료", "시린이 치약",
         ],
         searchIntent: "informational",
       },
@@ -467,15 +471,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "이가 시려요", "이가 아파요", "잇몸에서 피나요",
           "이가 흔들려요", "이가 깨졌어요", "잇몸이 부었어요",
           "이가 욱신거려요",
-        ],
-        searchIntent: "informational",
-      },
-      {
-        name: "발치/사랑니",
-        keywords: [
-          "사랑니 발치", "사랑니 통증", "사랑니",
-          "매복 사랑니", "발치 비용", "발치 후 관리",
-          "발치 후 음식", "사랑니 염증",
         ],
         searchIntent: "informational",
       },
@@ -507,19 +502,9 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         aspect: "시린 이 원인별 치료와 예방법",
       },
       {
-        template: "{keyword} 완벽 가이드: {aspect}",
-        subGroup: "턱관절/이갈이",
-        aspect: "원인·증상·치료법과 마우스피스 효과",
-      },
-      {
         template: "{keyword}? 증상별 원인과 대처법: {aspect}",
         subGroup: "증상/자가진단",
         aspect: "치과 가기 전 셀프 체크 가이드",
-      },
-      {
-        template: "{keyword} 완벽 가이드: {aspect}",
-        subGroup: "발치/사랑니",
-        aspect: "비용·통증·회복기간, 발치 전 꼭 알아야 할 것들",
       },
     ],
   },
@@ -543,8 +528,8 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "유치관리",
         keywords: [
-          "유치 충치", "유치 관리", "유치",
-          "유치 빠지는 시기", "유치 영구치", "유치 보존",
+          "유치 충치", "유치 관리",
+          "유치 빠지는 시기", "유치 영구치",
         ],
         searchIntent: "informational",
       },
@@ -579,7 +564,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "홈메우기",
         keywords: [
           "홈메우기", "실란트 비용", "실란트",
-          "홈메우기 비용", "홈메우기 효과", "어린이 홈메우기",
+          "홈메우기 비용", "치아홈메우기", "어린이 홈메우기",
           "홈메우기 보험",
         ],
         searchIntent: "commercial",
@@ -653,7 +638,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "잇몸질환",
         keywords: [
           "잇몸질환", "치주염", "치은염",
-          "잇몸 치료", "치주 치료", "잇몸 붓기",
+          "잇몸 치료", "잇몸치료비용", "잇몸 붓기",
           "잇몸 출혈", "잇몸 퇴축",
         ],
         searchIntent: "informational",
@@ -680,7 +665,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         name: "정기검진",
         keywords: [
           "치과 정기검진", "치과 검진 주기", "치과 X선",
-          "구강 검진", "치과 예방", "정기 스케일링",
+          "구강 검진", "영유아구강검진", "치과 예방", "정기 스케일링",
         ],
         searchIntent: "transactional",
       },
@@ -691,15 +676,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
           "에어플로우 효과", "에어플로우 통증", "파우더 스케일링",
         ],
         searchIntent: "commercial",
-      },
-      {
-        name: "잇몸재생/치료",
-        keywords: [
-          "잇몸재생주사", "잇몸재생술", "잇몸 퇴축 치료",
-          "잇몸 이식 수술", "치조골 재생", "잇몸재생 비용",
-          "잇몸 퇴축 원인",
-        ],
-        searchIntent: "transactional",
       },
       {
         name: "구강건조/타액",
@@ -740,11 +716,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} vs 일반 스케일링: {aspect}",
         subGroup: "에어플로우",
         aspect: "차이점과 효과, 비용 비교 총정리",
-      },
-      {
-        template: "{keyword} 최신 치료법: {aspect}",
-        subGroup: "잇몸재생/치료",
-        aspect: "잇몸재생주사부터 이식 수술까지 옵션 비교",
       },
       {
         template: "{keyword} 원인과 해결법: {aspect}",
@@ -807,7 +778,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "치과공포/심리",
         keywords: [
-          "치과 공포증", "수면 치료", "무통 치료",
+          "치과 공포증", "치과 수면 치료", "무통 치료",
           "치과 무서워요", "진정 치료", "웃음가스 치과",
           "치과 불안",
         ],
@@ -863,6 +834,60 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
   },
 
   // ─────────────────────────────────────────────────────────────
+  // 기타 진료 (general-care) — 분석 전용, 주제별 공개 카테고리에 발행
+  // ─────────────────────────────────────────────────────────────
+  {
+    category: "general-care",
+    slug: "general-care",
+    subGroups: [
+      {
+        name: "턱관절/이갈이",
+        keywords: [
+          "턱관절", "이갈이", "턱관절 치료",
+          "이갈이 마우스피스", "턱관절 소리", "턱관절 통증",
+          "이갈이 원인",
+        ],
+        searchIntent: "informational",
+      },
+      {
+        name: "발치/사랑니",
+        keywords: [
+          "사랑니 발치", "사랑니 통증", "사랑니",
+          "매복 사랑니", "사랑니발치비용", "발치 후 관리",
+          "사랑니발치후식사", "사랑니 염증",
+        ],
+        searchIntent: "informational",
+      },
+      {
+        name: "잇몸재생",
+        keywords: [
+          "잇몸재생술", "치주조직 재생술", "잇몸뼈 재생",
+          "치조골 재생", "잇몸 이식", "잇몸 이식 수술", "잇몸 퇴축 치료",
+          "치주재생술",
+        ],
+        searchIntent: "informational",
+      },
+    ],
+    topicAngles: [
+      {
+        template: "{keyword} 환자 교육 가이드: {aspect}",
+        subGroup: "턱관절/이갈이",
+        aspect: "생활관리와 간단한 치료, 전문 진료가 필요한 신호",
+      },
+      {
+        template: "{keyword} 환자 교육 가이드: {aspect}",
+        subGroup: "발치/사랑니",
+        aspect: "발치 전 확인사항과 회복 관리, 전문 진료가 필요한 경우",
+      },
+      {
+        template: "{keyword} 적용 조건 가이드: {aspect}",
+        subGroup: "잇몸재생",
+        aspect: "일반 잇몸치료와의 차이, 적용 가능한 상태와 검사 기준",
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // 치과선택 (dental-choice)
   // ─────────────────────────────────────────────────────────────
   {
@@ -874,7 +899,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         keywords: [
           "김포치과 추천", "김포 임플란트", "김포 교정",
           "한강신도시 치과", "장기동 치과", "고촌 치과",
-          "김포 소아치과", "김포 스케일링",
+          "김포 소아치과", "김포장기동치과",
         ],
         searchIntent: "navigational",
       },
@@ -890,8 +915,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "긴급/증상",
         keywords: [
-          "치통 응급", "이가 아플때", "이가 흔들려요",
-          "잇몸 출혈", "치아 깨짐", "밤에 치통",
+          "치통 응급", "이가 아플때", "치아 깨짐", "밤에 치통",
           "치아 빠짐", "잇몸 부음",
         ],
         searchIntent: "transactional",
@@ -925,7 +949,7 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
       {
         name: "브랜드검색",
         keywords: [
-          "서울본치과", "본치과", "서울본치과 김포",
+          "서울본치과", "서울본치과 김포",
           "김포 본치과", "장기동 본치과", "한강신도시 본치과",
           "born2smile",
         ],
@@ -962,11 +986,6 @@ export const CATEGORY_KEYWORDS: CategoryKeywords[] = [
         template: "{keyword} 찾기: {aspect}",
         subGroup: "야간/주말/편의",
         aspect: "김포 지역 야간·주말·응급 진료 안내",
-      },
-      {
-        template: "{keyword} 활용 가이드: {aspect}",
-        subGroup: "보험/실비활용",
-        aspect: "치료별 실비 청구 방법과 보장 범위",
       },
       {
         template: "{keyword} 진료 안내: {aspect}",
@@ -1053,6 +1072,13 @@ export function validateCategoryKeywords(): void {
       if (!hasAngle) {
         throw new Error(
           `[admin-naver-datalab-keywords] "${categoryLabel}" > "${sg.name}" 서브그룹에 topicAngle이 없습니다.`,
+        );
+      }
+    }
+    for (const angle of cat.topicAngles) {
+      if (!cat.subGroups.some((sg) => sg.name === angle.subGroup)) {
+        throw new Error(
+          `[admin-naver-datalab-keywords] "${categoryLabel}" topicAngle이 존재하지 않는 "${angle.subGroup}" 서브그룹을 참조합니다.`,
         );
       }
     }

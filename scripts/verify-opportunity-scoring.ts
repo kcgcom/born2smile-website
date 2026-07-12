@@ -29,7 +29,8 @@ const evaluations = evaluateOpportunities([
   gap({ subGroup: "일반 정보", monthlyVolume: 100, contentGapScore: 10 }),
   gap({ subGroup: "검색량 미수집", monthlyVolume: null, contentGapScore: 100 }),
   gap({ category: "prosthetics", slug: "prosthetics", subGroup: "라미네이트", monthlyVolume: 600, contentGapScore: 60, keywords: ["라미네이트", "라미네이트 비용"] }),
-  gap({ category: "restorative", slug: "restorative", subGroup: "발치/사랑니", monthlyVolume: 500, contentGapScore: 80, keywords: ["사랑니 발치", "사랑니 통증"] }),
+  gap({ category: "general-care", slug: "general-care", subGroup: "발치/사랑니", monthlyVolume: 500, contentGapScore: 80, keywords: ["사랑니 발치", "사랑니 통증"] }),
+  gap({ category: "general-care", slug: "general-care", subGroup: "턱관절/이갈이", monthlyVolume: 300, contentGapScore: 70, keywords: ["턱관절 통증", "이갈이"] }),
   gap({ subGroup: "첨단/디지털", monthlyVolume: 400, contentGapScore: 80, keywords: ["디지털 임플란트"] }),
 ]);
 
@@ -43,8 +44,9 @@ assert.equal(getActionEvaluation(byKey.get("implant:검색량 미수집")!, "blo
 assert.equal(getActionEvaluation(byKey.get("implant:일반 정보")!, "blog")?.eligibility, "covered");
 assert.equal(getActionEvaluation(byKey.get("implant:비용/보험")!, "blog")?.eligibility, "eligible");
 assert.equal((getActionEvaluation(byKey.get("implant:비용/보험")!, "blog")?.valueScore ?? 0) > (getActionEvaluation(byKey.get("implant:관리/주의사항")!, "blog")?.valueScore ?? 0), true);
-assert.equal(getActionEvaluation(byKey.get("restorative:발치/사랑니")!, "page")?.eligibility, "not-applicable", "진료 범위 밖 주제를 페이지 보강으로 추천하면 안 됩니다.");
-assert.equal(getActionEvaluation(byKey.get("restorative:발치/사랑니")!, "faq")?.eligibility, "not-applicable", "진료 범위 밖 주제를 FAQ로 추천하면 안 됩니다.");
+assert.equal(getActionEvaluation(byKey.get("general-care:발치/사랑니")!, "page")?.eligibility, "not-applicable", "환자 교육 주제를 페이지 보강으로 추천하면 안 됩니다.");
+assert.equal(getActionEvaluation(byKey.get("general-care:발치/사랑니")!, "faq")?.eligibility, "eligible", "환자 교육 주제는 페이지가 없어도 전체 FAQ 커버리지를 기준으로 FAQ 후보가 될 수 있어야 합니다.");
+assert.equal(byKey.get("general-care:발치/사랑니")?.demandScore, 50, "4개 미만 카테고리는 내부 백분위를 섞지 않아야 합니다.");
 assert.equal(getActionEvaluation(byKey.get("prosthetics:라미네이트")!, "faq")?.eligibility, "eligible", "본문에서 다루고 FAQ가 없는 주제는 FAQ 후보여야 합니다.");
 
 const pagePlans = buildPageUpdateOpportunities([], evaluations);
@@ -53,6 +55,12 @@ const implantPlan = pagePlans.find((item) => item.targetPage === "/treatments/im
 assert.ok(implantPlan, "임플란트 페이지 통합 보강 계획이 생성되어야 합니다.");
 assert.equal(implantPlan.contributingTopics.some((item) => item.topicKey === "implant:첨단/디지털"), false, "확인 필요 주제를 점수에 합산하면 안 됩니다.");
 assert.equal(implantPlan.confirmationTopics.some((item) => item.topicKey === "implant:첨단/디지털"), true, "확인 필요 주제는 별도 근거로 남아야 합니다.");
+
+const [gumRegeneration] = evaluateOpportunities([
+  gap({ category: "general-care", slug: "general-care", subGroup: "잇몸재생", monthlyVolume: 200, contentGapScore: 80, keywords: ["잇몸재생술", "잇몸 퇴축 치료"] }),
+]);
+assert.equal(getActionEvaluation(gumRegeneration, "page")?.eligibility, "not-applicable", "잇몸재생을 진료 페이지 보강으로 추천하면 안 됩니다.");
+assert.notEqual(getActionEvaluation(gumRegeneration, "faq")?.eligibility, "not-applicable", "잇몸재생은 전체 FAQ 기준 평가 대상이어야 합니다.");
 const contributingScores = implantPlan.contributingTopics.map((item) => item.valueScore).sort((a, b) => b - a);
 const nextScores = contributingScores.slice(1, 3);
 const nextAverage = nextScores.length ? nextScores.reduce((sum, score) => sum + score, 0) / nextScores.length : contributingScores[0];

@@ -2,7 +2,7 @@ import type { KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-ke
 import type { ContentGap } from "./trend-analysis";
 import { TREATMENT_DETAILS } from "./treatments";
 
-export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.1" as const;
+export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.4" as const;
 
 export type OpportunityActionType = "blog" | "page" | "faq";
 export type OpportunityConfidence = "B" | "C";
@@ -53,6 +53,7 @@ export const TARGET_PAGE_BY_CATEGORY: Record<KeywordCategorySlug, string> = {
   prevention: "/treatments/scaling",
   pediatric: "/treatments/pediatric",
   "health-tips": "/faq",
+  "general-care": "/faq",
   "dental-choice": "/about",
 };
 
@@ -65,6 +66,7 @@ const STRATEGIC_FIT: Record<KeywordCategorySlug, number> = {
   pediatric: 80,
   "dental-choice": 70,
   "health-tips": 60,
+  "general-care": 50,
 };
 
 const STRONG_QUESTION_TERMS = ["비용", "가격", "보험", "통증", "부작용", "기간", "가능", "대상", "차이", "비교"];
@@ -84,13 +86,14 @@ const FACETS = [
 /** 실제 진료 페이지 범위와 맞지 않는 택소노미 주제. 기본값은 진료 카테고리 내 blog/page/faq 허용이다. */
 const TOPIC_ACTION_OVERRIDES: Record<string, OpportunityActionType[]> = {
   "prosthetics:치아미백": ["blog"],
-  "restorative:턱관절/이갈이": ["blog"],
-  "restorative:발치/사랑니": ["blog"],
-  "prevention:잇몸재생/치료": ["blog"],
+  "general-care:턱관절/이갈이": ["blog", "faq"],
+  "general-care:발치/사랑니": ["blog", "faq"],
+  "general-care:잇몸재생": ["blog", "faq"],
   "prevention:구강위생": ["blog"],
   "prevention:구강건조/타액": ["blog"],
   "pediatric:교정시기": ["blog"],
 };
+const EDUCATION_FAQ_TOPICS = new Set(["general-care:턱관절/이갈이", "general-care:발치/사랑니", "general-care:잇몸재생"]);
 const PAGE_CONFIRMATION_TOPICS = new Set(["implant:첨단/디지털"]);
 const PAGE_STATUS_OVERRIDES: Partial<Record<string, PageContentStatus>> = {
   "implant:대상/조건": "covered",
@@ -132,6 +135,8 @@ function percentileScores(gaps: ContentGap[]): Map<string, number | null> {
     const key = `${gap.slug}:${gap.subGroup}`;
     if (gap.monthlyVolume == null) return [key, null];
     const category = byCategory.get(gap.slug) ?? [gap];
+    // 소규모 카테고리의 내부 백분위는 두 항목을 0/100으로 과도하게 양극화한다.
+    if (category.length < 4) return [key, percentile(global, gap)];
     return [key, Math.round(percentile(global, gap) * 0.7 + percentile(category, gap) * 0.3)];
   }));
 }
@@ -232,6 +237,14 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
     const page = pageEvidence(gap);
     const allowed = allowedActions(gap);
     const question = questionSignal(gap);
+    const isEducationFaq = EDUCATION_FAQ_TOPICS.has(key);
+    const educationFaqCoverage = isEducationFaq
+      ? Math.max(
+          textCoverage(Object.values(TREATMENT_DETAILS).flatMap((detail) => detail.faq.map((item) => item.q)), topicTerms(gap)),
+          Math.round(textCoverage(Object.values(TREATMENT_DETAILS).flatMap((detail) => detail.faq.map((item) => item.a)), topicTerms(gap)) * 0.7),
+        )
+      : null;
+    const faqGap = page.faqGap ?? (educationFaqCoverage == null ? null : 100 - educationFaqCoverage);
     const confidence: OpportunityConfidence = demand == null ? "C" : "B";
     const needsData = demand == null;
     const pageContentStatus: PageContentStatus = PAGE_STATUS_OVERRIDES[key] ?? (!allowed.includes("page") || page.pageCoverage == null
@@ -254,13 +267,15 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
     const pageScore = pageEligibility === "eligible"
       ? page.pageGap! * 0.35 + business * 0.25 + demand! * 0.25 + strategic * 0.15
       : null;
-    const faqEligibility: OpportunityEligibility = !allowed.includes("faq") || page.faqGap == null
+    const faqEligibility: OpportunityEligibility = !allowed.includes("faq") || faqGap == null
       ? "not-applicable"
       : needsData ? "needs-data"
-        : (page.pageCoverage ?? 0) < 40 ? "not-applicable"
-          : question < 60 || (page.faqCoverage ?? 0) >= 70 ? "covered" : "eligible";
+        : isEducationFaq
+          ? question < 60 || (educationFaqCoverage ?? 0) >= 70 ? "covered" : "eligible"
+          : (page.pageCoverage ?? 0) < 40 ? "not-applicable"
+            : question < 60 || (page.faqCoverage ?? 0) >= 70 ? "covered" : "eligible";
     const faqScore = faqEligibility === "eligible"
-      ? question * 0.3 + page.faqGap! * 0.3 + demand! * 0.2 + business * 0.2
+      ? question * 0.3 + faqGap! * 0.3 + demand! * 0.2 + business * 0.2
       : null;
 
     return {
@@ -275,7 +290,7 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
       patientBusinessValue: business,
       strategicFit: strategic,
       pageGapScore: page.pageGap,
-      faqGapScore: page.faqGap,
+      faqGapScore: faqGap,
       pageContentStatus,
       questionSignal: question,
       missingSections: page.missing,
@@ -289,7 +304,7 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
         action("faq", faqScore, faqEligibility, [
           `질문 신호 ${question}`,
           `페이지 본문 커버리지 ${page.pageCoverage ?? "해당 없음"}`,
-          `FAQ 공백 ${page.faqGap ?? "해당 없음"}`,
+          `FAQ 공백 ${faqGap ?? "해당 없음"}`,
         ]),
       ],
     };

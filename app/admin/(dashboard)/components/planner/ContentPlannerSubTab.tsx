@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Check, ChevronRight, Clock3, FilePenLine, LayoutList, Pause, Sparkles, X } from "lucide-react";
+import { Archive, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, FilePenLine, LayoutList, Pause, RotateCcw, Sparkles, X } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
@@ -23,8 +23,6 @@ interface PlannerCandidate {
   slug: KeywordCategorySlug;
   targetPage: string;
   rationale: string;
-  demandLabel: string;
-  confidence: "B" | "C";
   effort: string;
   effortMinutes: number;
   valueScore: number;
@@ -73,8 +71,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       slug: brief.slug,
       targetPage: brief.targetPage,
       rationale: gap ? `${demandLabel(gap)} · 콘텐츠 공백 ${gap.contentGapScore} · 신규 글 가치 ${actionValue}` : "새 콘텐츠 기회",
-      demandLabel: demandLabel(gap),
-      confidence: evaluation?.confidence ?? "C",
       effort: "약 90분",
       effortMinutes: 90,
       valueScore: actionValue,
@@ -96,8 +92,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       slug: brief.slug,
       targetPage: brief.targetPage,
       rationale: `페이지 가치 ${opportunity?.pageValueScore ?? 0} · 근거 주제 ${topics.length}개 · ${(opportunity?.missingSections ?? []).join(" · ")}`,
-      demandLabel: `${topics.length}개 주제 근거`,
-      confidence: contributingEvaluations.some((item) => item.confidence === "C") ? "C" as const : "B" as const,
       effort: `약 ${effortMinutes}분`,
       effortMinutes,
       valueScore: opportunity?.pageValueScore ?? 0,
@@ -115,8 +109,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       slug: brief.slug,
       targetPage: brief.targetPage,
       rationale: `${demandLabel(gap)} · FAQ 가치 ${brief.valueScore}`,
-      demandLabel: demandLabel(gap),
-      confidence: evaluation?.confidence ?? "C",
       effort: "약 20분",
       effortMinutes: 20,
       valueScore: brief.valueScore,
@@ -159,13 +151,14 @@ function makeBlogPrefill(brief: BlogBriefItem) {
     ]),
     { type: "paragraph", text: brief.cta },
   ];
-  return { title: brief.suggestedTitle, subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`, excerpt: brief.metaDescription, category: brief.slug, tags, blocks };
+  return { title: brief.suggestedTitle, subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`, excerpt: brief.metaDescription, category: brief.contentCategory, tags, blocks };
 }
 
 export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpportunityKey: string | null }) {
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [showArchive, setShowArchive] = useState(false);
   const { mutate, error: mutationError } = useAdminMutation<ContentPlannerItem>();
   const strategy = useAdminApi<StrategyOverviewData>("/api/admin/naver-datalab/trend-summary?mode=strategy");
   const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
@@ -179,11 +172,12 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
     [requestedOpportunityKey, unreviewedCandidates],
   );
   const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
-  const deferredCount = (planner.data ?? []).filter((item) => item.status === "deferred").length;
-  const blogOpportunityCount = strategy.data?.blogBriefs?.length ?? 0;
-  const pageOpportunityCount = strategy.data?.pageOpportunities?.length ?? 0;
-  const faqOpportunityCount = strategy.data?.faqSuggestions?.length ?? 0;
+  const archivedItems = (planner.data ?? []).filter((item) => item.status === "deferred" || item.status === "dismissed");
+  const deferredCount = archivedItems.filter((item) => item.status === "deferred").length;
+  const dismissedCount = archivedItems.filter((item) => item.status === "dismissed").length;
   const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
+  const publishedCount = boardItems.filter((item) => item.status === "published").length;
+  const boardByStatus = BOARD_STATUSES.reduce((acc, status) => { acc[status] = boardItems.filter((item) => item.status === status); return acc; }, {} as Record<PlannerStatus, ContentPlannerItem[]>);
 
   useEffect(() => {
     if (!requestedOpportunityKey || strategy.loading || planner.loading) return;
@@ -214,11 +208,25 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
     setSavingKey(null);
   };
 
+  const restoreItem = async (item: ContentPlannerItem) => {
+    setSavingKey(item.id);
+    const result = await mutate(`/api/admin/content-planner/${item.id}`, "PUT", { status: "approved" as PlannerStatus });
+    if (!result.error) {
+      planner.refetch();
+      setNotice("작업 보드로 복원했습니다.");
+      window.setTimeout(() => setNotice(null), 2500);
+    }
+    setSavingKey(null);
+  };
+
   const startDraft = (item: ContentPlannerItem) => {
-    if (item.itemType !== "blog" || !isBlogCategorySlug(item.category) || typeof window === "undefined") return;
-    window.sessionStorage.setItem(BLOG_EDITOR_PREFILL_KEY, JSON.stringify(makeBlogPrefill(item.brief as unknown as BlogBriefItem)));
+    if (item.itemType !== "blog" || typeof window === "undefined") return;
+    const brief = item.brief as unknown as BlogBriefItem;
+    const contentCategory = brief.contentCategory ?? (isBlogCategorySlug(item.category) ? item.category : null);
+    if (!contentCategory || !isBlogCategorySlug(contentCategory)) return;
+    window.sessionStorage.setItem(BLOG_EDITOR_PREFILL_KEY, JSON.stringify(makeBlogPrefill({ ...brief, contentCategory })));
     void updateItem(item, { status: "in_progress" });
-    router.push(`/admin/content/posts/new?category=${item.category}&prefill=brief`);
+    router.push(`/admin/content/posts/new?category=${contentCategory}&prefill=brief`);
   };
 
   if (strategy.loading || planner.loading) return <AdminLoadingSkeleton variant="full" />;
@@ -234,15 +242,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기회 분석 탭에서 검색 수요와 콘텐츠 근거를 자세히 확인할 수 있습니다.</p>
           </div>
-          <div className="space-y-3 lg:min-w-[520px]">
-            <MetricGroup
-              label="실행 후보 구성"
-              metrics={[
-                { label: "새 글", value: blogOpportunityCount },
-                { label: "페이지 보강", value: pageOpportunityCount },
-                { label: "FAQ 보강", value: faqOpportunityCount },
-              ]}
-            />
+          <div className="lg:min-w-[360px]">
             <MetricGroup
               label="작업 현황"
               metrics={[
@@ -263,7 +263,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
             <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{itemTypeLabel(candidate.itemType)}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="기회 가치" value={`${candidate.valueScore}점`} /><Fact label="신뢰도" value={candidate.confidence} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-4 grid grid-cols-2 gap-2"><Fact label="기회 가치" value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
             <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
           </AdminSurface>
         ))}</div> : <Empty icon={Check} title="현재 추천 후보를 모두 검토했습니다." description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
@@ -271,16 +271,101 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
 
       <section className="space-y-4">
         <div className="flex items-center gap-2"><LayoutList className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">작업 보드</h2><AdminPill tone="white">{boardItems.length}개</AdminPill></div>
-        {boardItems.length ? <div className="space-y-3">{boardItems.map((item) => (
-          <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className={`scroll-mt-6 rounded-2xl p-5 ${item.opportunityKey === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><AdminPill tone="white">{itemTypeLabel(item.itemType)}</AdminPill><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[item.status]}</span></div><h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p></div>
-            <div className="flex flex-wrap items-center gap-2"><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
-              <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
-              {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}
-            </div>
-          </div></AdminSurface>
-        ))}</div> : <Empty icon={Clock3} title="진행 중인 작업이 없습니다." description="추천 후보를 승인하면 작업 보드에 나타납니다." />}
+
+        {boardItems.length > 0 && (
+          <ProgressBar total={boardItems.length} published={publishedCount} active={activeWorkCount} />
+        )}
+
+        {boardItems.length ? (
+          <div className="space-y-6">
+            {BOARD_STATUSES.map((status) => {
+              const items = boardByStatus[status];
+              if (!items || items.length === 0) return null;
+              return (
+                <div key={status}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[var(--color-primary)]">{STATUS_LABELS[status]}</span>
+                    <span className="text-xs text-[var(--muted)]">{items.length}개</span>
+                  </div>
+                  <div className="space-y-3">{items.map((item) => (
+                    <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className={`scroll-mt-6 rounded-2xl p-5 ${item.opportunityKey === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <AdminPill tone="white">{itemTypeLabel(item.itemType)}</AdminPill>
+                          <span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span>
+                          {item.dueDate && <span className="text-xs text-[var(--muted)]">~{item.dueDate}</span>}
+                        </div>
+                        <h3 className="mt-2 truncate text-sm font-bold text-[var(--foreground)]">{item.title}</h3>
+                        <p className="mt-1 text-xs text-[var(--muted)]">{item.rationale}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select>
+                        <label className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs text-[var(--muted)]"><CalendarDays className="h-4 w-4" /><input type="date" value={item.dueDate ?? ""} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { dueDate: event.target.value || null })} className="bg-transparent text-[var(--foreground)] outline-none" /></label>
+                        {item.itemType === "blog" ? <AdminActionButton tone="primary" onClick={() => startDraft(item)}><FilePenLine className="h-4 w-4" />초안 작성<ChevronRight className="h-4 w-4" /></AdminActionButton> : <a href={item.targetPage} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 text-sm font-medium text-[var(--surface)]">대상 페이지<ChevronRight className="h-4 w-4" /></a>}
+                      </div>
+                    </div></AdminSurface>
+                  ))}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : <Empty icon={Clock3} title="진행 중인 작업이 없습니다." description="추천 후보를 승인하면 작업 보드에 나타납니다." />}
       </section>
+
+      {archivedItems.length > 0 && (
+        <section className="space-y-4">
+          <button onClick={() => setShowArchive(!showArchive)} className="flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+            <Archive className="h-4 w-4" />
+            <span>보류/제외 항목</span>
+            <AdminPill tone="white">{deferredCount + dismissedCount}개</AdminPill>
+            <ChevronDown className={`h-4 w-4 transition-transform ${showArchive ? "rotate-180" : ""}`} />
+          </button>
+          {showArchive && (
+            <div className="space-y-2">
+              {archivedItems.map((item) => (
+                <AdminSurface key={item.id} tone="white" className="rounded-2xl p-4 opacity-70">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <AdminPill tone="white">{itemTypeLabel(item.itemType)}</AdminPill>
+                        <span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span>
+                        <span className={`text-xs font-semibold ${item.status === "deferred" ? "text-amber-500" : "text-[var(--muted)]"}`}>{STATUS_LABELS[item.status]}</span>
+                      </div>
+                      <h3 className="mt-1 truncate text-sm text-[var(--foreground)]">{item.title}</h3>
+                    </div>
+                    <AdminActionButton tone="dark" disabled={savingKey === item.id} onClick={() => restoreItem(item)}>
+                      <RotateCcw className="h-4 w-4" />복원
+                    </AdminActionButton>
+                  </div>
+                </AdminSurface>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ProgressBar({ total, published, active }: { total: number; published: number; active: number }) {
+  const publishedPct = total > 0 ? Math.round((published / total) * 100) : 0;
+  const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+  return (
+    <div className="rounded-xl bg-[var(--background)] p-3">
+      <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
+        <span>진행률</span>
+        <span>{published}/{total} 완료 ({publishedPct}%)</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[var(--border)]">
+        <div className="flex h-full">
+          <div className="bg-emerald-500 transition-all" style={{ width: `${publishedPct}%` }} />
+          <div className="bg-[var(--color-primary)] transition-all" style={{ width: `${activePct}%` }} />
+        </div>
+      </div>
+      <div className="mt-1.5 flex gap-4 text-[10px] text-[var(--muted)]">
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />발행됨</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-[var(--color-primary)]" />진행 중</span>
+      </div>
     </div>
   );
 }

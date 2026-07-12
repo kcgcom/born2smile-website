@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import {
   CATEGORY_KEYWORDS,
-  KEYWORD_CATEGORY_LABELS,
+  KEYWORD_CATEGORY_SLUGS,
   type CategoryKeywords,
   type KeywordCategorySlug,
 } from "@/lib/admin-naver-datalab-keywords";
@@ -12,8 +12,6 @@ import {
 } from "@/lib/keyword-taxonomy/generated/active-snapshot";
 import { isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
 import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
-
-const categorySlugs = Object.keys(KEYWORD_CATEGORY_LABELS) as KeywordCategorySlug[];
 
 const topicAngleSchema = z.object({
   template: z.string().min(1),
@@ -28,8 +26,8 @@ const subGroupSchema = z.object({
 });
 
 const categorySchema = z.object({
-  category: z.enum(categorySlugs as [KeywordCategorySlug, ...KeywordCategorySlug[]]),
-  slug: z.enum(categorySlugs as [KeywordCategorySlug, ...KeywordCategorySlug[]]),
+  category: z.enum(KEYWORD_CATEGORY_SLUGS),
+  slug: z.enum(KEYWORD_CATEGORY_SLUGS),
   subGroups: z.array(subGroupSchema).min(1).max(15),
   topicAngles: z.array(topicAngleSchema),
 });
@@ -348,6 +346,38 @@ export async function getPendingKeywordTaxonomyDiff(): Promise<KeywordTaxonomyDi
   const state = await getKeywordTaxonomyState();
   if (!state.pending) return null;
   return diffTaxonomies(state.active.taxonomy, state.pending.taxonomy);
+}
+
+export async function getCodeKeywordTaxonomyDiff(): Promise<KeywordTaxonomyDiff> {
+  const active = await getActiveKeywordTaxonomy();
+  return diffTaxonomies(active.taxonomy, validateKeywordTaxonomy(CATEGORY_KEYWORDS));
+}
+
+function taxonomiesEqual(left: CategoryKeywords[], right: CategoryKeywords[]): boolean {
+  return JSON.stringify(validateKeywordTaxonomy(left)) === JSON.stringify(validateKeywordTaxonomy(right));
+}
+
+export async function isCodeKeywordTaxonomyActive(): Promise<boolean> {
+  const { taxonomy } = await getActiveKeywordTaxonomy();
+  return taxonomiesEqual(taxonomy, CATEGORY_KEYWORDS);
+}
+
+export async function isCodeKeywordTaxonomyPending(): Promise<boolean> {
+  const { pending } = await getKeywordTaxonomyState();
+  return pending ? taxonomiesEqual(pending.taxonomy, CATEGORY_KEYWORDS) : false;
+}
+
+export async function stageCodeKeywordTaxonomy(createdBy: string): Promise<number> {
+  const { pending } = await getKeywordTaxonomyState();
+  if (pending) {
+    throw new Error(`v${pending.version} 적용 대기 변경이 있습니다. 먼저 적용하거나 전체 취소한 뒤 코드 변경을 준비하세요.`);
+  }
+  return savePendingKeywordTaxonomy(
+    CATEGORY_KEYWORDS,
+    createdBy,
+    "코드 택소노미 적용 준비",
+    [],
+  );
 }
 
 export async function discardPendingKeywordTaxonomy(): Promise<number | null> {

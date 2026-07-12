@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   CATEGORY_KEYWORDS,
+  getBlogCategoryForKeywordTopic,
   getKeywordCategoryLabel,
   type KeywordCategorySlug,
   type SearchIntent,
@@ -197,6 +198,8 @@ function CategoryCard({
   trendInfo?: TrendOverviewCategory;
 }) {
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
+  const contentCategories = [...new Set(cat.subGroups.map((group) => getBlogCategoryForKeywordTopic(cat.slug, group.name)))];
+  const isAnalysisOnly = contentCategories.length !== 1 || contentCategories[0] !== cat.slug;
 
   return (
     <button
@@ -211,6 +214,11 @@ function CategoryCard({
       <h3 className="text-sm font-semibold text-[var(--foreground)]">
         {getKeywordCategoryLabel(cat.slug)}
       </h3>
+      {isAnalysisOnly && (
+        <p className="mt-0.5 text-[10px] font-medium text-amber-700">
+          발행 · {contentCategories.map(getKeywordCategoryLabel).join(" · ")}
+        </p>
+      )}
 
       {/* Monthly volume */}
       {trendInfo?.monthlyTotalVolume != null ? (
@@ -568,6 +576,8 @@ function CategoryDetail({
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const totalKw = cat.subGroups.reduce((s, g) => s + g.keywords.length, 0);
+  const contentCategories = [...new Set(cat.subGroups.map((group) => getBlogCategoryForKeywordTopic(cat.slug, group.name)))];
+  const isAnalysisOnly = contentCategories.length !== 1 || contentCategories[0] !== cat.slug;
 
   const filteredGroups = useMemo(() => {
     if (!filter.trim()) return cat.subGroups;
@@ -629,6 +639,7 @@ function CategoryDetail({
           </div>
           <p className="text-xs text-gray-500">
             {cat.subGroups.length}개 서브그룹 · {totalKw}개 키워드
+            {isAnalysisOnly ? ` · 공개 콘텐츠는 ${contentCategories.map(getKeywordCategoryLabel).join("·")}에 발행` : ""}
           </p>
         </div>
         <button
