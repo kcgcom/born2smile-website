@@ -12,7 +12,6 @@ import type { StrategyOverviewData } from "./shared";
 import { EvidenceDataSection } from "./strategy-evidence";
 import { OpportunityScatter, type ScatterPoint } from "./strategy-shared";
 import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
-import type { ContentPlannerItem } from "@/lib/content-planner";
 import { CONTENT_GAP_LARGE_THRESHOLD, isContentGapApplicable } from "@/lib/trend-analysis";
 
 export function StrategySubTab() {
@@ -20,7 +19,6 @@ export function StrategySubTab() {
   const syncEndpoint = "/api/admin/naver-searchad/sync";
   const strategy = useAdminApi<StrategyOverviewData>(endpoint);
   const sync = useAdminApi<SearchAdSyncState>(syncEndpoint);
-  const planner = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
   const { mutate: startSync, loading: startingSync, error: syncMutationError } = useAdminMutation<SearchAdSyncState>();
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const observedActiveJob = useRef<string | null>(null);
@@ -146,20 +144,7 @@ export function StrategySubTab() {
         </AdminSurface>
       )}
 
-      <EvidenceDataSection
-        contentGap={evaluatedContentGap}
-        insightActions={strategy.data.insightActions ?? []}
-        pageOpportunities={strategy.data.pageOpportunities ?? []}
-        candidateKeys={new Set([
-          ...(strategy.data.blogBriefs ?? []).map((brief) => `blog:${brief.slug}:${brief.subGroup}`),
-          ...(strategy.data.pageBriefs ?? []).map((brief) => `page:${brief.targetPage}`),
-          ...(strategy.data.faqSuggestions ?? []).map((brief) => `faq:${brief.slug}:${brief.subGroup}`),
-        ])}
-        plannedKeys={new Set((planner.data ?? []).map((item) => item.opportunityKey))}
-        visiblePlanKeys={new Set((planner.data ?? [])
-          .filter((item) => ["approved", "in_progress", "review", "scheduled", "published"].includes(item.status))
-          .map((item) => item.opportunityKey))}
-      />
+      <EvidenceDataSection contentGap={evaluatedContentGap} />
     </div>
   );
 }

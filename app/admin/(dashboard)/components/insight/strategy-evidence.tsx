@@ -5,16 +5,11 @@ import { getKeywordCategoryLabel, type KeywordCategorySlug, type SearchIntent } 
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
 import { CategoryBadge, ValueScoreBadge, SearchIntentBadge, calcRelatedVolume } from "./shared";
-import type { ContentGapItem, InsightActionItem, PageUpdateOpportunityItem } from "./shared";
-import { ACTION_LABELS, INTENT_FILTER_OPTIONS, buildCrossKeywords, useGapTableSort } from "./strategy-shared";
+import type { ContentGapItem } from "./shared";
+import { INTENT_FILTER_OPTIONS, buildCrossKeywords, useGapTableSort } from "./strategy-shared";
 
 interface EvidenceDataSectionProps {
   contentGap: ContentGapItem[];
-  insightActions: InsightActionItem[];
-  pageOpportunities: PageUpdateOpportunityItem[];
-  candidateKeys: Set<string>;
-  plannedKeys: Set<string>;
-  visiblePlanKeys: Set<string>;
 }
 
 function evidenceReasonText(evidence: ContentGapItem["coverageEvidence"][number]): string {
@@ -23,11 +18,6 @@ function evidenceReasonText(evidence: ContentGapItem["coverageEvidence"][number]
 
 export function EvidenceDataSection({
   contentGap,
-  insightActions,
-  pageOpportunities,
-  candidateKeys,
-  plannedKeys,
-  visiblePlanKeys,
 }: EvidenceDataSectionProps) {
   const [categoryFilter, setCategoryFilter] = useState<KeywordCategorySlug | "all">("all");
   const [intentFilter, setIntentFilter] = useState<SearchIntent | "all">("all");
@@ -65,41 +55,6 @@ export function EvidenceDataSection({
   );
 
   const maxVolume = useMemo(() => Math.max(...filteredGap.map((g) => g.monthlyVolume ?? 0), 1), [filteredGap]);
-  const actionByKey = useMemo(() => new Map(insightActions.map((item) => [`${item.slug}:${item.subGroup}`, item])), [insightActions]);
-  const pageOpportunityByKey = useMemo(() => new Map(
-    pageOpportunities.flatMap((item) => (item.contributingTopics ?? []).map((topic) => [topic.topicKey, item] as const)),
-  ), [pageOpportunities]);
-  const confirmationPageByKey = useMemo(() => new Map(
-    pageOpportunities.flatMap((item) => (item.confirmationTopics ?? []).map((topic) => [topic.topicKey, item] as const)),
-  ), [pageOpportunities]);
-
-  const getPlannerKeys = (slug: KeywordCategorySlug, subGroup: string) => {
-    const topicKey = `${slug}:${subGroup}`;
-    const pageOpportunity = pageOpportunityByKey.get(topicKey);
-    return ([
-      { type: "blog" as const, key: `blog:${topicKey}` },
-      ...(pageOpportunity ? [{ type: "page" as const, key: `page:${pageOpportunity.targetPage}` }] : []),
-      { type: "faq" as const, key: `faq:${topicKey}` },
-    ])
-    .filter((item) => candidateKeys.has(item.key));
-  };
-
-  const plannerLink = ({ type, key }: { type: "blog" | "page" | "faq"; key: string }) => {
-    const label = type === "blog" ? "새 글" : type === "page" ? "페이지" : "FAQ";
-    if (plannedKeys.has(key) && !visiblePlanKeys.has(key)) {
-      return <span key={key} className="whitespace-nowrap text-xs text-[var(--muted)]">{label} 검토 완료</span>;
-    }
-    return (
-      <a
-        key={key}
-        href={`/admin/content/planner?opportunity=${encodeURIComponent(key)}#weekly-recommendations`}
-        className="whitespace-nowrap text-xs font-semibold text-[var(--color-primary)] hover:underline"
-      >
-        {visiblePlanKeys.has(key) ? `${label} 계획 보기` : `${label} 검토`}
-      </a>
-    );
-  };
-
   if (contentGap.length === 0 && crossKeywords.length === 0) return null;
 
   return (
@@ -282,20 +237,6 @@ export function EvidenceDataSection({
                       : null,
                   },
                   {
-                    key: "actionType",
-                    label: "추천 액션",
-                    align: "left",
-                    render: (row) => {
-                      const item = actionByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
-                      if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
-                      return (
-                        <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[11px] font-medium text-[var(--foreground)]">
-                          {ACTION_LABELS[item.actionType]} · {item.valueScore}
-                        </span>
-                      );
-                    },
-                  },
-                  {
                     key: "monthlyVolume",
                     label: "주제 검색량",
                     align: "right",
@@ -373,29 +314,6 @@ export function EvidenceDataSection({
                       );
                     },
                   },
-                  {
-                    key: "pageValueScore",
-                    label: "페이지 가치",
-                    align: "right",
-                    render: (row) => {
-                      const item = pageOpportunityByKey.get(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
-                      const confirmation = confirmationPageByKey.has(`${row.slug as KeywordCategorySlug}:${String(row.subGroup)}`);
-                      if (confirmation) return <span className="text-xs font-medium text-amber-700">확인 필요</span>;
-                      if (!item) return <span className="text-xs text-[var(--muted)]">-</span>;
-                      return <span className="tabular-nums text-[var(--foreground)]">{item.pageValueScore}</span>;
-                    },
-                  },
-                  {
-                    key: "planner",
-                    label: "실행",
-                    align: "right",
-                    render: (row) => {
-                      const plannerKeys = getPlannerKeys(row.slug as KeywordCategorySlug, String(row.subGroup));
-                      return plannerKeys.length
-                        ? <div className="flex flex-col items-end gap-1">{plannerKeys.map(plannerLink)}</div>
-                        : <span className="text-xs text-[var(--muted)]">-</span>;
-                    },
-                  },
                 ]}
                 rows={gapRows as unknown as Record<string, unknown>[]}
                 keyField="id"
@@ -441,10 +359,6 @@ export function EvidenceDataSection({
                   const topRelatedCount = Math.min(10, related.length);
                   const topRelatedVolume = calcRelatedVolume(item, 10);
                   const hasKeywords = direct.length > 0 || related.length > 0;
-                  const action = actionByKey.get(`${item.slug}:${item.subGroup}`);
-                  const topicKey = `${item.slug}:${item.subGroup}`;
-                  const pageOpportunity = pageOpportunityByKey.get(topicKey);
-                  const needsPageConfirmation = confirmationPageByKey.has(topicKey);
                   return (
                     <div key={item.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
@@ -478,29 +392,6 @@ export function EvidenceDataSection({
                             직접 근거 없음{item.indirectEvidenceCount > 0 ? ` · 간접 언급 ${item.indirectEvidenceCount}개` : ""}
                           </p>
                         );
-                      })()}
-                      {(action || pageOpportunity) && (
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          {action && (
-                            <span className="inline-flex items-center rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
-                              {ACTION_LABELS[action.actionType]} · {action.valueScore}
-                            </span>
-                          )}
-                          {pageOpportunity && (
-                            <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">
-                              페이지 {pageOpportunity.pageValueScore}
-                            </span>
-                          )}
-                          {needsPageConfirmation && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                              페이지 반영 확인 필요
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {(() => {
-                        const plannerKeys = getPlannerKeys(item.slug, item.subGroup);
-                        return plannerKeys.length ? <div className="mt-2 flex flex-wrap gap-2">{plannerKeys.map(plannerLink)}</div> : null;
                       })()}
                       {hasKeywords && (
                         <div className="mt-1.5 flex flex-wrap gap-1">

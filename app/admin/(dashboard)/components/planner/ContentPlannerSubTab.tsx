@@ -59,6 +59,12 @@ function itemTypeLabel(type: PlannerCandidate["itemType"]): string {
   return "FAQ 보강";
 }
 
+function valueLabel(type: PlannerCandidate["itemType"]): string {
+  if (type === "blog") return "신규 글 가치";
+  if (type === "page") return "페이지 가치";
+  return "FAQ 가치";
+}
+
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
   const evaluations = new Map((data.opportunityEvaluations ?? []).map((item) => [item.key, item]));
   const blogs = (data.blogBriefs ?? []).map((brief) => {
@@ -233,7 +239,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
           <div>
             <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `미검토 후보 ${unreviewedCandidates.length}개` : "새 후보 검토 완료"}</AdminPill>{suppressedBlogCount > 0 && <AdminPill tone="white">페이지 우선 대기 {suppressedBlogCount}개</AdminPill>}</div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기회 분석 탭에서 검색 수요와 콘텐츠 근거를 자세히 확인할 수 있습니다.</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">분석 결과에 따른 추천 액션과 가치를 검토하고 실행할 작업을 정합니다. 검색 수요와 콘텐츠 근거는 기회 분석 탭에서 확인할 수 있습니다.</p>
           </div>
           <div className="lg:min-w-[360px]">
             <MetricGroup
@@ -251,12 +257,12 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
       {mutationError && <AdminNotice tone="error">{mutationError}</AdminNotice>}
 
       <section id="weekly-recommendations" className="scroll-mt-6 space-y-4">
-        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.{suppressedBlogCount > 0 && ` 페이지 보강과 겹치는 신규 글 ${suppressedBlogCount}개는 페이지 작업 이후로 미뤘습니다.`}</p></div>
+        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">추천 액션과 가치 점수를 비교해 승인, 보류, 제외 중 하나를 선택하세요. 한 번에 최대 5개만 보여줍니다.{suppressedBlogCount > 0 && ` 페이지 보강과 겹치는 신규 글 ${suppressedBlogCount}개는 페이지 작업 이후로 미뤘습니다.`}</p></div>
         {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
             <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{itemTypeLabel(candidate.itemType)}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
-            <div className="mt-4 grid grid-cols-2 gap-2"><Fact label="기회 가치" value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="추천 액션" value={itemTypeLabel(candidate.itemType)} /><Fact label={valueLabel(candidate.itemType)} value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
             <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
           </AdminSurface>
         ))}</div> : <Empty icon={Check} title="현재 추천 후보를 모두 검토했습니다." description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
