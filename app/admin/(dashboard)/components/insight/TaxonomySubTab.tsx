@@ -33,6 +33,12 @@ import type { TrendOverviewCategory, TrendSummaryData } from "./shared";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { KeywordCandidateReview } from "./KeywordCandidateReview";
 import type { SearchAdSyncState } from "@/lib/admin-searchad-snapshots";
+import {
+  getTaxonomyDiffCount,
+  getTaxonomyDiffLines,
+  getTaxonomyRefreshPlan,
+  type TaxonomyCodeDiff,
+} from "@/lib/admin-taxonomy-refresh";
 
 // ---------------------------------------------------------------
 // Constants
@@ -694,12 +700,7 @@ interface TaxonomyGovernanceSummary {
   active: { version: number | null; keywords: number; subgroups: number };
   pending: { version: number; keywords: number; subgroups: number } | null;
   pendingCandidateCount: number;
-  codeDiff: {
-    addedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
-    removedKeywords: Array<{ category: KeywordCategorySlug; subgroup: string; keyword: string }>;
-    addedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
-    removedSubgroups: Array<{ category: KeywordCategorySlug; subgroup: string }>;
-  };
+  codeDiff: TaxonomyCodeDiff;
   codeMatchesActive: boolean;
   codeMatchesPending: boolean;
 }
@@ -710,6 +711,7 @@ export function TaxonomySubTab() {
     useState<KeywordCategorySlug | null>(null);
   const [filter, setFilter] = useState("");
   const [forceLoading, setForceLoading] = useState(false);
+  const [completedVersion, setCompletedVersion] = useState<number | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const observedActiveJob = useRef<string | null>(null);
 
@@ -756,13 +758,14 @@ export function TaxonomySubTab() {
     if (searchAdSync.data?.status !== "completed" || !searchAdSync.data.jobId) return;
     if (observedActiveJob.current !== searchAdSync.data.jobId) return;
     observedActiveJob.current = null;
+    setCompletedVersion(searchAdSync.data.snapshotTaxonomyVersion);
     refetchTaxonomyGovernance();
     void Promise.all([
       forceRefetchAdminApi<TrendSummaryData>(VOLUME_ENDPOINT),
       forceRefetchAdminApi<TrendSummaryData>(TREND_SHORT_ENDPOINT),
       forceRefetchAdminApi<TrendSummaryData>(TREND_LONG_ENDPOINT),
     ]);
-  }, [refetchTaxonomyGovernance, searchAdSync.data?.jobId, searchAdSync.data?.status]);
+  }, [refetchTaxonomyGovernance, searchAdSync.data?.jobId, searchAdSync.data?.snapshotTaxonomyVersion, searchAdSync.data?.status]);
 
   // 세 결과를 병합
   const overviewData = useMemo(() => {
@@ -790,28 +793,35 @@ export function TaxonomySubTab() {
   const keywordTaxonomy = overviewData?.keywordTaxonomy ?? CATEGORY_KEYWORDS;
 
   const handleForceRefresh = useCallback(async () => {
-    setForceLoading(true);
-    try {
-      const governance = taxonomyGovernance.data;
-      if (governance && !governance.codeMatchesActive) {
-        if (governance.pending && !governance.codeMatchesPending) {
-          window.alert(`v${governance.pending.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 기존 대기 변경을 먼저 적용하거나 취소해 주세요.`);
-          setWorkspace("candidates");
-          return;
-        }
+    const governance = taxonomyGovernance.data;
+    if (!governance || taxonomyGovernance.error) return;
 
-        if (!governance.pending) {
-          const diff = governance.codeDiff;
-          const added = diff.addedKeywords.length + diff.addedSubgroups.length;
-          const removed = diff.removedKeywords.length + diff.removedSubgroups.length;
-          const summary = [added > 0 ? `추가 ${added}건` : "", removed > 0 ? `삭제 ${removed}건` : ""]
-            .filter(Boolean)
-            .join(" · ");
-          if (!window.confirm(`새 키워드 분류 변경${summary ? ` (${summary})` : ""}을 적용하고 데이터를 갱신할까요?`)) return;
-          const stageResult = await stageCodeTaxonomy("/api/admin/keyword-taxonomy/state", "POST", { action: "stage-code" });
-          if (stageResult.error) return;
-          await refetchTaxonomyGovernance();
-        }
+    setForceLoading(true);
+    setCompletedVersion(null);
+    try {
+      const plan = getTaxonomyRefreshPlan({
+        pendingVersion: governance.pending?.version ?? null,
+        codeMatchesActive: governance.codeMatchesActive,
+        codeMatchesPending: governance.codeMatchesPending,
+      });
+
+      if (plan === "conflict") {
+        window.alert(`v${governance.pending?.version}에 다른 변경이 적용 대기 중입니다. 후보 검토에서 기존 대기 변경을 먼저 적용하거나 취소해 주세요.`);
+        setWorkspace("candidates");
+        return;
+      }
+
+      if (plan === "stage-and-refresh") {
+        const { added, removed } = getTaxonomyDiffCount(governance.codeDiff);
+        const summary = [added > 0 ? `추가 ${added}건` : "", removed > 0 ? `삭제 ${removed}건` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        const lines = getTaxonomyDiffLines(governance.codeDiff, getKeywordCategoryLabel);
+        const detail = lines.length > 0 ? `\n\n${lines.join("\n")}` : "";
+        if (!window.confirm(`새 키워드 분류 변경${summary ? ` (${summary})` : ""}을 적용하고 데이터를 갱신할까요?${detail}`)) return;
+        const stageResult = await stageCodeTaxonomy("/api/admin/keyword-taxonomy/state", "POST", { action: "stage-code" });
+        if (stageResult.error) return;
+        await refetchTaxonomyGovernance();
       }
 
       const syncResult = await startSearchAdSync(SEARCHAD_SYNC_ENDPOINT, "POST");
@@ -824,7 +834,7 @@ export function TaxonomySubTab() {
     } finally {
       setForceLoading(false);
     }
-  }, [refetchSearchAdSync, refetchTaxonomyGovernance, stageCodeTaxonomy, startSearchAdSync, taxonomyGovernance.data]);
+  }, [refetchSearchAdSync, refetchTaxonomyGovernance, stageCodeTaxonomy, startSearchAdSync, taxonomyGovernance.data, taxonomyGovernance.error]);
 
   // Category trend info map for cards
   const trendInfoMap = useMemo(() => {
@@ -970,15 +980,14 @@ export function TaxonomySubTab() {
               : "새 키워드 분류가 배포되었습니다. 데이터 갱신 한 번으로 변경 적용과 통합 수집을 진행할 수 있습니다."}
         </AdminNotice>
       )}
-      {workspace === "taxonomy"
-        && searchAdSync.data?.status === "completed"
-        && taxonomyGovernance.data?.active.version != null
-        && taxonomyGovernance.data.active.version === searchAdSync.data.snapshotTaxonomyVersion
-        && (
+      {workspace === "taxonomy" && completedVersion != null && (
           <AdminNotice tone="success">
-            택소노미 v{taxonomyGovernance.data.active.version}와 검색 데이터가 적용되었습니다.
+            택소노미 v{completedVersion}와 검색 데이터가 적용되었습니다.
           </AdminNotice>
         )}
+      {workspace === "taxonomy" && taxonomyGovernance.error && (
+        <AdminNotice tone="error">키워드 분류 상태를 확인하지 못해 데이터 갱신을 잠시 중단했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.</AdminNotice>
+      )}
 
       {workspace === "candidates" ? (
         <KeywordCandidateReview taxonomy={keywordTaxonomy} />
@@ -990,11 +999,13 @@ export function TaxonomySubTab() {
         <button
           type="button"
           onClick={handleForceRefresh}
-          disabled={forceLoading || stagingCodeTaxonomy || startingSearchAdSync || searchAdSyncActive || overviewLoading}
+          disabled={taxonomyGovernance.loading || !taxonomyGovernance.data || !!taxonomyGovernance.error || forceLoading || stagingCodeTaxonomy || startingSearchAdSync || searchAdSyncActive || overviewLoading}
           className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
         >
           <RefreshCw size={14} className={forceLoading || stagingCodeTaxonomy || startingSearchAdSync || searchAdSyncActive ? "animate-spin" : ""} />
-          {stagingCodeTaxonomy
+          {taxonomyGovernance.loading
+            ? "분류 상태 확인 중"
+            : stagingCodeTaxonomy
             ? "변경 적용 준비 중"
             : startingSearchAdSync
               ? "갱신 시작 중"

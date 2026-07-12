@@ -9,6 +9,7 @@
     "generate-keyword-taxonomy-snapshot": "tsx scripts/generate-keyword-taxonomy-snapshot.ts",
     "verify-keyword-taxonomy": "tsx scripts/verify-keyword-taxonomy-state.ts",
     "verify-keyword-taxonomy-contract": "tsx scripts/verify-keyword-taxonomy-contract.ts",
+    "verify-taxonomy-refresh-flow": "tsx scripts/verify-taxonomy-refresh-flow.ts",
     "verify-opportunity-scoring": "tsx scripts/verify-opportunity-scoring.ts",
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",
     "evaluate-keyword-embeddings": "tsx scripts/evaluate-keyword-embeddings.ts",
