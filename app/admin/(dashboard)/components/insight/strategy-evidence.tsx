@@ -330,10 +330,21 @@ export function EvidenceDataSection({
                   },
                   {
                     key: "existingPostCount",
-                    label: "포스트 수",
+                    label: "콘텐츠 근거",
                     align: "right",
                     sortable: true,
-                    render: (row) => <span className="tabular-nums text-[var(--foreground)]">{Number(row.existingPostCount)}</span>,
+                    render: (row) => {
+                      const direct = Number(row.directEvidenceCount ?? 0);
+                      const indirect = Number(row.indirectEvidenceCount ?? 0);
+                      return (
+                        <div className="text-right text-xs tabular-nums">
+                          <span className={direct > 0 ? "font-medium text-[var(--foreground)]" : "font-medium text-amber-700"}>
+                            {direct > 0 ? `직접 ${direct}` : "직접 없음"}
+                          </span>
+                          {indirect > 0 && <span className="ml-1 text-[var(--muted)]">· 간접 {indirect}</span>}
+                        </div>
+                      );
+                    },
                   },
                   {
                     key: "contentGapScore",
@@ -341,16 +352,21 @@ export function EvidenceDataSection({
                     align: "right",
                     sortable: true,
                     render: (row) => {
-                      const evidence = (row.coverageEvidence as ContentGapItem["coverageEvidence"] | undefined)?.[0];
+                      const evidence = (row.coverageEvidence as ContentGapItem["coverageEvidence"] | undefined)?.find((item) => item.matchType === "direct");
+                      const indirectCount = Number(row.indirectEvidenceCount ?? 0);
                       return (
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center justify-end gap-1.5">
                           <span className="tabular-nums text-[var(--foreground)]">{Number(row.contentGapScore).toFixed(0)}</span>
                           <ValueScoreBadge score={Number(row.contentGapScore)} />
                         </div>
-                        {evidence && (
+                        {evidence ? (
                           <span className="max-w-52 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · 강도 ${evidence.strength} · ${evidenceReasonText(evidence)}`}>
-                            근거 {evidence.strength} · {evidenceReasonText(evidence)}
+                            직접 근거 {evidence.strength} · {evidenceReasonText(evidence)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-amber-700">
+                            직접 근거 없음{indirectCount > 0 ? ` · 간접 ${indirectCount}` : ""}
                           </span>
                         )}
                       </div>
@@ -451,11 +467,18 @@ export function EvidenceDataSection({
                           연관 키워드 {related.length}개 · 상위 {topRelatedCount}개 {topRelatedVolume.toLocaleString("ko-KR")}/월
                         </p>
                       )}
-                      {item.coverageEvidence[0] && (
-                        <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${item.coverageEvidence[0].title} · ${evidenceReasonText(item.coverageEvidence[0])}`}>
-                          근거 {item.coverageEvidence[0].strength} · {evidenceReasonText(item.coverageEvidence[0])}
-                        </p>
-                      )}
+                      {(() => {
+                        const evidence = item.coverageEvidence.find((candidate) => candidate.matchType === "direct");
+                        return evidence ? (
+                          <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={`${evidence.title} · ${evidenceReasonText(evidence)}`}>
+                            직접 근거 {evidence.strength} · {evidenceReasonText(evidence)}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-[10px] font-medium text-amber-700">
+                            직접 근거 없음{item.indirectEvidenceCount > 0 ? ` · 간접 언급 ${item.indirectEvidenceCount}개` : ""}
+                          </p>
+                        );
+                      })()}
                       {(action || pageOpportunity) && (
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {action && (

@@ -32,9 +32,11 @@ export interface ContentGapItem {
   changeRate: number;
   currentAvg: number;
   existingPostCount: number;
+  directEvidenceCount: number;
+  indirectEvidenceCount: number;
   contentGapScore: number;
   contentCoverage: number;
-  coverageEvidence: Array<{ slug: string; title: string; strength: number; reasons?: string[] }>;
+  coverageEvidence: Array<{ slug: string; title: string; strength: number; matchType: "direct" | "indirect"; reasons?: string[] }>;
   monthlyVolume: number | null;
   volumeSource: "searchad" | "datalab-fallback";
   isEstimated: boolean;

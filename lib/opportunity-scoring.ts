@@ -2,7 +2,7 @@ import type { KeywordCategorySlug, SearchIntent } from "./admin-naver-datalab-ke
 import { CONTENT_GAP_COVERED_THRESHOLD, type ContentGap } from "./trend-analysis";
 import { TREATMENT_DETAILS } from "./treatments";
 
-export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.8" as const;
+export const OPPORTUNITY_MODEL_VERSION = "opportunity-v1.9" as const;
 
 export type OpportunityActionType = "blog" | "page" | "faq";
 export type OpportunityConfidence = "B" | "C";

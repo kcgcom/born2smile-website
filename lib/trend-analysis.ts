@@ -48,12 +48,16 @@ export interface ContentGap {
   currentAvg: number;
   /** title/subtitle/excerpt/tags 키워드 매칭된 포스트 수 */
   existingPostCount: number;
+  /** 제목·소제목·정확 구문으로 주제를 직접 다룬 포스트 수 */
+  directEvidenceCount: number;
+  /** 요약·본문의 토큰 동시 출현만 확인된 간접 언급 포스트 수 */
+  indirectEvidenceCount: number;
   /** 0~100, 높을수록 현재 콘텐츠의 실질 커버리지가 부족함 */
   contentGapScore: number;
   /** 규칙 기반 전체 본문 유효 커버리지 (0~100) */
   contentCoverage: number;
   /** 관련성이 높은 기존 콘텐츠 근거 */
-  coverageEvidence: Array<{ slug: string; title: string; strength: number; reasons: string[] }>;
+  coverageEvidence: Array<{ slug: string; title: string; strength: number; matchType: "direct" | "indirect"; reasons: string[] }>;
   /** 월간 검색량 (검색광고 API 연동 시), null이면 미연동 */
   monthlyVolume: number | null;
   /** 데이터 출처 */
@@ -153,6 +157,20 @@ function includesCoveragePhrase(normalizedText: string, phrase: string): boolean
   return tokens.length >= 2 && tokens.every((token) => normalizedText.includes(token));
 }
 
+type CoverageMatchLevel = 0 | 1 | 2;
+
+function coverageMatchLevel(value: string, phrases: string[]): CoverageMatchLevel {
+  const normalized = normalizeCoverageText(value);
+  let best: CoverageMatchLevel = 0;
+  for (const phrase of phrases) {
+    const normalizedPhrase = normalizeCoverageText(phrase);
+    if (normalizedPhrase.length < 2) continue;
+    if (normalized.includes(normalizedPhrase)) return 2;
+    if (includesCoveragePhrase(normalized, phrase)) best = 1;
+  }
+  return best;
+}
+
 const CONCEPT_ALIASES = {
   cost: ["비용", "가격", "금액", "보험", "건강보험"],
   symptom: ["증상", "통증", "아픔", "붓기", "부기", "출혈", "시림"],
@@ -166,6 +184,14 @@ const CONCEPT_ALIASES = {
 } as const;
 
 type ConceptKey = keyof typeof CONCEPT_ALIASES | "topic";
+type CoverageEvidenceMatchType = "direct" | "indirect";
+
+interface CoverageStrengthResult {
+  strength: number;
+  concepts: Set<ConceptKey>;
+  matchType: CoverageEvidenceMatchType;
+  reasons: string[];
+}
 
 const CONCEPT_LABELS: Record<ConceptKey, string> = {
   topic: "주제",
@@ -206,57 +232,88 @@ function freshnessFactor(post: BlogPost): number {
   return 0.6;
 }
 
-function coverageStrength(post: BlogPost, keywords: string[], subGroup: string) {
+function coverageStrength(post: BlogPost, keywords: string[], subGroup: string): CoverageStrengthResult {
   const genericTerms = new Set(["치과", "치료", "병원", "정보", "추천", "김포", "서울본치과"]);
   const needles = [...new Set([...keywords, subGroup])]
     .filter((value) => {
       const normalized = normalizeCoverageText(value);
       return normalized.length >= 2 && !genericTerms.has(normalized);
     });
-  if (needles.length === 0) return { strength: 0, concepts: new Set<ConceptKey>(), reasons: [] };
-  const includesNeedle = (value: string) => {
-    const normalized = normalizeCoverageText(value);
-    return needles.some((needle) => includesCoveragePhrase(normalized, needle));
-  };
-  const titleMatch = includesNeedle(post.title);
-  const headingMatches = post.blocks.filter((block) => block.type === "heading" && includesNeedle(block.text)).length;
-  const bodyMatches = post.blocks.filter((block) => block.type !== "relatedLinks" && includesNeedle(blockText(block))).length;
-  const summaryMatch = includesNeedle(`${post.subtitle} ${post.excerpt}`);
-  const tagMatch = includesNeedle(post.tags.join(" "));
-  if (!titleMatch && headingMatches === 0 && bodyMatches === 0 && !summaryMatch && !tagMatch) {
-    return { strength: 0, concepts: new Set<ConceptKey>(), reasons: [] };
+  if (needles.length === 0) return { strength: 0, concepts: new Set<ConceptKey>(), matchType: "indirect", reasons: [] };
+  const titleMatch = coverageMatchLevel(post.title, needles);
+  const headingMatchLevels = post.blocks
+    .filter((block) => block.type === "heading")
+    .map((block) => coverageMatchLevel(block.text, needles));
+  const bodyMatchLevels = post.blocks
+    .filter((block) => block.type !== "relatedLinks")
+    .map((block) => coverageMatchLevel(blockText(block), needles));
+  const summaryMatch = coverageMatchLevel(`${post.subtitle} ${post.excerpt}`, needles);
+  const tagMatch = coverageMatchLevel(post.tags.join(" "), needles);
+  const exactHeadingMatches = headingMatchLevels.filter((level) => level === 2).length;
+  const contextualHeadingMatches = headingMatchLevels.filter((level) => level === 1).length;
+  const exactBodyMatches = bodyMatchLevels.filter((level) => level === 2).length;
+  const contextualBodyMatches = bodyMatchLevels.filter((level) => level === 1).length;
+  const headingMatches = exactHeadingMatches + contextualHeadingMatches;
+  const bodyMatches = exactBodyMatches + contextualBodyMatches;
+  if (titleMatch === 0 && headingMatches === 0 && bodyMatches === 0 && summaryMatch === 0 && tagMatch === 0) {
+    return { strength: 0, concepts: new Set<ConceptKey>(), matchType: "indirect", reasons: [] };
   }
 
-  // 제목에 한 번 등장한 긴 글보다 전용 소제목과 여러 본문 블록에서 설명한 글을 높게 평가한다.
-  const directness = titleMatch ? 100 : headingMatches > 0 ? 75 : summaryMatch ? 45 : bodyMatches > 0 ? 25 : 10;
+  // 정확한 주제 구문과 단순 토큰 동시 출현을 구분해 간접 언급의 커버리지 과대평가를 막는다.
+  const directness = titleMatch === 2 ? 100
+    : titleMatch === 1 ? 80
+      : exactHeadingMatches > 0 ? 85
+        : contextualHeadingMatches > 0 ? 65
+          : summaryMatch === 2 ? 60
+            : summaryMatch === 1 ? 35
+              : exactBodyMatches > 0 ? 35
+                : contextualBodyMatches > 0 ? 15
+                  : tagMatch === 2 ? 30
+                    : 10;
   const depth = Math.min(100,
-    Math.min(headingMatches, 2) * 20
-    + Math.min(bodyMatches, 5) * 12
-    + (post.blocks.some((block) => block.type === "faq" && includesNeedle(blockText(block))) ? 15 : 0),
+    Math.min(exactHeadingMatches, 2) * 20
+    + Math.min(contextualHeadingMatches, 2) * 12
+    + Math.min(exactBodyMatches, 5) * 12
+    + Math.min(contextualBodyMatches, 5) * 5
+    + (post.blocks.some((block) => block.type === "faq" && coverageMatchLevel(blockText(block), needles) === 2) ? 15 : 0)
+    + (post.blocks.some((block) => block.type === "faq" && coverageMatchLevel(blockText(block), needles) === 1) ? 8 : 0),
   );
   const relevantTexts = [post.title, post.subtitle, post.excerpt, post.tags.join(" "), ...post.blocks.map(blockText)]
-    .filter(includesNeedle);
+    .filter((value) => coverageMatchLevel(value, needles) > 0);
   const concepts = includedConcepts(relevantTexts.join(" "), keywords, subGroup);
   const expected = expectedConcepts(keywords, subGroup);
   const conceptCoverage = expected.size === 0 ? 0 : [...expected].filter((concept) => concepts.has(concept)).length / expected.size * 100;
   const freshness = freshnessFactor(post) * 100;
-  const strength = directness * 0.35 + depth * 0.35 + conceptCoverage * 0.2 + freshness * 0.1;
+  const rawStrength = directness * 0.35 + depth * 0.35 + conceptCoverage * 0.2 + freshness * 0.1;
+  const hasStrongTopicAnchor = titleMatch > 0
+    || headingMatches > 0
+    || summaryMatch === 2
+    || exactBodyMatches > 0
+    || tagMatch === 2;
+  // 요약·본문에서 토큰이 우연히 함께 나온 글은 보조 근거일 뿐 대표 콘텐츠가 될 수 없다.
+  const strength = hasStrongTopicAnchor ? rawStrength : Math.min(rawStrength, 35);
   const reasons = [
-    ...(titleMatch ? ["제목 일치"] : []),
+    ...(titleMatch ? [titleMatch === 2 ? "제목 일치" : "제목 문맥 일치"] : []),
     ...(headingMatches > 0 ? [`관련 소제목 ${headingMatches}개`] : []),
     ...(bodyMatches > 0 ? [`관련 본문 ${bodyMatches}개`] : []),
-    ...(summaryMatch ? ["요약 일치"] : []),
-    ...(tagMatch ? ["태그 일치"] : []),
+    ...(summaryMatch ? [summaryMatch === 2 ? "요약 일치" : "요약 문맥 일치"] : []),
+    ...(tagMatch ? [tagMatch === 2 ? "태그 일치" : "태그 문맥 일치"] : []),
+    ...(!hasStrongTopicAnchor ? ["간접 언급 상한 적용"] : []),
     `개념 ${[...concepts].map((concept) => CONCEPT_LABELS[concept]).join("·")}`,
   ];
-  return { strength: Math.round(strength), concepts, reasons };
+  return { strength: Math.round(strength), concepts, matchType: hasStrongTopicAnchor ? "direct" as const : "indirect" as const, reasons };
 }
 
 export function analyzeContentCoverage(posts: BlogPost[], keywords: string[], subGroup: string) {
   const evidence = posts
     .map((post) => ({ slug: post.slug, title: post.title, ...coverageStrength(post, keywords, subGroup) }))
     .filter((item) => item.strength > 0)
-    .sort((a, b) => b.strength - a.strength);
+    .sort((a, b) => {
+      if (a.matchType !== b.matchType) return a.matchType === "direct" ? -1 : 1;
+      return b.strength - a.strength;
+    });
+  const directEvidenceCount = evidence.filter((item) => item.matchType === "direct").length;
+  const indirectEvidenceCount = evidence.length - directEvidenceCount;
   const coveredConcepts = new Set<ConceptKey>();
   let coverage = 0;
   evidence.slice(0, 3).forEach((item, index) => {
@@ -275,8 +332,10 @@ export function analyzeContentCoverage(posts: BlogPost[], keywords: string[], su
   const roundedCoverage = Math.min(100, Math.round(coverage));
   const contentGapScore = 100 - roundedCoverage;
   return {
-    evidence: evidence.slice(0, 5).map(({ slug, title, strength, reasons }) => ({ slug, title, strength, reasons })),
+    evidence: evidence.slice(0, 5).map(({ slug, title, strength, matchType, reasons }) => ({ slug, title, strength, matchType, reasons })),
     matchCount: evidence.length,
+    directEvidenceCount,
+    indirectEvidenceCount,
     coverage: roundedCoverage,
     contentGapScore,
   };
@@ -378,9 +437,11 @@ export function analyzeContentGap(
       changeRate: number;
       currentAvg: number;
       existingPostCount: number;
+      directEvidenceCount: number;
+      indirectEvidenceCount: number;
       contentGapScore: number;
       contentCoverage: number;
-      coverageEvidence: Array<{ slug: string; title: string; strength: number; reasons: string[] }>;
+      coverageEvidence: Array<{ slug: string; title: string; strength: number; matchType: "direct" | "indirect"; reasons: string[] }>;
       monthlyVolume: number | null;
       isEstimated: boolean;
       relatedKeywords: Array<{ keyword: string; volume: number }>;
@@ -406,6 +467,8 @@ export function analyzeContentGap(
         changeRate: sg.changeRate,
         currentAvg: sg.currentAvg,
         existingPostCount: coverage.matchCount,
+        directEvidenceCount: coverage.directEvidenceCount,
+        indirectEvidenceCount: coverage.indirectEvidenceCount,
         contentGapScore: coverage.contentGapScore,
         contentCoverage: coverage.coverage,
         coverageEvidence: coverage.evidence,
@@ -427,6 +490,8 @@ export function analyzeContentGap(
         changeRate: g.changeRate,
         currentAvg: g.currentAvg,
         existingPostCount: g.existingPostCount,
+        directEvidenceCount: g.directEvidenceCount,
+        indirectEvidenceCount: g.indirectEvidenceCount,
         contentGapScore: g.contentGapScore,
         contentCoverage: g.contentCoverage,
         coverageEvidence: g.coverageEvidence,

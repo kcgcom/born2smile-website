@@ -7,6 +7,7 @@ import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/A
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import type { ContentPlannerItem, PlannerStatus } from "@/lib/content-planner";
+import { getSuppressedBlogCandidateCount, selectBalancedRecommendations } from "@/lib/planner-recommendations";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
 import { AdminErrorState } from "../AdminErrorState";
@@ -28,6 +29,7 @@ interface PlannerCandidate {
   valueScore: number;
   brief: BlogBriefItem | PageBriefItem | FaqSuggestionItem;
   sourceSnapshot: Record<string, unknown>;
+  topicKeys: string[];
 }
 
 const STATUS_LABELS: Record<PlannerStatus, string> = {
@@ -76,6 +78,7 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: actionValue,
       brief,
       sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
+      topicKeys: [`${brief.slug}:${brief.subGroup}`],
     };
   });
   const pages = (data.pageBriefs ?? []).map((brief) => {
@@ -97,6 +100,7 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: opportunity?.pageValueScore ?? 0,
       brief,
       sourceSnapshot: { opportunity, evaluations: contributingEvaluations },
+      topicKeys: topics.map((topic) => topic.topicKey),
     };
   });
   const faqs = (data.faqSuggestions ?? []).map((brief) => {
@@ -114,31 +118,10 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: brief.valueScore,
       brief,
       sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
+      topicKeys: [`${brief.slug}:${brief.subGroup}`],
     };
   });
   return [...blogs, ...pages, ...faqs];
-}
-
-function selectBalancedRecommendations(
-  candidates: PlannerCandidate[],
-  requestedOpportunityKey: string | null,
-  limit = 5,
-): PlannerCandidate[] {
-  const sorted = [...candidates].sort((a, b) => b.valueScore - a.valueScore || a.effortMinutes - b.effortMinutes || a.title.localeCompare(b.title, "ko"));
-  const requested = sorted.find((candidate) => candidate.key === requestedOpportunityKey);
-  const selected = requested ? [requested] : [];
-  const remaining = sorted.filter((candidate) => candidate.key !== requested?.key);
-  while (selected.length < limit && remaining.length > 0) {
-    const top = remaining[0];
-    const sameTypeCount = selected.filter((candidate) => candidate.itemType === top.itemType).length;
-    let index = sameTypeCount >= 3
-      ? remaining.findIndex((candidate) => candidate.itemType !== top.itemType && top.valueScore - candidate.valueScore <= 10)
-      : -1;
-    if (index < 0 && remaining[1] && top.valueScore - remaining[1].valueScore <= 10 && remaining[1].effortMinutes < top.effortMinutes) index = 1;
-    if (index < 0) index = 0;
-    selected.push(remaining.splice(index, 1)[0]);
-  }
-  return selected;
 }
 
 function makeBlogPrefill(brief: BlogBriefItem) {
@@ -167,9 +150,19 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
   const itemByKey = useMemo(() => new Map((planner.data ?? []).map((item) => [item.opportunityKey, item])), [planner.data]);
   const requestedPlannerItem = requestedOpportunityKey ? itemByKey.get(requestedOpportunityKey) : undefined;
   const unreviewedCandidates = candidates.filter((candidate) => !itemByKey.has(candidate.key));
+  const activePageTopicKeys = useMemo(() => new Set((planner.data ?? [])
+    .filter((item) => item.itemType === "page" && BOARD_STATUSES.includes(item.status) && item.status !== "published")
+    .flatMap((item) => {
+      const brief = item.brief as unknown as PageBriefItem;
+      return (brief.contributingTopics ?? []).map((topic) => topic.topicKey);
+    })), [planner.data]);
   const recommended = useMemo(
-    () => selectBalancedRecommendations(unreviewedCandidates, requestedOpportunityKey),
-    [requestedOpportunityKey, unreviewedCandidates],
+    () => selectBalancedRecommendations(unreviewedCandidates, requestedOpportunityKey, activePageTopicKeys),
+    [activePageTopicKeys, requestedOpportunityKey, unreviewedCandidates],
+  );
+  const suppressedBlogCount = useMemo(
+    () => getSuppressedBlogCandidateCount(unreviewedCandidates, requestedOpportunityKey, activePageTopicKeys),
+    [activePageTopicKeys, requestedOpportunityKey, unreviewedCandidates],
   );
   const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
   const archivedItems = (planner.data ?? []).filter((item) => item.status === "deferred" || item.status === "dismissed");
@@ -238,7 +231,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `미검토 후보 ${unreviewedCandidates.length}개` : "새 후보 검토 완료"}</AdminPill></div>
+            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `미검토 후보 ${unreviewedCandidates.length}개` : "새 후보 검토 완료"}</AdminPill>{suppressedBlogCount > 0 && <AdminPill tone="white">페이지 우선 대기 {suppressedBlogCount}개</AdminPill>}</div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">추천을 승인하면 영구 작업으로 저장됩니다. 기회 분석 탭에서 검색 수요와 콘텐츠 근거를 자세히 확인할 수 있습니다.</p>
           </div>
@@ -258,7 +251,7 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
       {mutationError && <AdminNotice tone="error">{mutationError}</AdminNotice>}
 
       <section id="weekly-recommendations" className="scroll-mt-6 space-y-4">
-        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.</p></div>
+        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">한 번에 최대 5개만 보여줍니다. 승인, 보류, 제외 중 하나를 선택하세요.{suppressedBlogCount > 0 && ` 페이지 보강과 겹치는 신규 글 ${suppressedBlogCount}개는 페이지 작업 이후로 미뤘습니다.`}</p></div>
         {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
             <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{itemTypeLabel(candidate.itemType)}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>

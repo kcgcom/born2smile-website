@@ -47,10 +47,17 @@ async function main() {
   const distinctGapScores = new Set(evaluatedGaps.map((gap) => gap.contentGapScore)).size;
   const extremeGapRatio = evaluatedGaps.filter((gap) => gap.contentGapScore === 0 || gap.contentGapScore === 100).length / Math.max(1, evaluatedGaps.length);
   const highWithoutEvidence = evaluatedGaps.filter((gap) => gap.contentGapScore >= 55 && gap.existingPostCount > 0 && gap.coverageEvidence.length === 0);
+  const highWithoutDirectEvidence = evaluatedGaps.filter((gap) => gap.contentGapScore >= 55 && gap.directEvidenceCount === 0);
+  const indirectBeforeDirect = evaluatedGaps.filter((gap) => {
+    const firstDirectIndex = gap.coverageEvidence.findIndex((evidence) => evidence.matchType === "direct");
+    return firstDirectIndex > 0;
+  });
   const blogCandidateCount = actions.filter((action) => action.type === "blog").length;
   assert.ok(distinctGapScores >= 10, `콘텐츠 공백 점수가 ${distinctGapScores}개 값에 몰렸습니다.`);
   assert.ok(extremeGapRatio <= 0.4, `콘텐츠 공백 극단값 비율이 ${Math.round(extremeGapRatio * 100)}%입니다.`);
   assert.equal(highWithoutEvidence.length, 0, "근거 게시글 수와 근거 목록이 일치하지 않는 큰 공백이 있습니다.");
+  assert.equal(indirectBeforeDirect.length, 0, "간접 언급이 직접 근거보다 먼저 정렬된 주제가 있습니다.");
+  assert.equal(evaluatedGaps.every((gap) => gap.existingPostCount === gap.directEvidenceCount + gap.indirectEvidenceCount), true, "직접·간접 근거 수의 합이 전체 포스트 수와 다릅니다.");
   assert.ok(blogCandidateCount <= evaluatedGaps.length * 0.8, `신규 글 후보가 ${blogCandidateCount}개로 비정상적으로 많습니다.`);
   console.log(JSON.stringify({
     topics: evaluations.length,
@@ -59,6 +66,8 @@ async function main() {
       distinctGapScores,
       extremeGapRatio: Math.round(extremeGapRatio * 1000) / 1000,
       highWithoutEvidence: highWithoutEvidence.length,
+      highWithoutDirectEvidence: highWithoutDirectEvidence.length,
+      indirectBeforeDirect: indirectBeforeDirect.length,
       blogCandidateRatio: Math.round(blogCandidateCount / Math.max(1, evaluatedGaps.length) * 1000) / 1000,
       excludedTopics: gaps.length - evaluatedGaps.length,
     },
@@ -73,6 +82,8 @@ async function main() {
       coverage: gap.contentCoverage,
       monthlyVolume: gap.monthlyVolume,
       matchedPosts: gap.existingPostCount,
+      directEvidence: gap.directEvidenceCount,
+      indirectEvidence: gap.indirectEvidenceCount,
       evidence: gap.coverageEvidence,
     })),
     eligible: actions.length,
