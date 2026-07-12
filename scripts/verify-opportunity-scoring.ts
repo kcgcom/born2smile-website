@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { evaluateOpportunities, getActionEvaluation, OPPORTUNITY_MODEL_VERSION } from "../lib/opportunity-scoring";
 import { buildPageUpdateOpportunities } from "../lib/trend-insights";
 import { analyzeContentCoverage, type ContentGap } from "../lib/trend-analysis";
-import { getSuppressedBlogCandidateCount, selectBalancedRecommendations, type RecommendationCandidate } from "../lib/planner-recommendations";
 import type { BlogBlock, BlogPost } from "../lib/blog/types";
 
 function post(slug: string, title: string, blocks: BlogBlock[] = []): BlogPost {
@@ -184,35 +183,6 @@ for (const evaluation of evaluations) {
     assert.equal(action.valueScore >= 0 && action.valueScore <= 100, true, `${evaluation.key}/${action.actionType} 점수 범위 오류`);
   }
 }
-
-function candidate(
-  key: string,
-  itemType: RecommendationCandidate["itemType"],
-  valueScore: number,
-  topicKeys: string[],
-): RecommendationCandidate {
-  return { key, itemType, valueScore, topicKeys, title: key, effortMinutes: itemType === "faq" ? 20 : itemType === "page" ? 60 : 90 };
-}
-
-const plannerCandidates = [
-  candidate("blog:implant:비용/가격", "blog", 95, ["implant:비용/가격"]),
-  candidate("page:/treatments/implant", "page", 91, ["implant:비용/가격", "implant:종류/브랜드"]),
-  candidate("blog:prosthetics:치아미백", "blog", 73, ["prosthetics:치아미백"]),
-  candidate("faq:pediatric:불소도포", "faq", 70, ["pediatric:불소도포"]),
-];
-const prioritized = selectBalancedRecommendations(plannerCandidates, null, new Set(), 5);
-assert.equal(prioritized[0]?.key, "page:/treatments/implant", "같은 주제에서는 신규 글 점수가 더 높아도 페이지 보강을 먼저 추천해야 합니다.");
-assert.equal(prioritized.some((item) => item.key === "blog:implant:비용/가격"), false, "같은 추천 묶음에 페이지 보강과 신규 글을 함께 넣으면 안 됩니다.");
-assert.equal(getSuppressedBlogCandidateCount(plannerCandidates, null, new Set()), 1, "페이지 우선으로 숨긴 신규 글 수를 관리자에게 정확히 안내해야 합니다.");
-
-const explicitlyRequested = selectBalancedRecommendations(plannerCandidates, "blog:implant:비용/가격", new Set(), 5);
-assert.equal(explicitlyRequested[0]?.key, "blog:implant:비용/가격", "관리자가 직접 선택한 신규 글 후보는 페이지 우선 규칙보다 앞서야 합니다.");
-assert.equal(explicitlyRequested.some((item) => item.key === "page:/treatments/implant"), false, "직접 선택한 신규 글과 충돌하는 페이지를 같은 추천 묶음에 넣으면 안 됩니다.");
-assert.equal(getSuppressedBlogCandidateCount(plannerCandidates, "blog:implant:비용/가격", new Set()), 0, "직접 선택한 신규 글을 페이지 우선 대기 수에 포함하면 안 됩니다.");
-
-const blockedByActivePage = selectBalancedRecommendations(plannerCandidates.filter((item) => item.itemType !== "page"), null, new Set(["implant:비용/가격"]), 5);
-assert.equal(blockedByActivePage.some((item) => item.key === "blog:implant:비용/가격"), false, "진행 중인 페이지 작업의 기여 주제는 신규 글 추천에서 숨겨야 합니다.");
-assert.equal(getSuppressedBlogCandidateCount(plannerCandidates.filter((item) => item.itemType !== "page"), null, new Set(["implant:비용/가격"])), 1, "진행 중 페이지 때문에 대기하는 신규 글도 대기 수에 포함해야 합니다.");
 
 console.log(JSON.stringify({
   ok: true,

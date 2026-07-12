@@ -7,7 +7,6 @@ import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/A
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import type { ContentPlannerItem, PlannerStatus } from "@/lib/content-planner";
-import { getSuppressedBlogCandidateCount, selectBalancedRecommendations } from "@/lib/planner-recommendations";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
 import { AdminErrorState } from "../AdminErrorState";
@@ -29,8 +28,15 @@ interface PlannerCandidate {
   valueScore: number;
   brief: BlogBriefItem | PageBriefItem | FaqSuggestionItem;
   sourceSnapshot: Record<string, unknown>;
-  topicKeys: string[];
 }
+
+type PlannerItemType = PlannerCandidate["itemType"];
+
+const ITEM_TYPE_TABS: Array<{ value: PlannerItemType; label: string; description: string }> = [
+  { value: "page", label: "페이지 보강", description: "기존 진료 페이지의 부족한 섹션을 한 번에 보강합니다." },
+  { value: "blog", label: "블로그 작성", description: "검색 수요가 확인된 주제의 새 글을 연속해서 작성합니다." },
+  { value: "faq", label: "FAQ 보강", description: "자주 묻는 질문을 대상 페이지별로 묶어 반영합니다." },
+];
 
 const STATUS_LABELS: Record<PlannerStatus, string> = {
   approved: "승인",
@@ -53,13 +59,13 @@ function demandLabel(gap?: ContentGapItem) {
   return volume > 0 ? `월 ${volume.toLocaleString("ko-KR")}` : "확인 불가";
 }
 
-function itemTypeLabel(type: PlannerCandidate["itemType"]): string {
-  if (type === "blog") return "새 글";
+function itemTypeLabel(type: PlannerItemType): string {
+  if (type === "blog") return "블로그 작성";
   if (type === "page") return "페이지 보강";
   return "FAQ 보강";
 }
 
-function valueLabel(type: PlannerCandidate["itemType"]): string {
+function valueLabel(type: PlannerItemType): string {
   if (type === "blog") return "신규 글 가치";
   if (type === "page") return "페이지 가치";
   return "FAQ 가치";
@@ -84,7 +90,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: actionValue,
       brief,
       sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
-      topicKeys: [`${brief.slug}:${brief.subGroup}`],
     };
   });
   const pages = (data.pageBriefs ?? []).map((brief) => {
@@ -106,7 +111,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: opportunity?.pageValueScore ?? 0,
       brief,
       sourceSnapshot: { opportunity, evaluations: contributingEvaluations },
-      topicKeys: topics.map((topic) => topic.topicKey),
     };
   });
   const faqs = (data.faqSuggestions ?? []).map((brief) => {
@@ -124,7 +128,6 @@ function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
       valueScore: brief.valueScore,
       brief,
       sourceSnapshot: { ...(gap ? { gap } : {}), ...(evaluation ? { evaluation } : {}) },
-      topicKeys: [`${brief.slug}:${brief.subGroup}`],
     };
   });
   return [...blogs, ...pages, ...faqs];
@@ -143,8 +146,15 @@ function makeBlogPrefill(brief: BlogBriefItem) {
   return { title: brief.suggestedTitle, subtitle: `${brief.targetReader}를 위한 ${brief.subGroup} 핵심 안내`, excerpt: brief.metaDescription, category: brief.contentCategory, tags, blocks };
 }
 
-export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpportunityKey: string | null }) {
+export function ContentPlannerSubTab({
+  requestedOpportunityKey,
+  initialItemType,
+}: {
+  requestedOpportunityKey: string | null;
+  initialItemType: PlannerItemType;
+}) {
   const router = useRouter();
+  const [activeItemType, setActiveItemType] = useState<PlannerItemType>(initialItemType);
   const [notice, setNotice] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [showArchive, setShowArchive] = useState(false);
@@ -155,34 +165,40 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
   const candidates = useMemo(() => strategy.data ? buildCandidates(strategy.data) : [], [strategy.data]);
   const itemByKey = useMemo(() => new Map((planner.data ?? []).map((item) => [item.opportunityKey, item])), [planner.data]);
   const requestedPlannerItem = requestedOpportunityKey ? itemByKey.get(requestedOpportunityKey) : undefined;
-  const unreviewedCandidates = candidates.filter((candidate) => !itemByKey.has(candidate.key));
-  const activePageTopicKeys = useMemo(() => new Set((planner.data ?? [])
-    .filter((item) => item.itemType === "page" && BOARD_STATUSES.includes(item.status) && item.status !== "published")
-    .flatMap((item) => {
-      const brief = item.brief as unknown as PageBriefItem;
-      return (brief.contributingTopics ?? []).map((topic) => topic.topicKey);
-    })), [planner.data]);
-  const recommended = useMemo(
-    () => selectBalancedRecommendations(unreviewedCandidates, requestedOpportunityKey, activePageTopicKeys),
-    [activePageTopicKeys, requestedOpportunityKey, unreviewedCandidates],
+  const allUnreviewedCandidates = useMemo(
+    () => candidates.filter((candidate) => !itemByKey.has(candidate.key)),
+    [candidates, itemByKey],
   );
-  const suppressedBlogCount = useMemo(
-    () => getSuppressedBlogCandidateCount(unreviewedCandidates, requestedOpportunityKey, activePageTopicKeys),
-    [activePageTopicKeys, requestedOpportunityKey, unreviewedCandidates],
-  );
-  const boardItems = (planner.data ?? []).filter((item) => BOARD_STATUSES.includes(item.status));
-  const archivedItems = (planner.data ?? []).filter((item) => item.status === "deferred" || item.status === "dismissed");
+  const unreviewedCandidates = useMemo(() => allUnreviewedCandidates
+    .filter((candidate) => candidate.itemType === activeItemType)
+    .sort((a, b) => b.valueScore - a.valueScore || a.effortMinutes - b.effortMinutes),
+  [activeItemType, allUnreviewedCandidates]);
+  const boardItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && BOARD_STATUSES.includes(item.status));
+  const archivedItems = (planner.data ?? []).filter((item) => item.itemType === activeItemType && (item.status === "deferred" || item.status === "dismissed"));
   const deferredCount = archivedItems.filter((item) => item.status === "deferred").length;
   const dismissedCount = archivedItems.filter((item) => item.status === "dismissed").length;
   const activeWorkCount = boardItems.filter((item) => item.status !== "published").length;
   const publishedCount = boardItems.filter((item) => item.status === "published").length;
   const boardByStatus = BOARD_STATUSES.reduce((acc, status) => { acc[status] = boardItems.filter((item) => item.status === status); return acc; }, {} as Record<PlannerStatus, ContentPlannerItem[]>);
+  const activeTab = ITEM_TYPE_TABS.find((tab) => tab.value === activeItemType)!;
+
+  const typeCounts = useMemo(() => Object.fromEntries(ITEM_TYPE_TABS.map((tab) => {
+    const unreviewed = allUnreviewedCandidates.filter((candidate) => candidate.itemType === tab.value).length;
+    const active = (planner.data ?? []).filter((item) => item.itemType === tab.value && BOARD_STATUSES.includes(item.status) && item.status !== "published").length;
+    return [tab.value, { unreviewed, active }];
+  })) as Record<PlannerItemType, { unreviewed: number; active: number }>, [allUnreviewedCandidates, planner.data]);
 
   useEffect(() => {
     if (!requestedOpportunityKey || strategy.loading || planner.loading) return;
-    const targetId = requestedPlannerItem ? `planner-item-${requestedPlannerItem.id}` : "weekly-recommendations";
+    const targetId = requestedPlannerItem ? `planner-item-${requestedPlannerItem.id}` : "type-candidates";
     window.requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "center" }));
   }, [planner.loading, requestedOpportunityKey, requestedPlannerItem, strategy.loading]);
+
+  const selectItemType = (type: PlannerItemType) => {
+    setActiveItemType(type);
+    setShowArchive(false);
+    router.replace(`/admin/content/planner?type=${type}`, { scroll: false });
+  };
 
   const saveCandidate = async (candidate: PlannerCandidate, status: "approved" | "deferred" | "dismissed") => {
     setSavingKey(candidate.key);
@@ -237,9 +253,9 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `미검토 후보 ${unreviewedCandidates.length}개` : "새 후보 검토 완료"}</AdminPill>{suppressedBlogCount > 0 && <AdminPill tone="white">페이지 우선 대기 {suppressedBlogCount}개</AdminPill>}</div>
-            <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">이번 주에 끝낼 콘텐츠 작업을 정합니다.</h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">분석 결과에 따른 추천 액션과 가치를 검토하고 실행할 작업을 정합니다. 검색 수요와 콘텐츠 근거는 기회 분석 탭에서 확인할 수 있습니다.</p>
+            <div className="flex flex-wrap gap-2"><AdminPill tone="white">콘텐츠 플래너</AdminPill><AdminPill tone={unreviewedCandidates.length ? "warning" : "white"}>{unreviewedCandidates.length ? `${activeTab.label} 미검토 ${unreviewedCandidates.length}개` : `${activeTab.label} 검토 완료`}</AdminPill></div>
+            <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">같은 성격의 콘텐츠 작업을 모아서 처리합니다.</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">작업 유형을 선택한 뒤 후보 검토부터 완료까지 한 흐름으로 관리하세요. 검색 수요와 콘텐츠 근거는 기회 분석 탭에서 확인할 수 있습니다.</p>
           </div>
           <div className="lg:min-w-[360px]">
             <MetricGroup
@@ -256,16 +272,29 @@ export function ContentPlannerSubTab({ requestedOpportunityKey }: { requestedOpp
       {notice && <AdminNotice tone="success">{notice}</AdminNotice>}
       {mutationError && <AdminNotice tone="error">{mutationError}</AdminNotice>}
 
-      <section id="weekly-recommendations" className="scroll-mt-6 space-y-4">
-        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">이번 주 추천</h2></div><p className="mt-1 text-sm text-[var(--muted)]">추천 액션과 가치 점수를 비교해 승인, 보류, 제외 중 하나를 선택하세요. 한 번에 최대 5개만 보여줍니다.{suppressedBlogCount > 0 && ` 페이지 보강과 겹치는 신규 글 ${suppressedBlogCount}개는 페이지 작업 이후로 미뤘습니다.`}</p></div>
-        {recommended.length ? <div className="grid gap-4 xl:grid-cols-2">{recommended.map((candidate, index) => (
+      <nav aria-label="콘텐츠 작업 유형" className="grid gap-2 md:grid-cols-3">
+        {ITEM_TYPE_TABS.map((tab) => {
+          const isActive = activeItemType === tab.value;
+          const counts = typeCounts[tab.value];
+          return (
+            <button key={tab.value} type="button" aria-current={isActive ? "page" : undefined} onClick={() => selectItemType(tab.value)} className={`rounded-2xl border px-4 py-4 text-left transition-colors ${isActive ? "border-[var(--color-primary)] bg-[var(--surface)] ring-1 ring-[var(--color-primary)]" : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)]"}`}>
+              <span className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-[var(--foreground)]">{tab.label}</span><span className="text-xs font-semibold text-[var(--color-primary)]">미검토 {counts.unreviewed}</span></span>
+              <span className="mt-1 block text-xs text-[var(--muted)]">진행 {counts.active}개</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <section id="type-candidates" className="scroll-mt-6 space-y-4">
+        <div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-lg font-bold text-[var(--foreground)]">{activeTab.label} 후보</h2><AdminPill tone="white">{unreviewedCandidates.length}개</AdminPill></div><p className="mt-1 text-sm text-[var(--muted)]">{activeTab.description} 가치 점수를 참고해 승인, 보류, 제외 중 하나를 선택하세요.</p></div>
+        {unreviewedCandidates.length ? <div className="grid gap-4 xl:grid-cols-2">{unreviewedCandidates.map((candidate, index) => (
           <AdminSurface key={candidate.key} tone="white" className={`rounded-3xl p-5 ${candidate.key === requestedOpportunityKey ? "ring-2 ring-[var(--color-primary)] ring-offset-2" : ""}`}>
-            <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /><AdminPill tone="white">{itemTypeLabel(candidate.itemType)}</AdminPill></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
+            <div className="flex items-start justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">{index + 1}</span><CategoryBadge category={candidate.slug} /></div>{"searchIntent" in candidate.brief && candidate.brief.searchIntent && <SearchIntentBadge intent={candidate.brief.searchIntent as "informational" | "commercial" | "transactional" | "navigational"} />}</div>
             <h3 className="mt-4 text-base font-bold text-[var(--foreground)]">{candidate.title}</h3><p className="mt-2 text-sm text-[var(--muted)]">{candidate.rationale}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2"><Fact label="추천 액션" value={itemTypeLabel(candidate.itemType)} /><Fact label={valueLabel(candidate.itemType)} value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3"><Fact label="추천 액션" value={itemTypeLabel(candidate.itemType)} /><Fact label={valueLabel(candidate.itemType)} value={`${candidate.valueScore}점`} /><Fact label="예상 작업량" value={candidate.effort} /></div>
             <div className="mt-5 flex flex-wrap justify-end gap-2"><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "dismissed")}><X className="h-4 w-4" />제외</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="dark" onClick={() => saveCandidate(candidate, "deferred")}><Pause className="h-4 w-4" />보류</AdminActionButton><AdminActionButton disabled={savingKey === candidate.key} tone="primary" onClick={() => saveCandidate(candidate, "approved")}><Check className="h-4 w-4" />작업으로 승인</AdminActionButton></div>
           </AdminSurface>
-        ))}</div> : <Empty icon={Check} title="현재 추천 후보를 모두 검토했습니다." description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
+        ))}</div> : <Empty icon={Check} title={`${activeTab.label} 후보를 모두 검토했습니다.`} description="새 검색 데이터가 들어오면 새로운 후보가 나타납니다." />}
       </section>
 
       <section className="space-y-4">
