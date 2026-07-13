@@ -28,7 +28,7 @@ const PURPOSE_LABELS: Record<EvaluationPurpose, string> = {
   noise: "노이즈", unknown: "미정",
 };
 const ACTION_LABELS: Record<EvaluationAction, string> = {
-  approve: "승인", defer: "보류", reject: "제외", reclassify: "재분류", review: "추가 검토",
+  approve: "승인", defer: "보류", reject: "제외", reclassify: "분류 위치 지정", review: "추가 검토",
 };
 
 type TaxonomyOption = { slug: KeywordCategorySlug; label: string; subgroups: string[] };
@@ -39,8 +39,9 @@ type EvaluationResponse = {
   snapshotCreatedAt: string;
   items: KeywordEvaluationItem[];
   taxonomy: TaxonomyOption[];
-  stats: { total: number; labeled: number; remaining: number };
+  stats: { total: number; labeled: number; remaining: number; preReviewed: number; confirmable: boolean };
 };
+type ConfirmResult = { confirmed: number; preserved: number; total: number; confirmedAt: string };
 type Draft = Omit<HumanEvaluationLabel, "updatedAt" | "updatedBy">;
 
 function initialDraft(item: KeywordEvaluationItem): Draft {
@@ -55,11 +56,11 @@ function initialDraft(item: KeywordEvaluationItem): Draft {
     };
   }
   return {
-    relevance: item.autoLabel.relevance,
-    purpose: item.autoLabel.purpose,
-    action: item.autoLabel.action,
-    category: item.lexicalCategory,
-    subgroup: item.lexicalSubgroup,
+    relevance: item.relevancePreReview?.relevance ?? item.autoLabel.relevance,
+    purpose: item.purposePreReview?.purpose ?? item.autoLabel.purpose,
+    action: item.actionPreReview?.action ?? item.autoLabel.action,
+    category: item.placementPreReview?.category ?? item.lexicalCategory,
+    subgroup: item.placementPreReview?.subgroup ?? item.lexicalSubgroup,
     notes: "",
   };
 }
@@ -67,6 +68,7 @@ function initialDraft(item: KeywordEvaluationItem): Draft {
 export function KeywordEvaluationPage() {
   const query = useAdminApi<EvaluationResponse>(ENDPOINT);
   const mutation = useAdminMutation<{ id: string; humanLabel: HumanEvaluationLabel }>();
+  const confirmation = useAdminMutation<ConfirmResult>();
   const [stratum, setStratum] = useState<EvaluationStratum | "all">("all");
   const [show, setShow] = useState<"remaining" | "all">("remaining");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export function KeywordEvaluationPage() {
   if (query.loading) return <AdminLoadingSkeleton variant="full" />;
   if (query.error) return <AdminErrorState message={query.error} onRetry={query.refetch} />;
   if (!query.data) return <AdminErrorState message="키워드 평가 데이터를 불러올 수 없습니다." />;
+  const stats = query.data.stats;
 
   const updateDraft = (updates: Partial<Draft>) => {
     if (!selected || !draft) return;
@@ -112,16 +115,20 @@ export function KeywordEvaluationPage() {
             <AdminPill tone="white">추천 모델 평가</AdminPill>
             <h1 className="mt-3 text-xl font-bold">연관 키워드 300개를 라벨링합니다.</h1>
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">자동 판단을 출발점으로 관련성·활용 목적·최종 조치를 확인하세요. 이 결과는 평가용이며 현재 후보와 택소노미를 직접 변경하지 않습니다.</p>
-            <div className="mt-4"><AdminActionLink tone="dark" href="/admin/content/trends"><ArrowLeft className="h-4 w-4" />검색 트렌드로</AdminActionLink></div>
+            <div className="mt-4 flex flex-wrap gap-2"><AdminActionLink tone="dark" href="/admin/content/trends"><ArrowLeft className="h-4 w-4" />검색 트렌드로</AdminActionLink>{stats.confirmable && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
+              if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 이미 직접 저장한 항목은 유지됩니다.`)) return;
+              const result = await confirmation.mutate(ENDPOINT, "POST", { action: "confirm-pre-reviews" });
+              if (!result.error && result.data) setSavedMessage(`사전 검토 ${result.data.confirmed}개를 확정했습니다.${result.data.preserved ? ` 직접 검토 ${result.data.preserved}개는 유지했습니다.` : ""}`);
+            }}>{confirmation.loading ? "확정 중…" : "사전 검토 일괄 확정"}</AdminActionButton>}</div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Metric label="전체" value={query.data.stats.total} />
-            <Metric label="완료" value={query.data.stats.labeled} />
-            <Metric label="남음" value={query.data.stats.remaining} />
+            <Metric label="전체" value={stats.total} />
+            <Metric label="완료" value={stats.labeled} />
+            <Metric label="남음" value={stats.remaining} />
           </div>
         </div>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`라벨링 진행률 ${query.data.stats.labeled}/${query.data.stats.total}`}>
-          <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${query.data.stats.total ? query.data.stats.labeled / query.data.stats.total * 100 : 0}%` }} />
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`라벨링 진행률 ${stats.labeled}/${stats.total}`}>
+          <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${stats.total ? stats.labeled / stats.total * 100 : 0}%` }} />
         </div>
         <p className="mt-2 text-xs text-slate-400">택소노미 v{query.data.taxonomyVersion ?? "code"} · 스냅샷 {new Date(query.data.snapshotCreatedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
       </AdminSurface>
@@ -137,7 +144,7 @@ export function KeywordEvaluationPage() {
         </div>
       </AdminSurface>
 
-      {mutation.error && <AdminNotice tone="error">{mutation.error}</AdminNotice>}
+      {(mutation.error || confirmation.error) && <AdminNotice tone="error">{mutation.error ?? confirmation.error}</AdminNotice>}
       {savedMessage && <AdminNotice tone="success">{savedMessage}</AdminNotice>}
 
       {!selected ? (
@@ -145,13 +152,14 @@ export function KeywordEvaluationPage() {
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           <AdminSurface tone="white" className="rounded-3xl p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><AdminPill tone="white">{STRATUM_LABELS[selected.stratum]}</AdminPill>{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div><span className="text-xs text-slate-400">월 {selected.monthlyVolume.toLocaleString("ko-KR")}회 · 문자열 점수 {selected.lexicalScore.toFixed(2)}</span></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><AdminPill tone="white">{STRATUM_LABELS[selected.stratum]}</AdminPill>{(selected.relevancePreReview || selected.purposePreReview || selected.actionPreReview) && !selected.humanLabel && <AdminPill tone="white">사전 검토 완료</AdminPill>}{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div><span className="text-xs text-slate-400">월 {selected.monthlyVolume.toLocaleString("ko-KR")}회 · 문자열 점수 {selected.lexicalScore.toFixed(2)}</span></div>
             <h2 className="mt-5 text-2xl font-bold">{selected.keyword}</h2>
             <p className="mt-2 text-sm text-slate-500">자동 판단: {PURPOSE_LABELS[selected.autoLabel.purpose]} · {ACTION_LABELS[selected.autoLabel.action]} · {selected.autoLabel.reasons.join(" · ")}</p>
 
             <ChoiceGroup title="관련성" value={draft?.relevance} options={[["relevant", "관련"], ["uncertain", "불확실"], ["irrelevant", "무관"]]} onChange={(value) => updateDraft({ relevance: value as EvaluationRelevance })} />
             <ChoiceGroup title="활용 목적" value={draft?.purpose} options={Object.entries(PURPOSE_LABELS)} onChange={(value) => updateDraft({ purpose: value as EvaluationPurpose })} />
             <ChoiceGroup title="최종 조치" value={draft?.action} options={Object.entries(ACTION_LABELS)} onChange={(value) => updateDraft({ action: value as EvaluationAction })} />
+            <p className="mt-2 text-xs leading-5 text-slate-500">승인은 위에서 선택한 활용 목적으로 채택한다는 뜻입니다. 분류 위치 지정은 택소노미 후보인데 카테고리·서브그룹을 찾지 못한 경우에만 사용합니다.</p>
 
             <fieldset className="mt-7"><legend className="text-sm font-bold">분류 위치 <span className="font-normal text-slate-400">(택소노미 목적은 필수)</span></legend><div className="mt-3 grid gap-3 sm:grid-cols-2"><select aria-label="카테고리" value={draft?.category ?? ""} onChange={(event) => updateDraft({ category: event.target.value ? event.target.value as KeywordCategorySlug : null, subgroup: null })} className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="">선택 안 함</option>{query.data.taxonomy.map((category) => <option key={category.slug} value={category.slug}>{category.label}</option>)}</select><select aria-label="서브그룹" value={draft?.subgroup ?? ""} disabled={!selectedCategory} onChange={(event) => updateDraft({ subgroup: event.target.value || null })} className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-50"><option value="">선택 안 함</option>{selectedCategory?.subgroups.map((subgroup) => <option key={subgroup} value={subgroup}>{subgroup}</option>)}</select></div></fieldset>
             <label className="mt-7 block text-sm font-bold">메모 <span className="font-normal text-slate-400">(선택)</span><textarea value={draft?.notes ?? ""} maxLength={1000} onChange={(event) => updateDraft({ notes: event.target.value })} rows={3} className="mt-2 w-full rounded-2xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[var(--color-primary)]" placeholder="경계 사례나 분류 근거를 기록하세요." /></label>

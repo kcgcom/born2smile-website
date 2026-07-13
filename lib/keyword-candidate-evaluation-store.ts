@@ -4,8 +4,12 @@ import type { KeywordCategorySlug } from "./admin-naver-datalab-keywords";
 import {
   buildKeywordEvaluationPool,
   buildKeywordEvaluationSample,
+  type ActionPreReview,
   type HumanEvaluationLabel,
   type KeywordEvaluationItem,
+  type PlacementPreReview,
+  type PurposePreReview,
+  type RelevancePreReview,
 } from "./keyword-candidate-evaluation";
 import { getSupabaseAdmin } from "./supabase-admin";
 
@@ -26,6 +30,10 @@ interface SavedEvaluationData {
   items: KeywordEvaluationItem[];
   taxonomy: EvaluationTaxonomyOption[];
   labels: Record<string, HumanEvaluationLabel>;
+  relevancePreReviews: Record<string, RelevancePreReview>;
+  purposePreReviews: Record<string, PurposePreReview>;
+  actionPreReviews: Record<string, ActionPreReview>;
+  placementPreReviews: Record<string, PlacementPreReview>;
 }
 
 async function loadSavedData(): Promise<SavedEvaluationData | null> {
@@ -41,6 +49,10 @@ async function loadSavedData(): Promise<SavedEvaluationData | null> {
     items: saved.items,
     taxonomy: Array.isArray(saved.taxonomy) ? saved.taxonomy : [],
     labels: saved.labels && typeof saved.labels === "object" ? saved.labels : {},
+    relevancePreReviews: saved.relevancePreReviews && typeof saved.relevancePreReviews === "object" ? saved.relevancePreReviews : {},
+    purposePreReviews: saved.purposePreReviews && typeof saved.purposePreReviews === "object" ? saved.purposePreReviews : {},
+    actionPreReviews: saved.actionPreReviews && typeof saved.actionPreReviews === "object" ? saved.actionPreReviews : {},
+    placementPreReviews: saved.placementPreReviews && typeof saved.placementPreReviews === "object" ? saved.placementPreReviews : {},
   };
 }
 
@@ -74,6 +86,10 @@ async function ensureEvaluationData(): Promise<SavedEvaluationData> {
       subgroups: category.subGroups.map((group) => group.name),
     })),
     labels: {},
+    relevancePreReviews: {},
+    purposePreReviews: {},
+    actionPreReviews: {},
+    placementPreReviews: {},
   };
   await persist(created, new Date().toISOString());
   return created;
@@ -86,9 +102,97 @@ export async function getKeywordCandidateEvaluationData() {
     taxonomyVersion: saved.taxonomyVersion,
     snapshotId: saved.snapshotId,
     snapshotCreatedAt: saved.snapshotCreatedAt,
-    items: saved.items.map((item) => ({ ...item, humanLabel: saved.labels[item.id] ?? null })),
+    items: saved.items.map((item) => ({
+      ...item,
+      humanLabel: saved.labels[item.id] ?? null,
+      relevancePreReview: saved.relevancePreReviews[item.id] ?? null,
+      purposePreReview: saved.purposePreReviews[item.id] ?? null,
+      actionPreReview: saved.actionPreReviews[item.id] ?? null,
+      placementPreReview: saved.placementPreReviews[item.id] ?? null,
+    })),
     taxonomy: saved.taxonomy,
   };
+}
+
+export async function saveKeywordCandidateRelevancePreReviews(
+  reviews: Array<{ id: string; relevance: RelevancePreReview["relevance"] }>,
+  reviewedBy: string,
+) {
+  const saved = await ensureEvaluationData();
+  const validIds = new Set(saved.items.map((item) => item.id));
+  if (reviews.length !== saved.items.length || reviews.some((review) => !validIds.has(review.id))) {
+    throw new Error("EVALUATION_REVIEW_SET_MISMATCH");
+  }
+  const reviewedAt = new Date().toISOString();
+  saved.relevancePreReviews = Object.fromEntries(reviews.map((review) => [review.id, {
+    relevance: review.relevance,
+    reviewedAt,
+    reviewedBy,
+  }]));
+  await persist(saved, reviewedAt);
+  return { reviewed: reviews.length, reviewedAt };
+}
+
+export async function saveKeywordCandidatePurposePreReviews(
+  reviews: Array<{ id: string; purpose: PurposePreReview["purpose"] }>,
+  reviewedBy: string,
+) {
+  const saved = await ensureEvaluationData();
+  const validIds = new Set(saved.items.map((item) => item.id));
+  if (reviews.length !== saved.items.length || reviews.some((review) => !validIds.has(review.id))) {
+    throw new Error("EVALUATION_REVIEW_SET_MISMATCH");
+  }
+  const reviewedAt = new Date().toISOString();
+  saved.purposePreReviews = Object.fromEntries(reviews.map((review) => [review.id, {
+    purpose: review.purpose,
+    reviewedAt,
+    reviewedBy,
+  }]));
+  await persist(saved, reviewedAt);
+  return { reviewed: reviews.length, reviewedAt };
+}
+
+export async function saveKeywordCandidateActionPreReviews(
+  reviews: Array<{ id: string; action: ActionPreReview["action"] }>,
+  reviewedBy: string,
+) {
+  const saved = await ensureEvaluationData();
+  const validIds = new Set(saved.items.map((item) => item.id));
+  if (reviews.length !== saved.items.length || reviews.some((review) => !validIds.has(review.id))) {
+    throw new Error("EVALUATION_REVIEW_SET_MISMATCH");
+  }
+  const reviewedAt = new Date().toISOString();
+  saved.actionPreReviews = Object.fromEntries(reviews.map((review) => [review.id, {
+    action: review.action,
+    reviewedAt,
+    reviewedBy,
+  }]));
+  await persist(saved, reviewedAt);
+  return { reviewed: reviews.length, reviewedAt };
+}
+
+export async function saveKeywordCandidatePlacementPreReviews(
+  reviews: Array<{ id: string; category: PlacementPreReview["category"]; subgroup: string }>,
+  reviewedBy: string,
+) {
+  const saved = await ensureEvaluationData();
+  const itemsById = new Map(saved.items.map((item) => [item.id, item]));
+  const taxonomy = new Map(saved.taxonomy.map((category) => [category.slug, new Set(category.subgroups)]));
+  if (reviews.some((review) => !itemsById.has(review.id) || !taxonomy.get(review.category)?.has(review.subgroup))) {
+    throw new Error("EVALUATION_PLACEMENT_MISMATCH");
+  }
+  const reviewedAt = new Date().toISOString();
+  saved.placementPreReviews = {
+    ...saved.placementPreReviews,
+    ...Object.fromEntries(reviews.map((review) => [review.id, {
+      category: review.category,
+      subgroup: review.subgroup,
+      reviewedAt,
+      reviewedBy,
+    }])),
+  };
+  await persist(saved, reviewedAt);
+  return { reviewed: reviews.length, reviewedAt };
 }
 
 export async function saveKeywordCandidateEvaluation(
@@ -106,4 +210,42 @@ export async function saveKeywordCandidateEvaluation(
   saved.labels[id] = entry;
   await persist(saved, entry.updatedAt);
   return entry;
+}
+
+export async function confirmKeywordCandidatePreReviews(updatedBy: string) {
+  const saved = await ensureEvaluationData();
+  const confirmedAt = new Date().toISOString();
+  let confirmed = 0;
+  let preserved = 0;
+
+  for (const item of saved.items) {
+    if (saved.labels[item.id]) {
+      preserved += 1;
+      continue;
+    }
+    const relevance = saved.relevancePreReviews[item.id]?.relevance;
+    const purpose = saved.purposePreReviews[item.id]?.purpose;
+    const action = saved.actionPreReviews[item.id]?.action;
+    if (!relevance || !purpose || !action || action === "review" || action === "reclassify" || purpose === "unknown") {
+      throw new Error("EVALUATION_PRE_REVIEW_INCOMPLETE");
+    }
+    const placement = saved.placementPreReviews[item.id];
+    const category = purpose === "taxonomy" ? placement?.category ?? item.lexicalCategory : null;
+    const subgroup = purpose === "taxonomy" ? placement?.subgroup ?? item.lexicalSubgroup : null;
+    if (purpose === "taxonomy" && (!category || !subgroup)) throw new Error("EVALUATION_PLACEMENT_INCOMPLETE");
+    saved.labels[item.id] = {
+      relevance,
+      purpose,
+      action,
+      category,
+      subgroup,
+      notes: "",
+      updatedAt: confirmedAt,
+      updatedBy,
+    };
+    confirmed += 1;
+  }
+
+  await persist(saved, confirmedAt);
+  return { confirmed, preserved, total: saved.items.length, confirmedAt };
 }

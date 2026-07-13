@@ -52,11 +52,40 @@ export interface HumanEvaluationLabel {
   updatedBy: string;
 }
 
+export interface RelevancePreReview {
+  relevance: EvaluationRelevance;
+  reviewedAt: string;
+  reviewedBy: string;
+}
+
+export interface PurposePreReview {
+  purpose: EvaluationPurpose;
+  reviewedAt: string;
+  reviewedBy: string;
+}
+
+export interface ActionPreReview {
+  action: EvaluationAction;
+  reviewedAt: string;
+  reviewedBy: string;
+}
+
+export interface PlacementPreReview {
+  category: KeywordCategorySlug;
+  subgroup: string;
+  reviewedAt: string;
+  reviewedBy: string;
+}
+
 export interface KeywordEvaluationItem extends EvaluationPoolItem {
   id: string;
   stratum: EvaluationStratum;
   autoLabel: AutoEvaluationLabel;
   humanLabel: HumanEvaluationLabel | null;
+  relevancePreReview?: RelevancePreReview | null;
+  purposePreReview?: PurposePreReview | null;
+  actionPreReview?: ActionPreReview | null;
+  placementPreReview?: PlacementPreReview | null;
 }
 
 export const DEFAULT_EVALUATION_QUOTAS: Record<EvaluationStratum, number> = {
