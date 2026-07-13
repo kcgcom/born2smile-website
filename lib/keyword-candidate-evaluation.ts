@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
-import type { KeywordCategorySlug } from "./admin-naver-datalab-keywords";
+import {
+  isRelevantRelatedKeyword,
+  type CategoryKeywords,
+  type KeywordCategorySlug,
+} from "./admin-naver-datalab-keywords";
+import type { SearchAdKeywordData } from "./admin-naver-searchad";
 
 export type EvaluationStratum =
   | "current-surface"
@@ -32,11 +37,26 @@ export interface AutoEvaluationLabel {
   reasons: string[];
 }
 
+export type EvaluationRelevance = AutoEvaluationLabel["relevance"];
+export type EvaluationPurpose = AutoEvaluationLabel["purpose"];
+export type EvaluationAction = AutoEvaluationLabel["action"];
+
+export interface HumanEvaluationLabel {
+  relevance: EvaluationRelevance;
+  purpose: EvaluationPurpose;
+  action: EvaluationAction;
+  category: KeywordCategorySlug | null;
+  subgroup: string | null;
+  notes: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export interface KeywordEvaluationItem extends EvaluationPoolItem {
   id: string;
   stratum: EvaluationStratum;
   autoLabel: AutoEvaluationLabel;
-  humanLabel: null;
+  humanLabel: HumanEvaluationLabel | null;
 }
 
 export const DEFAULT_EVALUATION_QUOTAS: Record<EvaluationStratum, number> = {
@@ -58,6 +78,77 @@ const EVALUATION_STRATUM_ORDER: EvaluationStratum[] = [
   "lexical-low-volume",
   "lexical-missed",
 ];
+
+const PRODUCT_OR_BRAND_PATTERN =
+  /추천|셀프|세척|관리|운동|방지|치약|칫솔|칫솔모|세정제|세척기|제거제|사탕|영양제|케이스|오랄비|워터픽|아쿠아픽|오아구강|화이트랩스|오스템|덴티움|스트라우만|crest/i;
+const LOCAL_OR_REGIONAL_PATTERN =
+  /김포|고촌|한강신도시|장기동|풍무동|구래동|마산동|양촌|걸포동|운양동|사우동|감정동|송도|수성|수지|산본|마곡|연세.*치과/;
+
+function normalize(keyword: string): string {
+  return keyword.replace(/\s+/g, "").toLowerCase();
+}
+
+export function buildKeywordEvaluationPool(
+  taxonomy: CategoryKeywords[],
+  snapshot: SearchAdKeywordData[],
+): EvaluationPoolItem[] {
+  const existing = new Set(taxonomy.flatMap((category) =>
+    category.subGroups.flatMap((group) => group.keywords.map(normalize)),
+  ));
+  const targets = taxonomy.flatMap((category) => category.subGroups.map((group) => ({
+    category: category.slug,
+    subgroup: group.name,
+    keywords: group.keywords.map(normalize),
+  })));
+
+  const deduped = new Map<string, EvaluationPoolItem>();
+  for (const row of snapshot) {
+    if (!row.isRelated || row.monthlyTotalQcCnt <= 0) continue;
+    const normalized = normalize(row.keyword);
+    let lexicalCategory: KeywordCategorySlug | null = null;
+    let lexicalSubgroup: string | null = null;
+    let lexicalScore = 0;
+    for (const target of targets) {
+      for (const core of target.keywords) {
+        if (!normalized.includes(core) || normalized === core) continue;
+        const score = core.length / normalized.length;
+        if (score > lexicalScore) {
+          lexicalCategory = target.category;
+          lexicalSubgroup = target.subgroup;
+          lexicalScore = score;
+        }
+      }
+    }
+    const previous = deduped.get(normalized);
+    if (previous && previous.monthlyVolume >= row.monthlyTotalQcCnt) continue;
+    deduped.set(normalized, {
+      keyword: row.keyword,
+      monthlyVolume: row.monthlyTotalQcCnt,
+      lexicalCategory,
+      lexicalSubgroup,
+      lexicalScore,
+      currentSurface: false,
+      capHidden: false,
+      passesBasicRelevance: isRelevantRelatedKeyword(row.keyword),
+      productOrBrand: PRODUCT_OR_BRAND_PATTERN.test(row.keyword),
+      localOrRegional: LOCAL_OR_REGIONAL_PATTERN.test(row.keyword),
+      alreadyRegistered: existing.has(normalized),
+    });
+  }
+
+  const eligible = [...deduped.values()]
+    .filter((item) => !item.alreadyRegistered && item.passesBasicRelevance && item.lexicalScore >= 0.35 && item.monthlyVolume >= 100)
+    .sort((a, b) => b.monthlyVolume - a.monthlyVolume);
+  const subgroupCounts = new Map<string, number>();
+  for (const item of eligible) {
+    const key = `${item.lexicalCategory}:${item.lexicalSubgroup}`;
+    const count = subgroupCounts.get(key) ?? 0;
+    item.currentSurface = count < 5;
+    item.capHidden = count >= 5;
+    subgroupCounts.set(key, count + 1);
+  }
+  return [...deduped.values()];
+}
 
 function stableOrder(keyword: string): string {
   return crypto.createHash("sha1").update(keyword).digest("hex");

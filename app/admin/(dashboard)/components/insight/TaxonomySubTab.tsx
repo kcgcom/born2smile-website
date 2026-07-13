@@ -715,6 +715,7 @@ interface RefreshConfirmation {
 }
 
 export function TaxonomySubTab() {
+  const router = useRouter();
   const [workspace, setWorkspace] = useState<"taxonomy" | "candidates">("taxonomy");
   const [selectedCategory, setSelectedCategory] =
     useState<KeywordCategorySlug | null>(null);
@@ -1027,6 +1028,9 @@ export function TaxonomySubTab() {
         <button type="button" onClick={() => setWorkspace("candidates")} className={`rounded-lg px-4 py-2 text-sm font-medium ${workspace === "candidates" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--background)] text-[var(--muted)]"}`}>
           후보 검토{taxonomyGovernance.data ? ` (${taxonomyGovernance.data.pendingCandidateCount})` : ""}
           {taxonomyGovernance.data?.pending && <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">v{taxonomyGovernance.data.pending.version} 대기</span>}
+        </button>
+        <button type="button" onClick={() => router.push("/admin/content/trends/keyword-evaluation")} className="rounded-lg bg-[var(--background)] px-4 py-2 text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)]">
+          추천 모델 라벨링
         </button>
       </div>
 
