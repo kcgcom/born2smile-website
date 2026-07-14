@@ -76,19 +76,32 @@ async function main() {
     label: item.humanLabel!,
   }));
   const references = mergeKeywordShadowReferences(savedAuditReferences, evaluationReferences);
+  const holdoutReferences: ShadowReference[] = audit.items.map((item) => ({
+    id: `holdout:${audit.engineVersion}:${item.id}`,
+    keyword: item.keyword,
+    label: item.humanLabel!,
+  }));
   const anchors = buildTaxonomyShadowAnchors(taxonomyState.taxonomy);
   const referenceTexts = references.map((reference) => formatEmbeddingSearchDocument("keyword", reference.keyword));
+  const holdoutTexts = holdoutReferences.map((reference) => formatEmbeddingSearchDocument("keyword", reference.keyword));
   const anchorTexts = anchors.map((anchor) => formatEmbeddingSearchDocument("taxonomy subgroup", anchor.text));
-  const embedded = await embedKeywordShadowTexts([...referenceTexts, ...anchorTexts]);
+  const embedded = await embedKeywordShadowTexts([...referenceTexts, ...holdoutTexts, ...anchorTexts]);
   const vectors = embedded.vectors.map(normalizeShadowVector);
-  const referenceVectors = new Map(references.map((reference, index) => [reference.id, vectors[index]]));
-  const anchorVectors = new Map(anchors.map((anchor, index) => [anchor.id, vectors[references.length + index]]));
-  const evaluateReference = (reference: ShadowReference) => {
+  const referenceVectors = new Map([
+    ...references.map((reference, index) => [reference.id, vectors[index]] as const),
+    ...holdoutReferences.map((reference, index) => [reference.id, vectors[references.length + index]] as const),
+  ]);
+  const anchorOffset = references.length + holdoutReferences.length;
+  const anchorVectors = new Map(anchors.map((anchor, index) => [anchor.id, vectors[anchorOffset + index]]));
+  const evaluateReference = (
+    reference: ShadowReference,
+    predictionReferences = references.filter((item) => item.id !== reference.id),
+  ) => {
     const poolItem = poolByKeyword.get(normalizeKeyword(reference.keyword));
     if (!poolItem) throw new Error(`평가 대상 벡터를 찾을 수 없습니다: ${reference.keyword}`);
     const prediction = predictKeywordCandidateShadow({
       item: { ...poolItem, id: reference.id },
-      references: references.filter((item) => item.id !== reference.id),
+      references: predictionReferences,
       itemVector: referenceVectors.get(reference.id)!,
       referenceVectors,
       anchors,
@@ -103,19 +116,19 @@ async function main() {
       rerankedCandidates: prediction.taxonomyCandidates,
     };
   };
-  const activeResults = audit.items.map((target) => {
-    const reference = references.find((item) =>
-      item.id.includes(target.id) && normalizeKeyword(item.keyword) === normalizeKeyword(target.keyword),
-    );
-    if (!reference) throw new Error(`활성 감사 참조를 찾을 수 없습니다: ${target.keyword}`);
+  const activeResults = audit.items.map((target, index) => {
+    const reference = holdoutReferences[index];
+    if (!reference || normalizeKeyword(reference.keyword) !== normalizeKeyword(target.keyword)) {
+      throw new Error(`활성 감사 참조를 찾을 수 없습니다: ${target.keyword}`);
+    }
     return {
-      ...evaluateReference(reference),
+      ...evaluateReference(reference, references),
       previousPurpose: target.predictedPurpose,
       previousCandidates: target.taxonomyCandidates,
     };
   });
   const results = activeResults.filter((result) => result.expected.purpose === "taxonomy");
-  const allCrossValidationResults = references.map(evaluateReference);
+  const allCrossValidationResults = references.map((reference) => evaluateReference(reference));
   const crossValidationResults = allCrossValidationResults.filter((result) =>
     result.expected.purpose === "taxonomy" && result.expected.category && result.expected.subgroup,
   );
@@ -139,6 +152,7 @@ async function main() {
       evaluation: evaluationReferences.length,
       audits: savedAuditReferences.length,
       deduplicated: references.length,
+      holdout: holdoutReferences.length,
     },
     targets: results.length,
     metrics,

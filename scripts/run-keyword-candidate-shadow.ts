@@ -16,6 +16,7 @@ import {
   type ShadowReference,
 } from "../lib/keyword-candidate-shadow";
 import { embedKeywordShadowTexts } from "../lib/keyword-candidate-shadow-embeddings";
+import { publishKeywordCandidateBoundaryReview } from "../lib/keyword-candidate-boundary-review-store";
 import {
   getKeywordCandidateShadowAuditReferences,
   publishKeywordCandidateShadowAudit,
@@ -25,6 +26,7 @@ import { getSupabaseAdmin } from "../lib/supabase-admin";
 const OUTPUT_PATH = path.resolve(process.cwd(), ".tmp/keyword-candidate-shadow-full.json");
 const PURPOSES = ["taxonomy", "content", "faq", "product", "local", "noise", "unknown"] as const;
 const AUDIT_PURPOSES = ["taxonomy", "content", "faq", "product", "local"] as const;
+const BOUNDARY_REVIEW_LIMIT = 30;
 
 function loadEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) return;
@@ -54,6 +56,28 @@ function normalizeKeyword(keyword: string): string {
 
 function auditId(snapshotId: string, keyword: string): string {
   return createHash("sha1").update(`${snapshotId}:${normalizeKeyword(keyword)}`).digest("hex");
+}
+
+function boundaryReviewReasons(result: {
+  productOrBrand: boolean;
+  localOrRegional: boolean;
+  lexical: { category: string; subgroup: string; score: number } | null;
+  prediction: ReturnType<typeof predictKeywordCandidateShadow>;
+}): string[] {
+  const reasons: string[] = [];
+  const { prediction } = result;
+  const [top, second] = prediction.taxonomyCandidates;
+  if (prediction.relevance === "uncertain") reasons.push("관련성 보류");
+  if (prediction.relevanceConfidence < 0.75) reasons.push("관련성 저신뢰");
+  if (prediction.purposeConfidence < 0.65) reasons.push("목적 저신뢰");
+  if (top && second && top.hybridScore - second.hybridScore < 0.05) reasons.push("택소노미 후보 경합");
+  if (result.productOrBrand && prediction.purpose !== "product") reasons.push("제품 신호 충돌");
+  if (result.localOrRegional && prediction.purpose !== "local") reasons.push("지역 신호 충돌");
+  if (result.lexical && top
+    && (result.lexical.category !== top.category || result.lexical.subgroup !== top.subgroup)) {
+    reasons.push("문자열·재정렬 위치 충돌");
+  }
+  return reasons;
 }
 
 async function main() {
@@ -113,6 +137,8 @@ async function main() {
       monthlyVolume: item.monthlyVolume,
       currentSurface: item.currentSurface,
       alreadyRegistered: item.alreadyRegistered,
+      productOrBrand: item.productOrBrand,
+      localOrRegional: item.localOrRegional,
       evaluatedReference: evaluatedKeywords.has(normalizeKeyword(item.keyword)),
       lexical: item.lexicalCategory && item.lexicalSubgroup
         ? { category: item.lexicalCategory, subgroup: item.lexicalSubgroup, score: item.lexicalScore }
@@ -143,6 +169,27 @@ async function main() {
     purpose,
     ...item,
   })));
+  const boundaryReviewQueue = unregistered
+    .filter((result) => !result.evaluatedReference && result.prediction.relevance !== "irrelevant")
+    .map((result) => ({ ...result, boundaryReasons: boundaryReviewReasons(result) }))
+    .filter((result) => result.boundaryReasons.length > 0)
+    .sort((a, b) =>
+      b.boundaryReasons.length - a.boundaryReasons.length
+      || a.prediction.purposeConfidence - b.prediction.purposeConfidence
+      || b.monthlyVolume - a.monthlyVolume,
+    )
+    .slice(0, BOUNDARY_REVIEW_LIMIT)
+    .map((result) => ({
+      keyword: result.keyword,
+      monthlyVolume: result.monthlyVolume,
+      reasons: result.boundaryReasons,
+      predictedRelevance: result.prediction.relevance,
+      predictedPurpose: result.prediction.purpose,
+      predictedAction: result.prediction.action,
+      relevanceConfidence: result.prediction.relevanceConfidence,
+      purposeConfidence: result.prediction.purposeConfidence,
+      taxonomyCandidates: result.prediction.taxonomyCandidates,
+    }));
   const countBy = <T extends string>(values: T[]) => Object.fromEntries(
     [...new Set(values)].sort().map((value) => [value, values.filter((candidate) => candidate === value).length]),
   );
@@ -171,11 +218,13 @@ async function main() {
       currentSurfaced: unregistered.filter((result) => result.currentSurface).length,
       shadowRelevantPool: shadowRelevantPool.length,
       auditQueue: auditQueue.length,
+      boundaryReviewQueue: boundaryReviewQueue.length,
       relevance: countBy(unregistered.map((result) => result.prediction.relevance)),
       purpose: countBy(unregistered.map((result) => result.prediction.purpose)),
       action: countBy(unregistered.map((result) => result.prediction.action)),
     },
     auditQueue,
+    boundaryReviewQueue,
     topByPurpose,
     results,
   };
@@ -183,6 +232,7 @@ async function main() {
   if (process.argv.includes("--publish")) {
     publication = await publishKeywordCandidateShadowAudit({
       engineVersion: KEYWORD_SHADOW_ENGINE_VERSION,
+      datasetRole: "holdout",
       snapshotId: evaluation.snapshotId,
       snapshotCreatedAt: snapshot.created_at,
       taxonomyVersion: evaluation.taxonomyVersion,
@@ -206,6 +256,25 @@ async function main() {
       })),
     });
   }
+  let boundaryPublication: { published: number; preservedLabels: number } | null = null;
+  if (process.argv.includes("--publish-boundary")) {
+    boundaryPublication = await publishKeywordCandidateBoundaryReview({
+      engineVersion: KEYWORD_SHADOW_ENGINE_VERSION,
+      snapshotId: evaluation.snapshotId,
+      snapshotCreatedAt: snapshot.created_at,
+      taxonomyVersion: evaluation.taxonomyVersion,
+      generatedAt,
+      items: boundaryReviewQueue.map((item) => ({
+        id: auditId(evaluation.snapshotId, item.keyword),
+        ...item,
+      })),
+      taxonomy: taxonomyState.taxonomy.map((category) => ({
+        slug: category.slug,
+        label: category.category,
+        subgroups: category.subGroups.map((subgroup) => subgroup.name),
+      })),
+    });
+  }
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(output, null, 2)}\n`);
   console.log(JSON.stringify({
@@ -214,6 +283,7 @@ async function main() {
     summary: output.summary,
     topPurposeCounts: Object.fromEntries(Object.entries(topByPurpose).map(([purpose, items]) => [purpose, items.length])),
     publication,
+    boundaryPublication,
     output: path.relative(process.cwd(), OUTPUT_PATH),
   }, null, 2));
 }

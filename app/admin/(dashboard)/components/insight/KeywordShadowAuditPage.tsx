@@ -31,6 +31,7 @@ const ACTION_LABELS: Record<EvaluationAction, string> = {
 type AuditResponse = {
   schemaVersion: number;
   engineVersion: string;
+  datasetRole: "training" | "holdout";
   snapshotId: string;
   snapshotCreatedAt: string;
   taxonomyVersion: number | null;
@@ -113,11 +114,15 @@ export function KeywordShadowAuditPage() {
       <AdminSurface tone="white" className="rounded-3xl p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <AdminPill tone="warning">독립 검증</AdminPill>
+            <div className="flex flex-wrap gap-2">
+              <AdminPill tone="warning">독립 검증</AdminPill>
+              {query.data.datasetRole === "holdout" && <AdminPill tone="white">고정 홀드아웃 · 학습 제외</AdminPill>}
+            </div>
             <h1 className="mt-3 text-xl font-bold">그림자 추천 상위 100개를 감사합니다.</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">기존 300개와 겹치지 않는 목적별 상위 후보입니다. 블라인드 사전 검토안은 선택값에 반영하지만, 그림자 모델의 예상 결과는 직접 판단을 저장하기 전까지 보여주지 않습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/trends/keyword-evaluation"><ArrowLeft className="h-4 w-4" />초기 평가 300개</AdminActionLink>
+              <AdminActionLink tone="primary" href="/admin/content/trends/keyword-evaluation/boundary-review">경계 검토 최대 30개<ArrowRight className="h-4 w-4" /></AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드로</AdminActionLink>
               {stats.preReviewed === stats.total && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
                 if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 직접 저장한 항목은 유지됩니다.`)) return;

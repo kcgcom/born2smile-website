@@ -6,6 +6,8 @@ import { getSupabaseAdmin } from "./supabase-admin";
 const SCHEMA_VERSION = 1;
 const CACHE_KEY = `keyword-candidate:shadow-audit:${SCHEMA_VERSION}:active`;
 
+export type KeywordShadowAuditDatasetRole = "training" | "holdout";
+
 export interface KeywordShadowAuditTaxonomyOption {
   slug: KeywordCategorySlug;
   label: string;
@@ -35,6 +37,7 @@ export interface KeywordShadowAuditPreReview extends Omit<HumanEvaluationLabel, 
 interface SavedKeywordShadowAuditData {
   schemaVersion: number;
   engineVersion: string;
+  datasetRole: KeywordShadowAuditDatasetRole;
   snapshotId: string;
   snapshotCreatedAt: string;
   taxonomyVersion: number | null;
@@ -47,6 +50,7 @@ interface SavedKeywordShadowAuditData {
 
 export interface PublishKeywordShadowAuditInput {
   engineVersion: string;
+  datasetRole: KeywordShadowAuditDatasetRole;
   snapshotId: string;
   snapshotCreatedAt: string;
   taxonomyVersion: number | null;
@@ -67,6 +71,9 @@ async function loadSavedAudit(): Promise<SavedKeywordShadowAuditData | null> {
   return {
     schemaVersion: SCHEMA_VERSION,
     engineVersion: saved.engineVersion ?? "unknown",
+    datasetRole: saved.datasetRole === "holdout" || saved.engineVersion === "keyword-shadow-v5"
+      ? "holdout"
+      : "training",
     snapshotId: saved.snapshotId ?? "unknown",
     snapshotCreatedAt: saved.snapshotCreatedAt ?? new Date(0).toISOString(),
     taxonomyVersion: saved.taxonomyVersion ?? null,
@@ -127,6 +134,7 @@ export async function getKeywordCandidateShadowAuditData() {
   return {
     schemaVersion: saved.schemaVersion,
     engineVersion: saved.engineVersion,
+    datasetRole: saved.datasetRole,
     snapshotId: saved.snapshotId,
     snapshotCreatedAt: saved.snapshotCreatedAt,
     taxonomyVersion: saved.taxonomyVersion,
@@ -140,7 +148,10 @@ export async function getKeywordCandidateShadowAuditData() {
   };
 }
 
-export async function getKeywordCandidateShadowAuditReferences(snapshotId: string) {
+export async function getKeywordCandidateShadowAuditReferences(
+  snapshotId: string,
+  options: { includeHoldout?: boolean } = {},
+) {
   const active = await loadSavedAudit();
   const { data, error } = await getSupabaseAdmin()
     .from("api_cache")
@@ -153,15 +164,27 @@ export async function getKeywordCandidateShadowAuditReferences(snapshotId: strin
       ? [{
           snapshotId: saved.snapshotId ?? "unknown",
           engineVersion: saved.engineVersion ?? "unknown",
+          datasetRole: saved.datasetRole === "holdout" || saved.engineVersion === "keyword-shadow-v5"
+            ? "holdout" as const
+            : "training" as const,
           items: saved.items,
           labels: saved.labels,
         }]
       : [];
   });
   const datasets = [
-    ...(active ? [{ snapshotId: active.snapshotId, engineVersion: active.engineVersion, items: active.items, labels: active.labels }] : []),
+    ...(active ? [{
+      snapshotId: active.snapshotId,
+      engineVersion: active.engineVersion,
+      datasetRole: active.datasetRole,
+      items: active.items,
+      labels: active.labels,
+    }] : []),
     ...history,
-  ].filter((dataset) => dataset.snapshotId === snapshotId);
+  ].filter((dataset) =>
+    dataset.snapshotId === snapshotId
+    && (options.includeHoldout || dataset.datasetRole === "training"),
+  );
   const references = new Map<string, { id: string; keyword: string; label: HumanEvaluationLabel }>();
   for (const dataset of datasets) {
     for (const item of dataset.items) {
