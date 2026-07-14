@@ -101,6 +101,18 @@ async function main() {
   assert.equal(brushingCandidates.some((candidate) => candidate.evidenceUnitId === "blog:interdental-brush-waterpik-guide:section:8-9"), false, "치간도구 사용 순서를 칫솔질 방법으로 분류하면 안 됩니다.");
   assert.equal(brushingCandidates.some((candidate) => candidate.evidenceUnitId === "blog:mouthwash-effectiveness:section:6-7"), false, "구강청결제 사용법을 칫솔질 방법으로 분류하면 안 됩니다.");
   assert.equal(shadow.topics["oral-hygiene"].byConcept.devices.some((candidate) => candidate.documentId === "blog:mouthwash-effectiveness"), true, "구강청결제 콘텐츠는 보조 관리도구 후보에 포함되어야 합니다.");
+  assert.equal(shadow.topics["orthodontics-pain-risks"].byConcept["root-resorption"].length, 0, "명시적 치근 흡수 근거가 없는데 후보를 채우면 안 됩니다.");
+  assert.equal(shadow.topics["dental-cost-insurance"].byConcept["private-insurance"].length, 0, "명시적 민간보험 근거가 없는데 후보를 채우면 안 됩니다.");
+  assert.equal(
+    shadow.topics["orthodontics-pain-risks"].byConcept["gum-recession"].some((candidate) => candidate.evidenceUnitId === "blog:gum-recession-causes:section:0-1"),
+    true,
+    "정확한 교정 문맥과 위험 기준이 있는 잇몸 퇴축 근거를 놓치면 안 됩니다.",
+  );
+  assert.equal(
+    shadow.topics["pediatric-dental-trauma"].byConcept["treatment-followup"].some((candidate) => candidate.evidenceUnitId === "blog:children-dental-trauma:section:6-7"),
+    true,
+    "소아 외상 후 검진 근거를 놓치면 안 됩니다.",
+  );
 
   const report = {
     version: shadow.version,

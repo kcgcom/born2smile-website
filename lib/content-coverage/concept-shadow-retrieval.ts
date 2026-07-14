@@ -2,7 +2,7 @@ import { cosineSimilarity } from "../gemini-embeddings";
 import { buildSemanticSearchVectors } from "./semantic-retrieval";
 import type { ContentDocument, CoverageConcept, CoverageTopicSpec, EvidenceUnit } from "./types";
 
-export const CONCEPT_SHADOW_RETRIEVAL_VERSION = "retrieval-v2-shadow.3" as const;
+export const CONCEPT_SHADOW_RETRIEVAL_VERSION = "retrieval-v2-shadow.4" as const;
 
 const STOP_WORDS = new Set([
   "치과", "치료", "관련", "대한", "위한", "방법", "내용", "설명", "설명한다", "필요", "경우", "기준", "정보", "환자", "일반", "주요", "확인", "글", "다룬", "중심", "단순",
@@ -50,6 +50,51 @@ export interface ConceptShadowRetrievalResult {
   topics: Record<string, {
     byConcept: Record<string, ConceptEvidenceCandidate[]>;
     integrated: ConceptEvidenceCandidate[];
+  }>;
+  fallbackAudit?: ConceptFallbackAudit;
+}
+
+export interface ConceptFallbackAuditTarget {
+  topicSpecId: string;
+  conceptId: string;
+}
+
+export interface ConceptFallbackAuditCandidate {
+  rank: number;
+  documentId: string;
+  evidenceUnitId: string;
+  title: string;
+  headingPath: string[];
+  path: string | null;
+  surface: string | null;
+  kind: EvidenceUnit["kind"];
+  excerpt: string;
+  fallbackScore: number;
+  conceptSimilarity: number;
+  conceptPercentile: number;
+  topicPercentile: number;
+  identityScore: number;
+  criterionScore: number;
+  identityMatches: string[];
+  contextMatches: string[];
+  matchedCriteria: string[];
+  exclusionMatches: string[];
+  strictAccepted: boolean;
+  rejectionCodes: Array<
+    | "identity-not-explicit"
+    | "required-context-missing"
+    | "topic-scope-below-threshold"
+    | "semantic-and-criteria-below-threshold"
+    | "explicit-exclusion"
+  >;
+  rejectionReasons: string[];
+}
+
+export interface ConceptFallbackAudit {
+  targets: Record<string, {
+    topicSpecId: string;
+    conceptId: string;
+    candidates: ConceptFallbackAuditCandidate[];
   }>;
 }
 
@@ -159,8 +204,9 @@ function selectIntegrated(
   const selected: ConceptEvidenceCandidate[] = [];
   const selectedIds = new Set<string>();
   const perDocument = new Map<string, number>();
-  const add = (candidate: ConceptEvidenceCandidate | undefined) => {
-    if (!candidate || selectedIds.has(candidate.evidenceUnitId) || (perDocument.get(candidate.documentId) ?? 0) >= 2) return;
+  const add = (candidate: ConceptEvidenceCandidate | undefined, allowDocumentOverflow = false) => {
+    if (!candidate || selectedIds.has(candidate.evidenceUnitId)
+      || (!allowDocumentOverflow && (perDocument.get(candidate.documentId) ?? 0) >= 2)) return;
     selected.push({ ...candidate, matchedConceptIds: conceptsByEvidence.get(candidate.evidenceUnitId) ?? [candidate.conceptId] });
     selectedIds.add(candidate.evidenceUnitId);
     perDocument.set(candidate.documentId, (perDocument.get(candidate.documentId) ?? 0) + 1);
@@ -168,9 +214,12 @@ function selectIntegrated(
 
   const orderedConcepts = [...spec.concepts].sort((a, b) => Number(a.importance === "recommended") - Number(b.importance === "recommended"));
   for (const concept of orderedConcepts) {
-    add(byConcept[concept.id]?.find((candidate) => candidate.evidenceLevel !== "discovery-only"
+    const preferred = byConcept[concept.id]?.find((candidate) => candidate.evidenceLevel !== "discovery-only"
       && !selectedIds.has(candidate.evidenceUnitId)
-      && (perDocument.get(candidate.documentId) ?? 0) < 2));
+      && (perDocument.get(candidate.documentId) ?? 0) < 2);
+    const fallback = byConcept[concept.id]?.find((candidate) => candidate.evidenceLevel !== "discovery-only"
+      && !selectedIds.has(candidate.evidenceUnitId));
+    add(preferred ?? fallback, !preferred && fallback != null);
     if (selected.length >= limit) return selected;
   }
   for (const candidate of [...all].sort((a, b) => b.rerankScore - a.rerankScore || a.evidenceUnitId.localeCompare(b.evidenceUnitId))) {
@@ -185,7 +234,13 @@ function selectIntegrated(
 export async function buildConceptShadowRetrieval(
   specs: CoverageTopicSpec[],
   documents: ContentDocument[],
-  options: { conceptLimit?: number; topicLimit?: number; cachePath?: string } = {},
+  options: {
+    conceptLimit?: number;
+    topicLimit?: number;
+    cachePath?: string;
+    fallbackAuditTargets?: ConceptFallbackAuditTarget[];
+    fallbackAuditLimit?: number;
+  } = {},
 ): Promise<ConceptShadowRetrievalResult> {
   const descriptors = queryDescriptors(specs);
   const search = await buildSemanticSearchVectors(descriptors.map((descriptor) => descriptor.text), documents, { cachePath: options.cachePath });
@@ -201,6 +256,8 @@ export async function buildConceptShadowRetrieval(
   });
 
   const topics: ConceptShadowRetrievalResult["topics"] = {};
+  const fallbackTargetKeys = new Set((options.fallbackAuditTargets ?? []).map((target) => `${target.topicSpecId}:${target.conceptId}`));
+  const fallbackAudit: ConceptFallbackAudit = { targets: {} };
   for (const spec of specs) {
     const topicIndex = topicDescriptorIndex.get(spec.id);
     if (topicIndex == null) throw new Error(`주제 정체성 질의가 없습니다: ${spec.id}`);
@@ -237,9 +294,14 @@ export async function buildConceptShadowRetrieval(
           .filter((exclusion) => normalize(documentScopeText).includes(normalize(exclusion)));
         const exclusionPercentile = exclusions.length === 0 ? 0 : Math.max(...exclusions.map((index) => queryPercentiles[index][unitIndex]));
         const semanticExclusion = exclusionPercentile >= 0.985 && exclusionPercentile > semanticPercentiles[unitIndex] + 0.02;
+        const explicitCriterionOverride = identity.matches.length > 0
+          && contextAccepted
+          && criterion.matched.length > 0
+          && semanticPercentiles[unitIndex] >= 0.95;
         const explicitIdentityAccepted = identity.matches.length > 0
-          && topicPercentiles[unitIndex] >= 0.75
-          && (semanticPercentiles[unitIndex] >= 0.8 || criterion.matched.length > 0);
+          && ((topicPercentiles[unitIndex] >= 0.75
+            && (semanticPercentiles[unitIndex] >= 0.8 || criterion.matched.length > 0))
+            || explicitCriterionOverride);
         const accepted = contextAccepted
           && exclusionMatches.length === 0
           && explicitIdentityAccepted;
@@ -251,7 +313,7 @@ export async function buildConceptShadowRetrieval(
           + specificity(unit.evidence.kind) * 0.05
           - (unit.evidence.kind === "summary" ? 0.08 : 0)
           - (semanticExclusion ? 0.15 : 0));
-        return { identity, context, accepted, criterion, scopeScore, exclusionMatches, semanticExclusion, rerankScore };
+        return { identity, context, accepted, explicitCriterionOverride, criterion, scopeScore, exclusionMatches, semanticExclusion, rerankScore };
       });
       const identityScores = featureRows.map((row) => row.identity.score);
       const lexicalScores = featureRows.map((row) => row.criterion.score);
@@ -311,6 +373,73 @@ export async function buildConceptShadowRetrieval(
         } satisfies ConceptEvidenceCandidate;
       }).sort((a, b) => b.rerankScore - a.rerankScore || a.semanticRank - b.semanticRank || a.evidenceUnitId.localeCompare(b.evidenceUnitId));
 
+      const fallbackKey = `${spec.id}:${concept.id}`;
+      if (fallbackTargetKeys.has(fallbackKey)) {
+        const auditRows = search.units.map((unit, unitIndex) => {
+          const row = featureRows[unitIndex];
+          const placement = unit.evidence.placements.find((candidate) => candidate.visible && candidate.indexable) ?? null;
+          const contextAccepted = contextPhrases.length === 0 || row.context.matches.length > 0;
+          const semanticOrCriterionAccepted = semanticPercentiles[unitIndex] >= 0.8 || row.criterion.matched.length > 0;
+          const rejectionCodes: ConceptFallbackAuditCandidate["rejectionCodes"] = [
+            ...(row.identity.matches.length === 0 ? ["identity-not-explicit" as const] : []),
+            ...(!contextAccepted ? ["required-context-missing" as const] : []),
+            ...(topicPercentiles[unitIndex] < 0.75 && !row.explicitCriterionOverride ? ["topic-scope-below-threshold" as const] : []),
+            ...(!semanticOrCriterionAccepted ? ["semantic-and-criteria-below-threshold" as const] : []),
+            ...(row.exclusionMatches.length > 0 ? ["explicit-exclusion" as const] : []),
+          ];
+          const rejectionReasons = [
+            ...(row.identity.matches.length === 0 ? ["식별 표현이 본문에 명시되지 않음"] : []),
+            ...(!contextAccepted ? ["필수 문맥 표현이 본문에 없음"] : []),
+            ...(topicPercentiles[unitIndex] < 0.75 && !row.explicitCriterionOverride ? ["주제 정체성 순위가 수용 기준보다 낮음"] : []),
+            ...(!semanticOrCriterionAccepted ? ["개념 의미 순위와 기준 일치가 모두 부족함"] : []),
+            ...(row.exclusionMatches.length > 0 ? ["문서 전체에 제외 표현이 있음"] : []),
+          ];
+          const fallbackScore = Math.max(0,
+            semanticPercentiles[unitIndex] * 0.35
+            + row.identity.score * 0.25
+            + topicPercentiles[unitIndex] * 0.15
+            + row.criterion.score * 0.15
+            + row.scopeScore * 0.1
+            - (row.exclusionMatches.length > 0 ? 0.25 : 0)
+            - (unit.evidence.kind === "summary" ? 0.05 : 0));
+          return {
+            documentId: unit.document.id,
+            evidenceUnitId: unit.evidence.id,
+            title: unit.document.title,
+            headingPath: unit.evidence.headingPath,
+            path: placement?.path ?? null,
+            surface: placement?.surface ?? null,
+            kind: unit.evidence.kind,
+            excerpt: unit.evidence.text.replace(/\s+/g, " ").trim().slice(0, 320),
+            fallbackScore: round(fallbackScore),
+            conceptSimilarity: round(semanticScores[unitIndex]),
+            conceptPercentile: round(semanticPercentiles[unitIndex]),
+            topicPercentile: round(topicPercentiles[unitIndex]),
+            identityScore: round(row.identity.score),
+            criterionScore: round(row.criterion.score),
+            identityMatches: row.identity.matches,
+            contextMatches: row.context.matches,
+            matchedCriteria: row.criterion.matched,
+            exclusionMatches: row.exclusionMatches,
+            strictAccepted: row.accepted,
+            rejectionCodes,
+            rejectionReasons,
+          };
+        }).sort((left, right) => right.fallbackScore - left.fallbackScore
+          || right.conceptPercentile - left.conceptPercentile
+          || left.evidenceUnitId.localeCompare(right.evidenceUnitId));
+        const candidates: ConceptFallbackAuditCandidate[] = [];
+        const perDocument = new Map<string, number>();
+        for (const row of auditRows) {
+          const documentCount = perDocument.get(row.documentId) ?? 0;
+          if (documentCount >= 2) continue;
+          candidates.push({ rank: candidates.length + 1, ...row });
+          perDocument.set(row.documentId, documentCount + 1);
+          if (candidates.length >= (options.fallbackAuditLimit ?? 10)) break;
+        }
+        fallbackAudit.targets[fallbackKey] = { topicSpecId: spec.id, conceptId: concept.id, candidates };
+      }
+
       for (const candidate of ranked) {
         const matchedConcepts = acceptedConceptsByEvidence.get(candidate.evidenceUnitId) ?? [];
         if (!matchedConcepts.includes(concept.id)) matchedConcepts.push(concept.id);
@@ -338,5 +467,6 @@ export async function buildConceptShadowRetrieval(
     generatedAt: new Date().toISOString(),
     cache: search.cache,
     topics,
+    ...(fallbackTargetKeys.size > 0 ? { fallbackAudit } : {}),
   };
 }

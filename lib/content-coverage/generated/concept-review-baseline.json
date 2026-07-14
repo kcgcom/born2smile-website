@@ -1,0 +1,283 @@
+{
+  "schemaVersion": "concept-review-baseline-v1",
+  "reviewSchemaVersion": "concept-review-v1",
+  "retrievalVersion": "retrieval-v2-shadow.4",
+  "candidateGeneratedAt": "2026-07-14T09:50:29.816Z",
+  "reviewedAt": "2026-07-14T09:50:29.817Z",
+  "items": [
+    {
+      "id": "retrieval-v2-shadow.4:orthodontics-pain-risks:blog:orthodontic-diet-guide:section:4-5",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "normal-pain": "supports"
+      },
+      "notes": "장치 부착 후 1~2주의 초기 통증과 부드러운 음식 섭취를 직접 안내한다. 정상 통증의 범위 중 초기 기간과 대처는 충족하지만 전체 부작용 주제를 다루지는 않는다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:orthodontics-pain-risks:blog:clear-aligner-care-guide:section:4-5",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "device-irritation": "supports"
+      },
+      "notes": "투명교정 장치의 초기 뻐근함과 가장자리 잇몸 자극, 교정용 왁스 사용을 구체적으로 설명해 장치 자극 근거로 충분하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:orthodontics-pain-risks:blog:orthodontic-diet-guide:section:0-1",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "warning-signs": "partial"
+      },
+      "notes": "딱딱하거나 끈적한 음식으로 장치가 탈락할 수 있고 추가 내원이 필요하다는 점은 경고 상황의 일부다. 심한 통증·부종·출혈 등 연락이 필요한 증상 기준은 없다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:orthodontics-pain-risks:blog:gum-recession-causes:section:0-1",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "gum-recession": "partial"
+      },
+      "notes": "잇몸 퇴축 원인 중 교정 후 치아 위치 변화로 잇몸이 얇아질 수 있음을 명시한다. 위험 가능성은 직접 다루지만 예방과 관리까지는 설명하지 않아 부분 근거다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:blog:sealant-for-children:section:6-7",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "national-insurance": "supports"
+      },
+      "notes": "만 18세 이하, 영구치 큰어금니, 본인부담률과 치아당 적용 횟수 등 건강보험 대상과 제한을 구체적으로 제시한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:blog:implant-and-orthodontics-combination:faq:d14773368dc5",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "cost-structure": "partial",
+        "national-insurance": "supports",
+        "estimate": "partial"
+      },
+      "notes": "임플란트와 교정 비용의 합산 및 개인차를 설명하고, 만 65세 이상 임플란트 2개와 제한적인 교정 급여 범위를 제시한다. 비용 확인을 권하지만 세부 추가비용과 견적 질문 항목은 부족하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:treatment:implant:faq:5872abb6029b",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "national-insurance": "supports",
+        "estimate": "supports"
+      },
+      "notes": "만 65세 이상 평생 2개라는 보험 기준과 비급여 변동 요인인 재료·뼈이식을 함께 설명하며, CT 검사와 상담 후 정확한 비용을 확인하도록 안내한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:blog:partial-orthodontics-front-teeth:faq:e472a29b8525",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "cost-structure": "supports"
+      },
+      "notes": "이동 범위, 장치 종류, 치료 기간이 부분교정 비용을 결정한다고 명시해 비용 형성 요인을 직접 설명한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:blog:scaling-myths-and-facts:section:11-12",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "national-insurance": "supports"
+      },
+      "notes": "만 19세 이상 연 1회 스케일링 건강보험 적용과 본인부담 정보를 직접 제시한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:dental-cost-insurance:blog:children-dental-care:section:9-10",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "national-insurance": "partial"
+      },
+      "notes": "만 18세 이하 영구치 실란트의 보험 적용을 알려 대상 조건은 확인할 수 있다. 대상 치아, 부담률, 횟수 같은 제한 정보는 없다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:front-teeth-treatment:blog:crown-material-comparison:section:2-3",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "options": "partial",
+        "suitability": "supports",
+        "aesthetics": "supports"
+      },
+      "notes": "앞니 크라운 재료 선택과 적합 조건, 색·투명도·잇몸선 심미성을 구체적으로 다룬다. 다만 레진·라미네이트·크라운·임플란트 등 치료 선택지 전체 비교는 아니다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:front-teeth-treatment:blog:laminate-veneer-guide:section:0-1",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "options": "partial",
+        "suitability": "supports",
+        "aesthetics": "supports"
+      },
+      "notes": "라미네이트의 적응증, 삭제량과 치아 보존, 색·형태·크기 개선 효과를 직접 설명한다. 하나의 치료법을 깊게 다뤄 전체 대안 비교 근거로는 부분적이다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:front-teeth-treatment:blog:crown-material-comparison:section:10-11",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "options": "partial",
+        "suitability": "supports",
+        "aesthetics": "supports",
+        "recovery-cost": "partial"
+      },
+      "notes": "앞니 크라운 재료를 색·투명도, 남은 치아, 교합력에 따라 고르는 기준은 충분하다. 비용은 PFM 선택 요인으로만 언급되고 치료별 회복 기간과 비용 구조 비교는 없다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:front-teeth-treatment:blog:broken-tooth-emergency:faq:bd50f5ff0a7d",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "diagnosis": "partial"
+      },
+      "notes": "앞니 외상 후 겉으로 보이지 않는 손상과 즉시 검사해야 할 신호를 설명해 진단 필요성은 뒷받침한다. 치료 선택을 위한 일반적인 앞니 진단 절차나 검사 항목은 다루지 않는다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:front-teeth-treatment:blog:children-dental-care:section:5-6",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "diagnosis": "partial"
+      },
+      "notes": "치아 표면의 흰색·갈색 변화, 시림과 앞니 외상을 조기에 확인하도록 안내한다. 소아 상황에 한정되고 앞니 치료 전 진단 체계를 설명하지 않아 부분 근거다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:pediatric-dental-trauma:blog:children-dental-trauma:section:8-9",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "first-aid": "partial",
+        "injury-types": "not-supported",
+        "urgency": "supports",
+        "prevention": "supports"
+      },
+      "notes": "스포츠 마우스가드와 생활공간 안전조치, 외상 시 거즈 압박 후 빠른 치과 방문을 안내한다. 응급처치는 출혈 압박만 제시하며 손상 유형 분류는 없다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:pediatric-dental-trauma:blog:children-dental-trauma:section:0-1",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "first-aid": "partial",
+        "injury-types": "supports",
+        "urgency": "supports"
+      },
+      "notes": "흔들림·위치 변화·파절·완전 탈구를 구분하고 모든 경우 빠른 치과 방문이 필요하다고 명시한다. 현장 응급처치는 침착하게 상태를 확인하라는 수준이라 부분적이다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:pediatric-dental-trauma:blog:children-dental-trauma:section:6-7",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "injury-types": "partial",
+        "treatment-followup": "partial"
+      },
+      "notes": "소아 치아 파절과 숨은 치근·치수 손상 가능성, 증상이 없어도 검진이 필요함을 설명한다. 파절 외 유형 비교와 변색·통증 등의 지속 관찰은 없어 두 개념 모두 부분 근거다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:pediatric-dental-trauma:blog:broken-tooth-emergency:faq:c4bfcf02682c",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "first-aid": "supports"
+      },
+      "notes": "파절편 보관, 날카로운 면 보호, 거즈 압박, 온도 자극 회피와 빠른 내원까지 구체적인 초기 대응을 제시한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:pediatric-dental-trauma:blog:broken-tooth-emergency:section:8-9",
+      "topicReviewLabel": "partial",
+      "conceptLabels": {
+        "first-aid": "partial",
+        "injury-types": "partial"
+      },
+      "notes": "파절과 탈구 가능성, 응급조치 후 신속한 검사의 필요성을 언급한다. 소아에 한정되지 않고 구체적인 응급 행동이나 손상 분류가 부족하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:electric-vs-manual-toothbrush:section:8-9",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "brushing": "supports",
+        "interdental": "partial",
+        "devices": "supports",
+        "professional-care": "partial"
+      },
+      "notes": "칫솔 종류보다 올바른 방법·시간·빈도가 중요하다는 점과 전동·일반 칫솔의 역할을 설명한다. 치실·치간칫솔과 정기검진은 필요성만 언급해 사용법 및 전문관리 근거는 제한적이다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:dental-floss-guide:section:4-5",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "interdental": "supports",
+        "individual-care": "supports"
+      },
+      "notes": "좁은 치간에는 치실, 넓거나 잇몸이 내려간 부위와 보철물 주변에는 치간칫솔을 권하고 크기 선택까지 설명해 개인별 치간 관리 근거가 충분하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:interdental-brush-waterpik-guide:section:6-7",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "interdental": "supports",
+        "devices": "supports",
+        "individual-care": "supports"
+      },
+      "notes": "치아 간격, 연령, 잇몸 상태, 교정·브릿지·임플란트 여부에 따라 치간칫솔과 구강세정기를 선택·병용하는 기준을 구체적으로 제시한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:correct-brushing-method:section:2-3",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "brushing": "supports"
+      },
+      "notes": "칫솔 각도, 잇몸선 접근, 힘과 동작을 포함한 올바른 칫솔질 방법을 단계적으로 설명한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:orthodontic-floss-interdental-guide:section:7-10",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "interdental": "supports",
+        "individual-care": "supports"
+      },
+      "notes": "교정 장치 주변에서 치실과 치간칫솔을 사용하는 방법과 상황별 선택 기준을 제시해 교정 환자의 맞춤 치간 관리에 직접 부합한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:after-orthodontic-device-care:section:4-5",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "brushing": "partial",
+        "interdental": "supports",
+        "devices": "partial",
+        "individual-care": "supports"
+      },
+      "notes": "교정 환자에게 식후 칫솔질, 교정용 칫솔·치간칫솔·치실 끼우개와 불소 제품을 조합하도록 안내한다. 칫솔질 기법과 구강세정 보조기기의 한계 설명은 부족하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:gum-recession-causes:section:2-3",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "brushing": "supports",
+        "interdental": "partial",
+        "devices": "partial",
+        "individual-care": "supports"
+      },
+      "notes": "잇몸 퇴축 환자의 부드러운 칫솔, 45도 각도, 압력 조절과 전동칫솔 압력 센서 활용을 구체적으로 설명한다. 치간 관리는 필요성만 제시하고 보조기기 비교는 제한적이다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:scaling-frequency-guide:section:0-1",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "professional-care": "supports"
+      },
+      "notes": "자가관리로 제거하기 어려운 치석에 대한 스케일링의 역할과 잇몸 상태·흡연·보철물 등에 따른 개인별 주기 조정을 설명한다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:implant-aftercare-tips:section:4-5",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "brushing": "supports",
+        "interdental": "supports",
+        "devices": "partial",
+        "individual-care": "supports"
+      },
+      "notes": "임플란트 잇몸선 칫솔질과 인접면 치간칫솔 사용, 구강세정기 보조 사용을 안내해 임플란트 맞춤 관리에 부합한다. 구강세정기의 한계와 대체 불가성 설명은 부족하다."
+    },
+    {
+      "id": "retrieval-v2-shadow.4:oral-hygiene:blog:orthodontic-diet-guide:section:9-10",
+      "topicReviewLabel": "relevant",
+      "conceptLabels": {
+        "interdental": "partial",
+        "individual-care": "supports"
+      },
+      "notes": "교정 중 식후 칫솔질과 교정용 칫솔·치간칫솔, 가글 및 전문 세정을 조합하도록 안내한다. 교정 환자 맞춤성은 충분하지만 치간도구 사용법과 선택 기준은 없다."
+    }
+  ]
+}

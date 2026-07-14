@@ -256,7 +256,7 @@ interface ConceptEvidenceCandidate {
 4. 구조화된 범위 정보가 없는 동안 카테고리·제목·경로 기반 범위 특성 적용 — 완료
 5. 기준선과 shadow 결과 비교 리포트 생성 — 완료
 6. 새 후보와 개념 라벨을 관리자 검토 화면에서 추가 입력 — 구현 완료
-7. 결과를 보고 구조화된 `EvidenceScope` 도입 여부 결정
+7. 결과를 보고 구조화된 `EvidenceScope` 도입 여부 결정 — 1차 결정 완료
 
 ## 다음 단계
 
@@ -277,8 +277,48 @@ interface ConceptEvidenceCandidate {
 - 앞니 치료: `diagnosis`
 - 소아 외상: `treatment-followup`
 
-다음 단계는 새 후보만 주제 관련성으로 검토하고, 각 개념 후보에 `supports/partial/not-supported` 라벨을 추가하는 것이다. 그 결과로 식별 표현과 수용 임계값을 조정한 뒤 구조화된 `EvidenceScope` 도입 여부를 결정한다.
+최초 `retrieval-v2-shadow.3`의 28개 후보와 61개 개념 판정을 완료한 뒤, fallback 감사 결과를 반영한 `retrieval-v2-shadow.4` 기준선을 `lib/content-coverage/generated/concept-review-baseline.json`에 고정했다. 현재 기준선은 후보 30건, 개념 판정 64건이며 분포는 `supports` 38건, `partial` 25건, `not-supported` 1건이다.
 
-관리자 화면 `/admin/content/strategy/concept-review`에서 통합 후보 28건과 개념 판정 61건을 검토한다. 기존 기준선에 포함된 13건은 주제 라벨을 자동 연결하고, 신규 15건은 주제 라벨부터 입력한다. 저장 단위는 후보 하나이며 해당 후보에 연결된 모든 개념을 판정해야 완료로 집계한다.
+관리자 화면 `/admin/content/strategy/concept-review`에서 통합 후보 30건과 개념 판정 64건을 검토한다. `shadow.3`의 판정은 안정적인 `(주제, 근거)` 키로 이관했고, 신규 잇몸 퇴축 및 소아 외상 후 검진 근거는 직접 검토해 `partial`로 저장했다. 저장 단위는 후보 하나이며 해당 후보에 연결된 모든 개념을 판정해야 완료로 집계한다.
 
 소아 치아 외상과 앞니 치료처럼 임상 판단이 포함되는 주제는 사전 라벨과 별도로 의료진 최종 확인이 필요하다.
+
+### 사전 라벨 평가 결과
+
+`pnpm evaluate-content-coverage-concepts`는 주제 정밀도와 개념별 검색 순위·근거 수준을 함께 평가한다. 통합 후보 순위를 개념 순위로 잘못 사용하는 것을 막기 위해 검토 seed에 `conceptRetrieval`을 추가했고, 개념별 최대 5개 후보의 순위와 `direct/supporting` 판정을 별도로 보존한다.
+
+| 주제 | 필수 개념 hit rate | 직접 근거가 있는 개념 비율 | 비어 있는 필수 개념 | 부분 근거만 있는 필수 개념 |
+|---|---:|---:|---|---|
+| 교정 통증과 부작용 | 0.80 | 0.750 | `root-resorption` | `gum-recession`, `warning-signs` |
+| 치과 비용과 보험 | 0.75 | 1.000 | `private-insurance` | 없음 |
+| 앞니 치료 | 1.00 | 0.200 | 없음 | `diagnosis`, `options`, `recovery-cost` |
+| 소아 치아 외상 | 1.00 | 0.600 | 없음 | `treatment-followup` |
+| 구강위생 | 1.00 | 0.800 | 없음 | 없음 |
+
+주제 상위 3건의 사용 가능 정밀도는 모두 1.0이고 무관 비율은 0이다. 규칙 조정 후에도 비어 있는 `root-resorption`과 `private-insurance`는 후보를 억지로 채우지 않으며, 충족 모델에서 실제 콘텐츠 공백 후보로 다룬다. `partial`만 있는 개념은 완전 충족으로 승격하지 않는다.
+
+### EvidenceScope 결정
+
+전체 `EvidenceScope`를 콘텐츠 원문에 즉시 수작업으로 부여하지는 않는다. 먼저 검색 산출물에 개념별 순위와 근거 수준을 보존하는 최소 구조를 도입했다. 사전 라벨에서 같은 문단이 `suitability`에는 충분하지만 `options`에는 부분적이고, `urgency`에는 충분하지만 `first-aid`에는 부분적인 사례가 반복됐기 때문이다. 다음 구현은 이 개념별 판정을 충족 모델에 연결하되, `partial`을 완전 충족으로 승격하지 않고 미검색과 실제 공백을 분리하는 것이다.
+
+### 미검색 개념 fallback 감사
+
+`pnpm audit-content-coverage-fallback`은 필수 개념 hit rate가 0인 개념을 기준선에서 자동 추출하고 전체 근거 말뭉치를 다시 검색한다. 기존 수용 조건을 변경하지 않으며, 상위 근접 후보와 다음 탈락 코드를 `.tmp/content-coverage-fallback-audit.json`에 기록한다.
+
+- `identity-not-explicit`: 개념 식별 표현이 문단에 명시되지 않음
+- `required-context-missing`: 주제 구분에 필요한 문맥 표현이 없음
+- `topic-scope-below-threshold`: 주제 정체성 백분위가 기존 0.75 기준 미만
+- `semantic-and-criteria-below-threshold`: 개념 의미 백분위와 판정 기준 일치가 모두 부족
+- `explicit-exclusion`: 문서 전체에 명시적 제외 표현이 있음
+
+감사 결과는 충족이나 콘텐츠 공백을 자동 확정하지 않는다. 109개 문서와 960개 근거 단위를 대상으로 한 최초 감사에서는 `root-resorption`과 `private-insurance`에 명시적 근거가 발견되지 않았다. 반면 `gum-recession`은 교정 후 잇몸이 얇아질 수 있다는 직접 문장이 있었지만 주제 정체성 기준에서 탈락했고, `treatment-followup`은 소아 외상 후 검진·숨은 손상·변색 확인 문단이 식별 표현 또는 문맥 표현 규칙에서 탈락했다. 따라서 앞의 두 개념은 실제 콘텐츠 공백 가능성이 높고, 뒤의 두 개념은 검색 규칙의 위음성 후보로 사람 검토가 필요하다.
+
+### fallback 반영 규칙
+
+`retrieval-v2-shadow.4`는 두 위음성을 서로 다른 방식으로 교정한다.
+
+- 정확한 개념 식별 표현, 필수 문맥, 판정 기준 일치, 개념 의미 백분위 0.95 이상이 모두 성립하면 주제 백분위 0.75 미만이어도 후보로 수용한다. 이 예외는 `gum-recession` 근거처럼 문서 전체 주제는 넓지만 문단 안에 명시적인 교정 위험 설명이 있는 경우에만 적용된다.
+- `treatment-followup`에는 실제 소아 외상 본문 표현인 `외상 후`, `검진`, `치아 색`을 식별·문맥 힌트로 추가한다. 의미 점수만으로 수용하지 않고 기존의 명시적 식별 표현과 필수 문맥 조건을 유지한다.
+- 통합 후보를 만들 때 문서당 2개 제한보다 개념당 최소 한 후보 보존을 우선한다. 이 예외 덕분에 새 치료·경과 근거가 들어와도 기존 예방 근거가 검토 목록에서 사라지지 않는다.
+
+조정 후 `gum-recession`과 `treatment-followup`은 각각 1건의 근거를 회수했고, `root-resorption`과 `private-insurance`는 계속 0건이다. 제외 표현 누수는 0건이고 기존 회귀 조건도 유지된다.

@@ -3,13 +3,14 @@ import type { BlogPost } from "../lib/blog/types";
 import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
 import { buildEvidenceSnapshot } from "../lib/content-coverage/evidence";
 import conceptReviewSeedJson from "../lib/content-coverage/generated/concept-review-seed.json";
+import conceptReviewBaselineJson from "../lib/content-coverage/generated/concept-review-baseline.json";
 import retrievalReviewBaselineJson from "../lib/content-coverage/generated/retrieval-review-baseline.json";
 import { RETRIEVAL_REVIEW_SEED } from "../lib/content-coverage/generated/retrieval-review-seed";
 import { buildLexicalBaseline } from "../lib/content-coverage/lexical-retrieval";
 import { applyRetrievalReviewBaseline, buildRetrievalReviewItems, createRetrievalReviewFile, evaluateRetrievalReview, summarizeRetrievalReviewReasons, type RetrievalReviewBaseline } from "../lib/content-coverage/retrieval-evaluation";
 import { COVERAGE_TOPIC_SPECS, validateCoverageTopicSpecs } from "../lib/content-coverage/topic-specs";
 import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib/content-coverage/types";
-import type { ConceptReviewSeed } from "../lib/content-coverage/concept-review";
+import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBaseline, type ConceptReviewSeed } from "../lib/content-coverage/concept-review";
 import { TREATMENT_DETAILS } from "../lib/treatments";
 import { cosineSimilarity, formatEmbeddingSearchDocument, formatEmbeddingSearchQuery } from "../lib/gemini-embeddings";
 
@@ -87,13 +88,43 @@ assert.equal(reasonSummary.overall["adjacent-topic"], 19, "주요 오탐 사유 
 assert.equal(reasonSummary.overall["required-concept"], 17, "핵심 개념 사유 집계가 달라졌습니다.");
 
 const conceptReviewSeed = conceptReviewSeedJson as unknown as ConceptReviewSeed;
-assert.equal(conceptReviewSeed.items.length, 28, "개념 검토 후보 수가 달라졌습니다.");
+assert.equal(conceptReviewSeed.items.length, 30, "개념 검토 후보 수가 달라졌습니다.");
 assert.equal(new Set(conceptReviewSeed.items.map((item) => item.id)).size, conceptReviewSeed.items.length, "개념 검토 후보 ID가 중복됩니다.");
 assert.equal(conceptReviewSeed.items.every((item) => item.evidenceLevel !== "discovery-only"), true, "탐색 전용 요약문이 개념 검토 seed에 포함되면 안 됩니다.");
-assert.equal(conceptReviewSeed.items.filter((item) => item.topicReviewLabel != null).length, 13, "기존 주제 라벨 연결 수가 달라졌습니다.");
-assert.equal(conceptReviewSeed.items.reduce((sum, item) => sum + item.conceptIds.length, 0), 61, "개념 판정 항목 수가 달라졌습니다.");
+assert.equal(conceptReviewSeed.items.filter((item) => item.topicReviewLabel != null).length, 14, "기존 주제 라벨 연결 수가 달라졌습니다.");
+assert.equal(conceptReviewSeed.items.reduce((sum, item) => sum + item.conceptIds.length, 0), 64, "개념 판정 항목 수가 달라졌습니다.");
 assert.equal(conceptReviewSeed.items.every((item) => item.conceptIds.length > 0
-  && item.conceptIds.every((conceptId) => Object.hasOwn(item.conceptLabels, conceptId) && item.conceptLabels[conceptId] == null)), true, "개념 검토 초기 라벨 계약이 올바르지 않습니다.");
+  && item.conceptIds.every((conceptId) => Object.hasOwn(item.conceptLabels, conceptId)
+    && item.conceptLabels[conceptId] == null
+    && Object.hasOwn(item.conceptRetrieval, conceptId))), true, "개념 검토 초기 라벨 계약이 올바르지 않습니다.");
+assert.equal(conceptReviewSeed.items.every((item) => Object.values(item.conceptRetrieval).every((retrieval) =>
+  retrieval.rank == null || (retrieval.rank >= 1 && retrieval.rank <= 5 && retrieval.evidenceLevel != null && retrieval.rerankScore != null))), true, "개념별 검색 순위 계약이 올바르지 않습니다.");
+const reviewedConcepts = applyConceptReviewBaseline(
+  conceptReviewSeed,
+  conceptReviewBaselineJson as unknown as ConceptReviewBaseline,
+);
+const conceptEvaluation = evaluateConceptReview(COVERAGE_TOPIC_SPECS, reviewedConcepts);
+assert.equal(conceptEvaluation.conceptJudgments, 64, "개념 기준선 판정 수가 달라졌습니다.");
+assert.deepEqual(
+  Object.fromEntries(["supports", "partial", "not-supported"].map((label) => [label, reviewedConcepts.items.reduce(
+    (sum, item) => sum + Object.values(item.conceptLabels).filter((value) => value === label).length,
+    0,
+  )])),
+  { supports: 38, partial: 25, "not-supported": 1 },
+  "개념 기준선 라벨 분포가 달라졌습니다.",
+);
+assert.equal(conceptEvaluation.verdict, "fail", "필수 개념이 비어 있는 현재 shadow 검색은 승격되면 안 됩니다.");
+assert.deepEqual(
+  Object.fromEntries(conceptEvaluation.topics.map((topic) => [topic.topicSpecId, topic.missingRequiredConceptIds])),
+  {
+    "orthodontics-pain-risks": ["root-resorption"],
+    "dental-cost-insurance": ["private-insurance"],
+    "front-teeth-treatment": [],
+    "pediatric-dental-trauma": [],
+    "oral-hygiene": [],
+  },
+  "검색되지 않은 필수 개념 목록이 달라졌습니다.",
+);
 
 console.log(JSON.stringify({
   ok: true,
