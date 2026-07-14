@@ -26,7 +26,7 @@ export interface RetrievalReviewItem {
   foundByLexical: boolean;
   excerpt: string;
   label: RetrievalReviewLabel;
-  reasonTags: string[];
+  reasonTags: RetrievalReasonTag[];
   notes: string;
 }
 
@@ -37,6 +37,23 @@ export interface RetrievalReviewFile {
   generatedAt: string;
   instructions: string;
   items: RetrievalReviewItem[];
+}
+
+export interface RetrievalReviewBaselineItem {
+  id: string;
+  label: Exclude<RetrievalReviewLabel, null>;
+  reasonTags: RetrievalReasonTag[];
+  notes: string;
+}
+
+export interface RetrievalReviewBaseline {
+  schemaVersion: "retrieval-review-baseline-v1";
+  reviewSchemaVersion: RetrievalReviewFile["schemaVersion"];
+  model: string;
+  dimensions: number;
+  candidateGeneratedAt: string;
+  reviewedAt: string;
+  items: RetrievalReviewBaselineItem[];
 }
 
 export const RETRIEVAL_QUALITY_THRESHOLDS = {
@@ -121,6 +138,69 @@ export function evaluateRetrievalReview(
     labeled: file.items.filter((item) => item.label != null).length,
     remaining: file.items.filter((item) => item.label == null).length,
     topics,
+  };
+}
+
+export function applyRetrievalReviewBaseline(
+  seed: RetrievalReviewFile,
+  baseline: RetrievalReviewBaseline,
+): RetrievalReviewFile {
+  if (baseline.schemaVersion !== "retrieval-review-baseline-v1") throw new Error("지원하지 않는 검색 검토 기준선입니다.");
+  if (baseline.reviewSchemaVersion !== seed.schemaVersion) throw new Error("검색 검토 스키마가 기준선과 다릅니다.");
+  if (baseline.model !== seed.model || baseline.dimensions !== seed.dimensions) throw new Error("임베딩 모델 또는 차원이 기준선과 다릅니다.");
+  if (baseline.candidateGeneratedAt !== seed.generatedAt) throw new Error("검색 후보 스냅샷이 기준선과 다릅니다.");
+
+  const validTags = new Set<string>(RETRIEVAL_REASON_TAGS);
+  const labels = new Map<string, RetrievalReviewBaselineItem>();
+  for (const item of baseline.items) {
+    if (labels.has(item.id)) throw new Error(`기준선 항목 ID가 중복됩니다: ${item.id}`);
+    if (!item.label || !["relevant", "partial", "irrelevant"].includes(item.label)) throw new Error(`기준선 라벨이 올바르지 않습니다: ${item.id}`);
+    if (!item.reasonTags.every((tag) => validTags.has(tag))) throw new Error(`기준선 사유 태그가 올바르지 않습니다: ${item.id}`);
+    labels.set(item.id, item);
+  }
+  if (labels.size !== seed.items.length) throw new Error(`기준선 항목 수가 후보와 다릅니다: ${labels.size}/${seed.items.length}`);
+
+  return {
+    ...seed,
+    items: seed.items.map((item) => {
+      const saved = labels.get(item.id);
+      if (!saved) throw new Error(`기준선에 후보가 없습니다: ${item.id}`);
+      return { ...item, label: saved.label, reasonTags: saved.reasonTags, notes: saved.notes };
+    }),
+  };
+}
+
+export function summarizeRetrievalReviewReasons(file: RetrievalReviewFile) {
+  const labels = ["relevant", "partial", "irrelevant"] as const;
+  const labeled = file.items.filter((item): item is RetrievalReviewItem & { label: Exclude<RetrievalReviewLabel, null> } => item.label != null);
+  const summarizeTags = (items: RetrievalReviewItem[]) => Object.fromEntries(
+    RETRIEVAL_REASON_TAGS
+      .map((tag) => [tag, items.filter((item) => item.reasonTags.includes(tag)).length] as const)
+      .filter((entry) => entry[1] > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+  );
+  const topicIds = [...new Set(file.items.map((item) => item.topicSpecId))];
+  const pairCounts = new Map<string, number>();
+  for (const item of labeled) {
+    for (let left = 0; left < item.reasonTags.length; left += 1) {
+      for (let right = left + 1; right < item.reasonTags.length; right += 1) {
+        const key = [item.reasonTags[left], item.reasonTags[right]].sort().join(" + ");
+        pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  return {
+    labeled: labeled.length,
+    overall: summarizeTags(labeled),
+    byLabel: Object.fromEntries(labels.map((label) => [label, summarizeTags(labeled.filter((item) => item.label === label))])),
+    byTopic: Object.fromEntries(topicIds.map((topicSpecId) => {
+      const items = labeled.filter((item) => item.topicSpecId === topicSpecId);
+      return [topicSpecId, {
+        labels: Object.fromEntries(labels.map((label) => [label, items.filter((item) => item.label === label).length])),
+        tags: summarizeTags(items),
+      }];
+    })),
+    tagPairs: Object.fromEntries([...pairCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))),
   };
 }
 

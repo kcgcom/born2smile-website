@@ -22,6 +22,11 @@ interface EmbeddingCacheFile {
   vectors: Record<string, number[]>;
 }
 
+export interface SemanticSearchVectorUnit {
+  document: ContentDocument;
+  evidence: EvidenceUnit;
+}
+
 export interface SemanticEvidenceCandidate {
   topicSpecId: string;
   documentId: string;
@@ -87,21 +92,38 @@ function candidateUnits(documents: ContentDocument[]): Array<{ document: Content
   }));
 }
 
+export async function buildSemanticSearchVectors(
+  queries: string[],
+  documents: ContentDocument[],
+  options: { cachePath?: string } = {},
+): Promise<{
+  units: SemanticSearchVectorUnit[];
+  queryVectors: number[][];
+  documentVectors: number[][];
+  cache: { hits: number; misses: number };
+}> {
+  const cachePath = options.cachePath ?? DEFAULT_CACHE_PATH;
+  const units = candidateUnits(documents);
+  const queryTexts = queries.map(formatEmbeddingSearchQuery);
+  const allResult = await embedWithCache([...queryTexts, ...units.map((item) => item.formatted)], cachePath);
+  return {
+    units: units.map(({ document, evidence }) => ({ document, evidence })),
+    queryVectors: allResult.vectors.slice(0, queries.length),
+    documentVectors: allResult.vectors.slice(queries.length),
+    cache: { hits: allResult.hits, misses: allResult.misses },
+  };
+}
+
 export async function buildSemanticBaseline(
   specs: CoverageTopicSpec[],
   documents: ContentDocument[],
   options: { limit?: number; cachePath?: string } = {},
 ): Promise<{ candidates: Record<string, SemanticEvidenceCandidate[]>; cache: { hits: number; misses: number } }> {
   const limit = options.limit ?? 10;
-  const cachePath = options.cachePath ?? DEFAULT_CACHE_PATH;
-  const units = candidateUnits(documents);
-  const queryTexts = specs.map((spec) => formatEmbeddingSearchQuery(topicQuery(spec)));
-  const allResult = await embedWithCache([...queryTexts, ...units.map((item) => item.formatted)], cachePath);
-  const queryVectors = allResult.vectors.slice(0, queryTexts.length);
-  const documentVectors = allResult.vectors.slice(queryTexts.length);
+  const search = await buildSemanticSearchVectors(specs.map(topicQuery), documents, { cachePath: options.cachePath });
   const candidates: Record<string, SemanticEvidenceCandidate[]> = {};
   specs.forEach((spec, specIndex) => {
-    const ranked = units.map((item, unitIndex) => {
+    const ranked = search.units.map((item, unitIndex) => {
       const placement = item.evidence.placements.find((candidate) => candidate.visible && candidate.indexable) ?? null;
       return {
         topicSpecId: spec.id,
@@ -112,7 +134,7 @@ export async function buildSemanticBaseline(
         surface: placement?.surface ?? null,
         role: item.evidence.role,
         headingPath: item.evidence.headingPath,
-        similarity: cosineSimilarity(queryVectors[specIndex], documentVectors[unitIndex]),
+        similarity: cosineSimilarity(search.queryVectors[specIndex], search.documentVectors[unitIndex]),
         excerpt: item.evidence.text.replace(/\s+/g, " ").trim().slice(0, 220),
       } satisfies SemanticEvidenceCandidate;
     }).sort((a, b) => b.similarity - a.similarity || a.documentId.localeCompare(b.documentId) || a.evidenceUnitId.localeCompare(b.evidenceUnitId));
@@ -128,6 +150,6 @@ export async function buildSemanticBaseline(
   });
   return {
     candidates,
-    cache: { hits: allResult.hits, misses: allResult.misses },
+    cache: search.cache,
   };
 }

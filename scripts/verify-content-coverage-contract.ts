@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import type { BlogPost } from "../lib/blog/types";
 import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
 import { buildEvidenceSnapshot } from "../lib/content-coverage/evidence";
-import { buildLexicalBaseline } from "../lib/content-coverage/lexical-retrieval";
-import { buildRetrievalReviewItems, createRetrievalReviewFile, evaluateRetrievalReview } from "../lib/content-coverage/retrieval-evaluation";
+import retrievalReviewBaselineJson from "../lib/content-coverage/generated/retrieval-review-baseline.json";
 import { RETRIEVAL_REVIEW_SEED } from "../lib/content-coverage/generated/retrieval-review-seed";
+import { buildLexicalBaseline } from "../lib/content-coverage/lexical-retrieval";
+import { applyRetrievalReviewBaseline, buildRetrievalReviewItems, createRetrievalReviewFile, evaluateRetrievalReview, summarizeRetrievalReviewReasons, type RetrievalReviewBaseline } from "../lib/content-coverage/retrieval-evaluation";
 import { COVERAGE_TOPIC_SPECS, validateCoverageTopicSpecs } from "../lib/content-coverage/topic-specs";
 import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib/content-coverage/types";
 import { TREATMENT_DETAILS } from "../lib/treatments";
@@ -15,6 +16,8 @@ assert.equal(COVERAGE_TOPIC_SPECS.length, 5, "대표 주제 명세는 초기 검
 assert.equal(new Set(COVERAGE_TOPIC_SPECS.map((spec) => spec.searchTopicKey)).size, COVERAGE_TOPIC_SPECS.length);
 assert.equal(COVERAGE_TOPIC_SPECS.every((spec) => spec.concepts.some((concept) => concept.importance === "required")), true);
 assert.equal(COVERAGE_TOPIC_SPECS.every((spec) => spec.actionPolicy.allowedActions.includes("no-action")), true);
+assert.equal(COVERAGE_TOPIC_SPECS.every((spec) => spec.retrievalExclusionPhrases && spec.retrievalExclusionPhrases.length > 0), true, "개념 검색용 제외 표현이 필요합니다.");
+assert.equal(COVERAGE_TOPIC_SPECS.every((spec) => spec.concepts.every((concept) => concept.retrievalHints && concept.retrievalHints.identityPhrases.length > 0)), true, "모든 개념에 검색 식별 표현이 필요합니다.");
 
 const posts = BLOG_POSTS_SNAPSHOT.filter((post) => post.published) as unknown as BlogPost[];
 const generatedAt = "2026-01-01T00:00:00.000Z";
@@ -68,6 +71,18 @@ assert.equal(RETRIEVAL_REVIEW_SEED.items.length, 50, "관리자 검토 후보는
 assert.equal(new Set(RETRIEVAL_REVIEW_SEED.items.map((item) => item.id)).size, 50, "관리자 검토 후보 ID가 중복됩니다.");
 assert.equal(RETRIEVAL_REVIEW_SEED.items.every((item) => item.label == null && item.reasonTags.length === 0), true, "코드에 저장한 검토 후보에는 사람의 라벨이 포함되면 안 됩니다.");
 assert.equal(RETRIEVAL_REVIEW_SEED.items.every((item) => item.headingPath.length > 0 && item.excerpt.trim().length > 0), true, "관리자 검토에 필요한 문맥이 누락되었습니다.");
+const retrievalBaseline = retrievalReviewBaselineJson as unknown as RetrievalReviewBaseline;
+const reviewedBaseline = applyRetrievalReviewBaseline(RETRIEVAL_REVIEW_SEED, retrievalBaseline);
+const reasonSummary = summarizeRetrievalReviewReasons(reviewedBaseline);
+assert.equal(reviewedBaseline.items.every((item) => item.label != null), true, "검색 검토 기준선의 50개 후보가 모두 라벨링되어야 합니다.");
+assert.equal(reviewedBaseline.items.every((item) => item.notes === item.notes.trim() && !item.notes.startsWith("사전검토:")), true, "기준선 메모에는 상태 접두어나 불필요한 공백이 없어야 합니다.");
+assert.deepEqual(
+  Object.fromEntries(["relevant", "partial", "irrelevant"].map((label) => [label, reviewedBaseline.items.filter((item) => item.label === label).length])),
+  { relevant: 17, partial: 15, irrelevant: 18 },
+  "검색 검토 기준선의 라벨 분포가 달라졌습니다.",
+);
+assert.equal(reasonSummary.overall["adjacent-topic"], 19, "주요 오탐 사유 집계가 달라졌습니다.");
+assert.equal(reasonSummary.overall["required-concept"], 17, "핵심 개념 사유 집계가 달라졌습니다.");
 
 console.log(JSON.stringify({
   ok: true,

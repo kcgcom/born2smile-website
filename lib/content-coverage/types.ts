@@ -25,6 +25,10 @@ export interface CoverageConcept {
   importance: "required" | "recommended";
   weight: number;
   criteria: CoverageCriterion[];
+  retrievalHints?: {
+    identityPhrases: string[];
+    contextPhrases?: string[];
+  };
   reviewPolicy?: {
     requiresClinicalReview: boolean;
     reasons: string[];
@@ -52,6 +56,7 @@ export interface CoverageTopicSpec {
   userQuestions: string[];
   concepts: CoverageConcept[];
   exclusions: string[];
+  retrievalExclusionPhrases?: string[];
   applicableSurfaces: ContentSurface[];
   actionPolicy: TopicActionPolicy;
   reviewPolicy: {

@@ -14,6 +14,7 @@
     "verify-content-coverage-contract": "tsx scripts/verify-content-coverage-contract.ts",
     "report-content-coverage-baseline": "tsx scripts/report-content-coverage-baseline.ts",
     "report-content-coverage-semantic": "tsx scripts/report-content-coverage-semantic.ts",
+    "report-content-coverage-concept-shadow": "tsx scripts/report-content-coverage-concept-shadow.ts",
     "generate-content-coverage-retrieval-review": "tsx scripts/generate-content-coverage-retrieval-review.ts",
     "evaluate-content-coverage-retrieval": "tsx scripts/evaluate-content-coverage-retrieval.ts",
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",
