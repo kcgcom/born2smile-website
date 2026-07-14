@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import type { BlogPost } from "../lib/blog/types";
 import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
 import { buildEvidenceSnapshot } from "../lib/content-coverage/evidence";
+import conceptReviewSeedJson from "../lib/content-coverage/generated/concept-review-seed.json";
 import retrievalReviewBaselineJson from "../lib/content-coverage/generated/retrieval-review-baseline.json";
 import { RETRIEVAL_REVIEW_SEED } from "../lib/content-coverage/generated/retrieval-review-seed";
 import { buildLexicalBaseline } from "../lib/content-coverage/lexical-retrieval";
 import { applyRetrievalReviewBaseline, buildRetrievalReviewItems, createRetrievalReviewFile, evaluateRetrievalReview, summarizeRetrievalReviewReasons, type RetrievalReviewBaseline } from "../lib/content-coverage/retrieval-evaluation";
 import { COVERAGE_TOPIC_SPECS, validateCoverageTopicSpecs } from "../lib/content-coverage/topic-specs";
 import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib/content-coverage/types";
+import type { ConceptReviewSeed } from "../lib/content-coverage/concept-review";
 import { TREATMENT_DETAILS } from "../lib/treatments";
 import { cosineSimilarity, formatEmbeddingSearchDocument, formatEmbeddingSearchQuery } from "../lib/gemini-embeddings";
 
@@ -83,6 +85,15 @@ assert.deepEqual(
 );
 assert.equal(reasonSummary.overall["adjacent-topic"], 19, "주요 오탐 사유 집계가 달라졌습니다.");
 assert.equal(reasonSummary.overall["required-concept"], 17, "핵심 개념 사유 집계가 달라졌습니다.");
+
+const conceptReviewSeed = conceptReviewSeedJson as unknown as ConceptReviewSeed;
+assert.equal(conceptReviewSeed.items.length, 28, "개념 검토 후보 수가 달라졌습니다.");
+assert.equal(new Set(conceptReviewSeed.items.map((item) => item.id)).size, conceptReviewSeed.items.length, "개념 검토 후보 ID가 중복됩니다.");
+assert.equal(conceptReviewSeed.items.every((item) => item.evidenceLevel !== "discovery-only"), true, "탐색 전용 요약문이 개념 검토 seed에 포함되면 안 됩니다.");
+assert.equal(conceptReviewSeed.items.filter((item) => item.topicReviewLabel != null).length, 13, "기존 주제 라벨 연결 수가 달라졌습니다.");
+assert.equal(conceptReviewSeed.items.reduce((sum, item) => sum + item.conceptIds.length, 0), 61, "개념 판정 항목 수가 달라졌습니다.");
+assert.equal(conceptReviewSeed.items.every((item) => item.conceptIds.length > 0
+  && item.conceptIds.every((conceptId) => Object.hasOwn(item.conceptLabels, conceptId) && item.conceptLabels[conceptId] == null)), true, "개념 검토 초기 라벨 계약이 올바르지 않습니다.");
 
 console.log(JSON.stringify({
   ok: true,

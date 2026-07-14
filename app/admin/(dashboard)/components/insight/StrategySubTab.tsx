@@ -103,6 +103,9 @@ export function StrategySubTab() {
               <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review">
                 임베딩 근거 검토
               </AdminActionLink>
+              <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review">
+                개념별 근거 검토
+              </AdminActionLink>
               <AdminActionButton
                 tone="dark"
                 disabled={startingSync || syncIsActive}

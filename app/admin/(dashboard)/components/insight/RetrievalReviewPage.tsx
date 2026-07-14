@@ -89,6 +89,7 @@ export function RetrievalReviewPage() {
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">후보 문단이 주제를 실제로 뒷받침하는지 판단합니다. 유사도는 참고값이며 본문과 주제 범위를 우선해 주세요.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy"><ArrowLeft className="h-4 w-4" />기회 분석으로</AdminActionLink>
+              <AdminActionLink tone="primary" href="/admin/content/strategy/concept-review">개념별 근거 검토</AdminActionLink>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
