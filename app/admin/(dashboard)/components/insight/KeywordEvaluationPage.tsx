@@ -115,7 +115,7 @@ export function KeywordEvaluationPage() {
             <AdminPill tone="white">추천 모델 평가</AdminPill>
             <h1 className="mt-3 text-xl font-bold">연관 키워드 300개를 라벨링합니다.</h1>
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">자동 판단을 출발점으로 관련성·활용 목적·최종 조치를 확인하세요. 이 결과는 평가용이며 현재 후보와 택소노미를 직접 변경하지 않습니다.</p>
-            <div className="mt-4 flex flex-wrap gap-2"><AdminActionLink tone="dark" href="/admin/content/trends"><ArrowLeft className="h-4 w-4" />검색 트렌드로</AdminActionLink>{stats.confirmable && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
+            <div className="mt-4 flex flex-wrap gap-2"><AdminActionLink tone="dark" href="/admin/content/trends"><ArrowLeft className="h-4 w-4" />검색 트렌드로</AdminActionLink><AdminActionLink tone="primary" href="/admin/content/trends/keyword-evaluation/shadow-audit">독립 감사 100개<ArrowRight className="h-4 w-4" /></AdminActionLink>{stats.confirmable && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
               if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 이미 직접 저장한 항목은 유지됩니다.`)) return;
               const result = await confirmation.mutate(ENDPOINT, "POST", { action: "confirm-pre-reviews" });
               if (!result.error && result.data) setSavedMessage(`사전 검토 ${result.data.confirmed}개를 확정했습니다.${result.data.preserved ? ` 직접 검토 ${result.data.preserved}개는 유지했습니다.` : ""}`);

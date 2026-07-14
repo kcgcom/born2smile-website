@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getActiveKeywordTaxonomy, getKeywordTaxonomyByVersion } from "../lib/admin-keyword-taxonomy";
@@ -13,6 +14,7 @@ import {
   type ShadowReference,
 } from "../lib/keyword-candidate-shadow";
 import { embedKeywordShadowTexts } from "../lib/keyword-candidate-shadow-embeddings";
+import { publishKeywordCandidateShadowAudit } from "../lib/keyword-candidate-shadow-audit-store";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 
 const OUTPUT_PATH = path.resolve(process.cwd(), ".tmp/keyword-candidate-shadow-full.json");
@@ -43,6 +45,10 @@ function rankScore(result: {
 
 function normalizeKeyword(keyword: string): string {
   return keyword.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+}
+
+function auditId(snapshotId: string, keyword: string): string {
+  return createHash("sha1").update(`${snapshotId}:${normalizeKeyword(keyword)}`).digest("hex");
 }
 
 async function main() {
@@ -131,9 +137,10 @@ async function main() {
   const countBy = <T extends string>(values: T[]) => Object.fromEntries(
     [...new Set(values)].sort().map((value) => [value, values.filter((candidate) => candidate === value).length]),
   );
+  const generatedAt = new Date().toISOString();
   const output = {
     engine: KEYWORD_SHADOW_ENGINE_VERSION,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     source: {
       evaluationSnapshotId: evaluation.snapshotId,
       snapshotCreatedAt: snapshot.created_at,
@@ -160,6 +167,33 @@ async function main() {
     topByPurpose,
     results,
   };
+  let publication: { published: number; preservedLabels: number } | null = null;
+  if (process.argv.includes("--publish")) {
+    publication = await publishKeywordCandidateShadowAudit({
+      engineVersion: KEYWORD_SHADOW_ENGINE_VERSION,
+      snapshotId: evaluation.snapshotId,
+      snapshotCreatedAt: snapshot.created_at,
+      taxonomyVersion: evaluation.taxonomyVersion,
+      generatedAt,
+      items: auditQueue.map((item) => ({
+        id: auditId(evaluation.snapshotId, item.keyword),
+        keyword: item.keyword,
+        monthlyVolume: item.monthlyVolume,
+        purposeRank: topByPurpose[item.purpose].findIndex((candidate) => candidate.keyword === item.keyword) + 1,
+        predictedRelevance: "relevant" as const,
+        predictedPurpose: item.purpose,
+        predictedAction: item.action,
+        relevanceConfidence: item.relevanceConfidence,
+        purposeConfidence: item.purposeConfidence,
+        taxonomyCandidates: item.taxonomyCandidates,
+      })).sort((a, b) => a.id.localeCompare(b.id)),
+      taxonomy: taxonomyState.taxonomy.map((category) => ({
+        slug: category.slug,
+        label: category.category,
+        subgroups: category.subGroups.map((subgroup) => subgroup.name),
+      })),
+    });
+  }
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(output, null, 2)}\n`);
   console.log(JSON.stringify({
@@ -167,6 +201,7 @@ async function main() {
     embedding: output.embedding,
     summary: output.summary,
     topPurposeCounts: Object.fromEntries(Object.entries(topByPurpose).map(([purpose, items]) => [purpose, items.length])),
+    publication,
     output: path.relative(process.cwd(), OUTPUT_PATH),
   }, null, 2));
 }

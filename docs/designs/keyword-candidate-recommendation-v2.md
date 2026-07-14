@@ -34,7 +34,9 @@
 
 `pnpm exec tsx scripts/evaluate-keyword-candidate-shadow.ts`는 확정된 300개를 leave-one-out 방식으로 평가해 현행 방식과 그림자 추천을 비교한다. 이 점수는 모델·규칙 보정에 사용한 평가 세트의 교차검증 결과이므로 독립 검증 점수로 간주하지 않는다.
 
-`pnpm exec tsx scripts/run-keyword-candidate-shadow.ts`는 평가 세트와 동일한 SearchAd 스냅샷의 전체 연관 키워드에 그림자 추천을 실행하고 `.tmp/keyword-candidate-shadow-full.json`을 만든다. 운영 후보와 택소노미는 변경하지 않는다. 이미 라벨링한 300개는 학습 참조로 사용하되 독립 감사 큐에서는 제외하고, 목적별 상위 20개씩 최대 100개를 별도 `auditQueue`로 보존한다.
+`pnpm exec tsx scripts/run-keyword-candidate-shadow.ts`는 평가 세트와 동일한 SearchAd 스냅샷의 전체 연관 키워드에 그림자 추천을 실행하고 `.tmp/keyword-candidate-shadow-full.json`을 만든다. 운영 후보와 택소노미는 변경하지 않는다. 이미 라벨링한 300개는 학습 참조로 사용하되 독립 감사 큐에서는 제외하고, 목적별 상위 20개씩 최대 100개를 별도 `auditQueue`로 보존한다. `--publish` 옵션을 붙이면 이 감사 큐만 관리자 검수용 Supabase 캐시에 게시한다.
+
+독립 감사 화면(`/admin/content/trends/keyword-evaluation/shadow-audit`)은 사람의 최초 판단을 저장하기 전까지 모델 예측을 숨긴다. 저장 후에는 예상 목적·조치·분류 후보를 공개해 불일치 사례를 확인할 수 있다.
 
 ### 4. 전환 기준
 
