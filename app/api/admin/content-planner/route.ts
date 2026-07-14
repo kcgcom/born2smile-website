@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { createPlannerItemSchema, mapPlannerRow } from "@/lib/content-planner";
+import { contentCoverageActionKey, loadContentReevaluationStates, withContentReevaluationState } from "@/lib/content-coverage/reevaluation-store";
 
 const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" } as const;
 
@@ -16,7 +17,15 @@ export async function GET(request: NextRequest) {
       .select("*")
       .order("updated_at", { ascending: false });
     if (error) throw error;
-    return Response.json({ data: (data ?? []).map(mapPlannerRow) }, { headers: HEADERS });
+    const items = (data ?? []).map(mapPlannerRow);
+    const states = await loadContentReevaluationStates(items.flatMap((item) => {
+      const actionKey = contentCoverageActionKey(item);
+      return actionKey ? [actionKey] : [];
+    }));
+    return Response.json({ data: items.map((item) => {
+      const actionKey = contentCoverageActionKey(item);
+      return withContentReevaluationState(item, actionKey ? states.get(actionKey) ?? null : null);
+    }) }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(

@@ -23,7 +23,7 @@ type WorkflowResponse = {
     latestAdminReviewAt: string | null;
   };
   recommendations: ActionWorkflowItem[];
-  stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number };
+  stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number; reevaluationPending: number };
 };
 
 const ACTION_LABELS: Record<ContentActionType, string> = {
@@ -104,11 +104,12 @@ export function ContentCoverageActionsPage() {
               <AdminActionLink tone="primary" href="/admin/content/planner">콘텐츠 플래너</AdminActionLink>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             <Metric label="검토 대기" value={query.data.stats.reviewsPending} />
             <Metric label="전환 가능" value={query.data.stats.ready} />
             <Metric label="차단" value={query.data.stats.blocked} />
             <Metric label="플래너 등록" value={query.data.stats.promoted} />
+            <Metric label="재평가 대기" value={query.data.stats.reevaluationPending} />
           </div>
         </div>
         <p className="mt-5 text-xs text-slate-400">
@@ -173,7 +174,7 @@ function Section({ icon, title, description, count, children }: { icon: React.Re
 }
 
 function ContentActionCard({ item, loading, onPromote }: { item: ActionWorkflowItem; loading: boolean; onPromote: () => void }) {
-  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.plannerItem && <AdminActionLink tone="primary" href="/admin/content/planner">플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
+  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${item.reevaluationState.status === "awaiting-content-change" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-sky-200 bg-sky-50 text-sky-900"}`}><strong>{item.reevaluationState.status === "awaiting-content-change" ? "콘텐츠 변경 확인 필요" : "근거 재평가 대기"}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
 }
 
 function ActionHeader({ item }: { item: ActionWorkflowItem }) {

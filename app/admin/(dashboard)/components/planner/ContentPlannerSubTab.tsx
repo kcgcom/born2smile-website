@@ -7,6 +7,7 @@ import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/A
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { getKeywordCategoryLabel, type KeywordCategorySlug } from "@/lib/admin-naver-datalab-keywords";
 import type { ContentPlannerItem, PlannerStatus } from "@/lib/content-planner";
+import type { ContentReevaluationState } from "@/lib/content-coverage/reevaluation-store";
 import { isBlogCategorySlug } from "@/lib/blog";
 import type { BlogBlock, BlogTag } from "@/lib/blog/types";
 import { AdminErrorState } from "../AdminErrorState";
@@ -118,6 +119,20 @@ function itemMeta(item: ContentPlannerItem): { valueScore: number | null; effort
   const evaluation = item.sourceSnapshot.evaluation as { actions?: Array<{ actionType?: string; valueScore?: number | null }> } | undefined;
   const action = evaluation?.actions?.find((candidate) => candidate.actionType === "blog");
   return { valueScore: typeof action?.valueScore === "number" ? action.valueScore : null, effort: "약 90분" };
+}
+
+function itemReevaluation(item: ContentPlannerItem): ContentReevaluationState | null {
+  const value = item.sourceSnapshot.reevaluation;
+  if (!value || typeof value !== "object") return null;
+  const state = value as Partial<ContentReevaluationState>;
+  return state.schemaVersion === "content-reevaluation-v1" && typeof state.status === "string"
+    ? value as ContentReevaluationState : null;
+}
+
+function reevaluationLabel(state: ContentReevaluationState): string {
+  if (state.status === "awaiting-content-change") return "콘텐츠 변경 확인 필요";
+  if (state.status === "pending-evidence-refresh") return "근거 재평가 대기";
+  return "재평가 취소";
 }
 
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {
@@ -276,7 +291,16 @@ export function ContentPlannerSubTab({
   const updateItem = async (item: ContentPlannerItem, updates: { status?: PlannerStatus; dueDate?: string | null }) => {
     setSavingKey(item.id);
     const result = await mutate(`/api/admin/content-planner/${item.id}`, "PUT", updates);
-    if (!result.error) planner.refetch();
+    if (!result.error) {
+      planner.refetch();
+      const reevaluation = result.data ? itemReevaluation(result.data) : null;
+      if (updates.status === "published" && reevaluation) {
+        setNotice(reevaluation.status === "awaiting-content-change"
+          ? "완료 처리했지만 대상 콘텐츠 변경을 확인하지 못했습니다. 반영 내용을 확인해 주세요."
+          : "완료 처리하고 콘텐츠 근거 재평가를 요청했습니다.");
+        window.setTimeout(() => setNotice(null), 3500);
+      }
+    }
     setSavingKey(null);
   };
 
@@ -408,7 +432,8 @@ export function ContentPlannerSubTab({
           </button>
           {showCompleted && <div className="space-y-2">{completedItems.map((item) => {
             const meta = itemMeta(item);
-            return <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className="rounded-2xl p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-emerald-600">{STATUS_LABELS[item.itemType].published}</span><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs text-[var(--muted)]">{valueLabel(item.itemType)} {meta.valueScore != null ? `${meta.valueScore}점` : "평가 없음"}</span></div><h3 className="mt-1 truncate text-sm font-medium text-[var(--foreground)]">{item.title}</h3></div><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[item.itemType][status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select></div></AdminSurface>;
+            const reevaluation = itemReevaluation(item);
+            return <AdminSurface id={`planner-item-${item.id}`} key={item.id} tone="white" className="rounded-2xl p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-emerald-600">{STATUS_LABELS[item.itemType].published}</span><span className="text-xs text-[var(--muted)]">{getKeywordCategoryLabel(item.category as KeywordCategorySlug)}</span><span className="text-xs text-[var(--muted)]">{valueLabel(item.itemType)} {meta.valueScore != null ? `${meta.valueScore}점` : "평가 없음"}</span>{reevaluation && reevaluation.status !== "cancelled" && <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${reevaluation.status === "awaiting-content-change" ? "bg-amber-50 text-amber-800" : "bg-sky-50 text-sky-800"}`}>{reevaluationLabel(reevaluation)}</span>}</div><h3 className="mt-1 truncate text-sm font-medium text-[var(--foreground)]">{item.title}</h3>{reevaluation && reevaluation.status !== "cancelled" && <p className="mt-1 text-xs text-[var(--muted)]">{reevaluation.reason}</p>}</div><select aria-label={`${item.title} 상태`} value={item.status} disabled={savingKey === item.id} onChange={(event) => updateItem(item, { status: event.target.value as PlannerStatus })} className="min-h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">{BOARD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[item.itemType][status]}</option>)}<option value="deferred">보류</option><option value="dismissed">제외</option></select></div></AdminSurface>;
           })}</div>}
         </section>
       )}

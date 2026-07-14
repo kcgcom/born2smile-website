@@ -15,6 +15,9 @@ import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBa
 import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
 import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
 import { buildOperationalConceptReviewSnapshot } from "../lib/content-coverage/concept-review-store";
+import { calculateTargetEvidenceRevision } from "../lib/content-coverage/operational-evidence";
+import { buildContentReevaluationState } from "../lib/content-coverage/reevaluation-store";
+import type { ContentPlannerItem } from "../lib/content-planner";
 import { TREATMENT_DETAILS } from "../lib/treatments";
 import { cosineSimilarity, formatEmbeddingSearchDocument, formatEmbeddingSearchQuery } from "../lib/gemini-embeddings";
 
@@ -39,6 +42,37 @@ assert.equal(units.some((unit) => unit.role === "navigation"), true, "탐색용 
 const treatmentFaqs = units.filter((unit) => unit.documentId.startsWith("treatment:") && unit.kind === "faq");
 assert.equal(treatmentFaqs.every((unit) => unit.placements.some((placement) => placement.surface === "treatment-page") && unit.placements.some((placement) => placement.surface === "faq")), true, "진료 FAQ는 하나의 근거에 두 노출 위치를 가져야 합니다.");
 assert.equal(evidence.stats.duplicatePlacementCount, treatmentFaqs.length, "중복 노출 집계는 공유 FAQ 수와 일치해야 합니다.");
+const orthodonticsRevision = calculateTargetEvidenceRevision(evidence, "/treatments/orthodontics");
+assert.equal(typeof orthodonticsRevision, "string", "대상 페이지의 근거 리비전을 계산해야 합니다.");
+assert.equal(typeof calculateTargetEvidenceRevision(evidence, "/blog/prevention"), "string", "블로그 카테고리 경로는 하위 게시글 근거를 포함해야 합니다.");
+assert.equal(calculateTargetEvidenceRevision(evidence, "/not-found"), null, "근거가 없는 경로에 리비전을 만들면 안 됩니다.");
+const coveragePlannerItem: ContentPlannerItem = {
+  id: "planner-contract",
+  opportunityKey: "action-recommendation-v1:orthodontics-pain-risks:update-treatment-page",
+  itemType: "page",
+  title: "교정 페이지 보강",
+  category: "교정",
+  targetPage: "/treatments/orthodontics",
+  status: "published",
+  priority: "now",
+  rationale: "계약 검증",
+  brief: {},
+  sourceSnapshot: {
+    schemaVersion: "action-recommendation-v1",
+    actionKey: "action-recommendation-v1:orthodontics-pain-risks:update-treatment-page",
+    topicSpecId: "orthodontics-pain-risks",
+    assessmentInputVersion: "concept-review-input-contract",
+    targetEvidenceRevision: orthodonticsRevision,
+  },
+  dueDate: null,
+  createdBy: "contract@example.com",
+  createdAt: generatedAt,
+  updatedAt: generatedAt,
+};
+assert.equal(buildContentReevaluationState(coveragePlannerItem, orthodonticsRevision, "contract@example.com", generatedAt).status,
+  "awaiting-content-change", "콘텐츠 리비전이 같으면 재평가를 시작하면 안 됩니다.");
+assert.equal(buildContentReevaluationState(coveragePlannerItem, "changed-revision", "contract@example.com", generatedAt).status,
+  "pending-evidence-refresh", "콘텐츠 리비전이 바뀌면 근거 재평가를 요청해야 합니다.");
 
 const lexical = buildLexicalBaseline(COVERAGE_TOPIC_SPECS, evidence.documents, 10);
 const repeatedLexical = buildLexicalBaseline(COVERAGE_TOPIC_SPECS, evidence.documents, 10);

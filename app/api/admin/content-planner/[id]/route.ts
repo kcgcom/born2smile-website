@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { mapPlannerRow, updatePlannerItemSchema } from "@/lib/content-planner";
+import { cancelContentReevaluation, requestContentReevaluation, withContentReevaluationState } from "@/lib/content-coverage/reevaluation-store";
 
 const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" } as const;
 
@@ -37,7 +38,11 @@ export async function PUT(
       .select("*")
       .single();
     if (error) throw error;
-    return Response.json({ data: mapPlannerRow(data) }, { headers: HEADERS });
+    const item = mapPlannerRow(data);
+    const reevaluation = parsed.data.status === "published"
+      ? await requestContentReevaluation(item, auth.email)
+      : parsed.data.status !== undefined ? await cancelContentReevaluation(item, auth.email) : null;
+    return Response.json({ data: withContentReevaluationState(item, reevaluation) }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(

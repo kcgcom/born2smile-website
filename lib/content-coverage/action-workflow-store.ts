@@ -3,6 +3,8 @@ import { mapPlannerRow } from "../content-planner";
 import { getSupabaseAdmin } from "../supabase-admin";
 import { ACTION_RECOMMENDATION_VERSION } from "./action-recommendation";
 import { getCurrentActionRecommendationReport } from "./action-recommendation-data";
+import { getCurrentTargetEvidenceRevision } from "./operational-evidence";
+import { loadContentReevaluationStates, type ContentReevaluationState } from "./reevaluation-store";
 import { COVERAGE_TOPIC_SPECS } from "./topic-specs";
 import type { ActionRecommendation, ContentActionType } from "./types";
 
@@ -25,6 +27,7 @@ export interface ActionWorkflowItem extends ActionRecommendation {
   canCompleteReview: boolean;
   canPromote: boolean;
   plannerItem: ContentPlannerItem | null;
+  reevaluationState: ContentReevaluationState | null;
 }
 
 const REVIEW_ACTIONS = new Set<ContentActionType>(["clinical-review", "evidence-review"]);
@@ -55,9 +58,11 @@ async function loadPlannerItems(actionKeys: string[]): Promise<Map<string, Conte
 
 export async function getActionWorkflowData() {
   const report = await getCurrentActionRecommendationReport();
-  const [saved, plannerItems] = await Promise.all([
+  const actionKeys = report.recommendations.map((item) => item.actionKey);
+  const [saved, plannerItems, reevaluationStates] = await Promise.all([
     loadSavedData(report.retrievalVersion, report.assessmentInput.version),
-    loadPlannerItems(report.recommendations.map((item) => item.actionKey)),
+    loadPlannerItems(actionKeys),
+    loadContentReevaluationStates(actionKeys),
   ]);
   const recommendations: ActionWorkflowItem[] = report.recommendations.map((recommendation) => {
     const reviewState = saved.reviewStates[recommendation.actionKey] ?? null;
@@ -73,6 +78,7 @@ export async function getActionWorkflowData() {
       canCompleteReview: REVIEW_ACTIONS.has(recommendation.actionType),
       canPromote: PROMOTABLE_ACTIONS.has(recommendation.actionType) && unresolvedBlockerKeys.length === 0 && plannerItem == null,
       plannerItem,
+      reevaluationState: reevaluationStates.get(recommendation.actionKey) ?? null,
     };
   });
   return {
@@ -86,6 +92,8 @@ export async function getActionWorkflowData() {
       ready: recommendations.filter((item) => item.canPromote).length,
       blocked: recommendations.filter((item) => PROMOTABLE_ACTIONS.has(item.actionType) && item.unresolvedBlockerKeys.length > 0).length,
       promoted: recommendations.filter((item) => item.plannerItem != null).length,
+      reevaluationPending: recommendations.filter((item) => item.reevaluationState != null
+        && item.reevaluationState.status !== "cancelled").length,
     },
   };
 }
@@ -141,6 +149,7 @@ export async function promoteActionToPlanner(actionKey: string, createdBy: strin
   if (item.plannerItem) return item.plannerItem;
   const spec = COVERAGE_TOPIC_SPECS.find((candidate) => candidate.id === item.topicSpecId);
   if (!spec) throw new Error("TOPIC_NOT_FOUND");
+  const targetEvidenceRevision = await getCurrentTargetEvidenceRevision(item.targetPath);
   const now = new Date().toISOString();
   const { data, error } = await getSupabaseAdmin().from("content_planner_items").upsert({
     opportunity_key: item.actionKey,
@@ -162,6 +171,8 @@ export async function promoteActionToPlanner(actionKey: string, createdBy: strin
       schemaVersion: workflow.schemaVersion,
       retrievalVersion: workflow.retrievalVersion,
       assessmentInputVersion: workflow.assessmentInput.version,
+      topicSpecId: item.topicSpecId,
+      targetEvidenceRevision,
       actionKey: item.actionKey,
     },
     due_date: null,
