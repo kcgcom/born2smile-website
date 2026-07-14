@@ -14,6 +14,7 @@ import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib
 import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBaseline, type ConceptReviewSeed } from "../lib/content-coverage/concept-review";
 import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
 import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
+import { buildOperationalConceptReviewSnapshot } from "../lib/content-coverage/concept-review-store";
 import { TREATMENT_DETAILS } from "../lib/treatments";
 import { cosineSimilarity, formatEmbeddingSearchDocument, formatEmbeddingSearchQuery } from "../lib/gemini-embeddings";
 
@@ -106,6 +107,38 @@ const reviewedConcepts = applyConceptReviewBaseline(
   conceptReviewSeed,
   conceptReviewBaselineJson as unknown as ConceptReviewBaseline,
 );
+const initialOperationalReview = buildOperationalConceptReviewSnapshot({});
+assert.equal(initialOperationalReview.review.items.every((item) => item.topicReviewLabel != null
+  && item.conceptIds.every((conceptId) => item.conceptLabels[conceptId] != null)), true, "운영 개념 검토는 검토 기준선으로 초기화되어야 합니다.");
+assert.equal(initialOperationalReview.input.source, "reviewed-baseline");
+const firstBaselineItem = (conceptReviewBaselineJson as unknown as ConceptReviewBaseline).items[0];
+const overriddenOperationalReview = buildOperationalConceptReviewSnapshot({
+  [firstBaselineItem.id]: {
+    topicReviewLabel: firstBaselineItem.topicReviewLabel,
+    conceptLabels: firstBaselineItem.conceptLabels,
+    notes: "관리자 운영 판정",
+    updatedAt: "2026-07-14T12:00:00.000Z",
+    updatedBy: "contract@example.com",
+  },
+});
+assert.equal(overriddenOperationalReview.input.source, "baseline-with-admin-overrides");
+assert.equal(overriddenOperationalReview.input.adminOverrideCount, 1);
+assert.equal(overriddenOperationalReview.input.latestAdminReviewAt, "2026-07-14T12:00:00.000Z");
+assert.equal(overriddenOperationalReview.input.version, initialOperationalReview.input.version, "판정 내용이 같으면 운영 입력 버전이 바뀌면 안 됩니다.");
+const firstConceptId = Object.keys(firstBaselineItem.conceptLabels)[0];
+const changedOperationalReview = buildOperationalConceptReviewSnapshot({
+  [firstBaselineItem.id]: {
+    topicReviewLabel: firstBaselineItem.topicReviewLabel,
+    conceptLabels: {
+      ...firstBaselineItem.conceptLabels,
+      [firstConceptId]: firstBaselineItem.conceptLabels[firstConceptId] === "supports" ? "partial" : "supports",
+    },
+    notes: "관리자 운영 판정 변경",
+    updatedAt: "2026-07-14T12:05:00.000Z",
+    updatedBy: "contract@example.com",
+  },
+});
+assert.notEqual(changedOperationalReview.input.version, initialOperationalReview.input.version, "판정 내용이 바뀌면 운영 입력 버전도 바뀌어야 합니다.");
 const conceptEvaluation = evaluateConceptReview(COVERAGE_TOPIC_SPECS, reviewedConcepts);
 assert.equal(conceptEvaluation.conceptJudgments, 64, "개념 기준선 판정 수가 달라졌습니다.");
 assert.deepEqual(
@@ -161,6 +194,8 @@ const unresolvedSatisfaction = assessConceptSatisfaction(COVERAGE_TOPIC_SPECS, r
 assert.equal(unresolvedSatisfaction.results.find((result) => result.conceptId === "root-resorption")?.provisionalStatus, "not-evaluated", "fallback 확인 없이 미검색 개념을 missing으로 확정하면 안 됩니다.");
 const actionRecommendations = buildActionRecommendations(COVERAGE_TOPIC_SPECS, conceptSatisfaction);
 assert.equal(actionRecommendations.recommendations.length, 8, "행동추천 수가 달라졌습니다.");
+assert.equal(actionRecommendations.assessmentInput.source, "static-evaluation", "계약 검증 추천은 고정 평가 입력을 사용해야 합니다.");
+assert.equal(actionRecommendations.assessmentInput.version.includes(conceptSatisfaction.retrievalVersion), true, "행동추천에 판정 입력 버전이 보존되어야 합니다.");
 assert.deepEqual(
   Object.fromEntries(["clinical-review", "update-treatment-page", "add-faq", "no-action"].map((actionType) => [
     actionType,

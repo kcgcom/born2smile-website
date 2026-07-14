@@ -32,12 +32,12 @@ const PROMOTABLE_ACTIONS = new Set<ContentActionType>([
   "create-blog", "update-blog", "update-treatment-page", "add-faq", "update-faq", "promote-faq-to-page", "refresh-content", "resolve-conflict",
 ]);
 
-function cacheKey(retrievalVersion: string) {
-  return `content-coverage:action-workflow:${ACTION_RECOMMENDATION_VERSION}:${retrievalVersion}`;
+function cacheKey(retrievalVersion: string, assessmentInputVersion: string) {
+  return `content-coverage:action-workflow:${ACTION_RECOMMENDATION_VERSION}:${retrievalVersion}:${assessmentInputVersion}`;
 }
 
-async function loadSavedData(retrievalVersion: string): Promise<SavedActionWorkflowData> {
-  const { data, error } = await getSupabaseAdmin().from("api_cache").select("data").eq("key", cacheKey(retrievalVersion)).maybeSingle();
+async function loadSavedData(retrievalVersion: string, assessmentInputVersion: string): Promise<SavedActionWorkflowData> {
+  const { data, error } = await getSupabaseAdmin().from("api_cache").select("data").eq("key", cacheKey(retrievalVersion, assessmentInputVersion)).maybeSingle();
   if (error) throw error;
   const saved = data?.data as Partial<SavedActionWorkflowData> | null;
   return { reviewStates: saved?.reviewStates && typeof saved.reviewStates === "object" ? saved.reviewStates : {} };
@@ -54,9 +54,11 @@ async function loadPlannerItems(actionKeys: string[]): Promise<Map<string, Conte
 }
 
 export async function getActionWorkflowData() {
-  const report = getCurrentActionRecommendationReport();
-  const saved = await loadSavedData(report.retrievalVersion);
-  const plannerItems = await loadPlannerItems(report.recommendations.map((item) => item.actionKey));
+  const report = await getCurrentActionRecommendationReport();
+  const [saved, plannerItems] = await Promise.all([
+    loadSavedData(report.retrievalVersion, report.assessmentInput.version),
+    loadPlannerItems(report.recommendations.map((item) => item.actionKey)),
+  ]);
   const recommendations: ActionWorkflowItem[] = report.recommendations.map((recommendation) => {
     const reviewState = saved.reviewStates[recommendation.actionKey] ?? null;
     const unresolvedBlockerKeys = recommendation.blockedBy
@@ -76,6 +78,7 @@ export async function getActionWorkflowData() {
   return {
     schemaVersion: report.schemaVersion,
     retrievalVersion: report.retrievalVersion,
+    assessmentInput: report.assessmentInput,
     recommendations,
     stats: {
       total: recommendations.length,
@@ -91,8 +94,10 @@ export async function saveActionReviewState(
   actionKey: string,
   input: { status: ActionReviewStatus; notes: string },
   updatedBy: string,
+  expectedAssessmentInputVersion: string,
 ) {
   const workflow = await getActionWorkflowData();
+  if (workflow.assessmentInput.version !== expectedAssessmentInputVersion) throw new Error("ASSESSMENT_INPUT_STALE");
   const recommendation = workflow.recommendations.find((item) => item.actionKey === actionKey);
   if (!recommendation) throw new Error("ACTION_NOT_FOUND");
   if (!REVIEW_ACTIONS.has(recommendation.actionType)) throw new Error("ACTION_NOT_REVIEWABLE");
@@ -102,11 +107,11 @@ export async function saveActionReviewState(
       item.plannerItem != null && item.blockedBy.some((blocker) => blocker.actionKey === actionKey && blocker.type === "must-complete-before"));
     if (promotedDependency) throw new Error("REVIEW_HAS_PROMOTED_DEPENDENCY");
   }
-  const saved = await loadSavedData(workflow.retrievalVersion);
+  const saved = await loadSavedData(workflow.retrievalVersion, workflow.assessmentInput.version);
   const reviewState: SavedActionReviewState = { ...input, notes: input.notes.trim(), updatedAt: new Date().toISOString(), updatedBy };
   saved.reviewStates[actionKey] = reviewState;
   const { error } = await getSupabaseAdmin().from("api_cache").upsert({
-    key: cacheKey(workflow.retrievalVersion),
+    key: cacheKey(workflow.retrievalVersion, workflow.assessmentInput.version),
     data: saved,
     fetched_at: reviewState.updatedAt,
   });
@@ -126,8 +131,9 @@ function plannerPriority(urgency: ActionRecommendation["urgency"]): PlannerPrior
   return "watch";
 }
 
-export async function promoteActionToPlanner(actionKey: string, createdBy: string) {
+export async function promoteActionToPlanner(actionKey: string, createdBy: string, expectedAssessmentInputVersion: string) {
   const workflow = await getActionWorkflowData();
+  if (workflow.assessmentInput.version !== expectedAssessmentInputVersion) throw new Error("ASSESSMENT_INPUT_STALE");
   const item = workflow.recommendations.find((recommendation) => recommendation.actionKey === actionKey);
   if (!item) throw new Error("ACTION_NOT_FOUND");
   if (!PROMOTABLE_ACTIONS.has(item.actionType)) throw new Error("ACTION_NOT_PROMOTABLE");
@@ -155,6 +161,7 @@ export async function promoteActionToPlanner(actionKey: string, createdBy: strin
     source_snapshot: {
       schemaVersion: workflow.schemaVersion,
       retrievalVersion: workflow.retrievalVersion,
+      assessmentInputVersion: workflow.assessmentInput.version,
       actionKey: item.actionKey,
     },
     due_date: null,

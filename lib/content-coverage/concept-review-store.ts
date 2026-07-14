@@ -1,12 +1,16 @@
+import { createHash } from "node:crypto";
 import { getSupabaseAdmin } from "../supabase-admin";
+import conceptReviewBaselineJson from "./generated/concept-review-baseline.json";
 import conceptReviewSeedJson from "./generated/concept-review-seed.json";
-import type { ConceptReviewSeed, ConceptSupportLabel } from "./concept-review";
+import { applyConceptReviewBaseline, type ConceptReviewBaseline, type ConceptReviewSeed, type ConceptSupportLabel } from "./concept-review";
 import type { RetrievalReviewLabel } from "./retrieval-evaluation";
 
 const SEED = conceptReviewSeedJson as unknown as ConceptReviewSeed;
+const BASELINE = conceptReviewBaselineJson as unknown as ConceptReviewBaseline;
+const BASE_REVIEW = applyConceptReviewBaseline(SEED, BASELINE);
 const CACHE_KEY = `content-coverage:concept-review:${SEED.retrievalVersion}:${SEED.schemaVersion}`;
 
-interface SavedConceptReviewEntry {
+export interface SavedConceptReviewEntry {
   topicReviewLabel: Exclude<RetrievalReviewLabel, null>;
   conceptLabels: Record<string, ConceptSupportLabel>;
   notes: string;
@@ -37,12 +41,36 @@ function validateConceptLabels(itemId: string, labels: Record<string, ConceptSup
 }
 
 export async function getConceptReviewData() {
+  return (await getOperationalConceptReviewSnapshot()).review;
+}
+
+export async function getOperationalConceptReviewSnapshot() {
   const saved = await loadSavedData();
-  const items = SEED.items.map((item) => {
-    const entry = saved.labels[item.id];
+  return buildOperationalConceptReviewSnapshot(saved.labels);
+}
+
+export function buildOperationalConceptReviewSnapshot(savedLabels: Record<string, SavedConceptReviewEntry>) {
+  const items = BASE_REVIEW.items.map((item) => {
+    const entry = savedLabels[item.id];
     return entry ? { ...item, ...entry } : item;
   });
-  return { ...SEED, items };
+  const review = { ...BASE_REVIEW, items };
+  const overrides = BASE_REVIEW.items.flatMap((item) => savedLabels[item.id] ? [savedLabels[item.id]] : []);
+  const inputPayload = items.map((item) => ({
+    id: item.id,
+    topicReviewLabel: item.topicReviewLabel,
+    conceptLabels: Object.fromEntries(Object.entries(item.conceptLabels).sort(([left], [right]) => left.localeCompare(right))),
+  }));
+  return {
+    review,
+    input: {
+      version: `concept-review-input-${createHash("sha256").update(JSON.stringify(inputPayload)).digest("hex").slice(0, 16)}`,
+      source: overrides.length > 0 ? "baseline-with-admin-overrides" as const : "reviewed-baseline" as const,
+      baselineReviewedAt: BASELINE.reviewedAt,
+      adminOverrideCount: overrides.length,
+      latestAdminReviewAt: overrides.map((entry) => entry.updatedAt).sort().at(-1) ?? null,
+    },
+  };
 }
 
 export async function saveConceptReviewEntry(

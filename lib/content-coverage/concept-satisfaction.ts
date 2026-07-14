@@ -50,7 +50,8 @@ export interface ConceptSatisfactionReport {
 
 function labelsForConcept(review: ConceptReviewSeed, topicSpecId: string, conceptId: string) {
   return review.items.flatMap((item) => {
-    if (item.topicSpecId !== topicSpecId || !item.conceptIds.includes(conceptId)) return [];
+    if (item.topicSpecId !== topicSpecId || !item.conceptIds.includes(conceptId)
+      || item.topicReviewLabel == null || item.topicReviewLabel === "irrelevant") return [];
     const label = item.conceptLabels[conceptId];
     return label ? [{ evidenceUnitId: item.evidenceUnitId, label }] : [];
   });

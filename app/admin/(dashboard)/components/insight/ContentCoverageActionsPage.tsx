@@ -15,6 +15,13 @@ const ENDPOINT = "/api/admin/content-coverage/actions";
 type WorkflowResponse = {
   schemaVersion: string;
   retrievalVersion: string;
+  assessmentInput: {
+    version: string;
+    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "static-evaluation";
+    baselineReviewedAt: string;
+    adminOverrideCount: number;
+    latestAdminReviewAt: string | null;
+  };
   recommendations: ActionWorkflowItem[];
   stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number };
 };
@@ -53,11 +60,13 @@ export function ContentCoverageActionsPage() {
   if (query.loading) return <AdminLoadingSkeleton variant="full" />;
   if (query.error) return <AdminErrorState message={query.error} onRetry={query.refetch} />;
   if (!query.data) return <AdminErrorState message="콘텐츠 행동추천을 불러올 수 없습니다." />;
+  const assessmentInputVersion = query.data.assessmentInput.version;
 
   const saveReview = async (item: ActionWorkflowItem, status: "pending" | "completed") => {
     setMessage(null);
     const result = await mutation.mutate(ENDPOINT, "PATCH", {
       actionKey: item.actionKey,
+      assessmentInputVersion,
       status,
       notes: notes[item.actionKey] ?? item.reviewState?.notes ?? "",
     });
@@ -69,7 +78,10 @@ export function ContentCoverageActionsPage() {
 
   const promote = async (item: ActionWorkflowItem) => {
     setMessage(null);
-    const result = await mutation.mutate(ENDPOINT, "POST", { actionKey: item.actionKey });
+    const result = await mutation.mutate(ENDPOINT, "POST", {
+      actionKey: item.actionKey,
+      assessmentInputVersion,
+    });
     if (!result.error) {
       setMessage("행동추천을 콘텐츠 플래너에 등록했습니다.");
       query.refetch();
@@ -99,7 +111,10 @@ export function ContentCoverageActionsPage() {
             <Metric label="플래너 등록" value={query.data.stats.promoted} />
           </div>
         </div>
-        <p className="mt-5 text-xs text-slate-400">판정 {query.data.schemaVersion} · 근거 검색 {query.data.retrievalVersion}</p>
+        <p className="mt-5 text-xs text-slate-400">
+          판정 {query.data.schemaVersion} · 근거 검색 {query.data.retrievalVersion} · 운영 라벨 {query.data.assessmentInput.version}
+          {query.data.assessmentInput.adminOverrideCount > 0 ? ` · 관리자 수정 ${query.data.assessmentInput.adminOverrideCount}건` : " · 검토 기준선 사용"}
+        </p>
       </AdminSurface>
 
       {mutation.error && <AdminNotice tone="error">{mutation.error}</AdminNotice>}

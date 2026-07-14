@@ -7,6 +7,13 @@ export interface ActionRecommendationReport {
   schemaVersion: typeof ACTION_RECOMMENDATION_VERSION;
   satisfactionVersion: typeof CONCEPT_SATISFACTION_VERSION;
   retrievalVersion: string;
+  assessmentInput: {
+    version: string;
+    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "static-evaluation";
+    baselineReviewedAt: string;
+    adminOverrideCount: number;
+    latestAdminReviewAt: string | null;
+  };
   recommendations: ActionRecommendation[];
 }
 
@@ -45,6 +52,13 @@ function urgencyFor(results: ConceptSatisfactionResult[], specs: CoverageTopicSp
 export function buildActionRecommendations(
   specs: CoverageTopicSpec[],
   satisfaction: ConceptSatisfactionReport,
+  assessmentInput: ActionRecommendationReport["assessmentInput"] = {
+    version: `static-evaluation:${satisfaction.retrievalVersion}:${satisfaction.reviewedAt}`,
+    source: "static-evaluation",
+    baselineReviewedAt: satisfaction.reviewedAt,
+    adminOverrideCount: 0,
+    latestAdminReviewAt: null,
+  },
 ): ActionRecommendationReport {
   if (satisfaction.schemaVersion !== CONCEPT_SATISFACTION_VERSION) throw new Error("지원하지 않는 개념 충족 판정입니다.");
   const recommendations: ActionRecommendation[] = [];
@@ -165,6 +179,7 @@ export function buildActionRecommendations(
     schemaVersion: ACTION_RECOMMENDATION_VERSION,
     satisfactionVersion: satisfaction.schemaVersion,
     retrievalVersion: satisfaction.retrievalVersion,
+    assessmentInput,
     recommendations,
   };
 }
