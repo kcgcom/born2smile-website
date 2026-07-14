@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "concept-search-resolution-v1",
+  "retrievalVersion": "retrieval-v2-shadow.4",
+  "reviewedAt": "2026-07-14T09:12:00.000Z",
+  "items": [
+    {
+      "topicSpecId": "orthodontics-pain-risks",
+      "conceptId": "root-resorption",
+      "resolution": "no-explicit-evidence",
+      "notes": "전체 109개 문서와 960개 근거 단위의 fallback 상위 후보에서 치근 흡수를 직접 설명하는 문장을 찾지 못했다."
+    },
+    {
+      "topicSpecId": "dental-cost-insurance",
+      "conceptId": "private-insurance",
+      "resolution": "no-explicit-evidence",
+      "notes": "전체 말뭉치의 fallback 상위 후보에서 실손·실비·민간보험의 보장 가능성과 확인 절차를 직접 설명하는 문장을 찾지 못했다."
+    }
+  ]
+}

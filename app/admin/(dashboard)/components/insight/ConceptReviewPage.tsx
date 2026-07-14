@@ -93,6 +93,7 @@ export function ConceptReviewPage() {
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">주제 관련성과 개념 충족은 별도 판단입니다. 기존 주제 라벨은 이어받았으며 개념별 근거 수준을 추가로 검토합니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review"><ArrowLeft className="h-4 w-4" />기존 검색 라벨</AdminActionLink>
+              <AdminActionLink tone="primary" href="/admin/content/strategy/actions">콘텐츠 행동추천</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석으로</AdminActionLink>
             </div>
           </div>

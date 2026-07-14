@@ -18,6 +18,8 @@
     "generate-content-coverage-concept-review": "tsx scripts/generate-content-coverage-concept-review.ts",
     "evaluate-content-coverage-concepts": "tsx scripts/evaluate-content-coverage-concepts.ts",
     "audit-content-coverage-fallback": "tsx scripts/audit-content-coverage-fallback.ts",
+    "report-content-coverage-satisfaction": "tsx scripts/report-content-coverage-satisfaction.ts",
+    "report-content-coverage-actions": "tsx scripts/report-content-coverage-actions.ts",
     "generate-content-coverage-retrieval-review": "tsx scripts/generate-content-coverage-retrieval-review.ts",
     "evaluate-content-coverage-retrieval": "tsx scripts/evaluate-content-coverage-retrieval.ts",
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",

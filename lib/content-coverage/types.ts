@@ -35,10 +35,11 @@ export interface CoverageConcept {
   };
 }
 
-export type ContentActionType = "create-blog" | "update-blog" | "update-treatment-page" | "add-faq" | "update-faq" | "promote-faq-to-page" | "refresh-content" | "resolve-conflict" | "clinical-review" | "no-action";
+export type ContentActionType = "create-blog" | "update-blog" | "update-treatment-page" | "add-faq" | "update-faq" | "promote-faq-to-page" | "refresh-content" | "resolve-conflict" | "evidence-review" | "clinical-review" | "no-action";
 
 export interface TopicActionPolicy {
   primarySurface: ContentSurface;
+  primaryTargetPath: string;
   supportingSurfaces: ContentSurface[];
   allowedActions: ContentActionType[];
   requiresPageFoundation: boolean;
@@ -155,6 +156,8 @@ export interface ActionRecommendation {
   targetPath: string;
   why: string;
   missingConcepts: string[];
+  partialConcepts: string[];
+  needsReviewConcepts: string[];
   currentEvidenceSummary: string;
   valueScore: number | null;
   confidence: "high" | "medium" | "low";

@@ -2,7 +2,7 @@ import { CATEGORY_KEYWORDS } from "../admin-naver-datalab-keywords";
 import type { CoverageConcept, CoverageCriterion, CoverageTopicSpec, ContentSurface } from "./types";
 
 const PRIMARY: ContentSurface[] = ["blog", "treatment-page", "faq"];
-const CONTENT_ACTIONS = ["create-blog", "update-blog", "update-treatment-page", "add-faq", "update-faq", "promote-faq-to-page", "refresh-content", "resolve-conflict", "clinical-review", "no-action"] as const;
+const CONTENT_ACTIONS = ["create-blog", "update-blog", "update-treatment-page", "add-faq", "update-faq", "promote-faq-to-page", "refresh-content", "resolve-conflict", "evidence-review", "clinical-review", "no-action"] as const;
 
 function criterion(
   id: string,
@@ -67,7 +67,7 @@ export const COVERAGE_TOPIC_SPECS: CoverageTopicSpec[] = [
     exclusions: ["교정과 관계없는 일반 치통", "혀 질환", "불소 치료 후 증상", "턱관절 질환"],
     retrievalExclusionPhrases: ["일반 치통", "혀 질환", "불소 치료", "턱관절"],
     applicableSurfaces: PRIMARY,
-    actionPolicy: { primarySurface: "treatment-page", supportingSurfaces: ["blog", "faq"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: true },
+    actionPolicy: { primarySurface: "treatment-page", primaryTargetPath: "/treatments/orthodontics", supportingSurfaces: ["blog", "faq"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: true },
     reviewPolicy: { requiresClinicalReview: true, reviewNote: "부작용과 내원 위험 신호는 의료진 검토가 필요함" },
     version: 1,
   },
@@ -99,7 +99,7 @@ export const COVERAGE_TOPIC_SPECS: CoverageTopicSpec[] = [
     exclusions: ["특정 치료의 가격만 단순 언급한 글", "치과와 무관한 보험 정보", "할인이나 이벤트 중심 홍보"],
     retrievalExclusionPhrases: ["가격만", "비용만", "할인", "이벤트"],
     applicableSurfaces: ["treatment-page", "faq", "blog", "about"],
-    actionPolicy: { primarySurface: "faq", supportingSurfaces: ["treatment-page", "blog", "about"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: false },
+    actionPolicy: { primarySurface: "faq", primaryTargetPath: "/faq", supportingSurfaces: ["treatment-page", "blog", "about"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: false },
     reviewPolicy: { requiresClinicalReview: false, reviewNote: "보험 조건과 금액은 최신성 확인이 필요함" },
     version: 1,
   },
@@ -119,7 +119,7 @@ export const COVERAGE_TOPIC_SPECS: CoverageTopicSpec[] = [
     exclusions: ["앞니 부분교정만 다룬 글", "앞니를 예시로 한 일반 임플란트 글", "심미 홍보만 있고 치료 기준이 없는 내용"],
     retrievalExclusionPhrases: ["앞니 부분교정", "부분 교정", "정중과잉치", "심미 홍보"],
     applicableSurfaces: PRIMARY,
-    actionPolicy: { primarySurface: "treatment-page", supportingSurfaces: ["blog", "faq"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: true },
+    actionPolicy: { primarySurface: "treatment-page", primaryTargetPath: "/treatments/prosthetics", supportingSurfaces: ["blog", "faq"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: true },
     reviewPolicy: { requiresClinicalReview: true },
     version: 1,
   },
@@ -139,7 +139,7 @@ export const COVERAGE_TOPIC_SPECS: CoverageTopicSpec[] = [
     exclusions: ["성인 치아 외상만 다룬 글", "외상과 무관한 유치 교환", "일반적인 아이 치통"],
     retrievalExclusionPhrases: ["성인 치아 외상", "주로 성인 치아 기준", "유치 교환", "아이 치통"],
     applicableSurfaces: PRIMARY,
-    actionPolicy: { primarySurface: "faq", supportingSurfaces: ["blog", "treatment-page"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: false },
+    actionPolicy: { primarySurface: "faq", primaryTargetPath: "/faq", supportingSurfaces: ["blog", "treatment-page"], allowedActions: [...CONTENT_ACTIONS], requiresPageFoundation: false },
     reviewPolicy: { requiresClinicalReview: true, reviewNote: "유치와 영구치의 응급 대처 차이는 의료진 검토가 필요함" },
     version: 1,
   },
@@ -159,7 +159,7 @@ export const COVERAGE_TOPIC_SPECS: CoverageTopicSpec[] = [
     exclusions: ["특정 제품 홍보만 있는 콘텐츠", "생활 위생 전반", "치과와 무관한 세정 도구"],
     retrievalExclusionPhrases: ["제품 홍보", "생활 위생", "치과와 무관한"],
     applicableSurfaces: ["blog", "treatment-page", "faq"],
-    actionPolicy: { primarySurface: "blog", supportingSurfaces: ["treatment-page", "faq"], allowedActions: ["create-blog", "update-blog", "add-faq", "update-faq", "refresh-content", "resolve-conflict", "clinical-review", "no-action"], requiresPageFoundation: false },
+    actionPolicy: { primarySurface: "blog", primaryTargetPath: "/blog/prevention", supportingSurfaces: ["treatment-page", "faq"], allowedActions: ["create-blog", "update-blog", "add-faq", "update-faq", "refresh-content", "resolve-conflict", "evidence-review", "clinical-review", "no-action"], requiresPageFoundation: false },
     reviewPolicy: { requiresClinicalReview: false },
     version: 1,
   },
@@ -187,6 +187,7 @@ export function validateCoverageTopicSpecs(specs: CoverageTopicSpec[] = COVERAGE
     }
     if (!spec.retrievalExclusionPhrases || spec.retrievalExclusionPhrases.length === 0) throw new Error(`${spec.id} 검색 제외 표현이 없습니다.`);
     if (!spec.applicableSurfaces.includes(spec.actionPolicy.primarySurface)) throw new Error(`${spec.id}의 기본 표면이 평가 범위에 없습니다.`);
+    if (!spec.actionPolicy.primaryTargetPath.startsWith("/")) throw new Error(`${spec.id}의 기본 대상 경로가 올바르지 않습니다.`);
   }
 }
 

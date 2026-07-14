@@ -4,6 +4,7 @@ import { BLOG_POSTS_SNAPSHOT } from "../lib/blog/generated/posts-snapshot";
 import { buildEvidenceSnapshot } from "../lib/content-coverage/evidence";
 import conceptReviewSeedJson from "../lib/content-coverage/generated/concept-review-seed.json";
 import conceptReviewBaselineJson from "../lib/content-coverage/generated/concept-review-baseline.json";
+import conceptSearchResolutionJson from "../lib/content-coverage/generated/concept-search-resolution.json";
 import retrievalReviewBaselineJson from "../lib/content-coverage/generated/retrieval-review-baseline.json";
 import { RETRIEVAL_REVIEW_SEED } from "../lib/content-coverage/generated/retrieval-review-seed";
 import { buildLexicalBaseline } from "../lib/content-coverage/lexical-retrieval";
@@ -11,6 +12,8 @@ import { applyRetrievalReviewBaseline, buildRetrievalReviewItems, createRetrieva
 import { COVERAGE_TOPIC_SPECS, validateCoverageTopicSpecs } from "../lib/content-coverage/topic-specs";
 import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib/content-coverage/types";
 import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBaseline, type ConceptReviewSeed } from "../lib/content-coverage/concept-review";
+import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
+import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
 import { TREATMENT_DETAILS } from "../lib/treatments";
 import { cosineSimilarity, formatEmbeddingSearchDocument, formatEmbeddingSearchQuery } from "../lib/gemini-embeddings";
 
@@ -125,6 +128,58 @@ assert.deepEqual(
   },
   "검색되지 않은 필수 개념 목록이 달라졌습니다.",
 );
+const conceptSatisfaction = assessConceptSatisfaction(
+  COVERAGE_TOPIC_SPECS,
+  reviewedConcepts,
+  conceptSearchResolutionJson as ConceptSearchResolution,
+);
+assert.equal(conceptSatisfaction.results.length, 24, "개념 충족 판정 수가 달라졌습니다.");
+assert.deepEqual(
+  Object.fromEntries(["covered", "partial", "missing", "not-evaluated"].map((status) => [
+    status,
+    conceptSatisfaction.results.filter((result) => result.provisionalStatus === status).length,
+  ])),
+  { covered: 16, partial: 6, missing: 2, "not-evaluated": 0 },
+  "잠정 개념 충족 상태가 달라졌습니다.",
+);
+assert.deepEqual(
+  Object.fromEntries(["covered", "partial", "missing", "needs-review", "not-evaluated"].map((status) => [
+    status,
+    conceptSatisfaction.results.filter((result) => result.status === status).length,
+  ])),
+  { covered: 8, partial: 0, missing: 1, "needs-review": 15, "not-evaluated": 0 },
+  "최종 개념 충족 상태가 달라졌습니다.",
+);
+assert.equal(conceptSatisfaction.results.every((result) => result.coverageScore == null
+  && result.criteria.every((criterion) => criterion.status === "not-evaluated")), true, "기준별 라벨 없이 점수나 기준 충족을 계산하면 안 됩니다.");
+const unresolvedSatisfaction = assessConceptSatisfaction(COVERAGE_TOPIC_SPECS, reviewedConcepts, {
+  schemaVersion: "concept-search-resolution-v1",
+  retrievalVersion: reviewedConcepts.retrievalVersion,
+  reviewedAt: conceptSearchResolutionJson.reviewedAt,
+  items: [],
+});
+assert.equal(unresolvedSatisfaction.results.find((result) => result.conceptId === "root-resorption")?.provisionalStatus, "not-evaluated", "fallback 확인 없이 미검색 개념을 missing으로 확정하면 안 됩니다.");
+const actionRecommendations = buildActionRecommendations(COVERAGE_TOPIC_SPECS, conceptSatisfaction);
+assert.equal(actionRecommendations.recommendations.length, 8, "행동추천 수가 달라졌습니다.");
+assert.deepEqual(
+  Object.fromEntries(["clinical-review", "update-treatment-page", "add-faq", "no-action"].map((actionType) => [
+    actionType,
+    actionRecommendations.recommendations.filter((recommendation) => recommendation.actionType === actionType).length,
+  ])),
+  { "clinical-review": 3, "update-treatment-page": 2, "add-faq": 2, "no-action": 1 },
+  "행동추천 유형 분포가 달라졌습니다.",
+);
+assert.equal(new Set(actionRecommendations.recommendations.map((recommendation) => recommendation.actionKey)).size, actionRecommendations.recommendations.length, "행동추천 키가 중복됩니다.");
+assert.equal(actionRecommendations.recommendations.every((recommendation) => recommendation.valueScore == null), true, "수요 입력 없이 행동 가치 점수를 만들면 안 됩니다.");
+assert.equal(actionRecommendations.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page"
+  || (recommendation.actionType === "add-faq" && recommendation.topicSpecId === "pediatric-dental-trauma")).every((recommendation) =>
+  recommendation.blockedBy.some((blocker) => blocker.type === "must-complete-before")), true, "임상 콘텐츠 수정은 의료진 검토에 막혀야 합니다.");
+assert.equal(actionRecommendations.recommendations.find((recommendation) => recommendation.topicSpecId === "dental-cost-insurance")?.blockedBy.length, 0, "민간보험 FAQ는 임상 검토에 막히면 안 됩니다.");
+const unresolvedActions = buildActionRecommendations(COVERAGE_TOPIC_SPECS, unresolvedSatisfaction);
+assert.equal(unresolvedActions.recommendations.some((recommendation) => recommendation.actionType === "evidence-review"
+  && recommendation.topicSpecId === "dental-cost-insurance"), true, "미평가 개념은 콘텐츠 작성 대신 근거 재검토를 추천해야 합니다.");
+assert.equal(unresolvedActions.recommendations.some((recommendation) => recommendation.actionType === "add-faq"
+  && recommendation.topicSpecId === "dental-cost-insurance"), false, "미평가 개념을 콘텐츠 공백으로 간주하면 안 됩니다.");
 
 console.log(JSON.stringify({
   ok: true,

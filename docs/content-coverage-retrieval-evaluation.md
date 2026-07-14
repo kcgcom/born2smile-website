@@ -322,3 +322,49 @@ interface ConceptEvidenceCandidate {
 - 통합 후보를 만들 때 문서당 2개 제한보다 개념당 최소 한 후보 보존을 우선한다. 이 예외 덕분에 새 치료·경과 근거가 들어와도 기존 예방 근거가 검토 목록에서 사라지지 않는다.
 
 조정 후 `gum-recession`과 `treatment-followup`은 각각 1건의 근거를 회수했고, `root-resorption`과 `private-insurance`는 계속 0건이다. 제외 표현 누수는 0건이고 기존 회귀 조건도 유지된다.
+
+## 개념 충족 판정 연결
+
+`concept-satisfaction-v1`은 검토된 개념 라벨과 fallback 해소 기준선을 충족 상태로 변환한다. 실행 명령은 `pnpm report-content-coverage-satisfaction`이며 전체 결과는 `.tmp/content-coverage-satisfaction.json`에 저장한다.
+
+| 입력 상태 | 잠정 충족 상태 |
+|---|---|
+| `supports` 근거가 1건 이상 | `covered` |
+| `supports` 없이 `partial`만 존재 | `partial` |
+| 검토 후보가 모두 `not-supported` | `missing` |
+| fallback 감사에서 `no-explicit-evidence`로 확정 | `missing` |
+| 후보가 없지만 fallback 확인도 없음 | `not-evaluated` |
+
+임상 검토가 필요한 주제는 잠정 상태를 보존하면서 외부 상태를 `needs-review`로 둔다. 따라서 교정의 치근 흡수는 잠정적으로 `missing`이지만 의료진 확인 전에는 최종 공백으로 실행하지 않는다. 비임상 주제인 민간보험은 `missing`으로 판정할 수 있다.
+
+현재 24개 개념의 잠정 분포는 `covered` 16개, `partial` 6개, `missing` 2개다. 임상 검토 정책을 적용한 외부 상태는 `covered` 8개, `missing` 1개, `needs-review` 15개다.
+
+개념 수준 라벨을 기준별 충족으로 확대 해석하지 않는다. 모든 `coverageScore`는 `null`이며, 48개 세부 기준은 `not-evaluated`로 유지한다. 기준별 점수는 이후 구조화된 범위 또는 기준별 사람 판정이 생긴 뒤에만 계산한다.
+
+## 행동추천 연결
+
+`action-recommendation-v1`은 개념 충족 상태와 주제별 `actionPolicy`를 실행 가능한 작업과 선행 관계로 변환한다. `pnpm report-content-coverage-actions`를 실행하면 `.tmp/content-coverage-actions.json`에 결과를 저장한다. 각 주제 명세는 추론 대신 명시적으로 `primaryTargetPath`를 가진다.
+
+현재 생성되는 추천은 8건이다.
+
+| 행동 | 건수 | 정책 |
+|---|---:|---|
+| `clinical-review` | 3 | 교정, 앞니, 소아 외상은 의료진이 먼저 확인 |
+| `update-treatment-page` | 2 | 교정과 앞니의 부족한 개념을 기존 기본 페이지에 보강 |
+| `add-faq` | 2 | 민간보험과 소아 외상 후속 관찰을 FAQ에 보강 |
+| `no-action` | 1 | 구강위생은 현재 콘텐츠 유지 |
+
+교정·앞니·소아 외상의 콘텐츠 작업은 해당 `clinical-review`를 `must-complete-before` 선행 작업으로 가진다. 민간보험 FAQ는 비임상 주제이므로 선행 차단 없이 추천한다. `valueScore`는 검색 수요나 사업 가치 입력이 연결되지 않았으므로 모두 `null`이다.
+
+`not-evaluated`는 콘텐츠 작업으로 변환하지 않고 `evidence-review`를 생성한다. 임상 검토가 함께 필요하면 근거 재검토를 `should-complete-before`로 연결한다. 이 규칙은 검색 불충분을 콘텐츠 공백으로 오인하는 것을 막는다.
+
+### 관리자 실행 흐름
+
+관리자 화면 `/admin/content/strategy/actions`에서 행동추천을 다음 순서로 처리한다.
+
+1. `clinical-review` 또는 `evidence-review`에 판단 근거를 입력하고 검토 완료 상태로 저장한다.
+2. 서버가 현재 추천과 저장된 검토 상태를 다시 결합해 필수 선행 조건을 판정한다.
+3. 차단이 해소된 콘텐츠 작업만 콘텐츠 플래너로 전환한다.
+4. 일정과 제작 상태는 기존 콘텐츠 플래너에서 관리한다.
+
+검토 상태와 플래너 전환 가능 여부는 클라이언트 입력을 신뢰하지 않고 요청 시 서버에서 다시 계산한다. 같은 `actionKey`의 반복 전환은 기존 플래너 항목을 반환하며 중복 생성하지 않는다. 후속 콘텐츠 작업이 이미 플래너에 등록된 검토는 감사 관계가 깨지지 않도록 다시 열 수 없다.

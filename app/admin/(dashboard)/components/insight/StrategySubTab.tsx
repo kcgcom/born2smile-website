@@ -106,6 +106,9 @@ export function StrategySubTab() {
               <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review">
                 개념별 근거 검토
               </AdminActionLink>
+              <AdminActionLink tone="dark" href="/admin/content/strategy/actions">
+                콘텐츠 행동추천
+              </AdminActionLink>
               <AdminActionButton
                 tone="dark"
                 disabled={startingSync || syncIsActive}
