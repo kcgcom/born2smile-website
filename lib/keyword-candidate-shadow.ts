@@ -7,7 +7,7 @@ import type {
   HumanEvaluationLabel,
 } from "./keyword-candidate-evaluation";
 
-export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v1";
+export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v4";
 
 export interface ShadowReference {
   id: string;
@@ -28,6 +28,8 @@ export interface ShadowTaxonomyCandidate {
   subgroup: string;
   lexicalScore: number;
   semanticScore: number;
+  supervisedScore?: number;
+  intentScore?: number;
   hybridScore: number;
 }
 
@@ -52,6 +54,18 @@ export interface ShadowPredictionInput {
 
 function normalize(keyword: string): string {
   return keyword.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+}
+
+export function mergeKeywordShadowReferences(
+  preferred: ShadowReference[],
+  fallback: ShadowReference[],
+): ShadowReference[] {
+  const merged = new Map<string, ShadowReference>();
+  for (const reference of [...preferred, ...fallback]) {
+    const key = normalize(reference.keyword);
+    if (!merged.has(key)) merged.set(key, reference);
+  }
+  return [...merged.values()];
 }
 
 export function normalizeShadowVector(vector: number[]): number[] {
@@ -96,7 +110,13 @@ const PRECISE_FAQ_PATTERN =
 const PRECISE_CONTENT_PATTERN =
   /후기|안면비대칭교정방법|베이킹소다치아미백|입냄새한의원|임플란트보험추천|치아미백레이저|돌출입투명교정|치과보험청구|치아보험청구|금니판매|돌출입수술|임플란트수면마취/;
 const OBVIOUS_NOISE_PATTERN =
-  /재활병원|센서|엉치|자율신경|피부과|지르코니아가공|코감기|반찬용기|변호사|노트북|비염|세탁기|^붓$|지방흡입|의료소송|안면윤곽|건망증|호흡기|광대축소|^tid$|이명|어지럽|산화알루미늄|threebond|척추|허리측만|금속보수|세라믹기판|^navigation$|프롤로|계산기|접착|본드|실리콘|폴리비닐|페인트|테프론|수성로라|바인더|락앤락/i;
+  /재활병원|센서|엉치|자율신경|피부과|지르코니아가공|코감기|반찬용기|변호사|노트북|비염|세탁기|^붓$|지방흡입|의료소송|안면윤곽|눈매교정|쌍꺼풀|건망증|호흡기|광대축소|^tid$|이명|어지럽|산화알루미늄|threebond|척추|허리측만|금속보수|세라믹기판|^navigation$|프롤로|계산기|접착|본드|실리콘|폴리비닐|페인트|테프론|수성로라|바인더|락앤락|^(도요다|토요다|toyota)크라운$/i;
+const REVIEW_DENTAL_EVIDENCE_PATTERN =
+  /치과|치아|이빨|잇몸|구강|입안|입냄새|속냄새|입벌리고|혀|혓바닥|구내염|설염|턱관절|교정|부정교합|돌출입|양악|안면비대칭|얼굴비대칭|입술비대칭|턱끝|라미네이트|레진|크라운|임플란트|스케일|스켈링|치약|칫솔|치실|구강청결|구강스프레이|불소|인사돌|금니|파절|시림|뻐드렁니|브릿지|틀니|충치|신경치료/i;
+const REVIEW_NEGATIVE_DOMAIN_PATTERN =
+  /경락|거북목|도수치료|체외충격파|일회용수세미|해외여행준비물|프로바이오틱스유산균|소화가안되는이유|목이물감|편도암|후두암|언청이|안면마비|윤곽수술|귀족수술|생명보험/i;
+const REVIEW_AMBIGUOUS_PATTERN = /^침$|침냄새/;
+const PREDICTION_AMBIGUOUS_PATTERN = /^(침|crown)$/i;
 
 function precisePurposeSignal(keyword: string): EvaluationPurpose | null {
   if (PRECISE_LOCAL_PATTERN.test(keyword)) return "local";
@@ -104,6 +124,37 @@ function precisePurposeSignal(keyword: string): EvaluationPurpose | null {
   if (PRECISE_CONTENT_PATTERN.test(keyword)) return "content";
   if (PRECISE_PRODUCT_PATTERN.test(keyword)) return "product";
   return null;
+}
+
+function taxonomyIntentScore(
+  normalizedKeyword: string,
+  category: KeywordCategorySlug,
+  subgroup: string,
+): number {
+  if (category === "orthodontics") {
+    const specificMethod = /부분교정|클리피씨|투명교정|설측교정|인비절라인/.test(normalizedKeyword);
+    const malocclusionConcern = /부정교합|과개교합|개방교합|반대교합|교차교합/.test(normalizedKeyword)
+      && !/교정기|교정장치/.test(normalizedKeyword);
+    if (subgroup === "비용/기간" && /교정/.test(normalizedKeyword) && /비용|가격|기간|얼마/.test(normalizedKeyword) && !specificMethod) return 1;
+    if (subgroup === "심미/고민" && (/비대칭|벌어짐|돌출입|덧니|뻐드렁|주걱턱/.test(normalizedKeyword) || malocclusionConcern)) return 1;
+    if (subgroup === "종류/방법" && specificMethod) return 1;
+    if (subgroup === "종류/방법" && /교정/.test(normalizedKeyword)
+      && !/비용|가격|기간|통증|부작용|나이|유지|재교정|비대칭|벌어짐|돌출입|부정교합|과개교합|개방교합|반대교합|교차교합/.test(normalizedKeyword)) return 0.8;
+  }
+  if (category === "pediatric" && subgroup === "교정시기" && /소아교정/.test(normalizedKeyword)) return 1;
+  if (category === "dental-choice" && subgroup === "신뢰/후기/선택" && /추천|후기|잘하는/.test(normalizedKeyword)) return 1;
+  if (category === "implant" && subgroup === "첨단/디지털" && /네비게이션|디지털/.test(normalizedKeyword)) return 1;
+  if (category === "prevention" && subgroup === "잇몸질환/치료"
+    && /잇몸/.test(normalizedKeyword) && !/임플란트/.test(normalizedKeyword)) return 1;
+  if (category === "prevention" && subgroup === "구강위생" && /구강관리|입안세균/.test(normalizedKeyword)) return 1;
+  if (category === "general-care" && subgroup === "턱관절/이갈이" && /턱관절/.test(normalizedKeyword)) return 1;
+  if (category === "restorative" && subgroup === "레진" && /레진/.test(normalizedKeyword)) return 1;
+  if (category === "restorative" && subgroup === "신경치료" && /신경치료/.test(normalizedKeyword)) return 1;
+  if (category === "restorative" && subgroup === "시림/균열" && /시림|시린/.test(normalizedKeyword)) return 1;
+  if (category === "prosthetics" && subgroup === "소재/종류" && /지르코니아|세라믹|골드크라운/.test(normalizedKeyword)) return 1;
+  if (category === "prosthetics" && subgroup === "크라운" && /크라운/.test(normalizedKeyword) && !/지르코니아|세라믹|골드크라운/.test(normalizedKeyword)) return 1;
+  if (category === "prosthetics" && subgroup === "라미네이트" && /라미네이트/.test(normalizedKeyword)) return 1;
+  return 0;
 }
 
 export function buildTaxonomyShadowAnchors(taxonomy: CategoryKeywords[]): TaxonomyShadowAnchor[] {
@@ -117,13 +168,13 @@ export function buildTaxonomyShadowAnchors(taxonomy: CategoryKeywords[]): Taxono
 }
 
 export function predictKeywordCandidateShadow(input: ShadowPredictionInput): KeywordShadowPrediction {
-  const neighbors = input.references
+  const sortedNeighbors = input.references
     .flatMap((reference) => {
       const vector = input.referenceVectors.get(reference.id);
       return vector ? [{ reference, similarity: normalizedVectorSimilarity(input.itemVector, vector) }] : [];
     })
-    .sort((a, b) => b.similarity - a.similarity || a.reference.keyword.localeCompare(b.reference.keyword))
-    .slice(0, 11);
+    .sort((a, b) => b.similarity - a.similarity || a.reference.keyword.localeCompare(b.reference.keyword));
+  const neighbors = sortedNeighbors.slice(0, 11);
 
   const relevanceVotes = new Map<EvaluationRelevance, number>();
   const purposeVotes = new Map<EvaluationPurpose, number>();
@@ -145,7 +196,8 @@ export function predictKeywordCandidateShadow(input: ShadowPredictionInput): Key
   balanceVotes(relevanceVotes, relevanceCounts);
   balanceVotes(purposeVotes, purposeCounts);
   const precisePurpose = precisePurposeSignal(input.item.keyword);
-  if (OBVIOUS_NOISE_PATTERN.test(input.item.keyword)) relevanceVotes.set("irrelevant", (relevanceVotes.get("irrelevant") ?? 0) + 1.5);
+  const obviousNoise = OBVIOUS_NOISE_PATTERN.test(input.item.keyword);
+  if (obviousNoise) relevanceVotes.set("irrelevant", (relevanceVotes.get("irrelevant") ?? 0) + 1.5);
   else if (!input.item.passesBasicRelevance) relevanceVotes.set("irrelevant", (relevanceVotes.get("irrelevant") ?? 0) + 0.3);
   if (precisePurpose) {
     relevanceVotes.set("relevant", (relevanceVotes.get("relevant") ?? 0) + 0.25);
@@ -155,23 +207,57 @@ export function predictKeywordCandidateShadow(input: ShadowPredictionInput): Key
   if (input.item.localOrRegional) purposeVotes.set("local", (purposeVotes.get("local") ?? 0) + 0.05);
   if (!precisePurpose && input.item.lexicalScore >= 0.35) purposeVotes.set("taxonomy", (purposeVotes.get("taxonomy") ?? 0) + 0.35);
 
-  const relevance = topVote(relevanceVotes, "uncertain");
+  const votedRelevance = topVote(relevanceVotes, "uncertain");
+  const relevance = obviousNoise
+    ? { value: "irrelevant" as const, confidence: 1 }
+    : PREDICTION_AMBIGUOUS_PATTERN.test(normalize(input.item.keyword))
+      ? { value: "uncertain" as const, confidence: 1 }
+      : votedRelevance;
   const purpose = relevance.value === "irrelevant"
     ? { value: "noise" as const, confidence: relevance.confidence }
-    : topVote(purposeVotes, "unknown");
+    : relevance.value === "uncertain"
+      ? { value: "unknown" as const, confidence: relevance.confidence }
+      : topVote(purposeVotes, "unknown");
   const normalized = normalize(input.item.keyword);
+  const placementCounts = new Map<string, number>();
+  for (const reference of input.references) {
+    const { label } = reference;
+    if (label.purpose !== "taxonomy" || !label.category || !label.subgroup) continue;
+    const key = `${label.category}:${label.subgroup}`;
+    placementCounts.set(key, (placementCounts.get(key) ?? 0) + 1);
+  }
+  const placementVotes = new Map<string, number>();
+  for (const neighbor of sortedNeighbors.filter(({ reference }) =>
+    reference.label.purpose === "taxonomy"
+    && reference.label.category
+    && reference.label.subgroup,
+  ).slice(0, 21)) {
+    const { category, subgroup } = neighbor.reference.label;
+    const key = `${category}:${subgroup}`;
+    const weight = Math.max(0.0001, neighbor.similarity ** 10);
+    placementVotes.set(key, (placementVotes.get(key) ?? 0) + weight);
+  }
+  for (const [key, weight] of placementVotes) {
+    placementVotes.set(key, weight / Math.max(1, placementCounts.get(key) ?? 1) ** 0.25);
+  }
+  const maxPlacementVote = Math.max(0, ...placementVotes.values());
   const taxonomyCandidates = input.anchors
     .flatMap((anchor) => {
       const vector = input.anchorVectors.get(anchor.id);
       if (!vector) return [];
       const lexicalScore = lexicalOverlap(normalized, anchor.normalizedKeywords);
       const semanticScore = normalizedVectorSimilarity(input.itemVector, vector);
+      const placementVote = placementVotes.get(`${anchor.category}:${anchor.subgroup}`) ?? 0;
+      const supervisedScore = maxPlacementVote > 0 ? placementVote / maxPlacementVote : 0;
+      const intentScore = taxonomyIntentScore(normalized, anchor.category, anchor.subgroup);
       return [{
         category: anchor.category,
         subgroup: anchor.subgroup,
         lexicalScore,
         semanticScore,
-        hybridScore: semanticScore * 0.65 + lexicalScore * 0.35,
+        supervisedScore,
+        intentScore,
+        hybridScore: semanticScore * 0.4 + lexicalScore * 0.25 + supervisedScore * 0.15 + intentScore * 0.2,
       }];
     })
     .sort((a, b) => b.hybridScore - a.hybridScore || b.semanticScore - a.semanticScore || a.subgroup.localeCompare(b.subgroup))
@@ -196,4 +282,15 @@ export function predictKeywordCandidateShadow(input: ShadowPredictionInput): Key
       similarity: neighbor.similarity,
     })),
   };
+}
+
+export function isKeywordShadowReviewEligible(
+  keyword: string,
+  prediction: Pick<KeywordShadowPrediction, "relevance" | "action" | "taxonomyCandidates" | "relevanceConfidence">,
+): boolean {
+  if (prediction.relevance !== "relevant" || prediction.action === "reject") return false;
+  if (REVIEW_NEGATIVE_DOMAIN_PATTERN.test(keyword) || REVIEW_AMBIGUOUS_PATTERN.test(keyword)) return false;
+  if (REVIEW_DENTAL_EVIDENCE_PATTERN.test(keyword)) return true;
+  const semanticScore = prediction.taxonomyCandidates[0]?.semanticScore ?? 0;
+  return semanticScore >= 0.74 && prediction.relevanceConfidence >= 0.8;
 }

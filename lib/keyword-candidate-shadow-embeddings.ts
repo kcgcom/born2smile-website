@@ -7,35 +7,41 @@ import {
   GEMINI_EMBEDDING_MODEL,
   isValidGeminiEmbedding,
 } from "./gemini-embeddings";
-import { KEYWORD_SHADOW_ENGINE_VERSION } from "./keyword-candidate-shadow";
-
 const DEFAULT_CACHE_PATH = path.resolve(process.cwd(), ".tmp/keyword-candidate-shadow-embeddings.json");
 const EMBEDDING_CHUNK_SIZE = 1_000;
 const MAX_RATE_LIMIT_RETRIES = 8;
+const CACHE_KEY_VERSION = "embedding-input-v1";
+const LEGACY_ENGINE_VERSION = "keyword-shadow-v1";
 
 interface CacheFile {
   model: string;
   dimensions: number;
-  engineVersion: string;
+  keyVersion?: string;
+  engineVersion?: string;
   vectors: Record<string, number[]>;
 }
 
 function cacheKey(text: string): string {
-  return createHash("sha256").update(`${GEMINI_EMBEDDING_MODEL}:${GEMINI_EMBEDDING_DIMS}:${KEYWORD_SHADOW_ENGINE_VERSION}:${text}`).digest("hex");
+  return createHash("sha256").update(`${GEMINI_EMBEDDING_MODEL}:${GEMINI_EMBEDDING_DIMS}:${text}`).digest("hex");
+}
+
+function legacyCacheKey(text: string): string {
+  return createHash("sha256").update(`${GEMINI_EMBEDDING_MODEL}:${GEMINI_EMBEDDING_DIMS}:${LEGACY_ENGINE_VERSION}:${text}`).digest("hex");
 }
 
 function loadCache(cachePath: string): CacheFile {
   try {
     const parsed = JSON.parse(fs.readFileSync(cachePath, "utf8")) as Partial<CacheFile>;
-    if (parsed.model !== GEMINI_EMBEDDING_MODEL || parsed.dimensions !== GEMINI_EMBEDDING_DIMS || parsed.engineVersion !== KEYWORD_SHADOW_ENGINE_VERSION || !parsed.vectors) throw new Error("cache-version-mismatch");
+    if (parsed.model !== GEMINI_EMBEDDING_MODEL || parsed.dimensions !== GEMINI_EMBEDDING_DIMS || !parsed.vectors) throw new Error("cache-version-mismatch");
     return {
       model: GEMINI_EMBEDDING_MODEL,
       dimensions: GEMINI_EMBEDDING_DIMS,
-      engineVersion: KEYWORD_SHADOW_ENGINE_VERSION,
+      keyVersion: parsed.keyVersion,
+      engineVersion: parsed.engineVersion,
       vectors: Object.fromEntries(Object.entries(parsed.vectors).filter((entry): entry is [string, number[]] => isValidGeminiEmbedding(entry[1]))),
     };
   } catch {
-    return { model: GEMINI_EMBEDDING_MODEL, dimensions: GEMINI_EMBEDDING_DIMS, engineVersion: KEYWORD_SHADOW_ENGINE_VERSION, vectors: {} };
+    return { model: GEMINI_EMBEDDING_MODEL, dimensions: GEMINI_EMBEDDING_DIMS, keyVersion: CACHE_KEY_VERSION, vectors: {} };
   }
 }
 
@@ -62,7 +68,13 @@ async function embedChunkWithRetry(texts: string[]): Promise<number[][]> {
 
 export async function embedKeywordShadowTexts(texts: string[], cachePath = DEFAULT_CACHE_PATH) {
   const cache = loadCache(cachePath);
+  cache.keyVersion = CACHE_KEY_VERSION;
   const keys = texts.map(cacheKey);
+  texts.forEach((text, index) => {
+    if (cache.vectors[keys[index]]) return;
+    const legacy = cache.vectors[legacyCacheKey(text)];
+    if (legacy) cache.vectors[keys[index]] = legacy;
+  });
   const missing = keys.flatMap((key, index) => cache.vectors[key] ? [] : [{ key, text: texts[index] }]);
   for (let offset = 0; offset < missing.length; offset += EMBEDDING_CHUNK_SIZE) {
     const chunk = missing.slice(offset, offset + EMBEDDING_CHUNK_SIZE);

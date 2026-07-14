@@ -8,13 +8,18 @@ import { buildKeywordEvaluationPool } from "../lib/keyword-candidate-evaluation"
 import { getKeywordCandidateEvaluationData } from "../lib/keyword-candidate-evaluation-store";
 import {
   buildTaxonomyShadowAnchors,
+  isKeywordShadowReviewEligible,
   KEYWORD_SHADOW_ENGINE_VERSION,
+  mergeKeywordShadowReferences,
   normalizeShadowVector,
   predictKeywordCandidateShadow,
   type ShadowReference,
 } from "../lib/keyword-candidate-shadow";
 import { embedKeywordShadowTexts } from "../lib/keyword-candidate-shadow-embeddings";
-import { publishKeywordCandidateShadowAudit } from "../lib/keyword-candidate-shadow-audit-store";
+import {
+  getKeywordCandidateShadowAuditReferences,
+  publishKeywordCandidateShadowAudit,
+} from "../lib/keyword-candidate-shadow-audit-store";
 import { getSupabaseAdmin } from "../lib/supabase-admin";
 
 const OUTPUT_PATH = path.resolve(process.cwd(), ".tmp/keyword-candidate-shadow-full.json");
@@ -72,13 +77,17 @@ async function main() {
   if (error) throw error;
   if (!Array.isArray(snapshot.data)) throw new Error("평가 세트의 SearchAd 스냅샷 데이터가 없습니다.");
 
+  const savedAuditReferences = await getKeywordCandidateShadowAuditReferences(evaluation.snapshotId).catch(() => []);
+
   const pool = buildKeywordEvaluationPool(taxonomyState.taxonomy, snapshot.data as SearchAdKeywordData[]);
   const anchors = buildTaxonomyShadowAnchors(taxonomyState.taxonomy);
-  const references: ShadowReference[] = evaluation.items.map((item) => ({
+  const evaluationReferences: ShadowReference[] = evaluation.items.map((item) => ({
     id: item.id,
     keyword: item.keyword,
     label: item.humanLabel!,
   }));
+  const auditReferences: ShadowReference[] = savedAuditReferences;
+  const references = mergeKeywordShadowReferences(auditReferences, evaluationReferences);
   const referenceTexts = references.map((reference) => formatEmbeddingSearchDocument("keyword", reference.keyword));
   const evaluatedKeywords = new Set(references.map((reference) => normalizeKeyword(reference.keyword)));
   const poolTexts = pool.map((item) => formatEmbeddingSearchDocument("keyword", item.keyword));
@@ -109,13 +118,13 @@ async function main() {
         ? { category: item.lexicalCategory, subgroup: item.lexicalSubgroup, score: item.lexicalScore }
         : null,
       prediction,
+      reviewEligible: isKeywordShadowReviewEligible(item.keyword, prediction),
     };
   });
   const unregistered = results.filter((result) => !result.alreadyRegistered);
   const shadowRelevantPool = unregistered.filter((result) =>
     !result.evaluatedReference
-    && result.prediction.relevance === "relevant"
-    && result.prediction.action !== "reject",
+    && result.reviewEligible,
   );
   const topByPurpose = Object.fromEntries(PURPOSES.map((purpose) => [purpose, shadowRelevantPool
     .filter((result) => result.prediction.purpose === purpose)
@@ -146,6 +155,9 @@ async function main() {
       snapshotCreatedAt: snapshot.created_at,
       taxonomyVersion: evaluation.taxonomyVersion,
       confirmedReferences: references.length,
+      evaluationReferences: evaluationReferences.length,
+      auditReferences: auditReferences.length,
+      duplicateReferencesRemoved: evaluationReferences.length + auditReferences.length - references.length,
     },
     embedding: {
       model: GEMINI_EMBEDDING_MODEL,

@@ -37,7 +37,7 @@ type AuditResponse = {
   generatedAt: string;
   items: KeywordShadowAuditItem[];
   taxonomy: KeywordShadowAuditTaxonomyOption[];
-  stats: { total: number; labeled: number; remaining: number };
+  stats: { total: number; labeled: number; remaining: number; preReviewed: number };
 };
 type Draft = {
   relevance: EvaluationRelevance | null;
@@ -47,22 +47,25 @@ type Draft = {
   subgroup: string | null;
   notes: string;
 };
+type ConfirmResult = { confirmed: number; preserved: number; total: number; confirmedAt: string };
 
 function initialDraft(item: KeywordShadowAuditItem): Draft {
-  if (!item.humanLabel) return { relevance: null, purpose: null, action: null, category: null, subgroup: null, notes: "" };
+  const label = item.humanLabel ?? item.preReview;
+  if (!label) return { relevance: null, purpose: null, action: null, category: null, subgroup: null, notes: "" };
   return {
-    relevance: item.humanLabel.relevance,
-    purpose: item.humanLabel.purpose,
-    action: item.humanLabel.action,
-    category: item.humanLabel.category,
-    subgroup: item.humanLabel.subgroup,
-    notes: item.humanLabel.notes,
+    relevance: label.relevance,
+    purpose: label.purpose,
+    action: label.action,
+    category: label.category,
+    subgroup: label.subgroup,
+    notes: label.notes,
   };
 }
 
 export function KeywordShadowAuditPage() {
   const query = useAdminApi<AuditResponse>(ENDPOINT);
   const mutation = useAdminMutation<{ id: string; humanLabel: HumanEvaluationLabel }>();
+  const confirmation = useAdminMutation<ConfirmResult>();
   const [show, setShow] = useState<"remaining" | "all">("remaining");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -112,10 +115,15 @@ export function KeywordShadowAuditPage() {
           <div>
             <AdminPill tone="warning">독립 검증</AdminPill>
             <h1 className="mt-3 text-xl font-bold">그림자 추천 상위 100개를 감사합니다.</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">기존 300개와 겹치지 않는 목적별 상위 후보입니다. 판단 편향을 줄이기 위해 저장 전에는 모델의 예상 결과를 보여주지 않습니다.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">기존 300개와 겹치지 않는 목적별 상위 후보입니다. 블라인드 사전 검토안은 선택값에 반영하지만, 그림자 모델의 예상 결과는 직접 판단을 저장하기 전까지 보여주지 않습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/trends/keyword-evaluation"><ArrowLeft className="h-4 w-4" />초기 평가 300개</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드로</AdminActionLink>
+              {stats.preReviewed === stats.total && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
+                if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 직접 저장한 항목은 유지됩니다.`)) return;
+                const result = await confirmation.mutate(ENDPOINT, "POST", { action: "confirm-pre-reviews" });
+                if (!result.error && result.data) setSavedMessage(`사전 검토 ${result.data.confirmed}개를 확정했습니다.${result.data.preserved ? ` 직접 검토 ${result.data.preserved}개는 유지했습니다.` : ""}`);
+              }}>{confirmation.loading ? "확정 중…" : "사전 검토 일괄 확정"}</AdminActionButton>}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
@@ -127,7 +135,7 @@ export function KeywordShadowAuditPage() {
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`독립 감사 진행률 ${stats.labeled}/${stats.total}`}>
           <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${stats.total ? stats.labeled / stats.total * 100 : 0}%` }} />
         </div>
-        <p className="mt-2 text-xs text-slate-400">{query.data.engineVersion} · 택소노미 v{query.data.taxonomyVersion ?? "code"} · 스냅샷 {new Date(query.data.snapshotCreatedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
+        <p className="mt-2 text-xs text-slate-400">사전 검토 {stats.preReviewed}개 · {query.data.engineVersion} · 택소노미 v{query.data.taxonomyVersion ?? "code"} · 스냅샷 {new Date(query.data.snapshotCreatedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-3xl p-5">
@@ -137,7 +145,7 @@ export function KeywordShadowAuditPage() {
         </div>
       </AdminSurface>
 
-      {mutation.error && <AdminNotice tone="error">{mutation.error}</AdminNotice>}
+      {(mutation.error || confirmation.error) && <AdminNotice tone="error">{mutation.error ?? confirmation.error}</AdminNotice>}
       {savedMessage && <AdminNotice tone="success">{savedMessage}</AdminNotice>}
 
       {!selected ? (
@@ -150,7 +158,7 @@ export function KeywordShadowAuditPage() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           <AdminSurface tone="white" className="rounded-3xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex gap-2"><AdminPill tone="white">독립 감사</AdminPill>{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div>
+              <div className="flex gap-2"><AdminPill tone="white">독립 감사</AdminPill>{selected.preReview && !selected.humanLabel && <AdminPill tone="white">블라인드 사전 검토</AdminPill>}{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div>
               <span className="text-xs text-slate-400">월 {selected.monthlyVolume.toLocaleString("ko-KR")}회</span>
             </div>
             <h2 className="mt-5 text-2xl font-bold">{selected.keyword}</h2>
