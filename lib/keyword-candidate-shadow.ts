@@ -7,7 +7,7 @@ import type {
   HumanEvaluationLabel,
 } from "./keyword-candidate-evaluation";
 
-export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v4";
+export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v5";
 
 export interface ShadowReference {
   id: string;
@@ -102,13 +102,14 @@ function balanceVotes<T extends string>(votes: Map<T, number>, counts: Map<T, nu
 }
 
 const PRECISE_LOCAL_PATTERN =
-  /서울|검단|송도|연산동|영통|오산|인천|대구|수원|부천|일산|부산|온천|구월동|구의역|건대|주엽역|청담동|반석동|고촌|한강신도시|장기동|풍무동|구래동|마산동|양촌|걸포동|운양동|사우동|감정동|금천|김포|수성|마곡|수지구청|미금역|양산|강남|분당|아산|나성동|강북구|세종|부평구|울산|에스바른치과|더화이트치과|연세.*치과/;
+  /서울|검단|송도|연산동|영통|오산|인천|대구|수원|부천|일산|부산|온천|구월동|구의역|건대|주엽역|청담동|반석동|고촌|한강신도시|장기동|풍무동|구래동|마산동|양촌|걸포동|운양동|사우동|감정동|금천|김포|수성|마곡|수지구청|미금역|양산|강남|분당|아산|나성동|강북구|세종|부평구|울산|에스바른치과|더화이트치과|연세.*치과|^(치아)?교정치과$|^구강내과(전문의)?$/;
 const PRECISE_PRODUCT_PATTERN =
-  /워터픽|아쿠아픽|aquapick|오랄비|필립스|큐라덴|메디메이트|알로코리아|브라운|비타할로|오아|이지숨|치간칫솔|구강세정기|칫솔|치약|캔디|스프레이|세척제|세정제|세척기|살균|세정컵|가글|영양제|유산균|구취측정기|마우스가드|마우스피스|쿠션코렉트|덴텍치실|양치컵|인사돌|aq350|wf10k|구강청결제|셀프치석|셀프스케일링|치석제거|입냄새.*약|구취제거약|시린이약|치주염치료약|오스템|네오임플란트|짐머임플란트|인비절라인퍼스트/i;
+  /워터픽|아쿠아픽|aquapick|오랄비|필립스|큐라덴|메디메이트|알로코리아|브라운|비타할로|오아|이지숨|치간칫솔|구강세정기|구강스펀지|인공타액|혀클리너|구강테이프|구강오일|잇몸물청소|칫솔|치약|캔디|스프레이|세척제|세정제|세척기|살균|세정컵|가글|영양제|유산균|구취측정기|마우스가드|마우스피스|쿠션코렉트|덴텍치실|양치컵|인사돌|aq350|wf10k|구강청결제|셀프치석|셀프스케일링|치석제거|입냄새.*약|구취제거약|시린이약|치주염치료약|오스템|네오임플란트|짐머임플란트|인비절라인퍼스트/i;
 const PRECISE_FAQ_PATTERN =
-  /이가시린이유|입냄새제거방법|틀니사용법|깨진이빨|턱빠짐|치실냄새|잇몸냄새|입마름증상|인레이판매/;
+  /이가시린이유|입냄새제거방법|틀니사용법|깨진이빨|턱빠짐|치실냄새|잇몸냄새|입마름증상|인레이판매|^(한쪽턱관절|턱통증|속냄새)$/;
 const PRECISE_CONTENT_PATTERN =
-  /후기|안면비대칭교정방법|베이킹소다치아미백|입냄새한의원|임플란트보험추천|치아미백레이저|돌출입투명교정|치과보험청구|치아보험청구|금니판매|돌출입수술|임플란트수면마취/;
+  /후기|안면비대칭교정방법|베이킹소다치아미백|한의원|임플란트보험추천|치아미백레이저|돌출입투명교정|치과보험청구|치아보험청구|금니판매|^금이빨가격$|돌출입수술|임플란트수면마취|^턱관절치료운동$|^치과치료(종류)?$/;
+const PRECISE_TAXONOMY_PATTERN = /^(잇몸|잇몸염증(치료)?|잇몸(수술|병)|구강건조(증)?(치료)?|입안건조증|구강관리|구강검진치과|입안세균|구강세균|구강질환|구강전정(술|형성술)|치주질환|치주포켓|이시림)$/;
 const OBVIOUS_NOISE_PATTERN =
   /재활병원|센서|엉치|자율신경|피부과|지르코니아가공|코감기|반찬용기|변호사|노트북|비염|세탁기|^붓$|지방흡입|의료소송|안면윤곽|눈매교정|쌍꺼풀|건망증|호흡기|광대축소|^tid$|이명|어지럽|산화알루미늄|threebond|척추|허리측만|금속보수|세라믹기판|^navigation$|프롤로|계산기|접착|본드|실리콘|폴리비닐|페인트|테프론|수성로라|바인더|락앤락|^(도요다|토요다|toyota)크라운$/i;
 const REVIEW_DENTAL_EVIDENCE_PATTERN =
@@ -116,13 +117,14 @@ const REVIEW_DENTAL_EVIDENCE_PATTERN =
 const REVIEW_NEGATIVE_DOMAIN_PATTERN =
   /경락|거북목|도수치료|체외충격파|일회용수세미|해외여행준비물|프로바이오틱스유산균|소화가안되는이유|목이물감|편도암|후두암|언청이|안면마비|윤곽수술|귀족수술|생명보험/i;
 const REVIEW_AMBIGUOUS_PATTERN = /^침$|침냄새/;
-const PREDICTION_AMBIGUOUS_PATTERN = /^(침|crown)$/i;
+const PREDICTION_AMBIGUOUS_PATTERN = /^(침|crown|구강|잇몸튼튼)$/i;
 
 function precisePurposeSignal(keyword: string): EvaluationPurpose | null {
   if (PRECISE_LOCAL_PATTERN.test(keyword)) return "local";
   if (PRECISE_FAQ_PATTERN.test(keyword)) return "faq";
   if (PRECISE_CONTENT_PATTERN.test(keyword)) return "content";
   if (PRECISE_PRODUCT_PATTERN.test(keyword)) return "product";
+  if (PRECISE_TAXONOMY_PATTERN.test(keyword)) return "taxonomy";
   return null;
 }
 
@@ -133,19 +135,24 @@ function taxonomyIntentScore(
 ): number {
   if (category === "orthodontics") {
     const specificMethod = /부분교정|클리피씨|투명교정|설측교정|인비절라인/.test(normalizedKeyword);
+    const ageIntent = /성인|중년|노년|\d{2}대/.test(normalizedKeyword);
+    const costIntent = /비용|가격|기간|얼마/.test(normalizedKeyword);
     const malocclusionConcern = /부정교합|과개교합|개방교합|반대교합|교차교합/.test(normalizedKeyword)
       && !/교정기|교정장치/.test(normalizedKeyword);
-    if (subgroup === "비용/기간" && /교정/.test(normalizedKeyword) && /비용|가격|기간|얼마/.test(normalizedKeyword) && !specificMethod) return 1;
-    if (subgroup === "심미/고민" && (/비대칭|벌어짐|돌출입|덧니|뻐드렁|주걱턱/.test(normalizedKeyword) || malocclusionConcern)) return 1;
+    if (subgroup === "비용/기간" && /교정/.test(normalizedKeyword) && costIntent && !specificMethod) return 1;
+    if (subgroup === "대상/나이" && /교정/.test(normalizedKeyword) && ageIntent) return 1;
+    if (subgroup === "심미/고민" && !costIntent && (/비대칭|벌어짐|돌출입|덧니|뻐드렁|주걱턱/.test(normalizedKeyword) || malocclusionConcern)) return 1;
     if (subgroup === "종류/방법" && specificMethod) return 1;
     if (subgroup === "종류/방법" && /교정/.test(normalizedKeyword)
+      && !ageIntent
       && !/비용|가격|기간|통증|부작용|나이|유지|재교정|비대칭|벌어짐|돌출입|부정교합|과개교합|개방교합|반대교합|교차교합/.test(normalizedKeyword)) return 0.8;
   }
   if (category === "pediatric" && subgroup === "교정시기" && /소아교정/.test(normalizedKeyword)) return 1;
   if (category === "dental-choice" && subgroup === "신뢰/후기/선택" && /추천|후기|잘하는/.test(normalizedKeyword)) return 1;
   if (category === "implant" && subgroup === "첨단/디지털" && /네비게이션|디지털/.test(normalizedKeyword)) return 1;
+  if (category === "implant" && subgroup === "뼈이식/골증대" && /뼈이식|골이식|상악동거상/.test(normalizedKeyword)) return 1;
   if (category === "prevention" && subgroup === "잇몸질환/치료"
-    && /잇몸/.test(normalizedKeyword) && !/임플란트/.test(normalizedKeyword)) return 1;
+    && /잇몸/.test(normalizedKeyword) && !/임플란트|뼈이식|골이식/.test(normalizedKeyword)) return 1;
   if (category === "prevention" && subgroup === "구강위생" && /구강관리|입안세균/.test(normalizedKeyword)) return 1;
   if (category === "general-care" && subgroup === "턱관절/이갈이" && /턱관절/.test(normalizedKeyword)) return 1;
   if (category === "restorative" && subgroup === "레진" && /레진/.test(normalizedKeyword)) return 1;

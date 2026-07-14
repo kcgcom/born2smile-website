@@ -103,19 +103,25 @@ async function main() {
       rerankedCandidates: prediction.taxonomyCandidates,
     };
   };
-  const targets = audit.items.filter((item) => item.humanLabel?.purpose === "taxonomy");
-  const results = targets.map((target) => {
+  const activeResults = audit.items.map((target) => {
     const reference = references.find((item) =>
       item.id.includes(target.id) && normalizeKeyword(item.keyword) === normalizeKeyword(target.keyword),
     );
     if (!reference) throw new Error(`활성 감사 참조를 찾을 수 없습니다: ${target.keyword}`);
-    return { ...evaluateReference(reference), previousCandidates: target.taxonomyCandidates };
+    return {
+      ...evaluateReference(reference),
+      previousPurpose: target.predictedPurpose,
+      previousCandidates: target.taxonomyCandidates,
+    };
   });
+  const results = activeResults.filter((result) => result.expected.purpose === "taxonomy");
   const allCrossValidationResults = references.map(evaluateReference);
   const crossValidationResults = allCrossValidationResults.filter((result) =>
     result.expected.purpose === "taxonomy" && result.expected.category && result.expected.subgroup,
   );
   const metrics = {
+    previousPurposeAccuracy: activeResults.filter((result) => result.previousPurpose === result.expected.purpose).length / activeResults.length,
+    rerankedPurposeAccuracy: activeResults.filter((result) => result.predictedPurpose === result.expected.purpose).length / activeResults.length,
     previousTop1: results.filter((result) => matchesPlacement(result.previousCandidates[0], result.expected)).length / results.length,
     previousTop3: results.filter((result) => result.previousCandidates.some((candidate) => matchesPlacement(candidate, result.expected))).length / results.length,
     rerankedTop1: results.filter((result) => matchesPlacement(result.rerankedCandidates[0], result.expected)).length / results.length,
@@ -140,6 +146,12 @@ async function main() {
       keyword: result.keyword,
       expected: `${result.expected.category}/${result.expected.subgroup}`,
       candidates: result.rerankedCandidates,
+    })),
+    purposeErrors: activeResults.filter((result) => result.predictedPurpose !== result.expected.purpose).map((result) => ({
+      keyword: result.keyword,
+      expected: result.expected.purpose,
+      previous: result.previousPurpose,
+      predicted: result.predictedPurpose,
     })),
     crossValidationErrors: crossValidationResults.filter((result) => !matchesPlacement(result.rerankedCandidates[0], result.expected)).map((result) => ({
       keyword: result.keyword,
