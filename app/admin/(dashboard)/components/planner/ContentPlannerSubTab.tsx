@@ -130,9 +130,7 @@ function itemReevaluation(item: ContentPlannerItem): ContentReevaluationState | 
 }
 
 function reevaluationLabel(state: ContentReevaluationState): string {
-  if (state.status === "awaiting-content-change") return "콘텐츠 변경 확인 필요";
-  if (state.status === "pending-evidence-refresh") return "근거 재평가 대기";
-  return "재평가 취소";
+  return ({ "awaiting-content-change": "콘텐츠 변경 확인 필요", "pending-evidence-refresh": "근거 재평가 대기", processing: "근거 재검색 중", "needs-review": "새 근거 검토 필요", completed: "재평가 반영 완료", failed: "재평가 실패", cancelled: "재평가 취소" } as const)[state.status];
 }
 
 function buildCandidates(data: StrategyOverviewData): PlannerCandidate[] {

@@ -1,10 +1,12 @@
 import type { ContentPlannerItem } from "../content-planner";
 import { getSupabaseAdmin } from "../supabase-admin";
+import type { ConceptReviewSeed, ConceptSupportLabel } from "./concept-review";
 import { getCurrentTargetEvidenceRevision } from "./operational-evidence";
+import type { RetrievalReviewLabel } from "./retrieval-evaluation";
 
 export const CONTENT_REEVALUATION_VERSION = "content-reevaluation-v1" as const;
 
-export type ContentReevaluationStatus = "awaiting-content-change" | "pending-evidence-refresh" | "cancelled";
+export type ContentReevaluationStatus = "awaiting-content-change" | "pending-evidence-refresh" | "processing" | "needs-review" | "completed" | "failed" | "cancelled";
 
 export interface ContentReevaluationState {
   schemaVersion: typeof CONTENT_REEVALUATION_VERSION;
@@ -19,8 +21,14 @@ export interface ContentReevaluationState {
   reason: string;
   requestedAt: string;
   requestedBy: string;
+  updatedAt: string;
+  processingAt: string | null;
   cancelledAt: string | null;
   cancelledBy: string | null;
+  candidateSet: ConceptReviewSeed | null;
+  completedAt: string | null;
+  completedBy: string | null;
+  error: string | null;
 }
 
 function cacheKey(actionKey: string) {
@@ -65,8 +73,14 @@ export function buildContentReevaluationState(
           : "작업 승인 이후 대상 콘텐츠 리비전이 바뀌지 않았습니다.",
     requestedAt,
     requestedBy,
+    updatedAt: requestedAt,
+    processingAt: null,
     cancelledAt: null,
     cancelledBy: null,
+    candidateSet: null,
+    completedAt: null,
+    completedBy: null,
+    error: null,
   };
 }
 
@@ -78,13 +92,14 @@ async function loadState(actionKey: string): Promise<ContentReevaluationState | 
 }
 
 async function persistState(state: ContentReevaluationState) {
+  const next = { ...state, updatedAt: new Date().toISOString() };
   const { error } = await getSupabaseAdmin().from("api_cache").upsert({
-    key: cacheKey(state.actionKey),
-    data: state,
-    fetched_at: state.cancelledAt ?? state.requestedAt,
+    key: cacheKey(next.actionKey),
+    data: next,
+    fetched_at: next.updatedAt,
   });
   if (error) throw error;
-  return state;
+  return next;
 }
 
 export async function requestContentReevaluation(item: ContentPlannerItem, requestedBy: string) {
@@ -121,6 +136,93 @@ export async function loadContentReevaluationStates(actionKeys: string[]): Promi
     return state?.schemaVersion === CONTENT_REEVALUATION_VERSION ? [state] : [];
   });
   return new Map(states.map((state) => [state.actionKey, state]));
+}
+
+export async function listContentReevaluationStates(): Promise<ContentReevaluationState[]> {
+  const prefix = `content-coverage:reevaluation:${CONTENT_REEVALUATION_VERSION}:`;
+  const { data, error } = await getSupabaseAdmin().from("api_cache").select("data").like("key", `${prefix}%`);
+  if (error) throw error;
+  return (data ?? []).flatMap((row) => {
+    const state = row.data as ContentReevaluationState | null;
+    return state?.schemaVersion === CONTENT_REEVALUATION_VERSION ? [state] : [];
+  }).sort((left, right) => right.requestedAt.localeCompare(left.requestedAt));
+}
+
+export async function claimContentReevaluation(actionKey?: string) {
+  const states = await listContentReevaluationStates();
+  const staleBefore = Date.now() - 30 * 60 * 1000;
+  const target = [...states].reverse().find((state) => {
+    const staleProcessing = state.status === "processing"
+      && (!state.processingAt || new Date(state.processingAt).getTime() < staleBefore);
+    return (state.status === "pending-evidence-refresh" || staleProcessing) && (!actionKey || state.actionKey === actionKey);
+  });
+  if (!target) return null;
+  return persistState({ ...target, status: "processing", processingAt: new Date().toISOString(), error: null });
+}
+
+export async function completeContentReevaluationGeneration(actionKey: string, candidateSet: ConceptReviewSeed, observedRevision?: string | null) {
+  const state = await loadState(actionKey);
+  if (!state) throw new Error("REEVALUATION_NOT_FOUND");
+  if (state.status !== "processing") throw new Error("REEVALUATION_NOT_PROCESSING");
+  if (candidateSet.items.some((item) => item.topicSpecId !== state.topicSpecId)) throw new Error("REEVALUATION_TOPIC_MISMATCH");
+  if (candidateSet.items.length === 0) throw new Error("REEVALUATION_EMPTY_CANDIDATES");
+  return persistState({
+    ...state,
+    status: "needs-review",
+    candidateSet,
+    observedRevision: observedRevision === undefined ? state.observedRevision : observedRevision,
+    processingAt: null,
+    completedAt: null,
+    completedBy: null,
+    error: null,
+  });
+}
+
+export async function failContentReevaluationGeneration(actionKey: string, message: string) {
+  const state = await loadState(actionKey);
+  if (!state) return null;
+  return persistState({ ...state, status: "failed", processingAt: null, error: message.slice(0, 1000) });
+}
+
+export async function retryContentReevaluation(actionKey: string) {
+  const state = await loadState(actionKey);
+  if (!state) throw new Error("REEVALUATION_NOT_FOUND");
+  if (state.status !== "failed") throw new Error("REEVALUATION_NOT_FAILED");
+  return persistState({ ...state, status: "pending-evidence-refresh", processingAt: null, error: null });
+}
+
+export async function saveContentReevaluationReviewEntry(
+  actionKey: string,
+  id: string,
+  input: {
+    topicReviewLabel: Exclude<RetrievalReviewLabel, null>;
+    conceptLabels: Record<string, ConceptSupportLabel>;
+    notes: string;
+  },
+  reviewedBy: string,
+) {
+  const state = await loadState(actionKey);
+  if (!state?.candidateSet) throw new Error("REEVALUATION_NOT_FOUND");
+  if (state.status !== "needs-review") throw new Error("REEVALUATION_NOT_REVIEWABLE");
+  const item = state.candidateSet.items.find((candidate) => candidate.id === id);
+  if (!item) throw new Error("REEVALUATION_ITEM_NOT_FOUND");
+  const expectedConceptIds = [...item.conceptIds].sort();
+  const receivedConceptIds = Object.keys(input.conceptLabels).sort();
+  if (expectedConceptIds.join("|") !== receivedConceptIds.join("|")) throw new Error("REEVALUATION_LABEL_MISMATCH");
+  const items = state.candidateSet.items.map((candidate) => candidate.id === id ? { ...candidate, ...input } : candidate);
+  const complete = items.every((candidate) => candidate.topicReviewLabel != null
+    && candidate.conceptIds.every((conceptId) => candidate.conceptLabels[conceptId] != null));
+  const now = new Date().toISOString();
+  const next = {
+    ...state,
+    status: complete ? "completed" as const : "needs-review" as const,
+    reason: complete ? "새 근거 후보 검토를 완료해 최신 운영 판정에 반영했습니다." : state.reason,
+    candidateSet: { ...state.candidateSet, items },
+    completedAt: complete ? now : null,
+    completedBy: complete ? reviewedBy : null,
+  };
+  await persistState(next);
+  return next;
 }
 
 export function withContentReevaluationState(item: ContentPlannerItem, state: ContentReevaluationState | null): ContentPlannerItem {

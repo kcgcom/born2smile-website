@@ -13,6 +13,7 @@ export interface ConceptReviewItem {
   rank: number;
   documentId: string;
   evidenceUnitId: string;
+  evidenceContentHash?: string;
   title: string;
   headingPath: string[];
   path: string | null;
@@ -194,6 +195,7 @@ export function buildConceptReviewSeed(
         rank: index + 1,
         documentId: candidate.documentId,
         evidenceUnitId: candidate.evidenceUnitId,
+        evidenceContentHash: candidate.contentHash,
         title: candidate.title,
         headingPath: candidate.headingPath,
         path: candidate.path,

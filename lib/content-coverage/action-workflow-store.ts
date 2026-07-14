@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "../supabase-admin";
 import { ACTION_RECOMMENDATION_VERSION } from "./action-recommendation";
 import { getCurrentActionRecommendationReport } from "./action-recommendation-data";
 import { getCurrentTargetEvidenceRevision } from "./operational-evidence";
-import { loadContentReevaluationStates, type ContentReevaluationState } from "./reevaluation-store";
+import { listContentReevaluationStates, type ContentReevaluationState } from "./reevaluation-store";
 import { COVERAGE_TOPIC_SPECS } from "./topic-specs";
 import type { ActionRecommendation, ContentActionType } from "./types";
 
@@ -62,8 +62,14 @@ export async function getActionWorkflowData() {
   const [saved, plannerItems, reevaluationStates] = await Promise.all([
     loadSavedData(report.retrievalVersion, report.assessmentInput.version),
     loadPlannerItems(actionKeys),
-    loadContentReevaluationStates(actionKeys),
+    listContentReevaluationStates(),
   ]);
+  const reevaluationByActionKey = new Map(reevaluationStates.map((state) => [state.actionKey, state]));
+  const latestCompletedByTopic = new Map<string, ContentReevaluationState>();
+  for (const state of reevaluationStates.filter((candidate) => candidate.status === "completed" && candidate.topicSpecId)) {
+    const current = latestCompletedByTopic.get(state.topicSpecId!);
+    if (!current || (state.completedAt ?? state.requestedAt) > (current.completedAt ?? current.requestedAt)) latestCompletedByTopic.set(state.topicSpecId!, state);
+  }
   const recommendations: ActionWorkflowItem[] = report.recommendations.map((recommendation) => {
     const reviewState = saved.reviewStates[recommendation.actionKey] ?? null;
     const unresolvedBlockerKeys = recommendation.blockedBy
@@ -78,7 +84,8 @@ export async function getActionWorkflowData() {
       canCompleteReview: REVIEW_ACTIONS.has(recommendation.actionType),
       canPromote: PROMOTABLE_ACTIONS.has(recommendation.actionType) && unresolvedBlockerKeys.length === 0 && plannerItem == null,
       plannerItem,
-      reevaluationState: reevaluationStates.get(recommendation.actionKey) ?? null,
+      reevaluationState: reevaluationByActionKey.get(recommendation.actionKey)
+        ?? latestCompletedByTopic.get(recommendation.topicSpecId) ?? null,
     };
   });
   return {
@@ -93,7 +100,7 @@ export async function getActionWorkflowData() {
       blocked: recommendations.filter((item) => PROMOTABLE_ACTIONS.has(item.actionType) && item.unresolvedBlockerKeys.length > 0).length,
       promoted: recommendations.filter((item) => item.plannerItem != null).length,
       reevaluationPending: recommendations.filter((item) => item.reevaluationState != null
-        && item.reevaluationState.status !== "cancelled").length,
+        && item.reevaluationState.status !== "cancelled" && item.reevaluationState.status !== "completed").length,
     },
   };
 }

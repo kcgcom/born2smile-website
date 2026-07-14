@@ -17,10 +17,13 @@ type WorkflowResponse = {
   retrievalVersion: string;
   assessmentInput: {
     version: string;
-    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "static-evaluation";
+    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "baseline-with-reevaluation" | "baseline-with-admin-overrides-and-reevaluation" | "static-evaluation";
     baselineReviewedAt: string;
     adminOverrideCount: number;
     latestAdminReviewAt: string | null;
+    completedReevaluationCount: number;
+    latestReevaluationAt: string | null;
+    topicReevaluationVersions: Record<string, string>;
   };
   recommendations: ActionWorkflowItem[];
   stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number; reevaluationPending: number };
@@ -101,6 +104,7 @@ export function ContentCoverageActionsPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review"><ArrowLeft className="h-4 w-4" />개념별 근거 검토</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석으로</AdminActionLink>
+              <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">재평가 검토</AdminActionLink>
               <AdminActionLink tone="primary" href="/admin/content/planner">콘텐츠 플래너</AdminActionLink>
             </div>
           </div>
@@ -115,6 +119,7 @@ export function ContentCoverageActionsPage() {
         <p className="mt-5 text-xs text-slate-400">
           판정 {query.data.schemaVersion} · 근거 검색 {query.data.retrievalVersion} · 운영 라벨 {query.data.assessmentInput.version}
           {query.data.assessmentInput.adminOverrideCount > 0 ? ` · 관리자 수정 ${query.data.assessmentInput.adminOverrideCount}건` : " · 검토 기준선 사용"}
+          {query.data.assessmentInput.completedReevaluationCount > 0 ? ` · 완료 재평가 ${query.data.assessmentInput.completedReevaluationCount}건` : ""}
         </p>
       </AdminSurface>
 
@@ -174,7 +179,17 @@ function Section({ icon, title, description, count, children }: { icon: React.Re
 }
 
 function ContentActionCard({ item, loading, onPromote }: { item: ActionWorkflowItem; loading: boolean; onPromote: () => void }) {
-  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${item.reevaluationState.status === "awaiting-content-change" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-sky-200 bg-sky-50 text-sky-900"}`}><strong>{item.reevaluationState.status === "awaiting-content-change" ? "콘텐츠 변경 확인 필요" : "근거 재평가 대기"}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
+  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${reevaluationTone(item.reevaluationState.status)}`}><strong>{reevaluationLabel(item.reevaluationState.status)}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.reevaluationState?.status === "needs-review" && <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">새 근거 검토</AdminActionLink>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
+}
+
+function reevaluationLabel(status: NonNullable<ActionWorkflowItem["reevaluationState"]>["status"]) {
+  return ({ "awaiting-content-change": "콘텐츠 변경 확인 필요", "pending-evidence-refresh": "임베딩 워커 대기", processing: "근거 재검색 중", "needs-review": "새 근거 검토 필요", completed: "재평가 반영 완료", failed: "재평가 실패", cancelled: "재평가 취소" } as const)[status];
+}
+
+function reevaluationTone(status: NonNullable<ActionWorkflowItem["reevaluationState"]>["status"]) {
+  if (status === "awaiting-content-change" || status === "failed") return "border-amber-200 bg-amber-50 text-amber-900";
+  if (status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  return "border-sky-200 bg-sky-50 text-sky-900";
 }
 
 function ActionHeader({ item }: { item: ActionWorkflowItem }) {

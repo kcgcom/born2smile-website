@@ -9,10 +9,13 @@ export interface ActionRecommendationReport {
   retrievalVersion: string;
   assessmentInput: {
     version: string;
-    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "static-evaluation";
+    source: "reviewed-baseline" | "baseline-with-admin-overrides" | "baseline-with-reevaluation" | "baseline-with-admin-overrides-and-reevaluation" | "static-evaluation";
     baselineReviewedAt: string;
     adminOverrideCount: number;
     latestAdminReviewAt: string | null;
+    completedReevaluationCount: number;
+    latestReevaluationAt: string | null;
+    topicReevaluationVersions: Record<string, string>;
   };
   recommendations: ActionRecommendation[];
 }
@@ -58,6 +61,9 @@ export function buildActionRecommendations(
     baselineReviewedAt: satisfaction.reviewedAt,
     adminOverrideCount: 0,
     latestAdminReviewAt: null,
+    completedReevaluationCount: 0,
+    latestReevaluationAt: null,
+    topicReevaluationVersions: {},
   },
 ): ActionRecommendationReport {
   if (satisfaction.schemaVersion !== CONCEPT_SATISFACTION_VERSION) throw new Error("지원하지 않는 개념 충족 판정입니다.");
@@ -128,7 +134,7 @@ export function buildActionRecommendations(
       const actionType = actionTypeFor(spec);
       assertAllowed(spec, actionType);
       recommendations.push({
-        actionKey: `${ACTION_RECOMMENDATION_VERSION}:${spec.id}:${actionType}`,
+        actionKey: `${ACTION_RECOMMENDATION_VERSION}:${spec.id}:${actionType}${assessmentInput.topicReevaluationVersions[spec.id] ? `:${assessmentInput.topicReevaluationVersions[spec.id]}` : ""}`,
         topicSpecId: spec.id,
         title: `${spec.label}의 부족한 개념을 ${spec.actionPolicy.primarySurface === "faq" ? "FAQ에 보강" : "기본 페이지에 보강"}`,
         actionType,

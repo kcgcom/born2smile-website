@@ -173,6 +173,23 @@ const changedOperationalReview = buildOperationalConceptReviewSnapshot({
   },
 });
 assert.notEqual(changedOperationalReview.input.version, initialOperationalReview.input.version, "판정 내용이 바뀌면 운영 입력 버전도 바뀌어야 합니다.");
+const completedReevaluation = {
+  ...buildContentReevaluationState(coveragePlannerItem, "changed-revision", "contract@example.com", generatedAt),
+  status: "completed" as const,
+  candidateSet: {
+    ...reviewedConcepts,
+    generatedAt: "2026-07-15T00:00:00.000Z",
+    items: reviewedConcepts.items.filter((item) => item.topicSpecId === "orthodontics-pain-risks"),
+  },
+  completedAt: "2026-07-15T00:10:00.000Z",
+  completedBy: "contract@example.com",
+};
+const reevaluatedOperationalReview = buildOperationalConceptReviewSnapshot({}, [completedReevaluation]);
+assert.equal(reevaluatedOperationalReview.input.source, "baseline-with-reevaluation");
+assert.equal(reevaluatedOperationalReview.input.completedReevaluationCount, 1);
+assert.notEqual(reevaluatedOperationalReview.input.version, initialOperationalReview.input.version, "재평가 완료 시 운영 입력 버전을 갱신해야 합니다.");
+assert.equal(reevaluatedOperationalReview.review.items.filter((item) => item.topicSpecId === "orthodontics-pain-risks").length,
+  completedReevaluation.candidateSet.items.length, "완료한 재평가 후보가 해당 주제의 운영 후보를 교체해야 합니다.");
 const conceptEvaluation = evaluateConceptReview(COVERAGE_TOPIC_SPECS, reviewedConcepts);
 assert.equal(conceptEvaluation.conceptJudgments, 64, "개념 기준선 판정 수가 달라졌습니다.");
 assert.deepEqual(
@@ -244,6 +261,18 @@ assert.equal(actionRecommendations.recommendations.filter((recommendation) => re
   || (recommendation.actionType === "add-faq" && recommendation.topicSpecId === "pediatric-dental-trauma")).every((recommendation) =>
   recommendation.blockedBy.some((blocker) => blocker.type === "must-complete-before")), true, "임상 콘텐츠 수정은 의료진 검토에 막혀야 합니다.");
 assert.equal(actionRecommendations.recommendations.find((recommendation) => recommendation.topicSpecId === "dental-cost-insurance")?.blockedBy.length, 0, "민간보험 FAQ는 임상 검토에 막히면 안 됩니다.");
+const reevaluatedSatisfaction = assessConceptSatisfaction(
+  COVERAGE_TOPIC_SPECS,
+  reevaluatedOperationalReview.review,
+  conceptSearchResolutionJson as ConceptSearchResolution,
+);
+const reevaluatedActions = buildActionRecommendations(COVERAGE_TOPIC_SPECS, reevaluatedSatisfaction, {
+  ...reevaluatedOperationalReview.input,
+  baselineReviewedAt: conceptSearchResolutionJson.reviewedAt,
+});
+assert.equal(reevaluatedActions.recommendations.some((recommendation) => recommendation.topicSpecId === "orthodontics-pain-risks"
+  && recommendation.actionType === "update-treatment-page" && recommendation.actionKey.includes(reevaluatedOperationalReview.input.topicReevaluationVersions["orthodontics-pain-risks"])),
+true, "재평가 후에도 공백이 남으면 새 반복 작업 키를 만들어야 합니다.");
 const unresolvedActions = buildActionRecommendations(COVERAGE_TOPIC_SPECS, unresolvedSatisfaction);
 assert.equal(unresolvedActions.recommendations.some((recommendation) => recommendation.actionType === "evidence-review"
   && recommendation.topicSpecId === "dental-cost-insurance"), true, "미평가 개념은 콘텐츠 작성 대신 근거 재검토를 추천해야 합니다.");

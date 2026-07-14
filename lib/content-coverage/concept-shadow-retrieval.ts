@@ -19,6 +19,7 @@ export interface ConceptEvidenceCandidate {
   matchedConceptIds: string[];
   documentId: string;
   evidenceUnitId: string;
+  contentHash: string;
   title: string;
   headingPath: string[];
   path: string | null;
@@ -341,6 +342,7 @@ export async function buildConceptShadowRetrieval(
           matchedConceptIds: [concept.id],
           documentId: unit.document.id,
           evidenceUnitId: unit.evidence.id,
+          contentHash: unit.evidence.contentHash,
           title: unit.document.title,
           headingPath: unit.evidence.headingPath,
           path: placement?.path ?? null,
