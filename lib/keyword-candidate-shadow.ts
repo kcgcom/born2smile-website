@@ -7,7 +7,7 @@ import type {
   HumanEvaluationLabel,
 } from "./keyword-candidate-evaluation";
 
-export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v5";
+export const KEYWORD_SHADOW_ENGINE_VERSION = "keyword-shadow-v6";
 
 export interface ShadowReference {
   id: string;

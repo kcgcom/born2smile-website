@@ -1,6 +1,6 @@
 import type { HumanEvaluationLabel } from "./keyword-candidate-evaluation";
 import type { KeywordShadowAuditTaxonomyOption } from "./keyword-candidate-shadow-audit-store";
-import type { KeywordShadowPrediction, ShadowTaxonomyCandidate } from "./keyword-candidate-shadow";
+import type { KeywordShadowPrediction, ShadowReference, ShadowTaxonomyCandidate } from "./keyword-candidate-shadow";
 import { getSupabaseAdmin } from "./supabase-admin";
 
 const SCHEMA_VERSION = 1;
@@ -81,6 +81,16 @@ async function persistBoundaryReview(data: SavedKeywordBoundaryReviewData, fetch
   if (error) throw error;
 }
 
+async function archiveBoundaryReview(data: SavedKeywordBoundaryReviewData): Promise<void> {
+  const key = `keyword-candidate:boundary-review:history:${data.snapshotId}:${data.engineVersion}`;
+  const { error } = await getSupabaseAdmin().from("api_cache").upsert({
+    key,
+    data,
+    fetched_at: data.generatedAt,
+  });
+  if (error) throw error;
+}
+
 export async function publishKeywordCandidateBoundaryReview(input: PublishKeywordBoundaryReviewInput) {
   if (input.items.length === 0 || input.items.length > 30) throw new Error("BOUNDARY_REVIEW_SIZE_INVALID");
   const previous = await loadSavedBoundaryReview();
@@ -98,6 +108,9 @@ export async function publishKeywordCandidateBoundaryReview(input: PublishKeywor
     preReviews,
     labels,
   };
+  if (previous && (previous.snapshotId !== input.snapshotId || previous.engineVersion !== input.engineVersion)) {
+    await archiveBoundaryReview(previous);
+  }
   await persistBoundaryReview(saved, input.generatedAt);
   return { published: input.items.length, preservedLabels: Object.keys(labels).length };
 }
@@ -119,6 +132,49 @@ export async function getKeywordCandidateBoundaryReviewData() {
     })),
     taxonomy: saved.taxonomy,
   };
+}
+
+export async function getKeywordCandidateBoundaryReviewReferences(snapshotId: string): Promise<ShadowReference[]> {
+  const active = await loadSavedBoundaryReview();
+  const { data, error } = await getSupabaseAdmin()
+    .from("api_cache")
+    .select("data")
+    .like("key", "keyword-candidate:boundary-review:history:%");
+  if (error) throw error;
+  const history = (data ?? []).flatMap((row) => {
+    const saved = row.data as Partial<SavedKeywordBoundaryReviewData> | null;
+    return saved && saved.schemaVersion === SCHEMA_VERSION && Array.isArray(saved.items) && saved.labels
+      ? [{
+          snapshotId: saved.snapshotId ?? "unknown",
+          engineVersion: saved.engineVersion ?? "unknown",
+          items: saved.items,
+          labels: saved.labels,
+        }]
+      : [];
+  });
+  const datasets = [
+    ...(active ? [{
+      snapshotId: active.snapshotId,
+      engineVersion: active.engineVersion,
+      items: active.items,
+      labels: active.labels,
+    }] : []),
+    ...history,
+  ].filter((dataset) => dataset.snapshotId === snapshotId);
+  const references = new Map<string, ShadowReference>();
+  for (const dataset of datasets) {
+    for (const item of dataset.items) {
+      const label = dataset.labels[item.id];
+      if (!label) continue;
+      const key = item.keyword.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+      if (!references.has(key)) references.set(key, {
+        id: `boundary:${dataset.engineVersion}:${item.id}`,
+        keyword: item.keyword,
+        label,
+      });
+    }
+  }
+  return [...references.values()];
 }
 
 export async function saveKeywordCandidateBoundaryReviewPreReviews(

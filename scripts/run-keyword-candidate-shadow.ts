@@ -16,7 +16,10 @@ import {
   type ShadowReference,
 } from "../lib/keyword-candidate-shadow";
 import { embedKeywordShadowTexts } from "../lib/keyword-candidate-shadow-embeddings";
-import { publishKeywordCandidateBoundaryReview } from "../lib/keyword-candidate-boundary-review-store";
+import {
+  getKeywordCandidateBoundaryReviewReferences,
+  publishKeywordCandidateBoundaryReview,
+} from "../lib/keyword-candidate-boundary-review-store";
 import {
   getKeywordCandidateShadowAuditReferences,
   publishKeywordCandidateShadowAudit,
@@ -101,7 +104,10 @@ async function main() {
   if (error) throw error;
   if (!Array.isArray(snapshot.data)) throw new Error("평가 세트의 SearchAd 스냅샷 데이터가 없습니다.");
 
-  const savedAuditReferences = await getKeywordCandidateShadowAuditReferences(evaluation.snapshotId).catch(() => []);
+  const [savedAuditReferences, boundaryReferences] = await Promise.all([
+    getKeywordCandidateShadowAuditReferences(evaluation.snapshotId).catch(() => []),
+    getKeywordCandidateBoundaryReviewReferences(evaluation.snapshotId).catch(() => []),
+  ]);
 
   const pool = buildKeywordEvaluationPool(taxonomyState.taxonomy, snapshot.data as SearchAdKeywordData[]);
   const anchors = buildTaxonomyShadowAnchors(taxonomyState.taxonomy);
@@ -111,7 +117,10 @@ async function main() {
     label: item.humanLabel!,
   }));
   const auditReferences: ShadowReference[] = savedAuditReferences;
-  const references = mergeKeywordShadowReferences(auditReferences, evaluationReferences);
+  const references = mergeKeywordShadowReferences(
+    boundaryReferences,
+    mergeKeywordShadowReferences(auditReferences, evaluationReferences),
+  );
   const referenceTexts = references.map((reference) => formatEmbeddingSearchDocument("keyword", reference.keyword));
   const evaluatedKeywords = new Set(references.map((reference) => normalizeKeyword(reference.keyword)));
   const poolTexts = pool.map((item) => formatEmbeddingSearchDocument("keyword", item.keyword));
@@ -204,7 +213,8 @@ async function main() {
       confirmedReferences: references.length,
       evaluationReferences: evaluationReferences.length,
       auditReferences: auditReferences.length,
-      duplicateReferencesRemoved: evaluationReferences.length + auditReferences.length - references.length,
+      boundaryReferences: boundaryReferences.length,
+      duplicateReferencesRemoved: evaluationReferences.length + auditReferences.length + boundaryReferences.length - references.length,
     },
     embedding: {
       model: GEMINI_EMBEDDING_MODEL,
