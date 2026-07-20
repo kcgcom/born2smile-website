@@ -25,9 +25,10 @@ export async function GET(request: NextRequest) {
   try {
     const review = await getKeywordCandidateBoundaryReviewData();
     const labeled = review.items.filter((item) => item.humanLabel != null).length;
+    const preReviewed = review.items.filter((item) => item.preReview != null).length;
     return Response.json({ data: {
       ...review,
-      stats: { total: review.items.length, labeled, remaining: review.items.length - labeled },
+      stats: { total: review.items.length, labeled, remaining: review.items.length - labeled, preReviewed },
     } }, { headers: HEADERS });
   } catch (error) {
     if (error instanceof Error && error.message === "BOUNDARY_REVIEW_NOT_FOUND") {

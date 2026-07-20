@@ -33,7 +33,7 @@ interface BoundaryResponse {
   generatedAt: string;
   items: KeywordBoundaryReviewItem[];
   taxonomy: KeywordShadowAuditTaxonomyOption[];
-  stats: { total: number; labeled: number; remaining: number };
+  stats: { total: number; labeled: number; remaining: number; preReviewed: number };
 }
 
 interface Draft {
@@ -46,13 +46,14 @@ interface Draft {
 }
 
 function initialDraft(item: KeywordBoundaryReviewItem): Draft {
-  if (item.humanLabel) return {
-    relevance: item.humanLabel.relevance,
-    purpose: item.humanLabel.purpose,
-    action: item.humanLabel.action,
-    category: item.humanLabel.category,
-    subgroup: item.humanLabel.subgroup,
-    notes: item.humanLabel.notes,
+  const reviewed = item.humanLabel ?? item.preReview;
+  if (reviewed) return {
+    relevance: reviewed.relevance,
+    purpose: reviewed.purpose,
+    action: reviewed.action,
+    category: reviewed.category,
+    subgroup: reviewed.subgroup,
+    notes: reviewed.notes,
   };
   const top = item.taxonomyCandidates[0];
   return {
@@ -121,7 +122,7 @@ export function KeywordBoundaryReviewPage() {
           <div className="grid grid-cols-3 gap-2 text-center"><Metric label="전체" value={stats.total} /><Metric label="완료" value={stats.labeled} /><Metric label="남음" value={stats.remaining} /></div>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${stats.total ? stats.labeled / stats.total * 100 : 0}%` }} /></div>
-        <p className="mt-2 text-xs text-slate-400">{query.data.engineVersion} · 택소노미 v{query.data.taxonomyVersion ?? "code"} · 생성 {new Date(query.data.generatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
+        <p className="mt-2 text-xs text-slate-400">사전 검토 {stats.preReviewed}개 · {query.data.engineVersion} · 택소노미 v{query.data.taxonomyVersion ?? "code"} · 생성 {new Date(query.data.generatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-3xl p-5"><div className="flex flex-wrap gap-2"><FilterButton active={show === "remaining"} onClick={() => { setShow("remaining"); setSelectedId(null); }}>미완료만</FilterButton><FilterButton active={show === "all"} onClick={() => { setShow("all"); setSelectedId(null); }}>전체 보기</FilterButton></div></AdminSurface>
@@ -133,7 +134,7 @@ export function KeywordBoundaryReviewPage() {
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AdminSurface tone="white" className="rounded-3xl p-6">
-            <div className="flex items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><AdminPill tone="white">경계 사례</AdminPill>{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div><span className="text-xs text-slate-400">월 {selected.monthlyVolume.toLocaleString("ko-KR")}회</span></div>
+            <div className="flex items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><AdminPill tone="white">경계 사례</AdminPill>{selected.preReview && !selected.humanLabel && <AdminPill tone="white">사전 검토안</AdminPill>}{selected.humanLabel && <AdminPill tone="warning">검토 완료</AdminPill>}</div><span className="text-xs text-slate-400">월 {selected.monthlyVolume.toLocaleString("ko-KR")}회</span></div>
             <h2 className="mt-5 text-2xl font-bold">{selected.keyword}</h2>
             <ChoiceGroup title="관련성" value={draft?.relevance} options={[["relevant", "관련"], ["uncertain", "불확실"], ["irrelevant", "무관"]]} onChange={(value) => {
               const relevance = value as EvaluationRelevance;

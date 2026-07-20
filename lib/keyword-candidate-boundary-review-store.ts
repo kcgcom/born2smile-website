@@ -17,7 +17,13 @@ export interface KeywordBoundaryReviewItem {
   relevanceConfidence: number;
   purposeConfidence: number;
   taxonomyCandidates: ShadowTaxonomyCandidate[];
+  preReview: KeywordBoundaryReviewPreReview | null;
   humanLabel: HumanEvaluationLabel | null;
+}
+
+export interface KeywordBoundaryReviewPreReview extends Omit<HumanEvaluationLabel, "updatedAt" | "updatedBy"> {
+  reviewedAt: string;
+  reviewedBy: string;
 }
 
 interface SavedKeywordBoundaryReviewData {
@@ -27,8 +33,9 @@ interface SavedKeywordBoundaryReviewData {
   snapshotCreatedAt: string;
   taxonomyVersion: number | null;
   generatedAt: string;
-  items: Omit<KeywordBoundaryReviewItem, "humanLabel">[];
+  items: Omit<KeywordBoundaryReviewItem, "preReview" | "humanLabel">[];
   taxonomy: KeywordShadowAuditTaxonomyOption[];
+  preReviews: Record<string, KeywordBoundaryReviewPreReview>;
   labels: Record<string, HumanEvaluationLabel>;
 }
 
@@ -38,7 +45,7 @@ export interface PublishKeywordBoundaryReviewInput {
   snapshotCreatedAt: string;
   taxonomyVersion: number | null;
   generatedAt: string;
-  items: Omit<KeywordBoundaryReviewItem, "humanLabel">[];
+  items: Omit<KeywordBoundaryReviewItem, "preReview" | "humanLabel">[];
   taxonomy: KeywordShadowAuditTaxonomyOption[];
 }
 
@@ -60,6 +67,7 @@ async function loadSavedBoundaryReview(): Promise<SavedKeywordBoundaryReviewData
     generatedAt: saved.generatedAt ?? new Date(0).toISOString(),
     items: saved.items,
     taxonomy: saved.taxonomy,
+    preReviews: saved.preReviews && typeof saved.preReviews === "object" ? saved.preReviews : {},
     labels: saved.labels && typeof saved.labels === "object" ? saved.labels : {},
   };
 }
@@ -78,12 +86,16 @@ export async function publishKeywordCandidateBoundaryReview(input: PublishKeywor
   const previous = await loadSavedBoundaryReview();
   const validIds = new Set(input.items.map((item) => item.id));
   const preserveLabels = previous?.snapshotId === input.snapshotId && previous.engineVersion === input.engineVersion;
+  const preReviews = preserveLabels
+    ? Object.fromEntries(Object.entries(previous.preReviews).filter(([id]) => validIds.has(id)))
+    : {};
   const labels = preserveLabels
     ? Object.fromEntries(Object.entries(previous.labels).filter(([id]) => validIds.has(id)))
     : {};
   const saved: SavedKeywordBoundaryReviewData = {
     schemaVersion: SCHEMA_VERSION,
     ...input,
+    preReviews,
     labels,
   };
   await persistBoundaryReview(saved, input.generatedAt);
@@ -100,9 +112,34 @@ export async function getKeywordCandidateBoundaryReviewData() {
     snapshotCreatedAt: saved.snapshotCreatedAt,
     taxonomyVersion: saved.taxonomyVersion,
     generatedAt: saved.generatedAt,
-    items: saved.items.map((item) => ({ ...item, humanLabel: saved.labels[item.id] ?? null })),
+    items: saved.items.map((item) => ({
+      ...item,
+      preReview: saved.preReviews[item.id] ?? null,
+      humanLabel: saved.labels[item.id] ?? null,
+    })),
     taxonomy: saved.taxonomy,
   };
+}
+
+export async function saveKeywordCandidateBoundaryReviewPreReviews(
+  reviews: Array<{ id: string; label: Omit<HumanEvaluationLabel, "updatedAt" | "updatedBy"> }>,
+  reviewedBy: string,
+) {
+  const saved = await loadSavedBoundaryReview();
+  if (!saved) throw new Error("BOUNDARY_REVIEW_NOT_FOUND");
+  const validIds = new Set(saved.items.map((item) => item.id));
+  if (reviews.some((review) => !validIds.has(review.id))) throw new Error("BOUNDARY_REVIEW_ITEM_NOT_FOUND");
+  const reviewedAt = new Date().toISOString();
+  saved.preReviews = {
+    ...saved.preReviews,
+    ...Object.fromEntries(reviews.map((review) => [review.id, {
+      ...review.label,
+      reviewedAt,
+      reviewedBy,
+    }])),
+  };
+  await persistBoundaryReview(saved, reviewedAt);
+  return { reviewed: reviews.length, preservedLabels: reviews.filter((review) => saved.labels[review.id]).length, reviewedAt };
 }
 
 export async function saveKeywordCandidateBoundaryReviewEvaluation(
