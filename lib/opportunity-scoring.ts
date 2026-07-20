@@ -48,7 +48,7 @@ export interface OpportunityValueSignalInput {
 }
 
 export interface OpportunityValueSignal {
-  key: string;
+  key: `${KeywordCategorySlug}:${string}`;
   demandScore: number | null;
   patientBusinessValue: number;
   strategicFit: number;
@@ -160,7 +160,7 @@ function percentileScores(gaps: DemandScoreInput[]): Map<string, number | null> 
   };
 
   return new Map(gaps.map((gap) => {
-    const key = `${gap.slug}:${gap.subGroup}`;
+    const key = `${gap.slug}:${gap.subGroup}` as const;
     if (gap.monthlyVolume == null) return [key, null];
     const category = byCategory.get(gap.slug) ?? [gap];
     // 소규모 카테고리의 내부 백분위는 두 항목을 0/100으로 과도하게 양극화한다.
@@ -291,7 +291,7 @@ export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation
     relatedKeywords: gap.relatedKeywords,
   }))).map((signal) => [signal.key, signal]));
   return gaps.map((gap) => {
-    const key = `${gap.slug}:${gap.subGroup}`;
+    const key = `${gap.slug}:${gap.subGroup}` as const;
     const signal = valueSignals.get(key)!;
     const demand = signal.demandScore;
     const business = signal.patientBusinessValue;

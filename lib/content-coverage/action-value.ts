@@ -1,6 +1,7 @@
 import { getActiveKeywordTaxonomy } from "../admin-keyword-taxonomy";
+import type { KeywordCategorySlug } from "../admin-naver-datalab-keywords";
 import { getActiveSearchAdSnapshotRecord } from "../admin-searchad-snapshots";
-import { evaluateOpportunityValueSignals, OPPORTUNITY_MODEL_VERSION } from "../opportunity-scoring";
+import { evaluateOpportunityValueSignals, OPPORTUNITY_MODEL_VERSION, type OpportunityValueSignal } from "../opportunity-scoring";
 import type { ConceptSatisfactionResult } from "./concept-satisfaction";
 import type { ActionRecommendation, ActionValueDataStatus, ContentActionType, CoverageTopicSpec } from "./types";
 
@@ -20,11 +21,26 @@ export interface ActionValueInput {
   sourceVersion: string;
 }
 
+export interface ActionValueTopicSignal extends OpportunityValueSignal {
+  category: KeywordCategorySlug;
+  subGroup: string;
+  monthlyVolume: number | null;
+}
+
+export interface ActionValueSignalSnapshot {
+  sourceVersion: string;
+  sourceUpdatedAt: string | null;
+  taxonomyVersion: number | null;
+  volumeCoverage: number;
+  dataStatus: ActionValueDataStatus;
+  topics: ActionValueTopicSignal[];
+}
+
 function normalize(value: string) {
   return value.replace(/\s+/g, "").toLowerCase();
 }
 
-export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): Promise<Record<string, ActionValueInput>> {
+export async function getCurrentActionValueSignalSnapshot(): Promise<ActionValueSignalSnapshot> {
   const [activeTaxonomy, snapshot] = await Promise.all([
     getActiveKeywordTaxonomy(),
     getActiveSearchAdSnapshotRecord().catch(() => null),
@@ -61,7 +77,7 @@ export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): P
       : !comparableDemandAvailable
         ? "insufficient-coverage"
         : "ready";
-  const signals = new Map(evaluateOpportunityValueSignals(topics).map((signal) => [signal.key, signal]));
+  const signals = evaluateOpportunityValueSignals(topics);
   const sourceVersion = [
     ACTION_VALUE_MODEL_VERSION,
     OPPORTUNITY_MODEL_VERSION,
@@ -70,22 +86,44 @@ export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): P
     `coverage-${Math.round(volumeCoverage * 100)}`,
   ].join(":");
 
+  const topicByKey = new Map(topics.map((topic) => [topic.key, topic]));
+  return {
+    sourceVersion,
+    sourceUpdatedAt: snapshotMatchesTaxonomy ? snapshot.createdAt : null,
+    taxonomyVersion: activeTaxonomy.version,
+    volumeCoverage,
+    dataStatus,
+    topics: signals.map((signal) => ({
+      ...signal,
+      category: topicByKey.get(signal.key)!.category,
+      subGroup: topicByKey.get(signal.key)!.subGroup,
+      monthlyVolume: topicByKey.get(signal.key)!.monthlyVolume,
+      demandScore: comparableDemandAvailable ? signal.demandScore : null,
+    })),
+  };
+}
+
+export function buildActionValueInputs(snapshot: ActionValueSignalSnapshot, specs: CoverageTopicSpec[]): Record<string, ActionValueInput> {
+  const signals = new Map(snapshot.topics.map((signal) => [signal.key, signal]));
   return Object.fromEntries(specs.map((spec) => {
-    const topic = topics.find((candidate) => candidate.key === spec.searchTopicKey);
     const signal = signals.get(spec.searchTopicKey);
     return [spec.id, {
       topicKey: spec.searchTopicKey,
-      monthlyVolume: topic?.monthlyVolume ?? null,
-      demandScore: comparableDemandAvailable ? signal?.demandScore ?? null : null,
+      monthlyVolume: signal?.monthlyVolume ?? null,
+      demandScore: signal?.demandScore ?? null,
       patientBusinessValue: signal?.patientBusinessValue ?? 0,
       strategicFit: signal?.strategicFit ?? 0,
-      volumeCoverage,
-      sourceUpdatedAt: snapshotMatchesTaxonomy ? snapshot.createdAt : null,
-      taxonomyVersion: activeTaxonomy.version,
-      dataStatus,
-      sourceVersion,
+      volumeCoverage: snapshot.volumeCoverage,
+      sourceUpdatedAt: snapshot.sourceUpdatedAt,
+      taxonomyVersion: snapshot.taxonomyVersion,
+      dataStatus: snapshot.dataStatus,
+      sourceVersion: snapshot.sourceVersion,
     }];
   }));
+}
+
+export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): Promise<Record<string, ActionValueInput>> {
+  return buildActionValueInputs(await getCurrentActionValueSignalSnapshot(), specs);
 }
 
 export function conceptNeedScore(spec: CoverageTopicSpec, results: ConceptSatisfactionResult[]): number {

@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, LockKeyhole, Send } from "lucide-react";
+import { Activity, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, ListPlus, LockKeyhole, Send } from "lucide-react";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import type { ActionValueAudit, ActionWorkflowItem } from "@/lib/content-coverage/action-workflow-store";
+import type { TopicExpansionFlag, TopicExpansionReport } from "@/lib/content-coverage/topic-expansion";
 import type { ContentActionType } from "@/lib/content-coverage/types";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -27,6 +28,7 @@ type WorkflowResponse = {
   };
   recommendations: ActionWorkflowItem[];
   valueAudit: ActionValueAudit;
+  topicExpansion: TopicExpansionReport;
   stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number; reevaluationPending: number };
 };
 
@@ -128,6 +130,7 @@ export function ContentCoverageActionsPage() {
       {message && <AdminNotice tone="success">{message}</AdminNotice>}
 
       <ValueAuditPanel audit={query.data.valueAudit} />
+      <TopicExpansionPanel report={query.data.topicExpansion} />
 
       <Section icon={<ClipboardCheck className="h-5 w-5" />} title="선행 검토" description="완료 메모는 후속 콘텐츠 작업을 허용하는 감사 기록입니다." count={groups.reviews.length}>
         {groups.reviews.map((item) => (
@@ -175,6 +178,31 @@ export function ContentCoverageActionsPage() {
       {groups.noAction.map((item) => <AdminNotice key={item.actionKey} tone="info"><strong>{item.title}</strong> — {item.why}</AdminNotice>)}
     </div>
   );
+}
+
+function TopicExpansionPanel({ report }: { report: TopicExpansionReport }) {
+  return (
+    <AdminSurface tone="white" className="rounded-3xl p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><ListPlus className="h-5 w-5" />다음 검증 주제</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">검색 수요·환자 가치·전략 적합도로 명세와 라벨링을 시작할 후보를 고릅니다. 이 순위는 콘텐츠 공백 판정이 아니며 자동으로 운영 엔진에 추가되지 않습니다.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs"><AdminPill tone="white">후보 {report.eligibleCount}개</AdminPill><AdminPill tone="white">{report.modelVersion}</AdminPill></div>
+      </div>
+
+      {report.dataStatus !== "ready" && <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">검색량 입력이 준비되지 않아 확장 후보 순위를 확정할 수 없습니다.</div>}
+      <div className="mt-5 grid gap-3 lg:grid-cols-5">
+        {report.recommended.map((candidate, index) => <div key={candidate.topicKey} className="rounded-2xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-sky-700">{index + 1}순위</span><span className="text-xs text-slate-400">{candidate.categoryLabel}</span></div><h3 className="mt-2 font-bold text-slate-950">{candidate.subGroup}</h3><p className="mt-1 text-xs text-slate-400">{candidate.topicKey}</p><div className="mt-3 flex flex-wrap gap-1"><AdminPill tone="white">온보딩 {candidate.onboardingScore ?? "보류"}점</AdminPill><AdminPill tone="white">수요 {candidate.demandScore ?? "-"}</AdminPill></div><p className="mt-3 text-xs leading-5 text-slate-600">월 {candidate.monthlyVolume?.toLocaleString("ko-KR") ?? "-"}회 · 환자 가치 {candidate.patientBusinessValue} · 전략 {candidate.strategicFit}</p></div>)}
+      </div>
+
+      {report.manualReview.length > 0 && <div className="mt-5 rounded-2xl bg-slate-50 p-4"><strong className="text-sm text-slate-900">자동 추천 제외</strong><p className="mt-1 text-xs leading-5 text-slate-500">제품·브랜드·지역 탐색, 진료 범위, 기존 개념과의 중복을 먼저 확인해야 하는 주제입니다.</p><div className="mt-3 flex flex-wrap gap-2">{report.manualReview.map((candidate) => <span key={candidate.topicKey} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700">{candidate.categoryLabel} · {candidate.subGroup} · {candidate.flags.map(expansionFlagLabel).join("/")}</span>)}</div></div>}
+    </AdminSurface>
+  );
+}
+
+function expansionFlagLabel(flag: TopicExpansionFlag) {
+  return ({ "product-led": "제품 중심", "brand-led": "브랜드 탐색", "local-navigation": "지역 탐색", "service-scope-review": "진료 범위 확인", "cross-topic-overlap": "기존 개념 중복" } as const)[flag];
 }
 
 function ValueAuditPanel({ audit }: { audit: ActionValueAudit }) {

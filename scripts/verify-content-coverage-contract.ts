@@ -14,8 +14,9 @@ import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib
 import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBaseline, type ConceptReviewSeed } from "../lib/content-coverage/concept-review";
 import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
 import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
-import { ACTION_VALUE_MODEL_VERSION } from "../lib/content-coverage/action-value";
+import { ACTION_VALUE_MODEL_VERSION, type ActionValueSignalSnapshot } from "../lib/content-coverage/action-value";
 import { buildActionValueAudit } from "../lib/content-coverage/action-workflow-store";
+import { buildTopicExpansionReport } from "../lib/content-coverage/topic-expansion";
 import { buildOperationalConceptReviewSnapshot } from "../lib/content-coverage/concept-review-store";
 import { calculateTargetEvidenceRevision } from "../lib/content-coverage/operational-evidence";
 import { buildContentReevaluationState } from "../lib/content-coverage/reevaluation-store";
@@ -281,6 +282,27 @@ assert.equal(valueAudit.stats.total, scoredContentActions.length, "가치 감사
 assert.equal(valueAudit.stats.scored, scoredContentActions.length, "수요 입력이 있는 콘텐츠 작업은 모두 점수 분포에 포함되어야 합니다.");
 assert.equal(valueAudit.items.every((item) => item.baseRank != null && item.priority != null), true, "가치 감사에 순위와 플래너 우선순위가 필요합니다.");
 assert.equal(valueAudit.warnings.some((warning) => warning.includes("표본")), true, "작은 검증 표본에는 자동 보정 방지 경고가 필요합니다.");
+const expansionSnapshot: ActionValueSignalSnapshot = {
+  sourceVersion: "contract-searchad-snapshot",
+  sourceUpdatedAt: "2026-01-01T00:00:00.000Z",
+  taxonomyVersion: 1,
+  volumeCoverage: 1,
+  dataStatus: "ready",
+  topics: [
+    { key: "orthodontics:통증/부작용", category: "orthodontics", subGroup: "통증/부작용", monthlyVolume: 1_000, demandScore: 100, patientBusinessValue: 100, strategicFit: 90 },
+    { key: "restorative:신경치료", category: "restorative", subGroup: "신경치료", monthlyVolume: 900, demandScore: 90, patientBusinessValue: 100, strategicFit: 90 },
+    { key: "orthodontics:종류/방법", category: "orthodontics", subGroup: "종류/방법", monthlyVolume: 800, demandScore: 80, patientBusinessValue: 80, strategicFit: 90 },
+    { key: "general-care:발치/사랑니", category: "general-care", subGroup: "발치/사랑니", monthlyVolume: 700, demandScore: 70, patientBusinessValue: 100, strategicFit: 50 },
+    { key: "prevention:잇몸질환/치료", category: "prevention", subGroup: "잇몸질환/치료", monthlyVolume: 600, demandScore: 60, patientBusinessValue: 80, strategicFit: 80 },
+    { key: "implant:뼈이식/골증대", category: "implant", subGroup: "뼈이식/골증대", monthlyVolume: 500, demandScore: 50, patientBusinessValue: 100, strategicFit: 100 },
+    { key: "prevention:구강관리제품", category: "prevention", subGroup: "구강관리제품", monthlyVolume: 2_000, demandScore: 100, patientBusinessValue: 90, strategicFit: 80 },
+  ],
+};
+const expansionReport = buildTopicExpansionReport(expansionSnapshot, [COVERAGE_TOPIC_SPECS[0]]);
+assert.equal(expansionReport.recommended.length, 5, "확장 묶음은 서로 다른 카테고리의 대표 후보 5개여야 합니다.");
+assert.equal(new Set(expansionReport.recommended.map((candidate) => candidate.category)).size, expansionReport.recommended.length, "한 확장 묶음에서 같은 카테고리를 중복 추천하면 안 됩니다.");
+assert.equal(expansionReport.recommended.some((candidate) => candidate.topicKey === COVERAGE_TOPIC_SPECS[0].searchTopicKey), false, "운영 중인 주제를 확장 후보로 다시 추천하면 안 됩니다.");
+assert.equal(expansionReport.manualReview.some((candidate) => candidate.topicKey === "prevention:구강관리제품" && candidate.flags.includes("product-led")), true, "제품 중심 주제는 검색량과 무관하게 편집 검토로 보내야 합니다.");
 assert.equal(actionRecommendations.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page"
   || (recommendation.actionType === "add-faq" && recommendation.topicSpecId === "pediatric-dental-trauma")).every((recommendation) =>
   recommendation.blockedBy.some((blocker) => blocker.type === "must-complete-before")), true, "임상 콘텐츠 수정은 의료진 검토에 막혀야 합니다.");

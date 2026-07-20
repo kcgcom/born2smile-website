@@ -219,6 +219,7 @@ export async function getActionWorkflowData() {
     assessmentInput: report.assessmentInput,
     recommendations,
     valueAudit: buildActionValueAudit(recommendations),
+    topicExpansion: report.topicExpansion,
     stats: {
       total: recommendations.length,
       reviewsPending: recommendations.filter((item) => item.canCompleteReview && item.reviewState?.status !== "completed").length,
