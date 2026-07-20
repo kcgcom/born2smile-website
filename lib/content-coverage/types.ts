@@ -36,6 +36,7 @@ export interface CoverageConcept {
 }
 
 export type ContentActionType = "create-blog" | "update-blog" | "update-treatment-page" | "add-faq" | "update-faq" | "promote-faq-to-page" | "refresh-content" | "resolve-conflict" | "evidence-review" | "clinical-review" | "no-action";
+export type ActionValueDataStatus = "ready" | "snapshot-unavailable" | "taxonomy-mismatch" | "insufficient-coverage";
 
 export interface TopicActionPolicy {
   primarySurface: ContentSurface;
@@ -163,12 +164,20 @@ export interface ActionRecommendation {
   valueAssessment: {
     modelVersion: string;
     sourceVersion: string;
+    sourceUpdatedAt: string | null;
+    taxonomyVersion: number | null;
+    volumeCoverage: number;
+    dataStatus: ActionValueDataStatus;
     score: number | null;
     conceptNeedScore: number;
     demandScore: number | null;
     monthlyVolume: number | null;
     patientBusinessValue: number | null;
     strategicFit: number | null;
+    sensitivity: {
+      demandEmphasisScore: number;
+      conceptNeedEmphasisScore: number;
+    } | null;
     reasons: string[];
   } | null;
   confidence: "high" | "medium" | "low";

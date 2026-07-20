@@ -15,6 +15,7 @@ import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBa
 import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
 import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
 import { ACTION_VALUE_MODEL_VERSION } from "../lib/content-coverage/action-value";
+import { buildActionValueAudit } from "../lib/content-coverage/action-workflow-store";
 import { buildOperationalConceptReviewSnapshot } from "../lib/content-coverage/concept-review-store";
 import { calculateTargetEvidenceRevision } from "../lib/content-coverage/operational-evidence";
 import { buildContentReevaluationState } from "../lib/content-coverage/reevaluation-store";
@@ -266,12 +267,20 @@ const demandAwareActions = buildActionRecommendations(COVERAGE_TOPIC_SPECS, conc
     patientBusinessValue: 80,
     strategicFit: 70,
     volumeCoverage: 1,
+    sourceUpdatedAt: "2026-01-01T00:00:00.000Z",
+    taxonomyVersion: 1,
+    dataStatus: "ready" as const,
     sourceVersion: "contract-searchad-snapshot",
   }]),
 ));
 const scoredContentActions = demandAwareActions.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page" || recommendation.actionType === "add-faq");
 assert.equal(scoredContentActions.every((recommendation) => recommendation.valueScore != null && recommendation.valueAssessment?.modelVersion === ACTION_VALUE_MODEL_VERSION), true, "수요 입력이 있으면 콘텐츠 행동의 실행 가치를 계산해야 합니다.");
 assert.equal(scoredContentActions.every((recommendation) => recommendation.valueAssessment!.conceptNeedScore > 0), true, "실행 가치에는 검토된 개념 부족도가 포함되어야 합니다.");
+const valueAudit = buildActionValueAudit(demandAwareActions.recommendations, new Date("2026-01-15T00:00:00.000Z"));
+assert.equal(valueAudit.stats.total, scoredContentActions.length, "가치 감사에서는 선행 검토 작업을 중복 집계하면 안 됩니다.");
+assert.equal(valueAudit.stats.scored, scoredContentActions.length, "수요 입력이 있는 콘텐츠 작업은 모두 점수 분포에 포함되어야 합니다.");
+assert.equal(valueAudit.items.every((item) => item.baseRank != null && item.priority != null), true, "가치 감사에 순위와 플래너 우선순위가 필요합니다.");
+assert.equal(valueAudit.warnings.some((warning) => warning.includes("표본")), true, "작은 검증 표본에는 자동 보정 방지 경고가 필요합니다.");
 assert.equal(actionRecommendations.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page"
   || (recommendation.actionType === "add-faq" && recommendation.topicSpecId === "pediatric-dental-trauma")).every((recommendation) =>
   recommendation.blockedBy.some((blocker) => blocker.type === "must-complete-before")), true, "임상 콘텐츠 수정은 의료진 검토에 막혀야 합니다.");

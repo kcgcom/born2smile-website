@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, LockKeyhole, Send } from "lucide-react";
+import { Activity, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, LockKeyhole, Send } from "lucide-react";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
-import type { ActionWorkflowItem } from "@/lib/content-coverage/action-workflow-store";
+import type { ActionValueAudit, ActionWorkflowItem } from "@/lib/content-coverage/action-workflow-store";
 import type { ContentActionType } from "@/lib/content-coverage/types";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -26,6 +26,7 @@ type WorkflowResponse = {
     topicReevaluationVersions: Record<string, string>;
   };
   recommendations: ActionWorkflowItem[];
+  valueAudit: ActionValueAudit;
   stats: { total: number; reviewsPending: number; ready: number; blocked: number; promoted: number; reevaluationPending: number };
 };
 
@@ -126,6 +127,8 @@ export function ContentCoverageActionsPage() {
       {mutation.error && <AdminNotice tone="error">{mutation.error}</AdminNotice>}
       {message && <AdminNotice tone="success">{message}</AdminNotice>}
 
+      <ValueAuditPanel audit={query.data.valueAudit} />
+
       <Section icon={<ClipboardCheck className="h-5 w-5" />} title="선행 검토" description="완료 메모는 후속 콘텐츠 작업을 허용하는 감사 기록입니다." count={groups.reviews.length}>
         {groups.reviews.map((item) => (
           <AdminSurface key={item.actionKey} tone="white" className="rounded-2xl p-5">
@@ -172,6 +175,70 @@ export function ContentCoverageActionsPage() {
       {groups.noAction.map((item) => <AdminNotice key={item.actionKey} tone="info"><strong>{item.title}</strong> — {item.why}</AdminNotice>)}
     </div>
   );
+}
+
+function ValueAuditPanel({ audit }: { audit: ActionValueAudit }) {
+  return (
+    <AdminSurface tone="white" className="rounded-3xl p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><Activity className="h-5 w-5" />실행 가치 진단</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">검색 수요와 검토된 개념 부족도가 현재 실행 순위에 미치는 영향을 확인합니다. 민감도 순위는 두 가중치를 ±10%p 바꾼 결과입니다.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <AdminPill tone="white">{dataStatusLabel(audit.dataStatus)}</AdminPill>
+          <AdminPill tone="white">검색량 범위 {Math.round(audit.volumeCoverage * 100)}%</AdminPill>
+          <AdminPill tone="white">택소노미 v{audit.taxonomyVersion ?? "-"}</AdminPill>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <AuditMetric label="평가 완료" value={`${audit.stats.scored}/${audit.stats.total}`} />
+        <AuditMetric label="평균" value={scoreText(audit.stats.average)} />
+        <AuditMetric label="중앙값" value={scoreText(audit.stats.median)} />
+        <AuditMetric label="점수 범위" value={audit.stats.minimum == null ? "-" : `${audit.stats.minimum}–${audit.stats.maximum}`} />
+        <AuditMetric label="Now / Next / Watch" value={`${audit.stats.now} / ${audit.stats.next} / ${audit.stats.watch}`} />
+        <AuditMetric label="순위 민감" value={`${audit.stats.rankSensitive}건`} />
+      </div>
+
+      <p className="mt-3 text-xs text-slate-400">
+        모델 {audit.modelVersion ?? "평가 없음"} · SearchAd {audit.sourceUpdatedAt ? formatDate(audit.sourceUpdatedAt) : "스냅샷 없음"}
+      </p>
+
+      {audit.warnings.length > 0 && <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950">{audit.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div>}
+
+      {audit.items.length === 0 ? <div className="mt-4 rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">진단할 콘텐츠 작업이 없습니다.</div> : (
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
+          <table className="min-w-[920px] w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-500"><tr><th className="px-3 py-3">순위</th><th className="px-3 py-3">작업</th><th className="px-3 py-3 text-right">가치</th><th className="px-3 py-3 text-right">수요</th><th className="px-3 py-3 text-right">개념 부족</th><th className="px-3 py-3 text-right">환자 가치</th><th className="px-3 py-3 text-right">전략</th><th className="px-3 py-3">우선순위</th><th className="px-3 py-3">민감도 순위</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">{audit.items.map((item) => <tr key={item.actionKey} className="align-top"><td className="px-3 py-3 font-bold text-slate-900">{item.baseRank ?? "-"}</td><td className="max-w-72 px-3 py-3"><strong className="block text-slate-900">{item.title}</strong><span className="mt-1 block text-slate-400">{ACTION_LABELS[item.actionType]} · 월 {item.monthlyVolume?.toLocaleString("ko-KR") ?? "-"}회</span></td><td className="px-3 py-3 text-right font-bold text-sky-700">{scoreText(item.score)}</td><td className="px-3 py-3 text-right">{scoreText(item.demandScore)}</td><td className="px-3 py-3 text-right">{scoreText(item.conceptNeedScore)}</td><td className="px-3 py-3 text-right">{scoreText(item.patientBusinessValue)}</td><td className="px-3 py-3 text-right">{scoreText(item.strategicFit)}</td><td className="px-3 py-3 font-semibold">{priorityLabel(item.priority)}</td><td className={`px-3 py-3 ${item.maxRankShift > 0 ? "font-semibold text-amber-700" : "text-slate-500"}`}>{sensitivityRankLabel(item)}</td></tr>)}</tbody>
+          </table>
+        </div>
+      )}
+    </AdminSurface>
+  );
+}
+
+function AuditMetric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center"><strong className="block text-base text-slate-950">{value}</strong><span className="mt-1 block text-[11px] text-slate-500">{label}</span></div>;
+}
+
+function scoreText(value: number | null) {
+  return value == null ? "보류" : `${value}점`;
+}
+
+function dataStatusLabel(status: ActionValueAudit["dataStatus"]) {
+  return ({ ready: "검색량 준비됨", "snapshot-unavailable": "스냅샷 없음", "taxonomy-mismatch": "택소노미 불일치", "insufficient-coverage": "검색량 범위 부족", "no-actions": "평가 작업 없음" } as const)[status];
+}
+
+function priorityLabel(priority: ActionValueAudit["items"][number]["priority"]) {
+  return ({ now: "Now", next: "Next", watch: "Watch" } as const)[priority];
+}
+
+function sensitivityRankLabel(item: ActionValueAudit["items"][number]) {
+  if (item.baseRank == null) return "평가 보류";
+  if (item.maxRankShift === 0) return "순위 안정";
+  return `수요 ${item.demandEmphasisRank ?? "-"}위 · 부족 ${item.conceptNeedEmphasisRank ?? "-"}위`;
 }
 
 function Section({ icon, title, description, count, children }: { icon: React.ReactNode; title: string; description: string; count: number; children: React.ReactNode }) {

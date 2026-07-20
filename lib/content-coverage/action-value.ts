@@ -2,7 +2,7 @@ import { getActiveKeywordTaxonomy } from "../admin-keyword-taxonomy";
 import { getActiveSearchAdSnapshotRecord } from "../admin-searchad-snapshots";
 import { evaluateOpportunityValueSignals, OPPORTUNITY_MODEL_VERSION } from "../opportunity-scoring";
 import type { ConceptSatisfactionResult } from "./concept-satisfaction";
-import type { ActionRecommendation, ContentActionType, CoverageTopicSpec } from "./types";
+import type { ActionRecommendation, ActionValueDataStatus, ContentActionType, CoverageTopicSpec } from "./types";
 
 export const ACTION_VALUE_MODEL_VERSION = "action-value-v1" as const;
 const MIN_COMPARABLE_VOLUME_COVERAGE = 0.7;
@@ -14,6 +14,9 @@ export interface ActionValueInput {
   patientBusinessValue: number;
   strategicFit: number;
   volumeCoverage: number;
+  sourceUpdatedAt: string | null;
+  taxonomyVersion: number | null;
+  dataStatus: ActionValueDataStatus;
   sourceVersion: string;
 }
 
@@ -51,6 +54,13 @@ export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): P
     ? topics.filter((topic) => topic.monthlyVolume != null).length / topics.length
     : 0;
   const comparableDemandAvailable = snapshotMatchesTaxonomy && volumeCoverage >= MIN_COMPARABLE_VOLUME_COVERAGE;
+  const dataStatus: ActionValueDataStatus = snapshot == null
+    ? "snapshot-unavailable"
+    : !snapshotMatchesTaxonomy
+      ? "taxonomy-mismatch"
+      : !comparableDemandAvailable
+        ? "insufficient-coverage"
+        : "ready";
   const signals = new Map(evaluateOpportunityValueSignals(topics).map((signal) => [signal.key, signal]));
   const sourceVersion = [
     ACTION_VALUE_MODEL_VERSION,
@@ -70,6 +80,9 @@ export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): P
       patientBusinessValue: signal?.patientBusinessValue ?? 0,
       strategicFit: signal?.strategicFit ?? 0,
       volumeCoverage,
+      sourceUpdatedAt: snapshotMatchesTaxonomy ? snapshot.createdAt : null,
+      taxonomyVersion: activeTaxonomy.version,
+      dataStatus,
       sourceVersion,
     }];
   }));
@@ -98,6 +111,15 @@ function scoreWeights(actionType: ContentActionType) {
   return { demand: 0.25, need: 0.4, business: 0.2, strategic: 0.15 };
 }
 
+function weightedScore(input: ActionValueInput, needScore: number, weights: ReturnType<typeof scoreWeights>) {
+  return Math.round(
+    input.demandScore! * weights.demand
+    + needScore * weights.need
+    + input.patientBusinessValue * weights.business
+    + input.strategicFit * weights.strategic,
+  );
+}
+
 export function assessActionValue(
   actionType: ContentActionType,
   needScore: number,
@@ -107,31 +129,41 @@ export function assessActionValue(
     return {
       modelVersion: ACTION_VALUE_MODEL_VERSION,
       sourceVersion: input?.sourceVersion ?? `${ACTION_VALUE_MODEL_VERSION}:unavailable`,
+      sourceUpdatedAt: input?.sourceUpdatedAt ?? null,
+      taxonomyVersion: input?.taxonomyVersion ?? null,
+      volumeCoverage: input?.volumeCoverage ?? 0,
+      dataStatus: input?.dataStatus ?? "snapshot-unavailable",
       score: null,
       conceptNeedScore: needScore,
       demandScore: null,
       monthlyVolume: input?.monthlyVolume ?? null,
       patientBusinessValue: input?.patientBusinessValue ?? null,
       strategicFit: input?.strategicFit ?? null,
+      sensitivity: null,
       reasons: ["비교 가능한 검색량 범위가 부족해 실행 가치 점수를 보류했습니다.", `개념 부족도 ${needScore}점`],
     };
   }
   const weights = scoreWeights(actionType);
-  const score = Math.round(
-    input.demandScore * weights.demand
-    + needScore * weights.need
-    + input.patientBusinessValue * weights.business
-    + input.strategicFit * weights.strategic,
-  );
+  const score = weightedScore(input, needScore, weights);
+  const demandEmphasisWeights = { ...weights, demand: weights.demand + 0.1, need: weights.need - 0.1 };
+  const conceptNeedEmphasisWeights = { ...weights, demand: weights.demand - 0.1, need: weights.need + 0.1 };
   return {
     modelVersion: ACTION_VALUE_MODEL_VERSION,
     sourceVersion: input.sourceVersion,
+    sourceUpdatedAt: input.sourceUpdatedAt,
+    taxonomyVersion: input.taxonomyVersion,
+    volumeCoverage: input.volumeCoverage,
+    dataStatus: input.dataStatus,
     score,
     conceptNeedScore: needScore,
     demandScore: input.demandScore,
     monthlyVolume: input.monthlyVolume,
     patientBusinessValue: input.patientBusinessValue,
     strategicFit: input.strategicFit,
+    sensitivity: {
+      demandEmphasisScore: weightedScore(input, needScore, demandEmphasisWeights),
+      conceptNeedEmphasisScore: weightedScore(input, needScore, conceptNeedEmphasisWeights),
+    },
     reasons: [
       `검색 수요 ${input.demandScore}점${input.monthlyVolume == null ? "" : ` · 월 ${input.monthlyVolume.toLocaleString("ko-KR")}회`}`,
       `검토된 개념 부족도 ${needScore}점`,
