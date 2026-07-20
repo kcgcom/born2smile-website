@@ -142,6 +142,35 @@ export async function saveKeywordCandidateBoundaryReviewPreReviews(
   return { reviewed: reviews.length, preservedLabels: reviews.filter((review) => saved.labels[review.id]).length, reviewedAt };
 }
 
+export async function confirmKeywordCandidateBoundaryReviewPreReviews(updatedBy: string) {
+  const saved = await loadSavedBoundaryReview();
+  if (!saved) throw new Error("BOUNDARY_REVIEW_NOT_FOUND");
+  const confirmedAt = new Date().toISOString();
+  let confirmed = 0;
+  let preserved = 0;
+  for (const item of saved.items) {
+    if (saved.labels[item.id]) {
+      preserved += 1;
+      continue;
+    }
+    const preReview = saved.preReviews[item.id];
+    if (!preReview) throw new Error("BOUNDARY_REVIEW_PRE_REVIEW_INCOMPLETE");
+    saved.labels[item.id] = {
+      relevance: preReview.relevance,
+      purpose: preReview.purpose,
+      action: preReview.action,
+      category: preReview.category,
+      subgroup: preReview.subgroup,
+      notes: preReview.notes,
+      updatedAt: confirmedAt,
+      updatedBy,
+    };
+    confirmed += 1;
+  }
+  await persistBoundaryReview(saved, confirmedAt);
+  return { confirmed, preserved, total: saved.items.length, confirmedAt };
+}
+
 export async function saveKeywordCandidateBoundaryReviewEvaluation(
   id: string,
   input: Omit<HumanEvaluationLabel, "updatedAt" | "updatedBy">,

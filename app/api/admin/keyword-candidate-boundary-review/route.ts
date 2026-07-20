@@ -3,12 +3,14 @@ import * as Sentry from "@sentry/nextjs";
 import { z } from "zod/v4";
 import { KEYWORD_CATEGORY_SLUGS } from "@/lib/admin-naver-datalab-keywords";
 import {
+  confirmKeywordCandidateBoundaryReviewPreReviews,
   getKeywordCandidateBoundaryReviewData,
   saveKeywordCandidateBoundaryReviewEvaluation,
 } from "@/lib/keyword-candidate-boundary-review-store";
 import { unauthorizedResponse, verifyAdminRequest } from "../_lib/auth";
 
 const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" } as const;
+const confirmSchema = z.object({ action: z.literal("confirm-pre-reviews") });
 const updateSchema = z.object({
   id: z.string().min(1),
   relevance: z.enum(["relevant", "irrelevant", "uncertain"]),
@@ -59,5 +61,24 @@ export async function PATCH(request: NextRequest) {
     }
     Sentry.captureException(error);
     return Response.json({ error: "BOUNDARY_REVIEW_SAVE_ERROR", message: "경계 사례 판단을 저장할 수 없습니다." }, { status: 500, headers: HEADERS });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await verifyAdminRequest(request);
+  if (!auth.ok) return unauthorizedResponse(auth);
+  const parsed = confirmSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return Response.json({ error: "VALIDATION_ERROR", message: "일괄 확정 요청이 올바르지 않습니다." }, { status: 400, headers: HEADERS });
+  }
+  try {
+    const result = await confirmKeywordCandidateBoundaryReviewPreReviews(auth.email);
+    return Response.json({ data: result }, { headers: HEADERS });
+  } catch (error) {
+    if (error instanceof Error && error.message === "BOUNDARY_REVIEW_PRE_REVIEW_INCOMPLETE") {
+      return Response.json({ error: "PRE_REVIEW_INCOMPLETE", message: "사전 검토가 없는 항목을 먼저 확인해 주세요." }, { status: 409, headers: HEADERS });
+    }
+    Sentry.captureException(error);
+    return Response.json({ error: "BOUNDARY_REVIEW_CONFIRM_ERROR", message: "사전 검토안을 일괄 확정할 수 없습니다." }, { status: 500, headers: HEADERS });
   }
 }

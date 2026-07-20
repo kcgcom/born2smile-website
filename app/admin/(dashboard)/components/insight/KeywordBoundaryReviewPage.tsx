@@ -45,6 +45,8 @@ interface Draft {
   notes: string;
 }
 
+type ConfirmResult = { confirmed: number; preserved: number; total: number; confirmedAt: string };
+
 function initialDraft(item: KeywordBoundaryReviewItem): Draft {
   const reviewed = item.humanLabel ?? item.preReview;
   if (reviewed) return {
@@ -69,6 +71,7 @@ function initialDraft(item: KeywordBoundaryReviewItem): Draft {
 export function KeywordBoundaryReviewPage() {
   const query = useAdminApi<BoundaryResponse>(ENDPOINT);
   const mutation = useAdminMutation<{ id: string; humanLabel: HumanEvaluationLabel }>();
+  const confirmation = useAdminMutation<ConfirmResult>();
   const [show, setShow] = useState<"remaining" | "all">("remaining");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -117,6 +120,11 @@ export function KeywordBoundaryReviewPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/trends/keyword-evaluation/shadow-audit"><ArrowLeft className="h-4 w-4" />고정 홀드아웃</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드로</AdminActionLink>
+              {stats.preReviewed === stats.total && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
+                if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 직접 저장한 항목은 유지됩니다.`)) return;
+                const result = await confirmation.mutate(ENDPOINT, "POST", { action: "confirm-pre-reviews" });
+                if (!result.error && result.data) setSavedMessage(`사전 검토 ${result.data.confirmed}개를 확정했습니다.${result.data.preserved ? ` 직접 검토 ${result.data.preserved}개는 유지했습니다.` : ""}`);
+              }}>{confirmation.loading ? "확정 중…" : "사전 검토 일괄 확정"}</AdminActionButton>}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center"><Metric label="전체" value={stats.total} /><Metric label="완료" value={stats.labeled} /><Metric label="남음" value={stats.remaining} /></div>
@@ -126,7 +134,7 @@ export function KeywordBoundaryReviewPage() {
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-3xl p-5"><div className="flex flex-wrap gap-2"><FilterButton active={show === "remaining"} onClick={() => { setShow("remaining"); setSelectedId(null); }}>미완료만</FilterButton><FilterButton active={show === "all"} onClick={() => { setShow("all"); setSelectedId(null); }}>전체 보기</FilterButton></div></AdminSurface>
-      {mutation.error && <AdminNotice tone="error">{mutation.error}</AdminNotice>}
+      {(mutation.error || confirmation.error) && <AdminNotice tone="error">{mutation.error ?? confirmation.error}</AdminNotice>}
       {savedMessage && <AdminNotice tone="success">{savedMessage}</AdminNotice>}
 
       {!selected ? (
