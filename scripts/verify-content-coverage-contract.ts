@@ -14,6 +14,7 @@ import { CONTENT_COVERAGE_ENGINE_VERSION, EVIDENCE_SCHEMA_VERSION } from "../lib
 import { applyConceptReviewBaseline, evaluateConceptReview, type ConceptReviewBaseline, type ConceptReviewSeed } from "../lib/content-coverage/concept-review";
 import { assessConceptSatisfaction, type ConceptSearchResolution } from "../lib/content-coverage/concept-satisfaction";
 import { buildActionRecommendations } from "../lib/content-coverage/action-recommendation";
+import { ACTION_VALUE_MODEL_VERSION } from "../lib/content-coverage/action-value";
 import { buildOperationalConceptReviewSnapshot } from "../lib/content-coverage/concept-review-store";
 import { calculateTargetEvidenceRevision } from "../lib/content-coverage/operational-evidence";
 import { buildContentReevaluationState } from "../lib/content-coverage/reevaluation-store";
@@ -257,6 +258,20 @@ assert.deepEqual(
 );
 assert.equal(new Set(actionRecommendations.recommendations.map((recommendation) => recommendation.actionKey)).size, actionRecommendations.recommendations.length, "행동추천 키가 중복됩니다.");
 assert.equal(actionRecommendations.recommendations.every((recommendation) => recommendation.valueScore == null), true, "수요 입력 없이 행동 가치 점수를 만들면 안 됩니다.");
+const demandAwareActions = buildActionRecommendations(COVERAGE_TOPIC_SPECS, conceptSatisfaction, undefined, Object.fromEntries(
+  COVERAGE_TOPIC_SPECS.map((spec, index) => [spec.id, {
+    topicKey: spec.searchTopicKey,
+    monthlyVolume: 1_000 - index * 100,
+    demandScore: 100 - index * 20,
+    patientBusinessValue: 80,
+    strategicFit: 70,
+    volumeCoverage: 1,
+    sourceVersion: "contract-searchad-snapshot",
+  }]),
+));
+const scoredContentActions = demandAwareActions.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page" || recommendation.actionType === "add-faq");
+assert.equal(scoredContentActions.every((recommendation) => recommendation.valueScore != null && recommendation.valueAssessment?.modelVersion === ACTION_VALUE_MODEL_VERSION), true, "수요 입력이 있으면 콘텐츠 행동의 실행 가치를 계산해야 합니다.");
+assert.equal(scoredContentActions.every((recommendation) => recommendation.valueAssessment!.conceptNeedScore > 0), true, "실행 가치에는 검토된 개념 부족도가 포함되어야 합니다.");
 assert.equal(actionRecommendations.recommendations.filter((recommendation) => recommendation.actionType === "update-treatment-page"
   || (recommendation.actionType === "add-faq" && recommendation.topicSpecId === "pediatric-dental-trauma")).every((recommendation) =>
   recommendation.blockedBy.some((blocker) => blocker.type === "must-complete-before")), true, "임상 콘텐츠 수정은 의료진 검토에 막혀야 합니다.");

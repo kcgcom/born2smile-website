@@ -160,6 +160,17 @@ export interface ActionRecommendation {
   needsReviewConcepts: string[];
   currentEvidenceSummary: string;
   valueScore: number | null;
+  valueAssessment: {
+    modelVersion: string;
+    sourceVersion: string;
+    score: number | null;
+    conceptNeedScore: number;
+    demandScore: number | null;
+    monthlyVolume: number | null;
+    patientBusinessValue: number | null;
+    strategicFit: number | null;
+    reasons: string[];
+  } | null;
   confidence: "high" | "medium" | "low";
   effort: "small" | "medium" | "large";
   urgency: "critical" | "high" | "normal" | "low";

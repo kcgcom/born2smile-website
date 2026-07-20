@@ -36,6 +36,24 @@ export interface OpportunityEvaluation {
   actions: OpportunityActionEvaluation[];
 }
 
+export interface OpportunityValueSignalInput {
+  key: `${KeywordCategorySlug}:${string}`;
+  category: KeywordCategorySlug;
+  subGroup: string;
+  keywords: string[];
+  searchIntent: SearchIntent;
+  monthlyVolume: number | null;
+  directKeywords?: Array<{ keyword: string; volume: number }>;
+  relatedKeywords?: Array<{ keyword: string; volume: number }>;
+}
+
+export interface OpportunityValueSignal {
+  key: string;
+  demandScore: number | null;
+  patientBusinessValue: number;
+  strategicFit: number;
+}
+
 const TREATMENT_BY_CATEGORY: Partial<Record<KeywordCategorySlug, keyof typeof TREATMENT_DETAILS>> = {
   implant: "implant",
   orthodontics: "orthodontics",
@@ -122,10 +140,12 @@ function keywordPool(gap: ContentGap): string[] {
   ])];
 }
 
-function percentileScores(gaps: ContentGap[]): Map<string, number | null> {
+type DemandScoreInput = Pick<ContentGap, "slug" | "subGroup" | "monthlyVolume">;
+
+function percentileScores(gaps: DemandScoreInput[]): Map<string, number | null> {
   const known = gaps.filter((gap) => gap.monthlyVolume != null);
   const global = [...known].sort((a, b) => (a.monthlyVolume ?? 0) - (b.monthlyVolume ?? 0));
-  const byCategory = new Map<KeywordCategorySlug, ContentGap[]>();
+  const byCategory = new Map<KeywordCategorySlug, DemandScoreInput[]>();
   for (const gap of known) {
     const list = byCategory.get(gap.slug) ?? [];
     list.push(gap);
@@ -133,7 +153,7 @@ function percentileScores(gaps: ContentGap[]): Map<string, number | null> {
   }
   for (const list of byCategory.values()) list.sort((a, b) => (a.monthlyVolume ?? 0) - (b.monthlyVolume ?? 0));
 
-  const percentile = (list: ContentGap[], gap: ContentGap) => {
+  const percentile = (list: DemandScoreInput[], gap: DemandScoreInput) => {
     if (list.length <= 1) return 100;
     const index = list.findIndex((item) => item.slug === gap.slug && item.subGroup === gap.subGroup);
     return Math.round((index / (list.length - 1)) * 100);
@@ -156,11 +176,35 @@ function intentValue(intent: SearchIntent): number {
   return 30;
 }
 
-function patientBusinessValue(gap: ContentGap): number {
-  const pool = normalize(keywordPool(gap).join(" "));
+function signalKeywordPool(input: OpportunityValueSignalInput): string[] {
+  return [...new Set([
+    input.subGroup,
+    ...input.keywords,
+    ...(input.directKeywords ?? []).map((item) => item.keyword),
+    ...(input.relatedKeywords ?? []).slice(0, 10).map((item) => item.keyword),
+  ])];
+}
+
+function signalPatientBusinessValue(input: OpportunityValueSignalInput): number {
+  const pool = normalize(signalKeywordPool(input).join(" "));
   const patient = PATIENT_TERMS.some((term) => pool.includes(normalize(term))) ? 100 : 55;
-  const consultation = CONSULT_TERMS.some((term) => pool.includes(normalize(term))) ? 100 : intentValue(gap.searchIntent);
+  const consultation = CONSULT_TERMS.some((term) => pool.includes(normalize(term))) ? 100 : intentValue(input.searchIntent);
   return Math.round(patient * 0.5 + consultation * 0.5);
+}
+
+export function evaluateOpportunityValueSignals(inputs: OpportunityValueSignalInput[]): OpportunityValueSignal[] {
+  const demandInputs: DemandScoreInput[] = inputs.map((input) => ({
+    slug: input.category,
+    subGroup: input.subGroup,
+    monthlyVolume: input.monthlyVolume,
+  }));
+  const demands = percentileScores(demandInputs);
+  return inputs.map((input) => ({
+    key: input.key,
+    demandScore: demands.get(input.key) ?? null,
+    patientBusinessValue: signalPatientBusinessValue(input),
+    strategicFit: STRATEGIC_FIT[input.category],
+  }));
 }
 
 function topicTerms(gap: ContentGap): string[] {
@@ -236,12 +280,22 @@ function action(
 }
 
 export function evaluateOpportunities(gaps: ContentGap[]): OpportunityEvaluation[] {
-  const demands = percentileScores(gaps);
+  const valueSignals = new Map(evaluateOpportunityValueSignals(gaps.map((gap) => ({
+    key: `${gap.slug}:${gap.subGroup}`,
+    category: gap.slug,
+    subGroup: gap.subGroup,
+    keywords: gap.keywords,
+    searchIntent: gap.searchIntent,
+    monthlyVolume: gap.monthlyVolume,
+    directKeywords: gap.directKeywords,
+    relatedKeywords: gap.relatedKeywords,
+  }))).map((signal) => [signal.key, signal]));
   return gaps.map((gap) => {
     const key = `${gap.slug}:${gap.subGroup}`;
-    const demand = demands.get(key) ?? null;
-    const business = patientBusinessValue(gap);
-    const strategic = STRATEGIC_FIT[gap.slug];
+    const signal = valueSignals.get(key)!;
+    const demand = signal.demandScore;
+    const business = signal.patientBusinessValue;
+    const strategic = signal.strategicFit;
     const page = pageEvidence(gap);
     const allowed = allowedActions(gap);
     const question = questionSignal(gap);

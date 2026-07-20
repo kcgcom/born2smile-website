@@ -1,4 +1,5 @@
 import { CONCEPT_SATISFACTION_VERSION, type ConceptSatisfactionReport, type ConceptSatisfactionResult } from "./concept-satisfaction";
+import { assessActionValue, conceptNeedScore, type ActionValueInput } from "./action-value";
 import type { ActionRecommendation, ContentActionType, CoverageTopicSpec } from "./types";
 
 export const ACTION_RECOMMENDATION_VERSION = "action-recommendation-v1" as const;
@@ -65,6 +66,7 @@ export function buildActionRecommendations(
     latestReevaluationAt: null,
     topicReevaluationVersions: {},
   },
+  valueInputs: Record<string, ActionValueInput> = {},
 ): ActionRecommendationReport {
   if (satisfaction.schemaVersion !== CONCEPT_SATISFACTION_VERSION) throw new Error("지원하지 않는 개념 충족 판정입니다.");
   const recommendations: ActionRecommendation[] = [];
@@ -76,6 +78,10 @@ export function buildActionRecommendations(
     const partialConcepts = conceptIds(results, "partial");
     const notEvaluatedConcepts = conceptIds(results, "not-evaluated");
     const actionable = results.filter((result) => result.provisionalStatus === "missing" || result.provisionalStatus === "partial");
+    const plannedActionType = actionTypeFor(spec);
+    const topicValueAssessment = actionable.length > 0
+      ? assessActionValue(plannedActionType, conceptNeedScore(spec, results), valueInputs[spec.id])
+      : null;
     const summary = statusSummary(results);
     let evidenceReviewActionKey: string | null = null;
     let reviewActionKey: string | null = null;
@@ -94,7 +100,8 @@ export function buildActionRecommendations(
         partialConcepts: [],
         needsReviewConcepts: notEvaluatedConcepts,
         currentEvidenceSummary: summary,
-        valueScore: null,
+        valueScore: topicValueAssessment?.score ?? null,
+        valueAssessment: topicValueAssessment,
         confidence: "high",
         effort: "small",
         urgency: "normal",
@@ -117,7 +124,8 @@ export function buildActionRecommendations(
         partialConcepts,
         needsReviewConcepts: results.map((result) => result.conceptId),
         currentEvidenceSummary: summary,
-        valueScore: null,
+        valueScore: topicValueAssessment?.score ?? null,
+        valueAssessment: topicValueAssessment,
         confidence: "high",
         effort: "small",
         urgency: urgencyFor(results, specs),
@@ -131,8 +139,9 @@ export function buildActionRecommendations(
     }
 
     if (actionable.length > 0) {
-      const actionType = actionTypeFor(spec);
+      const actionType = plannedActionType;
       assertAllowed(spec, actionType);
+      const valueAssessment = topicValueAssessment!;
       recommendations.push({
         actionKey: `${ACTION_RECOMMENDATION_VERSION}:${spec.id}:${actionType}${assessmentInput.topicReevaluationVersions[spec.id] ? `:${assessmentInput.topicReevaluationVersions[spec.id]}` : ""}`,
         topicSpecId: spec.id,
@@ -147,7 +156,8 @@ export function buildActionRecommendations(
         partialConcepts,
         needsReviewConcepts: reviewActionKey ? actionable.map((result) => result.conceptId) : [],
         currentEvidenceSummary: summary,
-        valueScore: null,
+        valueScore: valueAssessment.score,
+        valueAssessment,
         confidence: reviewActionKey ? "low" : "medium",
         effort: actionType === "update-treatment-page" || actionType === "create-blog" ? "medium" : "small",
         urgency: urgencyFor(actionable, specs),
@@ -172,6 +182,7 @@ export function buildActionRecommendations(
         needsReviewConcepts: [],
         currentEvidenceSummary: summary,
         valueScore: null,
+        valueAssessment: null,
         confidence: "medium",
         effort: "small",
         urgency: "low",

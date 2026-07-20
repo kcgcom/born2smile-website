@@ -140,8 +140,10 @@ function plannerItemType(actionType: ContentActionType): PlannerItemType {
   return "page";
 }
 
-function plannerPriority(urgency: ActionRecommendation["urgency"]): PlannerPriority {
+function plannerPriority(urgency: ActionRecommendation["urgency"], valueScore: number | null): PlannerPriority {
   if (urgency === "critical" || urgency === "high") return "now";
+  if (valueScore != null && valueScore >= 70) return "now";
+  if (valueScore != null && valueScore >= 45) return "next";
   if (urgency === "normal") return "next";
   return "watch";
 }
@@ -165,13 +167,15 @@ export async function promoteActionToPlanner(actionKey: string, createdBy: strin
     category: spec.label,
     target_page: item.targetPath,
     status: "approved",
-    priority: plannerPriority(item.urgency),
+    priority: plannerPriority(item.urgency, item.valueScore),
     rationale: item.why,
     brief: {
       actionType: item.actionType,
       missingConcepts: item.missingConcepts,
       partialConcepts: item.partialConcepts,
       currentEvidenceSummary: item.currentEvidenceSummary,
+      valueScore: item.valueScore,
+      valueAssessment: item.valueAssessment,
       reassessAfterCompletion: item.reassessAfterCompletion,
     },
     source_snapshot: {
@@ -181,6 +185,7 @@ export async function promoteActionToPlanner(actionKey: string, createdBy: strin
       topicSpecId: item.topicSpecId,
       targetEvidenceRevision,
       actionKey: item.actionKey,
+      valueAssessment: item.valueAssessment,
     },
     due_date: null,
     created_by: createdBy,

@@ -52,10 +52,10 @@ export function ContentCoverageActionsPage() {
   const groups = useMemo(() => {
     const items = query.data?.recommendations ?? [];
     return {
-      reviews: items.filter((item) => item.canCompleteReview),
-      ready: items.filter((item) => item.canPromote),
-      blocked: items.filter((item) => !item.canCompleteReview && !item.plannerItem && item.unresolvedBlockerKeys.length > 0),
-      promoted: items.filter((item) => item.plannerItem != null),
+      reviews: items.filter((item) => item.canCompleteReview).sort(compareActionPriority),
+      ready: items.filter((item) => item.canPromote).sort(compareActionPriority),
+      blocked: items.filter((item) => !item.canCompleteReview && !item.plannerItem && item.unresolvedBlockerKeys.length > 0).sort(compareActionPriority),
+      promoted: items.filter((item) => item.plannerItem != null).sort(compareActionPriority),
       noAction: items.filter((item) => item.actionType === "no-action"),
     };
   }, [query.data]);
@@ -179,7 +179,7 @@ function Section({ icon, title, description, count, children }: { icon: React.Re
 }
 
 function ContentActionCard({ item, loading, onPromote }: { item: ActionWorkflowItem; loading: boolean; onPromote: () => void }) {
-  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${reevaluationTone(item.reevaluationState.status)}`}><strong>{reevaluationLabel(item.reevaluationState.status)}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.reevaluationState?.status === "needs-review" && <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">새 근거 검토</AdminActionLink>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
+  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.valueAssessment && <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 p-3 text-xs leading-5 text-sky-950"><strong>실행 가치 {item.valueScore == null ? "평가 보류" : `${item.valueScore}점`}</strong>{item.valueAssessment.reasons.map((reason) => <span key={reason} className="block">{reason}</span>)}</div>}{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${reevaluationTone(item.reevaluationState.status)}`}><strong>{reevaluationLabel(item.reevaluationState.status)}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.reevaluationState?.status === "needs-review" && <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">새 근거 검토</AdminActionLink>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
 }
 
 function reevaluationLabel(status: NonNullable<ActionWorkflowItem["reevaluationState"]>["status"]) {
@@ -193,7 +193,14 @@ function reevaluationTone(status: NonNullable<ActionWorkflowItem["reevaluationSt
 }
 
 function ActionHeader({ item }: { item: ActionWorkflowItem }) {
-  return <div><div className="flex flex-wrap gap-2"><AdminPill tone="white">{ACTION_LABELS[item.actionType]}</AdminPill><AdminPill tone="white">{urgencyLabel(item.urgency)}</AdminPill><AdminPill tone="white">신뢰도 {item.confidence}</AdminPill></div><h3 className="mt-3 font-bold text-slate-950">{item.title}</h3></div>;
+  return <div><div className="flex flex-wrap gap-2"><AdminPill tone="white">{ACTION_LABELS[item.actionType]}</AdminPill><AdminPill tone="white">{urgencyLabel(item.urgency)}</AdminPill>{item.valueAssessment && <AdminPill tone="white">실행 가치 {item.valueScore == null ? "보류" : `${item.valueScore}점`}</AdminPill>}<AdminPill tone="white">신뢰도 {item.confidence}</AdminPill></div><h3 className="mt-3 font-bold text-slate-950">{item.title}</h3></div>;
+}
+
+function compareActionPriority(a: ActionWorkflowItem, b: ActionWorkflowItem) {
+  const urgencyRank = { critical: 4, high: 3, normal: 2, low: 1 } as const;
+  return urgencyRank[b.urgency] - urgencyRank[a.urgency]
+    || (b.valueScore ?? -1) - (a.valueScore ?? -1)
+    || a.title.localeCompare(b.title, "ko");
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
