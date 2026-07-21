@@ -1,4 +1,4 @@
-import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS, REVIEWS } from "./constants";
+import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
@@ -106,27 +106,6 @@ export function getClinicJsonLd() {
     sameAs: Object.values(LINKS).filter((url) => url !== ""),
     priceRange: "₩₩",
     image: `${BASE_URL}/images/og-image.jpg`,
-    ...(REVIEWS.length > 0 && {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: parseFloat(
-          (REVIEWS.reduce((sum, r) => sum + r.rating, 0) / REVIEWS.length).toFixed(1)
-        ),
-        reviewCount: REVIEWS.length,
-        bestRating: 5,
-        worstRating: 1,
-      },
-      review: REVIEWS.map((r) => ({
-        "@type": "Review",
-        reviewRating: {
-          "@type": "Rating",
-          ratingValue: r.rating,
-        },
-        author: { "@type": "Person", name: r.name },
-        datePublished: r.date.length === 7 ? `${r.date}-01` : r.date,
-        reviewBody: r.text,
-      })),
-    }),
   };
 }
 
