@@ -2,7 +2,18 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Share2, Check, Clock, ArrowRight, Tag, Search, X, Heart } from "lucide-react";
+import {
+  Share2,
+  Check,
+  Clock,
+  ArrowRight,
+  Tag,
+  Search,
+  X,
+  Heart,
+  SlidersHorizontal,
+  ChevronDown,
+} from "lucide-react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   BLOG_CATEGORY_SLUGS,
@@ -42,6 +53,8 @@ interface BlogContentProps {
 export default function BlogContent({ initialPosts, activeDefaultCategory }: BlogContentProps) {
   const [activeCategory, setActiveCategory] = useState<BlogCategoryFilter>(activeDefaultCategory ?? "all");
   const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
+  const [categoryScrollEdges, setCategoryScrollEdges] = useState({ left: false, right: true });
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
@@ -50,6 +63,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const [likingSlug, setLikingSlug] = useState<string | null>(null);
   const [coolingSlugs, setCoolingSlugs] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeCooldownTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -137,11 +151,47 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
+  const resultCountText = `${filteredPosts.length}개의 글`;
 
-  const handleCategoryClick = (cat: BlogCategoryFilter) => {
+  const updateCategoryScrollEdges = useCallback(() => {
+    const scroller = categoryScrollRef.current;
+    if (!scroller) return;
+    setCategoryScrollEdges({
+      left: scroller.scrollLeft > 2,
+      right: scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 2,
+    });
+  }, []);
+
+  useEffect(() => {
+    const scroller = categoryScrollRef.current;
+    if (!scroller) return;
+
+    const frameId = requestAnimationFrame(updateCategoryScrollEdges);
+    const resizeObserver = new ResizeObserver(updateCategoryScrollEdges);
+    resizeObserver.observe(scroller);
+    scroller.addEventListener("scroll", updateCategoryScrollEdges, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      scroller.removeEventListener("scroll", updateCategoryScrollEdges);
+    };
+  }, [updateCategoryScrollEdges]);
+
+  const handleCategoryClick = (
+    cat: BlogCategoryFilter,
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     setActiveCategory(cat);
     setActiveTag(null);
+    setIsTagFilterOpen(false);
     setVisibleCount(POSTS_PER_PAGE);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    e.currentTarget.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
   };
 
   const handleTagClick = (tag: BlogTag, e?: React.MouseEvent) => {
@@ -151,6 +201,12 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     }
     setActiveTag((prev) => (prev === tag ? null : tag));
     setActiveCategory("all");
+    setIsTagFilterOpen(false);
+    setVisibleCount(POSTS_PER_PAGE);
+  };
+
+  const clearTagFilter = () => {
+    setActiveTag(null);
     setVisibleCount(POSTS_PER_PAGE);
   };
 
@@ -288,36 +344,98 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         </div>
 
         {/* 카테고리 필터 */}
-        <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto px-1 md:flex-wrap md:justify-center md:overflow-visible md:px-0">
-          <button
-            onClick={() => handleCategoryClick("all")}
-            aria-pressed={activeCategory === "all" && !activeTag}
-            className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeCategory === "all" && !activeTag
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
-            }`}
+        <div className="relative mb-4">
+          <div
+            ref={categoryScrollRef}
+            className="no-scrollbar flex gap-2 overflow-x-auto px-1 md:flex-wrap md:justify-center md:overflow-visible md:px-0"
+            aria-label="건강칼럼 카테고리"
+            onScroll={updateCategoryScrollEdges}
           >
-            전체
-          </button>
-          {BLOG_CATEGORY_SLUGS.map((cat) => (
             <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              aria-pressed={activeCategory === cat && !activeTag}
+              onClick={(e) => handleCategoryClick("all", e)}
+              aria-pressed={activeCategory === "all" && !activeTag}
               className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeCategory === cat && !activeTag
+                activeCategory === "all" && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
                   : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
               }`}
             >
-              {getCategoryLabel(cat)}
+              전체
             </button>
-          ))}
+            {BLOG_CATEGORY_SLUGS.map((cat) => (
+              <button
+                key={cat}
+                onClick={(e) => handleCategoryClick(cat, e)}
+                aria-pressed={activeCategory === cat && !activeTag}
+                className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  activeCategory === cat && !activeTag
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
+                }`}
+              >
+                {getCategoryLabel(cat)}
+              </button>
+            ))}
+          </div>
+          {categoryScrollEdges.left && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[var(--surface)] to-transparent md:hidden"
+            />
+          )}
+          {categoryScrollEdges.right && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--surface)] to-transparent md:hidden"
+            />
+          )}
         </div>
 
-        {/* 태그 필터 */}
-        <div className="mb-10 flex flex-wrap justify-center gap-1.5">
+        {/* 모바일 상세 필터 요약 */}
+        <div className="mb-4 flex min-h-11 items-center justify-between gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsTagFilterOpen((open) => !open)}
+            aria-expanded={isTagFilterOpen}
+            aria-controls="blog-tag-filters"
+            className="inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border border-[var(--border)] px-3 text-sm font-medium text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)]/30 hover:bg-[var(--background)]"
+          >
+            <SlidersHorizontal size={15} aria-hidden="true" className="shrink-0" />
+            <span className="truncate">
+              상세 필터{activeTag ? ` · ${activeTag}` : ""}
+            </span>
+            <ChevronDown
+              size={15}
+              aria-hidden="true"
+              className={`shrink-0 transition-transform ${isTagFilterOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <span className="text-sm text-[var(--muted)]" aria-live="polite">
+              {resultCountText}
+            </span>
+            {activeTag && (
+              <button
+                type="button"
+                onClick={clearTagFilter}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                aria-label={`${activeTag} 필터 해제`}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 태그 필터: 모바일 접기, 데스크톱 항상 노출 */}
+        <div
+          id="blog-tag-filters"
+          aria-label="글 유형·대상"
+          className={`${isTagFilterOpen ? "flex" : "hidden"} mb-6 flex-wrap justify-center gap-1.5 rounded-2xl bg-[var(--background)] p-3 md:mb-10 md:flex md:bg-transparent md:p-0`}
+        >
+          <p className="mb-1 w-full text-sm font-medium text-[var(--foreground)] md:sr-only">
+            글 유형·대상
+          </p>
           {BLOG_TAGS.map((tag) => (
             <button
               key={tag}
@@ -337,10 +455,8 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
         {/* 포스트 그리드 */}
         <div aria-live="polite" aria-atomic="false">
-          <p className="mb-4 text-center text-sm text-[var(--muted)]">
-            {filteredPosts.length > 0
-              ? `${filteredPosts.length}개의 글`
-              : null}
+          <p className="mb-4 hidden text-center text-sm text-[var(--muted)] md:block">
+            {resultCountText}
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visiblePosts.map((post) => {
