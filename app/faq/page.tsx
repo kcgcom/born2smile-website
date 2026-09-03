@@ -93,7 +93,7 @@ export default function FaqPage() {
                   {treatment && (
                     <Link
                       href={treatment.href}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                      className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                     >
                       진료 안내
                       <ArrowRight size={14} />
@@ -118,7 +118,7 @@ export default function FaqPage() {
                         {item.link ? (
                           <Link
                             href={item.link.href}
-                            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                            className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                           >
                             {item.link.label}
                             <ArrowRight size={14} />
@@ -129,7 +129,7 @@ export default function FaqPage() {
                             href={item.source.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
+                            className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
                           >
                             {item.source.label}
                             <ArrowRight size={14} />

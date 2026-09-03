@@ -153,7 +153,7 @@ export default async function TreatmentDetailPage({
           <FadeIn>
             <Link
               href="/treatments"
-              className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
+              className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
             >
               <ArrowLeft size={14} aria-hidden="true" />
               진료 안내
@@ -303,7 +303,7 @@ export default async function TreatmentDetailPage({
                     {item.link ? (
                       <Link
                         href={item.link.href}
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                        className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                       >
                         {item.link.label}
                         <ArrowRight size={14} />
@@ -314,7 +314,7 @@ export default async function TreatmentDetailPage({
                         href={item.source.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
+                        className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-sky-700 hover:underline"
                       >
                         {item.source.label}
                         <ArrowRight size={14} />
@@ -414,7 +414,7 @@ export default async function TreatmentDetailPage({
             <FadeIn className="mt-8 text-center">
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
               >
                 건강칼럼에서 더 많은 글 보기
                 <ArrowRight size={14} />

@@ -273,12 +273,12 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               onChange={handleSearchChange}
               placeholder="궁금한 키워드를 검색해보세요"
               aria-label="건강칼럼 검색"
-              className="w-full rounded-full border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-10 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] transition-colors focus:border-[var(--color-primary)] focus:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              className="min-h-11 w-full rounded-full border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] transition-colors focus:border-[var(--color-primary)] focus:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--muted-light)] hover:text-[var(--muted)] transition-colors"
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[var(--muted-light)] transition-colors hover:text-[var(--muted)]"
                 aria-label="검색어 지우기"
               >
                 <X size={16} />
@@ -292,7 +292,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           <button
             onClick={() => handleCategoryClick("all")}
             aria-pressed={activeCategory === "all" && !activeTag}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeCategory === "all" && !activeTag
                 ? "bg-[var(--color-primary)] text-white"
                 : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
@@ -305,7 +305,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               key={cat}
               onClick={() => handleCategoryClick(cat)}
               aria-pressed={activeCategory === cat && !activeTag}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeCategory === cat && !activeTag
                   ? "bg-[var(--color-primary)] text-white"
                   : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
@@ -323,7 +323,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               key={tag}
               onClick={() => handleTagClick(tag)}
               aria-pressed={activeTag === tag}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTag === tag
                   ? "bg-[var(--color-gold)] text-white"
                   : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
@@ -382,7 +382,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                         <button
                           key={tag}
                           onClick={(e) => handleTagClick(tag, e)}
-                          className={`relative z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
+                          className={`relative z-10 inline-flex min-h-11 items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
                             activeTag === tag
                               ? "bg-[var(--color-gold)] text-white"
                               : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
@@ -406,7 +406,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                         <button
                           onClick={(e) => handleLike(e, post.slug)}
                           disabled={isLikeDisabled}
-                          className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
+                          className={`relative z-10 flex min-h-11 items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
                             localLiked.has(post.slug)
                               ? "text-rose-500 hover:bg-rose-50"
                               : "text-[var(--muted-light)] hover:bg-[var(--background)] hover:text-rose-400"
@@ -419,7 +419,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                       )}
                     <button
                       onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
-                      className="relative z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                      className="relative z-10 flex min-h-11 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                       aria-label={`"${post.title}" 공유하기`}
                     >
                       {copiedSlug === post.slug ? (
@@ -461,7 +461,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
             {(activeCategory !== "all" || activeTag || searchQuery.trim()) && (
               <button
                 onClick={() => { setActiveCategory("all"); setActiveTag(null); clearSearch(); }}
-                className="mt-4 rounded-full border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"
+                className="mt-4 inline-flex min-h-11 items-center rounded-full border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"
               >
                 필터 초기화
               </button>
