@@ -109,7 +109,11 @@ export function Header() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
-          <Link href="/" className="flex items-center gap-2" onClick={() => handleNavClick("/")}>
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-2"
+            onClick={() => handleNavClick("/")}
+          >
             <Image
               src="/images/Logo_SNU.png"
               alt="서울대학교 엠블럼"
@@ -117,10 +121,11 @@ export function Header() {
               height={40}
               sizes="40px"
               priority
-              className="h-8 w-8 md:h-10 md:w-10"
+              className="h-8 w-8 shrink-0 md:h-10 md:w-10"
             />
-            <span className="text-2xl font-bold tracking-tight text-[var(--color-primary)] md:text-2xl">
-              {headerClinicName}
+            <span className="shrink-0 whitespace-nowrap text-2xl font-bold tracking-tight text-[var(--color-primary)]">
+              <span className="md:hidden">{CLINIC.name}</span>
+              <span className="hidden md:inline">{headerClinicName}</span>
             </span>
           </Link>
 
@@ -160,19 +165,19 @@ export function Header() {
           </nav>
 
           {/* 모바일: 전화번호 + 햄버거 버튼 */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex shrink-0 items-center gap-1 min-[390px]:gap-2 md:hidden">
             <TrackedAnchor
               href={CLINIC.phoneHref}
               event="header_phone_click"
               properties={{ cta_location: "header_mobile", page_type: "global" }}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3"
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              <Phone size={14} aria-hidden="true" />
-              {CLINIC.phone}
+              <Phone size={16} aria-hidden="true" />
+              <span className="hidden whitespace-nowrap min-[390px]:inline">{CLINIC.phone}</span>
             </TrackedAnchor>
             <button
-              className="flex h-11 w-11 items-center justify-center rounded-lg"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
               aria-expanded={isMobileMenuOpen}
