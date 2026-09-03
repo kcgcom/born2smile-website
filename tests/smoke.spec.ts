@@ -7,6 +7,19 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('body')).toContainText('서울본치과');
   });
 
+  test('모바일 하단 메뉴를 누르면 열린 상단 메뉴가 닫힌다', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    await page.getByRole('button', { name: '메뉴 열기' }).click();
+    await expect(page.locator('#mobile-menu')).toBeVisible();
+
+    await page.getByRole('navigation', { name: '빠른 메뉴' }).getByRole('link', { name: '홈' }).click();
+
+    await expect(page.locator('#mobile-menu')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '메뉴 열기' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
   test('진료 목록 페이지', async ({ page }) => {
     const response = await page.goto('/treatments');
     expect(response?.status()).toBe(200);

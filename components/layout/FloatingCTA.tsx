@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
+import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
@@ -22,6 +23,8 @@ export function FloatingCTA() {
 
   const handleNavClick = useCallback(
     (href: string) => {
+      closeMobileMenu();
+
       const isCurrentPage =
         href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
       if (isCurrentPage) {

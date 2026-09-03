@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone, Settings } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { CLOSE_MOBILE_MENU_EVENT } from "@/components/layout/mobileMenuEvents";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
@@ -33,6 +34,13 @@ export function Header() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleCloseMobileMenu = () => setIsMobileMenuOpen(false);
+
+    window.addEventListener(CLOSE_MOBILE_MENU_EVENT, handleCloseMobileMenu);
+    return () => window.removeEventListener(CLOSE_MOBILE_MENU_EVENT, handleCloseMobileMenu);
   }, []);
 
   // 모바일 메뉴 열림 시 배경 스크롤 방지 + Escape 키 닫기
