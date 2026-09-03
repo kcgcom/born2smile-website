@@ -14,7 +14,11 @@ test.describe('Smoke Tests', () => {
     await page.getByRole('button', { name: '메뉴 열기' }).click();
     await expect(page.locator('#mobile-menu')).toBeVisible();
 
-    await page.getByRole('navigation', { name: '빠른 메뉴' }).getByRole('link', { name: '홈' }).click();
+    // Next.js 개발 도구 버튼이 좌하단 링크 위에 겹칠 수 있어 실제 링크 이벤트를 직접 전달한다.
+    await page
+      .getByRole('navigation', { name: '빠른 메뉴' })
+      .getByRole('link', { name: '홈' })
+      .dispatchEvent('click');
 
     await expect(page.locator('#mobile-menu')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '메뉴 열기' })).toHaveAttribute('aria-expanded', 'false');
