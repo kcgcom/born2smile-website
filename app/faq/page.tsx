@@ -63,7 +63,7 @@ export default function FaqPage() {
       />
 
       {/* 헤더 */}
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center">
+      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center lg:pb-0">
         <div className="mx-auto max-w-3xl px-4">
           <FadeIn>
             <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">

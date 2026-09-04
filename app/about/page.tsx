@@ -68,7 +68,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(doctorJsonLd) }}
       />
       {/* ───────────── 히어로 ───────────── */}
-      <section className="bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pt-32 pb-16 text-center">
+      <section className="bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pt-32 pb-16 text-center lg:pb-0">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
