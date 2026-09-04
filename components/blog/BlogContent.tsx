@@ -421,7 +421,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
               onChange={handleSearchChange}
               placeholder="궁금한 키워드를 검색해보세요"
               aria-label="건강칼럼 검색"
-              className="min-h-11 w-full rounded-full border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] transition-colors focus:border-[var(--color-primary)] focus:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              className="min-h-11 w-full rounded-full border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] transition-colors [&::-webkit-search-cancel-button]:appearance-none focus:border-[var(--color-primary)] focus:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
             {searchQuery && (
               <button
