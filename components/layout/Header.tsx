@@ -130,7 +130,7 @@ export function Header() {
           </Link>
 
           {/* 데스크톱 네비게이션 */}
-          <nav className="hidden items-center gap-8 md:flex" aria-label="메인 메뉴">
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="메인 메뉴">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.href === "/"
@@ -165,7 +165,7 @@ export function Header() {
           </nav>
 
           {/* 모바일: 전화번호 + 햄버거 버튼 */}
-          <div className="flex shrink-0 items-center gap-1 min-[390px]:gap-2 md:hidden">
+          <div className="flex shrink-0 items-center gap-1 min-[390px]:gap-2 lg:hidden">
             <TrackedAnchor
               href={CLINIC.phoneHref}
               event="header_phone_click"
@@ -193,7 +193,7 @@ export function Header() {
           <div
             id="mobile-menu"
             ref={menuRef}
-            className="border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
+            className="border-t border-[var(--border)] bg-[var(--surface)] lg:hidden"
           >
             <nav className="flex flex-col px-4 py-4" aria-label="모바일 메뉴">
               {NAV_ITEMS.map((item) => {
