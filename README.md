@@ -66,7 +66,6 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 | [docs/blog-workflow.md](docs/blog-workflow.md) | 블로그 발행 워크플로우 |
 | [docs/blog-writing-guide.md](docs/blog-writing-guide.md) | 블로그 작성 가이드 |
 | [docs/admin-ux-checklist.md](docs/admin-ux-checklist.md) | `/admin` 운영 점검 체크리스트 |
-| [docs/llm-gateway-cloudflare-setup.md](docs/llm-gateway-cloudflare-setup.md) | AI 작성 도우미 게이트웨이 운영 가이드 |
 | [docs/todo.md](docs/todo.md) | 현재 남아 있는 개선 과제 |
 
 ## 배포

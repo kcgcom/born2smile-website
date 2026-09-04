@@ -145,7 +145,7 @@ supabase/migrations/          # schema, RLS, RPC
 
 ### Supabase 데이터 아키텍처
 
-상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/001_initial_schema.sql` 참조. 4개 테이블 (`blog_posts`, `blog_likes`, `site_config`, `api_cache`), RLS 정책으로 보안, RPC 함수 (`toggle_like`, `get_like`), 공개 블로그의 dev/build snapshot 우선 전략과 런타임 Supabase→snapshot 폴백, `unstable_cache` + 2-tier 캐싱을 사용합니다.
+상세 내용은 [`docs/supabase-architecture.md`](docs/supabase-architecture.md) 및 `supabase/migrations/` 참조. 블로그·연구 자료·콘텐츠 플래너·검색 스냅샷·키워드 택소노미 테이블을 RLS로 보호하며, 공개 블로그는 dev/build snapshot 우선 전략과 런타임 Supabase→snapshot 폴백, `unstable_cache` + 2-tier 캐싱을 사용합니다.
 
 ### 블로그 발행 워크플로우
 
