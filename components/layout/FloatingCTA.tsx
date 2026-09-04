@@ -20,6 +20,7 @@ const NAV_ICONS: Record<string, typeof Home> = {
 
 export function FloatingCTA() {
   const pathname = usePathname();
+  const showDesktopPhone = !pathname.startsWith("/contact");
 
   const handleNavClick = useCallback(
     (href: string) => {
@@ -94,9 +95,14 @@ export function FloatingCTA() {
       </nav>
 
       {/* 데스크톱 플로팅 전화 버튼 + 진료 상태 */}
-      <div className="fixed bottom-6 right-6 z-40 hidden md:block">
-        <DesktopPhoneButton />
-      </div>
+      {showDesktopPhone && (
+        <div
+          className="fixed bottom-6 right-2 z-40 hidden xl:block"
+          data-testid="desktop-floating-cta"
+        >
+          <DesktopPhoneButton />
+        </div>
+      )}
     </>
   );
 }
@@ -129,9 +135,12 @@ function DesktopPhoneButton() {
   const style = info ? STATUS_STYLES[info.status] : STATUS_STYLES.closed;
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="group relative flex flex-col items-end">
       {info && (
-        <div className="flex items-center gap-1.5 rounded-full border border-[var(--border)]/70 bg-[var(--surface)]/95 px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm">
+        <div
+          className="pointer-events-none absolute right-0 bottom-[calc(100%+0.5rem)] flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border)]/70 bg-[var(--surface)]/95 px-3 py-1.5 text-xs font-medium opacity-0 shadow-md backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 min-[1440px]:opacity-100"
+          data-testid="desktop-floating-status"
+        >
           <span className={`inline-block h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
           <span className={style.text}>{info.message}</span>
         </div>
