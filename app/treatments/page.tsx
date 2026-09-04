@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Heart, HandHeart, Leaf } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { CLINIC, TREATMENTS, BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import {
@@ -60,50 +60,60 @@ export default function TreatmentsPage() {
                 <br />
                 그래서 저희는 모든 치료의 시작을
                 <br className="sm:hidden" />
-                &lsquo;지키는 것&rsquo;에서 출발합니다.
+                {" "}&lsquo;지키는 것&rsquo;에서 출발합니다.
               </p>
             </div>
           </FadeIn>
 
-          <StaggerContainer className="mt-14 grid gap-8 md:grid-cols-3">
-            {[
-              {
-                icon: Leaf,
-                title: "자연치아를 먼저 생각합니다",
-                desc: "발치보다 보존을, 인공물보다 자연을 우선합니다. 꼭 필요한 치료만 정직하게 권해 드리는 것이 저희의 약속입니다.",
-              },
-              {
-                icon: HandHeart,
-                title: "마음까지 편안한 진료",
-                desc: "치과가 두려운 분들의 마음을 누구보다 잘 압니다. 충분히 설명하고, 천천히 기다리며, 한 분 한 분 소중하게 진료합니다.",
-                gold: true,
-              },
-              {
-                icon: Heart,
-                title: "오래오래 함께하는 주치의",
-                desc: "한 번의 치료로 끝나는 관계가 아닌, 우리 가족의 평생 구강건강을 함께 지켜가는 따뜻한 동반자가 되겠습니다.",
-              },
-            ].map((item) => (
-              <StaggerItem key={item.title}>
-                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-8 text-center transition-shadow hover:shadow-md">
-                  <div
-                    className={`mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full ${
-                      "gold" in item && item.gold
-                        ? "bg-[var(--color-gold-bg)] text-[var(--color-gold)]"
-                        : "bg-blue-50 text-[var(--color-primary)]"
-                    }`}
-                  >
-                    <item.icon size={26} aria-hidden="true" />
+          <StaggerContainer className="mx-auto mt-14 grid max-w-5xl overflow-hidden border-y border-[var(--border)] lg:grid-cols-[1.1fr_1fr]">
+            <StaggerItem className="bg-[var(--background)]">
+              <div className="px-2 py-10 sm:px-8 md:py-12 lg:px-10 lg:py-14 lg:pr-16">
+                <p className="font-headline text-sm font-bold tracking-[0.2em] text-[var(--color-gold-text)]">
+                  01
+                </p>
+                <h3 className="font-headline mt-4 text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+                  자연치아를 먼저 생각합니다
+                </h3>
+                <p className="mt-5 max-w-xl text-base leading-8 text-[var(--foreground)]">
+                  발치보다 보존을, 인공물보다 자연을 우선합니다. 꼭 필요한
+                  치료만 권합니다.
+                </p>
+              </div>
+            </StaggerItem>
+
+            <div className="border-t border-[var(--border)] lg:border-t-0 lg:border-l">
+              {[
+                {
+                  number: "02",
+                  title: "마음까지 편안한 진료",
+                  desc: "무엇을 왜 하는지 충분히 설명하고, 서두르지 않고 기다릴 시간을 드립니다.",
+                },
+                {
+                  number: "03",
+                  title: "오래오래 함께하는 주치의",
+                  desc: "한 번의 치료보다 오래 지켜보는 관계를 생각합니다.",
+                },
+              ].map((item, index) => (
+                <StaggerItem
+                  key={item.number}
+                  className={index === 0 ? "border-b border-[var(--border)]" : ""}
+                >
+                  <div className="grid gap-3 px-2 py-8 sm:grid-cols-[3rem_1fr] sm:px-8 lg:px-12 lg:py-9">
+                    <p className="font-headline text-sm font-bold tracking-[0.2em] text-[var(--color-gold-text)]">
+                      {item.number}
+                    </p>
+                    <div>
+                      <h3 className="font-headline text-xl font-bold text-[var(--foreground)] md:text-2xl">
+                        {item.title}
+                      </h3>
+                      <p className="mt-3 text-base leading-7 text-[var(--foreground)]">
+                        {item.desc}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="mb-3 text-lg font-bold text-[var(--foreground)]">
-                    {item.title}
-                  </h3>
-                  <p className="text-base leading-relaxed text-[var(--foreground)]">
-                    {item.desc}
-                  </p>
-                </div>
-              </StaggerItem>
-            ))}
+                </StaggerItem>
+              ))}
+            </div>
           </StaggerContainer>
         </div>
       </section>
