@@ -12,13 +12,21 @@ import { CitationText, CitationReferences } from "./BlogCitations";
 // 공개 페이지(/blog/[category]/[slug])와 관리자 프리뷰 페이지 공유
 // ----------------------------------------------------------------
 
+const FAQ_TITLE = "자주 묻는 질문";
+
+function isFaqTitle(block: BlogBlock | undefined): boolean {
+  return block?.type === "heading" && /자주\s*묻는\s*질문|\bFAQ\b|Q\s*&\s*A/i.test(block.text);
+}
+
+function startsFaqGroup(blocks: BlogBlock[], index: number): boolean {
+  return blocks[index].type === "faq" && blocks[index - 1]?.type !== "faq";
+}
+
 export function getHeadingList(post: { blocks: BlogBlock[] }): string[] {
-  return post.blocks
-    .filter(
-      (block): block is Extract<BlogBlock, { type: "heading" }> =>
-        block.type === "heading",
-    )
-    .map((block) => block.text);
+  const ids = computeHeadingIds(post.blocks);
+  return post.blocks.flatMap((block, index) => ids[index]
+    ? [block.type === "heading" ? block.text : FAQ_TITLE]
+    : []);
 }
 
 export function isExternalHref(href: string): boolean {
@@ -98,11 +106,12 @@ export function renderSingleBlock(
     }
     case "faq":
       return (
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
-          <h2 className="font-headline mb-3 text-lg font-bold text-[var(--foreground)] md:text-xl">
-            {block.question}
-          </h2>
-          <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
+        <div id={headingId} className="min-w-0">
+          <h3 className="mb-3 flex items-baseline gap-3 text-lg font-semibold leading-relaxed text-[var(--foreground)] md:text-xl">
+            <span aria-hidden="true" className="shrink-0 text-sm font-bold text-[var(--color-primary)]">Q</span>
+            <span className="min-w-0 break-keep [overflow-wrap:anywhere]">{block.question}</span>
+          </h3>
+          <p className="break-keep pl-6 text-base leading-relaxed text-[var(--foreground)] [overflow-wrap:anywhere] md:text-lg">
             <CitationText text={block.answer} citations={block.citations} references={references} />
           </p>
         </div>
@@ -264,17 +273,58 @@ export function renderSingleBlock(
 
 export function computeHeadingIds(blocks: BlogBlock[]): (string | undefined)[] {
   let headingIndex = -1;
-  return blocks.map((block) =>
-    block.type === "heading" ? `section-${++headingIndex}` : undefined,
+  return blocks.map((block, index) =>
+    block.type === "heading" || (startsFaqGroup(blocks, index) && !isFaqTitle(blocks[index - 1]))
+      ? `section-${++headingIndex}` : undefined,
   );
 }
 
-export function renderBlocks(blocks: BlogBlock[]) {
+interface RenderBlocksOptions {
+  beforeBlock?: (block: BlogBlock) => React.ReactNode;
+  hideResearchCallouts?: boolean;
+}
+
+export function renderBlocks(blocks: BlogBlock[], options: RenderBlocksOptions = {}) {
   const headingIds = computeHeadingIds(blocks);
   const references = getBlogCitations(blocks);
-  return <>{blocks.map((block, index) => (
-    <Fragment key={`block-${index}`}>
-      {renderSingleBlock(block, headingIds[index], references)}
-    </Fragment>
-  ))}<CitationReferences references={references} /></>;
+  const content: React.ReactNode[] = [];
+
+  for (let index = 0; index < blocks.length; index++) {
+    const block = blocks[index];
+    const hasTitle = isFaqTitle(block) && blocks[index + 1]?.type === "faq";
+    if (block.type === "faq" || hasTitle) {
+      const start = index;
+      const title = hasTitle && block.type === "heading" ? block.text : FAQ_TITLE;
+      const headingId = headingIds[index];
+      if (hasTitle) index++;
+      const items: React.ReactNode[] = [];
+      for (; index < blocks.length && blocks[index].type === "faq"; index++) {
+        items.push(
+          <div key={`faq-${index}`} className="py-6 first:pt-0 last:pb-0 md:py-7">
+            {options.beforeBlock?.(blocks[index])}
+            {renderSingleBlock(blocks[index], undefined, references)}
+          </div>,
+        );
+      }
+      index--;
+      content.push(
+        <section key={`block-${start}`} id={headingId} aria-labelledby={`${headingId}-title`} className="scroll-mt-28 pt-4">
+          {hasTitle && options.beforeBlock?.(block)}
+          <h2 id={`${headingId}-title`} className="font-headline mb-6 text-xl font-bold text-[var(--foreground)] md:mb-8 md:text-3xl">
+            {title}
+          </h2>
+          <div className="divide-y divide-[var(--border)]">{items}</div>
+        </section>,
+      );
+      continue;
+    }
+    if (options.hideResearchCallouts && block.type === "researchCallout") continue;
+    content.push(
+      <Fragment key={`block-${index}`}>
+        {options.beforeBlock?.(block)}
+        {renderSingleBlock(block, headingIds[index], references)}
+      </Fragment>,
+    );
+  }
+  return <>{content}<CitationReferences references={references} /></>;
 }

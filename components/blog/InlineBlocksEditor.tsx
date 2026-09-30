@@ -16,11 +16,10 @@ import {
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { getAccessToken } from "@/lib/supabase";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog";
-import { renderSingleBlock, computeHeadingIds } from "./BlogPostRenderer";
+import { renderSingleBlock, computeHeadingIds, renderBlocks } from "./BlogPostRenderer";
 import { useBlogEditContext } from "./BlogEditProvider";
 import type { BlogCitation } from "@/lib/blog/types";
 import { getBlogCitations } from "@/lib/blog/citations";
-import { CitationReferences } from "./BlogCitations";
 import { CitationFields } from "./CitationFields";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { duplicateBlogBlockAt, insertBlogBlocks, prepareBlockConversion, replaceBlogBlock } from "@/lib/blog/block-editing";
@@ -125,14 +124,12 @@ function InlineBlocksEditorSession({ post }: { post: PostMeta }) {
   if (!isAdmin || !isEditMode) {
     return (
       <div className="space-y-10">
-        {blocks.map((block, i) => {
-          if (!isAdmin && block.type === "researchCallout") return null;
-          return <Fragment key={i}>
-            {isAdmin && <ResearchBlockNotice block={block} notices={researchNotices} />}
-            {renderSingleBlock(block, headingIds[i], references)}
-          </Fragment>;
+        {renderBlocks(blocks, {
+          hideResearchCallouts: !isAdmin,
+          beforeBlock: isAdmin
+            ? (block) => <ResearchBlockNotice block={block} notices={researchNotices} />
+            : undefined,
         })}
-        <CitationReferences references={references} />
       </div>
     );
   }
