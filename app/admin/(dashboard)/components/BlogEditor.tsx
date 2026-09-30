@@ -9,6 +9,7 @@ import { BLOG_TAGS } from "@/lib/blog/types";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog/types";
 import { getCategoryLabel } from "@/lib/blog";
 import { MAX_BLOG_BLOCKS } from "@/lib/blog/normalize-blocks";
+import { prepareBlockConversion } from "@/lib/blog/block-editing";
 import { inputClass, emptyBlock, BLOCK_LABELS, BlockEditorRenderer } from "./blog/block-editors";
 import { useBlogEditorForm } from "./blog/useBlogEditorForm";
 import type { BlogEditorData } from "./blog/useBlogEditorForm";
@@ -61,6 +62,7 @@ export default function BlogEditor({
     categoryOptions,
     setField,
     setBlock,
+    replaceBlocks,
     addBlock,
     removeBlock,
     duplicateBlock,
@@ -267,7 +269,11 @@ export default function BlogEditor({
                   </div>
                   <select
                     value={block.type}
-                    onChange={(e) => setBlock(idx, emptyBlock(e.target.value as BlogBlock["type"]))}
+                    onChange={(e) => {
+                      const result = prepareBlockConversion(block, e.target.value as BlogBlock["type"], emptyBlock);
+                      if (result.warning && !window.confirm(result.warning)) return;
+                      replaceBlocks(idx, result.blocks);
+                    }}
                     className={inputClass(false)}
                   >
                     {(Object.entries(BLOCK_LABELS) as [BlogBlock["type"], string][]).map(([type, label]) => (

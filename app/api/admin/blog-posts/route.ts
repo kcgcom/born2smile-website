@@ -11,6 +11,7 @@ import {
 import { blogPostSchema } from "@/lib/blog-validation";
 import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
+import { CitationResearchUnavailableError, validateBlogCitationTargets } from "@/lib/blog/citation-targets-server";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         ? (error as { issues: unknown[] }).issues
         : [];
     return Response.json(
-      { error: "VALIDATION_ERROR", message: "입력값이 올바르지 않습니다", issues },
+      { error: "VALIDATION_ERROR", message: (issues[0] as { message?: string } | undefined)?.message ?? "입력값이 올바르지 않습니다", issues },
       { status: 400, headers: HEADERS },
     );
   }
@@ -70,6 +71,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const issues = await validateBlogCitationTargets(data.blocks, data.published === true);
+    if (issues.length) return Response.json({ error: "VALIDATION_ERROR", message: issues[0].message, issues }, { status: 400, headers: HEADERS });
     await createBlogPost(data, auth.email);
 
     revalidateBlogCaches({ slug: data.slug, category: data.category });
@@ -84,6 +87,7 @@ export async function POST(request: NextRequest) {
       { status: 201, headers: HEADERS },
     );
   } catch (error) {
+    if (error instanceof CitationResearchUnavailableError) return Response.json({ error: "RESEARCH_UNAVAILABLE", message: error.message }, { status: 503, headers: HEADERS });
     Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "블로그 포스트를 생성할 수 없습니다" },

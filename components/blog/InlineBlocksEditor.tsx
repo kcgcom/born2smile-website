@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useRef, useState, useCallback } from "react";
+import { Fragment, createContext, useContext, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil,
@@ -23,6 +23,7 @@ import { getBlogCitations } from "@/lib/blog/citations";
 import { CitationReferences } from "./BlogCitations";
 import { CitationFields } from "./CitationFields";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
+import { duplicateBlogBlockAt, insertBlogBlocks, prepareBlockConversion, replaceBlogBlock } from "@/lib/blog/block-editing";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,21 +61,26 @@ const BLOCK_OPTIONS: { type: BlogBlock["type"]; label: string; desc: string }[] 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
+  const { isEditMode } = useBlogEditContext();
+  // A new editing session must not reuse an index from a saved/split block.
+  return <InlineBlocksEditorSession key={isEditMode ? "edit" : "read"} post={post} />;
+}
+
+function InlineBlocksEditorSession({ post }: { post: PostMeta }) {
   const isAdmin = useAdminAuth();
   const router = useRouter();
-  const { isEditMode, blocks, setBlocks } = useBlogEditContext();
+  const { isEditMode, blocks, setBlocks, researchNotices, beginSave, endSave, isSaving } = useBlogEditContext();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Destructure scalars so useCallback deps don't invalidate on every parent render
-  const { slug, title, subtitle, excerpt, category, tags, date } = post;
+  const { slug } = post;
   // Ref-based guard prevents concurrent overlapping save calls
   const inflightRef = useRef(false);
 
   const saveToApi = useCallback(
     async (newBlocks: BlogBlock[]) => {
-      if (inflightRef.current) return;
+      if (inflightRef.current || !beginSave()) return;
       inflightRef.current = true;
       setSaving(true);
       setSaveError(null);
@@ -89,15 +95,9 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            slug,
-            title,
-            subtitle,
-            excerpt,
-            category,
-            tags,
-            date,
+            // Inline editing changes the body only. Preserve draft/published state,
+            // dates and metadata; publication belongs to the explicit publish action.
             blocks: newBlocks,
-            published: true,
           }),
         });
         if (!res.ok) {
@@ -112,9 +112,10 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
       } finally {
         setSaving(false);
         inflightRef.current = false;
+        endSave();
       }
     },
-    [slug, title, subtitle, excerpt, category, tags, date, router, setBlocks],
+    [slug, router, setBlocks, beginSave, endSave],
   );
 
   const headingIds = computeHeadingIds(blocks);
@@ -126,22 +127,35 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
       <div className="space-y-10">
         {blocks.map((block, i) => {
           if (!isAdmin && block.type === "researchCallout") return null;
-          return <Fragment key={i}>{renderSingleBlock(block, headingIds[i], references)}</Fragment>;
+          return <Fragment key={i}>
+            {isAdmin && <ResearchBlockNotice block={block} notices={researchNotices} />}
+            {renderSingleBlock(block, headingIds[i], references)}
+          </Fragment>;
         })}
         <CitationReferences references={references} />
       </div>
     );
   }
 
-  const handleSave = (index: number, updated: BlogBlock) =>
-    saveToApi(blocks.map((b, i) => (i === index ? updated : b)));
+  const handleSave = (index: number, updated: BlogBlock[]) => {
+    try { return saveToApi(replaceBlogBlock(blocks, index, updated)); }
+    catch (error) { setSaveError(error instanceof Error ? error.message : "블록을 변환하지 못했습니다."); }
+  };
+
+  const canChangeStructure = () => {
+    if (editingIndex === null && !isSaving) return true;
+    setSaveError("현재 블록을 저장하거나 취소한 뒤 다른 블록을 편집·추가·이동해 주세요.");
+    return false;
+  };
 
   const handleDelete = (index: number) => {
+    if (!canChangeStructure()) return;
     if (!confirm("이 블록을 삭제할까요?")) return;
     saveToApi(blocks.filter((_, i) => i !== index));
   };
 
   const handleMove = (index: number, dir: "up" | "down") => {
+    if (!canChangeStructure()) return;
     const target = dir === "up" ? index - 1 : index + 1;
     if (target < 0 || target >= blocks.length) return;
     const nb = [...blocks];
@@ -150,9 +164,9 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
   };
 
   const handleAddAfter = (afterIndex: number, newBlock: BlogBlock) => {
-    const nb = [...blocks];
-    nb.splice(afterIndex + 1, 0, newBlock);
-    saveToApi(nb);
+    if (!canChangeStructure()) return;
+    try { return saveToApi(insertBlogBlocks(blocks, afterIndex + 1, [newBlock])); }
+    catch (error) { setSaveError(error instanceof Error ? error.message : "블록을 추가하지 못했습니다."); }
   };
 
   return (
@@ -172,18 +186,17 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
           totalBlocks={blocks.length}
           headingId={headingIds[index]}
           references={references}
+          researchNotices={researchNotices}
           isEditing={editingIndex === index}
-          saving={saving}
-          onStartEdit={() =>
-            setEditingIndex(editingIndex === index ? null : index)
-          }
+          saving={saving || isSaving}
+          onStartEdit={() => { if (canChangeStructure()) setEditingIndex(index); }}
           onCancelEdit={() => setEditingIndex(null)}
           onSave={(updated) => handleSave(index, updated)}
           onDelete={() => handleDelete(index)}
           onDuplicate={() => {
-            const nb = [...blocks];
-            nb.splice(index + 1, 0, structuredClone(block));
-            saveToApi(nb);
+            if (!canChangeStructure()) return;
+            try { saveToApi(duplicateBlogBlockAt(blocks, index)); }
+            catch (error) { setSaveError(error instanceof Error ? error.message : "블록을 복제하지 못했습니다."); }
           }}
           onMoveUp={() => handleMove(index, "up")}
           onMoveDown={() => handleMove(index, "down")}
@@ -193,8 +206,8 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
 
       <div className="flex justify-center pt-2">
         <AddBlockButton
-          onAdd={(nb) => saveToApi([...blocks, nb])}
-          saving={saving}
+          onAdd={(nb) => handleAddAfter(blocks.length - 1, nb)}
+          saving={saving || isSaving}
         />
       </div>
     </div>
@@ -205,6 +218,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
 
 interface AdminBlockWrapperProps {
   references: BlogCitation[];
+  researchNotices: Record<string, string>;
   block: BlogBlock;
   post: PostMeta;
   index: number;
@@ -214,7 +228,7 @@ interface AdminBlockWrapperProps {
   saving: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
-  onSave: (updated: BlogBlock) => void;
+  onSave: (updated: BlogBlock[]) => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp: () => void;
@@ -224,6 +238,7 @@ interface AdminBlockWrapperProps {
 
 function AdminBlockWrapper({
   references,
+  researchNotices,
   block,
   post,
   index,
@@ -328,6 +343,7 @@ function AdminBlockWrapper({
         </div>
       )}
 
+      <ResearchBlockNotice block={block} notices={researchNotices} />
       {/* Block content */}
       <div
         className={`rounded-xl transition-all ${
@@ -340,15 +356,12 @@ function AdminBlockWrapper({
       >
         {isEditing ? (
           <div className="rounded-xl bg-gray-50 p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-400">
-              {BLOCK_OPTIONS.find((o) => o.type === block.type)?.label} 수정
-            </p>
-            <BlockEditForm
+            <BlockEditSession
+              index={index}
               block={block}
               post={post}
               saving={saving}
               onSave={onSave}
-              onChangeType={(type) => onSave(makeDefaultBlock(type))}
               onCancel={onCancelEdit}
             />
           </div>
@@ -379,13 +392,72 @@ function AdminBlockWrapper({
 
 // ─── BlockEditForm dispatcher ─────────────────────────────────────────────────
 
+function ResearchBlockNotice({ block, notices }: { block: BlogBlock; notices: Record<string, string> }) {
+  const notice = block.type === "researchCallout" ? notices[block.href] : undefined;
+  return notice ? <p role="note" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{notice}</p> : null;
+}
+
 interface BlockFormProps {
   block: BlogBlock;
   post?: PostMeta;
   saving: boolean;
   onSave: (updated: BlogBlock) => void;
-  onChangeType: (type: BlogBlock["type"]) => void;
+  onChangeType: (type: BlogBlock["type"], current?: BlogBlock) => void;
   onCancel: () => void;
+}
+
+type DraftReader = () => BlogBlock;
+const FormDraftContext = createContext<((read: DraftReader) => () => void) | null>(null);
+
+function useBlockDraft<T extends BlogBlock>(draft: T, error?: string | null): T {
+  const register = useContext(FormDraftContext);
+  useLayoutEffect(() => register?.(() => {
+    if (error) throw new Error(error);
+    return draft;
+  }), [register, draft, error]);
+  return draft;
+}
+
+function BlockEditSession({ index, block, onSave, ...props }: Omit<BlockFormProps, "onChangeType" | "onSave"> & { index: number; onSave: (blocks: BlogBlock[]) => void }) {
+  const { registerBlockDraft } = useBlogEditContext();
+  const [draft, setDraft] = useState(block);
+  const [prefix, setPrefix] = useState<BlogBlock[]>([]);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const reader = useRef<DraftReader | null>(null);
+  const registerFormDraft = useCallback((read: DraftReader) => {
+    reader.current = read;
+    return () => { if (reader.current === read) reader.current = null; };
+  }, []);
+  useLayoutEffect(() => registerBlockDraft(index, () => [
+    ...prefix, reader.current ? reader.current() : draft,
+  ]), [registerBlockDraft, index, prefix, draft]);
+  return <FormDraftContext.Provider value={registerFormDraft}><fieldset disabled={props.saving} className="min-w-0 border-0 p-0">
+    <p className="mb-3 text-xs font-medium text-gray-500">
+      {BLOCK_OPTIONS.find((option) => option.type === draft.type)?.label} 수정 · 저장 전에는 반영되지 않습니다
+    </p>
+    {draftError && <p role="alert" className="mb-3 text-sm text-red-700">{draftError}</p>}
+    {prefix.length > 0 && <div className="mb-4 rounded-lg border border-blue-100 bg-white p-3">
+      <p className="mb-2 text-xs text-gray-500">질문은 별도 소제목으로 보존됩니다. 아래 내용과 함께 저장됩니다.</p>
+      {prefix.map((item, index) => <Fragment key={index}>{renderSingleBlock(item)}</Fragment>)}
+    </div>}
+    <BlockEditForm
+      key={draft.type}
+      {...props}
+      block={draft}
+      onSave={(updated) => {
+        setDraftError(null);
+        try { onSave([...prefix, reader.current ? reader.current() : updated]); }
+        catch (error) { setDraftError(error instanceof Error ? error.message : "입력 내용을 확인해 주세요."); }
+      }}
+      onChangeType={(type, current = draft) => {
+        const result = prepareBlockConversion(current, type, makeDefaultBlock);
+        if (result.warning && !window.confirm(result.warning)) return;
+        setDraftError(null);
+        setPrefix([...prefix, ...result.blocks.slice(0, -1)]);
+        setDraft(result.blocks[result.blocks.length - 1]);
+      }}
+    />
+  </fieldset></FormDraftContext.Provider>;
 }
 
 function BlockEditForm({ block, post, saving, onSave, onChangeType, onCancel }: BlockFormProps) {
@@ -480,13 +552,13 @@ function HeadingEditForm({
   const b = block as Extract<BlogBlock, { type: "heading" }>;
   const [text, setText] = useState(b.text);
   const [level, setLevel] = useState<2 | 3>(b.level);
+  const draft = useBlockDraft({ type: "heading" as const, level, text: text.trim() });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!text.trim()) return;
-        onSave({ type: "heading", level, text: text.trim() });
+        onSave(draft);
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -527,16 +599,16 @@ function ParagraphEditForm({
   const b = block as Extract<BlogBlock, { type: "paragraph" }>;
   const [text, setText] = useState(b.text);
   const [citations, setCitations] = useState(b.citations ?? []);
+  const draft = useBlockDraft({ ...b, text: text.trim(), citations });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!text.trim()) return;
-        onSave({ ...b, text: text.trim(), citations });
+        onSave(draft);
       }}
     >
-      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={(type) => onChangeType(type, { ...b, text, citations })} />
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -562,6 +634,7 @@ function ListEditForm({
   const b = block as Extract<BlogBlock, { type: "list" }>;
   const [style, setStyle] = useState<"bullet" | "number">(b.style);
   const [items, setItems] = useState<string[]>([...b.items]);
+  const draft = useBlockDraft({ type: "list" as const, style, items: items.map((item) => item.trim()) });
 
   const updateItem = (idx: number, val: string) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? val : it)));
@@ -570,9 +643,7 @@ function ListEditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const valid = items.map((it) => it.trim()).filter(Boolean);
-        if (!valid.length) return;
-        onSave({ type: "list", style, items: valid });
+        onSave(draft);
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -640,16 +711,16 @@ function FaqEditForm({
   const [question, setQuestion] = useState(b.question);
   const [answer, setAnswer] = useState(b.answer);
   const [citations, setCitations] = useState(b.citations ?? []);
+  const draft = useBlockDraft({ ...b, question: question.trim(), answer: answer.trim(), citations });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!question.trim() || !answer.trim()) return;
-        onSave({ ...b, question: question.trim(), answer: answer.trim(), citations });
+        onSave(draft);
       }}
     >
-      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
+      <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={(type) => onChangeType(type, { ...b, question, answer, citations })} />
       <label className="mb-1 block text-sm font-medium text-gray-600">질문</label>
       <input
         type="text"
@@ -685,6 +756,9 @@ function RelatedLinksEditForm({
   const [items, setItems] = useState(
     b.items.map((it) => ({ ...it, description: it.description ?? "" })),
   );
+  const draft = useBlockDraft({ type: "relatedLinks" as const, items: items.map(({ title, href, description }) => ({
+    title: title.trim(), href: href.trim(), ...(description.trim() ? { description: description.trim() } : {}),
+  })) });
 
   const updateField = (idx: number, field: "title" | "href" | "description", val: string) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: val } : it)));
@@ -693,15 +767,7 @@ function RelatedLinksEditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const valid = items
-          .filter((it) => it.title.trim() && it.href.trim())
-          .map(({ title, href, description }) => ({
-            title: title.trim(),
-            href: href.trim(),
-            ...(description.trim() ? { description: description.trim() } : {}),
-          }));
-        if (!valid.length) return;
-        onSave({ type: "relatedLinks", items: valid });
+        onSave(draft);
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -778,6 +844,12 @@ function ImageEditForm({
   const [decorative, setDecorative] = useState(b.decorative ?? false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const draft = useBlockDraft({
+    type: "image" as const, src: src.trim(), alt: decorative ? "" : alt.trim(),
+    ...(caption.trim() ? { caption: caption.trim() } : {}),
+    ...(imageWidth && imageHeight ? { width: imageWidth, height: imageHeight } : {}),
+    ...(hidden ? { hidden: true } : {}), ...(decorative ? { decorative: true } : {}),
+  }, uploading ? "이미지 업로드가 끝난 뒤 저장해 주세요." : null);
 
   const handleUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -823,18 +895,7 @@ function ImageEditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const normalizedAlt = alt.trim();
-        const normalizedCaption = caption.trim();
-        if (!src.trim()) return;
-        onSave({
-          type: "image",
-          src: src.trim(),
-          alt: decorative ? "" : normalizedAlt,
-          ...(normalizedCaption ? { caption: normalizedCaption } : {}),
-          ...(imageWidth && imageHeight ? { width: imageWidth, height: imageHeight } : {}),
-          ...(hidden ? { hidden: true } : {}),
-          ...(decorative ? { decorative: true } : {}),
-        });
+        if (!uploading) onSave(draft);
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -940,6 +1001,10 @@ function TableEditForm({
   const b = block as Extract<BlogBlock, { type: "table" }>;
   const [headers, setHeaders] = useState<string[]>([...b.headers]);
   const [rows, setRows] = useState<string[][]>(b.rows.map((row) => [...row]));
+  const tableError = headers.some((header) => !header.trim())
+    || rows.some((row) => row.length !== headers.length || row.some((cell) => !cell.trim()))
+    ? "표의 제목과 셀을 모두 입력하고 열 개수를 확인해 주세요." : null;
+  const draft = useBlockDraft({ type: "table" as const, headers: headers.map((header) => header.trim()), rows: rows.map((row) => row.map((cell) => cell.trim())) }, tableError);
 
   const updateHeader = (idx: number, value: string) => {
     setHeaders((prev) => prev.map((header, i) => (i === idx ? value : header)));
@@ -955,15 +1020,7 @@ function TableEditForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const normalizedHeaders = headers.map((header) => header.trim());
-        const normalizedRows = rows.map((row) => row.map((cell) => cell.trim()));
-        if (
-          normalizedHeaders.some((header) => !header)
-          || normalizedRows.some((row) => row.length !== normalizedHeaders.length || row.some((cell) => !cell))
-        ) {
-          return;
-        }
-        onSave({ type: "table", headers: normalizedHeaders, rows: normalizedRows });
+        onSave(draft);
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -1074,18 +1131,13 @@ function ResearchCalloutEditForm({
   const [description, setDescription] = useState(block.description);
   const [href, setHref] = useState(block.href);
   const [linkText, setLinkText] = useState(block.linkText);
+  const draft = useBlockDraft({ ...block, title: title.trim(), description: description.trim(), href: href.trim(), linkText: linkText.trim() });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({
-          ...block,
-          title: title.trim(),
-          description: description.trim(),
-          href: href.trim(),
-          linkText: linkText.trim(),
-        });
+        onSave(draft);
       }}
     >
       <BlockTypeSelector

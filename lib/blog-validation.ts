@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { BLOG_TAGS } from "./blog/types";
 import { normalizeBlogCategory } from "./blog/category-slugs";
 import { MAX_BLOG_BLOCKS } from "./blog/normalize-blocks";
-import { getTextCitations, isCitationSourceHref, isResearchCitationHref } from "./blog/citations";
+import { getCitationQuoteError, isCitationSourceHref, isResearchCitationHref } from "./blog/citations";
 
 const slugRegex = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 
@@ -33,7 +33,8 @@ const blogBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("heading"),
     level: z.union([z.literal(2), z.literal(3)]),
-    text: z.string().min(2).max(120),
+    // FAQ questions (up to 150 chars) must survive conversion into a heading.
+    text: z.string().min(2).max(150),
   }),
   z.object({
     type: z.literal("paragraph"),
@@ -95,22 +96,28 @@ const blogPostBaseSchema = z.object({
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  blocks: z.array(blogBlockSchema).min(1).max(MAX_BLOG_BLOCKS).superRefine((blocks, ctx) => {
+  blocks: z.array(blogBlockSchema).min(1).max(MAX_BLOG_BLOCKS, `본문 블록은 최대 ${MAX_BLOG_BLOCKS}개까지 저장할 수 있습니다. 초과한 내용은 삭제하지 않았습니다.`).superRefine((blocks, ctx) => {
     const seen = new Map<string, string>();
     blocks.forEach((block, index) => {
       if (block.type !== "paragraph" && block.type !== "faq") return;
       const text = block.type === "paragraph" ? block.text : block.answer;
       const citations = block.citations ?? [];
-      if (getTextCitations(text, citations).length !== citations.length) {
-        ctx.addIssue({ code: "custom", path: [index, "citations"], message: "주석 대상 문장은 본문에 한 번만 있어야 하며 다른 주석과 겹칠 수 없습니다" });
-      }
-      for (const citation of citations) {
+      const ranges: { start: number; end: number }[] = [];
+      citations.forEach((citation, citationIndex) => {
+        const label = `블록 ${index + 1} · 주석 ${citationIndex + 1} 「${citation.title}」`;
+        const quoteError = getCitationQuoteError(text, citation.quote);
+        const start = text.indexOf(citation.quote);
+        const end = start + citation.quote.length;
+        if (quoteError || ranges.some((range) => start < range.end && end > range.start)) {
+          ctx.addIssue({ code: "custom", path: [index, "citations", citationIndex, "quote"], message: `${label}: ${quoteError ?? "다른 주석의 연결 문장과 겹칩니다. 겹치지 않는 구간으로 지정해 주세요."}` });
+        }
+        if (!quoteError) ranges.push({ start, end });
         const value = JSON.stringify(citation);
         if (seen.has(citation.id) && seen.get(citation.id) !== value) {
-          ctx.addIssue({ code: "custom", path: [index, "citations"], message: "같은 주석 ID에는 같은 근거를 사용해 주세요" });
+          ctx.addIssue({ code: "custom", path: [index, "citations", citationIndex, "id"], message: `${label}: 다른 주석과 식별자가 중복됩니다. 이 주석을 삭제하고 다시 추가해 주세요.` });
         }
         seen.set(citation.id, value);
-      }
+      });
     });
   }),
   published: z.boolean(),

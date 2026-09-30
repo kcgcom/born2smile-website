@@ -14,6 +14,9 @@ import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
 import { getTodayKST } from "@/lib/date";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { CitationResearchUnavailableError, validateBlogCitationTargets } from "@/lib/blog/citation-targets-server";
+import { getResearchCalloutNotices } from "@/lib/blog/research-callout-notices";
+import { getResearchPageAdmin } from "@/lib/research/papers";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
 
@@ -34,7 +37,8 @@ export async function GET(
         { status: 404, headers: HEADERS },
       );
     }
-    return Response.json({ data: post }, { headers: HEADERS });
+    const researchNotices = await getResearchCalloutNotices(post.blocks, getResearchPageAdmin);
+    return Response.json({ data: post, researchNotices }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(
@@ -75,7 +79,7 @@ export async function PUT(
         ? (error as { issues: unknown[] }).issues
         : [];
     return Response.json(
-      { error: "VALIDATION_ERROR", message: "입력값이 올바르지 않습니다", issues },
+      { error: "VALIDATION_ERROR", message: (issues[0] as { message?: string } | undefined)?.message ?? "입력값이 올바르지 않습니다", issues },
       { status: 400, headers: HEADERS },
     );
   }
@@ -99,6 +103,10 @@ export async function PUT(
     const todayKST = getTodayKST();
     const previousPublished = existingMeta?.published === true;
     const effectivePublished = data.published ?? previousPublished;
+    if (data.blocks !== undefined || data.published === true) {
+      const issues = await validateBlogCitationTargets(data.blocks ?? existing.blocks, effectivePublished);
+      if (issues.length) return Response.json({ error: "VALIDATION_ERROR", message: issues[0].message, issues }, { status: 400, headers: HEADERS });
+    }
     const effectiveDate = data.date ?? existingMeta?.date ?? existing.date;
     const contentChanged = data.title !== undefined
       || data.subtitle !== undefined
@@ -134,6 +142,7 @@ export async function PUT(
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
   } catch (error) {
+    if (error instanceof CitationResearchUnavailableError) return Response.json({ error: "RESEARCH_UNAVAILABLE", message: error.message }, { status: 503, headers: HEADERS });
     Sentry.captureException(error);
     return Response.json(
       { error: "API_ERROR", message: "블로그 포스트를 수정할 수 없습니다" },

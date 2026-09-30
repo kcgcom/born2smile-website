@@ -148,5 +148,6 @@ function normalizeCitations(value: unknown): { citations?: BlogCitation[] } {
 
 export function normalizeBlogBlocks(value: unknown): BlogBlock[] {
   if (!Array.isArray(value)) return [];
-  return value.flatMap(normalizeBlock).slice(0, MAX_BLOG_BLOCKS);
+  // Keep every block so save validation rejects overflow instead of losing content.
+  return value.flatMap(normalizeBlock);
 }

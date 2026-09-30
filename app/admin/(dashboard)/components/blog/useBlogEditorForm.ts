@@ -8,6 +8,7 @@ import { MAX_BLOG_BLOCKS, normalizeBlogBlocks } from "@/lib/blog/normalize-block
 import { getAccessToken } from "@/lib/supabase";
 import { emptyBlock } from "./block-editors";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
+import { duplicateBlogBlockAt, insertBlogBlocks, replaceBlogBlock } from "@/lib/blog/block-editing";
 
 // -------------------------------------------------------------
 // Types
@@ -245,11 +246,23 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
   }, []);
 
   const addBlock = useCallback((type: BlogBlock["type"] = "paragraph") => {
-    setForm((prev) => ({
-      ...prev,
-      blocks: [...prev.blocks, emptyBlock(type)],
-    }));
-  }, []);
+    try {
+      const blocks = insertBlogBlocks(form.blocks, form.blocks.length, [emptyBlock(type)]);
+      setForm((prev) => ({ ...prev, blocks }));
+    } catch (error) {
+      setFieldErrors((prev) => ({ ...prev, blocks: error instanceof Error ? error.message : "블록을 추가하지 못했습니다." }));
+    }
+  }, [form.blocks]);
+
+  const replaceBlocks = useCallback((idx: number, replacements: BlogBlock[]) => {
+    try {
+      const blocks = replaceBlogBlock(form.blocks, idx, replacements);
+      setForm((prev) => ({ ...prev, blocks }));
+      setFieldErrors({});
+    } catch (error) {
+      setFieldErrors((prev) => ({ ...prev, [`block_${idx}`]: error instanceof Error ? error.message : "블록을 변환하지 못했습니다." }));
+    }
+  }, [form.blocks]);
 
   const removeBlock = useCallback((idx: number) => {
     setForm((prev) => ({
@@ -259,15 +272,13 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
   }, []);
 
   const duplicateBlock = useCallback((idx: number) => {
-    setForm((prev) => {
-      const blocks = [...prev.blocks];
-      const target = blocks[idx];
-      if (!target) return prev;
-      const clone = structuredClone(target);
-      blocks.splice(idx + 1, 0, clone);
-      return { ...prev, blocks: blocks.slice(0, MAX_BLOG_BLOCKS) };
-    });
-  }, []);
+    try {
+      const blocks = duplicateBlogBlockAt(form.blocks, idx);
+      setForm((prev) => ({ ...prev, blocks }));
+    } catch (error) {
+      setFieldErrors((prev) => ({ ...prev, [`block_${idx}`]: error instanceof Error ? error.message : "블록을 복제하지 못했습니다." }));
+    }
+  }, [form.blocks]);
 
   const moveBlock = useCallback((idx: number, direction: -1 | 1) => {
     setForm((prev) => {
@@ -334,6 +345,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     categoryOptions,
     setField,
     setBlock,
+    replaceBlocks,
     addBlock,
     removeBlock,
     duplicateBlock,

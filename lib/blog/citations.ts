@@ -1,5 +1,11 @@
 import type { BlogBlock, BlogCitation } from "./types";
 
+export function getCitationQuoteError(text: string, quote: string): string | null {
+  if (!quote || !text.includes(quote)) return "연결 문장을 본문에서 찾을 수 없습니다. 수정된 본문 문장을 복사해 다시 연결해 주세요.";
+  if (text.indexOf(quote) !== text.lastIndexOf(quote)) return "연결 문장이 본문에 여러 번 나옵니다. 한 번만 나오는 구간으로 지정해 주세요.";
+  return null;
+}
+
 export function isResearchCitationHref(href: string): boolean {
   return /^\/research\/[a-z0-9-]+#paper-[a-z0-9-]+$/.test(href);
 }

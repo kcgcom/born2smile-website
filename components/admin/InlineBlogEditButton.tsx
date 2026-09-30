@@ -28,7 +28,7 @@ interface PostMeta {
 export function InlineBlogEditButton({ post }: { post: PostMeta }) {
   const isAdmin = useAdminAuth();
   const router = useRouter();
-  const { isEditMode, enter, exit, blocks } = useBlogEditContext();
+  const { isEditMode, enter, exit, getBlocksForSave, beginSave, endSave, isSaving, editLoading, editError } = useBlogEditContext();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -165,11 +165,17 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
   const handleSave = async (e?: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault();
-    if (inflightRef.current) return;
+    if (inflightRef.current || !beginSave()) return;
     inflightRef.current = true;
     setSaving(true);
     setSaveError(null);
     try {
+      const { blogPostUpdateSchema } = await import("@/lib/blog-validation");
+      const parsed = blogPostUpdateSchema.safeParse({
+        title: title.trim(), subtitle: subtitle.trim(), excerpt: excerpt.trim(), category, tags, date,
+        blocks: getBlocksForSave(),
+      });
+      if (!parsed.success) throw new Error(parsed.error.issues[0].message);
       const token = await getAccessToken();
       const res = await fetch(`/api/admin/blog-posts/${slug}`, {
         method: "PUT",
@@ -177,17 +183,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          slug,
-          title: title.trim(),
-          subtitle: subtitle.trim(),
-          excerpt: excerpt.trim(),
-          category,
-          tags,
-          date,
-          blocks,
-          published: post.published ?? true,
-        }),
+        body: JSON.stringify(parsed.data),
       });
       if (!res.ok) {
         const json = (await res.json().catch(() => ({}))) as { message?: string };
@@ -200,6 +196,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
     } finally {
       setSaving(false);
       inflightRef.current = false;
+      endSave();
     }
   };
 
@@ -244,7 +241,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                   <AdminActionButton
                     type="button"
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || isSaving}
                     tone="primary"
                     className="rounded-full px-4"
                   >
@@ -254,7 +251,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                   <AdminActionButton
                     type="button"
                     onClick={handleExit}
-                    disabled={saving}
+                    disabled={saving || isSaving}
                     tone="ghost"
                     className="rounded-full bg-white/10 px-4 text-white hover:bg-white/15"
                   >
@@ -289,11 +286,12 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                   <AdminActionButton
                     type="button"
                     onClick={enter}
+                    disabled={editLoading}
                     tone="primary"
                     className="rounded-full px-4"
                   >
                     <Pencil size={14} />
-                    편집 모드
+                    {editLoading ? "원문 불러오는 중…" : "편집 모드"}
                   </AdminActionButton>
                 </>
               )}
@@ -316,12 +314,15 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
             )}
           </div>
         )}
+        {saveError && <p role="alert" className="border-t border-red-300/30 bg-red-950 px-4 py-3 text-sm text-red-100">{saveError}</p>}
       </AdminSurface>
       <div
         aria-hidden="true"
         className="h-[52px]"
         style={toolbarHeight ? { height: `${toolbarHeight}px` } : undefined}
       />
+
+      {editError && <p role="alert" className="mx-auto max-w-4xl rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{editError}</p>}
 
       {/* 편집 모드: 메타 폼 (일반 문서 흐름) */}
       {isEditMode && (
@@ -378,12 +379,8 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
 
             {!metaCollapsed && (
               <AdminSurface tone="white" className="rounded-2xl p-4 md:p-6">
-                <form onSubmit={handleSave} className="space-y-4">
-                  {saveError && (
-                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {saveError}
-                    </p>
-                  )}
+                <form onSubmit={handleSave}>
+                  <fieldset disabled={saving || isSaving} className="space-y-4">
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
@@ -464,6 +461,7 @@ export function InlineBlogEditButton({ post }: { post: PostMeta }) {
                     </div>
                   </div>
 
+                  </fieldset>
                 </form>
               </AdminSurface>
             )}

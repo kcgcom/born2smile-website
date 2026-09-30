@@ -19,35 +19,34 @@ export async function getResearchPageFresh(
 ): Promise<ResearchPage | undefined> {
   try {
     const supabase = getSupabaseAdmin();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("research_pages")
-      .select("data")
+      .select("data, verified")
       .eq("slug", slug)
-      .eq("verified", true)
-      .single();
+      .maybeSingle();
 
-    if (data?.data) return data.data as ResearchPage;
+    if (error) throw error;
+    return data?.verified === true ? data.data as ResearchPage : undefined;
   } catch {
-    // fallback
+    throw new Error("연구 자료의 공개 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
-  return getResearchPage(slug);
 }
 
 /** 런타임 공개용 — verified=true 슬러그 목록 */
 export async function getAllResearchSlugsFresh(): Promise<string[]> {
   try {
     const supabase = getSupabaseAdmin();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("research_pages")
       .select("slug")
       .eq("verified", true)
       .order("slug");
 
-    if (data && data.length > 0) return data.map((r) => r.slug);
+    if (error) throw error;
+    return (data ?? []).map((r) => r.slug);
   } catch {
-    // fallback
+    throw new Error("연구 자료 목록을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
-  return getAllResearchSlugs();
 }
 
 // ─── Admin (all pages) ────────────────────────────────────────────────────────

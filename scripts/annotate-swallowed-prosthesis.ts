@@ -29,8 +29,11 @@ async function main() {
     const block = matches[0];
     if (block.type !== "paragraph" && block.type !== "faq") throw new Error("주석 대상 오류");
     const existing = block.citations?.find((item) => item.id === citation.id);
-    if (existing) assert.deepEqual(existing, citation, `기존 주석 변경 확인 필요: ${citation.id}`);
-    else block.citations = [...(block.citations ?? []), citation];
+    if (existing) {
+      // Allow reviewed display-title updates without overwriting edited evidence or links.
+      assert.deepEqual({ ...existing, title: citation.title }, citation, `기존 주석 변경 확인 필요: ${citation.id}`);
+      existing.title = citation.title;
+    } else block.citations = [...(block.citations ?? []), citation];
   }
   blogPostUpdateSchema.parse({ blocks });
   if (isDeepStrictEqual(blocks, before.data.content)) {
@@ -38,7 +41,7 @@ async function main() {
     return;
   }
   if (!process.argv.includes("--apply")) {
-    console.log("검증 완료: 주석 3개 추가 예정. 저장하려면 --apply를 사용하세요.");
+    console.log("검증 완료: 주석 3개 추가 또는 제목 갱신 예정. 저장하려면 --apply를 사용하세요.");
     return;
   }
   const saved = await db.from("blog_posts")

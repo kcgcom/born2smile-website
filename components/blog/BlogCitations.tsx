@@ -46,9 +46,17 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
     };
     const onViewportChange = (event: Event) => {
       if (event.target instanceof Node && dialog.current?.contains(event.target)) return;
-      // Focus and smooth scrolling can dispatch scroll after opening. Reposition,
-      // rather than dismissing the dialog while a reader is trying to use it.
-      if (trigger.current) setPosition(getPopoverPosition(trigger.current));
+      const button = trigger.current;
+      if (!button) return;
+      const marker = button.querySelector("span")?.getBoundingClientRect() ?? button.getBoundingClientRect();
+      if (marker.bottom <= 0 || marker.top >= window.innerHeight
+        || marker.right <= 0 || marker.left >= window.innerWidth) {
+        // Restore keyboard focus without pulling the reader back to the old sentence.
+        if (dialog.current?.contains(document.activeElement)) button.focus({ preventScroll: true });
+        setPosition(null);
+        return;
+      }
+      setPosition(getPopoverPosition(button));
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onEscape);
@@ -64,7 +72,7 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
 
   return (
     <>
-      <sup className="relative align-baseline">
+      <sup className="relative inline-block h-0 w-5 align-baseline leading-none">
         <button
           ref={trigger}
           type="button"
@@ -72,14 +80,17 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
           aria-haspopup="dialog"
           aria-expanded={!!position}
           aria-controls={position ? id : undefined}
-          className="mx-0.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg align-middle text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+          className="group absolute -top-8 -left-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold text-teal-800 focus-visible:outline-none"
           onClick={(event) => {
             event.stopPropagation();
             if (position) { setPosition(null); return; }
+            // Keyboard focus may still be smoothly scrolling to this button.
+            // Finish that movement before applying the offscreen dismissal rule.
+            event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
             setPosition(getPopoverPosition(event.currentTarget));
           }}
         >
-          [{number}]
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded group-hover:bg-teal-50 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-teal-700">[{number}]</span>
         </button>
       </sup>
       {position && createPortal(
@@ -98,7 +109,7 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
           }}
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="pt-2 font-semibold">{citation.title}</p>
+            <p className="min-w-0 pt-2 font-semibold break-keep">{citation.title}</p>
             <button
               type="button"
               aria-label="근거 설명 닫기"
@@ -132,7 +143,8 @@ export function CitationText({ text, citations, references }: {
     const end = text.indexOf(citation.quote) + citation.quote.length;
     const part = text.slice(start, end);
     const number = references.findIndex((reference) => reference.id === citation.id) + 1;
-    return <Fragment key={citation.id}>{part}{number > 0 && <CitationPopover citation={citation} number={number} />}</Fragment>;
+    const lastWord = part.match(/\S+$/)?.[0] ?? "";
+    return <Fragment key={citation.id}>{part.slice(0, part.length - lastWord.length)}<span className="whitespace-nowrap">{lastWord}{number > 0 && <CitationPopover citation={citation} number={number} />}</span></Fragment>;
   })}{text.slice(tail)}</>;
 }
 
@@ -144,11 +156,11 @@ export function CitationReferences({ references }: { references: BlogCitation[] 
       <ol className="mt-4 space-y-4 text-sm">
         {references.map((citation, index) => (
           <li key={citation.id} id={`reference-${citation.id}`} className="scroll-mt-28">
-            <p className="font-medium">[{index + 1}] {citation.title}</p>
+            <p className="font-medium break-keep">[{index + 1}] {citation.title}</p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">{citation.sourceLabel}</p>
             <div className="flex flex-wrap gap-x-5">
-              <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>{citation.title} — 연구 해설</a>
-              <a href={citation.sourceHref} target="_blank" rel="noopener noreferrer" className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>원문 보기 (새 창)</a>
+              <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>연구 해설</a>
+              <a href={citation.sourceHref} target="_blank" rel="noopener noreferrer" className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>원문 <span className="sr-only">(새 창)</span></a>
             </div>
           </li>
         ))}

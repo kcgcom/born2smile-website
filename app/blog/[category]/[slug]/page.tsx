@@ -34,6 +34,8 @@ import {
   getHeadingList,
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
+import { filterPublicBlogCitations } from "@/lib/blog/citation-targets-server";
+import { getResearchCalloutNotices } from "@/lib/blog/research-callout-notices";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
 import { getIsAdminServer } from "@/lib/server-admin-check";
 
@@ -62,28 +64,21 @@ function getFaqEntries(post: { blocks: BlogBlock[] }) {
 }
 
 async function filterVisibleBlocks(blocks: BlogBlock[], isAdmin: boolean): Promise<BlogBlock[]> {
+  if (isAdmin) return blocks;
+  const checkedBlocks = await filterPublicBlogCitations(blocks);
   const results = await Promise.all(
-    blocks.map(async (block) => {
+    checkedBlocks.map(async (block) => {
       if (block.type !== "researchCallout") return block;
 
       const match = block.href.match(/^\/research\/([^/?#]+)\/?$/);
       if (!match) return block;
 
-      if (isAdmin) {
-        const researchPage = await getResearchPageAdmin(match[1]);
-        if (!researchPage) return null;
-        if (researchPage.verified) return block;
-
-        return {
-          ...block,
-          title: `${block.title} (비공개)`,
-          linkText: `${block.linkText} · 비공개`,
-          description: `${block.description} 현재 검증 전 상태라 관리자에게만 보입니다.`,
-        } satisfies BlogBlock;
+      try {
+        const researchPage = await getResearchPageFresh(match[1]);
+        return researchPage ? block : null;
+      } catch {
+        return null;
       }
-
-      const researchPage = await getResearchPageFresh(match[1]);
-      return researchPage ? block : null;
     }),
   );
 
@@ -228,6 +223,7 @@ export default async function BlogPostPage({
   if (!post) notFound();
   const isAdmin = await getIsAdminServer();
   const visibleBlocks = await filterVisibleBlocks(post.blocks, isAdmin);
+  const researchNotices = isAdmin ? await getResearchCalloutNotices(post.blocks, getResearchPageAdmin) : {};
   const categoryLabel = getCategoryLabel(post.category);
 
   // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
@@ -278,7 +274,7 @@ export default async function BlogPostPage({
       <BlogShareVisitTracker slug={post.slug} category={post.category} />
 
       {/* 블로그 포스트 */}
-      <BlogEditProvider initialBlocks={visibleBlocks}>
+      <BlogEditProvider slug={slug} initialBlocks={visibleBlocks} initialResearchNotices={researchNotices}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
