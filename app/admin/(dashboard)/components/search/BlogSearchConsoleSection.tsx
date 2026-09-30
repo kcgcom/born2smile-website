@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FilePenLine, Search } from "lucide-react";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
-import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { DataTable } from "../DataTable";
 import { MetricCard } from "../MetricCard";
 import type { SearchConsoleData } from "./search-types";
@@ -58,27 +57,6 @@ export function BlogSearchConsoleSection({
   }, [data.blogQueryMetrics, data.blogQueryTopPages]);
   const querySort = useSearchTableSort(queryRows);
 
-  const blogSummary = useMemo(() => {
-    if (data.blogPages.length === 0) {
-      return { impressions: 0, clicks: 0, ctr: 0, position: 0 };
-    }
-
-    const impressions = data.blogPages.reduce((sum, row) => sum + row.impressions, 0);
-    const clicks = data.blogPages.reduce((sum, row) => sum + row.clicks, 0);
-    const weightedPosition = data.blogPages.reduce(
-      (sum, row) => sum + row.position * row.impressions,
-      0,
-    );
-
-    return {
-      impressions,
-      clicks,
-      ctr: impressions > 0 ? Math.round((clicks / impressions) * 1000) / 10 : 0,
-      position: impressions > 0 ? Math.round((weightedPosition / impressions) * 10) / 10 : 0,
-    };
-  }, [data.blogPages]);
-
-  const topBlogPage = data.blogPages[0] ?? null;
   const selectedPageQueries = selectedPage ? data.pageTopQueries[selectedPage] ?? [] : [];
   const selectedPageMetrics = selectedPage
     ? data.blogPages.find((item) => item.page === selectedPage)
@@ -100,46 +78,13 @@ export function BlogSearchConsoleSection({
             <p className="mt-1 text-sm text-[var(--muted)]">
               전체 사이트 성과와 섞지 않고, 블로그 글과 블로그 유입 키워드만 분리해서 확인합니다.
             </p>
-            {topBlogPage && (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
-                  <span>대표 블로그 글</span>
-                  <span className="text-xs font-medium text-[var(--muted)]">
-                    {getBlogPageLabel(topBlogPage.page)}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-[var(--muted)]">
-                  노출 {topBlogPage.impressions.toLocaleString("ko-KR")} · 클릭 {topBlogPage.clicks.toLocaleString("ko-KR")} · CTR {formatCtr(topBlogPage.ctr)} · 순위 {topBlogPage.position}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <AdminActionButton
-                    tone="dark"
-                    onClick={() => setSelectedPage(topBlogPage.page)}
-                    className="min-h-8 px-3 py-1 text-xs"
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    대표 쿼리 보기
-                  </AdminActionButton>
-                  {getEditableBlogSlug(topBlogPage.page) && (
-                    <AdminActionButton
-                      tone="dark"
-                      onClick={() => onEditBlog(getEditableBlogSlug(topBlogPage.page)!)}
-                      className="min-h-8 px-3 py-1 text-xs"
-                    >
-                      <FilePenLine className="h-3.5 w-3.5" />
-                      이 글 수정
-                    </AdminActionButton>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
-            <MetricCard label="블로그 노출" value={blogSummary.impressions.toLocaleString("ko-KR")} />
-            <MetricCard label="블로그 클릭" value={blogSummary.clicks.toLocaleString("ko-KR")} />
-            <MetricCard label="블로그 CTR" value={`${blogSummary.ctr}%`} />
-            <MetricCard label="평균 순위" value={blogSummary.position} />
+            <MetricCard label="블로그 총 노출" value={data.blogSummary.impressions.toLocaleString("ko-KR")} />
+            <MetricCard label="블로그 총 클릭" value={data.blogSummary.clicks.toLocaleString("ko-KR")} />
+            <MetricCard label="블로그 CTR" value={`${data.blogSummary.ctr}%`} />
+            <MetricCard label="블로그 평균 순위" value={data.blogSummary.position} />
           </div>
         </div>
       </AdminSurface>
