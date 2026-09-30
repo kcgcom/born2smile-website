@@ -5,6 +5,7 @@ import { inputClass } from "./shared";
 import { ImageBlockEditor } from "./ImageBlockEditor";
 import { TableBlockEditor } from "./TableBlockEditor";
 import { RelatedLinkEditor } from "./RelatedLinkEditor";
+import { CitationFields } from "@/components/blog/CitationFields";
 
 interface BlockEditorRendererProps {
   block: BlogBlock;
@@ -48,14 +49,17 @@ export function BlockEditorRenderer({
       );
     case "paragraph":
       return (
-        <textarea
-          value={block.text}
-          onChange={(e) => setBlock(idx, { ...block, text: e.target.value })}
-          rows={5}
-          placeholder="문단 텍스트"
-          className={`${inputClass(hasError)} resize-y`}
-          aria-label={`블록 ${idx + 1} 문단 텍스트`}
-        />
+        <>
+          <textarea
+            value={block.text}
+            onChange={(e) => setBlock(idx, { ...block, text: e.target.value })}
+            rows={5}
+            placeholder="문단 텍스트"
+            className={`${inputClass(hasError)} resize-y`}
+            aria-label={`블록 ${idx + 1} 문단 텍스트`}
+          />
+          <CitationFields text={block.text} citations={block.citations} onChange={(citations) => setBlock(idx, { ...block, citations })} />
+        </>
       );
     case "list":
       return (
@@ -126,6 +130,7 @@ export function BlockEditorRenderer({
             className={`${inputClass(hasError)} resize-y`}
             aria-label={`블록 ${idx + 1} FAQ 답변`}
           />
+          <CitationFields text={block.answer} citations={block.citations} onChange={(citations) => setBlock(idx, { ...block, citations })} />
         </div>
       );
     case "relatedLinks":

@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { BLOG_TAGS } from "./blog/types";
 import { normalizeBlogCategory } from "./blog/category-slugs";
 import { MAX_BLOG_BLOCKS } from "./blog/normalize-blocks";
+import { getTextCitations, isCitationSourceHref, isResearchCitationHref } from "./blog/citations";
 
 const slugRegex = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 
@@ -18,6 +19,16 @@ const relatedLinkSchema = z.object({
   description: z.string().max(300).optional(),
 });
 
+const citationSchema = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/),
+  quote: z.string().min(2).max(1000),
+  title: z.string().min(2).max(150),
+  summary: z.string().min(10).max(600),
+  sourceLabel: z.string().min(2).max(150),
+  researchHref: z.string().max(300).refine(isResearchCitationHref, "연구 자료의 논문 위치 링크를 입력해 주세요"),
+  sourceHref: z.string().max(500).refine(isCitationSourceHref, "https 원문 링크를 입력해 주세요"),
+});
+
 const blogBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("heading"),
@@ -27,6 +38,7 @@ const blogBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("paragraph"),
     text: z.string().min(20).max(3000),
+    citations: z.array(citationSchema).max(5).optional(),
   }),
   z.object({
     type: z.literal("list"),
@@ -44,6 +56,7 @@ const blogBlockSchema = z.discriminatedUnion("type", [
     type: z.literal("faq"),
     question: z.string().min(5).max(150),
     answer: z.string().min(20).max(3000),
+    citations: z.array(citationSchema).max(5).optional(),
   }),
   z.object({
     type: z.literal("image"),
@@ -82,7 +95,24 @@ const blogPostBaseSchema = z.object({
   tags: z.array(z.enum(BLOG_TAGS as unknown as [string, ...string[]])).max(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD 형식이어야 합니다"),
   dateModified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  blocks: z.array(blogBlockSchema).min(1).max(MAX_BLOG_BLOCKS),
+  blocks: z.array(blogBlockSchema).min(1).max(MAX_BLOG_BLOCKS).superRefine((blocks, ctx) => {
+    const seen = new Map<string, string>();
+    blocks.forEach((block, index) => {
+      if (block.type !== "paragraph" && block.type !== "faq") return;
+      const text = block.type === "paragraph" ? block.text : block.answer;
+      const citations = block.citations ?? [];
+      if (getTextCitations(text, citations).length !== citations.length) {
+        ctx.addIssue({ code: "custom", path: [index, "citations"], message: "주석 대상 문장은 본문에 한 번만 있어야 하며 다른 주석과 겹칠 수 없습니다" });
+      }
+      for (const citation of citations) {
+        const value = JSON.stringify(citation);
+        if (seen.has(citation.id) && seen.get(citation.id) !== value) {
+          ctx.addIssue({ code: "custom", path: [index, "citations"], message: "같은 주석 ID에는 같은 근거를 사용해 주세요" });
+        }
+        seen.set(citation.id, value);
+      }
+    });
+  }),
   published: z.boolean(),
 });
 

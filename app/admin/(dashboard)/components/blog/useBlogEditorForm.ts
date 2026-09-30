@@ -7,6 +7,7 @@ import { normalizeBlogCategory } from "@/lib/blog";
 import { MAX_BLOG_BLOCKS, normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { getAccessToken } from "@/lib/supabase";
 import { emptyBlock } from "./block-editors";
+import { blogPostUpdateSchema } from "@/lib/blog-validation";
 
 // -------------------------------------------------------------
 // Types
@@ -49,6 +50,13 @@ const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/;
 
 function validate(form: BlogEditorData): Record<string, string> {
   const errors: Record<string, string> = {};
+  const parsedBlocks = blogPostUpdateSchema.safeParse({ blocks: form.blocks });
+  if (!parsedBlocks.success) {
+    for (const issue of parsedBlocks.error.issues) {
+      const index = issue.path[1];
+      errors[typeof index === "number" ? `block_${index}` : "blocks"] = issue.message;
+    }
+  }
 
   if (!SLUG_RE.test(form.slug)) {
     errors.slug = "슬러그는 영소문자·숫자·하이픈만 허용, 첫·끝은 영소문자·숫자여야 합니다";

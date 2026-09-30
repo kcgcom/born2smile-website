@@ -3,6 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, BookOpenText, FlaskConical } from "lucide-react";
 import type { BlogBlock } from "@/lib/blog";
+import type { BlogCitation } from "@/lib/blog/types";
+import { getBlogCitations } from "@/lib/blog/citations";
+import { CitationText, CitationReferences } from "./BlogCitations";
 
 // ----------------------------------------------------------------
 // 블로그 포스트 렌더 유틸리티
@@ -60,6 +63,7 @@ export function getReferenceSource(
 export function renderSingleBlock(
   block: BlogBlock,
   headingId?: string,
+  references: BlogCitation[] = getBlogCitations([block]),
 ): React.ReactElement | null {
   switch (block.type) {
     case "heading": {
@@ -75,7 +79,7 @@ export function renderSingleBlock(
     case "paragraph":
       return (
         <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
-          {block.text}
+          <CitationText text={block.text} citations={block.citations} references={references} />
         </p>
       );
     case "list": {
@@ -99,7 +103,7 @@ export function renderSingleBlock(
             {block.question}
           </h2>
           <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
-            {block.answer}
+            <CitationText text={block.answer} citations={block.citations} references={references} />
           </p>
         </div>
       );
@@ -125,7 +129,11 @@ export function renderSingleBlock(
         </figure>
       );
     case "relatedLinks": {
-      const allExternal = block.items.every((item) =>
+      const items = block.items.filter((item) => !references.some((reference) => (
+        reference.researchHref.split("#")[0] === item.href
+      )));
+      if (!items.length) return null;
+      const allExternal = items.every((item) =>
         isExternalHref(item.href),
       );
       const sectionTitle = allExternal ? "공식 참고 자료" : "함께 읽으면 좋은 글";
@@ -144,7 +152,7 @@ export function renderSingleBlock(
             </h2>
           </div>
           <div className="space-y-3">
-            {block.items.map((item) => {
+            {items.map((item) => {
               const external = isExternalHref(item.href);
               const source = external ? getReferenceSource(item.href) : null;
               const cardClasses = external
@@ -263,9 +271,10 @@ export function computeHeadingIds(blocks: BlogBlock[]): (string | undefined)[] {
 
 export function renderBlocks(blocks: BlogBlock[]) {
   const headingIds = computeHeadingIds(blocks);
-  return blocks.map((block, index) => (
+  const references = getBlogCitations(blocks);
+  return <>{blocks.map((block, index) => (
     <Fragment key={`block-${index}`}>
-      {renderSingleBlock(block, headingIds[index])}
+      {renderSingleBlock(block, headingIds[index], references)}
     </Fragment>
-  ));
+  ))}<CitationReferences references={references} /></>;
 }

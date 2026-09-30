@@ -8,6 +8,17 @@ export interface BlogRelatedLinkItem {
   description?: string;
 }
 
+export interface BlogCitation {
+  id: string;
+  /** Exact, unique text in the paragraph or FAQ answer that this source supports. */
+  quote: string;
+  title: string;
+  summary: string;
+  sourceLabel: string;
+  researchHref: string;
+  sourceHref: string;
+}
+
 export type BlogBlock =
   | {
       type: "heading";
@@ -17,6 +28,7 @@ export type BlogBlock =
   | {
       type: "paragraph";
       text: string;
+      citations?: BlogCitation[];
     }
   | {
       type: "list";
@@ -27,6 +39,7 @@ export type BlogBlock =
       type: "faq";
       question: string;
       answer: string;
+      citations?: BlogCitation[];
     }
   | {
       type: "image";

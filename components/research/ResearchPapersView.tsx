@@ -175,7 +175,7 @@ export function ResearchPapersView({ page }: Props) {
         const currentPaper = isEditing && draft ? draft : paper;
 
         return (
-          <article key={paper.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+          <article id={`paper-${paper.id}`} key={paper.id} className="scroll-mt-28 border border-gray-200 rounded-2xl overflow-hidden">
 
             {/* 논문 헤더 */}
             <div className="bg-gray-50 px-6 py-5 border-b border-gray-200">

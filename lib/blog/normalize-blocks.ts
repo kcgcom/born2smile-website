@@ -1,4 +1,4 @@
-import type { BlogBlock, BlogRelatedLinkItem } from "./types";
+import type { BlogBlock, BlogCitation, BlogRelatedLinkItem } from "./types";
 
 const MAX_BLOG_BLOCKS = 60;
 
@@ -44,7 +44,7 @@ function normalizeBlock(value: unknown): BlogBlock[] {
         text: asString(value.text),
       }];
     case "paragraph":
-      return [{ type: "paragraph", text: asString(value.text) }];
+      return [{ type: "paragraph", text: asString(value.text), ...normalizeCitations(value.citations) }];
     case "list":
       return [{
         type: "list",
@@ -59,6 +59,7 @@ function normalizeBlock(value: unknown): BlogBlock[] {
             type: "faq",
             question: asString(item.question),
             answer: asString(item.answer),
+            ...normalizeCitations(item.citations),
           }));
       }
 
@@ -66,6 +67,7 @@ function normalizeBlock(value: unknown): BlogBlock[] {
         type: "faq",
         question: asString(value.question),
         answer: asString(value.answer),
+        ...normalizeCitations(value.citations),
       }];
     case "image":
       return [{
@@ -124,6 +126,24 @@ function normalizeBlock(value: unknown): BlogBlock[] {
     default:
       return [];
   }
+}
+
+function normalizeCitations(value: unknown): { citations?: BlogCitation[] } {
+  if (value === undefined) return {};
+  // Keep invalid entries visible to validation instead of silently discarding sources.
+  const items = Array.isArray(value) ? value : [value];
+  return { citations: items.map((item) => {
+    const citation = isRecord(item) ? item : {};
+    return {
+      id: asString(citation.id),
+      quote: asString(citation.quote),
+      title: asString(citation.title),
+      summary: asString(citation.summary),
+      sourceLabel: asString(citation.sourceLabel),
+      researchHref: asString(citation.researchHref),
+      sourceHref: asString(citation.sourceHref),
+    };
+  }) };
 }
 
 export function normalizeBlogBlocks(value: unknown): BlogBlock[] {

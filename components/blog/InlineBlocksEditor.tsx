@@ -18,6 +18,11 @@ import { getAccessToken } from "@/lib/supabase";
 import type { BlogBlock, BlogCategorySlug } from "@/lib/blog";
 import { renderSingleBlock, computeHeadingIds } from "./BlogPostRenderer";
 import { useBlogEditContext } from "./BlogEditProvider";
+import type { BlogCitation } from "@/lib/blog/types";
+import { getBlogCitations } from "@/lib/blog/citations";
+import { CitationReferences } from "./BlogCitations";
+import { CitationFields } from "./CitationFields";
+import { blogPostUpdateSchema } from "@/lib/blog-validation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +79,8 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
       setSaving(true);
       setSaveError(null);
       try {
+        const validation = blogPostUpdateSchema.safeParse({ blocks: newBlocks });
+        if (!validation.success) throw new Error(validation.error.issues[0].message);
         const token = await getAccessToken();
         const res = await fetch(`/api/admin/blog-posts/${slug}`, {
           method: "PUT",
@@ -111,6 +118,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
   );
 
   const headingIds = computeHeadingIds(blocks);
+  const references = getBlogCitations(blocks);
 
   // Non-admin or not in edit mode: plain read view
   if (!isAdmin || !isEditMode) {
@@ -118,8 +126,9 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
       <div className="space-y-10">
         {blocks.map((block, i) => {
           if (!isAdmin && block.type === "researchCallout") return null;
-          return <Fragment key={i}>{renderSingleBlock(block, headingIds[i])}</Fragment>;
+          return <Fragment key={i}>{renderSingleBlock(block, headingIds[i], references)}</Fragment>;
         })}
+        <CitationReferences references={references} />
       </div>
     );
   }
@@ -162,6 +171,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
           index={index}
           totalBlocks={blocks.length}
           headingId={headingIds[index]}
+          references={references}
           isEditing={editingIndex === index}
           saving={saving}
           onStartEdit={() =>
@@ -194,6 +204,7 @@ export default function InlineBlocksEditor({ post }: { post: PostMeta }) {
 // ─── AdminBlockWrapper ────────────────────────────────────────────────────────
 
 interface AdminBlockWrapperProps {
+  references: BlogCitation[];
   block: BlogBlock;
   post: PostMeta;
   index: number;
@@ -212,6 +223,7 @@ interface AdminBlockWrapperProps {
 }
 
 function AdminBlockWrapper({
+  references,
   block,
   post,
   index,
@@ -356,7 +368,7 @@ function AdminBlockWrapper({
                 </p>
               </div>
             ) : (
-              renderSingleBlock(block, headingId)
+              renderSingleBlock(block, headingId, references)
             )}
           </div>
         )}
@@ -514,13 +526,14 @@ function ParagraphEditForm({
 }: BlockFormProps & { blockTypeOptions: { type: BlogBlock["type"]; label: string; desc: string }[] }) {
   const b = block as Extract<BlogBlock, { type: "paragraph" }>;
   const [text, setText] = useState(b.text);
+  const [citations, setCitations] = useState(b.citations ?? []);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!text.trim()) return;
-        onSave({ type: "paragraph", text: text.trim() });
+        onSave({ ...b, text: text.trim(), citations });
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -532,6 +545,7 @@ function ParagraphEditForm({
         placeholder="문단 내용"
         autoFocus
       />
+      <CitationFields text={text} citations={citations} onChange={setCitations} disabled={saving} />
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
   );
@@ -625,13 +639,14 @@ function FaqEditForm({
   const b = block as Extract<BlogBlock, { type: "faq" }>;
   const [question, setQuestion] = useState(b.question);
   const [answer, setAnswer] = useState(b.answer);
+  const [citations, setCitations] = useState(b.citations ?? []);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!question.trim() || !answer.trim()) return;
-        onSave({ type: "faq", question: question.trim(), answer: answer.trim() });
+        onSave({ ...b, question: question.trim(), answer: answer.trim(), citations });
       }}
     >
       <BlockTypeSelector value={block.type} options={blockTypeOptions} disabled={saving} onChange={onChangeType} />
@@ -652,6 +667,7 @@ function FaqEditForm({
         className="w-full resize-y rounded-lg border border-gray-200 px-3 py-2 text-sm leading-relaxed focus:border-blue-400 focus:outline-none"
         placeholder="답변을 입력하세요"
       />
+      <CitationFields text={answer} citations={citations} onChange={setCitations} disabled={saving} />
       <FormActions saving={saving} onCancel={onCancel} />
     </form>
   );
