@@ -537,34 +537,6 @@ export default async function BlogPostPage({
 
       <AdminDraftBar slug={slug} />
 
-      <div className="fixed inset-x-0 bottom-[calc(65px+env(safe-area-inset-bottom,0px))] z-30 border-t border-blue-100 bg-[var(--surface)]/98 px-3 py-2.5 shadow-[0_-10px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold leading-snug text-[var(--foreground)]">
-              도움이 됐다면
-            </p>
-            <p className="mt-0.5 text-[11px] leading-snug text-[var(--muted)]">
-              공감과 공유로 알려주세요
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <LikeButtonLazy
-              slug={post.slug}
-              source="mobile_sticky_cta"
-              size="compact"
-            />
-            <BlogShareButton
-              slug={post.slug}
-              title={post.title}
-              category={post.category}
-              source="mobile_sticky_cta"
-              size="compact"
-              variant="filled"
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="h-20 md:hidden" />
     </>
   );

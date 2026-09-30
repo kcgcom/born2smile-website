@@ -82,19 +82,10 @@ export default async function ContactPage() {
                   </div>
                 </TrackedAnchor>
               ) : (
-                <div className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 text-[var(--foreground)]">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-gold-bg)]">
-                    <MessageCircle
-                      size={28}
-                      aria-hidden="true"
-                      className="text-[var(--color-gold)]"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-sm text-[var(--muted)]">카카오톡 상담</div>
-                    <div className="text-sm font-medium">채널 준비 중</div>
-                  </div>
-                </div>
+                <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                  <MessageCircle size={16} aria-hidden="true" className="shrink-0" />
+                  카카오톡 상담 채널은 준비 중입니다.
+                </p>
               )}
 
               {/* 진료시간 */}
