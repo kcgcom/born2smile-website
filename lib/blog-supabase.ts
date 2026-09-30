@@ -109,7 +109,6 @@ interface DbRow {
   date_modified: string | null;
   content: unknown[];
   read_time: string;
-  reviewed_date: string | null;
   published: boolean;
   created_at: string;
   updated_at: string;
@@ -154,7 +153,6 @@ function rowToPost(row: DbRow): BlogPost {
     dateModified: row.date_modified ?? undefined,
     blocks: isBlogBlockArray(row.content) ? row.content : [],
     readTime: row.read_time ?? "1분",
-    reviewedDate: row.reviewed_date ?? undefined,
   };
 }
 
@@ -174,7 +172,6 @@ function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
     dateModified: post.dateModified,
     blocks: isBlogBlockArray(post.blocks) ? post.blocks : [],
     readTime: post.readTime,
-    reviewedDate: post.reviewedDate,
     published: post.published,
   }));
 }
@@ -476,7 +473,6 @@ export async function createBlogPost(
     date_modified: data.dateModified ?? null,
     content: data.blocks,
     read_time: readTime,
-    reviewed_date: null,
     published: data.published ?? false,
     created_at: now,
     updated_at: now,
@@ -492,8 +488,10 @@ export async function createBlogPost(
 }
 
 export type UpdateBlogPostData = Partial<
-  Omit<BlogPost, "slug" | "readTime"> & { published: boolean }
->;
+  Omit<BlogPost, "slug" | "readTime" | "dateModified"> & { published: boolean }
+> & {
+  dateModified?: string | null;
+};
 
 export type BlogPostAdminRecord = BlogPost & {
   published: boolean;
@@ -553,7 +551,6 @@ export async function updateBlogPost(
   if (data.tags !== undefined) update.tags = data.tags;
   if (data.date !== undefined) update.date = data.date;
   if ("dateModified" in data) update.date_modified = data.dateModified ?? null;
-  if ("reviewedDate" in data) update.reviewed_date = data.reviewedDate ?? null;
   if (data.published !== undefined) update.published = data.published;
 
   if (data.blocks !== undefined) {

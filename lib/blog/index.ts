@@ -21,6 +21,7 @@ export {
   BLOG_TAGS,
 } from "./types";
 export { categoryColors } from "./category-colors";
+export { getBlogLastModifiedDate, getMeaningfulDateModified } from "./dates";
 export {
   ALL_CATEGORY_SLUGS,
   BLOG_CATEGORY_LABELS,

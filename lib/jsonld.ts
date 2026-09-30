@@ -3,6 +3,7 @@ import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
 import { getBlogPostUrl, getCategoryLabel } from "./blog/category-slugs";
+import { getMeaningfulDateModified } from "./blog/dates";
 
 /**
  * JSON-LD 문자열 직렬화 시 </script> 브레이크아웃을 막기 위한 이스케이프.
@@ -199,6 +200,7 @@ export function getFaqJsonLd(faq: { q: string; a: string; link?: unknown }[]) {
  */
 export function getBlogPostJsonLd(post: BlogPost) {
   const doctor = DOCTORS[0];
+  const dateModified = getMeaningfulDateModified(post) ?? post.date;
 
   return {
     "@context": "https://schema.org",
@@ -206,7 +208,7 @@ export function getBlogPostJsonLd(post: BlogPost) {
     headline: `${post.title} — ${post.subtitle}`.slice(0, 110),
     description: post.excerpt,
     datePublished: post.date,
-    dateModified: post.dateModified ?? post.date,
+    dateModified,
     url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
     author: {
       "@type": "Person",

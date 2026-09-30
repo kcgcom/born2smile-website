@@ -91,7 +91,7 @@ export async function PUT(
 
     const { data: existingMeta, error: existingMetaError } = await getSupabaseAdmin()
       .from("blog_posts")
-      .select("published, date")
+      .select("published, date, date_modified")
       .eq("slug", slug)
       .single();
     if (existingMetaError) throw existingMetaError;
@@ -108,11 +108,18 @@ export async function PUT(
       || data.blocks !== undefined;
     const publishedAndDatedTodayOrPast = effectivePublished === true
       && effectiveDate <= todayKST;
-    const updateData: UpdateBlogPostData = data.dateModified === undefined
+    let updateData: UpdateBlogPostData = data.dateModified === undefined
       && contentChanged
       && publishedAndDatedTodayOrPast
       ? { ...data, dateModified: todayKST }
       : data;
+
+    const effectiveDateModified = updateData.dateModified === undefined
+      ? existingMeta?.date_modified
+      : updateData.dateModified;
+    if (effectiveDateModified && effectiveDateModified <= effectiveDate) {
+      updateData = { ...updateData, dateModified: null };
+    }
 
     await updateBlogPost(slug, updateData, auth.email);
 

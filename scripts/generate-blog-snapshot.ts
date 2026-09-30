@@ -40,7 +40,6 @@ interface SnapshotRow {
   date_modified: string | null;
   content: unknown[];
   read_time: string | null;
-  reviewed_date: string | null;
   published: boolean;
 }
 
@@ -90,7 +89,6 @@ function buildOutput(rows: SnapshotRow[]) {
     dateModified: row.date_modified ?? undefined,
     blocks: row.content ?? [],
     readTime: row.read_time ?? calculateReadTimeFromBlocks(row.content ?? []),
-    reviewedDate: row.reviewed_date ?? undefined,
     published: row.published,
   }));
 
@@ -110,7 +108,6 @@ export interface BlogSnapshotPost {
   dateModified?: string;
   blocks: unknown[];
   readTime: string;
-  reviewedDate?: string;
   published: boolean;
 }
 
@@ -150,7 +147,6 @@ export interface BlogSnapshotPost {
   dateModified?: string;
   blocks: unknown[];
   readTime: string;
-  reviewedDate?: string;
   published: boolean;
 }
 
@@ -168,7 +164,7 @@ export const BLOG_POSTS_SNAPSHOT: BlogSnapshotPost[] = [];
 
   const { data, error } = await supabase
     .from("blog_posts")
-    .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, content, read_time, reviewed_date, published")
+    .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, content, read_time, published")
     .order("date", { ascending: false });
 
   if (error) {

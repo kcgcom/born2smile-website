@@ -9,6 +9,7 @@ import {
   getCategoryLabel,
   getCategoryFromSlug,
   getBlogPostUrl,
+  getMeaningfulDateModified,
 } from "@/lib/blog";
 import { TREATMENTS } from "@/lib/constants";
 import { getBlogPostJsonLd, getBreadcrumbJsonLd, getFaqJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -178,6 +179,7 @@ export async function generateMetadata({
   const postUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
   const metaDescription = getPostMetaDescription(post);
   const ogImageUrl = `${postUrl}/opengraph-image`;
+  const dateModified = getMeaningfulDateModified(post);
 
   return {
     title: fullTitle,
@@ -190,7 +192,7 @@ export async function generateMetadata({
       locale: "ko_KR",
       type: "article",
       publishedTime: post.date,
-      ...(post.dateModified && { modifiedTime: post.dateModified }),
+      ...(dateModified && { modifiedTime: dateModified }),
       section: getCategoryLabel(post.category),
       tags: post.tags,
       authors: [DOCTORS[0].name],

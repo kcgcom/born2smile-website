@@ -74,8 +74,6 @@ export interface BlogPost extends Omit<BlogPostMeta, "readTime"> {
   blocks: BlogBlock[];
   /** 수동 입력 시 사용. 생략하면 빌드 시 blocks 글자 수 기반 자동 계산 (한국어 분당 ~500자) */
   readTime?: string;
-  /** 콘텐츠 검수 완료일 (YYYY-MM-DD). 미입력 시 미검수 상태 */
-  reviewedDate?: string;
 }
 
 export const BLOG_TAGS = [

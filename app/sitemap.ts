@@ -3,7 +3,7 @@ export const revalidate = 86400;
 import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
-import { ALL_CATEGORY_SLUGS, getBlogPostUrl } from "@/lib/blog";
+import { ALL_CATEGORY_SLUGS, getBlogLastModifiedDate, getBlogPostUrl } from "@/lib/blog";
 
 const DEFAULT_LAST_MODIFIED = new Date("2026-01-01T00:00:00.000Z");
 
@@ -15,13 +15,6 @@ const STATIC_PAGE_LAST_MODIFIED = {
   contact: new Date("2026-06-13T00:00:00.000Z"),
   privacy: new Date("2026-02-20T00:00:00.000Z"),
 } as const;
-
-function getPostLastModified(post: { date: string; dateModified?: string }): Date {
-  const lastModified = post.dateModified && post.dateModified > post.date
-    ? post.dateModified
-    : post.date;
-  return new Date(lastModified);
-}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const treatmentPages = TREATMENTS.map((t) => ({
@@ -35,13 +28,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 블로그 허브 및 카테고리 페이지 lastmod를 최신 포스트 날짜로 자동 계산
   const latestPostDate = publishedPosts.reduce<Date>((max, p) => {
-    const d = getPostLastModified(p);
+    const d = getBlogLastModifiedDate(p);
     return d > max ? d : max;
   }, DEFAULT_LAST_MODIFIED);
 
   const latestDateByCategory = new Map<string, Date>();
   for (const p of publishedPosts) {
-    const d = getPostLastModified(p);
+    const d = getBlogLastModifiedDate(p);
     const prev = latestDateByCategory.get(p.category);
     if (!prev || d > prev) latestDateByCategory.set(p.category, d);
   }
@@ -80,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...publishedPosts.map((post) => ({
       url: `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,
-      lastModified: getPostLastModified(post),
+      lastModified: getBlogLastModifiedDate(post),
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),

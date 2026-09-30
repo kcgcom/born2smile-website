@@ -89,8 +89,8 @@ export function collectBlogEvidence(posts: BlogPost[]): ContentDocument[] {
       const revision = hash(JSON.stringify({ title: post.title, subtitle: post.subtitle, excerpt: post.excerpt, category: post.category, tags: post.tags, dateModified: post.dateModified, units: units.map((item) => item.contentHash) }));
       return {
         id: documentId, sourceType: "blog-post", title: post.title, description: post.excerpt, category: post.category, tags: [...post.tags], status: "published", language: "ko",
-        publishedAt: post.date, modifiedAt: post.dateModified ?? post.date, reviewedAt: post.reviewedDate,
-        reviewStatus: post.reviewedDate ? "reviewed" : "unreviewed", revision, units,
+        publishedAt: post.date, modifiedAt: post.dateModified ?? post.date,
+        reviewStatus: "not-required", revision, units,
       } satisfies ContentDocument;
     });
 }

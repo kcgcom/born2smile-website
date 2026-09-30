@@ -43,7 +43,6 @@ pnpm dev                      # http://localhost:3000
 - `pnpm test:e2e:ui` — Playwright UI 모드로 디버깅
 - `pnpm lint` — Run ESLint
 - `pnpm deploy` — package.json에 legacy script가 남아 있어도 사용 금지. production은 `main` push 기반 자동 배포만 허용
-- `pnpm review-status` — 현재 구현 상태 요약 리포트 생성
 - `pnpm submit-indexnow` — 오늘 발행된 블로그 포스트 URL을 IndexNow에 제출
 - `pnpm submit-indexnow:all` — 전체 사이트 URL을 IndexNow에 제출 (초기 설정 또는 전체 재인덱싱 시)
 
