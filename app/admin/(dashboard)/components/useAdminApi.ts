@@ -28,6 +28,7 @@ const SLOW_ENDPOINTS = [
   "/api/admin/naver-datalab/trend-summary",
   "/api/admin/analytics",
   "/api/admin/blog-analytics",
+  "/api/admin/indexing-status",
 ];
 
 const KEEP_PREVIOUS_ENDPOINTS = [

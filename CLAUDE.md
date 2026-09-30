@@ -310,3 +310,22 @@ Vercel Cron Job (`vercel.json`)이 매일 KST 00:05 (UTC 15:05)에 `/api/cron/re
 ## Known TODO Items
 
 [`docs/todo.md`](docs/todo.md) 참조. `lib/admin-data.ts`의 `IMPROVEMENT_ITEMS`에서 전체 개선 항목 관리, 관리자 대시보드 개발>현황 서브탭에서 실시간 현황 확인 가능.
+
+## Skill routing
+
+When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
+
+Key routing rules:
+- Product ideas/brainstorming → invoke /office-hours
+- Strategy/scope → invoke /plan-ceo-review
+- Architecture → invoke /plan-eng-review
+- Design system/plan review → invoke /design-consultation or /plan-design-review
+- Full review pipeline → invoke /autoplan
+- Bugs/errors → invoke /investigate
+- QA/testing site behavior → invoke /qa or /qa-only
+- Code review/diff check → invoke /review
+- Visual polish → invoke /design-review
+- Ship/deploy/PR → invoke /ship or /land-and-deploy
+- Save progress → invoke /context-save
+- Resume context → invoke /context-restore
+- Author a backlog-ready spec/issue → invoke /spec

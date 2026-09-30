@@ -61,6 +61,7 @@ export interface SearchConsoleData {
     ctr: number;
     position: number;
   }>;
+  blogSummary: SearchMetricRow;
   pageTopQueries: Record<
     string,
     Array<{
@@ -92,6 +93,17 @@ export interface SearchConsoleData {
     }>
   >;
   blogQueryMetrics: Record<string, SearchMetricRow>;
+  sitemap: {
+    status: "healthy" | "pending" | "warning" | "error" | "unavailable";
+    path: string;
+    isPending: boolean;
+    lastSubmitted: string | null;
+    lastDownloaded: string | null;
+    warnings: number;
+    errors: number;
+    submittedUrlCount: number | null;
+    checkedAt: string;
+  };
   /** Server-computed semantic clusters (null if Gemini not configured) */
   semanticClusters?: SemanticCluster[] | null;
   /** Blog query semantic clusters */

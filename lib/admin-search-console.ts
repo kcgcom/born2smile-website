@@ -26,6 +26,105 @@ type SearchConsoleQueryPage = SearchConsoleMetricRow & {
   page: string;
 };
 
+export type SearchConsoleSitemapStatus = {
+  status: "healthy" | "pending" | "warning" | "error" | "unavailable";
+  path: string;
+  isPending: boolean;
+  lastSubmitted: string | null;
+  lastDownloaded: string | null;
+  warnings: number;
+  errors: number;
+  submittedUrlCount: number | null;
+  checkedAt: string;
+};
+
+function parseCount(value: string | null | undefined): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function toSitemapStatus(
+  sitemap: searchconsole_v1.Schema$WmxSitemap,
+  checkedAt = new Date().toISOString(),
+): SearchConsoleSitemapStatus {
+  const warnings = parseCount(sitemap.warnings);
+  const errors = parseCount(sitemap.errors);
+  const submitted = sitemap.contents?.find((content) => content.type === "web")?.submitted;
+  const submittedUrlCount = submitted == null ? null : parseCount(submitted);
+  const status = errors > 0
+    ? "error"
+    : warnings > 0
+      ? "warning"
+      : sitemap.isPending
+        ? "pending"
+        : "healthy";
+
+  return {
+    status,
+    path: sitemap.path ?? `${BASE_URL}/sitemap.xml`,
+    isPending: sitemap.isPending ?? false,
+    lastSubmitted: sitemap.lastSubmitted ?? null,
+    lastDownloaded: sitemap.lastDownloaded ?? null,
+    warnings,
+    errors,
+    submittedUrlCount,
+    checkedAt,
+  };
+}
+
+export async function createSearchConsoleContext() {
+  const configuredSiteUrl = process.env.SEARCH_CONSOLE_SITE_URL?.trim();
+  if (!configuredSiteUrl) throw new Error("SEARCH_CONSOLE_SITE_URL 환경변수가 설정되지 않았습니다");
+
+  const { google } = await import("googleapis");
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  let auth;
+  let actorLabel = "현재 인증 계정이";
+
+  if (keyJson) {
+    try {
+      const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
+      auth = new google.auth.JWT({
+        email: key.client_email,
+        key: key.private_key,
+        scopes: [SEARCH_CONSOLE_SCOPE],
+      });
+      actorLabel = key.client_email ? `서비스 계정(${key.client_email})이` : actorLabel;
+    } catch {
+      console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
+    }
+  }
+
+  if (!auth) {
+    auth = new google.auth.GoogleAuth({ scopes: [SEARCH_CONSOLE_SCOPE] });
+  }
+
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+  const sitesRes = await searchconsole.sites.list();
+  const siteEntries = sitesRes.data.siteEntry ?? [];
+  const siteUrl = resolveAccessibleSiteUrl(configuredSiteUrl, siteEntries);
+
+  if (!siteUrl) {
+    throw new Error(buildPermissionErrorMessage(configuredSiteUrl, actorLabel, siteEntries));
+  }
+
+  return { searchconsole, siteUrl, configuredSiteUrl };
+}
+
+function unavailableSitemapStatus(checkedAt = new Date().toISOString()): SearchConsoleSitemapStatus {
+  return {
+    status: "unavailable",
+    path: `${BASE_URL}/sitemap.xml`,
+    isPending: false,
+    lastSubmitted: null,
+    lastDownloaded: null,
+    warnings: 0,
+    errors: 0,
+    submittedUrlCount: null,
+    checkedAt,
+  };
+}
+
 // Period helper with 3-day offset for SC data delay
 function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;
@@ -208,47 +307,21 @@ function toMetricRow(row: searchconsole_v1.Schema$ApiDataRow): SearchConsoleMetr
 }
 
 export async function fetchSearchConsoleData(period: string) {
-  const configuredSiteUrl = process.env.SEARCH_CONSOLE_SITE_URL?.trim();
-  if (!configuredSiteUrl) throw new Error("SEARCH_CONSOLE_SITE_URL 환경변수가 설정되지 않았습니다");
-
-  // Dynamic import for cold start optimization
-  const { google } = await import("googleapis");
-
-  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  let auth;
-  let actorLabel = "현재 인증 계정이";
-  if (keyJson) {
-    try {
-      const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
-      auth = new google.auth.JWT({
-        email: key.client_email,
-        key: key.private_key,
-        scopes: [SEARCH_CONSOLE_SCOPE],
-      });
-      actorLabel = key.client_email ? `서비스 계정(${key.client_email})이` : actorLabel;
-    } catch {
-      console.error("GOOGLE_SERVICE_ACCOUNT_KEY JSON 파싱 실패. ADC로 폴백합니다.");
-    }
-  }
-  if (!auth) {
-    auth = new google.auth.GoogleAuth({
-      scopes: [SEARCH_CONSOLE_SCOPE],
-    });
-  }
-
-  const searchconsole = google.searchconsole({ version: "v1", auth });
-  const sitesRes = await searchconsole.sites.list();
-  const siteEntries = sitesRes.data.siteEntry ?? [];
-  const siteUrl = resolveAccessibleSiteUrl(configuredSiteUrl, siteEntries);
-
-  if (!siteUrl) {
-    throw new Error(buildPermissionErrorMessage(configuredSiteUrl, actorLabel, siteEntries));
-  }
+  const { searchconsole, siteUrl, configuredSiteUrl } = await createSearchConsoleContext();
 
   const { start, end, compareStart, compareEnd, dataAsOf } = getPeriodDates(period);
 
-  // Parallel API calls: current period, compare period, queries, pages, page-query drilldown, blog-specific page+query
-  const [currentRes, compareRes, queriesRes, pagesRes, pageQueryRes, blogPageQueryRes] = await Promise.all([
+  const sitemapStatusPromise = searchconsole.sitemaps.get({
+    siteUrl,
+    feedpath: `${BASE_URL}/sitemap.xml`,
+  }).then((response) => toSitemapStatus(response.data)).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    console.error(`[search-console] Sitemap 상태 조회 실패: ${message}`);
+    return unavailableSitemapStatus();
+  });
+
+  // Parallel API calls: search performance queries + sitemap health
+  const [currentRes, compareRes, queriesRes, pagesRes, pageQueryRes, blogPageQueryRes, blogSummaryRes, sitemapStatus] = await Promise.all([
     // Summary - current
     searchconsole.searchanalytics.query({
       siteUrl,
@@ -310,10 +383,30 @@ export async function fetchSearchConsoleData(period: string) {
         ],
       },
     }),
+    // Exact blog summary without relying on the truncated top-pages response
+    searchconsole.searchanalytics.query({
+      siteUrl,
+      requestBody: {
+        startDate: start,
+        endDate: end,
+        dimensions: [],
+        rowLimit: 1,
+        dataState: "final",
+        dimensionFilterGroups: [
+          {
+            filters: [
+              { dimension: "page", operator: "contains", expression: "/blog/" },
+            ],
+          },
+        ],
+      },
+    }),
+    sitemapStatusPromise,
   ]);
 
   const curRow = currentRes.data.rows?.[0];
   const prevRow = compareRes.data.rows?.[0];
+  const blogSummary = toMetricRow(blogSummaryRes.data.rows?.[0] ?? {});
 
   const summary = {
     impressions: {
@@ -488,9 +581,11 @@ export async function fetchSearchConsoleData(period: string) {
     topQueries,
     topPages,
     blogPages,
+    blogSummary,
     pageTopQueries,
     queryTopPages,
     blogQueryTopPages,
     blogQueryMetrics,
+    sitemap: sitemapStatus,
   };
 }
