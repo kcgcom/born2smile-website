@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   MousePointerClick,
   Search,
+  ScanSearch,
   Settings,
   Target,
   TrendingUp,
@@ -45,9 +46,12 @@ interface WorkspaceConfig {
 
 const PERFORMANCE_PATH = "/admin/system/monitoring";
 const MOBILE_PSI_ENDPOINT = "/api/dev/pagespeed?strategy=mobile";
+const INDEXING_PATH = "/admin/analysis/indexing";
+const INDEXING_ENDPOINT = "/api/admin/indexing-status";
 
 function preloadTabData(href: string) {
   if (href === PERFORMANCE_PATH) preloadAdminApi(MOBILE_PSI_ENDPOINT);
+  if (href === INDEXING_PATH) preloadAdminApi(INDEXING_ENDPOINT);
 }
 
 const WORKSPACES: WorkspaceConfig[] = [
@@ -60,6 +64,7 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
       { href: "/admin/analysis/traffic", label: "트래픽", icon: BarChart3 },
       { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
+      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
       { href: "/admin/operations/conversion", label: "전환", icon: MousePointerClick },
     ],
   },
