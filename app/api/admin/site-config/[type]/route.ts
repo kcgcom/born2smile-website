@@ -103,9 +103,8 @@ export async function PUT(
     }
 
     if (type !== "schedule") {
-      revalidatePath("/");
-      revalidatePath("/about");
-      revalidatePath("/contact");
+      // 공통 레이아웃의 병원 JSON-LD와 Header/Footer를 모든 페이지에서 갱신합니다.
+      revalidatePath("/", "layout");
     }
 
     return Response.json(

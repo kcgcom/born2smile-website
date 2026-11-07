@@ -74,6 +74,14 @@ const CSP = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return [{
+      source: "/:path*",
+      has: [{ type: "host", value: "born2smile.co.kr" }],
+      destination: "https://www.born2smile.co.kr/:path*",
+      permanent: true,
+    }];
+  },
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },

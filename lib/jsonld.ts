@@ -1,9 +1,11 @@
-import { BASE_URL, CLINIC, DOCTORS, HOURS, MAP, TREATMENTS, LINKS } from "./constants";
+import { BASE_URL, CLINIC, DOCTORS, MAP, TREATMENTS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
 import type { BlogCategoryValue } from "./blog/types";
 import { getBlogPostUrl, getCategoryLabel } from "./blog/category-slugs";
 import { getMeaningfulDateModified } from "./blog/dates";
+import { getBlogArticleImage } from "./blog/seo-image";
+import type { ResolvedSiteClinic, SiteHours, SiteLinks } from "./site-config-supabase";
 
 /**
  * JSON-LD 문자열 직렬화 시 </script> 브레이크아웃을 막기 위한 이스케이프.
@@ -21,21 +23,25 @@ export function serializeJsonLd(value: unknown): string {
  * 치과의원 메인 JSON-LD (Dentist + LocalBusiness)
  * Google/네이버 검색 결과에 병원 정보, 진료시간, 연락처 등이 표시됩니다.
  */
-export function getClinicJsonLd() {
+export function getClinicJsonLd({ clinic, hours, links }: {
+  clinic: ResolvedSiteClinic;
+  hours: SiteHours;
+  links: SiteLinks;
+}) {
   const doctor = DOCTORS[0];
 
   return {
     "@context": "https://schema.org",
     "@type": ["Dentist", "MedicalBusiness"],
     "@id": `${BASE_URL}/#organization`,
-    name: CLINIC.name,
-    alternateName: ["서울 본치과", "본치과", CLINIC.nameEn],
-    description: `김포한강신도시 장기동 ${CLINIC.name}. 김포한강신도시 장기동 치과. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
+    name: clinic.name,
+    alternateName: ["서울 본치과", "본치과", clinic.nameEn],
+    description: `김포 ${clinic.neighborhood} ${clinic.name}. ${doctor.position}. 임플란트, 치아교정, 심미보철, 소아치료, 보존치료, 스케일링.`,
     url: BASE_URL,
-    telephone: CLINIC.phoneIntl,
+    telephone: clinic.phoneIntl,
     address: {
       "@type": "PostalAddress",
-      streetAddress: CLINIC.addressShort,
+      streetAddress: clinic.addressShort,
       addressLocality: "김포시 장기동",
       addressRegion: "경기도",
       postalCode: "10089",
@@ -52,7 +58,7 @@ export function getClinicJsonLd() {
       latitude: MAP.lat,
       longitude: MAP.lng,
     },
-    openingHoursSpecification: HOURS.schedule
+    openingHoursSpecification: hours.schedule
       .filter((h) => h.open)
       .map((h) => {
         const dayMap: Record<string, string> = {
@@ -104,7 +110,7 @@ export function getClinicJsonLd() {
         name: m,
       })),
     },
-    sameAs: Object.values(LINKS).filter((url) => url !== ""),
+    sameAs: Object.values(links).filter((url) => url !== ""),
     priceRange: "₩₩",
     image: `${BASE_URL}/images/og-image.jpg`,
   };
@@ -201,6 +207,7 @@ export function getFaqJsonLd(faq: { q: string; a: string; link?: unknown }[]) {
 export function getBlogPostJsonLd(post: BlogPost) {
   const doctor = DOCTORS[0];
   const dateModified = getMeaningfulDateModified(post) ?? post.date;
+  const image = getBlogArticleImage(post);
 
   return {
     "@context": "https://schema.org",
@@ -227,12 +234,12 @@ export function getBlogPostJsonLd(post: BlogPost) {
         url: `${BASE_URL}/images/og-image.jpg`,
       },
     },
-    image: {
+    ...(image && { image: {
       "@type": "ImageObject",
-      url: `${BASE_URL}/images/og-image.jpg`,
-      width: 1200,
-      height: 630,
-    },
+      url: image.url,
+      ...(image.width && { width: image.width }),
+      ...(image.height && { height: image.height }),
+    } }),
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`,

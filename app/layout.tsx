@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
@@ -60,11 +61,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [clinic, hours, links] = await Promise.all([
+    getSiteClinic(), getSiteHours(), getSiteLinks(),
+  ]);
   return (
     <html
       lang="ko"
@@ -102,7 +106,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: serializeJsonLd(getClinicJsonLd()),
+            __html: serializeJsonLd(getClinicJsonLd({ clinic, hours, links })),
           }}
         />
         <AdminAuthProvider>

@@ -5,21 +5,10 @@ import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { ALL_CATEGORY_SLUGS, getBlogLastModifiedDate, getBlogPostUrl } from "@/lib/blog";
 
-const DEFAULT_LAST_MODIFIED = new Date("2026-01-01T00:00:00.000Z");
-
-const STATIC_PAGE_LAST_MODIFIED = {
-  home: new Date("2026-06-13T00:00:00.000Z"),
-  about: new Date("2026-06-13T00:00:00.000Z"),
-  treatments: new Date("2026-06-13T00:00:00.000Z"),
-  faq: new Date("2026-06-13T00:00:00.000Z"),
-  contact: new Date("2026-06-13T00:00:00.000Z"),
-  privacy: new Date("2026-02-20T00:00:00.000Z"),
-} as const;
-
+// 정적 페이지는 실제 콘텐츠 수정일을 추적하지 않으므로 lastModified를 생략합니다.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const treatmentPages = TREATMENTS.map((t) => ({
     url: `${BASE_URL}${t.href}`,
-    lastModified: STATIC_PAGE_LAST_MODIFIED.treatments,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
@@ -27,10 +16,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const publishedPosts = await getAllPublishedPostMetas();
 
   // 블로그 허브 및 카테고리 페이지 lastmod를 최신 포스트 날짜로 자동 계산
-  const latestPostDate = publishedPosts.reduce<Date>((max, p) => {
+  const latestPostDate = publishedPosts.reduce<Date | undefined>((max, p) => {
     const d = getBlogLastModifiedDate(p);
-    return d > max ? d : max;
-  }, DEFAULT_LAST_MODIFIED);
+    return !max || d > max ? d : max;
+  }, undefined);
 
   const latestDateByCategory = new Map<string, Date>();
   for (const p of publishedPosts) {
@@ -42,19 +31,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: BASE_URL,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.home,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${BASE_URL}/about`,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.about,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/treatments`,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.treatments,
       changeFrequency: "monthly",
       priority: 0.8,
     },
@@ -67,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...ALL_CATEGORY_SLUGS.map((categorySlug) => ({
       url: `${BASE_URL}/blog/${categorySlug}`,
-      lastModified: latestDateByCategory.get(categorySlug) ?? latestPostDate,
+      lastModified: latestDateByCategory.get(categorySlug),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
@@ -79,19 +65,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     {
       url: `${BASE_URL}/faq`,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.faq,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
       url: `${BASE_URL}/contact`,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.contact,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/privacy`,
-      lastModified: STATIC_PAGE_LAST_MODIFIED.privacy,
       changeFrequency: "yearly",
       priority: 0.3,
     },

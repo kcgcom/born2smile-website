@@ -39,6 +39,7 @@ import { filterPublicBlogCitations } from "@/lib/blog/citation-targets-server";
 import { getResearchCalloutNotices } from "@/lib/blog/research-callout-notices";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
 import { getIsAdminServer } from "@/lib/server-admin-check";
+import { getBlogArticleImage } from "@/lib/blog/seo-image";
 
 export const revalidate = 3600;
 
@@ -175,6 +176,10 @@ export async function generateMetadata({
   const postUrl = `${BASE_URL}${getBlogPostUrl(slug, post.category)}`;
   const metaDescription = getPostMetaDescription(post);
   const ogImageUrl = `${postUrl}/opengraph-image`;
+  const socialImage = getBlogArticleImage(post) ?? {
+    url: ogImageUrl,
+    alt: `${post.title} | ${CLINIC.name} 건강칼럼`,
+  };
   const dateModified = getMeaningfulDateModified(post);
 
   return {
@@ -193,18 +198,13 @@ export async function generateMetadata({
       tags: post.tags,
       authors: [DOCTORS[0].name],
       url: postUrl,
-      images: [
-        {
-          url: ogImageUrl,
-          alt: `${post.title} | ${CLINIC.name} 건강칼럼`,
-        },
-      ],
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description: metaDescription,
-      images: [ogImageUrl],
+      images: [socialImage],
     },
   };
 }
