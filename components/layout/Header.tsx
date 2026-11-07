@@ -101,13 +101,13 @@ export function Header() {
       </a>
 
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 flex max-h-dvh flex-col transition-all duration-300 ${
           isScrolled
             ? "bg-[var(--surface)]/95 shadow-sm backdrop-blur-sm border-b border-[var(--color-gold-light)]/30"
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
+        <div className="mx-auto flex w-full max-w-7xl shrink-0 items-center justify-between px-4 py-4 md:px-6">
           {/* 로고 */}
           <Link
             href="/"
@@ -193,7 +193,7 @@ export function Header() {
           <div
             id="mobile-menu"
             ref={menuRef}
-            className="border-t border-[var(--border)] bg-[var(--surface)] lg:hidden"
+            className="min-h-0 overflow-y-auto overscroll-contain border-t border-[var(--border)] bg-[var(--surface)] lg:hidden"
           >
             <nav className="flex flex-col px-4 py-4" aria-label="모바일 메뉴">
               {NAV_ITEMS.map((item) => {

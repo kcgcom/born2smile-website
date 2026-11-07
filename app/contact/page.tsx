@@ -13,7 +13,7 @@ export default async function ContactPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16 text-center lg:pb-0">
+      <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-0 text-center md:pb-16 lg:pb-0">
         <div className="mx-auto max-w-2xl px-4">
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">

@@ -37,7 +37,7 @@ export default function TreatmentsPage() {
             <h1 className="font-headline text-4xl font-bold text-[var(--foreground)] md:text-5xl">
               진료 안내
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-[var(--muted)]">
+            <p className="mx-auto mt-4 max-w-xl break-keep text-[var(--muted)]">
               자연치아를 지키는 치료, {CLINIC.name}에서 시작하세요.
             </p>
           </FadeIn>

@@ -7,6 +7,15 @@ function getDirective(csp: string, name: string) {
     .find((directive) => directive.startsWith(`${name} `));
 }
 
+test('카카오 지도 SDK의 현재 CDN을 스크립트 소스로 허용한다', async ({ request }) => {
+  const response = await request.get('/contact');
+  const csp = response.headers()['content-security-policy'];
+  expect(csp).toBeTruthy();
+  const scriptSrc = getDirective(csp, 'script-src');
+  expect(scriptSrc).toContain('https://dapi.kakao.com');
+  expect(scriptSrc).toContain('https://t1.kakaocdn.net');
+});
+
 test('분석 서비스의 실제 수집 엔드포인트를 CSP에서 허용한다', async ({ request }) => {
   const response = await request.get('/');
   const csp = response.headers()['content-security-policy'];

@@ -1,6 +1,23 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('모바일 헤더', () => {
+  test('작은 가로 화면에서 메뉴를 스크롤해 마지막 전화 버튼에 도달한다', async ({ page }) => {
+    await page.setViewportSize({ width: 667, height: 320 });
+    await page.goto('/');
+    await page.getByRole('button', { name: '메뉴 열기' }).click();
+    const menu = page.locator('#mobile-menu');
+    const phone = menu.getByRole('link', { name: '전화 상담 1833-7552' });
+    await expect(menu).toBeVisible();
+    const box = await menu.boundingBox();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(320);
+    await menu.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await expect(phone).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+  });
+
   for (const width of [360, 375, 390]) {
     test(`${width}px에서 한 줄 레이아웃과 터치 영역을 유지한다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });

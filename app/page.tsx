@@ -104,7 +104,7 @@ export default function Home() {
               <br />
               오래오래 편안하게
             </h1>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-[var(--muted)] md:text-xl">
+            <p className="mx-auto mb-10 max-w-2xl break-keep text-lg text-[var(--muted)] md:text-xl">
               서울대 출신의 전문의가 정성을 다해 진료합니다.{" "}
               <br className="hidden sm:inline" />
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
