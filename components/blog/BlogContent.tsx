@@ -28,6 +28,7 @@ import { BASE_URL } from "@/lib/constants";
 import { buildTrackedShareUrl, shareUrl } from "@/lib/share";
 import { getTodayKST } from "@/lib/date";
 import { captureEvent } from "@/lib/posthog";
+import { readListPosition, saveListPosition, type ListPosition } from "./listNavigation";
 
 const POSTS_PER_PAGE = 12;
 
@@ -95,6 +96,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeCooldownTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const isUrlStateReadyRef = useRef(false);
+  const restorePositionRef = useRef<ListPosition | null>(null);
 
   const syncFilterUrl = useCallback((state: BlogFilterUrlState, mode: "push" | "replace") => {
     const url = new URL(window.location.href);
@@ -124,7 +126,9 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
       setActiveTag(state.tag);
       setSearchQuery(state.query);
       setDebouncedQuery(state.query);
-      setVisibleCount(POSTS_PER_PAGE);
+      const position = readListPosition();
+      restorePositionRef.current = position;
+      setVisibleCount(position ? Math.min(position.count, initialPosts.length) : POSTS_PER_PAGE);
       setIsTagFilterOpen(false);
     };
 
@@ -132,7 +136,17 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     isUrlStateReadyRef.current = true;
     window.addEventListener("popstate", applyUrlState);
     return () => window.removeEventListener("popstate", applyUrlState);
-  }, [activeDefaultCategory]);
+  }, [activeDefaultCategory, initialPosts.length]);
+
+  useLayoutEffect(() => {
+    const position = restorePositionRef.current;
+    if (!position) return;
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: position.y, behavior: "instant" });
+      restorePositionRef.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [visibleCount, activeCategory, activeTag, debouncedQuery]);
 
   // setTimeout 정리
   useEffect(() => {
@@ -254,10 +268,13 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const frameId = requestAnimationFrame(() => {
-      activeCategoryButtonRef.current?.scrollIntoView({
+      const scroller = categoryScrollRef.current;
+      const button = activeCategoryButtonRef.current;
+      if (!scroller || !button) return;
+      scroller.scrollTo({
+        left: scroller.scrollLeft + button.getBoundingClientRect().left
+          - scroller.getBoundingClientRect().left - (scroller.clientWidth - button.clientWidth) / 2,
         behavior: prefersReducedMotion ? "auto" : "smooth",
-        block: "nearest",
-        inline: "center",
       });
     });
 
@@ -485,8 +502,8 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           )}
         </div>
 
-        {/* 모바일 상세 필터 요약 */}
-        <div className="mb-4 flex min-h-11 items-center justify-between gap-2 md:hidden">
+        {/* 상세 필터는 모든 화면에서 필요할 때 펼친다. */}
+        <div className="mb-4 flex min-h-11 items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => setIsTagFilterOpen((open) => !open)}
@@ -521,13 +538,13 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           </div>
         </div>
 
-        {/* 태그 필터: 모바일 접기, 데스크톱 항상 노출 */}
+        {/* 선택한 태그는 접힌 상태에서도 위 요약에 표시한다. */}
         <div
           id="blog-tag-filters"
           aria-label="글 유형·대상"
-          className={`${isTagFilterOpen ? "flex" : "hidden"} mb-6 flex-wrap justify-center gap-1.5 rounded-2xl bg-[var(--background)] p-3 md:mb-10 md:flex md:bg-transparent md:p-0`}
+          className={`${isTagFilterOpen ? "flex" : "hidden"} mb-6 flex-wrap justify-center gap-1.5 rounded-2xl bg-[var(--background)] p-3`}
         >
-          <p className="mb-1 w-full text-sm font-medium text-[var(--foreground)] md:sr-only">
+          <p className="mb-1 w-full text-sm font-medium text-[var(--foreground)]">
             글 유형·대상
           </p>
           {BLOG_TAGS.map((tag) => (
@@ -549,9 +566,6 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
         {/* 포스트 그리드 */}
         <div aria-live="polite" aria-atomic="false">
-          <p className="mb-4 hidden text-center text-sm text-[var(--muted)] md:block">
-            {resultCountText}
-          </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visiblePosts.map((post) => {
               const categorySlug = post.category as BlogCategorySlug;
@@ -574,7 +588,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
                   {/* 제목 + 부제 */}
                   <h2 className="mb-1 text-lg font-bold leading-snug text-[var(--foreground)] group-hover:text-[var(--color-primary)]">
-                    <Link href={getBlogPostUrl(post.slug, post.category)} className="relative z-10">
+                    <Link href={getBlogPostUrl(post.slug, post.category)} onClick={() => saveListPosition(getBlogPostUrl(post.slug, post.category), visibleCount)} className="relative z-10">
                       {post.title}
                     </Link>
                   </h2>
@@ -650,6 +664,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   {/* 카드 전체 링크 (인터랙티브 요소 뒤에 배치) */}
                   <Link
                     href={getBlogPostUrl(post.slug, post.category)}
+                    onClick={() => saveListPosition(getBlogPostUrl(post.slug, post.category), visibleCount)}
                     className="absolute inset-0 z-0 rounded-2xl"
                     aria-label={`${post.title} — ${post.subtitle} 읽기`}
                     tabIndex={-1}

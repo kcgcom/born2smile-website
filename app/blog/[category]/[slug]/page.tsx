@@ -17,6 +17,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import BlogShareVisitTracker from "@/components/blog/BlogShareVisitTracker";
+import BlogListReturnLink from "@/components/blog/BlogListReturnLink";
 import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
 import { formatDate } from "@/lib/format";
 import {
@@ -291,13 +292,13 @@ export default async function BlogPostPage({
           />
           <div className="mx-auto max-w-3xl px-4">
             <FadeIn>
-              <Link
+              <BlogListReturnLink
                 href={`/blog/${post.category}`}
                 className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={14} />
-                {categoryLabel} 목록
-              </Link>
+                칼럼 목록
+              </BlogListReturnLink>
 
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Link
@@ -469,13 +470,13 @@ export default async function BlogPostPage({
               </div>
             </div>
             <div className="mt-5 border-t border-white/70 pt-4">
-              <Link
+              <BlogListReturnLink
                 href={`/blog/${post.category}`}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={16} />
-                {categoryLabel} 목록으로
-              </Link>
+                칼럼 목록으로
+              </BlogListReturnLink>
             </div>
           </div>
         </div>

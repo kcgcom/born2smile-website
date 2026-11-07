@@ -41,10 +41,18 @@ test.describe('건강칼럼 모바일 필터', () => {
   });
 });
 
-test('데스크톱에서는 태그 필터를 항상 노출한다', async ({ page }) => {
+test('데스크톱도 태그 필터를 필요할 때 펼치고 선택 조건을 요약한다', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/blog');
 
-  await expect(page.getByRole('button', { name: '상세 필터' })).toBeHidden();
-  await expect(page.getByRole('button', { name: '생활습관' }).first()).toBeVisible();
+  const toggle = page.getByRole('button', { name: '상세 필터' });
+  const tag = page.locator('#blog-tag-filters').getByRole('button', { name: '생활습관' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(tag).toBeHidden();
+  await toggle.click();
+  await tag.click();
+  await expect(toggle).toContainText('생활습관');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await page.getByRole('button', { name: '생활습관 필터 해제' }).click();
+  await expect(toggle).not.toContainText('생활습관');
 });

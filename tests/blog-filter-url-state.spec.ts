@@ -72,7 +72,7 @@ test.describe('건강칼럼 필터 URL 상태', () => {
   test('유효하지 않은 필터 값은 적용하지 않는다', async ({ page }) => {
     await page.goto('/blog?category=unknown&tag=unknown');
 
-    await expect(page.getByRole('button', { name: '전체' })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: '전체', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
