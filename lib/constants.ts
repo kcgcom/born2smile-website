@@ -72,7 +72,7 @@ export function enrichClinicWithContact<T extends { phone: string }>(clinic: T):
 // -------------------------------------------------------------
 export const CLINIC_BASE: ClinicBase = {
   name: "서울본치과",
-  nameEn: "Seoul Born2smile Dental Clinic",
+  nameEn: "Seoul Born2Smile Dental Clinic",
   slogan: "꼭 필요한 치료만, 오래오래 편안하게",
   phone: "1833-7552",
   address: "경기도 김포시 태장로 820, 엠프라자 2층 (장기동)",

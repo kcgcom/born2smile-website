@@ -1,3 +1,4 @@
+import { getOpeningHoursJsonLd } from "./opening-hours-jsonld";
 import { BASE_URL, CLINIC, DOCTORS, MAP, TREATMENTS } from "./constants";
 import { TREATMENT_DETAILS } from "./treatments";
 import type { BlogPost } from "./blog/types";
@@ -58,26 +59,7 @@ export function getClinicJsonLd({ clinic, hours, links }: {
       latitude: MAP.lat,
       longitude: MAP.lng,
     },
-    openingHoursSpecification: hours.schedule
-      .filter((h) => h.open)
-      .map((h) => {
-        const dayMap: Record<string, string> = {
-          월요일: "Monday",
-          화요일: "Tuesday",
-          수요일: "Wednesday",
-          목요일: "Thursday",
-          금요일: "Friday",
-          토요일: "Saturday",
-          일요일: "Sunday",
-        };
-        const [open, close] = h.time.split(" - ");
-        return {
-          "@type": "OpeningHoursSpecification",
-          dayOfWeek: dayMap[h.day],
-          opens: open,
-          closes: close,
-        };
-      }),
+    ...getOpeningHoursJsonLd(hours),
     medicalSpecialty: [
       "Dentistry",
       "Implant Dentistry",

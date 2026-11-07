@@ -26,7 +26,9 @@ test("운영 병원 정보와 진료시간·링크를 구조화 데이터에 반
   expect(schema.telephone).toBe(clinic.phoneIntl);
   expect(schema.address.streetAddress).toBe(clinic.addressShort);
   expect(schema.openingHoursSpecification).toEqual([
-    { "@type": "OpeningHoursSpecification", dayOfWeek: "Monday", opens: "10:00", closes: "17:00" },
+    { "@type": "OpeningHoursSpecification", dayOfWeek: "Monday", opens: "10:00", closes: "13:00" },
+    { "@type": "OpeningHoursSpecification", dayOfWeek: "Monday", opens: "14:00", closes: "17:00" },
+    { "@type": "OpeningHoursSpecification", dayOfWeek: "Tuesday", opens: "00:00", closes: "00:00" },
   ]);
   expect(schema.sameAs).toContain("https://www.instagram.com/test");
   expect(schema.sameAs).not.toContain("");

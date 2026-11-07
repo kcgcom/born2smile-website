@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getOpeningHoursJsonLd } from "@/lib/opening-hours-jsonld";
 import { BASE_URL } from "@/lib/constants";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { getSiteClinic, getSiteHours } from "@/lib/site-config-supabase";
@@ -45,6 +46,8 @@ function getContactJsonLd(
     url: `${BASE_URL}/contact`,
     mainEntity: {
       "@type": "Dentist",
+      "@id": `${BASE_URL}/#organization`,
+      ...getOpeningHoursJsonLd(hours),
       name: clinic.name,
       telephone: clinic.phoneIntl,
       address: {
@@ -59,25 +62,6 @@ function getContactJsonLd(
         telephone: clinic.phoneIntl,
         contactType: "예약 및 상담",
         availableLanguage: "Korean",
-        hoursAvailable: hours.schedule
-          .filter((h) => h.open)
-          .map((h) => {
-            const dayMap: Record<string, string> = {
-              월요일: "Monday",
-              화요일: "Tuesday",
-              수요일: "Wednesday",
-              목요일: "Thursday",
-              금요일: "Friday",
-              토요일: "Saturday",
-            };
-            const [open, close] = h.time.split(" - ");
-            return {
-              "@type": "OpeningHoursSpecification",
-              dayOfWeek: dayMap[h.day],
-              opens: open,
-              closes: close,
-            };
-          }),
       },
     },
   };
