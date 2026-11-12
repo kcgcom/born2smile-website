@@ -4,7 +4,6 @@ import {
   verifyAdminRequest,
   unauthorizedResponse,
 } from "@/app/api/admin/_lib/auth";
-import { createCachedFetcher, CACHE_TTL } from "@/app/api/admin/_lib/cache";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTodayKST } from "@/lib/date";
 
@@ -57,11 +56,6 @@ interface PSIResult {
   coreWebVitals: CWVMetric[];
   overallCategory: string;
   audits: PSIAudit[];
-}
-
-interface PSIResponseData {
-  mobile: PSIResult | null;
-  desktop: PSIResult | null;
 }
 
 const CWV_METRICS = [
@@ -181,82 +175,6 @@ async function fetchPSI(
   }
 }
 
-/**
- * Supabase L2 캐시 + PSI API 호출
- * 일별 캐시 행(`psi-homepage-YYYY-MM-DD`)으로 저장.
- * force=true 시 캐시 무시하고 재호출.
- */
-async function fetchPSIWithCache(
-  force: boolean,
-): Promise<PSIResponseData> {
-  try {
-    const admin = getSupabaseAdmin();
-    const today = getTodayKST();
-    const docId = `psi-homepage-${today}`;
-
-    // force가 아니면 캐시 확인
-    if (!force) {
-      const { data: cached } = await admin
-        .from("api_cache")
-        .select("data")
-        .eq("key", docId)
-        .single();
-
-      if (cached?.data) {
-        const cachedData = cached.data as Record<string, unknown>;
-        if (cachedData.mobile || cachedData.desktop) {
-          return {
-            mobile: (cachedData.mobile as PSIResult) ?? null,
-            desktop: (cachedData.desktop as PSIResult) ?? null,
-          };
-        }
-      }
-    }
-
-    // 캐시 미스 또는 force → PSI API 호출
-    const [mobile, desktop] = await Promise.all([
-      fetchPSI("mobile"),
-      fetchPSI("desktop"),
-    ]);
-
-    if (!mobile && !desktop) {
-      throw new Error("PSI_BOTH_FAILED");
-    }
-
-    const result: PSIResponseData = { mobile, desktop };
-
-    // 응답 전에 저장을 완료해 다음 요청이 같은 PSI 분석을 반복하지 않게 한다.
-    try {
-      const { error } = await admin
-        .from("api_cache")
-        .upsert({ key: docId, data: { mobile, desktop }, fetched_at: new Date().toISOString() });
-      if (error) console.error("PSI cache write error:", error);
-    } catch (error) {
-      console.error("PSI cache write error:", error);
-    }
-
-    return result;
-  } catch (e) {
-    // Supabase 접근 실패 → PSI API 직접 호출로 폴백
-    if (e instanceof Error && e.message === "PSI_BOTH_FAILED") throw e;
-
-    const [mobile, desktop] = await Promise.all([
-      fetchPSI("mobile"),
-      fetchPSI("desktop"),
-    ]);
-    if (!mobile && !desktop) throw new Error("PSI_BOTH_FAILED");
-    return { mobile, desktop };
-  }
-}
-
-const getCachedPSI = createCachedFetcher<PSIResponseData>(
-  "psi-homepage",
-  () => fetchPSIWithCache(false),
-  CACHE_TTL.PSI,
-);
-
-// --- 단일 전략 호출 (strategy 파라미터) ---
-
 interface SinglePSIResponse {
   result: PSIResult;
   stale?: boolean;
@@ -271,14 +189,6 @@ interface PSICacheRow {
 
 function getStrategyCacheKey(date: string, strategy: PSIStrategy) {
   return `psi-homepage-${date}-${strategy}`;
-}
-
-function getCachedStrategyResult(
-  row: PSICacheRow,
-  strategy: PSIStrategy,
-): PSIResult | null {
-  if (row.key.endsWith(`-${strategy}`)) return row.data as PSIResult;
-  return ((row.data as Record<string, unknown> | null)?.[strategy] as PSIResult | undefined) ?? null;
 }
 
 async function saveStrategyCache(
@@ -297,7 +207,7 @@ async function saveStrategyCache(
 }
 
 /**
- * 단일 전략 PSI 호출 (Supabase L2 캐시 + 어제 폴백)
+ * 선택한 측정 환경의 일별 캐시 조회 및 이전 결과 폴백
  * unstable_cache 미사용 — stale 응답이 L1에 캐싱되는 문제 방지
  */
 async function fetchSingleStrategyPSI(
@@ -309,28 +219,19 @@ async function fetchSingleStrategyPSI(
     const today = getTodayKST();
 
     if (!force) {
-      // 최신 전략별 캐시와 기존 통합 캐시를 한 번에 조회한다.
+      // 선택한 환경의 최신 캐시만 조회한다. 통합 캐시는 사용하지 않는다.
       const { data: rows, error } = await admin
         .from("api_cache")
         .select("key, data")
-        .like("key", "psi-homepage-%")
+        .like("key", `psi-homepage-%-${strategy}`)
         .order("key", { ascending: false })
-        .limit(10);
+        .limit(1);
       if (error) throw error;
 
-      const cacheRows = (rows ?? []) as PSICacheRow[];
-      const todayKeys = new Set([
-        getStrategyCacheKey(today, strategy),
-        `psi-homepage-${today}`,
-      ]);
-      const todayRow = cacheRows.find((row) => todayKeys.has(row.key));
-      const todayResult = todayRow ? getCachedStrategyResult(todayRow, strategy) : null;
-      if (todayResult) return { result: todayResult };
-
-      const staleResult = cacheRows
-        .map((row) => getCachedStrategyResult(row, strategy))
-        .find((result): result is PSIResult => result !== null);
-      if (staleResult) {
+      const row = (rows as PSICacheRow[] | null)?.[0];
+      const cached = row?.data as PSIResult | null | undefined;
+      if (cached?.strategy === strategy) {
+        if (row?.key === getStrategyCacheKey(today, strategy)) return { result: cached };
         after(async () => {
           try {
             const fresh = await fetchPSI(strategy);
@@ -339,7 +240,7 @@ async function fetchSingleStrategyPSI(
             console.error(`PSI background refresh error (${strategy}):`, error);
           }
         });
-        return { result: staleResult, stale: true };
+        return { result: cached, stale: true };
       }
     }
 
@@ -370,39 +271,19 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";
-  const strategy = searchParams.get("strategy") as
-    | "mobile"
-    | "desktop"
-    | null;
+  const strategy = searchParams.get("strategy");
+  if (strategy !== "mobile" && strategy !== "desktop") {
+    return NextResponse.json(
+      { error: "INVALID_STRATEGY", message: "측정 환경을 mobile 또는 desktop으로 지정해 주세요." },
+      { status: 400, headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
+    );
+  }
 
   try {
-    // 단일 전략 호출
-    if (strategy === "mobile" || strategy === "desktop") {
-      const response = await fetchSingleStrategyPSI(strategy, force);
-      return NextResponse.json(
-        { data: response },
-        {
-          headers: {
-            "Cache-Control": "private, no-store",
-            Vary: "Authorization",
-          },
-        },
-      );
-    }
-
-    // 하위 호환: 양쪽 모두 호출
-    const data = force
-      ? await fetchPSIWithCache(true)
-      : await getCachedPSI();
-
+    const response = await fetchSingleStrategyPSI(strategy, force);
     return NextResponse.json(
-      { data },
-      {
-        headers: {
-          "Cache-Control": "private, no-store",
-          Vary: "Authorization",
-        },
-      },
+      { data: response },
+      { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
     );
   } catch (error) {
     Sentry.captureException(error);

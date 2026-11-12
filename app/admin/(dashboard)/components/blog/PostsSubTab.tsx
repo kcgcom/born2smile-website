@@ -35,7 +35,7 @@ export function PostsSubTab() {
     refetch: refetchPosts,
   } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const { data: likesData, loading: likesLoading } = useAdminApi<BlogLikesData>("/api/admin/blog-likes");
-  const { data: scheduleData } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
+  const { data: scheduleData, error: scheduleError } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { mutate } = useAdminMutation();
 
   const [publishedSlugs, setPublishedSlugs] = useState<Set<string>>(new Set());
@@ -117,7 +117,8 @@ export function PostsSubTab() {
   };
 
   const handlePublishOpen = (slug: string) => {
-    const recommended = getNextPublishDate({ publishDays: scheduleData?.publishDays, posts, today });
+    const recommended = scheduleError || postsError || !postsData ? "" : getNextPublishDate({ publishDays: scheduleData?.publishDays, posts, today: getTodayKST() });
+    setPublishError(recommended ? null : "발행 일정을 확인할 수 없습니다. 목록을 새로고침하거나 날짜를 직접 선택해 주세요.");
     setPublishingSlug(slug);
     setPublishMode("schedule");
     setPublishDate(recommended);

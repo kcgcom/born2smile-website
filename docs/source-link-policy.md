@@ -146,6 +146,10 @@
 
 ## 현재 코드와의 연결
 
-- 외부 링크 블록 렌더링: [components/blog/BlogPostRenderer.tsx](/home/dev/projects/born2smile-website/components/blog/BlogPostRenderer.tsx)
-- 블로그 스냅샷 데이터: [lib/blog/generated/posts-snapshot.ts](/home/dev/projects/born2smile-website/lib/blog/generated/posts-snapshot.ts)
-- 블로그 작성 가이드: [docs/blog-writing-guide.md](/home/dev/projects/born2smile-website/docs/blog-writing-guide.md)
+- 외부 링크 블록 렌더링: [components/blog/BlogPostRenderer.tsx](../components/blog/BlogPostRenderer.tsx)
+- 블로그 스냅샷 데이터: [lib/blog/generated/posts-snapshot.ts](../lib/blog/generated/posts-snapshot.ts)
+- 블로그 작성 가이드: [docs/blog-writing-guide.md](blog-writing-guide.md)
+
+- 인용 데이터 타입·정규화: [lib/blog/citations.ts](../lib/blog/citations.ts)
+- 인용 UI: [components/blog/BlogCitations.tsx](../components/blog/BlogCitations.tsx)
+- 생성 스냅샷은 Git 제외 대상이며 dev/build에서 생성합니다. 원문 출처나 운영 DB 수정 경로로 취급하지 않습니다.

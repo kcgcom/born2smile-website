@@ -59,10 +59,6 @@ export function getAllSearchAdKeywords(taxonomy: CategoryKeywords[]): string[] {
   )];
 }
 
-export async function getActiveSearchAdSnapshot(): Promise<SearchAdKeywordData[] | null> {
-  return (await getActiveSearchAdSnapshotRecord())?.data ?? null;
-}
-
 export async function getActiveSearchAdSnapshotRecord(): Promise<ActiveSearchAdSnapshot | null> {
   const admin = getSupabaseAdmin();
   const { data: pointer, error: pointerError } = await admin

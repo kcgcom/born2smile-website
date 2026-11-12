@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { getAccessToken } from "@/lib/supabase";
+import { getNextPublishDate } from "@/lib/publish-schedule";
 import { getTodayKST } from "@/lib/date";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 
@@ -18,8 +19,10 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const today = getTodayKST();
+  const recommendationRequest = useRef(0);
+  const modeRef = useRef<PublishMode>("schedule");
 
-  const fetchRecommendedDate = useCallback(async () => {
+  const fetchRecommendedDate = useCallback(async (requestId: number) => {
     try {
       const token = await getAccessToken();
 
@@ -27,59 +30,37 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
       const schedRes = await fetch("/api/admin/site-config/schedule", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const schedJson = schedRes.ok ? await schedRes.json() : null;
-      const days: number[] = schedJson?.data?.publishDays ?? [1, 3, 5];
-
-      // Fetch all posts for scheduled dates
+      if (!schedRes.ok) throw new Error("발행 요일을 불러오지 못했습니다. 창을 닫고 다시 시도해 주세요.");
+      const schedJson = await schedRes.json();
+      const days: number[] = schedJson.data.publishDays;
       const postsRes = await fetch("/api/admin/blog-posts", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const postsJson = postsRes.ok ? await postsRes.json() : null;
-      const posts: { published: boolean; date: string }[] =
-        postsJson?.data ?? postsJson ?? [];
-
-      const todayKST = getTodayKST();
-      const scheduledDates = new Set(
-        posts
-          .filter((p) => p.published && p.date >= todayKST)
-          .map((p) => p.date),
-      );
-
-      // Find next available date
-      const d = new Date();
-      for (let i = 0; i < 90; i++) {
-        const iso = d.toISOString().slice(0, 10);
-        const dow = d.getDay();
-        if (days.includes(dow) && !scheduledDates.has(iso) && iso >= todayKST) {
-          setPublishDate(iso);
-          setScheduledDate(iso);
-          return;
-        }
-        d.setDate(d.getDate() + 1);
-      }
-      // Fallback: tomorrow
-      const fb = new Date();
-      fb.setDate(fb.getDate() + 1);
-      const fbDate = fb.toISOString().slice(0, 10);
-      setPublishDate(fbDate);
-      setScheduledDate(fbDate);
-    } catch {
-      const fb = new Date();
-      fb.setDate(fb.getDate() + 1);
-      const fbDate = fb.toISOString().slice(0, 10);
-      setPublishDate(fbDate);
-      setScheduledDate(fbDate);
+      if (!postsRes.ok) throw new Error("예약된 글을 불러오지 못했습니다. 창을 닫고 다시 시도해 주세요.");
+      const postsJson = await postsRes.json();
+      const recommended = getNextPublishDate({ publishDays: days, posts: postsJson.data, today: getTodayKST() });
+      if (!recommended) throw new Error("추천할 수 있는 발행 날짜가 없습니다. 발행 일정을 확인해 주세요.");
+      if (requestId !== recommendationRequest.current) return;
+      setScheduledDate(recommended);
+      if (modeRef.current === "schedule") setPublishDate(recommended);
+    } catch (error) {
+      if (requestId !== recommendationRequest.current) return;
+      setError(error instanceof Error ? error.message : "발행 일정을 불러오지 못했습니다.");
     }
   }, []);
 
   const open = useCallback((slug: string) => {
     setPublishingSlug(slug);
+    modeRef.current = "schedule";
     setPublishMode("schedule");
+    setPublishDate("");
+    setScheduledDate("");
     setError(null);
-    fetchRecommendedDate();
+    void fetchRecommendedDate(++recommendationRequest.current);
   }, [fetchRecommendedDate]);
 
   const close = useCallback(() => {
+    recommendationRequest.current += 1;
     setPublishingSlug(null);
     setError(null);
   }, []);
@@ -121,7 +102,10 @@ export function usePublishPopup(options?: UsePublishPopupOptions) {
     error,
     today,
     setPublishDate,
-    setPublishMode,
+    setPublishMode: (mode: PublishMode) => {
+      modeRef.current = mode;
+      setPublishMode(mode);
+    },
     open,
     close,
     confirm,

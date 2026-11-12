@@ -34,13 +34,18 @@ export function saveListPosition(postPath: string, count: number) {
 }
 
 export function readListPosition(): ListPosition | null {
-  let pending: unknown;
-  try {
-    pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) ?? "null");
-    sessionStorage.removeItem(PENDING_KEY);
-  } catch {}
   const currentUrl = window.location.pathname + window.location.search;
-  const position = validPosition(pending) ? pending : window.history.state?.[HISTORY_KEY];
+  try {
+    const pending: unknown = JSON.parse(sessionStorage.getItem(PENDING_KEY) ?? "null");
+    if (validPosition(pending) && pending.url === currentUrl) {
+      // 복귀한 history 항목에 먼저 옮긴다. 초기화가 반복되어도 같은 위치를 읽는다.
+      window.history.replaceState({ ...window.history.state, [HISTORY_KEY]: pending }, "");
+      sessionStorage.removeItem(PENDING_KEY);
+      return pending;
+    }
+    sessionStorage.removeItem(PENDING_KEY);
+  } catch { /* Storage may be disabled; restore from this history entry instead. */ }
+  const position = window.history.state?.[HISTORY_KEY];
   return validPosition(position) && position.url === currentUrl ? position : null;
 }
 

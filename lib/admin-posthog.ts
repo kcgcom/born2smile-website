@@ -1,4 +1,3 @@
-import { BASE_URL } from "@/lib/constants";
 
 export const POSTHOG_CTA_EVENTS = [
   "hero_contact_click",
@@ -568,8 +567,4 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
       };
     }),
   };
-}
-
-export function getPostHogPublicUrl(): string {
-  return getPostHogConfig().baseUrl ?? BASE_URL;
 }

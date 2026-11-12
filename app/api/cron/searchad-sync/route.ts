@@ -1,3 +1,4 @@
+import { isValidCronAuthorization } from "@/lib/cron-auth";
 import * as Sentry from "@sentry/nextjs";
 import {
   createSearchAdSyncJob,
@@ -8,7 +9,7 @@ import {
 export const maxDuration = 300;
 
 export async function GET(request: Request) {
-  if (request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isValidCronAuthorization(process.env.CRON_SECRET, request.headers.get("authorization"))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

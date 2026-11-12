@@ -135,20 +135,6 @@ export interface CriterionCoverageResult {
   assessmentVersion: string;
 }
 
-export interface ConceptCoverageResult {
-  topicSpecId: string;
-  conceptId: string;
-  status: ConceptCoverageStatus;
-  coverageScore: number | null;
-  criteria: CriterionCoverageResult[];
-  confidence: AssessmentConfidence;
-  missingCriteria: string[];
-  summary: string;
-  topicSpecVersion: number;
-  contentRevision: string;
-  assessmentVersion: string;
-}
-
 export interface ActionRecommendation {
   actionKey: string;
   topicSpecId: string;

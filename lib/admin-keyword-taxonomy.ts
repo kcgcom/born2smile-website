@@ -123,21 +123,6 @@ export async function getActiveKeywordTaxonomy(): Promise<ActiveKeywordTaxonomy>
   }
 }
 
-export async function activateKeywordTaxonomy(
-  taxonomy: unknown,
-  createdBy: string,
-  summary: string,
-): Promise<string> {
-  const validated = validateKeywordTaxonomy(taxonomy);
-  const { data, error } = await getSupabaseAdmin().rpc("activate_keyword_taxonomy", {
-    p_taxonomy: validated,
-    p_created_by: createdBy,
-    p_change_summary: summary,
-  });
-  if (error) throw error;
-  return data as string;
-}
-
 export async function getKeywordTaxonomyState(): Promise<KeywordTaxonomyState> {
   const active = await getActiveKeywordTaxonomy();
   try {
@@ -203,13 +188,6 @@ async function savePendingKeywordTaxonomy(
   });
   if (error) throw error;
   return data as number;
-}
-
-export async function initializeKeywordTaxonomy(createdBy: string): Promise<ActiveKeywordTaxonomy> {
-  const current = await getActiveKeywordTaxonomy();
-  if (current.source === "supabase") return current;
-  await activateKeywordTaxonomy(CATEGORY_KEYWORDS, createdBy, "코드 택소노미 초기 이관");
-  return getActiveKeywordTaxonomy();
 }
 
 export async function refreshKeywordTaxonomyCandidates(): Promise<number> {

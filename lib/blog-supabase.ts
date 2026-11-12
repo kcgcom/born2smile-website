@@ -275,27 +275,6 @@ export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
     { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
   );
 
-/**
- * All posts regardless of published status or date.
- * For admin dashboard use only. Ordered by date DESC.
- */
-export const getAllPostMetas: () => Promise<
-  (BlogPostMeta & { published: boolean; createdAt?: string })[]
-> = unstable_cache(
-  async (): Promise<(BlogPostMeta & { published: boolean; createdAt?: string })[]> => {
-    const { data, error } = await getSupabaseAdmin()
-      .from(TABLE)
-      .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
-      .order("date", { ascending: false });
-
-    if (error) throw error;
-
-    return (data as DbRow[]).map((row) => rowToMeta(row));
-  },
-  ["blog-posts-admin"],
-  { revalidate: 300, tags: ["blog-posts-admin"] },
-);
-
 export async function getAllPostMetasFresh(): Promise<
   (BlogPostMeta & { published: boolean; createdAt?: string })[]
 > {
@@ -393,20 +372,6 @@ export async function getPostAdminBySlugFresh(slug: string): Promise<BlogPostAdm
 }
 
 /**
- * Slug list for generateStaticParams().
- * Only published posts with date <= today KST.
- * Falls back to snapshot data if Supabase query fails.
- */
-export const getPublishedPostSlugs: () => Promise<string[]> = unstable_cache(
-  async (): Promise<string[]> => {
-    const posts = await getAllPublishedPosts();
-    return posts.map((post) => post.slug);
-  },
-  [`blog-slugs-${DEPLOY_CACHE_SEGMENT}`],
-  { revalidate: CACHE_TTL, tags: ["blog-slugs"] },
-);
-
-/**
  * Related posts for a given category, excluding a specific slug.
  * Only published posts with date <= today KST.
  * Falls back to snapshot data if Supabase query fails.
@@ -483,8 +448,6 @@ export async function createBlogPost(
   if (error) throw error;
 
   safeRevalidateTag(CACHE_TAG);
-  safeRevalidateTag("blog-slugs");
-  safeRevalidateTag("blog-posts-admin");
 }
 
 export type UpdateBlogPostData = Partial<
@@ -567,8 +530,6 @@ export async function updateBlogPost(
 
   safeRevalidateTag(CACHE_TAG);
   safeRevalidateTag(getBlogPostCacheTag(slug));
-  safeRevalidateTag("blog-slugs");
-  safeRevalidateTag("blog-posts-admin");
 }
 
 /**
@@ -584,6 +545,4 @@ export async function deleteBlogPost(slug: string): Promise<void> {
 
   safeRevalidateTag(CACHE_TAG);
   safeRevalidateTag(getBlogPostCacheTag(slug));
-  safeRevalidateTag("blog-slugs");
-  safeRevalidateTag("blog-posts-admin");
 }

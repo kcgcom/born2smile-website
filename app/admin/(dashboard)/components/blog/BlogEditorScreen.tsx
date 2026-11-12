@@ -41,7 +41,7 @@ const EMPTY_CREATE_DRAFT: EditablePost = {
   excerpt: "",
   category: BLOG_CATEGORY_SLUGS[0],
   tags: [],
-  date: new Date().toISOString().slice(0, 10),
+  date: getTodayKST(),
   blocks: [],
   published: false,
 };
@@ -60,10 +60,12 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
 
   const {
     data: scheduleData,
+    error: scheduleError,
   } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
+  const { data: scheduledPosts, error: scheduledPostsError } = useAdminApi<{ published: boolean; date: string }[]>("/api/admin/blog-posts");
   const recommendedPublishDate = useMemo(
-    () => getNextPublishDate({ publishDays: scheduleData?.publishDays, posts: [], today }),
-    [scheduleData?.publishDays, today],
+    () => !scheduledPosts || scheduleError || scheduledPostsError ? "" : getNextPublishDate({ publishDays: scheduleData?.publishDays, posts: scheduledPosts, today }),
+    [scheduleData?.publishDays, scheduledPosts, scheduleError, scheduledPostsError, today],
   );
 
   const {
@@ -152,7 +154,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
 
   const handlePublish = async (data: BlogEditorData) => {
     setSaveNotice(null);
-    setPublishError(null);
+    setPublishError(recommendedPublishDate ? null : "발행 일정을 확인할 수 없습니다. 다시 시도하거나 날짜를 직접 선택해 주세요.");
     setPublishDraft(data);
     setPublishMode("schedule");
     setPublishDate(recommendedPublishDate);

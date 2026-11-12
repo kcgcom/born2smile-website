@@ -129,16 +129,6 @@ export const blogPostUpdateSchema = blogPostBaseSchema
   .partial()
   .omit({ slug: true });
 
-export const adminAiWriteRequestSchema = z.object({
-  messages: z.array(
-    z.object({
-      role: z.enum(["user", "assistant"]),
-      content: z.string().trim().min(1).max(4000),
-    }),
-  ).min(1).max(20),
-  mode: z.enum(["chat", "generate"]),
-});
-
 // ---------------------------------------------------------------------------
 // Site Config Schemas
 // ---------------------------------------------------------------------------

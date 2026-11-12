@@ -42,7 +42,7 @@ TeamCreate(
       agent_file: ".claude/agents/a11y-auditor.md",
       model: "opus",
       prompt: "a11y-check 스킬을 사용해 WCAG 2.1 AA 기준으로 접근성을 점검하라.
-               특히 Header skip link, FaqAccordion ARIA, LikeButton 레이블, contact 폼을 우선 점검.
+               특히 Header skip link, FAQ 페이지의 details/summary 접근성, LikeButton 레이블, contact 링크·지도을 우선 점검.
                _workspace/a11y-report.md에 저장 후 리더에게 SendMessage로 완료 보고하라."
     },
     {

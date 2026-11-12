@@ -1,6 +1,6 @@
+import { isValidCronAuthorization } from "@/lib/cron-auth";
 import * as Sentry from "@sentry/nextjs";
 import {
-  isValidCronAuthorization,
   runIndexingMonitor,
   shouldAlertRunFailures,
 } from "@/lib/admin-indexing-monitor";

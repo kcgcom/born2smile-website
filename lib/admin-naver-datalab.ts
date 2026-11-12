@@ -22,14 +22,6 @@ interface DatalabRequestBody {
   ages?: string[];
 }
 
-const KEYWORD_GROUPS = [
-  { groupName: "임플란트", keywords: ["임플란트", "임플란트 비용", "임플란트 수명", "임플란트 통증"] },
-  { groupName: "치아교정", keywords: ["치아교정", "투명교정", "교정 비용", "치아교정 기간"] },
-  { groupName: "보철·보존", keywords: ["크라운", "충치치료", "신경치료", "레진", "인레이"] },
-  { groupName: "소아치과", keywords: ["소아치과", "어린이 치과", "유치 충치", "아이 치과"] },
-  { groupName: "예방·건강", keywords: ["스케일링", "치석제거", "잇몸질환", "치주염", "구강건강"] },
-];
-
 export interface NaverDatalabData {
   period: { start: string; end: string };
   timeUnit: string;
@@ -147,42 +139,6 @@ async function postDatalabRequest(
   }
 
   throw lastError ?? new Error("네이버 DataLab API 요청에 실패했습니다");
-}
-
-export async function fetchNaverDatalabTrend(period: string): Promise<NaverDatalabData> {
-  const clientId = process.env.NAVER_DATALAB_CLIENT_ID;
-  const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error("NAVER_DATALAB_CLIENT_ID/SECRET 환경변수가 설정되지 않았습니다");
-  }
-
-  const { startDate, endDate, timeUnit } = getPeriodDates(period);
-
-  const res = await postDatalabRequest(
-    {
-      startDate,
-      endDate,
-      timeUnit,
-      keywordGroups: KEYWORD_GROUPS,
-    },
-    clientId,
-    clientSecret,
-  );
-
-  const json = await res.json();
-
-  return {
-    period: { start: startDate, end: endDate },
-    timeUnit,
-    groups: (json.results ?? []).map((r: { title: string; data: Array<{ period: string; ratio: number }> }) => ({
-      title: r.title,
-      data: (r.data ?? []).map((d: { period: string; ratio: number }) => ({
-        period: d.period,
-        ratio: Math.round(d.ratio * 10) / 10,
-      })),
-    })),
-  };
 }
 
 // ---------------------------------------------------------------

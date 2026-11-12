@@ -2,7 +2,7 @@
 
 ## Purpose
 
-이 문서는 서울본치과 웹사이트의 시각 규칙을 고정한다. 목표는 새 페이지나 섹션을 만들 때도 항상 "서울본치과답게" 보이도록 하는 것이다.
+이 문서는 서울본치과 공개 웹사이트의 시각 방향을 정의한다. 실제 토큰 값은 `app/globals.css`, 폰트 설정은 `lib/fonts.ts`가 기준이다. 관리자 UI는 `components/admin/AdminChrome.tsx` 등 기존 공통 컴포넌트를 따른다. 목표는 새 페이지나 섹션을 만들 때도 항상 "서울본치과답게" 보이도록 하는 것이다.
 
 핵심 인상:
 
@@ -154,7 +154,7 @@ className="inline-flex items-center gap-2 rounded-full border border-[var(--colo
 
 ## Motion
 
-- `FadeIn`, `Stagger` 기반의 부드러운 등장 애니메이션을 사용한다.
+- `FadeIn`, `StaggerContainer`, `StaggerItem` 기반의 부드러운 등장 애니메이션을 사용한다.
 - 모션은 안내를 돕는 수준이어야 한다.
 - `prefers-reduced-motion`을 존중한다.
 

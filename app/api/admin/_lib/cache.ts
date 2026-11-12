@@ -25,5 +25,4 @@ export const CACHE_TTL = {
   BLOG_LIKES: 300,         // 5 minutes
   POSTHOG: 300,            // 5 minutes — CTA/전환 모니터링
   SEARCHAD_VOLUME: 86400,  // 24 hours — 검색량은 월간 데이터이므로 하루 1회 갱신 충분
-  PSI: 86400,              // 24 hours — PageSpeed Insights (Supabase L2 캐시 병용)
 } as const;

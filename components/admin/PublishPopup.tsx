@@ -77,7 +77,7 @@ export function PublishPopup({
             <div>
               <span className="text-sm font-medium text-[var(--foreground)]">스케줄에 맞춰 발행</span>
               <p className="text-xs text-[var(--muted)]">
-                {scheduledDate ? `추천 날짜: ${scheduledDate}` : "날짜 계산 중..."}
+                {scheduledDate ? `추천 날짜: ${scheduledDate}` : error ? "추천 날짜를 불러오지 못했습니다" : "날짜 계산 중..."}
               </p>
             </div>
           </label>
@@ -149,7 +149,7 @@ export function PublishPopup({
           </button>
           <button
             onClick={onConfirm}
-            disabled={publishing || !publishDate}
+            disabled={publishing || !publishDate || (publishMode === "schedule" && !scheduledDate)}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors ${
               publishMode === "immediate"
                 ? "bg-green-600 hover:bg-green-700"

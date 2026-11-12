@@ -30,7 +30,7 @@
     "build": "BLOG_SNAPSHOT_REQUIRED=true tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && tsx scripts/generate-keyword-taxonomy-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "vercel --prod",
+    "deploy": "node scripts/forbid-production-deploy.mjs",
     "revalidate-blog": "node scripts/revalidate-blog-post.mjs",
     "submit-indexnow": "node scripts/submit-indexnow.mjs",
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all",

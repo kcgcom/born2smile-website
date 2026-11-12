@@ -148,38 +148,7 @@ export function getDraftRankMap(filteredPosts: AdminBlogPost[], sortKey: SortKey
   return map;
 }
 
-export function getNextPublishDate({
-  publishDays,
-  posts,
-  today,
-}: {
-  publishDays?: number[];
-  posts: AdminBlogPost[];
-  today: string;
-}) {
-  const days = publishDays ?? [1, 3, 5];
-  if (days.length === 0) {
-    const [y, m, d] = today.split("-").map(Number);
-    const tomorrow = new Date(y, m - 1, d + 1);
-    return tomorrow.toISOString().slice(0, 10);
-  }
-
-  const scheduledDates = new Set(posts.filter((post) => post.published && post.date >= today).map((post) => post.date));
-  const [y, m, d] = today.split("-").map(Number);
-  const cursor = new Date(y, m - 1, d);
-
-  for (let i = 0; i < 90; i += 1) {
-    const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
-    const dayOfWeek = cursor.getDay();
-    if (days.includes(dayOfWeek) && !scheduledDates.has(iso)) {
-      return iso;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  const fallback = new Date(y, m - 1, d + 1);
-  return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, "0")}-${String(fallback.getDate()).padStart(2, "0")}`;
-}
+export { getNextPublishDate } from "@/lib/publish-schedule";
 
 export function PostsHero({
   blogStats,

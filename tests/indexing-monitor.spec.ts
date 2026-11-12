@@ -1,3 +1,4 @@
+import { isValidCronAuthorization } from "../lib/cron-auth";
 import { expect, test } from "@playwright/test";
 import {
   classifyIndexStatus,
@@ -5,7 +6,6 @@ import {
   getInspectionErrorStatus,
   getNextInspectionAt,
   getRunCompletionStatus,
-  isValidCronAuthorization,
   nextObservationState,
   selectInspectionBatch,
   shouldAlertRunFailures,

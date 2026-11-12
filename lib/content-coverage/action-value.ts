@@ -122,10 +122,6 @@ export function buildActionValueInputs(snapshot: ActionValueSignalSnapshot, spec
   }));
 }
 
-export async function getCurrentActionValueInputs(specs: CoverageTopicSpec[]): Promise<Record<string, ActionValueInput>> {
-  return buildActionValueInputs(await getCurrentActionValueSignalSnapshot(), specs);
-}
-
 export function conceptNeedScore(spec: CoverageTopicSpec, results: ConceptSatisfactionResult[]): number {
   const statusFactor: Record<ConceptSatisfactionResult["provisionalStatus"], number> = {
     covered: 0,

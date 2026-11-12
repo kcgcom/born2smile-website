@@ -1,3 +1,4 @@
+import { isValidCronAuthorization } from "@/lib/cron-auth";
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { revalidateBlogCaches } from "../../admin/_lib/blog-cache";
@@ -8,8 +9,7 @@ import { getCategorySlug } from "@/lib/blog";
 import { getTodayKST } from "@/lib/date";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isValidCronAuthorization(process.env.CRON_SECRET, request.headers.get("authorization"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

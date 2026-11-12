@@ -1,10 +1,21 @@
 # 콘텐츠 커버리지 검색 평가
 
+> 코드 대조: 2026-11-12. 기준선 측정·설계 이력과 구현된 운영 흐름을 함께 보존한 문서다. 본문의 고정 후보 수·정밀도·공백 분포는 당시 평가 결과이며 현재 Supabase 운영 상태의 실시간 집계가 아니다. 이번 갱신은 코드·저장된 기준선 대조이며 외부 임베딩 평가를 재실행하지 않았다.
+
+## 현재 구현 위치
+
+- 검색: `lib/content-coverage/concept-shadow-retrieval.ts` (`retrieval-v2-shadow.4`)
+- 충족·행동추천: `concept-satisfaction.ts`, `action-recommendation.ts`, `action-value.ts`
+- 운영 라벨·완료 후 재평가: `concept-review-store.ts`, `reevaluation-store.ts`
+- 관리자 경로: `/admin/content/strategy/retrieval-review`, `/admin/content/strategy/concept-review`, `/admin/content/strategy/actions`, `/admin/content/strategy/reevaluation-review`.
+- 실행 명령은 package.json을 기준으로 한다. 평가·보고 스크립트도 DB 조회·외부 API 호출·로컬 캐시 쓰기를 포함할 수 있으며 재평가 워커는 운영 검토 상태를 갱신한다.
+
+
 ## 목적
 
 콘텐츠 커버리지 엔진이 주제와 관련된 근거 문단을 안정적으로 찾는지 평가하기 위한 기준선 문서다. 관리자 화면 `/admin/content/strategy/retrieval-review`에서 고정된 후보 스냅샷을 검토하며, 운영 라벨은 Supabase `api_cache`에 저장한다. 완료된 50건은 `lib/content-coverage/generated/retrieval-review-baseline.json`에 개인정보 없이 고정해 평가 기준으로 사용한다.
 
-현재 후보 스냅샷은 `gemini-embedding-2`, 768차원 임베딩으로 만든 5개 대표 주제별 상위 10건, 총 50건이다. 후보 생성 시점 이후 검색 로직을 바꾸더라도 이 스냅샷은 최초 기준선 비교를 마칠 때까지 유지한다.
+초기 고정 후보 스냅샷은 `gemini-embedding-2`, 768차원 임베딩으로 만든 5개 대표 주제별 상위 10건, 총 50건이다. 후보 생성 시점 이후 검색 로직을 바꾸더라도 이 스냅샷은 최초 기준선 비교를 마칠 때까지 유지한다.
 
 ## 판정 단위와 원칙
 
@@ -116,7 +127,7 @@
 
 ## 재정렬 설계
 
-아래는 현재 기준선을 바꾸지 않은 목표 설계다. 먼저 `retrieval-v2-shadow`로 실행하고 기준선보다 나아진 경우에만 기본 검색으로 승격한다.
+아래는 초기 기준선에서 도출한 재정렬 설계 기록이다. 뒤의 구현·fallback·운영 연결 절에서 실제 반영한 범위를 구분한다.
 
 ### 설계 원칙
 
@@ -129,7 +140,7 @@
 
 ### 1. 개념별 질의 생성
 
-현재 구현은 주제 설명, 사용자 질문, 모든 개념과 기준을 한 질의에 합친다. 긴 질의에서 인접 의미가 섞이지 않도록 다음 세 종류의 표현을 분리한다.
+초기 의미 검색 구현은 주제 설명, 사용자 질문, 모든 개념과 기준을 한 질의에 합쳤다. 긴 질의에서 인접 의미가 섞이지 않도록 다음 세 종류의 표현을 분리한다.
 
 - **주제 정체성 질의**: 어떤 진료·환자·치아 위치·상황에 관한 주제인지 확인
 - **개념 질의**: 개별 `CoverageConcept`의 설명과 해당 기준만 포함
@@ -226,7 +237,7 @@ interface ConceptEvidenceCandidate {
 
 ## 개념별 검색 평가 방식
 
-현재 라벨은 `(주제, 근거 문단)`의 관련성만 평가한다. 개념별 검색을 검증하려면 새 후보에 대해 어떤 개념을 실제로 지원하는지도 기록해야 한다.
+초기 검색 기준선 라벨은 `(주제, 근거 문단)`의 관련성만 평가했다. 개념별 검색을 검증하려면 새 후보에 대해 어떤 개념을 실제로 지원하는지도 기록해야 한다.
 
 - 기존 50건의 주제 라벨은 재정렬 정밀도 비교에 그대로 재사용한다.
 - 동일 `evidenceUnitId`는 기존 라벨과 메모를 자동 연결한다.
@@ -299,7 +310,7 @@ interface ConceptEvidenceCandidate {
 
 ### EvidenceScope 결정
 
-전체 `EvidenceScope`를 콘텐츠 원문에 즉시 수작업으로 부여하지는 않는다. 먼저 검색 산출물에 개념별 순위와 근거 수준을 보존하는 최소 구조를 도입했다. 사전 라벨에서 같은 문단이 `suitability`에는 충분하지만 `options`에는 부분적이고, `urgency`에는 충분하지만 `first-aid`에는 부분적인 사례가 반복됐기 때문이다. 다음 구현은 이 개념별 판정을 충족 모델에 연결하되, `partial`을 완전 충족으로 승격하지 않고 미검색과 실제 공백을 분리하는 것이다.
+전체 `EvidenceScope`를 콘텐츠 원문에 즉시 수작업으로 부여하지는 않는다. 먼저 검색 산출물에 개념별 순위와 근거 수준을 보존하는 최소 구조를 도입했다. 사전 라벨에서 같은 문단이 `suitability`에는 충분하지만 `options`에는 부분적이고, `urgency`에는 충분하지만 `first-aid`에는 부분적인 사례가 반복됐기 때문이다. 후속 구현은 아래 개념 충족 판정 연결 절과 같이 개념별 판정을 충족 모델에 연결하며, `partial`을 완전 충족으로 승격하지 않고 미검색과 실제 공백을 분리하는 것이다.
 
 ### 미검색 개념 fallback 감사
 
@@ -337,7 +348,7 @@ interface ConceptEvidenceCandidate {
 
 임상 검토가 필요한 주제는 잠정 상태를 보존하면서 외부 상태를 `needs-review`로 둔다. 따라서 교정의 치근 흡수는 잠정적으로 `missing`이지만 의료진 확인 전에는 최종 공백으로 실행하지 않는다. 비임상 주제인 민간보험은 `missing`으로 판정할 수 있다.
 
-현재 24개 개념의 잠정 분포는 `covered` 16개, `partial` 6개, `missing` 2개다. 임상 검토 정책을 적용한 외부 상태는 `covered` 8개, `missing` 1개, `needs-review` 15개다.
+기록된 기준선 평가에서 24개 개념의 잠정 분포는 `covered` 16개, `partial` 6개, `missing` 2개다. 임상 검토 정책을 적용한 외부 상태는 `covered` 8개, `missing` 1개, `needs-review` 15개다.
 
 개념 수준 라벨을 기준별 충족으로 확대 해석하지 않는다. 모든 `coverageScore`는 `null`이며, 48개 세부 기준은 `not-evaluated`로 유지한다. 기준별 점수는 이후 구조화된 범위 또는 기준별 사람 판정이 생긴 뒤에만 계산한다.
 
@@ -345,7 +356,7 @@ interface ConceptEvidenceCandidate {
 
 `action-recommendation-v1`은 개념 충족 상태와 주제별 `actionPolicy`를 실행 가능한 작업과 선행 관계로 변환한다. `pnpm report-content-coverage-actions`를 실행하면 `.tmp/content-coverage-actions.json`에 결과를 저장한다. 각 주제 명세는 추론 대신 명시적으로 `primaryTargetPath`를 가진다.
 
-현재 생성되는 추천은 8건이다.
+기록된 기준선 입력에서 생성된 추천은 8건이다.
 
 | 행동 | 건수 | 정책 |
 |---|---:|---|

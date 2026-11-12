@@ -51,7 +51,6 @@ test-results/
 playwright-report/
 
 .omx/
-AGENTS.md
 
 # local tooling scratch
 .tmp/

@@ -4,8 +4,6 @@
 // =============================================================
 
 import crypto from "crypto";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { getTodayKST } from "@/lib/date";
 
 // ── 환경변수 (lazy — 런타임 초기화 타이밍 보장) ─────
 
@@ -33,15 +31,6 @@ export interface SearchAdKeywordData {
   compIdx: string;
   /** true = API가 반환한 연관 키워드, false = 요청한 키워드 */
   isRelated: boolean;
-}
-
-export interface SubGroupVolume {
-  monthlyTotalQcCnt: number;
-  monthlyPcQcCnt: number;
-  monthlyMobileQcCnt: number;
-  isEstimated: boolean;
-  volumeSource: "searchad";
-  keywords: SearchAdKeywordData[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -202,61 +191,4 @@ export async function fetchKeywordSearchVolume(
     }
   }
   return Array.from(deduped.values());
-}
-
-/**
- * Supabase 일별 캐시를 거쳐 키워드 검색량을 조회한다.
- * 오늘 날짜의 캐시 행이 있으면 Supabase에서 반환하고,
- * 없으면 API를 호출한 뒤 Supabase에 저장한다.
- *
- * Supabase(일별 캐시) → API 순으로 fallback.
- * Supabase 접근 실패 시 API 직접 호출로 graceful degradation.
- */
-export async function fetchKeywordSearchVolumeWithCache(
-  keywords: string[],
-): Promise<SearchAdKeywordData[] | null> {
-  if (!isSearchAdConfigured()) return null;
-  if (keywords.length === 0) return [];
-
-  // Supabase L2 캐시 시도 — 실패 시 직접 API 호출로 폴백
-  try {
-    const admin = getSupabaseAdmin();
-    const today = getTodayKST();
-    const docId = `searchad-volume-${today}`;
-
-    // 오늘 캐시 확인
-    const { data: cached } = await admin
-      .from("api_cache")
-      .select("data")
-      .eq("key", docId)
-      .single();
-
-    if (cached?.data?.data && Array.isArray(cached.data.data) && cached.data.data.length > 0) {
-      return cached.data.data as SearchAdKeywordData[];
-    }
-
-    // 캐시 미스 → API 호출
-    const result = await fetchKeywordSearchVolume(keywords);
-
-    // API 결과를 Supabase에 저장 (비동기, 실패해도 무시)
-    if (result && result.length > 0) {
-      admin.from("api_cache").upsert({
-        key: docId,
-        data: {
-          data: result,
-          keywordCount: result.length,
-          requestedKeywords: keywords.length,
-        },
-        fetched_at: new Date().toISOString(),
-      }).then(
-        () => {},
-        () => {},
-      );
-    }
-
-    return result;
-  } catch {
-    // Supabase 접근 실패 → API 직접 호출로 폴백
-    return fetchKeywordSearchVolume(keywords);
-  }
 }

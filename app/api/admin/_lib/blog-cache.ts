@@ -17,9 +17,7 @@ function revalidateCategory(category: BlogCategoryValue) {
 export function revalidateBlogCaches(target: BlogCacheTarget | BlogCacheTarget[] = {}) {
   const targets = Array.isArray(target) ? target : [target];
 
-  revalidateTag("blog-posts-admin", "max");
   revalidateTag("blog-posts", "max");
-  revalidateTag("blog-slugs", "max");
   revalidatePath("/blog");
   revalidatePath("/sitemap.xml");
 

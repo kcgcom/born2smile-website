@@ -435,10 +435,3 @@ export async function computeSemanticClusterGroups(
     return queryGroups.map(() => null);
   }
 }
-
-export async function computeSemanticClusters(
-  queries: QueryRow[],
-): Promise<SemanticCluster[] | null> {
-  const [result] = await computeSemanticClusterGroups([queries]);
-  return result;
-}

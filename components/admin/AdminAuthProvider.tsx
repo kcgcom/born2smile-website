@@ -96,7 +96,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** 관리자 여부만 필요한 컴포넌트용 (AdminFloatingButton, AdminEditButton 등) */
+/** 관리자 여부만 필요한 컴포넌트용 (AdminFloatingButton 등) */
 export function useAdminAuth(): boolean {
   return useContext(AdminAuthContext).isAdmin;
 }

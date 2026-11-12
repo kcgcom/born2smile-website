@@ -22,10 +22,10 @@ WCAG 2.1 AA 기준으로 born2smile 코드베이스의 접근성 문제를 발�
 ```
 components/layout/Header.tsx        # skip link, nav landmark
 components/layout/Footer.tsx        # landmark, link text
-components/ui/FaqAccordion.tsx      # accordion ARIA pattern
+app/faq/page.tsx                    # native details/summary accessibility
 components/blog/TableOfContents.tsx # nav ARIA
 components/blog/LikeButton.tsx      # button labeling
-app/contact/page.tsx                # form accessibility
+app/contact/page.tsx                # contact links and map accessibility
 app/globals.css                     # color tokens for contrast
 ```
 

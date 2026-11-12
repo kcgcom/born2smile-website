@@ -37,6 +37,13 @@ test('직접 진입한 글의 목록 링크는 해당 카테고리로 이동한�
 for (const filter of ['category=health-tips', `tag=${encodeURIComponent('증상가이드')}`]) {
   test(`${filter}: 하단 목록 링크로 검색과 필터를 함께 복원한다`, async ({ page }) => {
     await page.goto(`/blog?${filter}&q=치`);
+    // URL 필터 적용 후의 첫 글을 고른다. SSR 기본 목록은 다른 순서일 수 있다.
+    await expect(page.getByRole('searchbox')).toHaveValue('치');
+    if (filter.startsWith('category')) {
+      await expect(page.getByRole('button', { name: '건강상식', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    } else {
+      await expect(page.getByRole('button', { name: '상세 필터' })).toContainText('증상가이드');
+    }
     const link = page.locator('main article h2 a').first();
     const title = await link.innerText();
     await link.click();

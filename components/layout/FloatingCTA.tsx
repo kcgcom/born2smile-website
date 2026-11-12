@@ -8,6 +8,7 @@ import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
+import type { SiteHours } from "@/lib/site-config-supabase";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
 const NAV_ICONS: Record<string, typeof Home> = {
@@ -18,7 +19,7 @@ const NAV_ICONS: Record<string, typeof Home> = {
   "/contact": Phone,
 };
 
-export function FloatingCTA() {
+export function FloatingCTA({ hours }: { hours: SiteHours }) {
   const pathname = usePathname();
   const showDesktopPhone = !pathname.startsWith("/contact");
 
@@ -100,7 +101,7 @@ export function FloatingCTA() {
           className="fixed bottom-6 right-2 z-40 hidden xl:block"
           data-testid="desktop-floating-cta"
         >
-          <DesktopPhoneButton />
+          <DesktopPhoneButton hours={hours} />
         </div>
       )}
     </>
@@ -113,12 +114,12 @@ const STATUS_STYLES: Record<ClinicStatusInfo["status"], { dot: string; text: str
   closed: { dot: "bg-[var(--muted-light)]", text: "text-[var(--muted)]" },
 };
 
-function DesktopPhoneButton() {
+function DesktopPhoneButton({ hours }: { hours: SiteHours }) {
   const [info, setInfo] = useState<ClinicStatusInfo | null>(null);
 
   useEffect(() => {
     const update = () => {
-      setInfo(getClinicStatus());
+      setInfo(getClinicStatus(hours));
     };
 
     const rafId = window.requestAnimationFrame(update);
@@ -130,7 +131,7 @@ function DesktopPhoneButton() {
       window.cancelAnimationFrame(rafId);
       window.clearInterval(id);
     };
-  }, []);
+  }, [hours]);
 
   const style = info ? STATUS_STYLES[info.status] : STATUS_STYLES.closed;
 

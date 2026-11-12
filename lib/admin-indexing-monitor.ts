@@ -225,13 +225,6 @@ export function shouldAlertRunFailures(succeeded: number, failed: number): boole
   return total > 0 && failed / total >= 0.5;
 }
 
-export function isValidCronAuthorization(
-  cronSecret: string | undefined,
-  authorization: string | null,
-): boolean {
-  return Boolean(cronSecret) && authorization === `Bearer ${cronSecret}`;
-}
-
 /**
  * 실패/변경 확인은 1일, 주의 상태는 7일, 안정적인 색인은 30일 뒤에 재검사한다.
  * 일일 검사량은 사이트맵 크기에 맞춰 조정해 30일 순환 주기를 목표로 한다.

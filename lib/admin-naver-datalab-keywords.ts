@@ -27,10 +27,6 @@ export function getBlogCategoryForKeywordTopic(category: KeywordCategorySlug, su
   return category;
 }
 
-export function isKeywordCategorySlug(value: string): value is KeywordCategorySlug {
-  return value in KEYWORD_CATEGORY_LABELS;
-}
-
 export function getKeywordCategoryLabel(category: KeywordCategorySlug): KeywordCategoryLabel {
   return KEYWORD_CATEGORY_LABELS[category];
 }
