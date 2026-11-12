@@ -6,6 +6,7 @@ import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
 import { getAdminPreviewUrl, getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 import { StatCard } from "../StatCard";
 import { calcDraftRecommendationOrder, HeartIcon } from "./blog-helpers";
 import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
@@ -63,6 +64,7 @@ interface PostListItemProps {
   editingDateSlug: string | null;
   editingDateValue: string;
   rescheduling: boolean;
+  rescheduleError: string | null;
   onToggleExpanded: (slug: string) => void;
   onEdit: (post: AdminBlogPost) => void;
   onDelete: (slug: string) => void;
@@ -365,6 +367,7 @@ export function PostListItem({
   editingDateSlug,
   editingDateValue,
   rescheduling,
+  rescheduleError,
   onToggleExpanded,
   onEdit,
   onDelete,
@@ -484,9 +487,17 @@ export function PostListItem({
                   type="date"
                   value={editingDateValue}
                   min={today}
+                  disabled={rescheduling}
+                  aria-label={`${post.title} 발행일`}
+                  aria-invalid={Boolean(rescheduleError)}
+                  aria-describedby={rescheduleError ? `reschedule-error-${post.slug}` : undefined}
                   onChange={(event) => onEditingDateValueChange(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") onReschedule(post.slug, editingDateValue);
+                    if (rescheduling) return;
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      onReschedule(post.slug, editingDateValue);
+                    }
                     if (event.key === "Escape") onCancelEditingDate();
                   }}
                   autoFocus
@@ -494,23 +505,30 @@ export function PostListItem({
                 />
                 <button
                   onClick={() => onReschedule(post.slug, editingDateValue)}
-                  disabled={rescheduling}
+                  disabled={rescheduling || !editingDateValue}
                   className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
                 >
-                  저장
+                  {rescheduling ? "저장 중..." : "저장"}
                 </button>
                 <button
                   onClick={onCancelEditingDate}
+                  disabled={rescheduling}
                   className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
                 >
                   취소
                 </button>
+                {rescheduleError && (
+                  <div id={`reschedule-error-${post.slug}`} className="w-full">
+                    <AdminNotice tone="error">발행일 변경 실패: {rescheduleError}</AdminNotice>
+                  </div>
+                )}
               </>
             ) : (
               <>
                 {dDay !== null && (
                   <button
                     onClick={() => onStartEditingDate(post)}
+                    disabled={rescheduling}
                     className="rounded px-2 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-50"
                   >
                     발행일 변경

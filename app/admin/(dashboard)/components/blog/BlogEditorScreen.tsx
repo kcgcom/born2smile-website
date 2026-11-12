@@ -53,7 +53,10 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   const { mutate } = useAdminMutation<{ slug: string }>();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
-  const [publishDraft, setPublishDraft] = useState<BlogEditorData | null>(null);
+  const [publishDraft, setPublishDraft] = useState<{
+    data: BlogEditorData;
+    onPublished: (saved: BlogEditorData) => void;
+  } | null>(null);
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
   const [publishing, setPublishing] = useState(false);
@@ -152,10 +155,13 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     return { error: saveError };
   };
 
-  const handlePublish = async (data: BlogEditorData) => {
+  const handlePublish = async (
+    data: BlogEditorData,
+    onPublished: (saved: BlogEditorData) => void,
+  ) => {
     setSaveNotice(null);
     setPublishError(recommendedPublishDate ? null : "발행 일정을 확인할 수 없습니다. 다시 시도하거나 날짜를 직접 선택해 주세요.");
-    setPublishDraft(data);
+    setPublishDraft({ data, onPublished });
     setPublishMode("schedule");
     setPublishDate(recommendedPublishDate);
     return { error: null };
@@ -168,12 +174,12 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     setPublishError(null);
 
     const payload = {
-      ...publishDraft,
+      ...publishDraft.data,
       published: true,
       date: publishDate,
     };
 
-    const targetSlug = slug ?? publishDraft.slug;
+    const targetSlug = slug ?? publishDraft.data.slug;
     const method = mode === "edit" ? "PUT" : "POST";
     const endpoint = mode === "edit" && targetSlug
       ? `/api/admin/blog-posts/${targetSlug}`
@@ -187,6 +193,9 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
       return;
     }
 
+    // The mutation response only contains the slug. The accepted payload is the
+    // saved editor snapshot; notify the form only after the write succeeds.
+    publishDraft.onPublished(payload);
     window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
     setPublishDraft(null);
     setSaveNotice(publishDate <= today ? "포스트를 발행했습니다." : `포스트 발행을 예약했습니다. (${publishDate})`);

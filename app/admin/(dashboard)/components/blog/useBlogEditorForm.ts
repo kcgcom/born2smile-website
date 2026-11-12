@@ -6,6 +6,7 @@ import type { BlogBlock, BlogCategorySlug, BlogTag } from "@/lib/blog/types";
 import { normalizeBlogCategory } from "@/lib/blog";
 import { MAX_BLOG_BLOCKS, normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { getAccessToken } from "@/lib/supabase";
+import { useEditorRecovery } from "./useEditorRecovery";
 import { emptyBlock } from "./block-editors";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
 import { duplicateBlogBlockAt, insertBlogBlocks, replaceBlogBlock } from "@/lib/blog/block-editing";
@@ -40,7 +41,10 @@ interface UseBlogEditorFormOptions {
     published?: boolean;
   };
   onSave: (data: BlogEditorData) => Promise<{ error: string | null }>;
-  onPublish?: (data: BlogEditorData) => Promise<{ error: string | null }>;
+  onPublish?: (
+    data: BlogEditorData,
+    onPublished: (saved: BlogEditorData) => void,
+  ) => Promise<{ error: string | null }>;
 }
 
 // -------------------------------------------------------------
@@ -178,7 +182,10 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     published: initialData?.published ?? false,
   });
 
+  const recovery = useEditorRecovery(form, setForm, mode === "create" ? "new" : initialData?.slug ?? "edit");
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [validationAttempt, setValidationAttempt] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [fetchingContent, setFetchingContent] = useState(false);
@@ -305,6 +312,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     const errors = validate(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setValidationAttempt((attempt) => attempt + 1);
       return;
     }
     setSaving(true);
@@ -313,6 +321,7 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     const { error } = await onSave(payload);
     setSaving(false);
     if (error) setSaveError(error);
+    else recovery.markSaved(form);
   };
 
   const handlePublish = async () => {
@@ -320,12 +329,20 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
     const errors = validate(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setValidationAttempt((attempt) => attempt + 1);
       return;
     }
     setPublishing(true);
     setSaveError(null);
     const payload = { ...form, blocks: normalizeBlogBlocks(form.blocks) };
-    const { error } = await onPublish(payload);
+    const { error } = await onPublish(payload, (saved) => {
+      const publication = { published: saved.published, date: saved.date, slug: saved.slug };
+      // Preserve any edits made after opening the publish dialog. Only the
+      // submitted snapshot is clean; later edits must remain unsaved.
+      setForm((current) => ({ ...current, ...publication }));
+      recovery.markSaved({ ...form, ...publication });
+      setSaveError(null);
+    });
     setPublishing(false);
     if (error) setSaveError(error);
   };
@@ -333,8 +350,10 @@ export function useBlogEditorForm({ mode, initialData, onSave, onPublish }: UseB
   const categoryOptions = BLOG_CATEGORY_SLUGS;
 
   return {
+    ...recovery,
     form,
     fieldErrors,
+    validationAttempt,
     saveError,
     saving,
     fetchingContent,

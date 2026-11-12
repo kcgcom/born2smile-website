@@ -9,7 +9,7 @@ function cx(...values: Array<string | false | null | undefined>) {
 }
 
 type SurfaceTone = "dark" | "success" | "white";
-type PillTone = "amber" | "sky" | "slate" | "warning" | "white";
+type PillTone = "amber" | "sky" | "slate" | "warning" | "success" | "white";
 type ActionTone = "ghost" | "primary" | "dark";
 
 const surfaceToneClasses: Record<SurfaceTone, string> = {
@@ -22,6 +22,7 @@ const pillToneClasses: Record<PillTone, string> = {
   amber: "border-amber-300/25 bg-amber-400/10 text-amber-100",
   sky: "border-sky-300/25 bg-sky-400/10 text-sky-100",
   slate: "border-white/10 bg-white/6 text-slate-200",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
   white: "border-slate-900/10 bg-slate-900/5 text-slate-700",
 };

@@ -54,6 +54,7 @@ export function PostsSubTab() {
   const [editingDateSlug, setEditingDateSlug] = useState<string | null>(null);
   const [editingDateValue, setEditingDateValue] = useState("");
   const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
 
@@ -141,12 +142,17 @@ export function PostsSubTab() {
   };
 
   const handleReschedule = async (slug: string, newDate: string) => {
-    if (!newDate) return;
+    if (!newDate || rescheduling) return;
+    setRescheduleError(null);
     setRescheduling(true);
     const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "PUT", { date: newDate });
     setRescheduling(false);
+    if (error) {
+      setRescheduleError(error);
+      return;
+    }
     setEditingDateSlug(null);
-    if (!error) refetchPosts();
+    refetchPosts();
   };
 
   const handleRefreshCache = async () => {
@@ -217,17 +223,27 @@ export function PostsSubTab() {
                     editingDateSlug={editingDateSlug}
                     editingDateValue={editingDateValue}
                     rescheduling={rescheduling}
+                    rescheduleError={rescheduleError}
                     onToggleExpanded={(slug) => setExpandedSlug((current) => (current === slug ? null : slug))}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onPublish={handlePublishOpen}
                     onStartEditingDate={(targetPost) => {
+                      if (rescheduling) return;
+                      setRescheduleError(null);
                       setEditingDateSlug(targetPost.slug);
                       setEditingDateValue(targetPost.date);
                     }}
-                    onEditingDateValueChange={setEditingDateValue}
+                    onEditingDateValueChange={(value) => {
+                      setRescheduleError(null);
+                      setEditingDateValue(value);
+                    }}
                     onReschedule={handleReschedule}
-                    onCancelEditingDate={() => setEditingDateSlug(null)}
+                    onCancelEditingDate={() => {
+                      if (rescheduling) return;
+                      setRescheduleError(null);
+                      setEditingDateSlug(null);
+                    }}
                   />
                 ))}
               </ul>

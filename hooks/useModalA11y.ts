@@ -9,11 +9,12 @@ const FOCUSABLE_SELECTOR =
  * Provides Escape-to-close and focus trap for modal/dialog elements.
  * Returns a ref to attach to the modal container.
  */
-export function useModalA11y(onClose: () => void) {
+export function useModalA11y(onClose: () => void, enabled = true) {
   const ref = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
 
     // Focus the first focusable element inside the modal
@@ -26,9 +27,10 @@ export function useModalA11y(onClose: () => void) {
     return () => {
       previouslyFocused.current?.focus();
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
@@ -64,7 +66,7 @@ export function useModalA11y(onClose: () => void) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [enabled, onClose]);
 
   return ref;
 }

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { PencilLine, X } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { DraftRecoveryNotice, type DraftRecoveryState } from "@/components/admin/DraftRecoveryNotice";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { SaveButton } from "./SaveButton";
 
@@ -14,6 +15,7 @@ export function SectionShell({
   saving,
   saved,
   dirty = false,
+  recovery,
   onSave,
   saveError,
   defaultOpen = false,
@@ -26,6 +28,7 @@ export function SectionShell({
   saving: boolean;
   saved: boolean;
   dirty?: boolean;
+  recovery?: DraftRecoveryState;
   onSave: () => void;
   saveError: string | null;
   defaultOpen?: boolean;
@@ -46,8 +49,8 @@ export function SectionShell({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-bold text-[var(--foreground)]">{title}</h3>
-            <AdminPill tone={saved ? "sky" : dirty ? "amber" : "white"} className="text-[10px]">
-              {saved ? "저장 완료" : dirty ? "수정됨" : "편집 가능"}
+            <AdminPill tone={dirty ? "warning" : saved ? "success" : "white"} className="text-xs">
+              {dirty ? "수정됨" : saved ? "저장 완료" : "편집 가능"}
             </AdminPill>
           </div>
           <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
@@ -64,9 +67,10 @@ export function SectionShell({
             {open ? <X className="h-3.5 w-3.5" /> : <PencilLine className="h-3.5 w-3.5" />}
             {open ? "편집 닫기" : "편집"}
           </AdminActionButton>
-          {open && <SaveButton saving={saving} saved={saved} disabled={!dirty && !saving} onClick={onSave} />}
+          {open && <SaveButton saving={saving} saved={saved} disabled={recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />}
         </div>
       </div>
+      {recovery && (recovery.hasConflict || recovery.recoveryNotice) && <div className="mb-4"><DraftRecoveryNotice recovery={recovery} /></div>}
       {saveError && (
         <AdminNotice tone="error" className="mb-4">
           저장 실패: {saveError}
@@ -75,7 +79,7 @@ export function SectionShell({
       <div className="rounded-xl bg-[var(--background)]/72 px-4 py-4">
         {preview}
       </div>
-      {open ? <div className="mt-4">{children}</div> : null}
+      {open ? <fieldset disabled={recovery?.hasConflict} className="mt-4 min-w-0">{children}</fieldset> : null}
     </AdminSurface>
   );
 }

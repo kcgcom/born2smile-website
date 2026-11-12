@@ -41,6 +41,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
         <div className="flex shrink-0 items-center md:justify-end">
           <AdminActionButton
             onClick={onLogout}
+            data-confirm-navigation
             tone="ghost"
             className="rounded-full border-white/10 bg-white/6 px-4 text-white"
           >
