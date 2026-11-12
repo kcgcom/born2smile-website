@@ -41,7 +41,7 @@ pnpm dev  # http://localhost:3000
 | `pnpm submit-indexnow` | 오늘 발행분 IndexNow 제출 |
 | `pnpm submit-indexnow:all` | 전체 URL IndexNow 제출 |
 
-> `pnpm deploy`는 배포 차단 스크립트에 연결되어 오류로 종료합니다. `vercel --prod`로 우회하지 않습니다. 프로덕션 배포는 승인된 `main` push로만 진행합니다.
+> `pnpm deploy`는 안내 후 종료 코드 1로 끝나며 실제 배포하지 않습니다. 차단 동작 검증에는 사용할 수 있습니다. 운영 배포 승인과 허용 경로는 [AGENTS.md](AGENTS.md#배포와-데이터)를 따릅니다.
 
 ## 프로젝트 구조
 
@@ -78,12 +78,14 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 
 ## 배포
 
-Vercel로 자동 배포됩니다.
+GitHub → Vercel 연동을 사용합니다. 로컬 커밋 자체는 원격 배포를 시작하지 않습니다.
 
-1. GitHub PR → Vercel Preview 배포
-2. `main` push → Vercel Production 배포
+1. 브랜치 push·PR → Vercel 설정에 따라 Preview 배포 생성 가능
+2. 승인된 `main` push 또는 merge → Vercel Production 배포
 3. Vercel Cron: KST 00:05 블로그 캐시 재검증, 00:20 색인 상태 검사, 00:35 검색 데이터 수집 (`vercel.json`)
 4. 블로그 cron은 당일 발행 글을 조회해 캐시를 재검증하고, `INDEXNOW_KEY`가 설정되면 URL을 제출합니다. 새 배포를 생성하거나 글의 published 값을 바꾸는 작업은 아닙니다.
+
+`pnpm deploy` 차단은 로컬 npm 스크립트의 실수 방지 장치입니다. 직접 Vercel CLI나 대시보드 실행 권한까지 제한하지 않으므로, 이를 이용해 Git 배포 정책을 우회하지 않습니다.
 
 개선 항목은 [lib/admin-data.ts](lib/admin-data.ts)의 `IMPROVEMENT_ITEMS`와 `/admin/system/devtools/project`에서 관리합니다. 별도 TODO 목록은 중복 유지하지 않습니다.
 

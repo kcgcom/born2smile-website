@@ -1,6 +1,6 @@
 const lines = [
-  "이 저장소에서는 CLI를 통한 프로덕션 배포를 차단합니다.",
-  "프로덕션은 승인된 main push에 따른 GitHub → Vercel 자동 배포만 사용하세요.",
+  "pnpm deploy는 차단되어 있으며 실제 배포를 실행하지 않습니다.",
+  "운영 배포는 승인된 main 반영(push 또는 merge)에 따른 GitHub → Vercel 자동 배포만 사용하세요.",
 ];
 
 for (const line of lines) {

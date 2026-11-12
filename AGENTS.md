@@ -37,8 +37,11 @@
 
 ## 배포와 데이터
 
-- `pnpm deploy`, `vercel --prod`는 금지한다. production은 승인된 `main` push에 따른 GitHub → Vercel 자동 배포만 사용한다.
-- 로컬 검증 완료가 push·PR·merge·배포 허가를 뜻하지 않는다. 해당 작업을 요청받았다면 기존 승인 범위에서 진행한다.
+- 운영 배포는 승인된 `main` 반영(push 또는 merge)에 따른 GitHub → Vercel 자동 배포만 사용한다. `main` 반영 요청은 운영 배포를 시작할 수 있는 작업으로 취급한다.
+- `pnpm deploy`는 실제 배포 없이 안내를 출력하고 종료 코드 1로 끝나는 차단 명령이다. 이 명령이나 `node scripts/forbid-production-deploy.mjs`로 차단 동작을 검증하는 것은 허용한다.
+- 이 스크립트가 기술적으로 차단하는 범위는 `pnpm deploy`뿐이다. 직접 `vercel --prod` 실행이나 대시보드 수동 운영 배포로 Git 경로를 우회하지 않는다. Vercel 계정 권한까지 제한하는 장치는 아니다.
+- 로컬 검증·커밋 요청은 push·PR·merge·운영 배포 승인을 뜻하지 않는다. 사용자가 해당 작업을 명시적으로 요청했다면 기존 승인 범위에서 진행하며 같은 승인을 반복 확인하지 않는다.
+- 승인된 브랜치 push·PR 생성에는 Git 연동에 따른 Preview 배포가 포함될 수 있다. Preview 생성 조건은 Vercel 프로젝트 설정을 확인하며, Preview 승인을 `main` 반영이나 운영 배포 승인으로 확대하지 않는다.
 - DB 마이그레이션 작성과 운영 DB 적용은 별개다. 운영 적용은 요청 범위에 포함된 경우에만 수행한다.
 - `.env.local`, 토큰, service-role 키, 환자·관리자 개인정보를 출력하거나 커밋하지 않는다. 환경변수 문서는 `.env.example`와 `docs/environment-variables.md`를 참고한다.
 - 커밋을 요청받으면 한국어 conventional commit 메시지를 사용한다 (`feat:`, `fix:`, `docs:` 등).
