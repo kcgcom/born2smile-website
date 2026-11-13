@@ -168,7 +168,24 @@ export function IndexingStatusTab() {
               </label>
             </div>
 
-            <div className="mt-5 overflow-x-auto">
+            <p role="status" className="mt-4 text-sm text-slate-600">{filteredItems.length}개 표시</p>
+            <ul className="mt-4 space-y-3 md:hidden" aria-label="색인 URL 요약">
+              {filteredItems.map(item => {
+                const copy = STATUS_COPY[effectiveStatus(item)];
+                return <li key={item.url} className="rounded-xl border border-slate-200 p-3">
+                  <a href={item.url} target="_blank" rel="noreferrer" className="block break-all text-sm font-semibold text-blue-800 underline">{item.path}<span className="sr-only"> (새 창)</span></a>
+                  <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${copy.className}`}>{copy.label}</span>
+                  {item.canonicalMismatch && <p className="mt-2 text-sm text-red-800">Google canonical 불일치</p>}
+                  {item.pendingCount > 0 && <p className="mt-2 text-sm text-blue-800">상태 변경 확인 중</p>}
+                  <dl className="mt-2 space-y-2 text-sm text-slate-700">
+                    <div><dt className="font-medium">세부 사유</dt><dd className="break-words">{item.error ?? item.coverageState ?? "—"}</dd></div>
+                    <div><dt className="font-medium">마지막 크롤링</dt><dd>{formatDate(item.lastCrawlTime)}</dd></div>
+                    <div><dt className="font-medium">검사 시각</dt><dd>{formatDate(item.inspectedAt)}</dd></div>
+                  </dl>
+                </li>;
+              })}
+            </ul>
+            <div className="mt-5 hidden overflow-x-auto md:block">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -205,10 +222,11 @@ export function IndexingStatusTab() {
                   })}
                 </tbody>
               </table>
-              {filteredItems.length === 0 && (
-                <p className="py-12 text-center text-sm text-[var(--muted)]">조건에 맞는 URL이 없습니다.</p>
-              )}
             </div>
+            {filteredItems.length === 0 && <div className="py-8 text-center text-sm text-slate-700">
+              <p>조건에 맞는 URL이 없습니다.</p>
+              <button type="button" onClick={() => { setQuery(""); setFilter("all"); }} className="mt-3 min-h-11 rounded-lg border border-slate-300 px-3 font-medium">전체 URL 보기</button>
+            </div>}
           </AdminSurface>
 
           {data.events.length > 0 && (

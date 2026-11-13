@@ -22,6 +22,7 @@ type BlogQueryRow = {
 
 type BlogSearchConsoleSectionProps = {
   data: SearchConsoleData;
+  titleMap: Map<string, string>;
   onEditBlog: (slug: string) => void;
   onCreatePost: (category?: string | null) => void;
 };
@@ -33,6 +34,7 @@ function getBlogPageLabel(page: string) {
 
 export function BlogSearchConsoleSection({
   data,
+  titleMap,
   onEditBlog,
   onCreatePost,
 }: BlogSearchConsoleSectionProps) {
@@ -99,7 +101,7 @@ export function BlogSearchConsoleSection({
             블로그 글과 유입 키워드를 개별적으로 확인합니다.
           </h3>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            블로그 전용 페이지�� 키워드를 나눠서 검색 성과를 분석합니다.
+            블로그 전용 페이지와 키워드를 나눠서 검색 성과를 분석합니다.
           </p>
         </div>
 
@@ -133,7 +135,7 @@ export function BlogSearchConsoleSection({
                       }`}
                       title={page}
                     >
-                      {slug ?? page}
+                      {titleMap.get(slug ?? "") ?? slug ?? page}
                     </button>
                     <p className="mt-1 truncate text-xs text-[var(--muted)]">{page}</p>
                   </div>
@@ -224,7 +226,7 @@ export function BlogSearchConsoleSection({
                         {query}
                       </button>
                       <p className="mt-1 truncate text-xs text-[var(--muted)]">
-                        연결 글 {getBlogPageLabel(representativePage)}
+                        연결 글 {titleMap.get(getEditableBlogSlug(representativePage) ?? "") ?? getBlogPageLabel(representativePage)}
                       </p>
                     </div>
                   );

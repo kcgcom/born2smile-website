@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { DataFreshness } from "./DataFreshness";
 import { MetricCard } from "./MetricCard";
 import { PeriodSelector } from "./PeriodSelector";
 import { AdminErrorState } from "./AdminErrorState";
@@ -32,6 +33,12 @@ export function TrafficTab() {
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
 
   const td = useTrafficData(period);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectView = (next: TrafficView) => {
+    setView(next);
+    setSelectedSource(null);
+    setSelectedTopPage(null);
+  };
 
   const activeSource = selectedSource && td.sourceDetails[selectedSource]
     ? selectedSource
@@ -64,34 +71,36 @@ export function TrafficTab() {
             setSelectedTopPage(null);
           }}
         />
-        {td.data?.period && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            집계 기간: {td.data.period.start} ~ {td.data.period.end}
-          </span>
-        )}
-        {td.data?.dataAsOf && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            <span aria-hidden="true">ⓘ</span> 데이터 기준: {td.data.dataAsOf} (어제 기준)
-          </span>
-        )}
         <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
           탭별 데이터 지연 기준이 달라 검색 성과 탭과 날짜 범위가 완전히 같지 않을 수 있습니다.
         </span>
       </div>
 
-      <div role="tablist" className="flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
-        {TRAFFIC_VIEWS.map((item) => (
+      <DataFreshness dataAsOf={td.data?.dataAsOf} period={td.data?.period} comparePeriod={td.data?.comparePeriod} updatedAt={td.updatedAt} isValidating={td.isValidating} onRefresh={td.refetch} />
+
+      <div aria-label="트래픽 보기" role="tablist" className="flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
+        {TRAFFIC_VIEWS.map((item, index) => (
           <button
             key={item.value}
             type="button"
             role="tab"
+            id={`traffic-tab-${item.value}`}
+            aria-controls={`traffic-panel-${item.value}`}
+            tabIndex={view === item.value ? 0 : -1}
+            ref={(node) => { tabRefs.current[index] = node; }}
+            onKeyDown={(event) => {
+              const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+              if (!keys.includes(event.key)) return;
+              event.preventDefault();
+              const next = event.key === "Home" ? 0 : event.key === "End" ? TRAFFIC_VIEWS.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + TRAFFIC_VIEWS.length) % TRAFFIC_VIEWS.length;
+              selectView(TRAFFIC_VIEWS[next].value);
+              tabRefs.current[next]?.focus();
+            }}
             aria-selected={view === item.value}
             onClick={() => {
-              setView(item.value);
-              setSelectedSource(null);
-              setSelectedTopPage(null);
+              selectView(item.value);
             }}
-            className={`rounded-lg px-4 py-1.5 text-sm transition-all ${
+            className={`min-h-11 rounded-lg px-4 py-1.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-blue-700 ${
               view === item.value
                 ? "bg-[var(--surface)] font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -102,6 +111,7 @@ export function TrafficTab() {
         ))}
       </div>
 
+      <div role="tabpanel" id={`traffic-panel-${view}`} aria-labelledby={`traffic-tab-${view}`} tabIndex={0} className="space-y-6 focus-visible:outline-2 focus-visible:outline-blue-700">
       {/* Loading */}
       {td.loading && <AdminLoadingSkeleton variant="full" />}
 
@@ -219,6 +229,9 @@ export function TrafficTab() {
           )}
         </>
       )}
+
+      </div>
+      <div role="tabpanel" id={`traffic-panel-${view === "overall" ? "blog" : "overall"}`} aria-labelledby={`traffic-tab-${view === "overall" ? "blog" : "overall"}`} hidden />
 
       {view === "overall" && activeSource && activeSourceDetail && (
         <SourceDetailModal

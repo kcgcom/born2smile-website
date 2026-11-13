@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import useSWR, { preload, mutate as globalMutate } from "swr";
 import { getAccessToken } from "@/lib/supabase";
 
@@ -11,6 +11,7 @@ import { getAccessToken } from "@/lib/supabase";
 async function adminFetcher<T>(endpoint: string): Promise<T> {
   const token = await getAccessToken();
   const res = await fetch(endpoint, {
+    cache: "no-store",
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
@@ -22,7 +23,7 @@ async function adminFetcher<T>(endpoint: string): Promise<T> {
   return ("data" in json ? json.data : json) as T;
 }
 
-// 느린 엔드포인트 — sessionStorage 캐시 + 긴 deduping으로 재방문 즉시 표시
+// 느린 엔드포인트 — 짧은 세션 캐시를 먼저 보여주고 최신 응답 확인
 const SLOW_ENDPOINTS = [
   "/api/dev/pagespeed",
   "/api/admin/naver-datalab/trend-summary",
@@ -39,22 +40,32 @@ function isSlowEndpoint(endpoint: string): boolean {
   return SLOW_ENDPOINTS.some((p) => endpoint.startsWith(p));
 }
 
+function needsFreshAnalytics(endpoint: string): boolean {
+  return ["/api/admin/analytics", "/api/admin/blog-analytics", "/api/admin/indexing-status"].some(path => endpoint.startsWith(path));
+}
+
 function shouldKeepPreviousData(endpoint: string): boolean {
-  return isSlowEndpoint(endpoint) || KEEP_PREVIOUS_ENDPOINTS.some((path) => endpoint.startsWith(path));
+  return (isSlowEndpoint(endpoint) && !needsFreshAnalytics(endpoint))
+    || KEEP_PREVIOUS_ENDPOINTS.some((path) => endpoint.startsWith(path));
 }
 
 // -------------------------------------------------------------
-// sessionStorage 캐시 — 새로고침 후에도 슬로우 엔드포인트 즉시 표시
+// sessionStorage 캐시 — 유효 시간과 KST 날짜를 확인한 응답만 재사용
 // -------------------------------------------------------------
 
-const SESSION_CACHE_PREFIX = "swr:";
+const SESSION_CACHE_PREFIX = "swr:v2:";
+const SESSION_CACHE_TTL = 5 * 60 * 1000;
 
-function getSessionData<T>(endpoint: string): T | undefined {
+function getSessionData<T>(endpoint: string): { data: T; savedAt: number } | undefined {
   if (typeof window === "undefined") return undefined;
   try {
     const raw = sessionStorage.getItem(SESSION_CACHE_PREFIX + endpoint);
     if (!raw) return undefined;
-    return JSON.parse(raw) as T;
+    const entry = JSON.parse(raw) as { data: T; savedAt: number };
+    const age = Date.now() - entry.savedAt;
+    const kstDay = (time: number) => new Date(time + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (!Number.isFinite(entry.savedAt) || age < 0 || age > (needsFreshAnalytics(endpoint) ? SESSION_CACHE_TTL : 6 * 60 * 60 * 1000) || kstDay(entry.savedAt) !== kstDay(Date.now())) return undefined;
+    return entry;
   } catch {
     return undefined;
   }
@@ -62,7 +73,7 @@ function getSessionData<T>(endpoint: string): T | undefined {
 
 function setSessionData(endpoint: string, data: unknown) {
   try {
-    sessionStorage.setItem(SESSION_CACHE_PREFIX + endpoint, JSON.stringify(data));
+    sessionStorage.setItem(SESSION_CACHE_PREFIX + endpoint, JSON.stringify({ data, savedAt: Date.now() }));
   } catch {
     // 용량 초과 시 무시
   }
@@ -76,18 +87,23 @@ function setSessionData(endpoint: string, data: unknown) {
 export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   const slow = isSlowEndpoint(endpoint);
   const keepPrevious = shouldKeepPreviousData(endpoint);
+  const freshAnalytics = needsFreshAnalytics(endpoint);
+  const cached = useMemo(() => slow ? getSessionData<T>(endpoint) : undefined, [endpoint, slow]);
+  const [lastResponse, setLastResponse] = useState<{ endpoint: string; at: number } | null>(null);
 
   const { data, error: swrError, isLoading, isValidating, mutate } = useSWR<T>(
     enabled ? endpoint : null,
     adminFetcher<T>,
     {
-      dedupingInterval: slow ? 6 * 60 * 60 * 1000 : 30_000,
-      revalidateOnFocus: !slow,
-      ...(keepPrevious && {
-        keepPreviousData: true,
-        fallbackData: getSessionData<T>(endpoint),
-        onSuccess: (d: T) => setSessionData(endpoint, d),
-      }),
+      dedupingInterval: freshAnalytics ? 60_000 : slow ? 6 * 60 * 60 * 1000 : 30_000,
+      revalidateOnFocus: !slow || freshAnalytics,
+      keepPreviousData: keepPrevious,
+      fallbackData: cached?.data,
+      ...(freshAnalytics && { revalidateOnMount: true, refreshInterval: 5 * 60 * 1000 }),
+      onSuccess: (d: T) => {
+        setLastResponse({ endpoint, at: Date.now() });
+        if (slow || keepPrevious) setSessionData(endpoint, d);
+      },
     },
   );
 
@@ -101,6 +117,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
     data: data ?? null,
     loading: isLoading && data === undefined,
     isValidating,
+    updatedAt: lastResponse?.endpoint === endpoint ? lastResponse.at : cached?.savedAt ?? null,
     error: swrError ? (swrError instanceof Error ? swrError.message : "알 수 없는 오류") : null,
     refetch,
   };

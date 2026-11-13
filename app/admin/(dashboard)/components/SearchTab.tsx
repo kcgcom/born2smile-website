@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSearchPageLabel } from "@/lib/search-page";
+import type { AdminBlogPost } from "./blog/blog-helpers";
+import { DataFreshness } from "./DataFreshness";
 import { ListTree } from "lucide-react";
 import { isBlogCategorySlug } from "@/lib/blog/category-slugs";
 import { useAdminApi } from "./useAdminApi";
@@ -52,9 +55,12 @@ export function SearchTab() {
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
   const [clustered, setClustered] = useState(true);
 
-  const { data, loading, error, refetch } = useAdminApi<SearchConsoleData>(
+  const { data, loading, error, refetch, isValidating, updatedAt } = useAdminApi<SearchConsoleData>(
     `/api/admin/search-console?period=${period}&includeClusters=true`,
   );
+
+  const { data: posts } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
+  const titleMap = new Map((posts ?? []).map(post => [post.slug, post.title]));
 
   const querySort = useSearchTableSort(data?.topQueries ?? []);
   const pageSort = useSearchTableSort(data?.topPages ?? []);
@@ -93,22 +99,12 @@ export function SearchTab() {
 
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
-        {data?.period && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            집계 기간: {data.period.start} ~ {data.period.end}
-          </span>
-        )}
-        {data?.dataAsOf && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            <span aria-hidden="true">ⓘ</span> 데이터 기준: {data.dataAsOf} (2~3일 지연)
-          </span>
-        )}
         {data?.siteUrl && (
           <details className="relative text-xs text-[var(--muted)]">
             <summary className="cursor-pointer rounded-full bg-[var(--background)] px-2.5 py-1 font-medium">
               데이터 정보
             </summary>
-            <div className="absolute left-0 top-8 z-20 w-80 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-lg">
+            <div className="absolute left-0 top-8 z-20 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-[var(--border)] bg-white p-4 shadow-lg">
               <p className="break-all">속성: {data.siteUrl}</p>
               {data.configuredSiteUrl !== data.siteUrl && <p className="mt-1">설정 속성에서 자동 전환됨</p>}
               <p className="mt-2">Search Console 데이터는 트래픽 데이터보다 2~3일 늦을 수 있습니다.</p>
@@ -116,6 +112,8 @@ export function SearchTab() {
           </details>
         )}
       </div>
+
+      <DataFreshness dataAsOf={data?.dataAsOf} period={data?.period} comparePeriod={data?.comparePeriod} expectedDelayDays={3} updatedAt={updatedAt} isValidating={isValidating} onRefresh={refetch} />
 
       {error && <AdminErrorState message={error} onRetry={refetch} />}
       {loading && <AdminLoadingSkeleton variant="metrics" />}
@@ -211,14 +209,15 @@ export function SearchTab() {
                                 current === page ? null : page,
                               )
                             }
-                            className={`block max-w-[200px] truncate text-left sm:max-w-xs ${
+                            className={`block max-w-[220px] text-left focus-visible:outline-2 focus-visible:outline-blue-700 sm:max-w-xs ${
                               isSelected
                                 ? "font-medium text-[var(--color-primary)]"
                                 : "text-[var(--foreground)] hover:text-[var(--color-primary)]"
                             }`}
                             title={page}
                           >
-                            {page}
+                            {getSearchPageLabel(page)}
+                            <span className="mt-1 block break-all text-xs font-normal text-slate-600">{page}</span>
                           </button>
                         );
                       },
@@ -346,6 +345,7 @@ export function SearchTab() {
 
           <BlogSearchConsoleSection
             data={data}
+            titleMap={titleMap}
             onEditBlog={handleEditBlog}
             onCreatePost={handleCreateRelatedPost}
           />

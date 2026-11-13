@@ -1,3 +1,4 @@
+import { getSearchPageIdentity, getSearchPagePath } from "./search-page";
 import type { searchconsole_v1 } from "googleapis";
 import { calcChange } from "./admin-utils";
 import { BASE_URL } from "./constants";
@@ -289,13 +290,6 @@ function buildPermissionErrorMessage(
   ].join(" ");
 }
 
-function normalizePagePath(fullUrl: string) {
-  try {
-    return new URL(fullUrl).pathname;
-  } catch {
-    return fullUrl;
-  }
-}
 
 function toMetricRow(row: searchconsole_v1.Schema$ApiDataRow): SearchConsoleMetricRow {
   return {
@@ -434,22 +428,22 @@ export async function fetchSearchConsoleData(period: string) {
     }));
 
   const allPages = (pagesRes.data.rows ?? []).map((row) => {
-    const page = normalizePagePath(row.keys?.[0] ?? "");
+    const page = getSearchPageIdentity(row.keys?.[0] ?? "");
     return {
       page,
       ...toMetricRow(row),
     };
   });
 
-  const nonBlogPages = allPages.filter((p) => !p.page.startsWith("/blog/"));
+  const nonBlogPages = allPages.filter((p) => !getSearchPagePath(p.page).startsWith("/blog/"));
   const topPages = nonBlogPages.slice(0, 15);
-  const blogPages = allPages.filter((p) => p.page.startsWith("/blog/")).slice(0, 20);
+  const blogPages = allPages.filter((p) => getSearchPagePath(p.page).startsWith("/blog/")).slice(0, 20);
   const trackedPages = new Set([...topPages, ...blogPages].map((page) => page.page));
   const trackedQueries = new Set(topQueries.map((query) => query.query));
 
   const pageQueryRows = (pageQueryRes.data.rows ?? []).flatMap((row) => {
     const [fullUrl, query = ""] = row.keys ?? [];
-    const page = normalizePagePath(fullUrl ?? "");
+    const page = getSearchPageIdentity(fullUrl ?? "");
     if (!page || !query) {
       return [];
     }
@@ -490,7 +484,7 @@ export async function fetchSearchConsoleData(period: string) {
   // Blog-specific query → pages map (not filtered by site-wide top queries)
   const blogPageQueryRows = (blogPageQueryRes.data.rows ?? []).flatMap((row) => {
     const [fullUrl, query = ""] = row.keys ?? [];
-    const page = normalizePagePath(fullUrl ?? "");
+    const page = getSearchPageIdentity(fullUrl ?? "");
     if (!page || !query) return [];
     return [{ page, query, ...toMetricRow(row) }];
   });

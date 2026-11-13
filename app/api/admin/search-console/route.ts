@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const getData = createCachedFetcher(
-      `sc-v2-${period}`,
+      `sc-v3-${period}`,
       () => fetchSearchConsoleData(period),
       CACHE_TTL.SEARCH_CONSOLE,
     );

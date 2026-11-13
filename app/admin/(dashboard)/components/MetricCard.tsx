@@ -33,16 +33,13 @@ export function MetricCard({
         <p className="mt-1 text-xs">
           {change === null ? (
             <span className="text-[var(--muted)]">—</span>
-          ) : change >= 0 ? (
-            invertChange ? (
-              <span className="text-red-600" aria-label={`${change}% 감소`}>▼ {change}%</span>
-            ) : (
-              <span className="text-green-600" aria-label={`${change}% 증가`}>▲ {change}%</span>
-            )
-          ) : invertChange ? (
-            <span className="text-green-600" aria-label={`${Math.abs(change)}% 증가`}>▲ {Math.abs(change)}%</span>
           ) : (
-            <span className="text-red-600" aria-label={`${Math.abs(change)}% 감소`}>▼ {Math.abs(change)}%</span>
+            <span
+              className={change === 0 ? "text-slate-600" : (invertChange ? change < 0 : change > 0) ? "text-green-700" : "text-red-700"}
+              aria-label={`${Math.abs(change)}% ${change === 0 ? "변화 없음" : change > 0 ? "증가" : "감소"}${invertChange ? " · 낮을수록 좋음" : ""}`}
+            >
+              {change === 0 ? "—" : change > 0 ? "▲" : "▼"} {Math.abs(change)}%
+            </span>
           )}
         </p>
       )}

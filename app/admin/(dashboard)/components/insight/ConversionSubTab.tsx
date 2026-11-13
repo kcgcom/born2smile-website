@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShareYield, SHARE_YIELD_DESCRIPTION } from "../analytics-display";
 import { Activity, MousePointerClick, PhoneCall, Route, ScrollText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../DataTable";
@@ -270,6 +271,7 @@ export function ConversionSubTab() {
           </div>
 
           <section>
+            <p className="mb-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{SHARE_YIELD_DESCRIPTION}</p>
             <SectionTitle
               icon={Route}
               title="블로그 공유 성과"
@@ -277,11 +279,9 @@ export function ConversionSubTab() {
             />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <MetricCard
-                label="공유 유입률"
+                label="공유 1회당 유입"
                 value={
-                  data.summary.shareVisitRate === null
-                    ? "—"
-                    : `${data.summary.shareVisitRate}%`
+                  formatShareYield(data.summary.totalShareVisits, data.summary.totalShareActions)
                 }
                 color="text-violet-700"
               />
@@ -326,9 +326,9 @@ export function ConversionSubTab() {
                 { key: "shareVisits", label: "공유 유입", align: "right" },
                 {
                   key: "visitRate",
-                  label: "유입률",
+                  label: "공유 1회당 유입",
                   align: "right",
-                  render: (row) => row.visitRate === null ? "—" : `${row.visitRate}%`,
+                  render: (row) => formatShareYield(row.shareVisits, row.shareActions),
                 },
               ]}
               rows={data.shareSources}
@@ -443,9 +443,9 @@ export function ConversionSubTab() {
                 { key: "shareVisits", label: "공유 유입", align: "right" },
                 {
                   key: "visitRate",
-                  label: "유입률",
+                  label: "공유 1회당 유입",
                   align: "right",
-                  render: (row) => row.visitRate === null ? "—" : `${row.visitRate}%`,
+                  render: (row) => formatShareYield(row.shareVisits, row.shareActions),
                 },
                 { key: "copiedShares", label: "복사", align: "right" },
                 { key: "nativeShares", label: "공유", align: "right" },

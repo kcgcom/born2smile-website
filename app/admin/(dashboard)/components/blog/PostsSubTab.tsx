@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
 import type { BlogCategoryFilter } from "@/lib/blog/types";
@@ -26,6 +26,7 @@ import {
 
 export function PostsSubTab() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const today = getTodayKST();
 
   const {
@@ -42,8 +43,8 @@ export function PostsSubTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => searchParams.get("status") === "draft" ? "draft" : "all");
+  const [sortKey, setSortKey] = useState<SortKey>(() => searchParams.get("status") === "draft" ? "recommended" : "newest");
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
@@ -188,8 +189,6 @@ export function PostsSubTab() {
             onStatusFilterChange={handleStatusFilterChange}
           />
 
-          <CategoryDistributionPanel posts={posts} today={today} />
-
           <PostsFilterPanel
             searchQuery={searchQuery}
             filteredCount={filteredPosts.length}
@@ -250,6 +249,10 @@ export function PostsSubTab() {
             )}
           </section>
 
+          <details className="rounded-xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">카테고리별 분포 보기</summary>
+            <div className="mt-4"><CategoryDistributionPanel posts={posts} today={today} /></div>
+          </details>
         </>
       )}
 

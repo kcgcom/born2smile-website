@@ -8,14 +8,14 @@ import { toBlogAnalyticsPeriod } from "./types";
 
 export function useTrafficData(period: Period) {
   // 점진적 로딩: basic(Stage 1)을 먼저 표시, full이 오면 상세 데이터 병합
-  const { data: basicData, loading: basicLoading, error: basicError, refetch: refetchBasic } = useAdminApi<AnalyticsData>(
+  const { data: basicData, loading: basicLoading, error: basicError, isValidating: basicValidating, updatedAt: basicUpdatedAt, refetch: refetchBasic } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}&scope=basic`,
   );
-  const { data: fullData, error: fullError, refetch: refetchFull } = useAdminApi<AnalyticsData>(
+  const { data: fullData, error: fullError, isValidating: fullValidating, updatedAt: fullUpdatedAt, refetch: refetchFull } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
   );
-  const data = fullData ?? basicData;
-  const loading = basicLoading;
+  const data = fullData && (!basicData || fullData.dataAsOf >= basicData.dataAsOf) ? fullData : basicData;
+  const loading = basicLoading && !data;
   const error = fullError ?? basicError;
   const refetch = useCallback(() => { refetchBasic(); refetchFull(); }, [refetchBasic, refetchFull]);
   const {
@@ -100,13 +100,15 @@ export function useTrafficData(period: Period) {
     loading,
     error,
     refetch,
+    isValidating: basicValidating || fullValidating,
+    updatedAt: data === fullData ? fullUpdatedAt : basicUpdatedAt,
     // Blog GA4
     blogGa4Data,
     blogGa4Loading,
     blogGa4Error,
     // Conversion
-    conversionData,
-    conversionLoading,
+    conversionData: conversionData?.period === period ? conversionData : null,
+    conversionLoading: conversionLoading || Boolean(conversionData && conversionData.period !== period),
     // Lookups
     sourceDetails,
     topPageDetails,

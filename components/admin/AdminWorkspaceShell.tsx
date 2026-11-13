@@ -115,7 +115,7 @@ function getWorkspace(pathname: string) {
 function WorkspaceNav({ pathname }: { pathname: string }) {
   return (
     <nav
-      className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100/80 p-1 lg:flex lg:flex-row lg:overflow-x-auto lg:[-ms-overflow-style:none] lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
+      className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100/80 p-1 lg:flex lg:flex-row lg:overflow-x-auto lg:[-ms-overflow-style:none] lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
       aria-label="관리자 워크스페이스"
     >
       {WORKSPACES.map((workspace) => {
@@ -126,7 +126,7 @@ function WorkspaceNav({ pathname }: { pathname: string }) {
             key={workspace.id}
             href={workspace.href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-all lg:min-w-[132px] lg:flex-1 lg:whitespace-nowrap lg:px-4 ${
+            className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:min-w-[132px] lg:flex-1 lg:whitespace-nowrap lg:px-4 ${
               active
                 ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -152,19 +152,13 @@ function SectionTabs({
     return null;
   }
 
-  const gridClass =
-    workspace.tabs.length <= 2
-      ? "grid-cols-2"
-      : workspace.tabs.length === 3
-        ? "grid-cols-3"
-        : "grid-cols-2 md:grid-cols-3";
 
   return (
     <nav
-      className="mt-4 rounded-xl bg-slate-100/80 p-1"
+      className="rounded-xl bg-slate-100/80 p-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className={`grid ${gridClass} gap-1 xl:flex xl:flex-row xl:items-center xl:gap-1 xl:overflow-x-auto xl:[-ms-overflow-style:none] xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden`}>
+      <div className="flex gap-1 overflow-x-auto pb-1">
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActivePath(pathname, tab.href);
@@ -175,9 +169,9 @@ function SectionTabs({
               onPointerEnter={() => preloadTabData(tab.href)}
               onFocus={() => preloadTabData(tab.href)}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] transition-all xl:min-w-[112px] xl:flex-1 xl:gap-1.5 xl:whitespace-nowrap xl:px-3 xl:py-1.5 xl:text-xs ${
+              className={`flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border-b-2 border-transparent px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:flex-1 ${
                 active
-                  ? "bg-white font-semibold text-amber-600 shadow-sm"
+                  ? "border-amber-800 bg-white font-semibold text-amber-900 shadow-sm"
                   : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
@@ -206,8 +200,8 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
     <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
       <DashboardHeader onLogout={handleLogout} />
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <AdminSurface tone="white" className="rounded-3xl px-5 py-4">
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6">
+        <AdminSurface tone="white" className="rounded-2xl px-2 py-2 sm:px-4 sm:py-3">
           <div className="flex flex-col gap-3">
             <WorkspaceNav pathname={pathname} />
             <SectionTabs pathname={pathname} workspace={workspace} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatShareYield, SHARE_YIELD_DESCRIPTION } from "../analytics-display";
 import { MetricCard } from "../MetricCard";
 import { DataTable } from "../DataTable";
 import { formatDuration } from "../insight/shared";
@@ -109,12 +110,10 @@ export function TrafficBlogView({
           loading={conversionLoading}
         />
         <MetricCard
-          label="공유 유입률"
+          label="공유 1회당 유입"
           value={
             conversionData?.configured
-              ? conversionData.summary.shareVisitRate === null
-                ? "—"
-                : `${conversionData.summary.shareVisitRate}%`
+              ? formatShareYield(conversionData.summary.totalShareVisits, conversionData.summary.totalShareActions)
               : "설정 필요"
           }
           color="text-emerald-700"
@@ -131,6 +130,8 @@ export function TrafficBlogView({
           loading={conversionLoading}
         />
       </div>
+
+      <p className="text-sm text-slate-700">{SHARE_YIELD_DESCRIPTION}</p>
 
       {blogGa4Error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">

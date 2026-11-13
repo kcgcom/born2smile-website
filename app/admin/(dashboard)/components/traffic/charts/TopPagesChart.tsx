@@ -35,6 +35,8 @@ export const TopPagesChart = dynamic(
             path.length > 22 ? path.slice(0, 21) + "…" : path;
 
           return (
+            <>
+            <div role="img" aria-label="주요 페이지·섹션 차트 · 아래 표에서 수치와 상세를 확인할 수 있습니다.">
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
                 data={data}
@@ -83,6 +85,21 @@ export const TopPagesChart = dynamic(
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
+            <details className="mt-3 rounded-xl border border-slate-200 p-3">
+              <summary className="min-h-11 cursor-pointer text-sm font-semibold text-blue-800">수치 및 상세 표 보기</summary>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">주요 페이지·섹션 차트 수치 및 상세</caption>
+                  <thead><tr><th scope="col" className="p-2 text-left">페이지</th><th scope="col" className="p-2 text-right">조회수</th><th scope="col" className="p-2 text-right">세션 수</th></tr></thead>
+                  <tbody>{data.map(item => <tr key={item.path} className="border-t border-slate-200">
+                    <th scope="row" className="break-all p-2 text-left font-medium">{onSelect ? <button type="button" onClick={() => onSelect(item.path)} className="min-h-11 text-blue-800 underline focus-visible:outline-2 focus-visible:outline-blue-700" aria-label={`${item.path} 상세 보기`}>{item.path}</button> : item.path}</th>
+                    <td className="p-2 text-right">{item.views.toLocaleString("ko-KR")}</td><td className="p-2 text-right">{item.sessions.toLocaleString("ko-KR")}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
+            </details>
+            </>
           );
         }
         return TopPagesChartInner;

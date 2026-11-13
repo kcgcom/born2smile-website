@@ -1,3 +1,4 @@
+import { getSearchPagePath } from "@/lib/search-page";
 import type { BlogCategorySlug } from "@/lib/blog/types";
 import { getCategoryLabel, isBlogCategorySlug } from "@/lib/blog/category-slugs";
 import type {
@@ -47,7 +48,7 @@ export function formatCtr(ctr: number, lowThreshold = 2) {
 // ---------------------------------------------------------------
 
 export function getEditableBlogSlug(page: string) {
-  const match = page.match(/^\/blog\/([^/]+)\/([^/]+)\/?$/);
+  const match = getSearchPagePath(page).match(/^\/blog\/([^/]+)\/([^/]+)\/?$/);
   if (!match) return null;
 
   const [, category, slug] = match;
@@ -55,12 +56,12 @@ export function getEditableBlogSlug(page: string) {
 }
 
 export function getBlogCategoryFromPage(page: string): BlogCategorySlug | null {
-  const blogMatch = page.match(/^\/blog\/([^/]+)(?:\/[^/]+)?\/?$/);
+  const blogMatch = getSearchPagePath(page).match(/^\/blog\/([^/]+)(?:\/[^/]+)?\/?$/);
   if (blogMatch && isBlogCategorySlug(blogMatch[1])) {
     return blogMatch[1];
   }
 
-  const treatmentMatch = page.match(/^\/treatments\/([^/]+)\/?$/);
+  const treatmentMatch = getSearchPagePath(page).match(/^\/treatments\/([^/]+)\/?$/);
   if (!treatmentMatch) return null;
 
   const treatmentToCategory: Record<string, string> = {
@@ -140,9 +141,9 @@ export function getMetaChecklist(page: string, row: SearchMetricRow) {
     checklist.push("숫자·기간 표현 추가");
   }
 
-  if (page.startsWith("/blog/")) {
+  if (getSearchPagePath(page).startsWith("/blog/")) {
     checklist.push("도입부/FAQ가 검색 의도와 맞는지 점검");
-  } else if (page.startsWith("/treatments/")) {
+  } else if (getSearchPagePath(page).startsWith("/treatments/")) {
     checklist.push("title/description 핵심 항목 보완");
   } else {
     checklist.push("대표 질문 1개를 요약 문구에 반영");
@@ -175,7 +176,7 @@ export function getQueryActionRecommendation(
     return {
       kind: "new",
       label: "관련 글 작성 추천",
-      description: `${categoryLabel} 카테��리에서 별도 글로 검색 의도를 분리해 공략하는 편이 좋습니다.`,
+      description: `${categoryLabel} 카테고리에서 별도 글로 검색 의도를 분리해 공략하는 편이 좋습니다.`,
       category,
       suggestedTitles: buildSuggestedTitles(query, category),
     };
