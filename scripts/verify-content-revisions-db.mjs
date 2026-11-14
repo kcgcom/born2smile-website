@@ -1,0 +1,60 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { resolve } from "node:path";
+
+// Optional, isolated test dependency: never connects to Supabase or reads env files.
+const loadTestModule = createRequire(resolve(".tmp/revision-db/package.json"));
+const { PGlite } = loadTestModule("@electric-sql/pglite");
+const db = await PGlite.create();
+try {
+  await db.exec("CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;");
+  const initial = readFileSync("supabase/migrations/001_initial_schema.sql", "utf8").match(/CREATE TABLE blog_posts \([\s\S]*?\n\);/);
+  assert(initial);
+  await db.exec(initial[0]);
+  // The reviewed_date column was removed by migration 022; match the current table.
+  await db.exec("ALTER TABLE public.blog_posts DROP COLUMN reviewed_date;");
+  await db.exec(readFileSync("supabase/migrations/026_blog_content_revisions.sql", "utf8"));
+  const candidate = { title: "수정 후 검토할 제목", subtitle: "충분한 길이의 부제", excerpt: "수정안의 요약입니다.", category: "implant", tags: [], blocks: [{ type: "paragraph", text: "검토를 마친 새로운 설명입니다." }] };
+  await db.query("INSERT INTO public.blog_posts(slug,title,subtitle,excerpt,category,date,content,published) VALUES ($1,$2,$3,$4,$5,$6,$7,true)", ["revision-test", "원본 제목", "원본 부제", "원본 요약", "implant", "2020-01-01", JSON.stringify(candidate.blocks)]);
+  const row = async () => (await db.query("SELECT * FROM public.blog_posts WHERE slug = 'revision-test'")).rows[0];
+  const propose = async (revision, reason = "설명을 보강합니다.") => (await db.query("SELECT public.create_blog_content_revision($1,$2,$3,$4,$5) AS result", ["revision-test", revision, JSON.stringify(candidate), reason, "agent:draft"])).rows[0].result;
+  const apply = async id => (await db.query("SELECT public.apply_blog_content_revision($1,$2,$3) AS result", [id, "admin@example.invalid", "1분"])).rows[0].result;
+  const original = await row();
+  assert.equal((await propose("00000000-0000-4000-8000-000000000001")).status, "conflict");
+  assert.equal((await db.query("SELECT count(*)::int AS count FROM public.blog_content_revisions")).rows[0].count, 0);
+  const first = await propose(original.revision);
+  assert.equal(first.status, "created");
+  assert.equal((await row()).revision, original.revision);
+  assert.equal((await row()).title, original.title);
+  await db.exec("UPDATE public.blog_posts SET subtitle = '다른 편집자가 변경한 부제' WHERE slug = 'revision-test';");
+  const edited = await row();
+  assert.notEqual(edited.revision, original.revision);
+  assert.equal((await apply(first.id)).status, "conflict");
+  assert.equal((await row()).revision, edited.revision);
+  const second = await propose(edited.revision);
+  const competing = await propose(edited.revision);
+  const applied = await apply(second.id);
+  assert.equal(applied.status, "applied");
+  const result = await row();
+  assert.equal(result.title, candidate.title);
+  assert.equal(result.published, original.published);
+  assert.equal(result.date, original.date);
+  assert.equal(result.revision, applied.revision);
+  assert.equal(result.updated_by, "admin@example.invalid");
+  assert.equal((await apply(second.id)).status, "already_applied");
+  assert.equal((await apply(competing.id)).status, "conflict");
+  assert.equal((await row()).revision, result.revision);
+  const recorded = (await db.query("SELECT * FROM public.blog_content_revisions WHERE id = $1", [second.id])).rows[0];
+  assert.equal(recorded.status, "applied");
+  assert.equal(recorded.applied_revision, applied.revision);
+  const rollback = await propose(result.revision, "rollback-test-reason");
+  await db.exec("ALTER TABLE public.blog_content_revisions ADD CONSTRAINT force_test_failure CHECK (reason <> 'rollback-test-reason' OR status = 'draft');");
+  await assert.rejects(() => apply(rollback.id));
+  assert.equal((await row()).revision, result.revision);
+  assert.equal((await row()).title, result.title);
+  assert.equal((await db.query("SELECT status FROM public.blog_content_revisions WHERE id = $1", [rollback.id])).rows[0].status, "draft");
+  const privileges = (await db.query("SELECT has_table_privilege('anon','public.blog_content_revisions','SELECT') AS anon_read, has_function_privilege('anon','public.apply_blog_content_revision(uuid,text,text)','EXECUTE') AS anon_apply, has_function_privilege('service_role','public.apply_blog_content_revision(uuid,text,text)','EXECUTE') AS server_apply")).rows[0];
+  assert.deepEqual(privileges, { anon_read: false, anon_apply: false, server_apply: true });
+  console.log("PostgreSQL execution verified: migration, draft isolation, version rotation, stale/competing conflicts, atomic application, repeated application denial, rollback and privileges. Multi-session lock contention is not covered by this single-session engine.");
+} finally { await db.close(); }

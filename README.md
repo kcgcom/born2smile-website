@@ -38,6 +38,11 @@ pnpm dev  # http://localhost:3000
 | `pnpm exec tsc --noEmit` | TypeScript 검사 |
 | `pnpm lint` | ESLint 실행 |
 | `pnpm test:e2e` | tests/의 Playwright 전체 테스트 |
+| `pnpm agent:context --target /treatments/implant --period 90d` | 에이전트 분석 자료 수집 (부분 수집·offline은 종료 코드 2) |
+| `pnpm verify:agent-context` | 외부 호출 없이 수집 계약 검증 |
+| `pnpm agent:revision --file .tmp/proposal.json --check` | 검토용 수정안 입력 검증. `--check` 생략 시 수정안만 저장 |
+| `pnpm verify:content-revisions` | 수정안·원본 버전·에이전트 권한 계약 검증 (실제 DB 실행 별도) |
+| `pnpm verify:content-revisions-db` | 임시 PostgreSQL 엔진으로 마이그레이션·충돌·롤백·권한 검증 (임시 의존성 준비 필요) |
 | `pnpm submit-indexnow` | 오늘 발행분 IndexNow 제출 |
 | `pnpm submit-indexnow:all` | 전체 URL IndexNow 제출 |
 
@@ -70,6 +75,7 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 | [docs/environment-variables.md](docs/environment-variables.md) | 환경변수 목록 및 설정 가이드 |
 | [docs/supabase-architecture.md](docs/supabase-architecture.md) | Supabase 테이블/RLS/RPC/캐싱 구조 |
 | [docs/blog-workflow.md](docs/blog-workflow.md) | 블로그 발행 워크플로우 |
+| [docs/agent-content-workflow.md](docs/agent-content-workflow.md) | 에이전트 자료 수집과 분석·보강 절차 |
 | [docs/blog-writing-guide.md](docs/blog-writing-guide.md) | 블로그 작성 가이드 |
 | [docs/source-link-policy.md](docs/source-link-policy.md) | 콘텐츠 출처·인용 정책 |
 | [docs/question-feedback-rollout.md](docs/question-feedback-rollout.md) | 질문 해결 피드백, 관리자 응답 제외, DB 전환 및 배포 상태 |

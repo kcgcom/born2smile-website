@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PublishPopup } from "@/components/admin/PublishPopup";
-import type { PublishMode } from "@/components/admin/PublishPopup";
 import type { BlogCategoryFilter } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
@@ -22,7 +20,6 @@ import {
   getBlogStats,
   getDraftRankMap,
   getFilteredPosts,
-  getNextPublishDate,
 } from "./posts-subtab-shared";
 
 const PostPerformancePanel = dynamic(() => import("./PostPerformancePanel").then(module => module.PostPerformancePanel), { loading: () => <p role="status">성과 패널을 준비하는 중…</p> });
@@ -39,10 +36,8 @@ export function PostsSubTab() {
     refetch: refetchPosts,
   } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const { data: feedbackData, loading: feedbackLoading } = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
-  const { data: scheduleData, error: scheduleError } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { mutate } = useAdminMutation();
 
-  const [publishedSlugs, setPublishedSlugs] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
@@ -50,24 +45,14 @@ export function PostsSubTab() {
   const [sortKey, setSortKey] = useState<SortKey>(() => searchParams.get("status") === "draft" ? "recommended" : "newest");
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const performanceSlug = searchParams.get("performance");
-  const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
-  const [publishDate, setPublishDate] = useState("");
-  const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [publishing, setPublishing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [editingDateSlug, setEditingDateSlug] = useState<string | null>(null);
   const [editingDateValue, setEditingDateValue] = useState("");
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [publishError, setPublishError] = useState<string | null>(null);
 
-  const posts = useMemo(() => {
-    const raw = postsData ?? [];
-    if (publishedSlugs.size === 0) return raw;
-    return raw.map((post) => (publishedSlugs.has(post.slug) ? { ...post, published: true } : post));
-  }, [postsData, publishedSlugs]);
+  const posts = useMemo(() => postsData ?? [], [postsData]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -131,30 +116,6 @@ export function PostsSubTab() {
     const { error } = await mutate(`/api/admin/blog-posts/${slug}`, "DELETE");
     if (error) setDeleteError(error);
     else refetchPosts();
-  };
-
-  const handlePublishOpen = (slug: string) => {
-    const recommended = scheduleError || postsError || !postsData ? "" : getNextPublishDate({ publishDays: scheduleData?.publishDays, posts, today: getTodayKST() });
-    setPublishError(recommended ? null : "발행 일정을 확인할 수 없습니다. 목록을 새로고침하거나 날짜를 직접 선택해 주세요.");
-    setPublishingSlug(slug);
-    setPublishMode("schedule");
-    setPublishDate(recommended);
-    setScheduledDate(recommended);
-  };
-
-  const handlePublishConfirm = async () => {
-    if (!publishingSlug || !publishDate) return;
-    setPublishing(true);
-    setPublishError(null);
-    const { error } = await mutate(`/api/admin/blog-posts/${publishingSlug}`, "PUT", { published: true, date: publishDate });
-    setPublishing(false);
-    if (error) {
-      setPublishError(error);
-      return;
-    }
-    setPublishedSlugs((prev) => new Set(prev).add(publishingSlug));
-    setPublishingSlug(null);
-    refetchPosts();
   };
 
   const handleReschedule = async (slug: string, newDate: string) => {
@@ -242,7 +203,6 @@ export function PostsSubTab() {
                     onShowPerformance={showPerformance}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onPublish={handlePublishOpen}
                     onStartEditingDate={(targetPost) => {
                       if (rescheduling) return;
                       setRescheduleError(null);
@@ -273,28 +233,6 @@ export function PostsSubTab() {
       )}
 
       {performancePost && <PostPerformancePanel key={performancePost.slug} post={performancePost} onClose={closePerformance} />}
-      {publishingSlug && (
-        <PublishPopup
-          publishDate={publishDate}
-          publishMode={publishMode}
-          scheduledDate={scheduledDate}
-          publishing={publishing}
-          today={today}
-          error={publishError}
-          onModeChange={(mode) => {
-            setPublishMode(mode);
-            if (mode === "schedule") setPublishDate(scheduledDate);
-            else if (mode === "immediate") setPublishDate(today);
-          }}
-          onDateChange={setPublishDate}
-          onConfirm={handlePublishConfirm}
-          onClose={() => {
-            setPublishingSlug(null);
-            setPublishError(null);
-          }}
-        />
-      )}
-
     </div>
   );
 }

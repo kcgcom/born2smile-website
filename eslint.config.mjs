@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local tooling scratch files are also excluded from Git.
+    ".tmp/**",
   ]),
 ]);
 

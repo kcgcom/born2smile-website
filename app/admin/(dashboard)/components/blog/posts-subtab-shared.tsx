@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, MessageCircle, Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { BarChart3, MessageCircle, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -69,7 +69,6 @@ interface PostListItemProps {
   onShowPerformance: (slug: string) => void;
   onEdit: (post: AdminBlogPost) => void;
   onDelete: (slug: string) => void;
-  onPublish: (slug: string) => void;
   onStartEditingDate: (post: AdminBlogPost) => void;
   onEditingDateValueChange: (value: string) => void;
   onReschedule: (slug: string, newDate: string) => void;
@@ -373,7 +372,6 @@ export function PostListItem({
   onShowPerformance,
   onEdit,
   onDelete,
-  onPublish,
   onStartEditingDate,
   onEditingDateValueChange,
   onReschedule,
@@ -443,16 +441,16 @@ export function PostListItem({
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-9 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
           {!expanded && (
             <button
               onClick={() => onEdit(post)}
               className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
-              aria-label={`${post.title} 수정`}
+              aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
             >
               <Pencil className="h-3.5 w-3.5" />
-              수정
+              {isDraft ? "검토·발행" : "수정"}
             </button>
           )}
           <button
@@ -537,23 +535,13 @@ export function PostListItem({
                     발행일 변경
                   </button>
                 )}
-                {isDraft && (
-                  <button
-                    onClick={() => onPublish(post.slug)}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-green-600 transition-colors hover:bg-green-50"
-                    aria-label={`${post.title} 발행`}
-                  >
-                    <Calendar className="h-3.5 w-3.5" />
-                    발행
-                  </button>
-                )}
                 <button
                   onClick={() => onEdit(post)}
                   className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
-                  aria-label={`${post.title} 수정`}
+                  aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  수정
+                  {isDraft ? "검토·발행" : "수정"}
                 </button>
                 <button
                   onClick={() => onDelete(post.slug)}

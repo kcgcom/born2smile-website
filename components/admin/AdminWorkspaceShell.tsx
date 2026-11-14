@@ -34,6 +34,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  aliases?: string[];
 }
 
 interface WorkspaceConfig {
@@ -61,40 +62,58 @@ const WORKSPACES: WorkspaceConfig[] = [
     label: "운영",
     icon: LayoutDashboard,
     tabs: [
-      { href: "/admin/operations/overview", label: "개요", icon: LayoutDashboard },
-      { href: "/admin/analysis/traffic", label: "트래픽", icon: BarChart3 },
-      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
-      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
-      { href: "/admin/operations/conversion", label: "전환", icon: MousePointerClick },
-    ],
-  },
-  {
-    id: "content",
-    href: "/admin/content/posts",
-    label: "콘텐츠",
-    icon: FileText,
-    tabs: [
-      { href: "/admin/content/posts", label: "포스트", icon: FileText },
+      { href: "/admin/operations/overview", label: "오늘 확인할 일", icon: LayoutDashboard },
+      { href: "/admin/content/posts", label: "포스트", icon: FileText, aliases: ["/admin/content/revisions"] },
       { href: "/admin/content/schedule", label: "발행 일정", icon: Activity },
       { href: "/admin/content/images", label: "이미지", icon: Image },
-      { href: "/admin/content/planner", label: "콘텐츠 플래너", icon: KanbanSquare },
-      { href: "/admin/content/strategy", label: "기회 분석", icon: Target },
-      { href: "/admin/content/trends", label: "검색 트렌드", icon: TrendingUp },
     ],
   },
   {
-    id: "system",
+    id: "performance",
+    href: "/admin/analysis/search",
+    label: "성과",
+    icon: BarChart3,
+    tabs: [
+      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
+      { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
+      { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
+      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
+    ],
+  },
+  {
+    id: "site",
     href: "/admin/system/settings",
-    label: "시스템",
+    label: "사이트 관리",
     icon: Settings,
     tabs: [
-      { href: "/admin/system/settings", label: "사이트 설정", icon: Settings },
-      { href: "/admin/system/monitoring", label: "성능", icon: Gauge },
-      { href: "/admin/system/devtools/project", label: "현황", icon: ClipboardCheck },
-      { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
+      { href: "/admin/system/settings", label: "병원 정보·진료시간", icon: Settings },
+      { href: "/admin/system/monitoring", label: "사이트 성능", icon: Gauge },
     ],
   },
 ];
+
+const TOOL_GROUPS: { label: string; items: NavItem[] }[] = [
+  { label: "기획·분석 자료", items: [
+    { href: "/admin/content/planner", label: "기존 콘텐츠 플래너", icon: KanbanSquare },
+    { href: "/admin/content/strategy", label: "기회 분석", icon: Target },
+    { href: "/admin/content/trends", label: "검색 트렌드·키워드 관리", icon: TrendingUp },
+  ] },
+  { label: "추천·근거 검토", items: [
+    { href: "/admin/content/strategy/actions", label: "콘텐츠 행동추천", icon: ClipboardCheck },
+    { href: "/admin/content/strategy/retrieval-review", label: "검색 근거 검토", icon: ScanSearch },
+    { href: "/admin/content/strategy/concept-review", label: "개념별 근거 검토", icon: ClipboardCheck },
+    { href: "/admin/content/strategy/reevaluation-review", label: "변경 후 재평가", icon: Activity },
+    { href: "/admin/content/trends/keyword-evaluation", label: "키워드 초기 평가", icon: Search },
+    { href: "/admin/content/trends/keyword-evaluation/shadow-audit", label: "키워드 독립 감사", icon: ClipboardCheck },
+    { href: "/admin/content/trends/keyword-evaluation/boundary-review", label: "키워드 경계 검토", icon: ScanSearch },
+  ] },
+  { label: "개발 도구", items: [
+    { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
+    { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
+  ] },
+];
+
+const TOOL_ITEMS = TOOL_GROUPS.flatMap((group) => group.items);
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -105,11 +124,45 @@ function isWorkspaceActive(pathname: string, workspace: WorkspaceConfig) {
     return true;
   }
 
-  return workspace.tabs?.some((tab) => isActivePath(pathname, tab.href)) ?? false;
+  return workspace.tabs?.some((tab) => isItemActive(pathname, tab)) ?? false;
+}
+
+function isItemActive(pathname: string, item: NavItem) {
+  return isActivePath(pathname, item.href) || Boolean(item.aliases?.some(path => isActivePath(pathname, path)));
 }
 
 function getWorkspace(pathname: string) {
-  return WORKSPACES.find((workspace) => isWorkspaceActive(pathname, workspace)) ?? WORKSPACES[0];
+  return WORKSPACES.find((workspace) => isWorkspaceActive(pathname, workspace));
+}
+
+function getActiveTool(pathname: string) {
+  return TOOL_ITEMS.filter((item) => isActivePath(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+}
+
+function AuxiliaryTools({ pathname }: { pathname: string }) {
+  const active = getActiveTool(pathname);
+  return (
+    <details open={Boolean(active)} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <summary className="min-h-9 cursor-pointer rounded-lg px-1 py-2 text-sm font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+        보조 도구{active ? ` · ${active.label}` : ""}
+      </summary>
+      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 lg:grid-cols-3">
+        {TOOL_GROUPS.map((group) => (
+          <section key={group.label} aria-label={group.label}>
+            <h2 className="mb-2 text-xs font-semibold text-slate-500">{group.label}</h2>
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const selected = item.href === active?.href;
+                return <li key={item.href}><Link href={item.href} aria-current={selected ? "page" : undefined} className={`flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${selected ? "bg-white font-semibold text-blue-800 shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-900"}`}><Icon size={14} aria-hidden="true" />{item.label}</Link></li>;
+              })}
+            </ul>
+          </section>
+        ))}
+      </nav>
+    </details>
+  );
 }
 
 function WorkspaceNav({ pathname }: { pathname: string }) {
@@ -126,13 +179,13 @@ function WorkspaceNav({ pathname }: { pathname: string }) {
             key={workspace.id}
             href={workspace.href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:min-w-[132px] lg:flex-1 lg:whitespace-nowrap lg:px-4 ${
+            className={`flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 py-2.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:gap-2 sm:px-3 lg:min-w-[132px] lg:flex-1 lg:px-4 ${
               active
                 ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            <Icon size={16} aria-hidden="true" />
+            <Icon size={16} className="shrink-0" aria-hidden="true" />
             <span>{workspace.label}</span>
           </Link>
         );
@@ -161,7 +214,7 @@ function SectionTabs({
       <div className="flex gap-1 overflow-x-auto pb-1">
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
-          const active = isActivePath(pathname, tab.href);
+          const active = isItemActive(pathname, tab);
           return (
             <Link
               key={tab.href}
@@ -204,7 +257,8 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
         <AdminSurface tone="white" className="rounded-2xl px-2 py-2 sm:px-4 sm:py-3">
           <div className="flex flex-col gap-3">
             <WorkspaceNav pathname={pathname} />
-            <SectionTabs pathname={pathname} workspace={workspace} />
+            {workspace && <SectionTabs pathname={pathname} workspace={workspace} />}
+            <AuxiliaryTools pathname={pathname} />
           </div>
         </AdminSurface>
 

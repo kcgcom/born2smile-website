@@ -44,6 +44,7 @@ async function openEditor(page: Page, failSave = false, blocks = POST.blocks) {
       }
       data = stored;
     } else if (path.endsWith("/blog-posts")) data = [stored];
+    else if (path.endsWith("/blog-feedback")) data = { feedback: {}, totalResponses: 0 };
     else if (path.endsWith("/schedule")) data = { publishDays: [1, 3, 5] };
     return route.fulfill({ json: { data } });
   });
@@ -51,6 +52,34 @@ async function openEditor(page: Page, failSave = false, blocks = POST.blocks) {
   await expect(page.getByRole("textbox", { name: /^제목/ })).toHaveValue(POST.title);
   return writes;
 }
+
+test("초안 목록은 바로 발행하지 않고 검토 화면으로 연결한다", async ({ page }) => {
+  const writes = await openEditor(page);
+  await page.getByRole("link", { name: "포스트 목록", exact: true }).click();
+  const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: POST.title, exact: true }) });
+  await row.getByRole("button", { name: "상세", exact: true }).click();
+  await expect(row.getByRole("button", { name: `${POST.title} 발행`, exact: true })).toHaveCount(0);
+  await row.getByRole("button", { name: `${POST.title} 검토·발행`, exact: true }).click();
+  await expect(page).toHaveURL(EDITOR);
+  await expect(page.getByRole("region", { name: "저장된 발행 상태" })).toContainText("아직 공개되지 않은 글");
+  expect(writes).toHaveLength(0);
+});
+
+test("발행 확인창은 저장할 제목을 표시하고 Escape로 입력을 보존한다", async ({ page }) => {
+  const writes = await openEditor(page);
+  await page.getByRole("textbox", { name: /^제목/ }).fill("검토한 뒤 발행할 새 제목");
+  const publish = page.getByRole("button", { name: "저장 후 발행", exact: true });
+  await publish.click();
+  const dialog = page.getByRole("dialog", { name: "발행", exact: true });
+  await expect(dialog).toContainText("검토한 뒤 발행할 새 제목");
+  await dialog.getByRole("radio", { name: /즉시 발행/ }).check();
+  await expect(dialog.getByRole("status")).toContainText("즉시 공개");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(publish).toBeFocused();
+  await expect(page.getByRole("textbox", { name: /^제목/ })).toHaveValue("검토한 뒤 발행할 새 제목");
+  expect(writes).toHaveLength(0);
+});
 
 test("페이지 편집기에서 Escape는 입력을 유지한다", async ({ page }) => {
   await openEditor(page);
@@ -62,7 +91,7 @@ test("페이지 편집기에서 Escape는 입력을 유지한다", async ({ page
   await expect(page.getByRole("textbox", { name: /^제목/ })).toHaveValue("저장하지 않은 새 제목");
 });
 
-for (const target of ["닫기", "취소", "포스트 목록", "콘텐츠", "미리보기"] as const) {
+for (const target of ["닫기", "취소", "포스트 목록", "성과", "미리보기"] as const) {
   test(`미저장 상태에서 ${target} 이탈을 취소하면 입력을 유지한다`, async ({ page }) => {
     await openEditor(page);
     await page.getByRole("textbox", { name: /^제목/ }).fill("저장하지 않은 새 제목");
@@ -153,6 +182,7 @@ for (const publishMode of ["immediate", "custom"] as const) {
     await page.getByRole("textbox", { name: /^제목/ }).fill("발행할 때 함께 저장한 제목");
     await page.getByRole("button", { name: "저장 후 발행", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "발행", exact: true });
+    await expect(dialog.getByText("발행할 때 함께 저장한 제목", { exact: true })).toBeVisible();
     if (publishMode === "immediate") {
       await dialog.getByRole("radio", { name: /즉시 발행/ }).check();
     } else {
@@ -161,6 +191,14 @@ for (const publishMode of ["immediate", "custom"] as const) {
     }
     await dialog.getByRole("button", { name: publishMode === "immediate" ? "즉시 발행" : "발행 예약", exact: true }).click();
     await expect(dialog).toHaveCount(0);
+    const publication = page.getByRole("region", { name: "저장된 발행 상태" });
+    await expect(publication).toContainText(publishMode === "immediate" ? "공개 중" : "발행 예약");
+    if (publishMode === "immediate") {
+      await expect(page.getByRole("link", { name: "포스트 성과", exact: true })).toHaveAttribute("href", "/admin/content/posts?performance=navigation-test");
+    } else {
+      await expect(publication).toContainText("2099-12-20");
+      await expect(page.getByRole("link", { name: "공개 페이지 (새 창)", exact: true })).toHaveCount(0);
+    }
     expect(writes[0].published).toBe(true);
     if (publishMode === "custom") expect(writes[0].date).toBe("2099-12-20");
     await expect(page.getByRole("button", { name: "변경사항 저장", exact: true })).toBeVisible();

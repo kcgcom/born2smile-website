@@ -278,6 +278,53 @@ test("운영 개요는 반복 미해결과 가까운 일정만 보여주고 조�
   await page.screenshot({ path: testInfo.outputPath("operations-overview-mobile.png"), fullPage: true });
 });
 
+test("주 메뉴는 운영·성과·사이트 관리로 나뉘고 보조 도구는 접혀 있다", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/admin/site-config/*", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
+  await page.goto("/admin/content/posts/new");
+  const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
+  await expect(main.getByRole("link")).toHaveText(["운영", "성과", "사이트 관리"]);
+  await expect(main.getByRole("link", { name: "운영", exact: true })).toHaveAttribute("aria-current", "page");
+  const operation = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
+  await expect(operation.getByRole("link")).toHaveText(["오늘 확인할 일", "포스트", "발행 일정", "이미지"]);
+  await expect(operation.getByRole("link", { name: "포스트", exact: true })).toHaveAttribute("aria-current", "page");
+  const tools = page.getByRole("navigation", { name: "관리자 보조 도구", exact: true });
+  await expect(tools).toBeHidden();
+  const disclosure = page.locator("summary").filter({ hasText: /^보조 도구/ });
+  await disclosure.focus();
+  await page.keyboard.press("Enter");
+  await expect(tools).toBeVisible();
+  await expect(tools.getByRole("link", { name: "기존 콘텐츠 플래너", exact: true })).toHaveAttribute("href", "/admin/content/planner");
+  await main.getByRole("link", { name: "성과", exact: true }).click();
+  await expect(page).toHaveURL("/admin/analysis/search");
+  await expect(page.getByRole("navigation", { name: "성과 세부 화면", exact: true }).getByRole("link")).toHaveText(["검색 성과", "방문·읽기", "문의·공유", "색인 상태"]);
+  await main.getByRole("link", { name: "사이트 관리", exact: true }).click();
+  await expect(page).toHaveURL("/admin/system/settings");
+  await expect(main.getByRole("link", { name: "사이트 관리", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 정보·진료시간", "사이트 성능"]);
+});
+
+for (const [path, label] of [
+  ["/admin/content/strategy/concept-review", "개념별 근거 검토"],
+  ["/admin/content/trends/keyword-evaluation/shadow-audit", "키워드 독립 감사"],
+  ["/admin/system/devtools/ref", "레퍼런스"],
+] as const) {
+  test(`보조 도구 직접 진입 시 ${label}만 현재 위치로 표시한다`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setup(page);
+    await page.route("**/api/admin/**", route => new URL(route.request().url()).pathname.endsWith("auth-check")
+      ? route.fulfill({ json: { ok: true } })
+      : route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
+    await page.goto(path);
+    const tools = page.getByRole("navigation", { name: "관리자 보조 도구", exact: true });
+    await expect(tools).toBeVisible();
+    await expect(tools.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(tools.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true }).locator('[aria-current="page"]')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
+}
+
 test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼저 제공한다", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
@@ -291,7 +338,7 @@ test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼�
   expect(await page.getByRole("navigation", { name: "관리자 워크스페이스" }).evaluate(node => node.getBoundingClientRect().height)).toBeLessThan(70);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("mobile-posts.png") });
-  const active = page.getByRole("navigation", { name: "콘텐츠 세부 화면" }).getByRole("link", { name: "포스트", exact: true });
+  const active = page.getByRole("navigation", { name: "운영 세부 화면" }).getByRole("link", { name: "포스트", exact: true });
   expect(await active.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(14);
   const ratio = await active.evaluate(node => {
     const style = getComputedStyle(node), canvas = document.createElement("canvas"); canvas.width = canvas.height = 1;

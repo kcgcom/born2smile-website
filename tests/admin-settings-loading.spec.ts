@@ -42,6 +42,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("/search-console")) return route.fulfill({ json: { data: null } });
     if (path.endsWith("/blog-posts")) return route.fulfill({ json: { data: [] } });
     if (path.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
     const key = path.split("/").at(-1) as Section;
@@ -141,15 +142,15 @@ test("여러 설정의 메뉴 이탈 확인은 한 번만 표시하며 재진입
   }
   let count = 0;
   page.on("dialog", async dialog => { count++; await dialog.dismiss(); });
-  await page.getByRole("link", { name: "콘텐츠", exact: true }).click();
+  await page.getByRole("link", { name: "성과", exact: true }).click();
   expect(count).toBe(1);
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   expect(count).toBe(2);
   await expect(page).toHaveURL("/admin/system/settings");
   page.removeAllListeners("dialog");
   page.on("dialog", async dialog => { count++; await dialog.accept(); });
-  await page.getByRole("link", { name: "콘텐츠", exact: true }).click();
-  await expect(page).toHaveURL("/admin/content/posts");
+  await page.getByRole("link", { name: "성과", exact: true }).click();
+  await expect(page).toHaveURL("/admin/analysis/search");
   expect(count).toBe(3);
   await page.goBack();
   for (const section of ["clinic", "links"] as const) {
@@ -239,8 +240,8 @@ test("이전 화면의 늦은 저장 완료가 재진입 후 복구본을 삭제
   await expect.poll(() => mock.writes.length).toBe(1);
   await input.fill("보관할 추가 입력");
   page.once("dialog", dialog => dialog.accept());
-  await page.getByRole("link", { name: "콘텐츠", exact: true }).click();
-  await expect(page).toHaveURL("/admin/content/posts");
+  await page.getByRole("link", { name: "성과", exact: true }).click();
+  await expect(page).toHaveURL("/admin/analysis/search");
   await page.goBack();
   await card.getByRole("button", { name: "편집", exact: true }).click();
   await expect(input).toHaveValue("보관할 추가 입력");

@@ -2,10 +2,12 @@
 
 import { Calendar, Check, X } from "lucide-react";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export type PublishMode = "immediate" | "schedule" | "custom";
 
 interface PublishPopupProps {
+  postTitle?: string;
   publishDate: string;
   publishMode: PublishMode;
   scheduledDate: string;
@@ -19,6 +21,7 @@ interface PublishPopupProps {
 }
 
 export function PublishPopup({
+  postTitle,
   publishDate,
   publishMode,
   scheduledDate,
@@ -30,8 +33,11 @@ export function PublishPopup({
   onClose,
   error,
 }: PublishPopupProps) {
+  const handleClose = () => { if (!publishing) onClose(); };
+  const modalRef = useModalA11y(handleClose);
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-[60] flex items-center justify-center"
       role="dialog"
       aria-modal="true"
@@ -39,14 +45,15 @@ export function PublishPopup({
     >
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={onClose}
+        onClick={handleClose}
         aria-hidden="true"
       />
       <div className="relative z-10 w-full max-w-sm rounded-xl bg-[var(--surface)] p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-bold text-[var(--foreground)]">발행</h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={publishing}
             className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
             aria-label="닫기"
           >
@@ -54,7 +61,9 @@ export function PublishPopup({
           </button>
         </div>
 
-        <fieldset className="mb-4 space-y-2">
+        {postTitle && <p className="mb-3 break-words text-sm font-semibold text-slate-900">{postTitle}</p>}
+
+        <fieldset disabled={publishing} className="mb-4 space-y-2 disabled:opacity-60">
           <legend className="sr-only">발행 방식 선택</legend>
 
           {/* 스케줄에 맞춰 발행 (기본) */}
@@ -124,6 +133,7 @@ export function PublishPopup({
               {publishMode === "custom" && (
                 <input
                   type="date"
+                  aria-label="공개 날짜"
                   value={publishDate}
                   onChange={(e) => onDateChange(e.target.value)}
                   className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]/15"
@@ -132,6 +142,8 @@ export function PublishPopup({
             </div>
           </label>
         </fieldset>
+
+        {publishDate && <p role="status" className="mb-3 text-sm text-slate-600">{publishDate <= today ? `${publishDate} 기준으로 즉시 공개됩니다.` : `${publishDate}에 공개됩니다.`} (한국 시간)</p>}
 
         {error && (
           <AdminNotice tone="error" className="mb-3 rounded-lg">

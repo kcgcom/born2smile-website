@@ -55,5 +55,6 @@
 | 데이터·인증·SEO | `lib/AGENTS.md`, `lib/blog/AGENTS.md` |
 | 생성·검증 스크립트 | `scripts/AGENTS.md`, `package.json` |
 | 블로그 작성·발행 | `docs/blog-writing-guide.md`, `docs/blog-workflow.md` |
+| 에이전트 콘텐츠 분석·보강 | `docs/agent-content-workflow.md`, `pnpm agent:context --help` |
 | DB·운영 설정 | `docs/supabase-architecture.md`, `supabase/migrations/` |
 | 문서 유지보수 | `docs/AGENTS.md` |

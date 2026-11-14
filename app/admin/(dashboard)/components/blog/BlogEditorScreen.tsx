@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { mutate as refreshCache } from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { PublishPopup, type PublishMode } from "@/components/admin/PublishPopup";
 import BlogEditor, { type BlogEditorData } from "@/app/admin/(dashboard)/components/BlogEditor";
@@ -11,11 +12,12 @@ import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorSt
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
-import { getAdminPreviewUrl } from "@/lib/blog/category-slugs";
+import { getAdminPreviewUrl, getBlogPostUrl } from "@/lib/blog/category-slugs";
 import { normalizeBlogCategory } from "@/lib/blog";
 import { getTodayKST } from "@/lib/date";
 import { BLOG_EDITOR_DRAFT_KEY, BLOG_EDITOR_PREFILL_KEY } from "./blog-editor-draft";
 import { getNextPublishDate } from "./posts-subtab-shared";
+import { RevisionList } from "./RevisionList";
 
 interface BlogEditorScreenProps {
   mode: "create" | "edit";
@@ -49,6 +51,8 @@ const EMPTY_CREATE_DRAFT: EditablePost = {
 export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const fromSchedule = searchParams.get("from") === "schedule";
+  const closeHref = fromSchedule ? "/admin/content/schedule" : "/admin/content/posts";
   const today = getTodayKST();
   const { mutate } = useAdminMutation<{ slug: string }>();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -60,6 +64,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
   const [publishing, setPublishing] = useState(false);
+  const publishTrigger = useRef<HTMLElement | null>(null);
 
   const {
     data: scheduleData,
@@ -136,9 +141,10 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     if (mode === "edit" && slug) {
       const { error: saveError } = await mutate(`/api/admin/blog-posts/${slug}`, "PUT", data);
       if (!saveError) {
+        void refreshCache("/api/admin/blog-posts").catch(() => {});
         setSaveNotice(data.published ? "발행된 글을 수정했습니다." : "초안을 저장했습니다.");
         if (data.slug !== slug) {
-          router.replace(`/admin/content/posts/${data.slug}`);
+          router.replace(`/admin/content/posts/${data.slug}${fromSchedule ? "?from=schedule" : ""}`);
         } else {
           refetch();
         }
@@ -148,6 +154,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
 
     const { error: saveError } = await mutate("/api/admin/blog-posts", "POST", data);
     if (!saveError) {
+      void refreshCache("/api/admin/blog-posts").catch(() => {});
       window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
       setSaveNotice(data.published ? "새 포스트를 발행했습니다." : "새 포스트 초안을 저장했습니다.");
       router.replace(`/admin/content/posts/${data.slug}`);
@@ -159,6 +166,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     data: BlogEditorData,
     onPublished: (saved: BlogEditorData) => void,
   ) => {
+    publishTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSaveNotice(null);
     setPublishError(recommendedPublishDate ? null : "발행 일정을 확인할 수 없습니다. 다시 시도하거나 날짜를 직접 선택해 주세요.");
     setPublishDraft({ data, onPublished });
@@ -168,7 +176,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   };
 
   const handlePublishConfirm = async () => {
-    if (!publishDraft || !publishDate) return;
+    if (!publishDraft || !publishDate || publishing) return;
 
     setPublishing(true);
     setPublishError(null);
@@ -196,16 +204,21 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     // The mutation response only contains the slug. The accepted payload is the
     // saved editor snapshot; notify the form only after the write succeeds.
     publishDraft.onPublished(payload);
+    void refreshCache("/api/admin/blog-posts").catch(() => {});
     window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
     setPublishDraft(null);
+    if (mode === "edit") refetch();
     setSaveNotice(publishDate <= today ? "포스트를 발행했습니다." : `포스트 발행을 예약했습니다. (${publishDate})`);
-    router.replace(`/admin/content/posts/${payload.slug}`);
+    router.replace(`/admin/content/posts/${payload.slug}${fromSchedule ? "?from=schedule" : ""}`);
   };
 
-  const previewCategory = initialData ? normalizeBlogCategory(initialData.category) : null;
-  const previewHref = initialData?.slug && previewCategory
-    ? getAdminPreviewUrl(initialData.slug, previewCategory)
+  const previewCategory = mode === "edit" && postData ? normalizeBlogCategory(postData.category) : null;
+  const previewHref = postData?.slug && previewCategory
+    ? getAdminPreviewUrl(postData.slug, previewCategory)
     : null;
+  const savedPost = mode === "edit" ? postData : null;
+  const isPublic = Boolean(savedPost?.published && savedPost.date <= today);
+  const isScheduled = Boolean(savedPost?.published && savedPost.date > today);
 
   if (mode === "edit" && loading) {
     return <AdminLoadingSkeleton variant="full" />;
@@ -224,10 +237,11 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
               {mode === "create" ? "새 포스트 작성" : "포스트 편집"}
             </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              메타 정보, 본문 블록, 발행 상태를 한 화면에서 정리합니다.
+              내용을 확인하고 초안을 저장한 뒤 미리보기와 발행 설정을 진행하세요.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {fromSchedule && <AdminActionLink tone="dark" href="/admin/content/schedule"><ArrowLeft className="h-4 w-4" />발행 일정으로 돌아가기</AdminActionLink>}
             <AdminActionLink tone="dark" href="/admin/content/posts">
               <ArrowLeft className="h-4 w-4" />
               포스트 목록
@@ -238,8 +252,31 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
                 미리보기
               </AdminActionLink>
             )}
+            {isPublic && savedPost && previewCategory && (
+              <AdminActionLink tone="dark" href={getBlogPostUrl(savedPost.slug, previewCategory)} target="_blank" rel="noopener noreferrer">
+                공개 페이지 (새 창)
+              </AdminActionLink>
+            )}
+            {isPublic && savedPost && (
+              <AdminActionLink tone="dark" href={`/admin/content/posts?performance=${encodeURIComponent(savedPost.slug)}`}>
+                포스트 성과
+              </AdminActionLink>
+            )}
           </div>
         </div>
+
+        <section aria-label="저장된 발행 상태" className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+          <AdminPill tone={isPublic ? "success" : "warning"}>
+            {!savedPost ? "저장 전" : isScheduled ? "발행 예약" : isPublic ? "공개 중" : "초안"}
+          </AdminPill>
+          <p className="mt-2">
+            {!savedPost ? "초안을 먼저 저장하면 저장된 글을 미리볼 수 있습니다."
+              : isScheduled ? `${savedPost.date} 공개 예정입니다. 아래 발행일을 수정하고 변경사항을 저장하면 예약일이 바뀝니다.`
+                : isPublic ? "변경사항을 저장하면 공개 중인 글에 바로 반영됩니다."
+                  : "아직 공개되지 않은 글입니다. 본문을 검토한 뒤 하단의 저장 후 발행에서 공개 날짜를 선택하세요."}
+          </p>
+          {savedPost && <p className="mt-2 text-xs text-slate-500">미리보기는 마지막으로 저장한 내용을 보여줍니다. 편집한 내용은 먼저 저장해 주세요.</p>}
+        </section>
 
         {saveNotice && (
           <AdminNotice tone="success" className="mt-4">
@@ -248,17 +285,19 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         )}
       </AdminSurface>
 
+      {mode === "edit" && slug && <RevisionList slug={slug} />}
       <BlogEditor
         mode={mode}
         presentation="page"
         initialData={initialData}
         onSave={handleSave}
         onPublish={handlePublish}
-        onClose={() => router.push("/admin/content/posts")}
+        onClose={() => router.push(closeHref)}
       />
 
       {publishDraft && (
         <PublishPopup
+          postTitle={publishDraft.data.title}
           publishDate={publishDate}
           publishMode={publishMode}
           scheduledDate={recommendedPublishDate}
@@ -271,6 +310,9 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
             if (publishing) return;
             setPublishDraft(null);
             setPublishError(null);
+            // Opening the dialog briefly disables the trigger, so capture it
+            // before that render and restore after the dialog's own cleanup.
+            requestAnimationFrame(() => publishTrigger.current?.focus());
           }}
           error={publishError}
         />

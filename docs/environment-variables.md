@@ -18,7 +18,9 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | 필수 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Admin key | 필수 |
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 브라우저 관리자 로그인·권한 확인 시 필수 |
-| `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증 등 별도 운영 호출 시 선택 |
+| `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증·`agent:context` live 조회 시 사용. 호출 대상 서버와 동일한 값 |
+| `AGENT_CONTENT_READ_SECRET` | 에이전트의 허용된 콘텐츠·성과 GET 조회용 키 | `agent:context`가 우선 사용. 서버·로컬에 같은 값 설정 |
+| `AGENT_CONTENT_DRAFT_SECRET` | 허용된 조회와 검토용 수정안 생성용 키 | `agent:revision`에 필요. 원본 수정·발행·삭제·적용 권한 없음 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | GA4/SC 사용 시 |
 | `GA4_PROPERTY_ID` | GA4 속성 ID | `/admin/analysis/traffic` 사용 시 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | `/admin/analysis/search` 사용 시 |
@@ -46,6 +48,8 @@
 | `POSTHOG_BASE_URL` | PostHog API base URL | 전환 리포트 API 사용 시 |
 | `CRON_SECRET` | rebuild/searchad-sync/indexing-monitor cron 인증 토큰 | 운영 자동화 시 필수 |
 | `INDEXNOW_KEY` | IndexNow 제출 키 | 자동/수동 IndexNow 제출 시 권장 |
+
+에이전트 키 두 개와 `ADMIN_CLI_SECRET`은 서로 다른 값이어야 한다. 에이전트 키는 허용 경로만 통과하며 `/api/admin/content-revisions/{id}/apply`는 관리자 Supabase 로그인 토큰이 필요하다. 기존 `ADMIN_CLI_SECRET` 자체의 광범위한 권한은 변경하지 않았으므로 에이전트에 해당 키를 제공하면 이 제한을 우회할 수 있다.
 
 ## 운영 자동화 메모
 

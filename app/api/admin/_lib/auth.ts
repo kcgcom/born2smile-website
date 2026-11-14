@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { classifyAgentContentAccess } from "@/lib/agent-content-access";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
@@ -23,6 +24,12 @@ export type AuthResult = AuthSuccess | AuthFailure;
 
 export async function verifyAdminRequest(request: Request): Promise<AuthResult> {
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+
+  const agent = classifyAgentContentAccess(token, request.method, new URL(request.url).pathname, {
+    read: process.env.AGENT_CONTENT_READ_SECRET, draft: process.env.AGENT_CONTENT_DRAFT_SECRET, admin: ADMIN_CLI_SECRET,
+  });
+  if (agent === "denied" || agent === "misconfigured") return { ok: false, status: 403, error: "FORBIDDEN", message: agent === "misconfigured" ? "에이전트 인증 키를 서로 다른 값으로 설정해야 합니다" : "에이전트에게 허용되지 않은 작업입니다" };
+  if (agent !== "none") return { ok: true, email: agent };
 
   if (ADMIN_CLI_SECRET && token === ADMIN_CLI_SECRET) {
     return { ok: true, email: "cli@admin" };

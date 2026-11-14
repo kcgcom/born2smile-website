@@ -13,9 +13,9 @@ import type { AdminBlogPost, BlogFeedbackData } from "./blog/blog-helpers";
 
 const ANALYSIS_LINKS = [
   { title: "검색 성과", href: "/admin/analysis/search" },
-  { title: "트래픽·읽기", href: "/admin/analysis/traffic" },
+  { title: "방문·읽기", href: "/admin/analysis/traffic" },
   { title: "문의·공유", href: "/admin/operations/conversion" },
-  { title: "다음 콘텐츠 계획", href: "/admin/content/planner" },
+  { title: "색인 상태", href: "/admin/analysis/indexing" },
 ];
 
 export function GrowthOverviewPanel() {

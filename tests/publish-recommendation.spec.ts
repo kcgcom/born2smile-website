@@ -23,6 +23,12 @@ for (const failSchedule of [false, true]) {
       if (pathname.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
       if (pathname.endsWith("/auth-check")) return route.fulfill({ json: { ok: true } });
       if (pathname.endsWith("/site-config/schedule")) return route.fulfill({ status: failSchedule ? 503 : 200, json: failSchedule ? { message: "일정 조회 실패" } : { data: { publishDays: [1, 3, 5] } } });
+      if (pathname === "/api/admin/blog-posts/schedule-test") return route.fulfill({ json: { data: {
+        slug: "schedule-test", title: "일정 검사 원고", subtitle: "일정 추천을 확인하는 테스트 원고입니다", excerpt: "발행 추천 날짜와 일정 조회 실패 시의 동작을 확인하는 원고입니다.",
+        category: "prevention", tags: [], date: "2026-11-12", published: false,
+        blocks: [{ type: "paragraph", text: "발행 전 내용을 검토하고 추천 날짜를 확인하기 위한 테스트 본문입니다." }],
+      } } });
+      if (pathname === "/api/admin/content-revisions") return route.fulfill({ json: { data: [] } });
       if (pathname.endsWith("/blog-posts")) return route.fulfill({ json: { data: [
         { slug: "schedule-test", title: "일정 검사 원고", subtitle: "", excerpt: "", category: "prevention", tags: [], date: "2026-11-12", published: false, readTime: "1분" },
         { slug: "occupied-date", title: "예약된 글", subtitle: "", excerpt: "", category: "prevention", tags: [], date: "2026-11-13", published: true, readTime: "1분" },
@@ -33,7 +39,9 @@ for (const failSchedule of [false, true]) {
     await page.context().addCookies([{ name: "sb-test-only-auth-token", value: "test-only-presence", url: "http://localhost:3000" }]);
     await page.goto("/admin/content/posts");
     await page.locator("li").filter({ has: page.getByRole("link", { name: "일정 검사 원고", exact: true }) }).getByRole("button", { name: "상세", exact: true }).click();
-    await page.getByRole("button", { name: "일정 검사 원고 발행", exact: true }).click();
+    await page.getByRole("button", { name: "일정 검사 원고 검토·발행", exact: true }).click();
+    await expect(page).toHaveURL("/admin/content/posts/schedule-test");
+    await page.getByRole("button", { name: "저장 후 발행", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "발행", exact: true });
     if (failSchedule) {
       await expect(dialog.getByText(/발행 일정을 확인할 수 없습니다/)).toBeVisible();
