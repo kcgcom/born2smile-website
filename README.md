@@ -72,6 +72,9 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 | [docs/blog-workflow.md](docs/blog-workflow.md) | 블로그 발행 워크플로우 |
 | [docs/blog-writing-guide.md](docs/blog-writing-guide.md) | 블로그 작성 가이드 |
 | [docs/source-link-policy.md](docs/source-link-policy.md) | 콘텐츠 출처·인용 정책 |
+| [docs/question-feedback-rollout.md](docs/question-feedback-rollout.md) | 질문 해결 피드백, 관리자 응답 제외, DB 전환 및 배포 상태 |
+| [docs/customer-analytics-card-measurement.md](docs/customer-analytics-card-measurement.md) | 글 카드 노출·클릭 측정 기준 |
+| [docs/customer-analytics-measurement-contract.md](docs/customer-analytics-measurement-contract.md) | 읽기 측정 계약과 초기 설계 이력 |
 | [docs/opportunity-scoring.md](docs/opportunity-scoring.md) | 콘텐츠 기회 점수 모델 |
 | [docs/content-coverage-retrieval-evaluation.md](docs/content-coverage-retrieval-evaluation.md) | 검색 평가 기준선과 운영 검토 흐름 |
 | [docs/designs/keyword-candidate-recommendation-v2.md](docs/designs/keyword-candidate-recommendation-v2.md) | 키워드 후보 shadow 평가 설계·구현 이력 |
