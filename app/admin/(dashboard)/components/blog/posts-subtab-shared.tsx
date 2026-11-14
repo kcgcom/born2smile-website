@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { BarChart3, MessageCircle, Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -66,6 +66,7 @@ interface PostListItemProps {
   rescheduling: boolean;
   rescheduleError: string | null;
   onToggleExpanded: (slug: string) => void;
+  onShowPerformance: (slug: string) => void;
   onEdit: (post: AdminBlogPost) => void;
   onDelete: (slug: string) => void;
   onPublish: (slug: string) => void;
@@ -369,6 +370,7 @@ export function PostListItem({
   rescheduling,
   rescheduleError,
   onToggleExpanded,
+  onShowPerformance,
   onEdit,
   onDelete,
   onPublish,
@@ -442,6 +444,7 @@ export function PostListItem({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-9 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
           {!expanded && (
             <button
               onClick={() => onEdit(post)}

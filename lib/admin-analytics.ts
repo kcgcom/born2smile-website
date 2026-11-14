@@ -18,6 +18,26 @@ function getClient(): BetaAnalyticsDataClient {
   return new BetaAnalyticsDataClient(); // ADC
 }
 
+/** Query a specific page directly; do not infer zero from a top-pages list. */
+export async function fetchPostGA4(path: string, start: string, end: string) {
+  if (!GA4_PROPERTY_ID) throw new Error("GA4 is not configured");
+  const [report] = await getClient().runReport({
+    property: `properties/${GA4_PROPERTY_ID}`,
+    dateRanges: [{ startDate: start, endDate: end }],
+    metrics: [{ name: "screenPageViews" }, { name: "sessions" }],
+    dimensionFilter: { andGroup: { expressions: [
+      { filter: { fieldName: "pagePath", stringFilter: { matchType: "EXACT", value: path } } },
+      { filter: { fieldName: "hostName", inListFilter: { values: ["www.born2smile.co.kr", "born2smile.co.kr"] } } },
+    ] } },
+  }, { timeout: 15000 });
+  const values = report.rows?.[0]?.metricValues;
+  return {
+    views: Number(values?.[0]?.value ?? 0), sessions: Number(values?.[1]?.value ?? 0),
+    timeZone: report.metadata?.timeZone ?? "속성 설정 기준",
+    thresholded: Boolean(report.metadata?.subjectToThresholding),
+  };
+}
+
 function getPeriodDates(period: string): {
   start: string;
   end: string;

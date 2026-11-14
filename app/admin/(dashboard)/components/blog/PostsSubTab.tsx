@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PublishPopup } from "@/components/admin/PublishPopup";
 import type { PublishMode } from "@/components/admin/PublishPopup";
@@ -24,6 +25,8 @@ import {
   getNextPublishDate,
 } from "./posts-subtab-shared";
 
+const PostPerformancePanel = dynamic(() => import("./PostPerformancePanel").then(module => module.PostPerformancePanel), { loading: () => <p role="status">성과 패널을 준비하는 중…</p> });
+
 export function PostsSubTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,6 +49,7 @@ export function PostsSubTab() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => searchParams.get("status") === "draft" ? "draft" : "all");
   const [sortKey, setSortKey] = useState<SortKey>(() => searchParams.get("status") === "draft" ? "recommended" : "newest");
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const performanceSlug = searchParams.get("performance");
   const [publishingSlug, setPublishingSlug] = useState<string | null>(null);
   const [publishDate, setPublishDate] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("schedule");
@@ -100,6 +104,17 @@ export function PostsSubTab() {
     [posts, feedbackData, today, debouncedQuery, categoryFilter, statusFilter, sortKey],
   );
   const draftRankMap = useMemo(() => getDraftRankMap(filteredPosts, sortKey), [filteredPosts, sortKey]);
+  const performancePost = posts.find(post => post.slug === performanceSlug);
+  const showPerformance = (slug: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("performance", slug);
+    window.history.pushState(null, "", url);
+  };
+  const closePerformance = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("performance");
+    window.history.replaceState(null, "", url);
+  };
 
   const handleEdit = (post: AdminBlogPost) => {
     router.push(`/admin/content/posts/${post.slug}`);
@@ -224,6 +239,7 @@ export function PostsSubTab() {
                     rescheduling={rescheduling}
                     rescheduleError={rescheduleError}
                     onToggleExpanded={(slug) => setExpandedSlug((current) => (current === slug ? null : slug))}
+                    onShowPerformance={showPerformance}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onPublish={handlePublishOpen}
@@ -256,6 +272,7 @@ export function PostsSubTab() {
         </>
       )}
 
+      {performancePost && <PostPerformancePanel key={performancePost.slug} post={performancePost} onClose={closePerformance} />}
       {publishingSlug && (
         <PublishPopup
           publishDate={publishDate}

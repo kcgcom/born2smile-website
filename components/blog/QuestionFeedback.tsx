@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { hasAdminBrowserFlag } from "@/lib/admin-visitor";
 import { captureEvent } from "@/lib/posthog";
-import { FEEDBACK_REASONS, type FeedbackAnswer, type FeedbackReason } from "@/lib/blog/feedback";
+import type { FeedbackAnswer } from "@/lib/blog/feedback";
 
 const VISITOR_KEY = "born2smile-feedback-visitor";
 
@@ -12,7 +12,6 @@ export default function QuestionFeedback({ slug, category, adminVisitor = false 
   const { isAdmin, loading: adminLoading } = useAdminAuthState();
   const blockedAdmin = adminVisitor || isAdmin;
   const [answer, setAnswer] = useState<FeedbackAnswer | null>(null);
-  const [reason, setReason] = useState<FeedbackReason | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const root = useRef<HTMLDivElement>(null);
@@ -27,7 +26,6 @@ export default function QuestionFeedback({ slug, category, adminVisitor = false 
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null");
       if (saved?.answer === "solved" || saved?.answer === "unresolved") {
         setAnswer(saved.answer);
-        setReason(Object.keys(FEEDBACK_REASONS).includes(saved.reason) ? saved.reason : null);
       }
     } catch { /* Storage is optional; submission remains available. */ }
   }, [storageKey]);
@@ -51,7 +49,7 @@ export default function QuestionFeedback({ slug, category, adminVisitor = false 
     return () => { cancel(); observer.disconnect(); document.removeEventListener("visibilitychange", observe); };
   }, [slug, category, adminLoading, blockedAdmin]);
 
-  async function submit(nextAnswer: FeedbackAnswer, nextReason: FeedbackReason | null) {
+  async function submit(nextAnswer: FeedbackAnswer) {
     if (busy.current || adminLoading || blockedAdmin || hasAdminBrowserFlag()) return;
     busy.current = true; setSaving(true); setMessage("");
     try {
@@ -62,15 +60,15 @@ export default function QuestionFeedback({ slug, category, adminVisitor = false 
       }
       const response = await fetch("/api/blog/feedback", {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, visitorId: visitor.current, answer: nextAnswer, reason: nextReason }),
+        body: JSON.stringify({ slug, visitorId: visitor.current, answer: nextAnswer }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message ?? "응답을 저장하지 못했습니다. 다시 시도해 주세요.");
       if (result.ignored) { setMessage("관리자 응답은 저장하지 않습니다."); return; }
-      setAnswer(nextAnswer); setReason(nextReason);
-      try { localStorage.setItem(storageKey, JSON.stringify({ answer: nextAnswer, reason: nextReason })); } catch {}
+      setAnswer(nextAnswer);
+      try { localStorage.setItem(storageKey, JSON.stringify({ answer: nextAnswer })); } catch {}
       captureEvent("blog_question_feedback", {
-        blog_slug: slug, category, source: "footer_feedback", answer: nextAnswer, reason: nextReason,
+        blog_slug: slug, category, source: "footer_feedback", answer: nextAnswer,
         feedback_id: result.data.id, feedback_updated_at: result.data.updatedAt,
       }, { ga4: false });
       setMessage("응답 감사합니다. 글을 보완하는 데 참고하겠습니다.");
@@ -84,18 +82,11 @@ export default function QuestionFeedback({ slug, category, adminVisitor = false 
     <div className="flex flex-wrap gap-2">
       {([["solved", "해결됐어요"], ["unresolved", "아직 궁금해요"]] as const).map(([value, label]) =>
         <button key={value} type="button" disabled={disabled} aria-pressed={answer === value}
-          onClick={() => submit(value, null)}
+          onClick={() => submit(value)}
           className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-blue-700 disabled:opacity-50 ${answer === value ? "border-blue-700 bg-blue-700 text-white" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-blue-50"}`}>
           {label}
         </button>)}
     </div>
-    {answer === "unresolved" && <fieldset className="space-y-2">
-      <legend className="text-sm text-[var(--muted)]">어떤 점이 아쉬웠나요? (선택)</legend>
-      <div className="flex flex-wrap gap-2">{Object.entries(FEEDBACK_REASONS).map(([value, label]) =>
-        <button key={value} type="button" disabled={disabled} aria-pressed={reason === value}
-          onClick={() => submit("unresolved", reason === value ? null : value as FeedbackReason)}
-          className={`min-h-11 rounded-xl border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-blue-700 disabled:opacity-50 ${reason === value ? "border-blue-700 bg-blue-50 text-blue-800" : "border-[var(--border)] bg-white"}`}>{label}</button>)}</div>
-    </fieldset>}
     <p role="status" aria-live="polite" className="text-sm text-[var(--muted)]">{blockedAdmin ? "관리자 응답은 저장하지 않습니다." : saving ? "응답을 저장하는 중…" : message}</p>
   </div>;
 }

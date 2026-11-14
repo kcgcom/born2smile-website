@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import { dataAgeDays, formatShareYield } from "../app/admin/(dashboard)/components/analytics-display";
 import { getSearchPageIdentity, getSearchPagePath } from "../lib/search-page";
 import { readingPeriodRange, type ReadingReport } from "../lib/blog/reading-report";
+import { performanceRange, type PostPerformance } from "../lib/post-performance";
+import { overviewContent, searchReviewCandidates } from "../lib/admin-overview";
+import { performanceSource } from "../lib/admin-post-performance";
 
 const metric = { value: 100, change: 5 };
 const path = "/blog/restorative/after-filling-care";
@@ -46,6 +49,8 @@ async function setup(page: Page, hold90?: Promise<void>) {
     else if (end.endsWith("/health")) data = { summary: { healthy: true, events24h: 201, ctaEvents24h: 5, lastEventAt: null } };
     else if (end.endsWith("/blog-feedback")) data = { feedback: {}, totalResponses: 0 };
     else if (end.endsWith("/schedule")) data = { publishDays: [1, 3, 5] };
+    else if (end.endsWith("/hours")) data = { schedule: [], exceptions: [], lunchTime: "", closedDays: "", notice: "" };
+    else if (end.endsWith("/search-attention")) data = { configured: true, start: "2026-10-13", end: "2026-11-11", previousStart: "2026-09-13", previousEnd: "2026-10-12", fetchedAt: "2026-11-14T00:00:00Z", truncated: false, items: [] };
     return route.fulfill({ json: { data } });
   });
 }
@@ -135,13 +140,142 @@ test("검색 성과는 한글 제목과 원본 URL을 표시하고 정렬 방향
   await expect(page.getByLabel("5% 감소 · 낮을수록 좋음")).toHaveText("▼ 5%");
 });
 
-test("개요에서 확인 필요와 초안을 안내하고 초안 목록으로 연결한다", async ({ page }) => {
+test("개요는 검토 후보를 오류와 구분하고 초안 목록으로 연결한다", async ({ page }) => {
   await setup(page);
   await page.goto("/admin/operations/overview");
-  await expect(page.getByText(/확인 필요 1개 · 검사 실패 0개/)).toBeVisible();
+  await expect(page.getByText(/색인 검토 후보 1개/)).toBeVisible();
+  await expect(page.getByText("조회된 자료에서 즉시 처리할 오류는 없습니다.", { exact: true })).toBeVisible();
   await expect(page.getByText(/미발행 초안 1건/)).toBeVisible();
   await page.getByRole("link", { name: "초안 검토하기", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "상태 필터" })).toHaveValue("draft");
+});
+
+test("개요 검토 기준과 공통 날짜 범위는 표본·예약·KST 경계를 구분한다", async () => {
+  const rows = [
+    { ...post, slug: "published", published: true, date: "2026-11-01" },
+    { ...post, slug: "small-sample", published: true, date: "2026-11-01" },
+    { ...post, slug: "tomorrow", published: true, date: "2026-11-15" },
+    { ...post, slug: "later", published: true, date: "2026-11-29" },
+    { ...post, slug: "draft", published: false, date: "" },
+  ];
+  const model = overviewContent(rows, {
+    published: { solved: 2, unresolved: 3, total: 5 },
+    "small-sample": { solved: 0, unresolved: 2, total: 2 },
+    draft: { solved: 0, unresolved: 8, total: 8 },
+  }, "2026-11-14");
+  expect(model.review.map(item => item.slug)).toEqual(["published"]);
+  expect(model.scheduled.map(item => item.slug)).toEqual(["tomorrow"]);
+  expect(model.drafts.map(item => item.slug)).toEqual(["draft"]);
+  const range = performanceRange("30d", new Date("2026-11-13T15:01:00Z"));
+  expect(range.start).toBe("2026-10-13");
+  expect(range.end).toBe("2026-11-11");
+  expect(range.periodEndExclusive).toBe("2026-11-11T15:00:00.000Z");
+  let called = false;
+  expect((await performanceSource(false, "검색", async () => { called = true; return 0; })).status).toBe("unconfigured");
+  expect(called).toBe(false);
+  expect((await performanceSource(true, "검색", async () => { throw new Error("provider unavailable"); })).status).toBe("error");
+  expect(await performanceSource(true, "검색", async () => ({ clicks: 0 }))).toEqual({ status: "ready", data: { clicks: 0 } });
+  const changes = searchReviewCandidates([
+    { page: "known", clicks: 12, impressions: 100 }, { page: "small", clicks: 1, impressions: 20 },
+  ], [
+    { page: "known", clicks: 20, impressions: 150 }, { page: "small", clicks: 3, impressions: 20 },
+    { page: "absent-in-current", clicks: 100, impressions: 1000 },
+  ]);
+  expect(changes).toEqual([{ page: "known", clicks: 12, previousClicks: 20, drop: 8, changePercent: -40 }]);
+});
+
+test("포스트 성과 API는 비인증 조회를 차단한다", async ({ request }) => {
+  const result = await request.get(`/api/admin/blog-posts/${post.slug}/performance?period=30d`);
+  expect(result.status()).toBe(401);
+});
+
+test("포스트 성과는 선택한 글만 조회하고 오류·누적 응답·기간 전환을 구분한다", async ({ page }, testInfo) => {
+  await setup(page);
+  await page.clock.setFixedTime(new Date("2026-11-14T09:00:00+09:00"));
+  const published = { ...post, category: "restorative" as const, date: "2026-11-01", published: true };
+  await page.route("**/api/admin/blog-posts", route => route.fulfill({ json: { data: [published] } }));
+  const response: PostPerformance = {
+    post: { ...published, dateModified: null, updatedAt: "2026-11-01T00:00:00Z" }, path, period: "30d",
+    range: performanceRange("30d", new Date("2026-11-14T00:00:00Z")), fetchedAt: "2026-11-14T00:00:00Z", partial: true,
+    feedback: { status: "ready", data: { solved: 2, unresolved: 3, total: 5 } },
+    search: { status: "error", data: null, message: "검색 데이터를 불러오지 못했습니다." },
+    traffic: { status: "ready", data: { views: 42, sessions: 30, timeZone: "Asia/Seoul", thresholded: false } },
+    reading: { status: "ready", data: { counts: { visits: 4, eligibleVisits: 4, qualified: 2, depth75: 2, time30: 2, feedbackPrompts: 2, solved: 1, unresolved: 1, shares: 1, inquiries: 0 }, firstObservedAt: "2026-11-01T00:00:00Z", warnings: [] } },
+  };
+  let requests = 0;
+  let release!: () => void;
+  const hold = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/admin/blog-posts/*/performance?*", async route => {
+    requests++;
+    const period = new URL(route.request().url()).searchParams.get("period");
+    if (period === "90d") await hold;
+    return route.fulfill({ json: { data: period === "90d" ? { ...response, period, range: performanceRange("90d", new Date("2026-11-14T00:00:00Z")), traffic: { status: "ready", data: { views: 900, sessions: 600, timeZone: "Asia/Seoul", thresholded: false } } } : response } });
+  });
+  await page.goto("/admin/content/posts");
+  const opener = page.getByRole("button", { name: `${post.title} 성과 보기`, exact: true });
+  await expect(opener).toBeVisible();
+  expect(requests).toBe(0);
+  await opener.click();
+  const panel = page.getByRole("dialog", { name: `${post.title} 성과`, exact: true });
+  await expect(panel.getByText("42회", { exact: true })).toBeVisible();
+  await expect(panel.getByText("40.0%", { exact: true })).toBeVisible();
+  await expect(panel.getByText("검색 데이터를 불러오지 못했습니다.", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/읽기 표본 부족/)).toBeVisible();
+  await panel.getByRole("combobox", { name: "포스트 성과 조회 기간" }).selectOption("90d");
+  await expect(panel.getByText("42회", { exact: true })).toHaveCount(0);
+  release();
+  await expect(panel.getByText("900회", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await panel.screenshot({ path: testInfo.outputPath("post-performance-mobile.png") });
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});
+
+test("초안 성과 패널은 외부 성과 조회 없이 공개 전 상태를 안내한다", async ({ page }) => {
+  await setup(page);
+  let requests = 0;
+  await page.route("**/api/admin/blog-posts/*/performance?*", route => { requests++; return route.fulfill({ json: {} }); });
+  await page.goto(`/admin/content/posts?performance=${post.slug}`);
+  const panel = page.getByRole("dialog", { name: `${post.title} 성과`, exact: true });
+  await expect(panel.getByText(/공개 발행 후 성과를 확인/)).toBeVisible();
+  expect(requests).toBe(0);
+  await expect(panel.getByRole("link", { name: "미리보기 열기" })).toHaveAttribute("href", `/admin/preview/${post.category}/${post.slug}`);
+  await panel.getByRole("button", { name: "닫기", exact: true }).click();
+  await expect(page).not.toHaveURL(/performance=/);
+});
+
+test("운영 개요는 반복 미해결과 가까운 일정만 보여주고 조회 실패를 0으로 감추지 않는다", async ({ page }, testInfo) => {
+  await setup(page);
+  await page.clock.setFixedTime(new Date("2026-11-14T09:00:00+09:00"));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/admin/blog-posts", route => route.fulfill({ json: { data: [
+    { ...post, published: true, date: "2026-11-01" },
+    { ...post, slug: "scheduled", title: "곧 발행할 글", published: true, date: "2026-11-16" },
+  ] } }));
+  await page.route("**/api/admin/blog-feedback", route => route.fulfill({ json: { data: { feedback: { [post.slug]: { solved: 2, unresolved: 3, total: 5 } }, totalResponses: 5 } } }));
+  await page.route("**/api/admin/search-attention", route => route.fulfill({ json: { data: { configured: true, start: "2026-10-13", end: "2026-11-11", previousStart: "2026-09-13", previousEnd: "2026-10-12", truncated: false, items: [{ page: `https://www.born2smile.co.kr${path}`, clicks: 12, previousClicks: 20, drop: 8, changePercent: -40 }] } } }));
+  await page.route("**/api/admin/site-config/hours", route => route.fulfill({ status: 503, json: { message: "진료시간 조회 테스트 오류" } }));
+  await page.goto("/admin/operations/overview");
+  await expect(page.getByRole("heading", { name: "오늘 할 일", exact: true })).toBeVisible();
+  await expect(page.getByText("진료시간 조회 테스트 오류", { exact: true })).toBeVisible();
+  await expect(page.getByText("조회된 자료에서 즉시 처리할 오류는 없습니다.", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("총 응답 5건 · 해결 2 · 미해결 3", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "근거와 성과 보기" })).toHaveAttribute("href", `/admin/content/posts?performance=${post.slug}`);
+  await expect(page.getByRole("link", { name: "곧 발행할 글", exact: true })).toBeVisible();
+  await expect(page.getByText("검색 클릭 20 → 12회 (-40%)", { exact: true })).toBeVisible();
+  await page.route("**/api/admin/site-config/hours", route => route.fulfill({ json: { data: { schedule: [], notice: "", exceptions: [
+    { date: "2026-11-13", open: false, time: "", note: "지난 휴진" },
+    { date: "2026-11-16", open: false, time: "", note: "가까운 휴진" },
+    { date: "2026-12-20", open: false, time: "", note: "먼 휴진" },
+  ] } } }));
+  await page.getByRole("button", { name: "다시 시도", exact: true }).click();
+  await expect(page.getByText("가까운 휴진", { exact: true })).toBeVisible();
+  await expect(page.getByText("지난 휴진", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("먼 휴진", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("operations-overview-mobile.png"), fullPage: true });
 });
 
 test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼저 제공한다", async ({ page }, testInfo) => {
