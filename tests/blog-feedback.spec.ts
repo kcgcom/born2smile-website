@@ -51,7 +51,32 @@ test("일반 응답은 식별자를 해시하고 저장 실패를 성공으로 �
   expect(failed.status).toBe(503);
 });
 
-test("본문 하단에서 답과 이유를 바꾸며 목록에는 좋아요를 표시하지 않는다", async ({ page }) => {
+test("이유 없이 보낸 미해결 응답도 정상 저장한다", async () => {
+  let stored: unknown;
+  const request = new Request("https://www.born2smile.co.kr/api/blog/feedback", {
+    method: "POST", headers: { origin: "https://www.born2smile.co.kr", "Content-Type": "application/json" },
+    body: JSON.stringify({ slug: body.slug, visitorId: body.visitorId, answer: "unresolved" }),
+  });
+  const result = await handleFeedback(request, {
+    authenticate: async () => "visitor", publicPost: async () => true,
+    save: async input => { stored = input; return { id: "response", updated_at: "2026-11-14T00:00:00Z" }; },
+  });
+  expect(result.status).toBe(200);
+  expect(stored).toMatchObject({ answer: "unresolved", reason: null });
+});
+
+test("과거 이유가 저장된 브라우저에서도 두 답변만 복원한다", async ({ page }) => {
+  await interceptAnalytics(page);
+  await page.addInitScript(() => localStorage.setItem("born2smile-feedback:swallowed-dental-prosthesis-what-to-do", JSON.stringify({ answer: "unresolved", reason: "missing" })));
+  await page.goto(PATH);
+  const region = page.getByLabel("질문 해결 피드백", { exact: true });
+  await expect(region.getByRole("button", { name: "아직 궁금해요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(region.getByRole("button")).toHaveCount(2);
+  await expect(region.getByRole("group")).toHaveCount(0);
+  await expect(region.getByRole("textbox")).toHaveCount(0);
+});
+
+test("본문 하단은 두 답변만 받고 이유 선택·입력 없이 응답을 바꾼다", async ({ page }) => {
   const { events } = await interceptAnalytics(page);
   const submissions: Array<Record<string, unknown>> = [];
   await page.route("**/api/blog/feedback", route => {
@@ -62,15 +87,18 @@ test("본문 하단에서 답과 이유를 바꾸며 목록에는 좋아요를 �
   const region = page.getByLabel("질문 해결 피드백", { exact: true });
   await expect(region).toHaveCount(1);
   await region.getByRole("button", { name: "아직 궁금해요", exact: true }).click();
-  await region.getByRole("button", { name: "필요한 내용이 없어요", exact: true }).click();
-  await expect(region.getByRole("button", { name: "필요한 내용이 없어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(region.getByRole("button", { name: "아직 궁금해요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(region.getByRole("button")).toHaveCount(2);
+  await expect(region.getByRole("group")).toHaveCount(0);
+  await expect(region.getByRole("textbox")).toHaveCount(0);
   await region.getByRole("button", { name: "해결됐어요", exact: true }).click();
   await expect(region.getByRole("button", { name: "해결됐어요", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(region.getByRole("group")).toHaveCount(0);
-  expect(submissions.map(item => [item.answer, item.reason])).toEqual([["unresolved", null], ["unresolved", "missing"], ["solved", null]]);
+  expect(submissions.map(item => item.answer)).toEqual(["unresolved", "solved"]);
+  expect(submissions.every(item => !("reason" in item))).toBe(true);
   expect(new Set(submissions.map(item => item.visitorId)).size).toBe(1);
-  await expect.poll(() => events.filter(event => event.event === "blog_question_feedback").length).toBe(3);
-  expect(events.filter(event => event.event === "blog_question_feedback").every(event => event.properties.visitorId === undefined)).toBe(true);
+  await expect.poll(() => events.filter(event => event.event === "blog_question_feedback").length).toBe(2);
+  expect(events.filter(event => event.event === "blog_question_feedback").every(event => event.properties.visitorId === undefined && event.properties.reason === undefined)).toBe(true);
   await page.goto("/blog");
   await expect(page.getByRole("button", { name: "좋아요", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("질문 해결 피드백", { exact: true })).toHaveCount(0);

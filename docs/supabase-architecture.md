@@ -11,7 +11,7 @@
 | 테이블 | 키 | 용도 | 접근 |
 |--------|---------|------|------|
 | `blog_posts` | `slug` | 블로그 포스트 | Supabase Admin 전용 |
-| `blog_question_feedback` | `id`, `slug + visitor_hash` 고유 | 질문 해결 여부·선택형 이유 | 서버 API 전용 |
+| `blog_question_feedback` | `id`, `slug + visitor_hash` 고유 | 질문 해결 여부·구 클라이언트 호환용 선택 이유 | 서버 API 전용 |
 | `blog_likes` | `slug` | 폐기된 좋아요 저장소, 025에서 기록 삭제 | 기존 조회만 유지 |
 | `site_config` | `type` (`links\|clinic\|hours\|schedule`) | 사이트 설정 + 발행 스케줄 | Supabase Admin 전용 |
 | `api_cache` | `key` | 외부 API 캐시와 관리자 검토 결과 | Supabase Admin 전용 |

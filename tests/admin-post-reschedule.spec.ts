@@ -107,3 +107,14 @@ test("저장 중 날짜 입력과 취소를 잠그고 중복 요청을 막는다
   await expect(date).toBeEnabled();
   await expect(date).toHaveValue("2099-12-21");
 });
+
+test("성과 패널을 열고 닫아도 입력 중인 예약 날짜를 보존한다", async ({ page }) => {
+  const { row, writes } = await openPosts(page);
+  const date = row.locator('input[type="date"]');
+  await date.fill("2099-12-24");
+  await row.getByRole("button", { name: `${POST.title} 성과 보기`, exact: true }).click();
+  await expect(page.getByRole("dialog", { name: `${POST.title} 성과`, exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(date).toHaveValue("2099-12-24");
+  expect(writes).toHaveLength(0);
+});

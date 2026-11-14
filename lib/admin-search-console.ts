@@ -2,6 +2,8 @@ import { getSearchPageIdentity, getSearchPagePath } from "./search-page";
 import type { searchconsole_v1 } from "googleapis";
 import { calcChange } from "./admin-utils";
 import { BASE_URL } from "./constants";
+import { performanceRange } from "./post-performance";
+import { searchReviewCandidates, type SearchAttention } from "./admin-overview";
 
 const SEARCH_CONSOLE_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
 const SEARCH_CONSOLE_READABLE_PERMISSION_LEVELS = new Set([
@@ -110,6 +112,50 @@ export async function createSearchConsoleContext() {
   }
 
   return { searchconsole, siteUrl, configuredSiteUrl };
+}
+
+export async function fetchPostSearch(url: string, start: string, end: string) {
+  const { searchconsole, siteUrl } = await createSearchConsoleContext();
+  const requestBody = {
+    startDate: start, endDate: end, dataState: "final",
+    dimensionFilterGroups: [{ filters: [{ dimension: "page", operator: "equals", expression: url }] }],
+  };
+  const [summary, queries] = await Promise.allSettled([
+    searchconsole.searchanalytics.query({ siteUrl, requestBody: { ...requestBody, dimensions: [], rowLimit: 1 } }, { timeout: 15000 }),
+    searchconsole.searchanalytics.query({ siteUrl, requestBody: { ...requestBody, dimensions: ["query"], rowLimit: 10 } }, { timeout: 15000 }),
+  ]);
+  if (summary.status === "rejected") throw summary.reason;
+  const row = summary.value.data.rows?.[0];
+  return {
+    clicks: row?.clicks ?? 0, impressions: row?.impressions ?? 0, ctr: (row?.ctr ?? 0) * 100,
+    position: row?.position ?? null, queriesAvailable: queries.status === "fulfilled",
+    queries: queries.status === "fulfilled" ? (queries.value.data.rows ?? []).map(item => ({
+      query: item.keys?.[0] ?? "", clicks: item.clicks ?? 0, impressions: item.impressions ?? 0,
+    })) : [],
+  };
+}
+
+export async function fetchSearchAttention(now = new Date()): Promise<SearchAttention> {
+  const range = performanceRange("30d", now);
+  const previous = performanceRange("30d", new Date(now.getTime() - 30 * 86400_000));
+  const result: SearchAttention = {
+    configured: Boolean(process.env.SEARCH_CONSOLE_SITE_URL?.trim()), start: range.start, end: range.end,
+    previousStart: previous.start, previousEnd: previous.end, fetchedAt: now.toISOString(), truncated: false, items: [],
+  };
+  if (!result.configured) return result;
+  const { searchconsole, siteUrl } = await createSearchConsoleContext();
+  const prefix = `${BASE_URL}/blog/`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const fetchPages = async (start: string, end: string) => {
+    const response = await searchconsole.searchanalytics.query({ siteUrl, requestBody: {
+      startDate: start, endDate: end, dimensions: ["page"], dataState: "final", rowLimit: 25000,
+      dimensionFilterGroups: [{ filters: [{ dimension: "page", operator: "includingRegex", expression: `^${prefix}[^/]+/[^/]+$` }] }],
+    } }, { timeout: 15000 });
+    return (response.data.rows ?? []).map(row => ({ page: row.keys?.[0] ?? "", clicks: row.clicks ?? 0, impressions: row.impressions ?? 0 }));
+  };
+  const [currentRows, previousRows] = await Promise.all([fetchPages(range.start, range.end), fetchPages(previous.start, previous.end)]);
+  result.truncated = currentRows.length >= 25000 || previousRows.length >= 25000;
+  if (!result.truncated) result.items = searchReviewCandidates(currentRows, previousRows);
+  return result;
 }
 
 function unavailableSitemapStatus(checkedAt = new Date().toISOString()): SearchConsoleSitemapStatus {

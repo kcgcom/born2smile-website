@@ -73,6 +73,7 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 | [docs/blog-writing-guide.md](docs/blog-writing-guide.md) | 블로그 작성 가이드 |
 | [docs/source-link-policy.md](docs/source-link-policy.md) | 콘텐츠 출처·인용 정책 |
 | [docs/question-feedback-rollout.md](docs/question-feedback-rollout.md) | 질문 해결 피드백, 관리자 응답 제외, DB 전환 및 배포 상태 |
+| [docs/admin-post-performance.md](docs/admin-post-performance.md) | 포스트 성과 패널과 운영 개요의 정보 구성·집계 기준 |
 | [docs/customer-analytics-card-measurement.md](docs/customer-analytics-card-measurement.md) | 글 카드 노출·클릭 측정 기준 |
 | [docs/customer-analytics-measurement-contract.md](docs/customer-analytics-measurement-contract.md) | 읽기 측정 계약과 초기 설계 이력 |
 | [docs/opportunity-scoring.md](docs/opportunity-scoring.md) | 콘텐츠 기회 점수 모델 |

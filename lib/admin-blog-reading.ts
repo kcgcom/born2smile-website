@@ -14,8 +14,10 @@ function counts(row: Record<string, unknown> = {}): ReadingCounts {
   return Object.fromEntries(COUNT_KEYS.map(key => [key, Number(row[key] ?? 0)])) as unknown as ReadingCounts;
 }
 
-export function buildReadingQueries(period: ReadingPeriod, cursor: string | null, now = new Date()) {
+export function buildReadingQueries(period: ReadingPeriod, cursor: string | null, now = new Date(), slug?: string) {
   if (cursor !== null && !/^[a-z0-9][a-z0-9-]{0,199}$/.test(cursor)) throw new Error("Invalid reading cursor");
+  if (slug !== undefined && !/^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/.test(slug)) throw new Error("Invalid reading slug");
+  const postFilter = slug ? ` AND properties.blog_slug = '${slug}'` : "";
   const range = readingPeriodRange(period, now);
   const date = (value: string) => value.replace("T", " ").slice(0, 19);
   const where = `timestamp >= toDateTime('${date(range.periodStart)}', 'UTC') AND timestamp < toDateTime('${date(range.periodEndExclusive)}', 'UTC') AND ${HOSTS}`;
@@ -38,7 +40,7 @@ export function buildReadingQueries(period: ReadingPeriod, cursor: string | null
       OR (properties.milestone_type = 'depth' AND properties.milestone_value IN (25,50,75,90))
       OR (properties.milestone_type = 'active_time' AND properties.milestone_value IN (15,30,60,90)))`;
   const cte = `WITH raw AS (
-    SELECT * FROM events WHERE ${where} AND event IN ${READ_EVENTS}
+    SELECT * FROM events WHERE ${where} AND event IN ${READ_EVENTS}${postFilter}
   ), valid_events AS (
     SELECT * FROM raw WHERE ${valid}
   ), views AS (
@@ -97,13 +99,13 @@ export function buildReadingQueries(period: ReadingPeriod, cursor: string | null
       (SELECT count() FROM raw WHERE (event IN ('blog_article_viewed','blog_read_progress','blog_read_qualified') OR properties.surface='article') AND NOT ifNull((${valid}), false)) AS invalid_events,
       (SELECT count() FROM views WHERE starts=0) AS orphan_views,
       (SELECT sum(if(starts>1,starts-1,0)) FROM views) AS duplicate_starts`,
-    first: `SELECT min(timestamp) AS first_at, count() AS starts FROM events WHERE ${HOSTS} AND event='blog_article_viewed' AND ${valid}`,
+    first: `SELECT min(timestamp) AS first_at, count() AS starts FROM events WHERE ${HOSTS} AND event='blog_article_viewed' AND ${valid}${postFilter}`,
   };
 }
 
-export async function fetchBlogReading(period: ReadingPeriod, cursor: string | null): Promise<ReadingReport> {
+export async function fetchBlogReading(period: ReadingPeriod, cursor: string | null, options: { slug?: string; now?: Date } = {}): Promise<ReadingReport> {
   const env = getPostHogEnvStatus();
-  const queries = buildReadingQueries(period, cursor);
+  const queries = buildReadingQueries(period, cursor, options.now, options.slug);
   const result: ReadingReport = {
     configured: env.projectIdConfigured && env.apiKeyConfigured && env.baseUrlConfigured,
     period, cursor, nextCursor: null, pageSize: PAGE_SIZE, totalPosts: 0,
