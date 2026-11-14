@@ -1,3 +1,5 @@
+import BlogCardTracker from "@/components/blog/BlogCardTracker";
+import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -137,6 +139,7 @@ export default async function BlogCategoryPage({
 
   return (
     <>
+      <BlogCardTracker />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionJsonLd) }}
@@ -246,8 +249,9 @@ export default async function BlogCategoryPage({
               </h2>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              {questionCards.map(({ question, answer, post }) => (
+              {questionCards.map(({ question, answer, post }, position) => (
                 <Link
+                  {...blogCardAttributes(getBlogPostUrl(post.slug, post.category), "category_questions", position + 1)}
                   key={question}
                   href={getBlogPostUrl(post.slug, post.category)}
                   className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)] hover:shadow-md md:p-5"
@@ -291,7 +295,7 @@ export default async function BlogCategoryPage({
               </h2>
             </div>
             <div className="space-y-7 md:space-y-8">
-              {groupedSections.map((section) => (
+              {groupedSections.map((section, sectionIndex) => (
                 <div key={section.title} className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 md:p-8">
                   <div className="mb-4 max-w-none md:mb-5 lg:max-w-3xl xl:max-w-4xl">
                     <h3 className="text-xl font-bold text-[var(--foreground)] md:text-2xl">{section.title}</h3>
@@ -300,8 +304,9 @@ export default async function BlogCategoryPage({
                     </p>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {section.posts.map((post) => (
+                    {section.posts.map((post, position) => (
                       <Link
+                        {...blogCardAttributes(getBlogPostUrl(post.slug, post.category), "category_curated", position + 1, String(sectionIndex + 1))}
                         key={post.slug}
                         href={getBlogPostUrl(post.slug, post.category)}
                         className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)]"

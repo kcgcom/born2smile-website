@@ -1,30 +1,9 @@
 
-export const POSTHOG_CTA_EVENTS = [
-  "hero_contact_click",
-  "hero_phone_click",
-  "cta_contact_click",
-  "cta_phone_click",
-  "contact_phone_click",
-  "contact_kakao_click",
-  "header_phone_click",
-  "floating_phone_click",
-  "floating_contact_nav_click",
-] as const;
+import { CTA_EVENTS, PHONE_EVENTS, KAKAO_EVENTS, CONTACT_NAVIGATION_EVENTS } from "@/lib/analytics-events";
 
-export const POSTHOG_PHONE_EVENTS = [
-  "hero_phone_click",
-  "cta_phone_click",
-  "contact_phone_click",
-  "header_phone_click",
-  "floating_phone_click",
-] as const;
-
-export const POSTHOG_CONTACT_EVENTS = [
-  "hero_contact_click",
-  "cta_contact_click",
-  "floating_contact_nav_click",
-  "contact_kakao_click",
-] as const;
+export const POSTHOG_CTA_EVENTS = CTA_EVENTS;
+export const POSTHOG_PHONE_EVENTS = PHONE_EVENTS;
+export const POSTHOG_CONTACT_EVENTS = KAKAO_EVENTS;
 
 const POSTHOG_SHARE_EVENTS = ["blog_post_shared", "blog_share_visit"] as const;
 const POSTHOG_CONVERSION_QUERY_EVENTS = [
@@ -68,6 +47,7 @@ export interface ConversionData {
     totalCtaClicks: number;
     totalPhoneClicks: number;
     totalContactClicks: number;
+    totalNavigationClicks: number;
     contactPageViews: number;
     contactToPhoneRate: number | null;
     totalShareActions: number;
@@ -188,7 +168,7 @@ function normalizeRows(payload: PostHogQueryResponse): Array<Record<string, unkn
   return [];
 }
 
-async function queryPostHog(sql: string, name: string): Promise<Array<Record<string, unknown>>> {
+export async function queryPostHog(sql: string, name: string): Promise<Array<Record<string, unknown>>> {
   const config = getPostHogConfig();
   if (!config.projectId || !config.apiKey || !config.baseUrl) {
     throw new Error("PostHog 조회용 환경변수가 설정되지 않았습니다");
@@ -210,6 +190,7 @@ async function queryPostHog(sql: string, name: string): Promise<Array<Record<str
       refresh: "blocking",
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
@@ -332,6 +313,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
         totalCtaClicks: 0,
         totalPhoneClicks: 0,
         totalContactClicks: 0,
+        totalNavigationClicks: 0,
         contactPageViews: 0,
         contactToPhoneRate: null,
         totalShareActions: 0,
@@ -349,7 +331,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
   }
 
   const days = PERIOD_TO_DAYS[period];
-  const intervalClause = `timestamp >= now() - INTERVAL ${days} DAY`;
+  const intervalClause = `timestamp >= now() - INTERVAL ${days} DAY AND properties.$host IN ('www.born2smile.co.kr', 'born2smile.co.kr')`;
 
   const queryResults = await Promise.allSettled([
     queryPostHog(
@@ -358,6 +340,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
           countIf(event IN ${sqlList(POSTHOG_CTA_EVENTS)}) AS total_cta_clicks,
           countIf(event IN ${sqlList(POSTHOG_PHONE_EVENTS)}) AS total_phone_clicks,
           countIf(event IN ${sqlList(POSTHOG_CONTACT_EVENTS)}) AS total_contact_clicks,
+          countIf(event IN ${sqlList(CONTACT_NAVIGATION_EVENTS)}) AS total_navigation_clicks,
           countIf(event = '$pageview' AND properties.$pathname = '/contact') AS contact_page_views,
           countIf(event = 'contact_phone_click') AS contact_phone_clicks,
           countIf(event = 'blog_post_shared') AS total_share_actions,
@@ -404,15 +387,14 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
     queryPostHog(
       `
         SELECT
-          properties.slug AS slug,
+          ifNull(properties.blog_slug, ifNull(properties.slug, extract(properties.page_path, '^/blog/[^/]+/([^/]+)'))) AS slug,
           count() AS total_clicks,
           countIf(event IN ${sqlList(POSTHOG_PHONE_EVENTS)}) AS phone_clicks,
           countIf(event IN ${sqlList(POSTHOG_CONTACT_EVENTS)}) AS contact_clicks
         FROM events
         WHERE ${intervalClause}
           AND event IN ${sqlList(POSTHOG_CTA_EVENTS)}
-          AND properties.page_type = 'blog_post'
-          AND properties.slug IS NOT NULL
+          AND match(properties.page_path, '^/blog/[^/]+/[^/]+/?$')
         GROUP BY slug
         ORDER BY total_clicks DESC
         LIMIT 10
@@ -440,7 +422,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
     queryPostHog(
       `
         SELECT
-          ifNull(properties.share_source, '(unknown)') AS share_source,
+          if(event = 'blog_post_shared', ifNull(properties.source, '(unknown)'), ifNull(properties.share_source, '(unknown)')) AS share_source,
           countIf(event = 'blog_post_shared') AS share_actions,
           countIf(event = 'blog_share_visit') AS share_visits
         FROM events
@@ -481,7 +463,7 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
   const totalPhoneClicks = toNumber(summaryRow.total_phone_clicks);
   const totalContactClicks = toNumber(summaryRow.total_contact_clicks);
   const contactPageViews = toNumber(summaryRow.contact_page_views);
-  const contactPhoneClicks = toNumber(summaryRow.contact_phone_clicks);
+
   const totalShareActions = toNumber(summaryRow.total_share_actions);
   const totalShareVisits = toNumber(summaryRow.total_share_visits);
   const nativeShareActions = toNumber(summaryRow.native_share_actions);
@@ -499,11 +481,10 @@ export async function fetchPostHogConversion(period: PostHogPeriod): Promise<Con
       totalCtaClicks,
       totalPhoneClicks,
       totalContactClicks,
+      totalNavigationClicks: toNumber(summaryRow.total_navigation_clicks),
       contactPageViews,
-      contactToPhoneRate:
-        contactPageViews > 0
-          ? Math.round((contactPhoneClicks / contactPageViews) * 1000) / 10
-          : null,
+      // Legacy field retained for API compatibility; counts are not a conversion funnel.
+      contactToPhoneRate: null,
       totalShareActions,
       totalShareVisits,
       shareVisitRate:

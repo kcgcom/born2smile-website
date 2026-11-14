@@ -46,6 +46,7 @@ export default function BlogShareButton({
     if (result !== "failed") {
       captureEvent("blog_post_shared", {
         blog_slug: slug,
+        surface: "article",
         category,
         source,
         method: result,

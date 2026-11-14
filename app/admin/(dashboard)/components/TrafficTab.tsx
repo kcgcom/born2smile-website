@@ -21,6 +21,7 @@ import {
 import { SectionCard } from "./traffic/SectionCard";
 import { useTrafficData } from "./traffic/useTrafficData";
 import { TrafficBlogView } from "./traffic/TrafficBlogView";
+import { BlogReadingPanel } from "./traffic/BlogReadingPanel";
 import { SourceDetailModal } from "./traffic/SourceDetailModal";
 import { TopPageDetailModal } from "./traffic/TopPageDetailModal";
 import { PERIODS, TRAFFIC_VIEWS, getTopPageDisplayTitle } from "./traffic/types";
@@ -112,6 +113,7 @@ export function TrafficTab() {
       </div>
 
       <div role="tabpanel" id={`traffic-panel-${view}`} aria-labelledby={`traffic-tab-${view}`} tabIndex={0} className="space-y-6 focus-visible:outline-2 focus-visible:outline-blue-700">
+      {view === "blog" && <BlogReadingPanel key={period} period={period} titles={td.blogTitleMap} />}
       {/* Loading */}
       {td.loading && <AdminLoadingSkeleton variant="full" />}
 
@@ -142,7 +144,7 @@ export function TrafficTab() {
                   change={td.data.summary.pageviews.change}
                 />
                 <MetricCard
-                  label="평균 체류"
+                  label="평균 세션 시간"
                   value={formatDuration(td.data.summary.avgDuration.value)}
                   change={td.data.summary.avgDuration.change}
                 />
@@ -220,8 +222,6 @@ export function TrafficTab() {
               blogTitleMap={td.blogTitleMap}
               blogSummary={td.blogSummary}
               activeBlogPosts={td.activeBlogPosts}
-              longestReadPosts={td.longestReadPosts}
-              shortestReadPosts={td.shortestReadPosts}
               blogSourceShare={td.blogSourceShare}
               topPageDetails={td.topPageDetails}
               onSelectTopPage={setSelectedTopPage}

@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import BlogCardTracker from "./BlogCardTracker";
+import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import {
   Share2,
   Check,
@@ -10,11 +12,9 @@ import {
   Tag,
   Search,
   X,
-  Heart,
   SlidersHorizontal,
   ChevronDown,
 } from "lucide-react";
-import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   BLOG_CATEGORY_SLUGS,
   BLOG_TAGS,
@@ -31,10 +31,6 @@ import { captureEvent } from "@/lib/posthog";
 import { readListPosition, saveListPosition, type ListPosition } from "./listNavigation";
 
 const POSTS_PER_PAGE = 12;
-
-const USER_ID_KEY = "born2smile_uid";
-const LIKED_SLUGS_KEY = "born2smile_liked_slugs";
-const LIKE_COOLDOWN_MS = 1000;
 
 interface BlogFilterUrlState {
   category: BlogCategoryFilter;
@@ -62,16 +58,6 @@ function readFilterUrlState(defaultCategory: BlogCategoryFilter): BlogFilterUrlS
   };
 }
 
-function getUserId(): string {
-  if (typeof window === "undefined") return "";
-  let uid = localStorage.getItem(USER_ID_KEY);
-  if (!uid) {
-    uid = crypto.randomUUID();
-    localStorage.setItem(USER_ID_KEY, uid);
-  }
-  return uid;
-}
-
 interface BlogContentProps {
   initialPosts: BlogPostMeta[];
   activeDefaultCategory?: BlogCategorySlug;
@@ -86,15 +72,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
-  const [localLiked, setLocalLiked] = useState<Set<string>>(new Set());
-  const [likingSlug, setLikingSlug] = useState<string | null>(null);
-  const [coolingSlugs, setCoolingSlugs] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const activeCategoryButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const likeCooldownTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const isUrlStateReadyRef = useRef(false);
   const restorePositionRef = useRef<ListPosition | null>(null);
 
@@ -150,20 +132,13 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
   // setTimeout 정리
   useEffect(() => {
-    const likeCooldownTimers = likeCooldownTimersRef.current;
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      likeCooldownTimers.forEach((timer) => clearTimeout(timer));
-      likeCooldownTimers.clear();
     };
   }, []);
 
-  // liked 슬러그 localStorage에서 복원
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LIKED_SLUGS_KEY);
-      if (stored) setLocalLiked(new Set(JSON.parse(stored) as string[]));
-    } catch {}
+    try { localStorage.removeItem("born2smile_liked_slugs"); } catch {}
   }, []);
 
   // 검색어 debounce (250ms)
@@ -330,63 +305,6 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     syncFilterUrl({ category: "all", tag: null, query: "" }, "push");
   };
 
-  const handleLike = useCallback(async (e: React.MouseEvent, slug: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isSupabaseConfigured || likingSlug || coolingSlugs.has(slug)) return;
-
-    const uid = getUserId();
-    const wasLiked = localLiked.has(slug);
-
-    const prevTimer = likeCooldownTimersRef.current.get(slug);
-    if (prevTimer) clearTimeout(prevTimer);
-    setCoolingSlugs((prev) => {
-      const next = new Set(prev);
-      next.add(slug);
-      return next;
-    });
-    likeCooldownTimersRef.current.set(
-      slug,
-      setTimeout(() => {
-        setCoolingSlugs((prev) => {
-          const next = new Set(prev);
-          next.delete(slug);
-          return next;
-        });
-        likeCooldownTimersRef.current.delete(slug);
-      }, LIKE_COOLDOWN_MS),
-    );
-
-    setLocalLiked((prev) => {
-      const next = new Set(prev);
-      if (wasLiked) {
-        next.delete(slug);
-      } else {
-        next.add(slug);
-      }
-      try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
-      return next;
-    });
-    setLikingSlug(slug);
-
-    try {
-      await getSupabaseBrowserClient().rpc("toggle_like", { p_slug: slug, p_user_id: uid });
-    } catch {
-      setLocalLiked((prev) => {
-        const next = new Set(prev);
-        if (wasLiked) {
-          next.add(slug);
-        } else {
-          next.delete(slug);
-        }
-        try { localStorage.setItem(LIKED_SLUGS_KEY, JSON.stringify([...next])); } catch {}
-        return next;
-      });
-    } finally {
-      setLikingSlug(null);
-    }
-  }, [localLiked, likingSlug, coolingSlugs]);
-
   const handleShare = useCallback(
     async (
       e: React.MouseEvent,
@@ -407,6 +325,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           blog_slug: slug,
           category,
           source: "list_card",
+          surface: "list_card",
           method: result,
         });
       }
@@ -422,6 +341,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
 
   return (
     <section className="section-padding bg-[var(--surface)]">
+      <BlogCardTracker contextKey={JSON.stringify([activeCategory, activeTag, debouncedQuery])} hasSearch={Boolean(debouncedQuery.trim())} categoryFilter={activeCategory} tagFilter={activeTag ?? "all"} />
       <div className="container-narrow">
         {/* 검색 */}
         <div className="mx-auto mb-6 max-w-md">
@@ -567,12 +487,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
         {/* 포스트 그리드 */}
         <div aria-live="polite" aria-atomic="false">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visiblePosts.map((post) => {
+            {visiblePosts.map((post, position) => {
               const categorySlug = post.category as BlogCategorySlug;
-              const isLikeDisabled = likingSlug === post.slug || coolingSlugs.has(post.slug);
               return (
               <div key={post.slug}>
-                <article className="group relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)] hover:shadow-lg md:p-8">
+                <article {...blogCardAttributes(getBlogPostUrl(post.slug, post.category), "listing", position + 1)} className="group relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6 transition-all hover:border-[var(--color-primary)]/20 hover:bg-[var(--surface)] hover:shadow-lg md:p-8">
                   {/* 상단: 카테고리 + 읽기 시간 */}
                   <div className="mb-4 flex items-center justify-between">
                     <span
@@ -619,28 +538,13 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                     </div>
                   )}
 
-                  {/* 하단: 자세히 읽기 + 좋아요 + 공유 */}
+                  {/* 하단: 자세히 읽기 + 공유 */}
                   <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
                     <span className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]" aria-hidden="true">
                       자세히 읽기
                       <ArrowRight size={14} />
                     </span>
                     <div className="flex items-center gap-1">
-                      {isSupabaseConfigured && (
-                        <button
-                          onClick={(e) => handleLike(e, post.slug)}
-                          disabled={isLikeDisabled}
-                          className={`relative z-10 flex min-h-11 items-center gap-1 rounded-full px-2.5 py-1.5 text-sm transition-colors ${
-                            localLiked.has(post.slug)
-                              ? "text-rose-500 hover:bg-rose-50"
-                              : "text-[var(--muted-light)] hover:bg-[var(--background)] hover:text-rose-400"
-                          } ${isLikeDisabled ? "opacity-50" : ""}`}
-                          aria-label={localLiked.has(post.slug) ? "좋아요 취소" : "좋아요"}
-                        >
-                          <Heart size={14} className={localLiked.has(post.slug) ? "fill-rose-500" : ""} />
-                          <span>좋아요</span>
-                        </button>
-                      )}
                     <button
                       onClick={(e) => handleShare(e, post.slug, post.title, categorySlug)}
                       className="relative z-10 flex min-h-11 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"

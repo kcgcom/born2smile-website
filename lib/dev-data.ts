@@ -50,10 +50,10 @@ export const DATABASE_TABLES: DatabaseTable[] = [
     purpose: "블로그 포스트",
   },
   {
-    name: "blog_likes",
-    primaryKey: "slug",
-    access: "anon SELECT + RPC toggle_like",
-    purpose: "좋아요 카운트 + 사용자 UUID",
+    name: "blog_question_feedback",
+    primaryKey: "id (slug + visitor_hash 고유)",
+    access: "서버 API 전용 (관리자 응답 제외)",
+    purpose: "질문 해결 여부와 선택형 미해결 이유",
   },
   {
     name: "site_config",
@@ -141,6 +141,8 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "NEXT_PUBLIC_POSTHOG_TOKEN", label: "PostHog 공개 토큰", required: false, scope: "public", group: "posthog" },
   { key: "NEXT_PUBLIC_POSTHOG_HOST", label: "PostHog 수집 호스트", required: false, scope: "public", group: "posthog" },
   { key: "NEXT_PUBLIC_POSTHOG_UI_HOST", label: "PostHog UI 호스트", required: false, scope: "public", group: "posthog" },
+  { key: "NEXT_PUBLIC_BLOG_READING_ENABLED", label: "본문 읽기 측정 (false로 중단)", required: false, scope: "public", group: "posthog" },
+  { key: "NEXT_PUBLIC_BLOG_CARD_TRACKING_ENABLED", label: "카드 노출·클릭 측정 (false로 중단)", required: false, scope: "public", group: "posthog" },
   { key: "POSTHOG_PROJECT_ID", label: "PostHog Project ID", required: false, scope: "private", group: "posthog" },
   { key: "POSTHOG_API_KEY", label: "PostHog API Key", required: false, scope: "private", group: "posthog" },
   { key: "POSTHOG_BASE_URL", label: "PostHog App URL", required: false, scope: "private", group: "posthog" },

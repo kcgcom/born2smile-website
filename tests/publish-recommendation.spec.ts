@@ -20,7 +20,7 @@ for (const failSchedule of [false, true]) {
       const pathname = new URL(route.request().url()).pathname;
       // All admin requests are mocked; no writes or fabricated credentials reach the server.
       if (route.request().method() !== "GET") return route.fulfill({ status: 403, json: { message: "테스트 저장 차단" } });
-      if (pathname.endsWith("/blog-likes")) return route.fulfill({ json: { data: { likes: {}, totalLikes: 0 } } });
+      if (pathname.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
       if (pathname.endsWith("/auth-check")) return route.fulfill({ json: { ok: true } });
       if (pathname.endsWith("/site-config/schedule")) return route.fulfill({ status: failSchedule ? 503 : 200, json: failSchedule ? { message: "일정 조회 실패" } : { data: { publishDays: [1, 3, 5] } } });
       if (pathname.endsWith("/blog-posts")) return route.fulfill({ json: { data: [

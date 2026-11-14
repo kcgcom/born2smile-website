@@ -1,3 +1,5 @@
+import BlogCardTracker from "@/components/blog/BlogCardTracker";
+import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -17,8 +19,10 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
 import BlogShareButton from "@/components/blog/BlogShareButton";
 import BlogShareVisitTracker from "@/components/blog/BlogShareVisitTracker";
+import BlogReadTracker from "@/components/blog/BlogReadTracker";
+import { getReadingMetadata } from "@/lib/blog/reading";
 import BlogListReturnLink from "@/components/blog/BlogListReturnLink";
-import LikeButtonLazy from "@/components/blog/LikeButtonLazy";
+import QuestionFeedback from "@/components/blog/QuestionFeedback";
 import { formatDate } from "@/lib/format";
 import {
   getPostBySlug,
@@ -272,6 +276,9 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
+      {!isAdmin && <BlogCardTracker />}
+      <BlogReadTracker key={post.slug} slug={post.slug} category={post.category} disabled={isAdmin}
+        metadata={getReadingMetadata(visibleBlocks.filter(block => block.type !== "researchCallout"))} />
       <BlogShareVisitTracker slug={post.slug} category={post.category} />
 
       {/* 블로그 포스트 */}
@@ -337,14 +344,13 @@ export default async function BlogPostPage({
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-primary)]">
-                      이 글이 도움이 되셨다면 반응을 남겨주세요
+                      필요한 분께 이 글을 공유해 주세요
                     </p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
-                      공감이나 공유는 더 많은 분들이 필요한 정보를 찾는 데 도움이 됩니다.
+                      공유 링크로 이 글을 다시 찾아보거나 다른 분께 전달할 수 있습니다.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <LikeButtonLazy slug={post.slug} source="header_cta" />
                     <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="header_cta" />
                   </div>
                 </div>
@@ -451,21 +457,13 @@ export default async function BlogPostPage({
         </section>
       )}
 
-      {/* 좋아요 + 공유 + 목록 돌아가기 */}
+      {/* 질문 해결 피드백 + 공유 + 목록 돌아가기 */}
       <section className="bg-[var(--surface)] px-4 pt-6 pb-12">
         <div className="mx-auto max-w-3xl border-t border-[var(--border)] pt-8">
           <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-rose-50/50 p-5 shadow-sm">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-base font-bold text-[var(--foreground)]">
-                  도움이 되셨다면 공감 또는 공유를 남겨주세요
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                  반응이 쌓일수록 다른 환자분들도 필요한 건강 정보를 더 쉽게 발견할 수 있습니다.
-                </p>
-              </div>
+              <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} adminVisitor={isAdmin} />
               <div className="flex flex-wrap items-center gap-2">
-                <LikeButtonLazy slug={post.slug} source="footer_cta" />
                 <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" />
               </div>
             </div>
@@ -492,9 +490,9 @@ export default async function BlogPostPage({
               </h2>
             </FadeIn>
             <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {relatedPosts.map((rp) => (
+              {relatedPosts.map((rp, position) => (
                 <StaggerItem key={rp.slug}>
-                  <Link href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
+                  <Link {...blogCardAttributes(getBlogPostUrl(rp.slug, rp.category), "related_auto", position + 1)} href={getBlogPostUrl(rp.slug, rp.category)} className="block h-full">
                     <article className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 transition-all hover:border-[var(--color-primary)]/20 hover:shadow-lg">
                       <span
                         className={`mb-3 w-fit rounded-full px-3 py-1 text-sm font-medium ${categoryColors[rp.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}

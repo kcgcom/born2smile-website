@@ -22,7 +22,7 @@
 - 병원 정보의 코드 기본값은 `lib/constants.ts`에서 먼저 수정한다. 운영 설정은 `lib/site-config-supabase.ts`를 통해 기본값을 덮어쓸 수 있으므로 실제 소비 경로도 확인한다.
 - 블로그 URL 매핑은 `lib/blog/category-slugs.ts`, 콘텐츠 타입은 `lib/blog/types.ts`, 구조화 데이터는 `lib/jsonld.ts`에서 관리한다.
 - 공개 블로그의 dev/build snapshot 전략과 런타임 Supabase → snapshot 폴백을 보존한다. `lib/blog/generated/`, `lib/dev/generated/` 파일은 생성 스크립트로 갱신한다.
-- Supabase Admin/service-role 키는 서버 전용이다. 관리자 API는 서버에서 인증과 입력 검증을 수행한다. 브라우저 Auth 및 공개 좋아요 접근과 관리자 데이터 접근을 구분한다.
+- Supabase Admin/service-role 키는 서버 전용이다. 관리자 API는 서버에서 인증과 입력 검증을 수행한다. 브라우저 Auth, 공개 질문 해결 피드백 저장 API, 관리자 데이터 접근을 구분한다.
 - 예약 발행 날짜는 KST 기준이다. 메타데이터·canonical·사이트맵·JSON-LD·리다이렉트 변경 시 서로 일치하는지 확인한다.
 - 한국어 UI, 시맨틱 HTML, 키보드 조작, 포커스 표시, `prefers-reduced-motion`을 유지한다.
 

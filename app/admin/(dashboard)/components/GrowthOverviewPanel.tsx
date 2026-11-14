@@ -13,7 +13,7 @@ import type { AdminBlogPost } from "./blog/blog-helpers";
 interface ConversionData {
   configured: boolean;
   meta: { fetchedAt: string };
-  summary: { totalCtaClicks: number; totalPhoneClicks: number; totalShareActions: number };
+  summary: { totalCtaClicks: number; totalPhoneClicks: number; totalContactClicks?: number; totalShareActions: number };
 }
 
 const LINKS = [
@@ -69,7 +69,7 @@ export function GrowthOverviewPanel() {
         <p className="text-sm text-slate-600">{conversionData?.meta?.fetchedAt ? `조회 시각: ${new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "short", timeStyle: "short" }).format(new Date(conversionData.meta.fetchedAt))} KST` : "조회 시각 확인 중"} · 검색 성과와 집계 기간이 다릅니다.</p>
         {conversion.error && <AdminErrorState message={conversion.error} onRetry={conversion.refetch} />}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <MetricCard label="30일 CTA 클릭" value={conversionData?.configured ? conversionData.summary.totalCtaClicks.toLocaleString("ko-KR") : conversionData ? "설정 필요" : "—"} loading={conversion.loading} />
+          <MetricCard label="30일 전화·카카오 클릭" value={conversionData?.configured ? (conversionData.summary.totalPhoneClicks + (conversionData.summary.totalContactClicks ?? 0)).toLocaleString("ko-KR") : conversionData ? "설정 필요" : "—"} loading={conversion.loading} />
           <MetricCard label="30일 전화 클릭" value={conversionData?.configured ? conversionData.summary.totalPhoneClicks.toLocaleString("ko-KR") : conversionData ? "설정 필요" : "—"} loading={conversion.loading} />
           <MetricCard label="30일 공유 시도" value={conversionData?.configured ? conversionData.summary.totalShareActions.toLocaleString("ko-KR") : conversionData ? "설정 필요" : "—"} loading={conversion.loading} />
         </div>

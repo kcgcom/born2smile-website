@@ -20,8 +20,6 @@ interface TrafficBlogViewProps {
   blogTitleMap: Map<string, string>;
   blogSummary: { pageViews: number; avgDuration: number; trackedPosts: number };
   activeBlogPosts: number;
-  longestReadPosts: Array<{ path: string; pageViews: number; avgDuration: number }>;
-  shortestReadPosts: Array<{ path: string; pageViews: number; avgDuration: number }>;
   blogSourceShare: Array<{ source: string; sessions: number; percentage: number }>;
   topPageDetails: Record<string, TopPageDetail>;
   onSelectTopPage: (path: string) => void;
@@ -38,8 +36,6 @@ export function TrafficBlogView({
   blogTitleMap,
   blogSummary,
   activeBlogPosts,
-  longestReadPosts,
-  shortestReadPosts,
   blogSourceShare,
   topPageDetails,
   onSelectTopPage,
@@ -81,7 +77,7 @@ export function TrafficBlogView({
           loading={blogGa4Loading && activeBlogPosts === 0}
         />
         <MetricCard
-          label="평균 체류"
+          label="평균 세션 시간"
           value={blogSummary.avgDuration > 0 ? formatDuration(blogSummary.avgDuration) : "—"}
           loading={blogGa4Loading && blogSummary.avgDuration === 0}
         />
@@ -135,91 +131,18 @@ export function TrafficBlogView({
 
       {blogGa4Error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          블로그 평균 체류 집계 일부를 불러오지 못했습니다. 글별 조회와 드릴다운은 계속 볼 수 있습니다.
+          블로그 평균 세션 시간 집계 일부를 불러오지 못했습니다. 글별 조회와 드릴다운은 계속 볼 수 있습니다.
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard title="오래 읽힌 글">
-          <div className="space-y-2">
-            {longestReadPosts.length > 0 ? longestReadPosts.map((item) => (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => onSelectTopPage(item.path)}
-                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
-              >
-                <div className="min-w-0 pr-3">
-                  <a
-                    href={item.path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(event) => event.stopPropagation()}
-                    className="block truncate text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                  >
-                    {getTitle(item.path)}
-                  </a>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    평균 체류 {formatDuration(item.avgDuration)} · 페이지뷰 {item.pageViews.toLocaleString("ko-KR")}
-                  </p>
-                  <p className="mt-1 truncate text-[11px] text-[var(--muted)]">
-                    {item.path}
-                  </p>
-                </div>
-                <span className="shrink-0 text-xs font-medium text-emerald-600">상세 보기</span>
-              </button>
-            )) : (
-              <p className="py-8 text-center text-sm text-[var(--muted)]">
-                표시할 체류 데이터가 없습니다.
-              </p>
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="짧게 보고 나간 글">
-          <div className="space-y-2">
-            {shortestReadPosts.length > 0 ? shortestReadPosts.map((item) => (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => onSelectTopPage(item.path)}
-                className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition-colors hover:border-[var(--color-primary)]/40"
-              >
-                <div className="min-w-0 pr-3">
-                  <a
-                    href={item.path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(event) => event.stopPropagation()}
-                    className="block truncate text-sm font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
-                  >
-                    {getTitle(item.path)}
-                  </a>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    평균 체류 {formatDuration(item.avgDuration)} · 페이지뷰 {item.pageViews.toLocaleString("ko-KR")}
-                  </p>
-                  <p className="mt-1 truncate text-[11px] text-[var(--muted)]">
-                    {item.path}
-                  </p>
-                </div>
-                <span className="shrink-0 text-xs font-medium text-amber-600">상세 보기</span>
-              </button>
-            )) : (
-              <p className="py-8 text-center text-sm text-[var(--muted)]">
-                표시할 체류 데이터가 없습니다.
-              </p>
-            )}
-          </div>
-        </SectionCard>
-      </div>
-
+      <p className="text-xs text-[var(--muted)]">아래 GA4 시간은 평균 세션 시간으로 본문 읽기 시간이 아닙니다. 30일 선택 시 기존 블로그 GA4 조회는 28일 기준입니다.</p>
       <SectionCard title="글별 방문 성과">
         <>
           <div className="space-y-2 sm:hidden">
             <div className="flex items-center gap-2 pb-1 text-xs text-[var(--muted)]">
               <span>정렬:</span>
               {(["sessions", "views", "avgDuration"] as const).map((k) => {
-                const labels = { sessions: "세션수", views: "페이지뷰", avgDuration: "평균체류" };
+                const labels = { sessions: "세션수", views: "페이지뷰", avgDuration: "세션시간" };
                 const active = blogSortKey === k;
                 return (
                   <button
@@ -251,7 +174,7 @@ export function TrafficBlogView({
                     {getTitle(item.path)}
                   </a>
                   <p className="mt-1 text-xs text-[var(--muted)]">
-                    세션 {item.sessions.toLocaleString("ko-KR")} · 페이지뷰 {item.views.toLocaleString("ko-KR")} · 평균 체류 {item.avgDuration > 0 ? formatDuration(item.avgDuration) : "—"}
+                    세션 {item.sessions.toLocaleString("ko-KR")} · 페이지뷰 {item.views.toLocaleString("ko-KR")} · 평균 세션 시간 {item.avgDuration > 0 ? formatDuration(item.avgDuration) : "—"}
                   </p>
                   <p className="mt-1 truncate text-[11px] text-[var(--muted)]">{item.path}</p>
                 </div>
@@ -315,7 +238,7 @@ export function TrafficBlogView({
                 },
                 {
                   key: "avgDuration",
-                  label: "평균 체류",
+                  label: "평균 세션 시간",
                   align: "right",
                   sortable: true,
                   render: (row) => {

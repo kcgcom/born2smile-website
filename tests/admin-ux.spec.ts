@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { dataAgeDays, formatShareYield } from "../app/admin/(dashboard)/components/analytics-display";
 import { getSearchPageIdentity, getSearchPagePath } from "../lib/search-page";
+import { readingPeriodRange, type ReadingReport } from "../lib/blog/reading-report";
 
 const metric = { value: 100, change: 5 };
 const path = "/blog/restorative/after-filling-care";
@@ -43,7 +44,7 @@ async function setup(page: Page, hold90?: Promise<void>) {
     else if (end.endsWith("/indexing-status")) data = indexing;
     else if (end.endsWith("/conversion")) data = { ...conversion, period: url.searchParams.get("period") ?? "30d" };
     else if (end.endsWith("/health")) data = { summary: { healthy: true, events24h: 201, ctaEvents24h: 5, lastEventAt: null } };
-    else if (end.endsWith("/blog-likes")) data = { likes: {}, totalLikes: 0 };
+    else if (end.endsWith("/blog-feedback")) data = { feedback: {}, totalResponses: 0 };
     else if (end.endsWith("/schedule")) data = { publishDays: [1, 3, 5] };
     return route.fulfill({ json: { data } });
   });
@@ -59,6 +60,34 @@ test("기준일은 KST와 실제 지연으로 계산하고 공유량을 전환�
   expect(getSearchPagePath("http://born2smile.co.kr/?a=1")).toBe("/");
   expect(getSearchPageIdentity("http://born2smile.co.kr/")).not.toBe(getSearchPageIdentity("https://www.born2smile.co.kr/"));
   expect(getSearchPageIdentity("https://www.born2smile.co.kr/?ref=one")).toContain("?ref=one");
+});
+
+test("새 읽기 리포트는 표본·오류·기간을 구분하고 세션 시간 순위를 없앤다", async ({ page }) => {
+  await setup(page);
+  const counts = { visits: 3, eligibleVisits: 3, qualified: 2, depth75: 2, time30: 2, feedbackPrompts: 3, solved: 1, unresolved: 1, shares: 1, inquiries: 1 };
+  const report: ReadingReport = {
+    configured: true, period: "30d", cursor: null, nextCursor: "after-filling-care", pageSize: 25, totalPosts: 26,
+    meta: { ...readingPeriodRange("30d", new Date("2026-11-14T07:00:00Z")), fetchedAt: "2026-11-14T07:00:00Z", firstObservedAt: "2026-11-01T00:00:00Z", partial: false },
+    warnings: [], summary: counts, rows: [{ ...counts, slug: post.slug, path }], quality: { invalidEvents: 0, orphanViews: 1, duplicateStarts: 1 },
+  };
+  await page.route("**/api/admin/posthog/reading?*", route => {
+    const params = new URL(route.request().url()).searchParams;
+    if (params.get("period") === "90d") return route.fulfill({ status: 500, json: { message: "읽기 조회 테스트 오류" } });
+    return route.fulfill({ json: { data: params.has("cursor") ? { ...report, cursor: params.get("cursor"), nextCursor: null, rows: [] } : report } });
+  });
+  await page.goto("/admin/analysis/traffic");
+  await page.getByRole("tab", { name: "블로그", exact: true }).click();
+  await expect(page.getByText("유효 읽기율 (추정)", { exact: true })).toBeVisible();
+  await expect(page.getByText("표본 부족", { exact: true })).toBeVisible();
+  await expect(page.getByText(/시작 없는 view 1건/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "오래 읽힌 글", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "다음 글 목록" }).click();
+  await expect(page.getByRole("button", { name: "다음 글 목록" })).toBeDisabled();
+  await page.getByRole("button", { name: "이전 글 목록" }).click();
+  await expect(page.getByText("표본 부족", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "3개월 기간 선택" }).click();
+  await expect(page.getByText("읽기 조회 테스트 오류", { exact: true })).toBeVisible();
+  await expect(page.getByText("표본 부족", { exact: true })).toHaveCount(0);
 });
 
 test("기간 전환 중 이전 기간 수치를 숨기고 늦은 응답 후 새 기간을 표시한다", async ({ page }) => {

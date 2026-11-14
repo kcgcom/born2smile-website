@@ -72,7 +72,7 @@ export function TopPageDetailModal({
             value={detail.summary.views.toLocaleString("ko-KR")}
           />
           <MetricCard
-            label="평균 체류"
+            label="평균 세션 시간"
             value={duration > 0 ? formatDuration(duration) : "—"}
           />
           <MetricCard

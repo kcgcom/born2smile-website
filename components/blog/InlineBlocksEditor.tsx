@@ -123,8 +123,9 @@ function InlineBlocksEditorSession({ post }: { post: PostMeta }) {
   // Non-admin or not in edit mode: plain read view
   if (!isAdmin || !isEditMode) {
     return (
-      <div className="space-y-10">
+      <div className="space-y-10" data-blog-reading-root="">
         {renderBlocks(blocks, {
+          trackReading: !isAdmin,
           hideResearchCallouts: !isAdmin,
           beforeBlock: isAdmin
             ? (block) => <ResearchBlockNotice block={block} notices={researchNotices} />
