@@ -42,7 +42,7 @@ async function openPosts(page: Page, hold?: Promise<void>) {
     }
     if (route.request().method() !== "GET") return route.fulfill({ status: 400, json: { message: "테스트 쓰기 차단" } });
     const data = path.endsWith("/blog-posts") ? [stored, { ...POST, slug: "second-post", title: "다른 예약 포스트" }]
-      : path.endsWith("/blog-likes") ? { likes: {}, totalLikes: 0 }
+      : path.endsWith("/blog-feedback") ? { feedback: {}, totalResponses: 0 }
       : path.endsWith("/schedule") ? { publishDays: [1, 3, 5] } : stored;
     return route.fulfill({ json: { data } });
   });

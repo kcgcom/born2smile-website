@@ -11,7 +11,8 @@
 | 테이블 | 키 | 용도 | 접근 |
 |--------|---------|------|------|
 | `blog_posts` | `slug` | 블로그 포스트 | Supabase Admin 전용 |
-| `blog_likes` | `slug` | 좋아요 카운트 + 사용자 UUID | 클라이언트 RPC |
+| `blog_question_feedback` | `id`, `slug + visitor_hash` 고유 | 질문 해결 여부·선택형 이유 | 서버 API 전용 |
+| `blog_likes` | `slug` | 폐기된 좋아요 저장소, 025에서 기록 삭제 | 기존 조회만 유지 |
 | `site_config` | `type` (`links\|clinic\|hours\|schedule`) | 사이트 설정 + 발행 스케줄 | Supabase Admin 전용 |
 | `api_cache` | `key` | 외부 API 캐시와 관리자 검토 결과 | Supabase Admin 전용 |
 | `gsc_index_status` / `gsc_index_events` / `gsc_index_monitor_runs` | `url` / `id` | URL 색인 상태·변경 이력·검사 작업 | Supabase Admin 전용 |
@@ -41,7 +42,8 @@ Row Level Security로 보안:
 
 | 테이블 | 읽기 | 쓰기 | 비고 |
 |--------|------|------|------|
-| `blog_likes` | 모든 사용자 | RPC를 통해서만 | `toggle_like`, `get_like` RPC 함수 |
+| `blog_likes` | 기존 조회 유지 | 공개 쓰기 차단 | 025에서 `toggle_like` 실행 권한 회수 |
+| `blog_question_feedback` | service_role | service_role | 공개 API에서 관리자 세션을 검증한 뒤 일반 방문자만 저장 |
 | `blog_posts` | 차단 | 차단 | Supabase Admin (service_role) 전용 |
 | `site_config` | 차단 | 차단 | Supabase Admin (service_role) 전용 |
 | `research_pages` | 모든 사용자 | 차단 | 공개 SELECT, 쓰기는 service_role 전용 |
@@ -51,15 +53,16 @@ Row Level Security로 보안:
 
 ## RPC 함수
 
-- `toggle_like(p_slug, p_user_id)`: 좋아요 토글 (insert or delete)
-- `get_like(p_slug, p_user_id)`: 좋아요 상태 조회 (count + liked)
+- `toggle_like(p_slug, p_user_id)`: 폐기됨, 공개 실행 권한 회수
+- `get_like(p_slug)`: 구 클라이언트 호환용 읽기 함수
+- `get_blog_question_feedback_stats()`: 글별 최종 해결/미해결 응답 집계, service_role만 실행
 - `activate_keyword_taxonomy(...)`: 새 택소노미를 즉시 활성화하고 기존 active 버전을 보관
 - `save_pending_keyword_taxonomy(...)`: 검토 중인 택소노미 버전과 승인 후보 저장
 - `discard_pending_keyword_taxonomy()`: pending 버전을 폐기하고 연결된 후보 상태 복원
 - `refresh_keyword_taxonomy_candidates(...)`: SearchAd 후보를 최신 스냅샷 기준으로 갱신
 - `publish_keyword_analysis(...)`: 택소노미와 SearchAd/DataLab 활성 포인터를 원자적으로 게시
 
-좋아요 함수는 anon/authenticated 역할에 공개한다. 택소노미 함수는 public 실행 권한을 회수하고 service_role에만 허용한다.
+질문 해결 피드백은 공개 브라우저 DB 쓰기를 허용하지 않는다. `/api/blog/feedback`이 관리자 쿠키·토큰을 검증하고 확인 실패도 저장하지 않는다. 택소노미 함수는 public 실행 권한을 회수하고 service_role에만 허용한다.
 
 ## 폴백 전략
 
@@ -86,7 +89,7 @@ snapshot(`BLOG_POSTS_SNAPSHOT`)은 `pnpm generate-blog-snapshot`으로 생성되
 | 검색광고 검색량 | 수집·게시 시 갱신 | SearchAd 스냅샷과 활성 포인터 사용 |
 | 블로그 목록 (공개) | 1시간 | ISR `revalidate: 3600` |
 | 블로그 목록 (관리자) | 서버 조회 캐시 없음 | `getAllPostMetasFresh` 직접 조회 |
-| 좋아요 집계 | 5분 | `unstable_cache` |
+| 질문 해결 응답 집계 | 코드의 `CACHE_TTL.POSTHOG` 기준 | `unstable_cache` |
 | 사이트 설정 | 1시간 | `unstable_cache` |
 
 CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`를 쓰는 경로도 있으므로 모든 응답이 즉시 최신값으로 교체된다고 가정하지 않는다. 검색광고 데이터는 `lib/admin-searchad-snapshots.ts`의 수집 작업이 API에서 가져오고, SearchAd/DataLab 스냅샷과 활성 포인터를 게시한다. 소비 경로는 활성 스냅샷을 읽으며, 삭제된 일별 api_cache 래퍼를 사용하지 않는다. 수집 일정과 수동 갱신은 조회 응답 캐시와 구분한다.
@@ -107,3 +110,5 @@ CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`�
 | Search Console 색인 모니터 | `024_gsc_index_monitor.sql` |
 
 `003_ai_write_logs.sql`~`006_ai_ops_low_traffic.sql`은 과거 기능의 이력이다. 해당 테이블은 `010_drop_ai_ops.sql`과 `011_drop_ai_write_logs.sql`에서 삭제되므로 현재 스키마에 포함하지 않는다.
+
+질문 해결 피드백 전환 및 기존 좋아요 삭제는 `025_blog_question_feedback.sql`을 따른다.

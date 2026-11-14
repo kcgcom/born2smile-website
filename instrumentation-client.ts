@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
+import { sanitizeCardEventProperties } from "@/lib/blog/card-tracking";
 
 const POSTHOG_TOKEN = process.env.NEXT_PUBLIC_POSTHOG_TOKEN;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -53,6 +54,9 @@ if (typeof window !== "undefined" && POSTHOG_TOKEN && POSTHOG_HOST) {
         return null;
       }
 
+      if (event?.event === "blog_card_impression" || event?.event === "blog_card_clicked") {
+        return { ...event, properties: sanitizeCardEventProperties(event.properties ?? {}) };
+      }
       return event;
     },
   });

@@ -1,3 +1,4 @@
+import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import Link from "next/link";
 import { getBlogPostUrl } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog";
@@ -24,8 +25,8 @@ export function CategoryPostList({ posts }: CategoryPostListProps) {
         </div>
 
         <ul className="divide-y divide-[var(--border)]">
-          {posts.map((post) => (
-            <li key={post.slug}>
+          {posts.map((post, position) => (
+            <li key={post.slug} {...blogCardAttributes(getBlogPostUrl(post.slug, post.category), "category_list", position + 1)}>
               <Link
                 href={getBlogPostUrl(post.slug, post.category)}
                 className="group flex items-center justify-between gap-4 py-3.5 hover:text-[var(--color-primary)]"

@@ -44,6 +44,7 @@ interface ConversionData {
     totalCtaClicks: number;
     totalPhoneClicks: number;
     totalContactClicks: number;
+    totalNavigationClicks?: number;
     contactPageViews: number;
     contactToPhoneRate: number | null;
     totalShareActions: number;
@@ -235,8 +236,8 @@ export function ConversionSubTab() {
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             <MetricCard
-              label={`${PERIOD_LABELS[data.period]} CTA 클릭`}
-              value={data.summary.totalCtaClicks.toLocaleString("ko-KR")}
+              label={`${PERIOD_LABELS[data.period]} 카카오 클릭`}
+              value={(data.summary.totalContactClicks ?? 0).toLocaleString("ko-KR")}
               color="text-[var(--color-primary)]"
             />
             <MetricCard
@@ -250,12 +251,8 @@ export function ConversionSubTab() {
               color="text-[var(--color-gold-dark)]"
             />
             <MetricCard
-              label="/contact → 전화"
-              value={
-                data.summary.contactToPhoneRate === null
-                  ? "—"
-                  : `${data.summary.contactToPhoneRate}%`
-              }
+              label="문의 안내 이동"
+              value={(data.summary.totalNavigationClicks ?? 0).toLocaleString("ko-KR")}
               color="text-[var(--foreground)]"
             />
             <MetricCard
@@ -371,7 +368,7 @@ export function ConversionSubTab() {
                 { key: "pagePath", label: "페이지", align: "left" },
                 { key: "totalClicks", label: "총 클릭", align: "right" },
                 { key: "phoneClicks", label: "전화", align: "right" },
-                { key: "contactClicks", label: "상담", align: "right" },
+                { key: "contactClicks", label: "카카오", align: "right" },
               ]}
               rows={data.topPages}
               keyField="pagePath"
@@ -390,7 +387,7 @@ export function ConversionSubTab() {
                 { key: "slug", label: "슬러그", align: "left" },
                 { key: "totalClicks", label: "총 클릭", align: "right" },
                 { key: "phoneClicks", label: "전화", align: "right" },
-                { key: "contactClicks", label: "상담", align: "right" },
+                { key: "contactClicks", label: "카카오", align: "right" },
               ]}
               rows={data.topBlogPosts}
               keyField="slug"

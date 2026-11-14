@@ -39,6 +39,8 @@
 | `NEXT_PUBLIC_POSTHOG_TOKEN` | PostHog 웹 SDK 토큰 | 전환 측정 사용 시 |
 | `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host | 전환 측정 사용 시 |
 | `NEXT_PUBLIC_POSTHOG_UI_HOST` | PostHog UI host | 전환 리포트 링크 생성 시 |
+| `NEXT_PUBLIC_BLOG_READING_ENABLED` | `false`이면 새 본문 읽기 측정만 중단 (미설정 시 활성) | 읽기 측정 제어 시 |
+| `NEXT_PUBLIC_BLOG_CARD_TRACKING_ENABLED` | `false`이면 카드 노출·클릭 측정만 중단 (미설정 시 활성) | 카드 측정 제어 시 |
 | `POSTHOG_PROJECT_ID` | PostHog 프로젝트 ID | 전환 리포트 API 사용 시 |
 | `POSTHOG_API_KEY` | PostHog query API key | 전환 리포트 API 사용 시 |
 | `POSTHOG_BASE_URL` | PostHog API base URL | 전환 리포트 API 사용 시 |
@@ -71,6 +73,7 @@
 - 브라우저 추적에는 `NEXT_PUBLIC_POSTHOG_TOKEN`, `NEXT_PUBLIC_POSTHOG_HOST`가 필요합니다.
 - 관리자 전환 리포트 API에는 `POSTHOG_PROJECT_ID`, `POSTHOG_API_KEY`, `POSTHOG_BASE_URL`이 추가로 필요합니다.
 - `POSTHOG_BASE_URL`이 없으면 `NEXT_PUBLIC_POSTHOG_UI_HOST` 또는 `NEXT_PUBLIC_POSTHOG_HOST`에서 유도합니다.
+- 본문 읽기 이벤트는 PostHog에만 전송합니다. `NEXT_PUBLIC_BLOG_READING_ENABLED=false`는 기존 CTA·공유·GA4 수집을 중단하지 않습니다. 공개 환경변수이므로 변경 적용에는 재빌드가 필요합니다.
 
 ### Sentry
 

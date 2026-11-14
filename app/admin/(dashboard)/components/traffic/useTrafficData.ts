@@ -71,25 +71,6 @@ export function useTrafficData(period: Period) {
     [blogGa4Data],
   );
 
-  const comparableBlogPosts = useMemo(() => {
-    return (blogGa4Data?.blogPostStats ?? [])
-      .filter((item) => item.pageViews >= 20 && item.avgDuration > 0);
-  }, [blogGa4Data]);
-
-  const longestReadPosts = useMemo(() => {
-    return comparableBlogPosts
-      .filter((item) => item.avgDuration > blogSummary.avgDuration)
-      .sort((a, b) => b.avgDuration - a.avgDuration)
-      .slice(0, 5);
-  }, [blogSummary.avgDuration, comparableBlogPosts]);
-
-  const shortestReadPosts = useMemo(() => {
-    return comparableBlogPosts
-      .filter((item) => item.avgDuration < blogSummary.avgDuration)
-      .sort((a, b) => a.avgDuration - b.avgDuration)
-      .slice(0, 5);
-  }, [blogSummary.avgDuration, comparableBlogPosts]);
-
   const blogSourceShare = useMemo(() => {
     return (blogAggregateDetail?.sources ?? []).slice(0, 6);
   }, [blogAggregateDetail?.sources]);
@@ -118,8 +99,6 @@ export function useTrafficData(period: Period) {
     // Blog computed
     blogSummary,
     activeBlogPosts,
-    longestReadPosts,
-    shortestReadPosts,
     blogSourceShare,
   };
 }

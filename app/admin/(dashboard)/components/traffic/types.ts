@@ -94,8 +94,8 @@ export function formatDurationDelta(current: number, baseline: number) {
   const diff = current - baseline;
   if (!Number.isFinite(diff) || baseline <= 0 || diff === 0) return "평균과 비슷";
   return diff > 0
-    ? `평균보다 ${formatDuration(diff)} 길게 읽힘`
-    : `평균보다 ${formatDuration(Math.abs(diff))} 짧게 읽힘`;
+    ? `평균보다 ${formatDuration(diff)} 긴 세션`
+    : `평균보다 ${formatDuration(Math.abs(diff))} 짧은 세션`;
 }
 
 export function toBlogAnalyticsPeriod(period: Period): "28d" | "90d" | "180d" {

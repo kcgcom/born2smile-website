@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { MessageCircle, Calendar, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -8,8 +8,8 @@ import { getAdminPreviewUrl, getBlogPostUrl, getCategoryLabel } from "@/lib/blog
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { StatCard } from "../StatCard";
-import { calcDraftRecommendationOrder, HeartIcon } from "./blog-helpers";
-import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
+import { calcDraftRecommendationOrder } from "./blog-helpers";
+import type { AdminBlogPost, BlogFeedbackData, SortKey, StatusFilter } from "./blog-helpers";
 
 export interface BlogStats {
   total: number;
@@ -20,7 +20,7 @@ export interface BlogStats {
 
 interface FilterPostsParams {
   posts: AdminBlogPost[];
-  likesData?: BlogLikesData | null;
+  feedbackData?: BlogFeedbackData | null;
   today: string;
   searchQuery: string;
   categoryFilter: BlogCategoryFilter;
@@ -57,8 +57,8 @@ interface PostsFilterPanelProps {
 interface PostListItemProps {
   post: AdminBlogPost;
   today: string;
-  likesData?: BlogLikesData | null;
-  likesLoading: boolean;
+  feedbackData?: BlogFeedbackData | null;
+  feedbackLoading: boolean;
   expanded: boolean;
   draftRank: number | null;
   editingDateSlug: string | null;
@@ -91,7 +91,7 @@ export function getBlogStats(posts: AdminBlogPost[], today: string): BlogStats {
 
 export function getFilteredPosts({
   posts,
-  likesData,
+  feedbackData,
   today,
   searchQuery,
   categoryFilter,
@@ -123,10 +123,10 @@ export function getFilteredPosts({
     filtered.sort((a, b) => b.date.localeCompare(a.date));
   } else if (sortKey === "oldest") {
     filtered.sort((a, b) => a.date.localeCompare(b.date));
-  } else if (sortKey === "likes") {
+  } else if (sortKey === "unresolved") {
     filtered.sort((a, b) => {
-      const aLikes = likesData?.likes[a.slug] ?? 0;
-      const bLikes = likesData?.likes[b.slug] ?? 0;
+      const aLikes = feedbackData?.feedback[a.slug]?.unresolved ?? 0;
+      const bLikes = feedbackData?.feedback[b.slug]?.unresolved ?? 0;
       return bLikes - aLikes;
     });
   }
@@ -232,7 +232,7 @@ export function PostsFilterPanel({
   const sortLabels: Record<SortKey, string> = {
     newest: "최신순",
     oldest: "오래된순",
-    likes: "좋아요순",
+    unresolved: "미해결 많은순",
     recommended: "추천순",
   };
   const categoryLabel = categoryFilter === "all" ? "전체 카테고리" : getCategoryLabel(categoryFilter);
@@ -293,7 +293,7 @@ export function PostsFilterPanel({
         >
           <option value="newest">최신순</option>
           <option value="oldest">오래된순</option>
-          <option value="likes">좋아요순</option>
+          <option value="unresolved">미해결 많은순</option>
           {statusFilter === "draft" && <option value="recommended">추천순</option>}
         </select>
 
@@ -360,8 +360,8 @@ export function PostsFilterPanel({
 export function PostListItem({
   post,
   today,
-  likesData,
-  likesLoading,
+  feedbackData,
+  feedbackLoading,
   expanded,
   draftRank,
   editingDateSlug,
@@ -378,7 +378,7 @@ export function PostListItem({
   onCancelEditingDate,
 }: PostListItemProps) {
   const isPublished = post.published && post.date <= today;
-  const likeCount = likesData?.likes[post.slug] ?? 0;
+  const responseCounts = feedbackData?.feedback[post.slug];
   const dDay = post.published && post.date > today
     ? Math.ceil((new Date(post.date).getTime() - new Date(today).getTime()) / 86400000)
     : null;
@@ -436,8 +436,8 @@ export function PostListItem({
             <span>{isDraft ? "미정" : post.date}</span>
             {dDay !== null && <span className="font-medium text-amber-600">D-{dDay}</span>}
             <span className="flex items-center gap-1">
-              <HeartIcon />
-              {likesLoading ? "..." : likeCount}
+              <MessageCircle size={14} aria-hidden="true" />
+              {feedbackLoading ? "응답 조회 중…" : !feedbackData ? "피드백 조회 불가" : `해결 ${responseCounts?.solved ?? 0} · 미해결 ${responseCounts?.unresolved ?? 0}`}
             </span>
           </div>
         </div>

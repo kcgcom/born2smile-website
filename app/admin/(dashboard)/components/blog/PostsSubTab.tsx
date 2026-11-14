@@ -10,7 +10,7 @@ import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminNotice } from "@/components/admin/AdminNotice";
-import type { AdminBlogPost, BlogLikesData, SortKey, StatusFilter } from "./blog-helpers";
+import type { AdminBlogPost, BlogFeedbackData, SortKey, StatusFilter } from "./blog-helpers";
 import { BLOG_EDITOR_DRAFT_KEY } from "./blog-editor-draft";
 import { CategoryDistributionPanel } from "./CategoryDistributionPanel";
 import {
@@ -35,7 +35,7 @@ export function PostsSubTab() {
     error: postsError,
     refetch: refetchPosts,
   } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
-  const { data: likesData, loading: likesLoading } = useAdminApi<BlogLikesData>("/api/admin/blog-likes");
+  const { data: feedbackData, loading: feedbackLoading } = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
   const { data: scheduleData, error: scheduleError } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule");
   const { mutate } = useAdminMutation();
 
@@ -90,14 +90,14 @@ export function PostsSubTab() {
   const filteredPosts = useMemo(
     () => getFilteredPosts({
       posts,
-      likesData,
+      feedbackData,
       today,
       searchQuery: debouncedQuery,
       categoryFilter,
       statusFilter,
       sortKey,
     }),
-    [posts, likesData, today, debouncedQuery, categoryFilter, statusFilter, sortKey],
+    [posts, feedbackData, today, debouncedQuery, categoryFilter, statusFilter, sortKey],
   );
   const draftRankMap = useMemo(() => getDraftRankMap(filteredPosts, sortKey), [filteredPosts, sortKey]);
 
@@ -215,8 +215,8 @@ export function PostsSubTab() {
                     key={post.slug}
                     post={post}
                     today={today}
-                    likesData={likesData}
-                    likesLoading={likesLoading}
+                    feedbackData={feedbackData}
+                    feedbackLoading={feedbackLoading}
                     expanded={expandedSlug === post.slug}
                     draftRank={draftRankMap?.get(post.slug) ?? null}
                     editingDateSlug={editingDateSlug}

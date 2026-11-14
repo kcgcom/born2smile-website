@@ -33,10 +33,9 @@ export default function BlogShareVisitTracker({
 
     try {
       if (window.sessionStorage.getItem(key) === "1") return;
-      window.sessionStorage.setItem(key, "1");
     } catch {}
 
-    captureEvent("blog_share_visit", {
+    const submitted = captureEvent("blog_share_visit", {
       blog_slug: slug,
       category,
       share_source: attribution.shareSource,
@@ -44,6 +43,9 @@ export default function BlogShareVisitTracker({
       utm_medium: attribution.utmMedium,
       utm_campaign: attribution.utmCampaign,
     });
+    if (submitted) {
+      try { window.sessionStorage.setItem(key, "1"); } catch {}
+    }
   }, [category, pathname, searchParams, slug]);
 
   return null;

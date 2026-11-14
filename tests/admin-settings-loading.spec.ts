@@ -43,7 +43,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
     if (path.endsWith("/blog-posts")) return route.fulfill({ json: { data: [] } });
-    if (path.endsWith("/blog-likes")) return route.fulfill({ json: { data: { likes: {}, totalLikes: 0 } } });
+    if (path.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
     const key = path.split("/").at(-1) as Section;
     if (route.request().method() === "PUT" && key === section) {
       const submitted = route.request().postDataJSON();

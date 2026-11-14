@@ -1,4 +1,6 @@
 import { Fragment } from "react";
+import { isReadingBlock } from "@/lib/blog/reading";
+import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, BookOpenText, FlaskConical } from "lucide-react";
@@ -72,6 +74,7 @@ export function renderSingleBlock(
   block: BlogBlock,
   headingId?: string,
   references: BlogCitation[] = getBlogCitations([block]),
+  trackingGroup = "manual",
 ): React.ReactElement | null {
   switch (block.type) {
     case "heading": {
@@ -161,7 +164,7 @@ export function renderSingleBlock(
             </h2>
           </div>
           <div className="space-y-3">
-            {items.map((item) => {
+            {items.map((item, position) => {
               const external = isExternalHref(item.href);
               const source = external ? getReferenceSource(item.href) : null;
               const cardClasses = external
@@ -170,6 +173,7 @@ export function renderSingleBlock(
 
               return (
                 <Link
+                  {...blogCardAttributes(item.href, "related_manual", position + 1, trackingGroup)}
                   key={item.href}
                   href={item.href}
                   target={external ? "_blank" : undefined}
@@ -280,6 +284,7 @@ export function computeHeadingIds(blocks: BlogBlock[]): (string | undefined)[] {
 }
 
 interface RenderBlocksOptions {
+  trackReading?: boolean;
   beforeBlock?: (block: BlogBlock) => React.ReactNode;
   hideResearchCallouts?: boolean;
 }
@@ -308,7 +313,7 @@ export function renderBlocks(blocks: BlogBlock[], options: RenderBlocksOptions =
       }
       index--;
       content.push(
-        <section key={`block-${start}`} id={headingId} aria-labelledby={`${headingId}-title`} className="scroll-mt-28 pt-4">
+        <section data-reading-block={options.trackReading ? "" : undefined} key={`block-${start}`} id={headingId} aria-labelledby={`${headingId}-title`} className="scroll-mt-28 pt-4">
           {hasTitle && options.beforeBlock?.(block)}
           <h2 id={`${headingId}-title`} className="font-headline mb-6 text-xl font-bold text-[var(--foreground)] md:mb-8 md:text-3xl">
             {title}
@@ -319,12 +324,15 @@ export function renderBlocks(blocks: BlogBlock[], options: RenderBlocksOptions =
       continue;
     }
     if (options.hideResearchCallouts && block.type === "researchCallout") continue;
-    content.push(
+    const rendered = (
       <Fragment key={`block-${index}`}>
         {options.beforeBlock?.(block)}
-        {renderSingleBlock(block, headingIds[index], references)}
-      </Fragment>,
+        {renderSingleBlock(block, headingIds[index], references, String(index + 1))}
+      </Fragment>
     );
+    content.push(options.trackReading && isReadingBlock(block)
+      ? <div key={`block-${index}`} data-reading-block="">{rendered}</div>
+      : rendered);
   }
   return <>{content}<CitationReferences references={references} /></>;
 }
