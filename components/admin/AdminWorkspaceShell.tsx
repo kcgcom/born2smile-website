@@ -62,7 +62,8 @@ const WORKSPACES: WorkspaceConfig[] = [
     label: "운영",
     icon: LayoutDashboard,
     tabs: [
-      { href: "/admin/operations/overview", label: "오늘 확인할 일", icon: LayoutDashboard },
+      { href: "/admin/operations/overview", label: "오늘 할 일", icon: LayoutDashboard },
+      { href: "/admin/content/tasks", label: "작업함", icon: KanbanSquare, aliases: ["/admin/content/planner"] },
       { href: "/admin/content/posts", label: "포스트", icon: FileText, aliases: ["/admin/content/revisions"] },
       { href: "/admin/content/schedule", label: "발행 일정", icon: Activity },
       { href: "/admin/content/images", label: "이미지", icon: Image },
@@ -94,7 +95,6 @@ const WORKSPACES: WorkspaceConfig[] = [
 
 const TOOL_GROUPS: { label: string; items: NavItem[] }[] = [
   { label: "기획·분석 자료", items: [
-    { href: "/admin/content/planner", label: "기존 콘텐츠 플래너", icon: KanbanSquare },
     { href: "/admin/content/strategy", label: "기회 분석", icon: Target },
     { href: "/admin/content/trends", label: "검색 트렌드·키워드 관리", icon: TrendingUp },
   ] },
@@ -143,11 +143,11 @@ function getActiveTool(pathname: string) {
 function AuxiliaryTools({ pathname }: { pathname: string }) {
   const active = getActiveTool(pathname);
   return (
-    <details open={Boolean(active)} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <summary className="min-h-9 cursor-pointer rounded-lg px-1 py-2 text-sm font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+    <details className="relative rounded-xl border border-slate-200 bg-slate-50 px-2 lg:ml-auto lg:shrink-0" onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
+      <summary className="min-h-11 cursor-pointer rounded-lg px-1 py-3 text-xs font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
         보조 도구{active ? ` · ${active.label}` : ""}
       </summary>
-      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 lg:grid-cols-3">
+      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 pb-3 lg:absolute lg:right-0 lg:top-full lg:z-40 lg:w-[min(760px,calc(100vw-4rem))] lg:grid-cols-3 lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-4 lg:shadow-xl">
         {TOOL_GROUPS.map((group) => (
           <section key={group.label} aria-label={group.label}>
             <h2 className="mb-2 text-xs font-semibold text-slate-500">{group.label}</h2>
@@ -155,7 +155,7 @@ function AuxiliaryTools({ pathname }: { pathname: string }) {
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const selected = item.href === active?.href;
-                return <li key={item.href}><Link href={item.href} aria-current={selected ? "page" : undefined} className={`flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${selected ? "bg-white font-semibold text-blue-800 shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-900"}`}><Icon size={14} aria-hidden="true" />{item.label}</Link></li>;
+                return <li key={item.href}><Link href={item.href} aria-current={selected ? "page" : undefined} className={`flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${selected ? "bg-white font-semibold text-blue-800 shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-900"}`}><Icon size={14} aria-hidden="true" />{item.label}</Link></li>;
               })}
             </ul>
           </section>
@@ -168,7 +168,7 @@ function AuxiliaryTools({ pathname }: { pathname: string }) {
 function WorkspaceNav({ pathname }: { pathname: string }) {
   return (
     <nav
-      className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100/80 p-1 lg:flex lg:flex-row lg:overflow-x-auto lg:[-ms-overflow-style:none] lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
+      className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100/80 p-1 lg:flex lg:shrink-0"
       aria-label="관리자 워크스페이스"
     >
       {WORKSPACES.map((workspace) => {
@@ -179,7 +179,7 @@ function WorkspaceNav({ pathname }: { pathname: string }) {
             key={workspace.id}
             href={workspace.href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 py-2.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:gap-2 sm:px-3 lg:min-w-[132px] lg:flex-1 lg:px-4 ${
+            className={`flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 py-2.5 text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:gap-2 sm:px-3 lg:px-3 ${
               active
                 ? "bg-white font-semibold text-[var(--color-primary)] shadow-sm"
                 : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -208,10 +208,10 @@ function SectionTabs({
 
   return (
     <nav
-      className="rounded-xl bg-slate-100/80 p-1"
+      className="rounded-xl bg-slate-100/80 p-1 lg:min-w-0 lg:flex-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      <div className={`grid gap-1 ${workspace.tabs.length === 2 ? "grid-cols-2" : workspace.tabs.length === 5 ? "grid-cols-5" : "grid-cols-4"} lg:flex`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);
@@ -222,14 +222,14 @@ function SectionTabs({
               onPointerEnter={() => preloadTabData(tab.href)}
               onFocus={() => preloadTabData(tab.href)}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border-b-2 border-transparent px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:flex-1 ${
+              className={`flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-normal rounded-lg border-b-2 border-transparent px-1 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:px-3 lg:flex-1 lg:whitespace-nowrap ${
                 active
                   ? "border-amber-800 bg-white font-semibold text-amber-900 shadow-sm"
                   : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              <Icon size={13} aria-hidden="true" />
-              <span>{tab.label}</span>
+              <Icon size={13} className="hidden shrink-0 sm:block" aria-hidden="true" />
+              <span className="break-keep">{tab.label}</span>
             </Link>
           );
         })}
@@ -250,19 +250,19 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)] max-sm:[&_button]:min-h-11 max-sm:[&_summary]:min-h-11 max-sm:[&_select]:min-h-11 max-sm:[&_input:not([type=checkbox]):not([type=radio])]:min-h-11">
       <DashboardHeader onLogout={handleLogout} />
 
-      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6">
-        <AdminSurface tone="white" className="rounded-2xl px-2 py-2 sm:px-4 sm:py-3">
-          <div className="flex flex-col gap-3">
+      <div className="mx-auto max-w-7xl px-3 py-2 sm:px-6 sm:py-6 lg:py-3">
+        <AdminSurface tone="white" className="rounded-2xl px-2 py-2 sm:px-4 sm:py-3 lg:px-2 lg:py-2">
+          <div className="flex flex-col gap-1.5 sm:gap-3 lg:flex-row lg:items-center lg:gap-2">
             <WorkspaceNav pathname={pathname} />
             {workspace && <SectionTabs pathname={pathname} workspace={workspace} />}
-            <AuxiliaryTools pathname={pathname} />
+            <AuxiliaryTools key={pathname} pathname={pathname} />
           </div>
         </AdminSurface>
 
-        <div className="mt-6">{children}</div>
+        <div className="mt-3 sm:mt-6">{children}</div>
       </div>
     </div>
   );

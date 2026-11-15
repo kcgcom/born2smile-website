@@ -89,8 +89,8 @@ export function ConceptReviewPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <AdminPill tone="white">개념별 근거 검토</AdminPill>
-            <h1 className="mt-3 text-xl font-bold">재정렬 후보가 어떤 개념을 실제로 충족하는지 판정합니다.</h1>
-            <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">주제 관련성과 개념 충족은 별도 판단입니다. 기존 주제 라벨은 이어받았으며 개념별 근거 수준을 추가로 검토합니다.</p>
+            <h1 className="mt-3 text-xl font-bold">개념별 근거 검토</h1>
+            <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">본문이 각 개념을 얼마나 설명하는지 판정하세요.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review"><ArrowLeft className="h-4 w-4" />기존 검색 라벨</AdminActionLink>
               <AdminActionLink tone="primary" href="/admin/content/strategy/actions">콘텐츠 행동추천</AdminActionLink>
@@ -126,7 +126,7 @@ export function ConceptReviewPage() {
             <label className="mt-7 block text-sm font-bold">메모 <span className="font-normal text-slate-400">(선택)</span><textarea value={draft?.notes ?? ""} maxLength={1000} onChange={(event) => updateDraft({ notes: event.target.value })} rows={3} placeholder="개념별 경계 사례나 판단 근거를 기록하세요." className="mt-2 w-full rounded-2xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[var(--color-primary)]" /></label>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2"><AdminActionButton tone="dark" disabled={selectedIndex <= 0} onClick={() => move(-1)}><ArrowLeft className="h-4 w-4" />이전</AdminActionButton><AdminActionButton tone="dark" disabled={selectedIndex >= filtered.length - 1} onClick={() => move(1)}>다음<ArrowRight className="h-4 w-4" /></AdminActionButton></div><AdminActionButton tone="primary" disabled={!canSave || mutation.loading} onClick={save}>{mutation.loading ? "저장 중…" : "저장하고 다음"}</AdminActionButton></div>
           </AdminSurface>
-          <aside className="space-y-4"><AdminSurface tone="white" className="rounded-3xl p-5"><h3 className="font-bold">판정 원칙</h3><p className="mt-2 text-sm leading-6 text-slate-600">{topic?.description}</p><ul className="mt-4 space-y-2 text-xs leading-5 text-slate-500"><li>· 주제가 관련이어도 특정 개념은 미충족일 수 있습니다.</li><li>· 요약이나 짧은 언급은 부분 충족 또는 미충족으로 판단합니다.</li><li>· 문단에 없는 내용을 추론해서 충족으로 판정하지 않습니다.</li></ul></AdminSurface><AdminSurface tone="white" className="rounded-3xl p-5 text-sm text-slate-600"><strong className="text-slate-900">현재 위치</strong> {selectedIndex + 1} / {filtered.length}</AdminSurface></aside>
+          <aside className="space-y-4"><details className="rounded-2xl border border-slate-200 bg-white p-4"><summary className="min-h-11 cursor-pointer py-3 font-bold">판정 원칙</summary><p className="mt-2 text-sm leading-6 text-slate-600">{topic?.description}</p><ul className="mt-4 space-y-2 text-xs leading-5 text-slate-500"><li>· 주제가 관련이어도 특정 개념은 미충족일 수 있습니다.</li><li>· 요약이나 짧은 언급은 부분 충족 또는 미충족으로 판단합니다.</li><li>· 문단에 없는 내용을 추론해서 충족으로 판정하지 않습니다.</li></ul></details><AdminSurface tone="white" className="rounded-3xl p-5 text-sm text-slate-600"><strong className="text-slate-900">현재 위치</strong> {selectedIndex + 1} / {filtered.length}</AdminSurface></aside>
         </div>
       )}
     </div>

@@ -44,8 +44,8 @@ export function SectionShell({
   };
 
   return (
-    <AdminSurface tone="white" className="rounded-2xl p-6">
-      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <AdminSurface tone="white" data-settings-editing={open} className="rounded-2xl p-4 sm:p-6">
+      <div className="mb-3 flex flex-wrap gap-3 sm:flex-nowrap sm:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-bold text-[var(--foreground)]">{title}</h3>
@@ -53,7 +53,7 @@ export function SectionShell({
               {dirty ? "수정됨" : saved ? "저장 완료" : "편집 가능"}
             </AdminPill>
           </div>
-          <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+          {open && <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>}
           {summary && (
             <p className="mt-2 text-xs text-[var(--muted)]">{summary}</p>
           )}
@@ -62,7 +62,8 @@ export function SectionShell({
           <AdminActionButton
             tone="dark"
             onClick={handleToggle}
-            className="px-3 text-xs"
+            aria-expanded={open}
+            className="min-h-11 px-3 text-sm"
           >
             {open ? <X className="h-3.5 w-3.5" /> : <PencilLine className="h-3.5 w-3.5" />}
             {open ? "편집 닫기" : "편집"}
@@ -76,9 +77,10 @@ export function SectionShell({
           저장 실패: {saveError}
         </AdminNotice>
       )}
-      <div className="rounded-xl bg-[var(--background)]/72 px-4 py-4">
-        {preview}
-      </div>
+      <details className="rounded-xl bg-[var(--background)]/72 px-3">
+        <summary className="min-h-11 cursor-pointer py-3 text-sm">현재 설정 보기</summary>
+        <div className="pb-4">{preview}</div>
+      </details>
       {open ? <fieldset disabled={recovery?.hasConflict} className="mt-4 min-w-0">{children}</fieldset> : null}
     </AdminSurface>
   );

@@ -89,7 +89,7 @@ export function ContentScheduleManager({
 
   if (loading || loadingOverride) {
     return (
-      <AdminSurface tone="white" className="rounded-3xl p-6">
+      <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
         <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
           <Loader2 className="h-4 w-4 animate-spin" />
           불러오는 중...
@@ -99,67 +99,11 @@ export function ContentScheduleManager({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-      <AdminSurface tone="white" className="rounded-3xl p-6">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-              <h3 className="text-lg font-bold text-[var(--foreground)]">
-                {embedded ? "발행 정책과 일정" : "발행 요일 정책"}
-              </h3>
-            </div>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              발행 요일은 새 글의 추천 날짜를 정할 때 사용합니다. 요일을 바꿔도 기존 예약 글의 날짜는 바뀌지 않습니다.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || (!embedded && (Boolean(policyError) || !data))}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-              {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
-            </button>
-          </div>
-        </div>
-
-        {policyError && <AdminNotice tone="error">발행 요일 정책을 불러오지 못했습니다. <button type="button" onClick={refetch} className="underline">다시 시도</button></AdminNotice>}
-        {saveError && <AdminNotice tone="error">저장 실패: {saveError}</AdminNotice>}
-
-        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
-          {DAY_LABELS.map((label, index) => {
-            const selected = days.includes(index);
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={() => toggleDay(index)}
-                aria-pressed={selected}
-                disabled={saving || (!embedded && (Boolean(policyError) || !data))}
-                className={`flex h-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
-                  selected
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                    : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          선택된 요일: {days.map((day) => DAY_LABELS[day]).join(", ")} (주 {days.length}회)
-        </p>
-      </AdminSurface>
-
-      <AdminSurface tone="white" className="rounded-3xl p-6">
+    <div className="grid items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
+      <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
         <h3 className="text-lg font-bold text-[var(--foreground)]">일정 현황</h3>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          한국 시간 기준입니다. 글을 열어 내용을 검토하고 발행일을 변경한 뒤 저장하세요.
+          한국시간 기준 · 글을 눌러 예약 변경
         </p>
 
         {postsLoading ? <p role="status" className="mt-4 text-sm">발행 일정을 불러오는 중…</p>
@@ -206,6 +150,63 @@ export function ContentScheduleManager({
           </section>
         </div>}
       </AdminSurface>
+
+      <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
+              <h3 className="text-lg font-bold text-[var(--foreground)]">
+                {embedded ? "발행 정책과 일정" : "발행 요일 정책"}
+              </h3>
+            </div>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              새 글의 추천 요일입니다. 기존 예약일은 바뀌지 않습니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || (!embedded && (Boolean(policyError) || !data))}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
+            </button>
+          </div>
+        </div>
+
+        {policyError && <AdminNotice tone="error">발행 요일 정책을 불러오지 못했습니다. <button type="button" onClick={refetch} className="underline">다시 시도</button></AdminNotice>}
+        {saveError && <AdminNotice tone="error">저장 실패: {saveError}</AdminNotice>}
+
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+          {DAY_LABELS.map((label, index) => {
+            const selected = days.includes(index);
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => toggleDay(index)}
+                aria-pressed={selected}
+                disabled={saving || (!embedded && (Boolean(policyError) || !data))}
+                className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
+                  selected
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                    : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          선택된 요일: {days.map((day) => DAY_LABELS[day]).join(", ")} (주 {days.length}회)
+        </p>
+      </AdminSurface>
+
 
     </div>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { ReportToolbar } from "./ReportToolbar";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSearchPageLabel } from "@/lib/search-page";
@@ -95,25 +97,27 @@ export function SearchTab() {
 
   return (
     <div className="space-y-6">
-      <ApiSourceBadge sources={["searchConsole"]} />
+      <ReportToolbar>
+        <ApiSourceBadge sources={["searchConsole"]} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
-        {data?.siteUrl && (
-          <details className="relative text-xs text-[var(--muted)]">
-            <summary className="cursor-pointer rounded-full bg-[var(--background)] px-2.5 py-1 font-medium">
-              데이터 정보
-            </summary>
-            <div className="absolute left-0 top-8 z-20 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-[var(--border)] bg-white p-4 shadow-lg">
-              <p className="break-all">속성: {data.siteUrl}</p>
-              {data.configuredSiteUrl !== data.siteUrl && <p className="mt-1">설정 속성에서 자동 전환됨</p>}
-              <p className="mt-2">Search Console 데이터는 트래픽 데이터보다 2~3일 늦을 수 있습니다.</p>
-            </div>
-          </details>
-        )}
-      </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
+          {data?.siteUrl && (
+            <details className="relative text-xs text-[var(--muted)]">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-[var(--background)] px-2.5 py-1 font-medium">
+                데이터 정보
+              </summary>
+              <div className="absolute left-0 top-8 z-20 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-[var(--border)] bg-white p-4 shadow-lg">
+                <p className="break-all">속성: {data.siteUrl}</p>
+                {data.configuredSiteUrl !== data.siteUrl && <p className="mt-1">설정 속성에서 자동 전환됨</p>}
+                <p className="mt-2">Search Console 데이터는 트래픽 데이터보다 2~3일 늦을 수 있습니다.</p>
+              </div>
+            </details>
+          )}
+        </div>
 
-      <DataFreshness dataAsOf={data?.dataAsOf} period={data?.period} comparePeriod={data?.comparePeriod} expectedDelayDays={3} updatedAt={updatedAt} isValidating={isValidating} onRefresh={refetch} />
+        <DataFreshness dataAsOf={data?.dataAsOf} period={data?.period} comparePeriod={data?.comparePeriod} metricHelp="CTR의 %p 차이가 아닙니다. 평균 순위는 숫자가 낮을수록 좋습니다." expectedDelayDays={3} updatedAt={updatedAt} isValidating={isValidating} onRefresh={refetch} />
+      </ReportToolbar>
 
       {error && <AdminErrorState message={error} onRetry={refetch} />}
       {loading && <AdminLoadingSkeleton variant="metrics" />}

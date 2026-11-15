@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, RefreshCw } from "lucide-react";
-import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
+import { AdminActionButton, AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { forceRefetchAdminApi, useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -80,26 +80,24 @@ export function StrategySubTab() {
     <div className="space-y-8">
       <ApiSourceBadge sources={["naverDatalab", "naverSearchAd"]} />
 
-      <AdminSurface tone="white" className="rounded-3xl p-6">
+      <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex flex-wrap gap-2">
-              <AdminPill tone="white">기회 분석</AdminPill>
-            </div>
             <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">
-              검색 수요와 현재 콘텐츠의 차이를 분석합니다.
+              기회 분석
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
-              검색량, 기존 포스트, 검색 의도를 함께 비교합니다. 실행할 작업은 콘텐츠 플래너에서 관리하세요.
+              검색 수요와 콘텐츠 보강 기회를 확인합니다.
             </p>
             <p className="mt-2 text-xs text-[var(--muted)]">
               {strategy.data.period?.end ? `DataLab ${strategy.data.period.end} 기준` : "DataLab 기준일 확인 불가"}
               {strategy.data.volumeCoverage != null ? ` · 커버리지 ${Math.round(strategy.data.volumeCoverage * 100)}%` : ""}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <AdminActionLink tone="primary" href="/admin/content/planner">
-                콘텐츠 플래너 열기
+              <AdminActionLink tone="primary" href="/admin/content/tasks">
+                콘텐츠 작업함 열기
               </AdminActionLink>
+              <details><summary className="min-h-11 cursor-pointer rounded-lg border border-slate-200 px-3 py-3 text-sm">근거 검토 도구</summary><div className="mt-2 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review">
                 임베딩 근거 검토
               </AdminActionLink>
@@ -109,6 +107,7 @@ export function StrategySubTab() {
               <AdminActionLink tone="dark" href="/admin/content/strategy/actions">
                 콘텐츠 행동추천
               </AdminActionLink>
+              </div></details>
               <AdminActionButton
                 tone="dark"
                 disabled={startingSync || syncIsActive}

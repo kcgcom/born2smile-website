@@ -19,7 +19,7 @@ export function SaveButton({
       onClick={onClick}
       disabled={saving || disabled}
       tone="primary"
-      className="px-4"
+      className="min-h-11 px-4"
     >
       {saving ? (
         <Loader2 className="h-4 w-4 animate-spin" />

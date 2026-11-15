@@ -65,6 +65,56 @@ test("초안 목록은 바로 발행하지 않고 검토 화면으로 연결한�
   expect(writes).toHaveLength(0);
 });
 
+for (const width of [360, 390]) {
+  test(`${width}px 포스트 목록은 제목과 터치 영역을 확보하고 검색 상태로 복귀한다`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    const writes = await openEditor(page);
+    await page.getByRole("link", { name: "포스트 목록", exact: true }).click();
+    await page.getByRole("searchbox").fill("원래");
+    await page.getByRole("combobox", { name: "카테고리 필터" }).selectOption("prosthetics");
+    await page.getByRole("combobox", { name: "상태 필터" }).selectOption("draft");
+    await page.getByRole("combobox", { name: "정렬", exact: true }).selectOption("oldest");
+    const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: POST.title, exact: true }) });
+    const title = await row.getByRole("link", { name: POST.title, exact: true }).boundingBox();
+    const card = await row.boundingBox();
+    expect(title!.width).toBeGreaterThan(card!.width * 0.8);
+    for (const button of await row.getByRole("button").all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await row.getByRole("button", { name: `${POST.title} 검토·발행`, exact: true }).click();
+    await expect(page).toHaveURL(/list=/);
+    await page.getByRole("link", { name: "포스트 목록", exact: true }).click();
+    await expect(page.getByRole("searchbox")).toHaveValue("원래");
+    await expect(page.getByRole("combobox", { name: "카테고리 필터" })).toHaveValue("prosthetics");
+    await expect(page.getByRole("combobox", { name: "상태 필터" })).toHaveValue("draft");
+    await expect(page.getByRole("combobox", { name: "정렬", exact: true })).toHaveValue("oldest");
+    await page.reload();
+    await expect(page.getByRole("searchbox")).toHaveValue("원래");
+    await page.getByRole("button", { name: "초기화", exact: true }).click();
+    await expect(page.getByRole("searchbox")).toHaveValue("");
+    await expect(page.getByRole("combobox", { name: "상태 필터" })).toHaveValue("all");
+    expect(writes).toHaveLength(0);
+  });
+}
+
+test("캐시 갱신은 모바일 상단에 표시하며 실패와 재시도 성공을 안내한다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openEditor(page);
+  await page.getByRole("link", { name: "포스트 목록", exact: true }).click();
+  let fail = true;
+  await page.route("**/api/admin/revalidate", route => route.fulfill({ status: fail ? 503 : 200, json: fail ? { message: "테스트 갱신 실패" } : { data: {} } }));
+  const refresh = page.getByRole("button", { name: "캐시 갱신", exact: true });
+  const create = page.getByRole("button", { name: "새 글 작성", exact: true });
+  const refreshBox = await refresh.boundingBox();
+  expect(refreshBox!.y).toBeLessThan(844);
+  expect(refreshBox!.height).toBeGreaterThanOrEqual(44);
+  expect(refreshBox!.y).toBe((await create.boundingBox())!.y);
+  await refresh.click();
+  await expect(page.getByRole("alert").filter({ hasText: "캐시 갱신 실패" })).toBeVisible();
+  fail = false;
+  await refresh.click();
+  await expect(page.getByRole("status")).toContainText("캐시를 갱신했습니다");
+});
+
 test("발행 확인창은 저장할 제목을 표시하고 Escape로 입력을 보존한다", async ({ page }) => {
   const writes = await openEditor(page);
   await page.getByRole("textbox", { name: /^제목/ }).fill("검토한 뒤 발행할 새 제목");

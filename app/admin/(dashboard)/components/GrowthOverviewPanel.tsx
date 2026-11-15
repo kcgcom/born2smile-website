@@ -47,7 +47,7 @@ export function GrowthOverviewPanel() {
     <header>
       <p className="text-sm font-medium text-blue-700">{today} · 한국시간</p>
       <h1 className="mt-1 text-xl font-bold text-slate-900">오늘 할 일</h1>
-      <p className="mt-2 text-sm text-slate-600">처리할 문제, 검토할 글, 가까운 일정을 확인하고 해당 작업으로 이동하세요.</p>
+
     </header>
 
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
@@ -60,7 +60,7 @@ export function GrowthOverviewPanel() {
         <AdminActionLink tone="dark" href="/admin/analysis/indexing" className="mt-3">검사 실패 확인하기</AdminActionLink>
       </div>}
       {!pending && issues.length === 0 && sources.every(source => source.data) && !failedChecks && !failedRun && <p className="mt-3 text-sm text-slate-600">조회된 자료에서 즉시 처리할 오류는 없습니다.</p>}
-      {!indexing.error && indexing.data && indexing.data.summary.needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 검토 후보 {indexing.data.summary.needsAttention}개 · 미색인·상태 변경만으로 운영 오류로 판정하지 않습니다. <a href="/admin/analysis/indexing" className="text-blue-700 underline">색인 상세 보기</a></p>}
+      {!indexing.error && indexing.data && indexing.data.summary.needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {indexing.data.summary.needsAttention}개 ·  <a href="/admin/analysis/indexing" className="text-blue-700 underline">색인 상세 보기</a></p>}
     </AdminSurface>
 
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
@@ -69,24 +69,24 @@ export function GrowthOverviewPanel() {
         <section aria-label="초안 검토">
           <h3 className="font-semibold text-slate-900">발행 전 초안</h3>
           {posts.loading ? <p className="mt-2 text-sm">초안 확인 중…</p> : posts.error || !posts.data ? <p className="mt-2 text-sm text-slate-600">목록을 확인하지 못해 초안 수를 표시하지 않습니다.</p> : <>
-            <p className="mt-2 text-sm text-slate-600">미발행 초안 {content.drafts.length}건 · 초안이 있다는 것만으로 오류나 지연을 뜻하지 않습니다.</p>
+            <p className="mt-2 text-sm text-slate-600">미발행 초안 {content.drafts.length}건</p>
             <ul className="mt-2 space-y-2">{content.drafts.slice(0, 3).map(post => <li key={post.slug}><a className="text-sm text-blue-700 underline" href={`/admin/content/posts/${post.slug}`}>{post.title}</a></li>)}</ul>
           </>}
           <AdminActionLink tone="dark" href="/admin/content/posts?status=draft" className="mt-3">초안 검토하기</AdminActionLink>
         </section>
         <section aria-label="미해결 응답 검토">
           <h3 className="font-semibold text-slate-900">미해결 응답이 모인 글</h3>
-          <p className="mt-2 text-xs text-slate-500">DB 누적 응답 {MIN_REVIEW_RESPONSES}건 이상·미해결 {MIN_UNRESOLVED_RESPONSES}건 이상을 검토 후보로 보여줍니다. 글의 품질이나 불만족 판정이 아닙니다.</p>
+          <details className="mt-1 text-xs text-slate-500"><summary className="min-h-11 cursor-pointer py-3">선정 기준</summary><p className="pb-2">DB 누적 응답 {MIN_REVIEW_RESPONSES}건 이상·미해결 {MIN_UNRESOLVED_RESPONSES}건 이상을 검토 후보로 보여줍니다. 글의 품질이나 불만족 판정이 아닙니다.</p></details>
           {posts.loading || feedback.loading ? <p role="status" className="mt-2 text-sm">응답 확인 중…</p> : posts.error || feedback.error || !feedback.data || !posts.data ? <p className="mt-2 text-sm text-slate-600">자료를 확인하지 못해 검토 후보를 판단하지 않습니다.</p> : content.review.length ? <ul className="mt-3 space-y-3">{content.review.slice(0, 3).map(post => <li key={post.slug} className="rounded-xl bg-slate-50 p-3">
             <p className="text-sm font-medium text-slate-900">{post.title}</p>
             <p className="mt-1 text-xs text-slate-600">총 응답 {post.responses.total}건 · 해결 {post.responses.solved} · 미해결 {post.responses.unresolved}</p>
             <a className="mt-2 inline-block text-sm text-blue-700 underline" href={`/admin/content/posts?performance=${encodeURIComponent(post.slug)}`}>근거와 성과 보기</a>
-          </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 기준을 충족하는 검토 후보가 없습니다. 응답이 적은 글은 계속 관찰합니다.</p>}
+          </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 검토 후보 없음</p>}
         </section>
       </div>
       <section aria-label="검색 유입 변화 검토" className="mt-5 border-t border-slate-200 pt-4">
         <h3 className="font-semibold text-slate-900">검색 유입이 줄어든 글</h3>
-        <p className="mt-2 text-xs text-slate-500">두 기간 모두 기록이 있고, 이전 클릭 {MIN_PREVIOUS_SEARCH_CLICKS}회 이상·감소 {MIN_SEARCH_CLICK_DROP}회 이상·감소율 {MIN_SEARCH_DROP_PERCENT}% 이상인 공개 글입니다. 검색 변화가 곧 글의 품질 문제라는 뜻은 아닙니다.</p>
+        <details className="mt-1 text-xs text-slate-500"><summary className="min-h-11 cursor-pointer py-3">선정 기준</summary><p className="pb-2">두 기간 모두 기록이 있고, 이전 클릭 {MIN_PREVIOUS_SEARCH_CLICKS}회 이상·감소 {MIN_SEARCH_CLICK_DROP}회 이상·감소율 {MIN_SEARCH_DROP_PERCENT}% 이상인 공개 글입니다. 검색 변화가 곧 글의 품질 문제라는 뜻은 아닙니다.</p></details>
         {searchAttention.loading || posts.loading ? <p role="status" className="mt-2 text-sm">검색 변화 확인 중…</p>
           : searchAttention.error || posts.error ? <p className="mt-2 text-sm text-slate-600">자료를 확인하지 못해 검색 변화 후보를 판단하지 않습니다.</p>
           : !searchAttention.data?.configured ? <p className="mt-2 text-sm text-slate-600">검색 연결 설정이 필요합니다.</p>
@@ -123,7 +123,7 @@ export function GrowthOverviewPanel() {
     </AdminSurface>
 
     <details className="rounded-2xl border border-slate-200 bg-white p-4">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>
+      <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>
       <div className="mt-3 flex flex-wrap gap-2">{ANALYSIS_LINKS.map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}</div>
     </details>
   </div>;

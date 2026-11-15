@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { BlogCategoryFilter } from "@/lib/blog/types";
+import { BLOG_CATEGORY_SLUGS, type BlogCategoryFilter } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
@@ -38,14 +38,18 @@ export function PostsSubTab() {
   const { data: feedbackData, loading: feedbackLoading } = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
   const { mutate } = useAdminMutation();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = searchParams.get("q") ?? "";
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-  const [categoryFilter, setCategoryFilter] = useState<BlogCategoryFilter>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => searchParams.get("status") === "draft" ? "draft" : "all");
-  const [sortKey, setSortKey] = useState<SortKey>(() => searchParams.get("status") === "draft" ? "recommended" : "newest");
+  const categoryParam = searchParams.get("category");
+  const categoryFilter: BlogCategoryFilter = BLOG_CATEGORY_SLUGS.includes(categoryParam as typeof BLOG_CATEGORY_SLUGS[number]) ? categoryParam as BlogCategoryFilter : "all";
+  const statusParam = searchParams.get("status");
+  const statusFilter: StatusFilter = statusParam === "draft" || statusParam === "published" || statusParam === "scheduled" ? statusParam : "all";
+  const sortParam = searchParams.get("sort");
+  const sortKey: SortKey = sortParam === "oldest" || sortParam === "unresolved" || sortParam === "newest" ? sortParam : statusFilter === "draft" ? "recommended" : "newest";
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const performanceSlug = searchParams.get("performance");
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState<{ error: boolean; message: string } | null>(null);
   const [editingDateSlug, setEditingDateSlug] = useState<string | null>(null);
   const [editingDateValue, setEditingDateValue] = useState("");
   const [rescheduling, setRescheduling] = useState(false);
@@ -59,20 +63,20 @@ export function PostsSubTab() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleStatusFilterChange = (next: StatusFilter) => {
-    setStatusFilter(next);
-    if (next === "draft") {
-      setSortKey("recommended");
-    } else if (sortKey === "recommended") {
-      setSortKey("newest");
+  const updateFilters = (changes: Record<string, string>) => {
+    const url = new URL(window.location.href);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value && (key === "q" || value !== "all")) url.searchParams.set(key, value);
+      else url.searchParams.delete(key);
     }
+    window.history.replaceState(null, "", url);
+  };
+  const handleStatusFilterChange = (next: StatusFilter) => {
+    updateFilters({ status: next, sort: next === "draft" ? "recommended" : sortKey === "recommended" ? "newest" : sortKey });
   };
 
   const handleResetFilters = () => {
-    setSearchQuery("");
-    setCategoryFilter("all");
-    setStatusFilter("all");
-    setSortKey("newest");
+    updateFilters({ q: "", category: "", status: "", sort: "" });
   };
 
   const blogStats = useMemo(() => getBlogStats(posts, today), [posts, today]);
@@ -102,7 +106,10 @@ export function PostsSubTab() {
   };
 
   const handleEdit = (post: AdminBlogPost) => {
-    router.push(`/admin/content/posts/${post.slug}`);
+    const query = new URLSearchParams(window.location.search);
+    query.delete("performance");
+    const suffix = query.size ? `?list=${encodeURIComponent(query.toString())}` : "";
+    router.push(`/admin/content/posts/${post.slug}${suffix}`);
   };
 
   const handleCreate = () => {
@@ -133,10 +140,15 @@ export function PostsSubTab() {
   };
 
   const handleRefreshCache = async () => {
+    if (refreshing) return;
     setRefreshing(true);
-    await mutate("/api/admin/revalidate", "POST");
-    await refetchPosts();
-    setRefreshing(false);
+    setRefreshNotice(null);
+    try {
+      const result = await mutate("/api/admin/revalidate", "POST");
+      if (result.error) { setRefreshNotice({ error: true, message: `캐시 갱신 실패: ${result.error}` }); return; }
+      refetchPosts();
+      setRefreshNotice({ error: false, message: "캐시를 갱신했습니다. 포스트 목록을 새로고침합니다." });
+    } finally { setRefreshing(false); }
   };
 
   return (
@@ -147,6 +159,8 @@ export function PostsSubTab() {
         onRefresh={handleRefreshCache}
         onCreatePost={handleCreate}
       />
+
+      {refreshNotice && <AdminNotice tone={refreshNotice.error ? "error" : "success"}>{refreshNotice.message}</AdminNotice>}
 
       {postsLoading && <AdminLoadingSkeleton variant="table" />}
       {postsError && <AdminErrorState message={postsError} onRetry={refetchPosts} />}
@@ -159,6 +173,7 @@ export function PostsSubTab() {
 
       {!postsLoading && !postsError && (
         <>
+          <div className="space-y-6 lg:space-y-3 lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:p-4">
           <PostsSummaryCards
             blogStats={blogStats}
             statusFilter={statusFilter}
@@ -171,12 +186,13 @@ export function PostsSubTab() {
             categoryFilter={categoryFilter}
             statusFilter={statusFilter}
             sortKey={sortKey}
-            onSearchQueryChange={setSearchQuery}
-            onCategoryFilterChange={setCategoryFilter}
+            onSearchQueryChange={(value) => updateFilters({ q: value })}
+            onCategoryFilterChange={(value) => updateFilters({ category: value })}
             onStatusFilterChange={handleStatusFilterChange}
-            onSortKeyChange={setSortKey}
+            onSortKeyChange={(value) => updateFilters({ sort: value })}
             onResetFilters={handleResetFilters}
           />
+          </div>
 
           <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
             <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">포스트 목록</h3>

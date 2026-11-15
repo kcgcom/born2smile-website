@@ -91,6 +91,6 @@ test("요일 정책 조회 실패 시 저장을 막고 글 일정은 유지한�
   await expect(page.getByRole("alert").filter({ hasText: "발행 요일 정책을 불러오지 못했습니다." })).toBeVisible();
   await expect(page.getByRole("button", { name: "저장", exact: true })).toBeDisabled();
   await expect(page.getByRole("article", { name: POST.title, exact: true })).toBeVisible();
-  await expect(page.getByText(/요일을 바꿔도 기존 예약 글의 날짜는 바뀌지 않습니다/)).toBeVisible();
+  await expect(page.getByText(/기존 예약일은 바뀌지 않습니다/)).toBeVisible();
   expect(writes).toHaveLength(0);
 });

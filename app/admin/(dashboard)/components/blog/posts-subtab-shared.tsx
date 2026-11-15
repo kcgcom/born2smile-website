@@ -7,7 +7,6 @@ import { categoryColors } from "@/lib/blog/category-colors";
 import { getAdminPreviewUrl, getBlogPostUrl, getCategoryLabel } from "@/lib/blog/category-slugs";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
-import { StatCard } from "../StatCard";
 import { calcDraftRecommendationOrder } from "./blog-helpers";
 import type { AdminBlogPost, BlogFeedbackData, SortKey, StatusFilter } from "./blog-helpers";
 
@@ -159,25 +158,25 @@ export function PostsHero({
   onCreatePost,
 }: PostsHeroProps) {
   return (
-    <AdminSurface tone="white" className="rounded-3xl p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <AdminSurface tone="white" className="rounded-2xl p-4 sm:rounded-3xl sm:p-6 lg:px-4 lg:py-3">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:hidden">
             <AdminPill tone="white">포스트 운영</AdminPill>
             <AdminPill tone={blogStats.draft > 0 ? "warning" : "white"}>
               {blogStats.draft > 0 ? "초안 우선 정리 필요" : "운영 안정"}
             </AdminPill>
           </div>
-          <h2 className="mt-3 text-lg font-bold text-[var(--foreground)]">글 상태와 초안을 빠르게 정리합니다.</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
+          <h2 className="mt-2 text-lg font-bold text-[var(--foreground)] lg:mt-0">포스트 관리</h2>
+          <p className="mt-1 hidden text-sm text-[var(--muted)] sm:block lg:hidden">
             작성, 발행, 일정, 성과 요약까지 한 화면에서 관리합니다.
           </p>
-          <p className="mt-2 text-xs text-[var(--muted)]">
+          <p className="mt-2 hidden text-xs text-[var(--muted)] sm:block lg:hidden">
             초안 {blogStats.draft}건 · 예약 {blogStats.scheduled}건 · 발행 {blogStats.published}건
           </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-10 w-full px-4 py-2 text-sm sm:w-auto">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-11 w-full px-3 py-2 text-sm sm:w-auto">
             <Pencil className="h-4 w-4" />
             새 글 작성
           </AdminActionButton>
@@ -185,7 +184,7 @@ export function PostsHero({
             onClick={onRefresh}
             disabled={refreshing}
             title="캐시 새로고침 (Supabase 직접 수정 후 사용)"
-            className="flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50 sm:w-auto"
+            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50 sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "새로고침 중..." : "캐시 갱신"}
@@ -200,13 +199,13 @@ export function PostsHero({
 export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChange }: PostsSummaryCardsProps) {
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="전체 포스트" value={blogStats.total} variant="elevated" onClick={() => onStatusFilterChange("all")} active={statusFilter === "all"} />
-        <StatCard label="발행" value={blogStats.published} color="text-green-600" variant="elevated" onClick={() => onStatusFilterChange("published")} active={statusFilter === "published"} />
-        <StatCard label="예약" value={blogStats.scheduled} color="text-[var(--color-gold)]" variant="elevated" onClick={() => onStatusFilterChange("scheduled")} active={statusFilter === "scheduled"} />
-        <StatCard label="초안" value={blogStats.draft} color="text-[var(--muted)]" variant="elevated" onClick={() => onStatusFilterChange("draft")} active={statusFilter === "draft"} />
+      <div role="group" aria-label="포스트 상태" className="grid grid-cols-4 gap-2 lg:w-fit">
+        {([
+          ["all", "전체 포스트", blogStats.total], ["published", "발행", blogStats.published],
+          ["scheduled", "예약", blogStats.scheduled], ["draft", "초안", blogStats.draft],
+        ] as const).map(([status, label, value]) => <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => onStatusFilterChange(status)} className={`min-h-16 rounded-xl border bg-white px-1 py-2 text-center lg:flex lg:min-h-11 lg:items-center lg:gap-2 lg:px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${statusFilter === status ? "border-blue-600 text-blue-700 ring-1 ring-blue-600" : "border-slate-200 text-slate-700"}`}><span className="block text-lg font-bold lg:text-sm">{value}</span><span className="block text-xs">{label}</span></button>)}
       </div>
-      <p className="text-xs text-[var(--muted)]">요약 카드를 누르면 포스트 목록이 해당 상태로 바로 필터링됩니다.</p>
+      <p className="sr-only">상태를 누르면 포스트 목록이 해당 상태로 필터링됩니다.</p>
     </div>
   );
 }
@@ -239,17 +238,17 @@ export function PostsFilterPanel({
   const hasActiveFilters = searchQuery.trim().length > 0 || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
 
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
+    <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm lg:p-0 lg:shadow-none">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="lg:sr-only">
           <h3 className="text-sm font-semibold text-[var(--foreground)]">목록 필터</h3>
           <p className="mt-1 text-xs text-[var(--muted)]">검색, 상태, 카테고리, 정렬을 바로 조정합니다.</p>
         </div>
         <p className="text-xs font-medium text-[var(--muted)]">{filteredCount.toLocaleString("ko-KR")}개 표시</p>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_140px_140px_auto]">
-        <label className="relative block">
+      <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-[minmax(220px,1fr)_180px_140px_140px_auto]">
+        <label className="relative col-span-2 block lg:col-span-1">
           <span className="sr-only">제목 검색</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <input
@@ -257,14 +256,14 @@ export function PostsFilterPanel({
             placeholder="제목 검색..."
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
-            className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] pl-9 pr-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] pl-9 pr-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           />
         </label>
 
         <select
           value={categoryFilter}
           onChange={(event) => onCategoryFilterChange(event.target.value as BlogCategoryFilter)}
-          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           aria-label="카테고리 필터"
         >
           <option value="all">전체 카테고리</option>
@@ -276,7 +275,7 @@ export function PostsFilterPanel({
         <select
           value={statusFilter}
           onChange={(event) => onStatusFilterChange(event.target.value as StatusFilter)}
-          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           aria-label="상태 필터"
         >
           <option value="all">전체 상태</option>
@@ -288,7 +287,7 @@ export function PostsFilterPanel({
         <select
           value={sortKey}
           onChange={(event) => onSortKeyChange(event.target.value as SortKey)}
-          className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           aria-label="정렬"
         >
           <option value="newest">최신순</option>
@@ -302,7 +301,7 @@ export function PostsFilterPanel({
           tone="dark"
           onClick={onResetFilters}
           disabled={!hasActiveFilters}
-          className="min-h-9 w-full rounded-lg px-3 py-1.5 text-xs lg:w-auto"
+          className="min-h-11 w-full rounded-lg px-3 py-1.5 text-xs lg:w-auto"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           초기화
@@ -315,7 +314,7 @@ export function PostsFilterPanel({
           <button
             type="button"
             onClick={() => onSearchQueryChange("")}
-            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
           >
             검색: {searchQuery.trim()}
             <X className="h-3 w-3 text-[var(--muted)]" />
@@ -325,7 +324,7 @@ export function PostsFilterPanel({
           <button
             type="button"
             onClick={() => onCategoryFilterChange("all")}
-            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
           >
             {categoryLabel}
             <X className="h-3 w-3 text-[var(--muted)]" />
@@ -335,7 +334,7 @@ export function PostsFilterPanel({
           <button
             type="button"
             onClick={() => onStatusFilterChange("all")}
-            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
           >
             {statusLabels[statusFilter]}
             <X className="h-3 w-3 text-[var(--muted)]" />
@@ -345,7 +344,7 @@ export function PostsFilterPanel({
           <button
             type="button"
             onClick={() => onSortKeyChange("newest")}
-            className="inline-flex min-h-7 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
           >
             {sortLabels[sortKey]}
             <X className="h-3 w-3 text-[var(--muted)]" />
@@ -397,7 +396,7 @@ export function PostListItem({
     <li
       className={`flex flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm${isDraft ? " border-l-4 border-l-amber-400" : dDay !== null ? " border-l-4 border-l-blue-400" : ""}`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${categoryColor}`}>
@@ -417,7 +416,7 @@ export function PostListItem({
               href={getAdminPreviewUrl(post.slug, post.category)}
               target="_blank"
               rel="noopener"
-              className="mt-2 block truncate font-medium text-[var(--foreground)] hover:text-amber-600 hover:underline"
+              className="mt-2 block break-words font-medium leading-6 text-[var(--foreground)] hover:text-amber-600 hover:underline"
               title={isDraft ? "초안 미리보기" : "예약 글 미리보기"}
             >
               {post.title}
@@ -427,7 +426,7 @@ export function PostListItem({
               href={getBlogPostUrl(post.slug, post.category)}
               target="_blank"
               rel="noopener"
-              className="mt-2 block truncate font-medium text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
+              className="mt-2 block break-words font-medium leading-6 text-[var(--foreground)] hover:text-[var(--color-primary)] hover:underline"
             >
               {post.title}
             </a>
@@ -435,18 +434,18 @@ export function PostListItem({
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
             <span>{isDraft ? "미정" : post.date}</span>
             {dDay !== null && <span className="font-medium text-amber-600">D-{dDay}</span>}
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <MessageCircle size={14} aria-hidden="true" />
               {feedbackLoading ? "응답 조회 중…" : !feedbackData ? "피드백 조회 불가" : `해결 ${responseCounts?.solved ?? 0} · 미해결 ${responseCounts?.unresolved ?? 0}`}
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-9 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+          <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-11 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
           {!expanded && (
             <button
               onClick={() => onEdit(post)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
+              className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
               aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -455,7 +454,8 @@ export function PostListItem({
           )}
           <button
             onClick={() => onToggleExpanded(post.slug)}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
+            aria-expanded={expanded}
+            className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
           >
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             {expanded ? "접기" : "상세"}
@@ -466,7 +466,7 @@ export function PostListItem({
       {expanded && (
         <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-3">
           <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
-            <span>슬러그: {post.slug}</span>
+            <span className="break-all">슬러그: {post.slug}</span>
             <span>읽기 시간: {post.readTime}</span>
             {post.dateModified && <span>수정일: {post.dateModified}</span>}
           </div>
@@ -502,19 +502,19 @@ export function PostListItem({
                     if (event.key === "Escape") onCancelEditingDate();
                   }}
                   autoFocus
-                  className="rounded border border-blue-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="min-h-11 min-w-0 rounded border border-blue-300 px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
                 <button
                   onClick={() => onReschedule(post.slug, editingDateValue)}
                   disabled={rescheduling || !editingDateValue}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
+                  className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50"
                 >
                   {rescheduling ? "저장 중..." : "저장"}
                 </button>
                 <button
                   onClick={onCancelEditingDate}
                   disabled={rescheduling}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
+                  className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
                 >
                   취소
                 </button>
@@ -530,14 +530,14 @@ export function PostListItem({
                   <button
                     onClick={() => onStartEditingDate(post)}
                     disabled={rescheduling}
-                    className="rounded px-2 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-50"
+                    className="min-h-11 rounded px-3 py-2 text-sm text-blue-600 transition-colors hover:bg-blue-50"
                   >
                     발행일 변경
                   </button>
                 )}
                 <button
                   onClick={() => onEdit(post)}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
+                  className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
                   aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -545,7 +545,7 @@ export function PostListItem({
                 </button>
                 <button
                   onClick={() => onDelete(post.slug)}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600"
                   aria-label={`${post.title} 삭제`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

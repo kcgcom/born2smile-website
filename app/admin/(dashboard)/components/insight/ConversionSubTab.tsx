@@ -1,5 +1,7 @@
 "use client";
 
+import { ReportToolbar } from "../ReportToolbar";
+
 import { formatShareYield, SHARE_YIELD_DESCRIPTION } from "../analytics-display";
 import { Activity, MousePointerClick, PhoneCall, Route, ScrollText } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -129,29 +131,31 @@ export function ConversionSubTab() {
 
   return (
     <div className="space-y-6">
-      <ApiSourceBadge sources={["posthog"]} />
+      <ReportToolbar>
+        <ApiSourceBadge sources={["posthog"]} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector
-          periods={PERIODS.map((item) => ({ value: item.value, label: item.label }))}
-          selected={period}
-          disabled={isValidating || retryingDetails}
-          onChange={(value) => {
-            setRetryError(null);
-            setPeriod(value as "30d" | "90d" | "180d");
-          }}
-        />
-        {data && (
-          <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-            ⓘ 현재 {PERIOD_LABELS[data.period]} 데이터 · {formatFetchedAt(data.meta.fetchedAt)} 조회
-          </span>
-        )}
-        {isValidating && !loading && (
-          <span className="text-xs font-medium text-[var(--color-primary)]">
-            {data?.period !== period ? `${PERIOD_LABELS[period]} 데이터 불러오는 중…` : "최신 데이터 확인 중…"}
-          </span>
-        )}
-      </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <PeriodSelector
+            periods={PERIODS.map((item) => ({ value: item.value, label: item.label }))}
+            selected={period}
+            disabled={isValidating || retryingDetails}
+            onChange={(value) => {
+              setRetryError(null);
+              setPeriod(value as "30d" | "90d" | "180d");
+            }}
+          />
+          {data && (
+            <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
+              ⓘ 현재 {PERIOD_LABELS[data.period]} 데이터 · {formatFetchedAt(data.meta.fetchedAt)} 조회
+            </span>
+          )}
+          {isValidating && !loading && (
+            <span className="text-xs font-medium text-[var(--color-primary)]">
+              {data?.period !== period ? `${PERIOD_LABELS[period]} 데이터 불러오는 중…` : "최신 데이터 확인 중…"}
+            </span>
+          )}
+        </div>
+      </ReportToolbar>
 
       {data && data.warnings.length > 0 && (
         <AdminNotice tone="warning">
@@ -206,31 +210,6 @@ export function ConversionSubTab() {
         </div>
       )}
 
-      {!loading && !error && data?.configured && healthData && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Activity className="h-4 w-4 text-[var(--color-primary)]" />
-            <h3 className="text-sm font-semibold text-[var(--foreground)]">PostHog 계측 상태</h3>
-            <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${healthData.summary.healthy ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-              {healthData.summary.healthy ? "정상" : "이벤트 없음"}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
-              <div className="text-xs text-[var(--muted)]">24시간 이벤트</div>
-              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.events24h?.toLocaleString("ko-KR") ?? "—"}</div>
-            </div>
-            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
-              <div className="text-xs text-[var(--muted)]">24시간 CTA</div>
-              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.ctaEvents24h?.toLocaleString("ko-KR") ?? "—"}</div>
-            </div>
-            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
-              <div className="text-xs text-[var(--muted)]">마지막 이벤트</div>
-              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.lastEventAt ? formatCompactDate(healthData.summary.lastEventAt) : "—"}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {!loading && !error && data?.configured && (
         <>
@@ -267,14 +246,41 @@ export function ConversionSubTab() {
             />
           </div>
 
+      {!loading && !error && data?.configured && healthData && (
+        <details open={!healthData.summary.healthy} className="rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4">
+          <summary className="flex min-h-11 cursor-pointer items-center gap-2 py-2">
+            <Activity className="h-4 w-4 text-[var(--color-primary)]" />
+            <span className="text-sm font-semibold text-[var(--foreground)]">계측 상태 · 상세</span>
+            <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${healthData.summary.healthy ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {healthData.summary.healthy ? "정상" : "이벤트 없음"}
+            </span>
+          </summary>
+          <div className="grid grid-cols-3 gap-3 pb-4">
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">24시간 이벤트</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.events24h?.toLocaleString("ko-KR") ?? "—"}</div>
+            </div>
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">24시간 CTA</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.ctaEvents24h?.toLocaleString("ko-KR") ?? "—"}</div>
+            </div>
+            <div className="rounded-xl bg-[var(--surface)] px-3 py-2">
+              <div className="text-xs text-[var(--muted)]">마지막 이벤트</div>
+              <div className="mt-0.5 text-base font-semibold text-[var(--foreground)]">{healthData.summary.lastEventAt ? formatCompactDate(healthData.summary.lastEventAt) : "—"}</div>
+            </div>
+          </div>
+        </details>
+      )}
+
+
           <section>
-            <p className="mb-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{SHARE_YIELD_DESCRIPTION}</p>
+            <details className="mb-2 text-sm text-slate-700"><summary className="min-h-11 cursor-pointer py-3">공유 지표 정의</summary><p className="pb-3">{SHARE_YIELD_DESCRIPTION}</p></details>
             <SectionTitle
               icon={Route}
               title="블로그 공유 성과"
               subtitle={`${PERIOD_LABELS[data.period]} 기준 공유 시도와 실제 공유 유입을 함께 확인합니다`}
             />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="grid grid-cols-3 gap-3">
               <MetricCard
                 label="공유 1회당 유입"
                 value={
@@ -291,16 +297,6 @@ export function ConversionSubTab() {
                 label="링크 복사"
                 value={data.summary.copyShareActions.toLocaleString("ko-KR")}
                 color="text-[var(--color-gold-dark)]"
-              />
-              <MetricCard
-                label="공유 후 유입"
-                value={data.summary.totalShareVisits.toLocaleString("ko-KR")}
-                color="text-emerald-700"
-              />
-              <MetricCard
-                label="총 공유 시도"
-                value={data.summary.totalShareActions.toLocaleString("ko-KR")}
-                color="text-[var(--color-primary)]"
               />
             </div>
           </section>

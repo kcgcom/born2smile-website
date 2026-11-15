@@ -52,7 +52,13 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromSchedule = searchParams.get("from") === "schedule";
-  const closeHref = fromSchedule ? "/admin/content/schedule" : "/admin/content/posts";
+  const listQuery = new URLSearchParams(searchParams.get("list") ?? "");
+  const listHref = `/admin/content/posts${listQuery.size ? `?${listQuery}` : ""}`;
+  const editorQuery = new URLSearchParams();
+  if (fromSchedule) editorQuery.set("from", "schedule");
+  if (listQuery.size) editorQuery.set("list", listQuery.toString());
+  const editorSuffix = editorQuery.size ? `?${editorQuery}` : "";
+  const closeHref = fromSchedule ? "/admin/content/schedule" : listHref;
   const today = getTodayKST();
   const { mutate } = useAdminMutation<{ slug: string }>();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -144,7 +150,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         void refreshCache("/api/admin/blog-posts").catch(() => {});
         setSaveNotice(data.published ? "발행된 글을 수정했습니다." : "초안을 저장했습니다.");
         if (data.slug !== slug) {
-          router.replace(`/admin/content/posts/${data.slug}${fromSchedule ? "?from=schedule" : ""}`);
+          router.replace(`/admin/content/posts/${data.slug}${editorSuffix}`);
         } else {
           refetch();
         }
@@ -209,7 +215,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     setPublishDraft(null);
     if (mode === "edit") refetch();
     setSaveNotice(publishDate <= today ? "포스트를 발행했습니다." : `포스트 발행을 예약했습니다. (${publishDate})`);
-    router.replace(`/admin/content/posts/${payload.slug}${fromSchedule ? "?from=schedule" : ""}`);
+    router.replace(`/admin/content/posts/${payload.slug}${editorSuffix}`);
   };
 
   const previewCategory = mode === "edit" && postData ? normalizeBlogCategory(postData.category) : null;
@@ -242,7 +248,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {fromSchedule && <AdminActionLink tone="dark" href="/admin/content/schedule"><ArrowLeft className="h-4 w-4" />발행 일정으로 돌아가기</AdminActionLink>}
-            <AdminActionLink tone="dark" href="/admin/content/posts">
+            <AdminActionLink tone="dark" href={listHref}>
               <ArrowLeft className="h-4 w-4" />
               포스트 목록
             </AdminActionLink>

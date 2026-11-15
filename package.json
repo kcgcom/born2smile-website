@@ -5,7 +5,11 @@
   "scripts": {
     "agent:context": "tsx scripts/agent-context.ts",
     "agent:revision": "tsx scripts/agent-revision.ts",
+    "agent:task": "tsx scripts/agent-task.ts",
     "verify:content-revisions": "tsx scripts/verify-content-revisions.ts",
+    "verify:content-tasks": "tsx scripts/verify-content-tasks.ts",
+    "verify:content-tasks-db": "node scripts/verify-content-tasks-db.mjs",
+    "verify:agent-task-cli": "tsx scripts/verify-agent-task-cli.ts",
     "verify:content-revisions-db": "node scripts/verify-content-revisions-db.mjs",
     "verify:agent-context": "tsx scripts/verify-agent-context.ts",
     "generate-blog-meta": "tsx scripts/generate-blog-meta.ts",

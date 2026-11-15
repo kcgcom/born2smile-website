@@ -76,11 +76,10 @@ export function IndexingStatusTab() {
 
       {!loading && !error && data && (
         <>
-          <AdminSurface tone="white" className="rounded-3xl p-6">
+          <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap gap-2">
-                  <AdminPill tone="white">URL Inspection</AdminPill>
                   <AdminPill tone={data.summary.needsAttention > 0 ? "warning" : "white"}>
                     확인 필요 {data.summary.needsAttention}개
                   </AdminPill>
@@ -89,11 +88,9 @@ export function IndexingStatusTab() {
                   )}
                 </div>
                 <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">
-                  중요한 페이지의 색인 변화를 순환 점검합니다.
+                  색인 상태
                 </h1>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  신규·문제 URL을 우선하고, 사이트 규모에 맞춰 하루 50~200개를 검사해 30일 순환을 목표로 합니다.
-                </p>
+                <details className="text-xs text-slate-600"><summary className="min-h-11 cursor-pointer py-3">검사 방식</summary><p>신규·문제 URL 우선 · 하루 50~200개 검사 · 30일 순환 목표</p></details>
                 {data.lastRun && (
                   <div className="mt-2 text-xs text-[var(--muted-light)]">
                     <p>
@@ -106,23 +103,23 @@ export function IndexingStatusTab() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
-                <div className="rounded-2xl bg-emerald-50 p-4">
+              <div className="grid grid-cols-4 gap-2 lg:min-w-[480px]">
+                <div className="rounded-xl bg-emerald-50 p-2 sm:p-4">
                   <CheckCircle2 className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                   <p className="mt-2 text-xs text-emerald-700">색인됨</p>
                   <p className="mt-1 text-xl font-bold text-emerald-900">{data.summary.indexed}</p>
                 </div>
-                <div className="rounded-2xl bg-amber-50 p-4">
+                <div className="rounded-xl bg-amber-50 p-2 sm:p-4">
                   <ShieldAlert className="h-4 w-4 text-amber-700" aria-hidden="true" />
                   <p className="mt-2 text-xs text-amber-700">확인 필요</p>
                   <p className="mt-1 text-xl font-bold text-amber-900">{data.summary.needsAttention}</p>
                 </div>
-                <div className="rounded-2xl bg-slate-100 p-4">
+                <div className="rounded-xl bg-slate-100 p-2 sm:p-4">
                   <Clock3 className="h-4 w-4 text-slate-600" aria-hidden="true" />
                   <p className="mt-2 text-xs text-slate-600">검사 대기</p>
                   <p className="mt-1 text-xl font-bold text-slate-900">{data.summary.unchecked}</p>
                 </div>
-                <div className="rounded-2xl bg-red-50 p-4">
+                <div className="rounded-xl bg-red-50 p-2 sm:p-4">
                   <AlertTriangle className="h-4 w-4 text-red-700" aria-hidden="true" />
                   <p className="mt-2 text-xs text-red-700">검사 실패</p>
                   <p className="mt-1 text-xl font-bold text-red-900">{data.summary.failed}</p>
@@ -131,7 +128,7 @@ export function IndexingStatusTab() {
             </div>
           </AdminSurface>
 
-          <AdminSurface tone="white" className="rounded-3xl p-6">
+          <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-2">
                 {([
@@ -145,7 +142,7 @@ export function IndexingStatusTab() {
                     type="button"
                     onClick={() => setFilter(value)}
                     aria-pressed={filter === value}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`min-h-11 rounded-full px-3 py-2 text-xs font-semibold transition-colors ${
                       filter === value
                         ? "bg-[var(--color-primary)] text-white"
                         : "bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -230,7 +227,7 @@ export function IndexingStatusTab() {
           </AdminSurface>
 
           {data.events.length > 0 && (
-            <AdminSurface tone="white" className="rounded-3xl p-6">
+            <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
               <details>
                 <summary className="cursor-pointer text-sm font-semibold text-[var(--foreground)]">
                   확정된 상태 변경 {data.events.length}건

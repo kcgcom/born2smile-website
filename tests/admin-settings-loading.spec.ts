@@ -256,3 +256,35 @@ test("이전 화면의 늦은 저장 완료가 재진입 후 복구본을 삭제
   expect(raw).not.toBeNull();
   expect(JSON.parse(raw!).form.name).toBe("재진입 후 새 입력");
 });
+
+test("모바일 설정은 요약을 먼저 보여주고 상세와 편집은 별도로 연다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { writes } = await openSettings(page, "clinic", "success");
+  const card = settingsSection(page, "clinic");
+  await expect(card.getByText("테스트 치과 · 031-000-0000", { exact: true })).toBeVisible();
+  await expect(card.getByText("테스트 슬로건", { exact: true })).toBeHidden();
+  await card.getByText("현재 설정 보기", { exact: true }).click();
+  await expect(card.getByText("테스트 슬로건", { exact: true })).toBeVisible();
+  const edit = card.getByRole("button", { name: "편집", exact: true });
+  expect((await edit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await edit.click();
+  await expect(card.getByRole("textbox", { name: "병원명", exact: true })).toHaveValue("테스트 치과");
+  expect(writes).toHaveLength(0);
+});
+
+test("데스크톱 설정은 요약을 2열로 배치하고 편집 중인 구역을 전체 너비로 확장한다", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const { writes } = await openSettings(page, "clinic", "success");
+  const clinic = settingsSection(page, "clinic");
+  const hours = settingsSection(page, "hours");
+  const initial = await clinic.boundingBox();
+  const hoursBox = await hours.boundingBox();
+  expect(Math.abs(initial!.y - hoursBox!.y)).toBeLessThan(2);
+  expect(hoursBox!.x).toBeGreaterThan(initial!.x);
+  await clinic.getByRole("button", { name: "편집", exact: true }).click();
+  await expect(clinic.getByRole("textbox", { name: "병원명", exact: true })).toBeVisible();
+  expect((await clinic.boundingBox())!.width).toBeGreaterThan(initial!.width * 1.8);
+  await clinic.getByRole("button", { name: "편집 닫기", exact: true }).click();
+  expect((await clinic.boundingBox())!.width).toBeLessThan(initial!.width + 2);
+  expect(writes).toHaveLength(0);
+});

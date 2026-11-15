@@ -1,5 +1,7 @@
 "use client";
 
+import { ReportToolbar } from "./ReportToolbar";
+
 import { useRef, useState } from "react";
 import { DataFreshness } from "./DataFreshness";
 import { MetricCard } from "./MetricCard";
@@ -56,28 +58,28 @@ export function TrafficTab() {
 
   return (
     <div className="space-y-6">
-      <ApiSourceBadge
-        sources={["ga4"]}
-        urlOverrides={td.data?.analyticsUrl ? { ga4: td.data.analyticsUrl } : undefined}
-      />
-
-      {/* Period selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <PeriodSelector
-          periods={PERIODS}
-          selected={period}
-          onChange={(v) => {
-            setPeriod(v as Period);
-            setSelectedSource(null);
-            setSelectedTopPage(null);
-          }}
+      <ReportToolbar>
+        <ApiSourceBadge
+          sources={["ga4"]}
+          urlOverrides={td.data?.analyticsUrl ? { ga4: td.data.analyticsUrl } : undefined}
         />
-        <span className="rounded-full bg-[var(--background)] px-2.5 py-1 text-xs text-[var(--muted)]">
-          탭별 데이터 지연 기준이 달라 검색 성과 탭과 날짜 범위가 완전히 같지 않을 수 있습니다.
-        </span>
-      </div>
 
-      <DataFreshness dataAsOf={td.data?.dataAsOf} period={td.data?.period} comparePeriod={td.data?.comparePeriod} updatedAt={td.updatedAt} isValidating={td.isValidating} onRefresh={td.refetch} />
+        {/* Period selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          <PeriodSelector
+            periods={PERIODS}
+            selected={period}
+            onChange={(v) => {
+              setPeriod(v as Period);
+              setSelectedSource(null);
+              setSelectedTopPage(null);
+            }}
+          />
+
+        </div>
+
+        <DataFreshness metricHelp="검색 성과와 방문 통계는 반영 지연 기준이 달라 집계 기간이 다를 수 있습니다." dataAsOf={td.data?.dataAsOf} period={td.data?.period} comparePeriod={td.data?.comparePeriod} updatedAt={td.updatedAt} isValidating={td.isValidating} onRefresh={td.refetch} />
+      </ReportToolbar>
 
       <div aria-label="트래픽 보기" role="tablist" className="flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
         {TRAFFIC_VIEWS.map((item, index) => (

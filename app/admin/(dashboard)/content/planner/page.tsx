@@ -1,4 +1,4 @@
-import { ContentPlannerSubTab } from "../../components/planner/ContentPlannerSubTab";
+import { redirect } from "next/navigation";
 
 export default async function AdminContentPlannerPage({
   searchParams,
@@ -6,11 +6,8 @@ export default async function AdminContentPlannerPage({
   searchParams: Promise<{ opportunity?: string; type?: string }>;
 }) {
   const { opportunity, type } = await searchParams;
-  const opportunityType = opportunity?.split(":", 1)[0];
-  const initialItemType = type === "page" || type === "blog" || type === "faq"
-    ? type
-    : opportunityType === "page" || opportunityType === "blog" || opportunityType === "faq"
-      ? opportunityType
-      : "page";
-  return <ContentPlannerSubTab requestedOpportunityKey={opportunity ?? null} initialItemType={initialItemType} />;
+  const query = new URLSearchParams();
+  if (opportunity) query.set("opportunity", opportunity);
+  if (type === "page" || type === "blog" || type === "faq") query.set("type", type);
+  redirect(`/admin/content/tasks${query.size ? `?${query}` : ""}`);
 }

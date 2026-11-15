@@ -85,8 +85,8 @@ export function RetrievalReviewPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <AdminPill tone="white">콘텐츠 근거 모델</AdminPill>
-            <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">임베딩 검색 결과를 라벨링합니다.</h1>
-            <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">후보 문단이 주제를 실제로 뒷받침하는지 판단합니다. 유사도는 참고값이며 본문과 주제 범위를 우선해 주세요.</p>
+            <h1 className="mt-3 text-xl font-bold text-[var(--foreground)]">검색 근거 검토</h1>
+            <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">본문을 읽고 관련·부분 관련·무관 중 선택하세요.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy"><ArrowLeft className="h-4 w-4" />기회 분석으로</AdminActionLink>
               <AdminActionLink tone="primary" href="/admin/content/strategy/concept-review">개념별 근거 검토</AdminActionLink>
@@ -147,7 +147,7 @@ export function RetrievalReviewPage() {
           </AdminSurface>
 
           <aside className="space-y-4">
-            <AdminSurface tone="white" className="rounded-3xl p-5"><h3 className="font-bold">주제 판정 기준</h3><p className="mt-2 text-sm leading-6 text-slate-600">{topic?.description}</p><h4 className="mt-5 text-xs font-bold text-slate-500">평가 개념</h4><ul className="mt-2 space-y-1 text-sm text-slate-700">{topic?.concepts.map((concept) => <li key={concept}>· {concept}</li>)}</ul>{topic?.exclusions.length ? <><h4 className="mt-5 text-xs font-bold text-slate-500">제외 범위</h4><ul className="mt-2 space-y-1 text-sm text-slate-700">{topic.exclusions.map((exclusion) => <li key={exclusion}>· {exclusion}</li>)}</ul></> : null}</AdminSurface>
+            <details className="rounded-2xl border border-slate-200 bg-white p-4"><summary className="min-h-11 cursor-pointer py-3 font-bold">주제 판정 기준</summary><p className="mt-2 text-sm leading-6 text-slate-600">{topic?.description}</p><h4 className="mt-5 text-xs font-bold text-slate-500">평가 개념</h4><ul className="mt-2 space-y-1 text-sm text-slate-700">{topic?.concepts.map((concept) => <li key={concept}>· {concept}</li>)}</ul>{topic?.exclusions.length ? <><h4 className="mt-5 text-xs font-bold text-slate-500">제외 범위</h4><ul className="mt-2 space-y-1 text-sm text-slate-700">{topic.exclusions.map((exclusion) => <li key={exclusion}>· {exclusion}</li>)}</ul></> : null}</details>
             <AdminSurface tone="white" className="rounded-3xl p-5 text-sm text-slate-600"><p><strong className="text-slate-900">현재 위치</strong> {selectedIndex + 1} / {filtered.length}</p><p className="mt-2 text-xs leading-5">점수가 높아도 환자·진료·문맥이 다르면 무관으로 판단합니다. 짧지만 실제 개념을 설명하면 부분 관련으로 판단합니다.</p></AdminSurface>
           </aside>
         </div>

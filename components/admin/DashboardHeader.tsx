@@ -19,7 +19,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
       tone="dark"
       className="border-x-0 border-t-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))]"
     >
-      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 md:gap-4">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 sm:py-4 md:gap-4 lg:py-2">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href="/" className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80">
@@ -43,7 +43,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
             onClick={onLogout}
             data-confirm-navigation
             tone="ghost"
-            className="rounded-full border-white/10 bg-white/6 px-4 text-white"
+            className="min-h-11 rounded-full border-white/10 bg-white/6 px-4 text-white"
           >
             로그아웃
           </AdminActionButton>

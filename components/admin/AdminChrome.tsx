@@ -86,7 +86,7 @@ export function AdminActionLink({
     <Link
       {...props}
       className={cx(
-        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors",
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors",
         actionToneClasses[tone],
         className,
       )}
@@ -110,7 +110,7 @@ export function AdminActionButton({
     <button
       {...props}
       className={cx(
-        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50",
         actionToneClasses[tone],
         className,
       )}

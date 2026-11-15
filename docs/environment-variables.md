@@ -19,7 +19,7 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Admin key | 필수 |
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 브라우저 관리자 로그인·권한 확인 시 필수 |
 | `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증 등 관리자 작업 시 사용. 호출 대상 서버와 동일한 값 |
-| `AGENT_CONTENT_SECRET` | 허용된 조회·검토용 수정안 생성·이미지 업로드용 키 | `agent:revision`, `POST /api/admin/upload`에 사용. 원본 수정·발행·삭제·적용 권한 없음 |
+| `AGENT_CONTENT_SECRET` | 허용된 조회·작업 제안/보고·비공개 원고/수정안 생성·이미지 업로드용 키 | `agent:task`, `content-tasks` API, `agent:revision`, `POST /api/admin/upload`에 사용. 작업 승인·완료·기존 원본 직접 수정·발행·삭제·적용 권한 없음 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | GA4/SC 사용 시 |
 | `GA4_PROPERTY_ID` | GA4 속성 ID | `/admin/analysis/traffic` 사용 시 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | `/admin/analysis/search` 사용 시 |

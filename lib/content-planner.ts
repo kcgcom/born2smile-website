@@ -49,10 +49,11 @@ export const createPlannerItemSchema = z.object({
 });
 
 export const updatePlannerItemSchema = z.object({
+  baseUpdatedAt: z.iso.datetime({ offset: true }).optional(),
   status: z.enum(plannerStatuses).optional(),
   priority: z.enum(plannerPriorities).optional(),
   dueDate: z.iso.date().nullable().optional(),
-}).refine((value) => Object.keys(value).length > 0, "수정할 값이 없습니다");
+}).strict().refine((value) => value.status !== undefined || value.priority !== undefined || value.dueDate !== undefined, "수정할 값이 없습니다");
 
 interface PlannerRow {
   id: string;
@@ -73,6 +74,14 @@ interface PlannerRow {
 }
 
 export function mapPlannerRow(row: PlannerRow): ContentPlannerItem {
+  const snapshot = { ...(row.source_snapshot ?? {}) };
+  if (snapshot.taskWorkflow && typeof snapshot.taskWorkflow === "object" && !Array.isArray(snapshot.taskWorkflow)) {
+    const workflow = { ...snapshot.taskWorkflow as Record<string, unknown> };
+    delete workflow.claimHash;
+    delete workflow.proposalHash;
+    delete workflow.requestHash;
+    snapshot.taskWorkflow = workflow;
+  }
   return {
     id: row.id,
     opportunityKey: row.opportunity_key,
@@ -84,7 +93,7 @@ export function mapPlannerRow(row: PlannerRow): ContentPlannerItem {
     priority: row.priority,
     rationale: row.rationale,
     brief: row.brief ?? {},
-    sourceSnapshot: row.source_snapshot ?? {},
+    sourceSnapshot: snapshot,
     dueDate: row.due_date,
     createdBy: row.created_by,
     createdAt: row.created_at,

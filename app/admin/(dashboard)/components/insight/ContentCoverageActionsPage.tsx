@@ -89,7 +89,7 @@ export function ContentCoverageActionsPage() {
       assessmentInputVersion,
     });
     if (!result.error) {
-      setMessage("행동추천을 콘텐츠 플래너에 등록했습니다.");
+      setMessage("행동추천을 콘텐츠 작업함에 등록했습니다.");
       query.refetch();
     }
   };
@@ -108,7 +108,7 @@ export function ContentCoverageActionsPage() {
               <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review"><ArrowLeft className="h-4 w-4" />개념별 근거 검토</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석으로</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">재평가 검토</AdminActionLink>
-              <AdminActionLink tone="primary" href="/admin/content/planner">콘텐츠 플래너</AdminActionLink>
+              <AdminActionLink tone="primary" href="/admin/content/tasks">콘텐츠 작업함</AdminActionLink>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -163,7 +163,7 @@ export function ContentCoverageActionsPage() {
         ))}
       </Section>
 
-      <Section icon={<Send className="h-5 w-5" />} title="전환 가능한 작업" description="필수 선행 조건을 통과해 콘텐츠 플래너에 등록할 수 있습니다." count={groups.ready.length}>
+      <Section icon={<Send className="h-5 w-5" />} title="전환 가능한 작업" description="필수 선행 조건을 통과해 콘텐츠 작업함에 등록할 수 있습니다." count={groups.ready.length}>
         {groups.ready.length === 0 ? <EmptyState text="현재 전환 가능한 작업이 없습니다." /> : groups.ready.map((item) => <ContentActionCard key={item.actionKey} item={item} loading={mutation.loading} onPromote={() => promote(item)} />)}
       </Section>
 
@@ -171,7 +171,7 @@ export function ContentCoverageActionsPage() {
         {groups.blocked.map((item) => <ContentActionCard key={item.actionKey} item={item} loading={mutation.loading} onPromote={() => promote(item)} />)}
       </Section>}
 
-      {groups.promoted.length > 0 && <Section icon={<CheckCircle2 className="h-5 w-5" />} title="플래너 등록 완료" description="실행 상태와 일정은 콘텐츠 플래너에서 관리합니다." count={groups.promoted.length}>
+      {groups.promoted.length > 0 && <Section icon={<CheckCircle2 className="h-5 w-5" />} title="작업함 등록 완료" description="실행 상태와 일정은 콘텐츠 작업함에서 관리합니다." count={groups.promoted.length}>
         {groups.promoted.map((item) => <ContentActionCard key={item.actionKey} item={item} loading={mutation.loading} onPromote={() => promote(item)} />)}
       </Section>}
 
@@ -274,7 +274,7 @@ function Section({ icon, title, description, count, children }: { icon: React.Re
 }
 
 function ContentActionCard({ item, loading, onPromote }: { item: ActionWorkflowItem; loading: boolean; onPromote: () => void }) {
-  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.valueAssessment && <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 p-3 text-xs leading-5 text-sky-950"><strong>실행 가치 {item.valueScore == null ? "평가 보류" : `${item.valueScore}점`}</strong>{item.valueAssessment.reasons.map((reason) => <span key={reason} className="block">{reason}</span>)}</div>}{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${reevaluationTone(item.reevaluationState.status)}`}><strong>{reevaluationLabel(item.reevaluationState.status)}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />플래너로 전환</AdminActionButton>}{item.reevaluationState?.status === "needs-review" && <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">새 근거 검토</AdminActionLink>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/planner?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>플래너에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
+  return <AdminSurface tone="white" className="rounded-2xl p-5"><ActionHeader item={item} /><p className="mt-3 text-sm leading-6 text-slate-600">{item.why}</p><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">대상</strong> {item.targetPath}<br /><strong className="text-slate-900">미충족 개념</strong> {item.missingConcepts.length ? item.missingConcepts.join(", ") : "없음"}{item.partialConcepts.length > 0 && <><br /><strong className="text-slate-900">부분 충족</strong> {item.partialConcepts.join(", ")}</>}</div>{item.valueAssessment && <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 p-3 text-xs leading-5 text-sky-950"><strong>실행 가치 {item.valueScore == null ? "평가 보류" : `${item.valueScore}점`}</strong>{item.valueAssessment.reasons.map((reason) => <span key={reason} className="block">{reason}</span>)}</div>}{item.unresolvedBlockerKeys.length > 0 && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />선행 검토 대기: {item.unresolvedBlockerKeys.join(", ")}</div>}{item.reevaluationState && item.reevaluationState.status !== "cancelled" && <div className={`mt-3 rounded-xl border p-3 text-xs leading-5 ${reevaluationTone(item.reevaluationState.status)}`}><strong>{reevaluationLabel(item.reevaluationState.status)}</strong><span className="mt-1 block">{item.reevaluationState.reason}</span></div>}<div className="mt-4 flex flex-wrap gap-2">{item.canPromote && <AdminActionButton tone="primary" disabled={loading} onClick={onPromote}><Send className="h-4 w-4" />작업함에 등록</AdminActionButton>}{item.reevaluationState?.status === "needs-review" && <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">새 근거 검토</AdminActionLink>}{item.plannerItem && <AdminActionLink tone="primary" href={`/admin/content/tasks?type=${item.plannerItem.itemType}&opportunity=${encodeURIComponent(item.actionKey)}`}>작업함에서 보기 <ExternalLink className="h-4 w-4" /></AdminActionLink>}</div></AdminSurface>;
 }
 
 function reevaluationLabel(status: NonNullable<ActionWorkflowItem["reevaluationState"]>["status"]) {
