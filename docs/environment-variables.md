@@ -18,9 +18,8 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | 필수 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Admin key | 필수 |
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 브라우저 관리자 로그인·권한 확인 시 필수 |
-| `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증·`agent:context` live 조회 시 사용. 호출 대상 서버와 동일한 값 |
-| `AGENT_CONTENT_READ_SECRET` | 에이전트의 허용된 콘텐츠·성과 GET 조회용 키 | `agent:context`가 우선 사용. 서버·로컬에 같은 값 설정 |
-| `AGENT_CONTENT_DRAFT_SECRET` | 허용된 조회와 검토용 수정안 생성용 키 | `agent:revision`에 필요. 원본 수정·발행·삭제·적용 권한 없음 |
+| `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증 등 관리자 작업 시 사용. 호출 대상 서버와 동일한 값 |
+| `AGENT_CONTENT_SECRET` | 허용된 조회·검토용 수정안 생성·이미지 업로드용 키 | `agent:revision`, `POST /api/admin/upload`에 사용. 원본 수정·발행·삭제·적용 권한 없음 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | GA4/SC 사용 시 |
 | `GA4_PROPERTY_ID` | GA4 속성 ID | `/admin/analysis/traffic` 사용 시 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | `/admin/analysis/search` 사용 시 |

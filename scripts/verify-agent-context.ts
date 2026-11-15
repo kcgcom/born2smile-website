@@ -51,6 +51,7 @@ async function main() {
   assert.equal(calls.length, before);
   assert.equal(offline.sources.catalog.status, "skipped");
   assert.equal((await createReader("http://localhost:3000", undefined, fetcher)("/api/admin/blog-feedback")).status, "unconfigured");
+  assert.equal((await createReader("http://localhost:3000", undefined, fetcher)("/api/admin/blog-feedback")).error, "AGENT_CONTENT_SECRET_MISSING");
   assert.equal(calls.length, before);
   await assert.rejects(() => createReader("http://localhost:3000", token, fetcher)("/api/admin/revalidate"));
   const empty = await createReader("http://localhost:3000", token, async () => Response.json({ data: null }))("/api/admin/analytics");

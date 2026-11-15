@@ -39,7 +39,7 @@ async function main() {
   // Preserve process environment overrides; never print configuration values.
   if (!offline) for (const name of [".env.local", ".env"]) if (existsSync(name)) loadEnvFile(name);
   const report = await collectContext({ target, period: period as Period, limit: Number(args.get("--limit") ?? "5"),
-    baseUrl: args.get("--base-url") ?? "http://localhost:3000", token: offline ? undefined : process.env.AGENT_CONTENT_READ_SECRET || process.env.AGENT_CONTENT_DRAFT_SECRET || process.env.ADMIN_CLI_SECRET, offline });
+    baseUrl: args.get("--base-url") ?? "http://localhost:3000", token: offline ? undefined : process.env.AGENT_CONTENT_SECRET, offline });
   const localFiles = report.target.sourceFiles.map(path => ({ path, hash: createHash("sha256").update(readFileSync(path)).digest("hex") }));
   let gitCommit: string | null = null;
   try { gitCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { /* A source archive may not contain Git metadata. */ }

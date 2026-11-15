@@ -2,7 +2,7 @@
 
 2026-11-15. 자료 수집 CLI, 최신 DB 원본 조회, 검토용 수정안 저장·관리자 검토 화면, 버전 충돌 검사를 구현했다. [026 마이그레이션](../supabase/migrations/026_blog_content_revisions.sql)은 운영 DB에 적용하고 적용 이력·RLS·역할별 권한을 확인했다. 실제 DB에서 제안 생성과 반영을 트랜잭션으로 검증한 뒤 테스트 쓰기는 모두 롤백했다.
 
-Vercel 운영 환경에는 `AGENT_CONTENT_READ_SECRET`과 `AGENT_CONTENT_DRAFT_SECRET`을 Secret 유형으로 등록했다. 코드의 운영 배포는 아직 진행하지 않았으며, 키와 새 API의 운영 동작은 승인된 Git 배포 후 별도로 확인해야 한다. Preview 환경에는 이 운영 키를 등록하지 않았다.
+에이전트 인증은 `AGENT_CONTENT_SECRET` 하나로 통합했다. 로컬 설정을 이전했으며 운영 환경은 새 변수 등록과 승인된 Git 배포가 필요하다. 기존 조회·수정안 키는 새 코드에서 사용하지 않는다. 운영 전환 시 새 변수를 먼저 등록하고 배포·검증한 뒤 기존 변수를 제거한다. Preview에는 운영 키를 복제하지 않는다.
 
 ## 자료 수집
 
@@ -18,7 +18,7 @@ pnpm verify:agent-context
 `--help`에 전체 인수가 있다. `--output`을 생략하면 `.tmp/agent-context/`에 새 JSON을 저장하고 경로·부분 수집 여부를 출력한다. 기존 파일은 덮어쓰지 않는다. `.tmp/`는 Git에서 제외되므로 결과를 영구 기록으로 간주하지 않는다.
 
 - 기본 API origin은 `http://localhost:3000`이다. 필요하면 `--base-url https://www.born2smile.co.kr`로 공식 사이트를 지정한다. 다른 외부 origin과 리다이렉트는 거부한다.
-- 인증은 프로세스 환경 또는 `.env.local`/`.env`에서 `AGENT_CONTENT_READ_SECRET`, `AGENT_CONTENT_DRAFT_SECRET`, `ADMIN_CLI_SECRET` 순으로 선택한다. 에이전트에는 범위가 제한된 키를 제공한다. 마지막 키는 기존 호환 경로이며 광범위한 관리자 권한이 있으므로 에이전트에 전달하지 않는 것이 원칙이다. 토큰·환경 파일·요청 헤더를 대화나 산출물에 복사하지 않는다.
+- 인증은 프로세스 환경 또는 `.env.local`/`.env`의 `AGENT_CONTENT_SECRET`을 사용한다. `ADMIN_CLI_SECRET`으로 자동 대체하지 않는다. 서버·클라이언트에 동일한 에이전트 키를 설정하고 관리자 키와는 다른 값을 쓴다. 토큰·환경 파일·요청 헤더를 대화나 산출물에 복사하지 않는다.
 - GET 조회만 수행한다. 콘텐츠 수정·발행·삭제·강제 동기화는 하지 않는다. 기존 API가 사용하는 서버 분석 캐시는 조회 과정에서 갱신될 수 있다.
 - CLI 본체의 종료 코드 0은 모든 요청이 ready인 경우다. 일부 실패·미설정·offline은 결과를 저장하고 2를 반환한다. `pnpm run`은 이 코드를 1로 전달할 수 있으므로 부분 수집 여부는 JSON의 `partial`과 source 상태를 함께 확인한다. 인수나 출력 오류는 1이다. 부분 수집 파일도 누락 범위를 확인한 뒤 분석에 사용할 수 있다.
 - live 호출은 기존 분석 API 호출 비용을 발생시킬 수 있다. 자동 재시도와 임베딩 클러스터 생성을 요청하지 않는다.
@@ -44,12 +44,24 @@ pnpm verify:agent-context
 
 ## 수정안 작성과 검토
 
+### 이미지 업로드
+
+`AGENT_CONTENT_SECRET`은 `POST /api/admin/upload`에도 사용할 수 있다. 에이전트 키로는 이미지 목록 조회·삭제와 공개 글 직접 수정·수정안 적용을 할 수 없다. 권한 변경은 서버 코드 배포 후 해당 환경에서 적용된다.
+
+- `Authorization: Bearer <AGENT_CONTENT_SECRET>`과 `multipart/form-data`로 `file`을 보낸다. `Content-Type` 헤더의 boundary는 요청 클라이언트가 생성하도록 둔다.
+- 선택 필드 `category`, `slug`를 지정하면 글별 경로에 저장한다. 생략하면 라이브러리 경로에 저장한다.
+- 허용 형식·용량·WebP 변환은 기존 `app/api/admin/upload/route.ts`의 관리자 업로드 규칙과 동일하다. 응답 `data.url`, `data.path`, `data.width`, `data.height`를 사용한다.
+- 업로드 파일은 공개 Storage URL로 접근할 수 있다. 환자 개인정보나 비공개 자료를 업로드하지 않는다. 업로드 자체는 `blog_posts`나 공개 캐시를 변경하지 않는다.
+- 글에 표시하려면 반환된 URL을 `candidate.blocks`의 `image` 블록에 넣어 아래 수정안 경로로 제출한다. 원고 반영은 기존 관리자 검토 절차를 따른다.
+
+### 수정안 제출과 적용
+
 1. 최신 `/source` 응답에서 `slug`, `revision`과 본문을 읽는다. 그 본문을 바탕으로 다음 JSON을 만든다. `candidate`에는 `title`, `subtitle`, `excerpt`, `category`, `tags`, `blocks`만 허용된다. 발행 상태·날짜·slug 변경은 거부한다.
 2. 로컬 파일의 형태는 `{ "slug": "대상-slug", "baseRevision": "조회한-UUID", "reason": "근거와 변경 이유", "candidate": { "title": "...", "subtitle": "...", "excerpt": "...", "category": "implant", "tags": [], "blocks": [] } }`이다. 이 예시는 필드 설명용이며 실제 본문은 기존 검증 조건을 충족해야 한다.
-3. `pnpm agent:revision --file .tmp/proposal.json --check`로 입력만 검증한다. `--check`를 빼면 `AGENT_CONTENT_DRAFT_SECRET`으로 수정안만 저장한다. 원본 글과 공개 캐시는 바꾸지 않는다. 결과의 `reviewUrl`을 사용자에게 제공한다. 기본 서버는 localhost이며 다른 서버에는 `--base-url`을 지정한다.
+3. `pnpm agent:revision --file .tmp/proposal.json --check`로 입력만 검증한다. `--check`를 빼면 `AGENT_CONTENT_SECRET`으로 수정안만 저장한다. 원본 글과 공개 캐시는 바꾸지 않는다. 결과의 `reviewUrl`을 사용자에게 제공한다. 기본 서버는 localhost이며 다른 서버에는 `--base-url`을 지정한다.
 4. 관리자는 `/admin/content/revisions/{id}`에서 수정 전후를 읽고 동의 체크 후 반영한다. 원본 편집 화면의 접힌 **에이전트 수정안**에서도 최근 50건을 찾을 수 있다. 반영 전의 수정 후 화면은 관리자 내부 미리보기이며 공개 페이지가 아니다.
 5. 생성과 적용 모두 DB에서 원본 버전을 검사한다. 모든 `blog_posts` UPDATE가 UUID를 회전시킨다. 적용 함수는 수정안과 원본 행을 잠그고 원본 변경과 적용 기록을 같은 트랜잭션으로 처리한다. 충돌에는 409를 반환하며 자동 재시도·원본 덮어쓰기는 하지 않는다. 이미 적용된 수정안도 재적용하지 않는다.
-6. 적용은 로그인한 관리자만 가능하다. 조회·수정안 키와 기존 CLI 키는 적용 API에서 거부한다. 적용해도 초안/예약/공개 상태와 발행일은 유지된다. 공개 중인 글의 내용은 즉시 변경된다. 적용 후 캐시 갱신 실패는 성공 응답의 `cacheRefreshPending`으로 알리며 운영자가 재확인한다.
+6. 적용은 로그인한 관리자만 가능하다. 에이전트 키와 기존 CLI 키는 적용 API에서 거부한다. 적용해도 초안/예약/공개 상태와 발행일은 유지된다. 공개 중인 글의 내용은 즉시 변경된다. 적용 후 캐시 갱신 실패는 성공 응답의 `cacheRefreshPending`으로 알리며 운영자가 재확인한다.
 
 `pnpm verify:content-revisions`는 스키마·권한 거부·CLI 입력·마이그레이션 잠금 구조를 검사한다. `pnpm verify:content-revisions-db`는 외부 DB 연결 없이 임시 PGlite의 PostgreSQL 엔진에서 026을 실행하고 원본 보존·버전 회전·충돌·중복 적용·적용 기록 실패 시 전체 롤백·권한을 검사한다. 이 엔진은 단일 세션이므로 여러 실제 세션의 잠금 경합 검증과 운영 마이그레이션 적용은 별도다. 기존 브라우저 PUT 경로에는 낙관적 충돌 검사를 추가하지 않았으므로 이 보장은 수정안 경로에 한정된다. 새 블로그 생성 전용 에이전트 쓰기 권한은 아직 제공하지 않는다.
 

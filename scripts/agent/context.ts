@@ -64,7 +64,7 @@ export function createReader(baseUrl: string, token: string | undefined, fetcher
       freshness: endpoint.startsWith("/api/admin/blog-posts") && !/^\/api\/admin\/blog-posts\/[a-z0-9-]+\/performance(?:\?|$)/.test(endpoint)
         ? "unverified-may-fallback" as const : "provider-metadata" as const, data: null };
     if (offline) return { ...base, status: "skipped", error: "OFFLINE" };
-    if (!token) return { ...base, status: "unconfigured", error: "ADMIN_CLI_SECRET_MISSING" };
+    if (!token) return { ...base, status: "unconfigured", error: "AGENT_CONTENT_SECRET_MISSING" };
     try {
       const response = await fetcher(`${origin}${endpoint}`, { method: "GET", redirect: "error",
         signal: AbortSignal.timeout(30_000), headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });

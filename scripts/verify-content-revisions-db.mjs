@@ -18,7 +18,7 @@ try {
   const candidate = { title: "수정 후 검토할 제목", subtitle: "충분한 길이의 부제", excerpt: "수정안의 요약입니다.", category: "implant", tags: [], blocks: [{ type: "paragraph", text: "검토를 마친 새로운 설명입니다." }] };
   await db.query("INSERT INTO public.blog_posts(slug,title,subtitle,excerpt,category,date,content,published) VALUES ($1,$2,$3,$4,$5,$6,$7,true)", ["revision-test", "원본 제목", "원본 부제", "원본 요약", "implant", "2020-01-01", JSON.stringify(candidate.blocks)]);
   const row = async () => (await db.query("SELECT * FROM public.blog_posts WHERE slug = 'revision-test'")).rows[0];
-  const propose = async (revision, reason = "설명을 보강합니다.") => (await db.query("SELECT public.create_blog_content_revision($1,$2,$3,$4,$5) AS result", ["revision-test", revision, JSON.stringify(candidate), reason, "agent:draft"])).rows[0].result;
+  const propose = async (revision, reason = "설명을 보강합니다.") => (await db.query("SELECT public.create_blog_content_revision($1,$2,$3,$4,$5) AS result", ["revision-test", revision, JSON.stringify(candidate), reason, "agent:content"])).rows[0].result;
   const apply = async id => (await db.query("SELECT public.apply_blog_content_revision($1,$2,$3) AS result", [id, "admin@example.invalid", "1분"])).rows[0].result;
   const original = await row();
   assert.equal((await propose("00000000-0000-4000-8000-000000000001")).status, "conflict");
