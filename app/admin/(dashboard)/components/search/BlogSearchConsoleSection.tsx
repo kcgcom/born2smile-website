@@ -82,7 +82,7 @@ export function BlogSearchConsoleSection({
             </p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
+          <div className="grid grid-cols-2 gap-2 lg:min-w-[360px]">
             <MetricCard label="블로그 총 노출" value={data.blogSummary.impressions.toLocaleString("ko-KR")} />
             <MetricCard label="블로그 총 클릭" value={data.blogSummary.clicks.toLocaleString("ko-KR")} />
             <MetricCard label="블로그 CTR" value={`${data.blogSummary.ctr}%`} />
@@ -113,7 +113,7 @@ export function BlogSearchConsoleSection({
         defaultOpen={true}
         collapsedMessage="블로그 글별 노출과 클릭을 펼쳐서 봅니다."
       >
-        <DataTable
+        <DataTable mobileCards
           columns={[
             {
               key: "page",
@@ -200,7 +200,7 @@ export function BlogSearchConsoleSection({
             selectedQuery={selectedQuery}
           />
         ) : (
-          <DataTable
+          <DataTable mobileCards
             columns={[
               {
                 key: "query",

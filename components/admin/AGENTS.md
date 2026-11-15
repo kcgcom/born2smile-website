@@ -2,7 +2,7 @@
 
 - `AdminAuthProvider.tsx`가 관리자 표시 상태와 세션 감지를 공유한다. `hooks/useAdminAuth.ts`는 이를 재노출한다. 컴포넌트마다 중복 세션 구독을 추가하지 않는다.
 - `AuthGuard.tsx`는 대시보드 진입을 보호하고 `AdminWorkspaceShell.tsx`는 현재 경로에 따른 워크스페이스 UI를 제공한다.
-- 주 메뉴는 운영·성과·사이트 관리다. 기획·추천 검토·개발 화면은 보조 도구에서 접근하며, 기존 URL의 폴더명으로 메뉴 소속을 추정하지 않는다.
+- 주 메뉴는 운영·성과·사이트 관리다. 사이트 성능·프로젝트 현황·레퍼런스는 사이트 관리에서, 기획·추천 검토는 보조 도구에서 접근한다. 기존 URL의 폴더명으로 메뉴 소속을 추정하지 않는다.
 - `AdminFloatingButton.tsx`는 공개 화면의 관리자 진입 버튼이다. 블로그 편집 모드·관리자 경로에서의 숨김 동작을 보존한다.
 - `AdminChrome.tsx`의 버튼·링크·표면·상태 UI를 재사용한다.
 - `InlineBlogEditButton.tsx`, `InlineResearchEditButton.tsx`의 편집은 공개 표시와 분리하고, 저장 실패 시 작성 내용을 보존한다.

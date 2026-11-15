@@ -107,7 +107,7 @@ export function SearchTab() {
               <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-[var(--background)] px-2.5 py-1 font-medium">
                 데이터 정보
               </summary>
-              <div className="absolute left-0 top-8 z-20 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-[var(--border)] bg-white p-4 shadow-lg">
+              <div className="mt-2 max-w-full rounded-2xl border border-[var(--border)] bg-white p-4 sm:absolute sm:right-0 sm:top-full sm:z-20 sm:w-80 sm:max-w-none sm:shadow-lg">
                 <p className="break-all">속성: {data.siteUrl}</p>
                 {data.configuredSiteUrl !== data.siteUrl && <p className="mt-1">설정 속성에서 자동 전환됨</p>}
                 <p className="mt-2">Search Console 데이터는 트래픽 데이터보다 2~3일 늦을 수 있습니다.</p>
@@ -196,7 +196,7 @@ export function SearchTab() {
                 countLabel={`${data.topPages.length}개`}
                 collapsedMessage="필요할 때만 펼쳐 봅니다."
               >
-                <DataTable
+                <DataTable mobileCards
                   columns={[
                     {
                       key: "page",
@@ -284,7 +284,7 @@ export function SearchTab() {
                     selectedQuery={selectedQuery}
                   />
                 ) : (
-                  <DataTable
+                  <DataTable mobileCards
                     columns={[
                       {
                         key: "query",

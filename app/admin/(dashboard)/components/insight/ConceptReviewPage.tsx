@@ -92,7 +92,6 @@ export function ConceptReviewPage() {
             <h1 className="mt-3 text-xl font-bold">개념별 근거 검토</h1>
             <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">본문이 각 개념을 얼마나 설명하는지 판정하세요.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review"><ArrowLeft className="h-4 w-4" />기존 검색 라벨</AdminActionLink>
               <AdminActionLink tone="primary" href="/admin/content/strategy/actions">콘텐츠 행동추천</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석으로</AdminActionLink>
             </div>

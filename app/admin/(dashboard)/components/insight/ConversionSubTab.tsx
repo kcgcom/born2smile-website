@@ -14,6 +14,7 @@ import { ApiSourceBadge } from "./ApiSourceBadge";
 import { forceRefetchAdminApi, useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { getSearchPageLabel } from "@/lib/search-page";
 
 interface PostHogHealthSummary {
   events24h: number | null;
@@ -106,6 +107,31 @@ const SHARE_SOURCE_LABELS: Record<string, string> = {
   mobile_sticky_cta: "모바일 고정 CTA",
   list_card: "목록 카드",
   "(unknown)": "미확인",
+};
+
+const CTA_LOCATION_LABELS: Record<string, string> = {
+  ...SHARE_SOURCE_LABELS,
+  floating_cta: "고정 문의 버튼",
+  contact_page: "상담 안내 페이지",
+  blog_bottom: "블로그 하단",
+  hero: "첫 화면",
+  header_desktop: "PC 상단 문의",
+  header_mobile: "모바일 상단 문의",
+  mobile_menu_phone: "모바일 메뉴 전화",
+  floating_mobile_nav: "모바일 고정 문의",
+  floating_desktop_phone: "PC 고정 전화",
+  cta_banner: "문의 안내 배너",
+  contact_main: "상담 페이지 전화",
+  contact_kakao: "상담 페이지 카카오",
+  contact_bottom: "상담 페이지 하단",
+  footer_phone: "하단 전화",
+  footer_address: "하단 주소",
+  footer_naver_map: "하단 네이버 지도",
+  footer_kakao_map: "하단 카카오 지도",
+  footer_google_review: "하단 Google 리뷰",
+  footer_naver_review: "하단 네이버 리뷰",
+  footer_kakao_channel: "하단 카카오 채널",
+  footer_naver_map_icon: "하단 지도 아이콘",
 };
 
 export function ConversionSubTab() {
@@ -301,153 +327,160 @@ export function ConversionSubTab() {
             </div>
           </section>
 
-          <section>
-            <SectionTitle
-              icon={MousePointerClick}
-              title="공유 버튼 위치별 성과"
-              subtitle="어느 위치의 공유 버튼이 실제로 사용되는지 확인합니다"
-            />
-            <DataTable
-              columns={[
-                {
-                  key: "shareSource",
-                  label: "공유 위치",
-                  align: "left",
-                  render: (row) => SHARE_SOURCE_LABELS[row.shareSource] ?? row.shareSource,
-                },
-                { key: "shareActions", label: "공유 시도", align: "right" },
-                { key: "shareVisits", label: "공유 유입", align: "right" },
-                {
-                  key: "visitRate",
-                  label: "공유 1회당 유입",
-                  align: "right",
-                  render: (row) => formatShareYield(row.shareVisits, row.shareActions),
-                },
-              ]}
-              rows={data.shareSources}
-              keyField="shareSource"
-              emptyMessage="공유 위치 데이터가 없습니다"
-            />
-          </section>
+          <div className="grid items-start gap-6 lg:grid-cols-2" aria-label="문의·공유 상세 성과">
+            <section>
+              <SectionTitle
+                icon={MousePointerClick}
+                title="공유 버튼 위치별 성과"
+                subtitle="어느 위치의 공유 버튼이 실제로 사용되는지 확인합니다"
+              />
+              <DataTable mobileCards
+                columns={[
+                  {
+                    key: "shareSource",
+                    className: "md:w-2/5",
+                    label: "공유 위치",
+                    align: "left",
+                    render: (row) => SHARE_SOURCE_LABELS[row.shareSource] ?? row.shareSource,
+                  },
+                  { key: "shareActions", label: "공유 시도", align: "right" },
+                  { key: "shareVisits", label: "공유 유입", align: "right" },
+                  {
+                    key: "visitRate",
+                    label: "공유 1회당 유입",
+                    align: "right",
+                    render: (row) => formatShareYield(row.shareVisits, row.shareActions),
+                  },
+                ]}
+                rows={data.shareSources}
+                keyField="shareSource"
+                emptyMessage="공유 위치 데이터가 없습니다"
+              />
+            </section>
 
-          <section>
-            <SectionTitle
-              icon={MousePointerClick}
-              title="CTA 위치별 성과"
-              subtitle="cta_location 기준 클릭 분포"
-            />
-            <DataTable
-              columns={[
-                { key: "ctaLocation", label: "위치", align: "left" },
-                { key: "clicks", label: "클릭", align: "right" },
-                {
-                  key: "percentage",
-                  label: "비중",
-                  align: "right",
-                  render: (row) => `${row.percentage}%`,
-                },
-              ]}
-              rows={data.byLocation}
-              keyField="ctaLocation"
-              emptyMessage="집계된 CTA 위치 데이터가 없습니다"
-            />
-          </section>
+            <section>
+              <SectionTitle
+                icon={MousePointerClick}
+                title="CTA 위치별 성과"
+                subtitle="문의 버튼이 표시된 위치별 클릭 분포"
+              />
+              <DataTable mobileCards
+                columns={[
+                  { key: "ctaLocation", label: "위치", align: "left", className: "md:w-2/5", render: row => CTA_LOCATION_LABELS[row.ctaLocation] ?? "기타 위치" },
+                  { key: "clicks", label: "클릭", align: "right" },
+                  {
+                    key: "percentage",
+                    label: "비중",
+                    align: "right",
+                    render: (row) => `${row.percentage}%`,
+                  },
+                ]}
+                rows={data.byLocation}
+                keyField="ctaLocation"
+                emptyMessage="집계된 CTA 위치 데이터가 없습니다"
+              />
+            </section>
 
-          <section>
-            <SectionTitle
-              icon={Route}
-              title="전환 페이지 TOP"
-              subtitle="어떤 페이지가 CTA 클릭을 가장 많이 만들었는지 확인합니다"
-            />
-            <DataTable
-              columns={[
-                { key: "pagePath", label: "페이지", align: "left" },
-                { key: "totalClicks", label: "총 클릭", align: "right" },
-                { key: "phoneClicks", label: "전화", align: "right" },
-                { key: "contactClicks", label: "카카오", align: "right" },
-              ]}
-              rows={data.topPages}
-              keyField="pagePath"
-              emptyMessage="집계된 페이지 데이터가 없습니다"
-            />
-          </section>
+            <section>
+              <SectionTitle
+                icon={Route}
+                title="전환 페이지 TOP"
+                subtitle="어떤 페이지가 CTA 클릭을 가장 많이 만들었는지 확인합니다"
+              />
+              <DataTable mobileCards
+                columns={[
+                  { key: "pagePath", label: "페이지", align: "left", className: "md:w-2/5", render: row => {
+                    const slug = row.pagePath.split("/").filter(Boolean).at(-1);
+                    return <div><p>{slugToTitleMap.get(slug ?? "") ?? getSearchPageLabel(row.pagePath)}</p><p className="mt-1 break-all text-xs font-normal text-slate-600">{row.pagePath}</p></div>;
+                  } },
+                  { key: "totalClicks", label: "총 클릭", align: "right" },
+                  { key: "phoneClicks", label: "전화", align: "right" },
+                  { key: "contactClicks", label: "카카오", align: "right" },
+                ]}
+                rows={data.topPages}
+                keyField="pagePath"
+                emptyMessage="집계된 페이지 데이터가 없습니다"
+              />
+            </section>
 
-          <section>
-            <SectionTitle
-              icon={ScrollText}
-              title="블로그 기여 TOP"
-              subtitle="어떤 글이 상담 CTA로 가장 잘 이어졌는지 확인합니다"
-            />
-            <DataTable
-              columns={[
-                { key: "slug", label: "슬러그", align: "left" },
-                { key: "totalClicks", label: "총 클릭", align: "right" },
-                { key: "phoneClicks", label: "전화", align: "right" },
-                { key: "contactClicks", label: "카카오", align: "right" },
-              ]}
-              rows={data.topBlogPosts}
-              keyField="slug"
-              emptyMessage="블로그 CTA 클릭 데이터가 없습니다"
-            />
-          </section>
+            <section>
+              <SectionTitle
+                icon={ScrollText}
+                title="블로그 기여 TOP"
+                subtitle="어떤 글이 상담 CTA로 가장 잘 이어졌는지 확인합니다"
+              />
+              <DataTable mobileCards
+                columns={[
+                  { key: "slug", label: "글 제목", align: "left", className: "md:w-2/5", render: row => slugToTitleMap.get(row.slug) ?? row.slug },
+                  { key: "totalClicks", label: "총 클릭", align: "right" },
+                  { key: "phoneClicks", label: "전화", align: "right" },
+                  { key: "contactClicks", label: "카카오", align: "right" },
+                ]}
+                rows={data.topBlogPosts}
+                keyField="slug"
+                emptyMessage="블로그 CTA 클릭 데이터가 없습니다"
+              />
+            </section>
 
-          <section>
-            <SectionTitle
-              icon={ScrollText}
-              title="공유된 블로그 TOP"
-              subtitle="어떤 글이 가장 많이 공유되고 실제 유입까지 이어졌는지 확인합니다"
-            />
-            <DataTable
-              columns={[
-                {
-                  key: "slug",
-                  label: "글 제목",
-                  align: "left",
-                  render: (row) => (
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-[var(--foreground)]">
-                        {slugToTitleMap.get(row.slug) ?? row.slug}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                        {slugToCategoryMap.get(row.slug) ? (
+            <section className="lg:col-span-2">
+              <SectionTitle
+                icon={ScrollText}
+                title="공유된 블로그 TOP"
+                subtitle="어떤 글이 가장 많이 공유되고 실제 유입까지 이어졌는지 확인합니다"
+              />
+              <DataTable mobileCards
+                columns={[
+                  {
+                    key: "slug",
+                    className: "md:w-2/5",
+                    label: "글 제목",
+                    align: "left",
+                    render: (row) => (
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-[var(--foreground)]">
+                          {slugToTitleMap.get(row.slug) ?? row.slug}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                          {slugToCategoryMap.get(row.slug) ? (
+                            <a
+                              href={`/blog/${slugToCategoryMap.get(row.slug)}/${row.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--color-primary)] hover:underline"
+                            >
+                              글 보기
+                            </a>
+                          ) : (
+                            <span className="text-[var(--muted)]">글 경로 없음</span>
+                          )}
+                          <span className="text-[var(--border)]">·</span>
                           <a
-                            href={`/blog/${slugToCategoryMap.get(row.slug)}/${row.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--color-primary)] hover:underline"
+                            href={`/admin/content/posts/${encodeURIComponent(row.slug)}`}
+                            className="text-[var(--color-gold-dark)] hover:underline"
                           >
-                            글 보기
+                            수정
                           </a>
-                        ) : (
-                          <span className="text-[var(--muted)]">글 경로 없음</span>
-                        )}
-                        <span className="text-[var(--border)]">·</span>
-                        <a
-                          href={`/admin/content/posts/${encodeURIComponent(row.slug)}`}
-                          className="text-[var(--color-gold-dark)] hover:underline"
-                        >
-                          수정
-                        </a>
+                        </div>
                       </div>
-                    </div>
-                  ),
-                },
-                { key: "shareActions", label: "공유 시도", align: "right" },
-                { key: "shareVisits", label: "공유 유입", align: "right" },
-                {
-                  key: "visitRate",
-                  label: "공유 1회당 유입",
-                  align: "right",
-                  render: (row) => formatShareYield(row.shareVisits, row.shareActions),
-                },
-                { key: "copiedShares", label: "복사", align: "right" },
-                { key: "nativeShares", label: "공유", align: "right" },
-              ]}
-              rows={data.topSharedBlogPosts}
-              keyField="slug"
-              emptyMessage="블로그 공유 데이터가 없습니다"
-            />
-          </section>
+                    ),
+                  },
+                  { key: "shareActions", label: "공유 시도", align: "right" },
+                  { key: "shareVisits", label: "공유 유입", align: "right" },
+                  {
+                    key: "visitRate",
+                    label: "공유 1회당 유입",
+                    align: "right",
+                    render: (row) => formatShareYield(row.shareVisits, row.shareActions),
+                  },
+                  { key: "copiedShares", label: "복사", align: "right" },
+                  { key: "nativeShares", label: "공유", align: "right" },
+                ]}
+                rows={data.topSharedBlogPosts}
+                keyField="slug"
+                emptyMessage="블로그 공유 데이터가 없습니다"
+              />
+            </section>
+          </div>
         </>
       )}
     </div>

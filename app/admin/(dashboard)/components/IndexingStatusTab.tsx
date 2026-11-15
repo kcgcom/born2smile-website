@@ -38,6 +38,23 @@ function effectiveStatus(item: IndexStatusItem): IndexMonitorStatus {
   return item.error ? "failed" : item.status;
 }
 
+function IndexReason({ item }: { item: IndexStatusItem }) {
+  if (item.error) return <>{item.error}</>;
+  const status = effectiveStatus(item);
+  const explanation = status === "discovered"
+    ? "Google이 URL을 발견했지만 아직 검색 색인에 등록하지 않았습니다."
+    : status === "crawled-not-indexed"
+      ? "Google이 페이지를 수집했지만 아직 검색 색인에 등록하지 않았습니다."
+      : null;
+  return <>
+    <p className="leading-5">{explanation ?? item.coverageState ?? "—"}</p>
+    {explanation && item.coverageState && <details className="mt-1 text-xs">
+      <summary className="min-h-11 cursor-pointer py-3">Google 원문 사유</summary>
+      <p className="break-words">{item.coverageState}</p>
+    </details>}
+  </>;
+}
+
 function formatRunStatus(status: string): string {
   if (status === "completed") return "완료";
   if (status === "completed_with_errors") return "일부 실패";
@@ -175,7 +192,9 @@ export function IndexingStatusTab() {
                   {item.canonicalMismatch && <p className="mt-2 text-sm text-red-800">Google canonical 불일치</p>}
                   {item.pendingCount > 0 && <p className="mt-2 text-sm text-blue-800">상태 변경 확인 중</p>}
                   <dl className="mt-2 space-y-2 text-sm text-slate-700">
-                    <div><dt className="font-medium">세부 사유</dt><dd className="break-words">{item.error ?? item.coverageState ?? "—"}</dd></div>
+                    <div><dt className="font-medium">세부 사유</dt><dd className="break-words">
+                      <IndexReason item={item} />
+                    </dd></div>
                     <div><dt className="font-medium">마지막 크롤링</dt><dd>{formatDate(item.lastCrawlTime)}</dd></div>
                     <div><dt className="font-medium">검사 시각</dt><dd>{formatDate(item.inspectedAt)}</dd></div>
                   </dl>
@@ -210,7 +229,7 @@ export function IndexingStatusTab() {
                           <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${copy.className}`}>{copy.label}</span>
                         </td>
                         <td className="max-w-[260px] px-3 py-3 text-xs text-[var(--muted)]">
-                          {item.error ?? item.coverageState ?? "—"}
+                          <IndexReason item={item} />
                         </td>
                         <td className="px-3 py-3 text-xs text-[var(--muted)]">{formatDate(item.lastCrawlTime)}</td>
                         <td className="px-3 py-3 text-xs text-[var(--muted)]">{formatDate(item.inspectedAt)}</td>

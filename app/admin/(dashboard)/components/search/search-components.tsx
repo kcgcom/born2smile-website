@@ -112,7 +112,7 @@ export function PageQueryDrilldown({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-[var(--muted)]">대표 유입 키워드</p>
-          <h4 className="mt-1 text-sm font-semibold text-[var(--foreground)]">{page}</h4>
+          <h4 className="mt-1 break-all text-sm font-semibold text-[var(--foreground)]">{page}</h4>
           <p className="mt-1 text-xs text-[var(--muted)]">
             이 페이지의 주요 유입 키워드입니다.
           </p>
@@ -158,7 +158,7 @@ export function PageQueryDrilldown({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p
-                    className="truncate text-sm font-medium text-[var(--foreground)]"
+                    className="break-all text-sm font-medium text-[var(--foreground)]"
                     title={item.query}
                   >
                     {item.query}
@@ -208,7 +208,7 @@ export function QueryPageDrilldown({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-[var(--muted)]">이 키워드가 연결된 페이지</p>
-          <h4 className="mt-1 text-sm font-semibold text-[var(--foreground)]">{query}</h4>
+          <h4 className="mt-1 break-all text-sm font-semibold text-[var(--foreground)]">{query}</h4>
           <p className="mt-1 text-xs text-[var(--muted)]">
             이 키워드에 연결된 대표 페이지입니다.
           </p>
@@ -281,7 +281,7 @@ export function QueryPageDrilldown({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p
-                      className="truncate text-sm font-medium text-[var(--foreground)]"
+                      className="break-all text-sm font-medium text-[var(--foreground)]"
                       title={item.page}
                     >
                       {item.page}

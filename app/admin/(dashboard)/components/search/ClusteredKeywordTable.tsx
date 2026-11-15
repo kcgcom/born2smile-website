@@ -4,6 +4,7 @@ import { memo, useState, useMemo, useCallback } from "react";
 import type { KeywordCluster, QueryRow } from "./keyword-cluster";
 import type { SemanticCluster, TableSortKey, SortDirection } from "./search-types";
 import { formatCtr } from "./search-utils";
+import { DataTable } from "../DataTable";
 
 // ---------------------------------------------------------------
 // SimilarityBadge (memoized)
@@ -195,7 +196,7 @@ function SortableHeader({
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        className="inline-flex items-center gap-0.5 hover:text-[var(--foreground)]"
+        className="inline-flex min-h-11 items-center justify-center gap-1 rounded-md px-2 hover:bg-slate-200/60 hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
       >
         {label}
         {isActive && (
@@ -268,7 +269,31 @@ export function ClusteredKeywordTable({
           유사 키워드 {multiCount}그룹 발견 — 합산 지표로 실제 검색 의도를 파악합니다.
         </p>
       )}
-      <div className="max-h-[36rem] overflow-x-auto overflow-y-auto rounded-xl border border-[var(--border)]">
+      <div className="md:hidden">
+        <DataTable mobileCards desktopTable={false}
+          columns={[
+            { key: "representative", label: "키워드", render: row => <div>
+              <button type="button" aria-pressed={selectedQuery === row.representative} onClick={() => onSelectQuery?.(row.representative)} className="min-h-11 w-full text-left text-blue-800 underline">{row.representative}</button>
+              {row.keywords.length > 1 && <details className="mt-2">
+                <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">묶인 키워드 {row.keywords.length}개</summary>
+                <ul className="space-y-3">{row.keywords.map(keyword => <li key={keyword.query} className="rounded-lg bg-slate-50 p-3">
+                  <button type="button" aria-pressed={selectedQuery === keyword.query} onClick={() => onSelectQuery?.(keyword.query)} className="min-h-11 w-full text-left text-blue-800 underline">{keyword.query}</button>
+                  <p className="text-xs font-normal leading-5 text-slate-600">노출 {keyword.impressions.toLocaleString("ko-KR")} · 클릭 {keyword.clicks.toLocaleString("ko-KR")} · CTR {formatCtr(keyword.ctr)} · 순위 {keyword.position}</p>
+                  <p className="text-xs font-normal text-slate-600">대표 키워드와 유사도 {Math.round(keyword.similarity * 100)}%</p>
+                </li>)}</ul>
+              </details>}
+            </div> },
+            { key: "impressions", label: "노출", sortable: true, render: row => row.impressions.toLocaleString("ko-KR") },
+            { key: "clicks", label: "클릭", sortable: true, render: row => row.clicks.toLocaleString("ko-KR") },
+            { key: "ctr", label: "CTR (%)", sortable: true, render: row => formatCtr(row.ctr) },
+            { key: "position", label: "순위", sortable: true },
+          ]}
+          rows={sortedClusters} keyField="representative"
+          sortKey={sortKey ?? undefined} sortDirection={sortDirection}
+          onSort={key => handleSort(key as TableSortKey)}
+        />
+      </div>
+      <div className="hidden max-h-[36rem] overflow-x-auto overflow-y-auto rounded-xl border border-[var(--border)] md:block">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-[var(--background)]">
             <tr className="border-b border-[var(--border)]">

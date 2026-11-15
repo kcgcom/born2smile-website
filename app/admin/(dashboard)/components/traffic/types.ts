@@ -89,6 +89,8 @@ export const TRAFFIC_VIEWS: Array<{ value: TrafficView; label: string }> = [
 // ---------------------------------------------------------------
 
 import { formatDuration } from "../insight/shared";
+import { TREATMENTS } from "@/lib/constants";
+import { getSearchPageLabel } from "@/lib/search-page";
 
 export function formatDurationDelta(current: number, baseline: number) {
   const diff = current - baseline;
@@ -114,5 +116,7 @@ export function getTopPageDisplayTitle(path: string, blogTitleMap: Map<string, s
   if (path === "/treatments (전체)") return "치료 페이지 전체";
   if (path === "/research (전체)") return "리서치 전체";
 
-  return blogTitleMap.get(getBlogSlugFromPath(path) ?? "") ?? path;
+  return blogTitleMap.get(getBlogSlugFromPath(path) ?? "")
+    ?? TREATMENTS.find(treatment => treatment.href === path)?.name
+    ?? getSearchPageLabel(path);
 }

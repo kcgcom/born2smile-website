@@ -1,5 +1,6 @@
 # 콘텐츠 커버리지 검색 평가
 
+> 2026-11-15 정리: 고정 후보 라벨링용 검색 근거 검토 화면과 전용 API·저장 모듈은 제거했다. 아래 검색 근거 검토 경로는 당시 구현 이력이다. 검색 평가 기준선·생성 및 검증 스크립트와 개념별 근거 검토·재평가 기능은 유지한다.
 > 코드 대조: 2026-11-12. 기준선 측정·설계 이력과 구현된 운영 흐름을 함께 보존한 문서다. 본문의 고정 후보 수·정밀도·공백 분포는 당시 평가 결과이며 현재 Supabase 운영 상태의 실시간 집계가 아니다. 이번 갱신은 코드·저장된 기준선 대조이며 외부 임베딩 평가를 재실행하지 않았다.
 
 ## 현재 구현 위치
@@ -7,7 +8,7 @@
 - 검색: `lib/content-coverage/concept-shadow-retrieval.ts` (`retrieval-v2-shadow.4`)
 - 충족·행동추천: `concept-satisfaction.ts`, `action-recommendation.ts`, `action-value.ts`
 - 운영 라벨·완료 후 재평가: `concept-review-store.ts`, `reevaluation-store.ts`
-- 관리자 경로: `/admin/content/strategy/retrieval-review`, `/admin/content/strategy/concept-review`, `/admin/content/strategy/actions`, `/admin/content/strategy/reevaluation-review`.
+- 관리자 경로: `/admin/content/strategy/concept-review`, `/admin/content/strategy/actions`, `/admin/content/strategy/reevaluation-review`.
 - 실행 명령은 package.json을 기준으로 한다. 평가·보고 스크립트도 DB 조회·외부 API 호출·로컬 캐시 쓰기를 포함할 수 있으며 재평가 워커는 운영 검토 상태를 갱신한다.
 
 

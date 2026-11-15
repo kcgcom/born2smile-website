@@ -159,8 +159,9 @@ export function TrafficTab() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <SectionCard title="주요 페이지·섹션">
+                <SectionCard title="주요 페이지·섹션" empty={td.data.topPages.length === 0}>
                   <TopPagesChart
+                    titles={td.blogTitleMap}
                     data={td.data.topPages}
                     selectedPath={activeTopPage}
                     onSelect={setSelectedTopPage}
@@ -170,7 +171,7 @@ export function TrafficTab() {
                   </p>
                 </SectionCard>
 
-                <SectionCard title="유입 경로">
+                <SectionCard title="유입 경로" empty={td.data.trafficSources.length === 0}>
                   <TrafficSourceChart
                     data={td.data.trafficSources}
                     selectedSource={activeSource}
@@ -181,30 +182,30 @@ export function TrafficTab() {
                   </p>
                 </SectionCard>
 
-                <SectionCard title="기기별 접속">
+                <SectionCard title="기기별 접속" empty={td.data.devices.length === 0}>
                   <DeviceChart data={td.data.devices} />
                 </SectionCard>
 
-                <SectionCard title="일별 방문자 추이">
+                <SectionCard title="일별 방문자 추이" empty={td.data.dailyTrend.length === 0}>
                   <DailyTrendChart data={td.data.dailyTrend} />
                 </SectionCard>
 
-                <SectionCard title="지역별 유입 TOP 10">
+                <SectionCard title="지역별 유입 TOP 10" empty={td.data.cities.length === 0}>
                   <CityChart data={td.data.cities} />
                 </SectionCard>
 
-                <SectionCard title="신규 vs 재방문">
+                <SectionCard title="신규 vs 재방문" empty={td.data.newVsReturning.length === 0}>
                   <NewVsReturningChart data={td.data.newVsReturning} />
                 </SectionCard>
 
-                <SectionCard title="시간대별 방문 패턴">
+                <SectionCard title="시간대별 방문 패턴" empty={td.data.hourlyPattern.length === 0}>
                   <HourlyPatternChart data={td.data.hourlyPattern} />
                   <p className="mt-2 text-xs text-[var(--muted)]">
                     가장 많이 방문하는 시간대가 골드 색으로 표시됩니다.
                   </p>
                 </SectionCard>
 
-                <SectionCard title="요일별 방문 패턴">
+                <SectionCard title="요일별 방문 패턴" empty={td.data.dowPattern.length === 0}>
                   <DowPatternChart data={td.data.dowPattern} />
                   <p className="mt-2 text-xs text-[var(--muted)]">
                     가장 많이 방문하는 요일이 골드 색으로 표시됩니다.
@@ -237,6 +238,7 @@ export function TrafficTab() {
 
       {view === "overall" && activeSource && activeSourceDetail && (
         <SourceDetailModal
+          titles={td.blogTitleMap}
           source={activeSource}
           detail={activeSourceDetail}
           onClose={() => setSelectedSource(null)}
@@ -245,6 +247,7 @@ export function TrafficTab() {
 
       {activeTopPage && activeTopPageDetail && (
         <TopPageDetailModal
+          titles={td.blogTitleMap}
           path={activeTopPage}
           title={activeTopPageTitle}
           detail={activeTopPageDetail}

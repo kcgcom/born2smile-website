@@ -83,13 +83,13 @@ test("새 읽기 리포트는 표본·오류·기간을 구분하고 세션 시�
   await page.goto("/admin/analysis/traffic");
   await page.getByRole("tab", { name: "블로그", exact: true }).click();
   await expect(page.getByText("유효 읽기율 (추정)", { exact: true })).toBeVisible();
-  await expect(page.getByText("표본 부족", { exact: true })).toBeVisible();
+  await expect(page.getByText("표본 부족", { exact: true }).filter({ visible: true })).toBeVisible();
   await expect(page.getByText(/시작 없는 view 1건/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "오래 읽힌 글", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "다음 글 목록" }).click();
   await expect(page.getByRole("button", { name: "다음 글 목록" })).toBeDisabled();
   await page.getByRole("button", { name: "이전 글 목록" }).click();
-  await expect(page.getByText("표본 부족", { exact: true })).toBeVisible();
+  await expect(page.getByText("표본 부족", { exact: true }).filter({ visible: true })).toBeVisible();
   await page.getByRole("button", { name: "3개월 기간 선택" }).click();
   await expect(page.getByText("읽기 조회 테스트 오류", { exact: true })).toBeVisible();
   await expect(page.getByText("표본 부족", { exact: true })).toHaveCount(0);
@@ -344,6 +344,10 @@ test("주 메뉴는 운영·성과·사이트 관리로 나뉘고 보조 도구�
   await disclosure.focus();
   await page.keyboard.press("Enter");
   await expect(tools).toBeVisible();
+  await expect(tools.getByRole("link")).toHaveText([
+    "기회 분석", "검색 트렌드·키워드 관리", "콘텐츠 행동추천",
+    "개념별 근거 검토", "변경 후 재평가", "키워드 경계 검토",
+  ]);
   await expect(operation.getByRole("link", { name: "작업함", exact: true })).toHaveAttribute("href", "/admin/content/tasks");
   await main.getByRole("link", { name: "성과", exact: true }).click();
   await expect(page).toHaveURL("/admin/analysis/search");
@@ -351,13 +355,12 @@ test("주 메뉴는 운영·성과·사이트 관리로 나뉘고 보조 도구�
   await main.getByRole("link", { name: "사이트 관리", exact: true }).click();
   await expect(page).toHaveURL("/admin/system/settings");
   await expect(main.getByRole("link", { name: "사이트 관리", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 정보·진료시간", "사이트 성능"]);
+  await expect(page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 정보·진료시간", "사이트 성능", "프로젝트 현황", "레퍼런스"]);
 });
 
 for (const [path, label] of [
   ["/admin/content/strategy/concept-review", "개념별 근거 검토"],
-  ["/admin/content/trends/keyword-evaluation/shadow-audit", "키워드 독립 감사"],
-  ["/admin/system/devtools/ref", "레퍼런스"],
+  ["/admin/content/trends/keyword-evaluation/boundary-review", "키워드 경계 검토"],
 ] as const) {
   test(`보조 도구 직접 진입 시 ${label}만 현재 위치로 표시한다`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -373,6 +376,24 @@ for (const [path, label] of [
     await expect(tools.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(tools.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true }).locator('[aria-current="page"]')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
+}
+
+for (const [path, label] of [
+  ["/admin/system/devtools/project", "프로젝트 현황"],
+  ["/admin/system/devtools/ref", "레퍼런스"],
+] as const) {
+  test(`사이트 관리 직접 진입 시 ${label} 탭을 선택한다`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setup(page);
+    await page.route("**/api/dev/**", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
+    await page.goto(path);
+    const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
+    await expect(main.getByRole("link", { name: "사이트 관리", exact: true })).toHaveAttribute("aria-current", "page");
+    const tabs = page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true });
+    await expect(tabs.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(tabs.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 }

@@ -15,6 +15,7 @@ interface TopPageDetailModalProps {
   avgDurationBaseline: number;
   onClose: () => void;
   onSelectTopPage: (path: string) => void;
+  titles?: Map<string, string>;
 }
 
 export function TopPageDetailModal({
@@ -25,6 +26,7 @@ export function TopPageDetailModal({
   avgDurationBaseline,
   onClose,
   onSelectTopPage,
+  titles,
 }: TopPageDetailModalProps) {
   const modalRef = useModalA11y(onClose);
 
@@ -131,6 +133,7 @@ export function TopPageDetailModal({
             </p>
             <div className="mt-3">
               <TopPagesChart
+                titles={titles}
                 data={detail.topChildPages}
                 selectedPath={path}
                 onSelect={onSelectTopPage}

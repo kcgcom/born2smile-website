@@ -98,9 +98,6 @@ export function StrategySubTab() {
                 콘텐츠 작업함 열기
               </AdminActionLink>
               <details><summary className="min-h-11 cursor-pointer rounded-lg border border-slate-200 px-3 py-3 text-sm">근거 검토 도구</summary><div className="mt-2 flex flex-wrap gap-2">
-              <AdminActionLink tone="dark" href="/admin/content/strategy/retrieval-review">
-                임베딩 근거 검토
-              </AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review">
                 개념별 근거 검토
               </AdminActionLink>

@@ -89,6 +89,8 @@ const WORKSPACES: WorkspaceConfig[] = [
     tabs: [
       { href: "/admin/system/settings", label: "병원 정보·진료시간", icon: Settings },
       { href: "/admin/system/monitoring", label: "사이트 성능", icon: Gauge },
+      { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
+      { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
     ],
   },
 ];
@@ -100,16 +102,9 @@ const TOOL_GROUPS: { label: string; items: NavItem[] }[] = [
   ] },
   { label: "추천·근거 검토", items: [
     { href: "/admin/content/strategy/actions", label: "콘텐츠 행동추천", icon: ClipboardCheck },
-    { href: "/admin/content/strategy/retrieval-review", label: "검색 근거 검토", icon: ScanSearch },
     { href: "/admin/content/strategy/concept-review", label: "개념별 근거 검토", icon: ClipboardCheck },
     { href: "/admin/content/strategy/reevaluation-review", label: "변경 후 재평가", icon: Activity },
-    { href: "/admin/content/trends/keyword-evaluation", label: "키워드 초기 평가", icon: Search },
-    { href: "/admin/content/trends/keyword-evaluation/shadow-audit", label: "키워드 독립 감사", icon: ClipboardCheck },
     { href: "/admin/content/trends/keyword-evaluation/boundary-review", label: "키워드 경계 검토", icon: ScanSearch },
-  ] },
-  { label: "개발 도구", items: [
-    { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
-    { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
   ] },
 ];
 
@@ -147,7 +142,7 @@ function AuxiliaryTools({ pathname }: { pathname: string }) {
       <summary className="min-h-11 cursor-pointer rounded-lg px-1 py-3 text-xs font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
         보조 도구{active ? ` · ${active.label}` : ""}
       </summary>
-      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 pb-3 lg:absolute lg:right-0 lg:top-full lg:z-40 lg:w-[min(760px,calc(100vw-4rem))] lg:grid-cols-3 lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-4 lg:shadow-xl">
+      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 pb-3 lg:absolute lg:right-0 lg:top-full lg:z-40 lg:w-[min(560px,calc(100vw-4rem))] lg:grid-cols-2 lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-4 lg:shadow-xl">
         {TOOL_GROUPS.map((group) => (
           <section key={group.label} aria-label={group.label}>
             <h2 className="mb-2 text-xs font-semibold text-slate-500">{group.label}</h2>

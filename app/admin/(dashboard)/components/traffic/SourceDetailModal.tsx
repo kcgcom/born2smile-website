@@ -10,9 +10,10 @@ interface SourceDetailModalProps {
   source: string;
   detail: SourceDetail;
   onClose: () => void;
+  titles?: Map<string, string>;
 }
 
-export function SourceDetailModal({ source, detail, onClose }: SourceDetailModalProps) {
+export function SourceDetailModal({ source, detail, onClose, titles }: SourceDetailModalProps) {
   const modalRef = useModalA11y(onClose);
 
   return (
@@ -79,7 +80,7 @@ export function SourceDetailModal({ source, detail, onClose }: SourceDetailModal
               어떤 페이지가 해당 유입을 실제로 받고 있는지 봅니다.
             </p>
             <div className="mt-3">
-              <TopPagesChart data={detail.topLandingPages} />
+              <TopPagesChart data={detail.topLandingPages} titles={titles} />
             </div>
           </div>
 

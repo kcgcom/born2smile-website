@@ -118,7 +118,6 @@ export function KeywordBoundaryReviewPage() {
             <h1 className="mt-3 text-xl font-bold">판단이 엇갈리는 키워드만 검토합니다.</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">관련성·목적 신뢰도가 낮거나 제품/지역 신호와 추천 목적이 충돌한 사례입니다. 모델 판단을 초안으로 제공하며 자동 승인이나 자동 제외에는 사용하지 않습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <AdminActionLink tone="dark" href="/admin/content/trends/keyword-evaluation/shadow-audit"><ArrowLeft className="h-4 w-4" />고정 홀드아웃</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드로</AdminActionLink>
               {stats.preReviewed === stats.total && stats.remaining > 0 && <AdminActionButton tone="primary" disabled={confirmation.loading} onClick={async () => {
                 if (!window.confirm(`사전 검토 ${stats.preReviewed}개를 일괄 확정할까요? 직접 저장한 항목은 유지됩니다.`)) return;

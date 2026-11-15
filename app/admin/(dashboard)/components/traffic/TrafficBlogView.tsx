@@ -136,7 +136,7 @@ export function TrafficBlogView({
       )}
 
       <p className="text-xs text-[var(--muted)]">아래 GA4 시간은 평균 세션 시간으로 본문 읽기 시간이 아닙니다. 30일 선택 시 기존 블로그 GA4 조회는 28일 기준입니다.</p>
-      <SectionCard title="글별 방문 성과">
+      <SectionCard title="글별 방문 성과" empty={!blogGa4Loading && !blogGa4Error && blogPerformanceRows.length === 0}>
         <>
           <div className="space-y-2 sm:hidden">
             <div className="flex items-center gap-2 pb-1 text-xs text-[var(--muted)]">
@@ -270,7 +270,7 @@ export function TrafficBlogView({
         </>
       </SectionCard>
 
-      <SectionCard title="유입 구조">
+      <SectionCard title="유입 구조" empty={blogSourceShare.length === 0}>
         <div className="space-y-2">
           {blogSourceShare.length > 0 ? blogSourceShare.map((item) => (
             <div
