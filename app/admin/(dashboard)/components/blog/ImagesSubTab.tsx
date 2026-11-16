@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Copy, Trash2, Check, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAdminApi, useAdminMutation } from "@/app/admin/(dashboard)/components/useAdminApi";
@@ -58,6 +58,25 @@ function getUsageLabel(usage: ImageItem["usage"][number]): string {
   return usage.published ? "예약" : "초안";
 }
 
+function UsageLinks({ usages }: { usages: ImageItem["usage"] }) {
+  if (!usages.length) return <p className="text-xs text-slate-600">사용 중인 포스트 없음</p>;
+  return <ul className="space-y-2">
+    {usages.map(usage => {
+      const category = encodeURIComponent(usage.category);
+      const slug = encodeURIComponent(usage.slug);
+      const href = usage.visible ? `/blog/${category}/${slug}`
+        : usage.hidden ? `/admin/content/posts/${slug}` : `/admin/preview/${category}/${slug}`;
+      const action = usage.visible ? "공개 글 보기" : usage.hidden ? "편집하기" : "미리보기";
+      return <li key={usage.slug}>
+        <Link href={href} target="_blank" rel="noopener noreferrer" className="flex min-h-11 flex-col justify-center rounded-lg px-2 py-2 text-sm text-blue-800 underline focus-visible:outline-2 focus-visible:outline-blue-700">
+          <span className="break-words">{usage.title}</span>
+          <span className="mt-1 text-xs text-slate-600">{getUsageLabel(usage)} · {action} (새 창)</span>
+        </Link>
+      </li>;
+    })}
+  </ul>;
+}
+
 export function ImagesSubTab() {
   const { data, loading, error, refetch } = useAdminApi<ImageItem[]>("/api/admin/images");
   const { mutate } = useAdminMutation<{ path: string }>();
@@ -66,27 +85,54 @@ export function ImagesSubTab() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ImageFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("newest");
   const [previewImage, setPreviewImage] = useState<ImageItem | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const deleteLock = useRef(false);
+  const previewOpen = Boolean(previewImage);
+  const closePreview = useCallback(() => setPreviewImage(null), []);
 
-  const handleCopy = useCallback((url: string, path: string) => {
-    void navigator.clipboard.writeText(url).then(() => {
+  const handleCopy = useCallback(async (url: string, path: string) => {
+    setActionError(null);
+    setActionNotice(null);
+    try {
+      await navigator.clipboard.writeText(url);
       setCopiedPath(path);
-      setTimeout(() => setCopiedPath(null), 2000);
-    });
+      setActionNotice("이미지 URL을 복사했습니다.");
+    } catch {
+      setActionError("URL을 복사하지 못했습니다. 브라우저의 클립보드 권한을 확인한 뒤 다시 시도해 주세요.");
+    }
   }, []);
 
-  const handleDelete = useCallback(async (image: ImageItem) => {
-    if (
-      image.isUsed &&
-      !confirm("이 이미지를 삭제하면 해당 이미지를 사용 중인 포스트에서도 표시되지 않습니다. 삭제할까요?")
-    ) {
-      return;
-    }
+  useEffect(() => {
+    if (!copiedPath) return;
+    const timer = window.setTimeout(() => setCopiedPath(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copiedPath]);
 
+  const handleDelete = useCallback(async (image: ImageItem) => {
+    if (deleteLock.current) return;
+    const warning = image.isUsed ? "사용 중인 포스트에서도 이미지가 표시되지 않습니다. " : "";
+    if (!confirm(`${image.name}\n${warning}이미지를 삭제할까요?`)) return;
+    deleteLock.current = true;
+    setActionError(null);
+    setActionNotice(null);
     setDeletingPath(image.path);
-    await mutate(`/api/admin/images?path=${encodeURIComponent(image.path)}`, "DELETE");
-    setDeletingPath(null);
-    refetch();
+    try {
+      const result = await mutate(`/api/admin/images?path=${encodeURIComponent(image.path)}`, "DELETE");
+      if (result.error) {
+        setActionError(`이미지 삭제 실패: ${result.error}`);
+        return;
+      }
+      setActionNotice(`${image.name} 이미지를 삭제했습니다.`);
+      setPreviewImage(previous => previous?.path === image.path ? null : previous);
+      refetch();
+    } finally {
+      deleteLock.current = false;
+      setDeletingPath(null);
+    }
   }, [mutate, refetch]);
 
   const handleUpload = useCallback(async (file: File) => {
@@ -126,10 +172,11 @@ export function ImagesSubTab() {
   const usedCount = useMemo(() => images.filter((img) => img.isUsed).length, [images]);
   const unusedCount = images.length - usedCount;
   const filteredImages = useMemo(() => {
-    if (filter === "used") return images.filter((img) => img.isUsed);
-    if (filter === "unused") return images.filter((img) => !img.isUsed);
-    return images;
-  }, [filter, images]);
+    const search = query.trim().toLocaleLowerCase();
+    return images.filter(img => (filter === "all" || (filter === "used" ? img.isUsed : !img.isUsed))
+      && (!search || [img.name, img.path, ...img.usage.map(usage => usage.title)].some(value => value.toLocaleLowerCase().includes(search))))
+      .sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ko") : sort === "oldest" ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt));
+  }, [filter, images, query, sort]);
 
   const previewIndex = useMemo(
     () => (previewImage ? filteredImages.findIndex((img) => img.path === previewImage.path) : -1),
@@ -154,7 +201,14 @@ export function ImagesSubTab() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [previewImage, goToPrev, goToNext]);
 
-  const modalRef = useModalA11y(() => setPreviewImage(null));
+  const modalRef = useModalA11y(closePreview, previewOpen);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [previewOpen]);
 
   const filterOptions: { value: ImageFilter; label: string; count: number }[] = [
     { value: "all", label: "전체", count: images.length },
@@ -173,7 +227,7 @@ export function ImagesSubTab() {
               JPG · PNG · WebP는 1200×1200 WebP로 자동 최적화되고 GIF는 원본으로 보관됩니다.
             </p>
           </div>
-          <label className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity ${uploading ? "cursor-not-allowed bg-[var(--muted)]" : "bg-[var(--color-primary)] hover:opacity-90"}`}>
+          <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue-700 ${uploading ? "cursor-not-allowed bg-[var(--muted)]" : "bg-[var(--color-primary)] hover:opacity-90"}`}>
             <Upload size={15} />
             {uploading ? "업로드 중…" : "이미지 업로드"}
             <input
@@ -189,8 +243,10 @@ export function ImagesSubTab() {
             />
           </label>
         </div>
-        {uploadError && <p className="mt-2 text-xs text-red-500">{uploadError}</p>}
+        {uploadError && <p role="alert" className="mt-2 text-sm text-red-700">{uploadError}</p>}
       </AdminSurface>
+      {actionError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{actionError}</p>}
+      {actionNotice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{actionNotice}</p>}
 
       {/* Image grid */}
       {loading && <AdminLoadingSkeleton variant="full" />}
@@ -228,6 +284,12 @@ export function ImagesSubTab() {
             </p>
           </div>
 
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input type="search" aria-label="이미지 검색" placeholder="파일명·경로·사용처 제목 검색" value={query} onChange={event => setQuery(event.target.value)} className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm" />
+            <select aria-label="이미지 정렬" value={sort} onChange={event => setSort(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="newest">최신순</option><option value="oldest">오래된순</option><option value="name">파일명순</option></select>
+            <button type="button" onClick={() => { setQuery(""); setFilter("all"); setSort("newest"); }} disabled={!query && filter === "all" && sort === "newest"} className="min-h-11 rounded-xl border border-slate-300 px-3 text-sm disabled:opacity-50">조건 초기화</button>
+          </div>
+          <p role="status" className="text-xs text-slate-600">{filteredImages.length.toLocaleString("ko-KR")}개 표시</p>
           {filteredImages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] py-16 text-center text-sm text-[var(--muted)]">
               이 조건에 해당하는 이미지가 없습니다.
@@ -237,7 +299,7 @@ export function ImagesSubTab() {
               {filteredImages.map((img) => (
                 <div
                   key={img.path}
-                  className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-sm"
+                  className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-sm"
                 >
                   {/* Thumbnail */}
                   <button
@@ -259,7 +321,7 @@ export function ImagesSubTab() {
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <span
                         className={[
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        "rounded-full px-2 py-0.5 text-xs font-semibold",
                           img.isUsed
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-[var(--background)] text-slate-500",
@@ -267,60 +329,48 @@ export function ImagesSubTab() {
                       >
                         {img.isUsed ? "사용 중" : "미사용"}
                       </span>
-                      {img.isUsed && !img.isVisible && (
-                        <span className="text-[10px] text-amber-600">비공개/숨김</span>
-                      )}
+                      {img.isUsed && <span className="text-xs text-slate-600">{Array.from(new Set(img.usage.map(getUsageLabel))).join(" · ")}</span>}
                     </div>
                     <p className="truncate text-xs font-medium text-[var(--foreground)]" title={img.name}>
                       {img.name}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-[var(--muted)]">
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">
                       {[formatBytes(img.size), formatImageMeta(img), formatDate(img.createdAt)].filter(Boolean).join(" · ")}
                     </p>
-                  {img.usage.length > 0 ? (
-                    <div className="mt-1 space-y-0.5">
-                      {img.usage.slice(0, 2).map((item) => (
-                        <Link
-                          key={`${img.path}-${item.slug}`}
-                          href={`/blog/${item.category}/${item.slug}`}
-                          className="block truncate text-[10px] text-[var(--color-primary)] hover:underline"
-                          title={`${item.title} (${getUsageLabel(item)})`}
-                        >
-                          {item.title} · {getUsageLabel(item)}
-                        </Link>
-                      ))}
-                      {img.usage.length > 2 && (
-                        <p className="text-[10px] text-[var(--muted)]">
-                          외 {img.usage.length - 2}개 글
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="mt-1 truncate text-[10px] text-[var(--muted)]" title={img.path}>
-                      사용 중인 포스트 없음
-                    </p>
-                  )}
-                </div>
+                    <details className="mt-2 text-xs text-slate-600">
+                      <summary className="min-h-11 cursor-pointer py-3 font-medium">파일 정보·사용처</summary>
+                      <p className="break-all font-medium text-slate-900">{img.name}</p>
+                      <p className="mt-2 break-all">{img.path}</p>
+                      <p className="my-2 leading-5">{[formatBytes(img.size), formatImageMeta(img), formatDate(img.createdAt)].filter(Boolean).join(" · ")}</p>
+                      <UsageLinks usages={img.usage} />
+                    </details>
+                  </div>
 
                   {/* Actions */}
-                  <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="mt-auto grid grid-cols-2 gap-1 border-t border-slate-200 p-2">
                     <button
-                      onClick={() => handleCopy(img.url, img.path)}
+                      type="button"
+                      onClick={() => void handleCopy(img.url, img.path)}
+                      aria-label={img.name + " URL 복사"}
                       title="URL 복사"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--background)]/90 shadow-sm backdrop-blur-sm hover:bg-[var(--background)]"
+                      className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-slate-200 text-xs hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-blue-700"
                     >
                       {copiedPath === img.path
                         ? <Check size={13} className="text-green-500" />
                         : <Copy size={13} className="text-[var(--foreground)]" />
                       }
+                      {copiedPath === img.path ? "복사됨" : "복사"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => void handleDelete(img)}
-                      disabled={deletingPath === img.path}
+                      aria-label={img.name + " 삭제"}
+                      disabled={deletingPath !== null}
                       title="삭제"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--background)]/90 shadow-sm backdrop-blur-sm hover:bg-red-50 disabled:opacity-50"
+                      className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-red-200 text-xs text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-700 disabled:opacity-50"
                     >
-                      <Trash2 size={13} className="text-red-500" />
+                      <Trash2 size={13} aria-hidden="true" />
+                      {deletingPath === img.path ? "삭제 중" : "삭제"}
                     </button>
                   </div>
                 </div>
@@ -337,26 +387,19 @@ export function ImagesSubTab() {
           aria-modal="true"
           aria-label="이미지 크게 보기"
           onClick={() => setPreviewImage(null)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setPreviewImage(null);
-            }
-          }}
-          tabIndex={0}
         >
           <div
             ref={modalRef}
-            className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-[var(--background)] shadow-2xl"
+            className="relative flex max-h-[92dvh] w-full max-w-6xl flex-col overflow-y-auto rounded-2xl bg-[var(--background)] shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-3">
+            <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--background)] px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                <p className="break-all text-sm font-semibold text-[var(--foreground)]">
                   {previewImage.name}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
-                  {[formatBytes(previewImage.size), formatImageMeta(previewImage), previewImage.path].filter(Boolean).join(" · ")}
+                <p className="mt-0.5 text-xs text-[var(--muted)]">
+                  {[formatBytes(previewImage.size), formatImageMeta(previewImage)].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -368,7 +411,7 @@ export function ImagesSubTab() {
                 <button
                   type="button"
                   onClick={() => setPreviewImage(null)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)]"
                   aria-label="이미지 미리보기 닫기"
                 >
                   <X size={18} />
@@ -380,7 +423,7 @@ export function ImagesSubTab() {
                 <button
                   type="button"
                   onClick={goToPrev}
-                  className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
+                  className="absolute left-3 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
                   aria-label="이전 이미지"
                 >
                   <ChevronLeft size={20} />
@@ -390,18 +433,23 @@ export function ImagesSubTab() {
               <img
                 src={previewImage.url}
                 alt={previewImage.name}
-                className="max-h-[75vh] max-w-full object-contain"
+                className="max-h-[50dvh] max-w-full object-contain"
               />
               {previewIndex < filteredImages.length - 1 && (
                 <button
                   type="button"
                   onClick={goToNext}
-                  className="absolute right-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
+                  className="absolute right-3 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[var(--background)]/90 shadow-md backdrop-blur-sm hover:bg-[var(--background)]"
                   aria-label="다음 이미지"
                 >
                   <ChevronRight size={20} />
                 </button>
               )}
+            </div>
+            <div className="border-t border-slate-200 p-4">
+              <p className="mb-3 break-all text-xs text-slate-600">{previewImage.path}</p>
+              <h3 className="mb-2 text-sm font-semibold">사용 중인 포스트</h3>
+              <UsageLinks usages={previewImage.usage} />
             </div>
           </div>
         </div>

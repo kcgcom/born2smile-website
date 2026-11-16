@@ -152,7 +152,7 @@ export function PostsSubTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PostsHero
         blogStats={blogStats}
         refreshing={refreshing}
@@ -173,7 +173,7 @@ export function PostsSubTab() {
 
       {!postsLoading && !postsError && (
         <>
-          <div className="space-y-6 lg:space-y-3 lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:p-4">
+          <div className="space-y-3 sm:space-y-6 lg:space-y-3 lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:p-4">
           <PostsSummaryCards
             blogStats={blogStats}
             statusFilter={statusFilter}

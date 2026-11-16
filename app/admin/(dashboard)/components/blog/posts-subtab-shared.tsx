@@ -158,16 +158,16 @@ export function PostsHero({
   onCreatePost,
 }: PostsHeroProps) {
   return (
-    <AdminSurface tone="white" className="rounded-2xl p-4 sm:rounded-3xl sm:p-6 lg:px-4 lg:py-3">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <AdminSurface tone="white" className="rounded-2xl p-3 sm:rounded-3xl sm:p-6 lg:px-4 lg:py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-2 lg:hidden">
+          <div className="hidden flex-wrap items-center gap-2 sm:flex lg:hidden">
             <AdminPill tone="white">포스트 운영</AdminPill>
             <AdminPill tone={blogStats.draft > 0 ? "warning" : "white"}>
               {blogStats.draft > 0 ? "초안 우선 정리 필요" : "운영 안정"}
             </AdminPill>
           </div>
-          <h2 className="mt-2 text-lg font-bold text-[var(--foreground)] lg:mt-0">포스트 관리</h2>
+          <h2 className="text-lg font-bold text-[var(--foreground)] sm:mt-2 lg:mt-0">포스트 관리</h2>
           <p className="mt-1 hidden text-sm text-[var(--muted)] sm:block lg:hidden">
             작성, 발행, 일정, 성과 요약까지 한 화면에서 관리합니다.
           </p>
@@ -203,7 +203,7 @@ export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChang
         {([
           ["all", "전체 포스트", blogStats.total], ["published", "발행", blogStats.published],
           ["scheduled", "예약", blogStats.scheduled], ["draft", "초안", blogStats.draft],
-        ] as const).map(([status, label, value]) => <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => onStatusFilterChange(status)} className={`min-h-16 rounded-xl border bg-white px-1 py-2 text-center lg:flex lg:min-h-11 lg:items-center lg:gap-2 lg:px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${statusFilter === status ? "border-blue-600 text-blue-700 ring-1 ring-blue-600" : "border-slate-200 text-slate-700"}`}><span className="block text-lg font-bold lg:text-sm">{value}</span><span className="block text-xs">{label}</span></button>)}
+        ] as const).map(([status, label, value]) => <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => onStatusFilterChange(status)} className={`min-h-12 rounded-xl border bg-white px-1 py-1 text-center sm:min-h-16 sm:py-2 lg:flex lg:min-h-11 lg:items-center lg:gap-2 lg:px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${statusFilter === status ? "border-blue-600 text-blue-700 ring-1 ring-blue-600" : "border-slate-200 text-slate-700"}`}><span className="block text-lg font-bold lg:text-sm">{value}</span><span className="block text-xs">{label}</span></button>)}
       </div>
       <p className="sr-only">상태를 누르면 포스트 목록이 해당 상태로 필터링됩니다.</p>
     </div>
@@ -238,11 +238,11 @@ export function PostsFilterPanel({
   const hasActiveFilters = searchQuery.trim().length > 0 || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
 
   return (
-    <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm lg:p-0 lg:shadow-none">
+    <section className="rounded-xl bg-[var(--surface)] p-3 shadow-sm sm:p-5 lg:p-0 lg:shadow-none">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="lg:sr-only">
           <h3 className="text-sm font-semibold text-[var(--foreground)]">목록 필터</h3>
-          <p className="mt-1 text-xs text-[var(--muted)]">검색, 상태, 카테고리, 정렬을 바로 조정합니다.</p>
+          <p className="mt-1 hidden text-xs text-[var(--muted)] sm:block">검색, 상태, 카테고리, 정렬을 바로 조정합니다.</p>
         </div>
         <p className="text-xs font-medium text-[var(--muted)]">{filteredCount.toLocaleString("ko-KR")}개 표시</p>
       </div>
@@ -308,7 +308,7 @@ export function PostsFilterPanel({
         </AdminActionButton>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      {hasActiveFilters && <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="font-medium text-[var(--muted)]">적용 필터</span>
         {searchQuery.trim() && (
           <button
@@ -350,8 +350,7 @@ export function PostsFilterPanel({
             <X className="h-3 w-3 text-[var(--muted)]" />
           </button>
         )}
-        {!hasActiveFilters && <span className="text-[var(--muted)]">기본 보기</span>}
-      </div>
+      </div>}
     </section>
   );
 }

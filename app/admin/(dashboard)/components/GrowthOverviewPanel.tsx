@@ -60,17 +60,18 @@ export function GrowthOverviewPanel() {
         <AdminActionLink tone="dark" href="/admin/analysis/indexing" className="mt-3">검사 실패 확인하기</AdminActionLink>
       </div>}
       {!pending && issues.length === 0 && sources.every(source => source.data) && !failedChecks && !failedRun && <p className="mt-3 text-sm text-slate-600">조회된 자료에서 즉시 처리할 오류는 없습니다.</p>}
-      {!indexing.error && indexing.data && indexing.data.summary.needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {indexing.data.summary.needsAttention}개 ·  <a href="/admin/analysis/indexing" className="text-blue-700 underline">색인 상세 보기</a></p>}
+      {!indexing.error && indexing.data && indexing.data.summary.needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {indexing.data.summary.needsAttention}개 ·  <a href="/admin/analysis/indexing" className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">색인 상세 보기</a></p>}
     </AdminSurface>
 
-    <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+    <AdminSurface tone="white" className="min-w-0 rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">검토할 콘텐츠</h2>
-      <div className="mt-4 grid gap-5 lg:grid-cols-2">
+      <div className="mt-4 grid gap-5 xl:grid-cols-2">
         <section aria-label="초안 검토">
           <h3 className="font-semibold text-slate-900">발행 전 초안</h3>
           {posts.loading ? <p className="mt-2 text-sm">초안 확인 중…</p> : posts.error || !posts.data ? <p className="mt-2 text-sm text-slate-600">목록을 확인하지 못해 초안 수를 표시하지 않습니다.</p> : <>
             <p className="mt-2 text-sm text-slate-600">미발행 초안 {content.drafts.length}건</p>
-            <ul className="mt-2 space-y-2">{content.drafts.slice(0, 3).map(post => <li key={post.slug}><a className="text-sm text-blue-700 underline" href={`/admin/content/posts/${post.slug}`}>{post.title}</a></li>)}</ul>
+            <ul className="mt-2 space-y-2">{content.drafts.slice(0, 3).map(post => <li key={post.slug}><a className="inline-flex min-h-11 items-center py-2 text-sm text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700" href={`/admin/content/posts/${post.slug}`}>{post.title}</a></li>)}</ul>
           </>}
           <AdminActionLink tone="dark" href="/admin/content/posts?status=draft" className="mt-3">초안 검토하기</AdminActionLink>
         </section>
@@ -80,7 +81,7 @@ export function GrowthOverviewPanel() {
           {posts.loading || feedback.loading ? <p role="status" className="mt-2 text-sm">응답 확인 중…</p> : posts.error || feedback.error || !feedback.data || !posts.data ? <p className="mt-2 text-sm text-slate-600">자료를 확인하지 못해 검토 후보를 판단하지 않습니다.</p> : content.review.length ? <ul className="mt-3 space-y-3">{content.review.slice(0, 3).map(post => <li key={post.slug} className="rounded-xl bg-slate-50 p-3">
             <p className="text-sm font-medium text-slate-900">{post.title}</p>
             <p className="mt-1 text-xs text-slate-600">총 응답 {post.responses.total}건 · 해결 {post.responses.solved} · 미해결 {post.responses.unresolved}</p>
-            <a className="mt-2 inline-block text-sm text-blue-700 underline" href={`/admin/content/posts?performance=${encodeURIComponent(post.slug)}`}>근거와 성과 보기</a>
+            <a className="mt-2 inline-flex min-h-11 items-center py-2 text-sm text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700" href={`/admin/content/posts?performance=${encodeURIComponent(post.slug)}`}>근거와 성과 보기</a>
           </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 검토 후보 없음</p>}
         </section>
       </div>
@@ -93,10 +94,10 @@ export function GrowthOverviewPanel() {
           : searchAttention.data.truncated ? <p className="mt-2 text-sm text-slate-600">조회 결과가 잘려 있어 글별 변화를 판단하지 않습니다.</p>
           : <>
             <p className="mt-2 text-xs text-slate-500">최근 {searchAttention.data.start} ~ {searchAttention.data.end} / 이전 {searchAttention.data.previousStart} ~ {searchAttention.data.previousEnd} · Search Console PT 기준</p>
-            {searchReview.length ? <ul className="mt-3 grid gap-3 md:grid-cols-3">{searchReview.slice(0, 3).map(item => <li key={item.post.slug} className="rounded-xl bg-slate-50 p-3">
+            {searchReview.length ? <ul className="mt-3 grid gap-3">{searchReview.slice(0, 3).map(item => <li key={item.post.slug} className="rounded-xl bg-slate-50 p-3">
               <p className="text-sm font-medium text-slate-900">{item.post.title}</p>
               <p className="mt-1 text-xs text-slate-600">검색 클릭 {item.previousClicks} → {item.clicks}회 ({Math.round(item.changePercent)}%)</p>
-              <a href={`/admin/content/posts?performance=${encodeURIComponent(item.post.slug)}`} className="mt-2 inline-block text-sm text-blue-700 underline">검색과 글 성과 보기</a>
+              <a href={`/admin/content/posts?performance=${encodeURIComponent(item.post.slug)}`} className="mt-2 inline-flex min-h-11 items-center py-2 text-sm text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">검색과 글 성과 보기</a>
             </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 기준을 충족하는 검색 변화 후보가 없습니다.</p>}
           </>}
       </section>
@@ -105,10 +106,10 @@ export function GrowthOverviewPanel() {
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">가까운 일정</h2>
       <p className="mt-1 text-xs text-slate-500">{today} ~ {content.end} · 앞으로 {OVERVIEW_WINDOW_DAYS}일</p>
-      <div className="mt-4 grid gap-5 lg:grid-cols-2">
+      <div className="mt-4 grid gap-5">
         <section aria-label="발행 예정">
           <h3 className="font-semibold text-slate-900">발행 예정 글</h3>
-          {posts.loading ? <p className="mt-2 text-sm">일정 확인 중…</p> : posts.error || !posts.data ? <p className="mt-2 text-sm text-slate-600">발행 일정을 확인할 수 없습니다.</p> : content.scheduled.length ? <ul className="mt-3 space-y-2">{content.scheduled.slice(0, 5).map(post => <li key={post.slug} className="flex flex-wrap gap-x-3 gap-y-1 text-sm"><time dateTime={post.date} className="text-slate-600">{post.date}</time><a href={`/admin/content/posts/${post.slug}`} className="text-blue-700 underline">{post.title}</a></li>)}</ul> : <p className="mt-2 text-sm text-slate-600">이 기간에 예약된 글이 없습니다.</p>}
+          {posts.loading ? <p className="mt-2 text-sm">일정 확인 중…</p> : posts.error || !posts.data ? <p className="mt-2 text-sm text-slate-600">발행 일정을 확인할 수 없습니다.</p> : content.scheduled.length ? <ul className="mt-3 space-y-2">{content.scheduled.slice(0, 5).map(post => <li key={post.slug} className="flex flex-wrap gap-x-3 gap-y-1 text-sm"><time dateTime={post.date} className="text-slate-600">{post.date}</time><a href={`/admin/content/posts/${post.slug}`} className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">{post.title}</a></li>)}</ul> : <p className="mt-2 text-sm text-slate-600">이 기간에 예약된 글이 없습니다.</p>}
           <AdminActionLink tone="dark" href="/admin/content/schedule" className="mt-3">발행 일정 보기</AdminActionLink>
         </section>
         <section aria-label="진료 일정 변경">
@@ -121,6 +122,7 @@ export function GrowthOverviewPanel() {
         </section>
       </div>
     </AdminSurface>
+    </div>
 
     <details className="rounded-2xl border border-slate-200 bg-white p-4">
       <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>

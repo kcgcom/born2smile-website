@@ -64,8 +64,8 @@ export function ContentWorkInbox() {
       <div role="group" aria-label="콘텐츠 작업 상태" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {WORK_STAGES.map(entry => <button key={entry.id} type="button" aria-pressed={stage === entry.id} onClick={() => updateQuery({ stage: entry.id })} className={`min-h-11 rounded-xl border px-3 py-3 text-sm ${stage === entry.id ? "border-blue-700 bg-blue-50 font-semibold text-blue-800" : "border-slate-200 bg-white text-slate-700"}`}>{entry.label} <span className="ml-1 font-bold">{items.filter(item => workStage(item) === entry.id).length}</span></button>)}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <input type="search" aria-label="작업 검색" placeholder="제목·대상 검색" value={query} onChange={event => updateQuery({ q: event.target.value })} className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-base sm:text-sm" />
+      <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
+        <input type="search" aria-label="작업 검색" placeholder="제목·대상 검색" value={query} onChange={event => updateQuery({ q: event.target.value })} className="col-span-2 min-h-11 min-w-0 w-full rounded-xl border border-slate-300 bg-white px-3 text-base sm:flex-1 sm:text-sm" />
         <select aria-label="작업 유형" value={type} onChange={event => updateQuery({ type: event.target.value })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="all">전체 유형</option>{Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <button type="button" aria-pressed={stage === "archive"} onClick={() => updateQuery({ stage: stage === "archive" ? "proposals" : "archive" })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">제외한 작업 {items.filter(item => item.status === "dismissed").length}</button>
       </div>
@@ -84,12 +84,12 @@ function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerI
   const submitted = parsedResult.success ? parsedResult.data : null;
   return <AdminSurface tone="white" className={`rounded-2xl p-4 sm:p-5 ${highlighted ? "ring-2 ring-blue-700" : ""}`}>
     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600"><span>{TYPE_LABELS[item.itemType]}</span><span className="rounded-full bg-slate-100 px-2 py-1">{workflow?.proposalPending && item.status === "deferred" ? "승인 대기" : STATUS_LABELS[item.status]}</span>{item.dueDate && <span>기한 {item.dueDate}</span>}</div>
-    <h2 className="mt-2 break-words text-lg font-bold">{item.title}</h2>
+    <h2 className="mt-2 break-words text-lg font-bold lg:text-base">{item.title}</h2>
     <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.rationale || "저장된 보강 이유가 없습니다. 제안 상세를 확인하세요."}</p>
     <p className="mt-2 break-all text-xs text-slate-500">대상: {item.targetPage}</p>
     {workflow?.workerId && <p className="mt-2 text-xs text-slate-600">담당: {workflow.workerId}</p>}
     {workflow?.blockedReason ? <div className="mt-3"><AdminNotice tone="warning">진행 보류: {workflow.blockedReason}</AdminNotice></div> : workflow?.message && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{workflow.message}</p>}
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-3 flex flex-wrap gap-2 lg:mt-2">
       {item.status === "deferred" && <AdminActionButton tone="primary" disabled={busy} onClick={() => onUpdate("approved")}>승인</AdminActionButton>}
       {item.status === "approved" && <AdminActionButton tone="primary" disabled={busy} onClick={() => onUpdate("in_progress")}>작업 시작</AdminActionButton>}
       {item.status === "in_progress" && <AdminActionButton tone="primary" disabled={busy} onClick={() => onUpdate("review")}>검토 요청</AdminActionButton>}
@@ -105,8 +105,10 @@ function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerI
     {submitted?.kind === "code" && <p className="mt-3 break-words text-xs text-slate-500">변경 파일: {submitted.files.join(", ")}</p>}
     {item.status === "scheduled" && <p className="mt-3 text-sm text-slate-600">발행·반영 예정 작업입니다. 실제 공개 상태와 예약일을 확인하세요. <a href="/admin/content/schedule" className="underline">발행 일정</a></p>}
     {(item.itemType === "page" || item.itemType === "faq") && item.status === "review" && <p className="mt-3 text-sm text-slate-600">페이지·FAQ 변경은 코드 변경안과 미리보기를 검토한 뒤 반영하세요.</p>}
-    <details className="mt-3 text-sm"><summary className="min-h-11 cursor-pointer py-3 font-medium">제안 상세·근거</summary><StoredBrief brief={item.brief} /><details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs text-slate-500">저장된 기획·분석 자료 원문</summary><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-50 p-3 text-xs">{JSON.stringify({ brief: item.brief, evidence: item.sourceSnapshot }, null, 2)}</pre></details></details>
-    {result.postSlug && <div className="mt-3"><RevisionList slug={result.postSlug} /></div>}
+    <div className="mt-3 grid gap-3 lg:mt-2 lg:grid-cols-2 lg:gap-4">
+    <details className="min-w-0 text-sm"><summary className="min-h-11 cursor-pointer py-3 font-medium">제안 상세·근거</summary><StoredBrief brief={item.brief} /><details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs text-slate-500">저장된 기획·분석 자료 원문</summary><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-50 p-3 text-xs">{JSON.stringify({ brief: item.brief, evidence: item.sourceSnapshot }, null, 2)}</pre></details></details>
+    {result.postSlug && <RevisionList slug={result.postSlug} compact />}
+    </div>
   </AdminSurface>;
 }
 

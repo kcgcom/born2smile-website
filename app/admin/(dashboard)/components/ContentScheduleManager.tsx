@@ -23,7 +23,7 @@ function SchedulePostCard({ post, isPublic }: { post: SchedulePostItem; isPublic
   const editorHref = `/admin/content/posts/${encodeURIComponent(post.slug)}?from=schedule`;
   return (
     <article aria-label={post.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <AdminActionLink tone="dark" href={editorHref} className="justify-start break-words text-left">{post.title}</AdminActionLink>
+      <h5 className="break-words text-sm font-semibold text-slate-900">{post.title}</h5>
       <p className="mt-2 text-xs text-[var(--muted)]"><time dateTime={post.date}>{post.date}</time> · {isPublic ? "공개 중" : "공개 예정"}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <AdminActionLink tone="primary" href={editorHref}>{isPublic ? "내용 확인·수정" : "검토·예약일 변경"}</AdminActionLink>
@@ -99,7 +99,7 @@ export function ContentScheduleManager({
   }
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
         <h3 className="text-lg font-bold text-[var(--foreground)]">일정 현황</h3>
         <p className="mt-1 text-sm text-[var(--muted)]">
@@ -152,7 +152,7 @@ export function ContentScheduleManager({
       </AdminSurface>
 
       <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
           <div>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
@@ -180,7 +180,7 @@ export function ContentScheduleManager({
         {policyError && <AdminNotice tone="error">발행 요일 정책을 불러오지 못했습니다. <button type="button" onClick={refetch} className="underline">다시 시도</button></AdminNotice>}
         {saveError && <AdminNotice tone="error">저장 실패: {saveError}</AdminNotice>}
 
-        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-2 lg:grid lg:grid-cols-7 lg:gap-1">
           {DAY_LABELS.map((label, index) => {
             const selected = days.includes(index);
             return (
@@ -190,7 +190,7 @@ export function ContentScheduleManager({
                 onClick={() => toggleDay(index)}
                 aria-pressed={selected}
                 disabled={saving || (!embedded && (Boolean(policyError) || !data))}
-                className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 ${
+                className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 lg:w-auto ${
                   selected
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
                     : "border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
