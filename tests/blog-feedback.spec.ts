@@ -4,6 +4,26 @@ import { interceptAnalytics } from "./helpers/blog-analytics";
 
 const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 const body = { slug: "swallowed-dental-prosthesis-what-to-do", visitorId: "00000000-0000-4000-8000-000000000001", answer: "solved", reason: null };
+
+for (const width of [390, 1440]) {
+  test(`${width}px 피드백은 본문 직후 작성자 소개 앞에 한 번 표시된다`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await interceptAnalytics(page);
+    await page.goto(PATH);
+    const feedback = page.getByLabel("질문 해결 피드백", { exact: true });
+    await expect(feedback).toHaveCount(1);
+    const positions = await page.evaluate(() => {
+      const feedback = document.querySelector('[aria-label="질문 해결 피드백"]')!;
+      const body = document.querySelector('[data-blog-reading-root]')!;
+      const author = [...document.querySelectorAll('p')].find(node => node.textContent?.trim() === 'Author')!;
+      return { followsBody: Boolean(body.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING), precedesAuthor: Boolean(feedback.compareDocumentPosition(author) & Node.DOCUMENT_POSITION_FOLLOWING) };
+    });
+    expect(positions).toEqual({ followsBody: true, precedesAuthor: true });
+    await feedback.scrollIntoViewIfNeeded();
+    await expect(feedback).toBeInViewport();
+    await expect(feedback.getByRole("button")).toHaveCount(2);
+  });
+}
 test.use({ userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36" });
 
 test("서버는 관리자 쿠키·토큰을 모두 확인하고 확인 실패를 저장하지 않는다", async () => {

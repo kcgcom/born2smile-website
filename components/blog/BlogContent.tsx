@@ -9,20 +9,16 @@ import {
   Check,
   Clock,
   ArrowRight,
-  Tag,
   Search,
   X,
-  SlidersHorizontal,
-  ChevronDown,
 } from "lucide-react";
 import {
   BLOG_CATEGORY_SLUGS,
-  BLOG_TAGS,
   categoryColors,
   getBlogPostUrl,
   getCategoryLabel,
 } from "@/lib/blog";
-import type { BlogCategoryFilter, BlogCategorySlug, BlogTag } from "@/lib/blog";
+import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog/types";
 import { BASE_URL } from "@/lib/constants";
 import { buildTrackedShareUrl, shareUrl } from "@/lib/share";
@@ -34,26 +30,17 @@ const POSTS_PER_PAGE = 12;
 
 interface BlogFilterUrlState {
   category: BlogCategoryFilter;
-  tag: BlogTag | null;
   query: string;
 }
 
 function readFilterUrlState(defaultCategory: BlogCategoryFilter): BlogFilterUrlState {
   const params = new URLSearchParams(window.location.search);
   const categoryParam = params.get("category");
-  const tagParam = params.get("tag");
-  const tag = tagParam && BLOG_TAGS.includes(tagParam as BlogTag)
-    ? tagParam as BlogTag
-    : null;
-  const category = !tag && categoryParam && BLOG_CATEGORY_SLUGS.includes(categoryParam as BlogCategorySlug)
-    ? categoryParam as BlogCategorySlug
-    : tag
-      ? "all"
-      : defaultCategory;
+  const category = categoryParam && BLOG_CATEGORY_SLUGS.includes(categoryParam as BlogCategorySlug)
+    ? categoryParam as BlogCategorySlug : defaultCategory;
 
   return {
     category,
-    tag,
     query: params.get("q") ?? "",
   };
 }
@@ -65,8 +52,6 @@ interface BlogContentProps {
 
 export default function BlogContent({ initialPosts, activeDefaultCategory }: BlogContentProps) {
   const [activeCategory, setActiveCategory] = useState<BlogCategoryFilter>(activeDefaultCategory ?? "all");
-  const [activeTag, setActiveTag] = useState<BlogTag | null>(null);
-  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
   const [categoryScrollEdges, setCategoryScrollEdges] = useState({ left: false, right: true });
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -87,7 +72,6 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     url.searchParams.delete("q");
 
     if (state.category !== "all") url.searchParams.set("category", state.category);
-    if (state.tag) url.searchParams.set("tag", state.tag);
     if (state.query.trim()) url.searchParams.set("q", state.query);
 
     const nextUrl = `${url.pathname}${url.search}${url.hash}`;
@@ -105,20 +89,19 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     const applyUrlState = () => {
       const state = readFilterUrlState(activeDefaultCategory ?? "all");
       setActiveCategory(state.category);
-      setActiveTag(state.tag);
       setSearchQuery(state.query);
       setDebouncedQuery(state.query);
+      if (new URLSearchParams(window.location.search).has("tag")) syncFilterUrl(state, "replace");
       const position = readListPosition();
       restorePositionRef.current = position;
       setVisibleCount(position ? Math.min(position.count, initialPosts.length) : POSTS_PER_PAGE);
-      setIsTagFilterOpen(false);
     };
 
     applyUrlState();
     isUrlStateReadyRef.current = true;
     window.addEventListener("popstate", applyUrlState);
     return () => window.removeEventListener("popstate", applyUrlState);
-  }, [activeDefaultCategory, initialPosts.length]);
+  }, [activeDefaultCategory, initialPosts.length, syncFilterUrl]);
 
   useLayoutEffect(() => {
     const position = restorePositionRef.current;
@@ -128,7 +111,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
       restorePositionRef.current = null;
     });
     return () => cancelAnimationFrame(frame);
-  }, [visibleCount, activeCategory, activeTag, debouncedQuery]);
+  }, [visibleCount, activeCategory, debouncedQuery]);
 
   // setTimeout 정리
   useEffect(() => {
@@ -147,13 +130,13 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     debounceRef.current = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       if (isUrlStateReadyRef.current) {
-        syncFilterUrl({ category: activeCategory, tag: activeTag, query: searchQuery }, "replace");
+        syncFilterUrl({ category: activeCategory, query: searchQuery }, "replace");
       }
     }, 250);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [activeCategory, activeTag, searchQuery, syncFilterUrl]);
+  }, [activeCategory, searchQuery, syncFilterUrl]);
 
   // 날짜 기반 시드 셔플용 오늘 날짜 (shuffle seed로만 사용)
   const today = useMemo(() => getTodayKST(), []);
@@ -198,8 +181,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const filteredPosts = useMemo(() => shuffledPosts.filter((post) => {
     const categoryMatch =
       activeCategory === "all" || post.category === activeCategory;
-    const tagMatch = !activeTag || post.tags.includes(activeTag);
-    if (!categoryMatch || !tagMatch) return false;
+    if (!categoryMatch) return false;
     if (!debouncedQuery.trim()) return true;
     const q = debouncedQuery.trim().toLowerCase();
     return (
@@ -207,7 +189,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
       post.subtitle.toLowerCase().includes(q) ||
       post.excerpt.toLowerCase().includes(q)
     );
-  }), [shuffledPosts, activeCategory, activeTag, debouncedQuery]);
+  }), [shuffledPosts, activeCategory, debouncedQuery]);
 
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
@@ -239,7 +221,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   }, [updateCategoryScrollEdges]);
 
   useEffect(() => {
-    if (activeTag || !activeCategoryButtonRef.current) return;
+    if (!activeCategoryButtonRef.current) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const frameId = requestAnimationFrame(() => {
@@ -254,33 +236,12 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [activeCategory, activeTag]);
+  }, [activeCategory]);
 
   const handleCategoryClick = (cat: BlogCategoryFilter) => {
     setActiveCategory(cat);
-    setActiveTag(null);
-    setIsTagFilterOpen(false);
     setVisibleCount(POSTS_PER_PAGE);
-    syncFilterUrl({ category: cat, tag: null, query: searchQuery }, "push");
-  };
-
-  const handleTagClick = (tag: BlogTag, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    const nextTag = activeTag === tag ? null : tag;
-    setActiveTag(nextTag);
-    setActiveCategory("all");
-    setIsTagFilterOpen(false);
-    setVisibleCount(POSTS_PER_PAGE);
-    syncFilterUrl({ category: "all", tag: nextTag, query: searchQuery }, "push");
-  };
-
-  const clearTagFilter = () => {
-    setActiveTag(null);
-    setVisibleCount(POSTS_PER_PAGE);
-    syncFilterUrl({ category: "all", tag: null, query: searchQuery }, "push");
+    syncFilterUrl({ category: cat, query: searchQuery }, "push");
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,18 +252,16 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   const clearSearch = () => {
     setSearchQuery("");
     setVisibleCount(POSTS_PER_PAGE);
-    syncFilterUrl({ category: activeCategory, tag: activeTag, query: "" }, "replace");
+    syncFilterUrl({ category: activeCategory, query: "" }, "replace");
     searchInputRef.current?.focus();
   };
 
   const resetFilters = () => {
     setActiveCategory("all");
-    setActiveTag(null);
     setSearchQuery("");
     setDebouncedQuery("");
     setVisibleCount(POSTS_PER_PAGE);
-    setIsTagFilterOpen(false);
-    syncFilterUrl({ category: "all", tag: null, query: "" }, "push");
+    syncFilterUrl({ category: "all", query: "" }, "push");
   };
 
   const handleShare = useCallback(
@@ -340,8 +299,8 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
   );
 
   return (
-    <section className="section-padding bg-[var(--surface)]">
-      <BlogCardTracker contextKey={JSON.stringify([activeCategory, activeTag, debouncedQuery])} hasSearch={Boolean(debouncedQuery.trim())} categoryFilter={activeCategory} tagFilter={activeTag ?? "all"} />
+    <section className="bg-[var(--surface)] px-4 pt-8 pb-16 md:px-6 md:pt-10 md:pb-20 lg:px-8">
+      <BlogCardTracker contextKey={JSON.stringify([activeCategory, debouncedQuery])} hasSearch={Boolean(debouncedQuery.trim())} categoryFilter={activeCategory} tagFilter="all" />
       <div className="container-narrow">
         {/* 검색 */}
         <div className="mx-auto mb-6 max-w-md">
@@ -381,11 +340,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
             onScroll={updateCategoryScrollEdges}
           >
             <button
-              ref={activeCategory === "all" && !activeTag ? activeCategoryButtonRef : undefined}
+              ref={activeCategory === "all" ? activeCategoryButtonRef : undefined}
               onClick={() => handleCategoryClick("all")}
-              aria-pressed={activeCategory === "all" && !activeTag}
+              aria-pressed={activeCategory === "all"}
               className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeCategory === "all" && !activeTag
+                activeCategory === "all"
                   ? "bg-[var(--color-primary)] text-white"
                   : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
               }`}
@@ -395,11 +354,11 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
             {BLOG_CATEGORY_SLUGS.map((cat) => (
               <button
                 key={cat}
-                ref={activeCategory === cat && !activeTag ? activeCategoryButtonRef : undefined}
+                ref={activeCategory === cat ? activeCategoryButtonRef : undefined}
                 onClick={() => handleCategoryClick(cat)}
-                aria-pressed={activeCategory === cat && !activeTag}
+                aria-pressed={activeCategory === cat}
                 className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  activeCategory === cat && !activeTag
+                  activeCategory === cat
                     ? "bg-[var(--color-primary)] text-white"
                     : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
                 }`}
@@ -422,67 +381,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
           )}
         </div>
 
-        {/* 상세 필터는 모든 화면에서 필요할 때 펼친다. */}
-        <div className="mb-4 flex min-h-11 items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => setIsTagFilterOpen((open) => !open)}
-            aria-expanded={isTagFilterOpen}
-            aria-controls="blog-tag-filters"
-            className="inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border border-[var(--border)] px-3 text-sm font-medium text-[var(--foreground)] transition-colors hover:border-[var(--color-primary)]/30 hover:bg-[var(--background)]"
-          >
-            <SlidersHorizontal size={15} aria-hidden="true" className="shrink-0" />
-            <span className="truncate">
-              상세 필터{activeTag ? ` · ${activeTag}` : ""}
-            </span>
-            <ChevronDown
-              size={15}
-              aria-hidden="true"
-              className={`shrink-0 transition-transform ${isTagFilterOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          <div className="flex shrink-0 items-center gap-1">
-            <span className="text-sm text-[var(--muted)]" aria-live="polite">
-              {resultCountText}
-            </span>
-            {activeTag && (
-              <button
-                type="button"
-                onClick={clearTagFilter}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
-                aria-label={`${activeTag} 필터 해제`}
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 선택한 태그는 접힌 상태에서도 위 요약에 표시한다. */}
-        <div
-          id="blog-tag-filters"
-          aria-label="글 유형·대상"
-          className={`${isTagFilterOpen ? "flex" : "hidden"} mb-6 flex-wrap justify-center gap-1.5 rounded-2xl bg-[var(--background)] p-3`}
-        >
-          <p className="mb-1 w-full text-sm font-medium text-[var(--foreground)]">
-            글 유형·대상
-          </p>
-          {BLOG_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => handleTagClick(tag)}
-              aria-pressed={activeTag === tag}
-              className={`inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                activeTag === tag
-                  ? "bg-[var(--color-gold)] text-white"
-                  : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              <Tag size={12} />
-              {tag}
-            </button>
-          ))}
-        </div>
+        <p className="mb-4 text-sm text-[var(--muted)]" aria-live="polite">{resultCountText}</p>
 
         {/* 포스트 그리드 */}
         <div aria-live="polite" aria-atomic="false">
@@ -517,26 +416,6 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                   <p className="mb-4 flex-1 text-sm leading-relaxed text-[var(--foreground)] line-clamp-3">
                     {post.excerpt}
                   </p>
-
-                  {/* 태그 */}
-                  {post.tags.length > 0 && (
-                    <div className="mb-4 flex flex-wrap gap-1.5">
-                      {post.tags.map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={(e) => handleTagClick(tag, e)}
-                          className={`relative z-10 inline-flex min-h-11 items-center gap-1 rounded-full px-2.5 py-1 text-sm transition-colors ${
-                            activeTag === tag
-                              ? "bg-[var(--color-gold)] text-white"
-                              : "bg-[var(--background)] text-[var(--muted)] hover:bg-[var(--surface)]"
-                          }`}
-                        >
-                          <Tag size={12} />
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  )}
 
                   {/* 하단: 자세히 읽기 + 공유 */}
                   <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
@@ -587,7 +466,7 @@ export default function BlogContent({ initialPosts, activeDefaultCategory }: Blo
                 ? `"${searchQuery.trim()}"에 대한 검색 결과가 없습니다.`
                 : "해당 조건의 글이 아직 없습니다."}
             </p>
-            {(activeCategory !== "all" || activeTag || searchQuery.trim()) && (
+            {(activeCategory !== "all" || searchQuery.trim()) && (
               <button
                 onClick={resetFilters}
                 className="mt-4 inline-flex min-h-11 items-center rounded-full border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"

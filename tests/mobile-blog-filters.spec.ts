@@ -1,58 +1,20 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('건강칼럼 모바일 필터', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+for (const width of [360, 390, 1280, 1440]) {
+  test(width + 'px 환자 목록은 검색·카테고리만 제공하고 카드 유형 태그를 표시하지 않는다', async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
     await page.goto('/blog');
-  });
-
-  test('태그 필터는 기본 접힘이고 결과 수를 바로 보여준다', async ({ page }) => {
-    const toggle = page.getByRole('button', { name: '상세 필터' });
-    const tagFilter = page.locator('#blog-tag-filters');
-
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('searchbox', { name: '건강칼럼 검색' })).toBeVisible();
     await expect(page.getByText(/\d+개의 글/).first()).toBeVisible();
-    await expect(tagFilter.getByRole('button', { name: '생활습관', includeHidden: true })).toBeHidden();
-  });
-
-  test('태그 선택 상태를 요약하고 필터를 바로 해제할 수 있다', async ({ page }) => {
-    const toggle = page.getByRole('button', { name: '상세 필터' });
-    await toggle.click();
-
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByText('글 유형·대상')).toBeVisible();
-    await page.locator('#blog-tag-filters').getByRole('button', { name: '생활습관' }).click();
-
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(toggle).toContainText('생활습관');
-    await page.getByRole('button', { name: '생활습관 필터 해제' }).click();
-    await expect(toggle).not.toContainText('생활습관');
-  });
-
-  test('가려진 카테고리를 선택하면 화면 안으로 이동한다', async ({ page }) => {
+    await expect(page.getByRole('button', { name: '상세 필터' })).toHaveCount(0);
+    await expect(page.locator('#blog-tag-filters')).toHaveCount(0);
+    const card = page.locator('main article').first();
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('button')).toHaveCount(1);
+    await expect(card.getByRole('button')).toHaveAccessibleName(/공유하기$/);
+    await page.getByRole('button', { name: '건강상식', exact: true }).click();
+    await expect(page.getByRole('button', { name: '건강상식', exact: true })).toHaveAttribute('aria-pressed', 'true');
     const scroller = page.locator('[aria-label="건강칼럼 카테고리"]');
-    await page.getByRole('button', { name: '건강상식' }).click();
-
-    await expect(page.getByRole('button', { name: '건강상식' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await expect.poll(() => scroller.evaluate(element => { const active = element.querySelector('[aria-pressed="true"]')!.getBoundingClientRect(); const box = element.getBoundingClientRect(); return active.left >= box.left && active.right <= box.right + 1; })).toBe(true);
   });
-});
-
-test('데스크톱도 태그 필터를 필요할 때 펼치고 선택 조건을 요약한다', async ({ page }) => {
-  await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto('/blog');
-
-  const toggle = page.getByRole('button', { name: '상세 필터' });
-  const tag = page.locator('#blog-tag-filters').getByRole('button', { name: '생활습관' });
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(tag).toBeHidden();
-  await toggle.click();
-  await tag.click();
-  await expect(toggle).toContainText('생활습관');
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await page.getByRole('button', { name: '생활습관 필터 해제' }).click();
-  await expect(toggle).not.toContainText('생활습관');
-});
+}

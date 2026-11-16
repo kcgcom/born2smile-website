@@ -285,7 +285,7 @@ export default async function BlogPostPage({
       <BlogEditProvider slug={slug} initialBlocks={visibleBlocks} initialResearchNotices={researchNotices}>
       <article>
         {/* 헤더 */}
-        <header className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-16">
+        <header className="bg-gradient-to-b from-blue-50 to-white pt-28 pb-6 md:pt-32 md:pb-8">
           <InlineBlogEditButton
             post={{
               slug,
@@ -301,7 +301,7 @@ export default async function BlogPostPage({
             <FadeIn>
               <BlogListReturnLink
                 href={`/blog/${post.category}`}
-                className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
+                className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={14} />
                 칼럼 목록
@@ -310,7 +310,7 @@ export default async function BlogPostPage({
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Link
                   href={`/blog/${post.category}`}
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
+                  className={`inline-flex min-h-11 items-center rounded-full px-3 py-1 text-sm font-medium ${categoryColors[post.category as keyof typeof categoryColors] ?? "bg-[var(--background)] text-[var(--muted)]"}`}
                 >
                   {categoryLabel}
                 </Link>
@@ -332,7 +332,7 @@ export default async function BlogPostPage({
               <p className="mt-4 text-sm text-[var(--muted)]">
                 <Link
                   href="/about"
-                  className="font-medium text-[var(--foreground)] hover:text-[var(--color-primary)]"
+                  className="inline-flex min-h-11 items-center font-medium text-[var(--foreground)] hover:text-[var(--color-primary)]"
                 >
                   {CLINIC.name} 원장 {DOCTORS[0].name}
                 </Link>
@@ -340,33 +340,22 @@ export default async function BlogPostPage({
                 {DOCTORS[0].position}
               </p>
 
-              <div className="mt-8 hidden rounded-3xl border border-blue-100 bg-[var(--surface)]/85 p-5 shadow-sm backdrop-blur md:block">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--color-primary)]">
-                      필요한 분께 이 글을 공유해 주세요
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      공유 링크로 이 글을 다시 찾아보거나 다른 분께 전달할 수 있습니다.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="header_cta" />
-                  </div>
-                </div>
+              <div className="mt-3 hidden md:block">
+                <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="header_cta" />
               </div>
             </FadeIn>
           </div>
         </header>
 
         {/* 본문 */}
-        <section className="bg-[var(--surface)] px-4 pt-10 pb-16 md:px-6 md:pt-12 md:pb-20 lg:px-8 lg:pb-24">
-          <div className="mx-auto max-w-3xl">
+        <section className="bg-[var(--surface)] px-4 pt-6 pb-16 md:px-6 md:pt-8 md:pb-20 lg:px-8 lg:pb-24">
+          <div className={headings.length >= 3 ? "mx-auto grid max-w-3xl items-start lg:max-w-6xl gap-x-8 lg:grid-cols-[220px_minmax(0,768px)] lg:justify-center" : "mx-auto max-w-3xl"}>
             {headings.length >= 3 && (
-              <FadeIn>
+              <div className="min-w-0 lg:sticky lg:top-24">
                 <TableOfContents headings={headings} />
-              </FadeIn>
+              </div>
             )}
+            <div className="min-w-0">
             <div className="space-y-10">
               <InlineBlocksEditor
                 post={{
@@ -379,6 +368,9 @@ export default async function BlogPostPage({
                   date: post.date,
                 }}
               />
+            </div>
+            <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 md:p-6">
+              <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} adminVisitor={isAdmin} />
             </div>
             <FadeIn className="mt-10">
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-6">
@@ -402,7 +394,7 @@ export default async function BlogPostPage({
                   </div>
                   <Link
                     href="/about"
-                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-[var(--color-primary)] hover:underline"
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-[var(--color-primary)] hover:underline"
                   >
                     병원 소개 보기
                     <ArrowRight size={14} />
@@ -425,6 +417,7 @@ export default async function BlogPostPage({
                 이 글은 일반적인 치과 건강 정보를 제공하며, 개인의 증상·치료에 대한 의학적 조언을 대체하지 않습니다. 정확한 진단과 치료는 치과 전문의와 상담하시기 바랍니다.
               </p>
             </FadeIn>
+            </div>
           </div>
         </section>
       </article>
@@ -457,20 +450,17 @@ export default async function BlogPostPage({
         </section>
       )}
 
-      {/* 질문 해결 피드백 + 공유 + 목록 돌아가기 */}
+      {/* 공유 + 목록 돌아가기 */}
       <section className="bg-[var(--surface)] px-4 pt-6 pb-12">
         <div className="mx-auto max-w-3xl border-t border-[var(--border)] pt-8">
           <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-rose-50/50 p-5 shadow-sm">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} adminVisitor={isAdmin} />
               <div className="flex flex-wrap items-center gap-2">
                 <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" />
               </div>
-            </div>
             <div className="mt-5 border-t border-white/70 pt-4">
               <BlogListReturnLink
                 href={`/blog/${post.category}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
               >
                 <ArrowLeft size={16} />
                 칼럼 목록으로

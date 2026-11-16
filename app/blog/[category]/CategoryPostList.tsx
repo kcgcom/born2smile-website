@@ -10,7 +10,7 @@ interface CategoryPostListProps {
 
 export function CategoryPostList({ posts }: CategoryPostListProps) {
   return (
-    <section className="bg-[var(--background)] px-4 py-10 md:px-6 md:py-14 lg:px-8">
+    <section id="hub-posts" className="scroll-mt-24 bg-[var(--background)] px-4 py-10 md:px-6 md:py-14 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-end justify-between md:mb-8">
           <div>

@@ -42,7 +42,8 @@ for (const filter of ['category=health-tips', `tag=${encodeURIComponent('증상�
     if (filter.startsWith('category')) {
       await expect(page.getByRole('button', { name: '건강상식', exact: true })).toHaveAttribute('aria-pressed', 'true');
     } else {
-      await expect(page.getByRole('button', { name: '상세 필터' })).toContainText('증상가이드');
+      await expect(page).not.toHaveURL(/tag=/);
+      await expect(page.getByRole('button', { name: '전체', exact: true })).toHaveAttribute('aria-pressed', 'true');
     }
     const link = page.locator('main article h2 a').first();
     const title = await link.innerText();
@@ -53,8 +54,9 @@ for (const filter of ['category=health-tips', `tag=${encodeURIComponent('증상�
     if (filter.startsWith('category')) {
       await expect(page.getByRole('button', { name: '건강상식', exact: true })).toHaveAttribute('aria-pressed', 'true');
     } else {
-      await expect(page.getByRole('button', { name: '상세 필터' })).toContainText('증상가이드');
-      await expect(page.locator('#blog-tag-filters')).toBeHidden();
+      await expect(page).not.toHaveURL(/tag=/);
+      await expect(page.getByRole('button', { name: '전체', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#blog-tag-filters')).toHaveCount(0);
     }
   });
 }

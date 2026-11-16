@@ -1,3 +1,4 @@
+import CategoryNavigation from "@/components/blog/CategoryNavigation";
 import BlogCardTracker from "@/components/blog/BlogCardTracker";
 import { blogCardAttributes } from "@/lib/blog/card-tracking";
 import type { Metadata } from "next";
@@ -155,7 +156,7 @@ export default async function BlogCategoryPage({
         />
       )}
 
-      <section className="bg-gradient-to-b from-blue-50 via-white to-white pt-28 pb-14 md:pt-32 md:pb-16">
+      <section className="bg-gradient-to-b from-blue-50 via-white to-white pt-28 pb-6 md:pt-28 md:pb-8">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
           <FadeIn>
             <div className="lg:max-w-5xl xl:max-w-6xl">
@@ -175,43 +176,25 @@ export default async function BlogCategoryPage({
 
       <section className="bg-[var(--surface)] px-4 pb-8 md:px-6 md:pb-10 lg:px-8">
         <div className="container-narrow">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-5 md:p-8">
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto md:flex-wrap md:gap-2.5 md:overflow-visible">
-              {ALL_CATEGORY_SLUGS.map((slug) => {
-                const isActive = slug === categorySlug;
-                return (
-                  <Link
-                    key={slug}
-                    href={`/blog/${slug}`}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-[var(--surface)] text-[var(--foreground)] ring-1 ring-[var(--border)] hover:bg-[var(--color-primary)]/10"
-                    }`}
-                  >
-                    {getCategoryLabel(slug)}
-                  </Link>
-                );
-              })}
-              <Link href="/blog" className="ml-auto shrink-0 text-sm font-medium text-[var(--color-primary)] hover:underline">
-                전체 보기 →
-              </Link>
-            </div>
-          </div>
+          <CategoryNavigation category={categorySlug} />
+          <nav aria-label="이 주제에서 찾아보기" className="mt-3 flex flex-wrap gap-2">
+            {questionCards.length > 0 && <a href="#hub-questions" className="inline-flex min-h-11 items-center rounded-full border border-[var(--border)] px-4 text-sm">추천 질문</a>}
+            {groupedSections.length > 0 && <a href="#hub-paths" className="inline-flex min-h-11 items-center rounded-full border border-[var(--border)] px-4 text-sm">상황별로 읽기</a>}
+            <a href="#hub-posts" className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-primary)] px-4 text-sm text-white">전체 글 {categoryPosts.length}개</a>
+          </nav>
         </div>
       </section>
 
-      <section className="bg-[var(--surface)] px-4 py-8 md:px-6 md:py-10 lg:px-8">
+      <section className="bg-[var(--surface)] px-4 py-5 md:px-6 md:py-6 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm md:p-8">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm md:p-6">
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Who It Helps
             </p>
             <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
               이런 분께 도움이 됩니다
             </h2>
-            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
               {hub.audience.map((item) => (
                 <li key={item} className="flex gap-3">
                   <span className="mt-0.5 text-[var(--color-primary)]">•</span>
@@ -221,15 +204,15 @@ export default async function BlogCategoryPage({
             </ul>
           </div>
 
-          <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-5 md:p-8">
+          <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-4 md:p-6">
             <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
               Reading Guide
             </p>
             <h2 className="mt-2 font-headline text-2xl font-bold text-[var(--foreground)] md:text-3xl">
               처음 읽는다면 이렇게 보세요
             </h2>
-            <ol className="mt-5 space-y-4 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
-              <li><strong className="text-[var(--foreground)]">1.</strong> Common Questions에서 자주 묻는 질문의 핵심 답을 먼저 확인합니다.</li>
+            <ol className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--foreground)] md:text-base">
+              <li><strong className="text-[var(--foreground)]">1.</strong> 추천 질문에서 자주 묻는 질문의 핵심 답을 먼저 확인합니다.</li>
               <li><strong className="text-[var(--foreground)]">2.</strong> 상황별 섹션에서 내 고민과 가까운 글을 고릅니다.</li>
               <li><strong className="text-[var(--foreground)]">3.</strong> 전체 글 목록에서 더 깊은 주제를 차근차근 읽어 나갑니다.</li>
             </ol>
@@ -238,7 +221,7 @@ export default async function BlogCategoryPage({
       </section>
 
       {questionCards.length > 0 && (
-        <section className="bg-[var(--surface)] px-4 py-8 md:px-6 md:py-10 lg:px-8">
+        <section id="hub-questions" className="scroll-mt-24 bg-[var(--surface)] px-4 py-8 md:px-6 md:py-10 lg:px-8">
           <div className="container-narrow">
             <div className="mb-5 md:mb-6">
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">
@@ -284,7 +267,7 @@ export default async function BlogCategoryPage({
       )}
 
       {groupedSections.length > 0 && (
-        <section className="bg-[var(--background)] px-4 py-10 md:px-6 md:py-14 lg:px-8">
+        <section id="hub-paths" className="scroll-mt-24 bg-[var(--background)] px-4 py-10 md:px-6 md:py-14 lg:px-8">
           <div className="container-narrow">
             <div className="mb-6 md:mb-8">
               <p className="text-sm font-semibold tracking-wide text-[var(--color-gold-text)] uppercase">

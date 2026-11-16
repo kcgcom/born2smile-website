@@ -44,7 +44,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
   return (
     <nav
       aria-label="목차"
-      className="mb-8 rounded-xl border border-blue-100 bg-blue-50/40 p-4"
+      className="mb-6 rounded-xl border border-blue-100 bg-blue-50/40 p-3 lg:mb-0 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto"
     >
       <div className="hidden items-center gap-2 text-sm font-semibold text-[var(--foreground)] md:flex">
         <List size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
@@ -54,7 +54,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between md:hidden"
+        className="flex min-h-11 w-full items-center justify-between rounded-lg focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] md:hidden"
         aria-expanded={isOpen}
         aria-controls={listId}
       >
@@ -76,8 +76,16 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
             <li key={i}>
               <a
                 href={`#section-${i}`}
-                onClick={() => { if (window.innerWidth < 768) setIsOpen(false); }}
-                className={`block border-l-2 py-1.5 pl-3 text-sm transition-colors ${
+                onClick={() => {
+                  if (window.innerWidth < 768) {
+                    setIsOpen(false);
+                    requestAnimationFrame(() => {
+                      const target = document.getElementById(`section-${i}`);
+                      if (target) { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+                    });
+                  }
+                }}
+                className={`flex min-h-11 items-center border-l-2 py-2 pl-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${
                   isActive
                     ? "border-[var(--color-primary)] font-medium text-[var(--color-primary)]"
                     : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:text-[var(--foreground)]"

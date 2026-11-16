@@ -31,16 +31,14 @@ test.describe('건강칼럼 필터 URL 상태', () => {
     await expect(page.getByRole('searchbox', { name: '건강칼럼 검색' })).toHaveValue('수명');
   });
 
-  test('태그 선택과 해제가 URL에 반영된다', async ({ page }) => {
-    await page.goto('/blog');
-    await page.getByRole('button', { name: '상세 필터' }).click();
-    await page.locator('#blog-tag-filters').getByRole('button', { name: '생활습관' }).click();
-
-    await expect(page).toHaveURL(/tag=%EC%83%9D%ED%99%9C%EC%8A%B5%EA%B4%80/);
-    await expect(page).not.toHaveURL(/category=/);
-
-    await page.getByRole('button', { name: '생활습관 필터 해제' }).click();
+  test('예전 태그 URL은 숨은 필터 없이 검색어·카테고리만 유지한다', async ({ page }) => {
+    await page.goto('/blog?tag=생활습관&category=implant&q=수명');
     await expect(page).not.toHaveURL(/tag=/);
+    await expect(page.getByRole('searchbox', { name: '건강칼럼 검색' })).toHaveValue('수명');
+    await expect(page.getByRole('button', { name: '임플란트', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.reload();
+    await expect(page).not.toHaveURL(/tag=/);
+    await expect(page.getByRole('searchbox')).toHaveValue('수명');
   });
 
   test('검색어는 지연 반영되고 지우면 URL에서도 제거된다', async ({ page }) => {
@@ -76,6 +74,7 @@ test.describe('건강칼럼 필터 URL 상태', () => {
       'aria-pressed',
       'true',
     );
-    await expect(page.getByRole('button', { name: '상세 필터' })).not.toContainText('unknown');
+    await expect(page).not.toHaveURL(/tag=/);
+    await expect(page.getByRole('button', { name: '상세 필터' })).toHaveCount(0);
   });
 });
