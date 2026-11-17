@@ -112,7 +112,7 @@ export default async function RootLayout({
         <AdminAuthProvider>
           <Header />
           <main id="main-content">{children}</main>
-          <Footer />
+          <Footer clinic={clinic} hours={hours} links={links} />
           <FloatingCTA hours={hours} />
           <AdminFloatingButton />
         </AdminAuthProvider>
@@ -132,3 +132,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

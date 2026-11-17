@@ -36,8 +36,8 @@
     "report-opportunity-scoring": "tsx scripts/report-opportunity-scoring.ts",
     "evaluate-keyword-embeddings": "tsx scripts/evaluate-keyword-embeddings.ts",
     "generate-dev-manifest": "tsx scripts/generate-dev-manifest.ts",
-    "dev": "tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && tsx scripts/generate-keyword-taxonomy-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
-    "build": "BLOG_SNAPSHOT_REQUIRED=true tsx scripts/generate-blog-snapshot.ts && tsx scripts/generate-blog-meta.ts && tsx scripts/generate-dev-manifest.ts && tsx scripts/generate-research-snapshot.ts && tsx scripts/generate-keyword-taxonomy-snapshot.ts && BLOG_PUBLIC_DATA_SOURCE=snapshot NODE_OPTIONS=--max-old-space-size=4096 next build",
+    "dev": "node --import tsx scripts/generate-site-config-snapshot.ts && node --import tsx scripts/generate-blog-snapshot.ts && node --import tsx scripts/generate-blog-meta.ts && node --import tsx scripts/generate-dev-manifest.ts && node --import tsx scripts/generate-research-snapshot.ts && node --import tsx scripts/generate-keyword-taxonomy-snapshot.ts && SITE_CONFIG_DATA_SOURCE=${SITE_CONFIG_DATA_SOURCE:-snapshot} BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
+    "build": "node --import tsx scripts/generate-site-config-snapshot.ts --force --required && BLOG_SNAPSHOT_REQUIRED=true node --import tsx scripts/generate-blog-snapshot.ts && node --import tsx scripts/generate-blog-meta.ts && node --import tsx scripts/generate-dev-manifest.ts && node --import tsx scripts/generate-research-snapshot.ts && node --import tsx scripts/generate-keyword-taxonomy-snapshot.ts && SITE_CONFIG_DATA_SOURCE=snapshot BLOG_PUBLIC_DATA_SOURCE=snapshot NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "node scripts/forbid-production-deploy.mjs",
@@ -46,7 +46,11 @@
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all",
     "db:sql": "supabase db query --linked",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "dev:live": "node --import tsx scripts/generate-blog-snapshot.ts && node --import tsx scripts/generate-blog-meta.ts && node --import tsx scripts/generate-dev-manifest.ts && node --import tsx scripts/generate-research-snapshot.ts && node --import tsx scripts/generate-keyword-taxonomy-snapshot.ts && SITE_CONFIG_DATA_SOURCE=live BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
+    "dev:test": "SITE_CONFIG_DATA_SOURCE=fixture pnpm dev",
+    "site-config:refresh": "node --import tsx scripts/generate-site-config-snapshot.ts --force --required",
+    "verify:site-config-snapshot": "node --import tsx --test scripts/site-config-snapshot.test.ts"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",

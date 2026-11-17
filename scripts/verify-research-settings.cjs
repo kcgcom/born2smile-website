@@ -6,8 +6,9 @@ const assert = require("node:assert/strict");
 const { test, beforeEach } = require("node:test");
 const Module = require("node:module");
 
-const state = { reads: [], writes: [], tags: [], single: {}, list: {}, writeError: null };
+const state = { reads: [], writes: [], tags: [], single: {}, list: {}, writeError: null, noStore: 0 };
 const requestCaches = [];
+const persistentCache = new Map();
 function stub(id, exports) {
   const filename = require.resolve(id);
   const fixture = new Module(filename);
@@ -29,8 +30,13 @@ stub("react", {
   },
 });
 stub("next/cache", {
-  unstable_cache: (fn) => fn,
-  revalidateTag: (...args) => state.tags.push(args),
+  unstable_cache: (fn, keys) => (...args) => {
+    const key = JSON.stringify([keys, args]);
+    if (!persistentCache.has(key)) persistentCache.set(key, Promise.resolve().then(() => fn(...args)).catch((error) => { persistentCache.delete(key); throw error; }));
+    return persistentCache.get(key);
+  },
+  revalidateTag: (...args) => { state.tags.push(args); persistentCache.clear(); },
+  unstable_noStore: () => { state.noStore++; },
 });
 stub("../lib/supabase-admin.ts", {
   getSupabaseAdmin: () => ({
@@ -55,8 +61,9 @@ beforeEach(() => {
   state.reads = []; state.writes = []; state.tags = [];
   state.single = { data: null, error: null };
   state.list = { data: [], error: null };
-  state.writeError = null;
+  state.writeError = null; state.noStore = 0;
   requestCaches.forEach((memo) => memo.clear());
+  persistentCache.clear();
 });
 
 test("public hub performs one verified-only read and never returns unverified rows", async () => {
@@ -127,5 +134,31 @@ for (const [type, update, input, tag] of [
     assert.equal(state.writes.length, 1);
     assert.equal(state.writes[0].type, type);
     assert.deepEqual(state.tags, [[tag, "max"]]);
+  });
+}
+
+for (const [type, getter, field, value] of [
+  ["links", settings.getSiteLinks, "instagram", "https://example.com/recovered"],
+  ["clinic", settings.getSiteClinic, "name", "복구된 병원"],
+  ["hours", settings.getSiteHours, "notice", "복구된 공지"],
+  ["schedule", settings.getSiteSchedule, "publishDays", [2, 4]],
+]) {
+  test(`${type}: live read failures do not cache defaults and the next read recovers`, async () => {
+    const errorLog = console.error;
+    const logs = [];
+    console.error = (...args) => logs.push(args);
+    try {
+      state.single.error = new Error("sensitive-credential-marker");
+      await getter();
+      assert.equal(persistentCache.size, 0);
+      assert.equal(state.noStore, 1);
+      assert.equal(logs.length, 1);
+      assert.equal(JSON.stringify(logs).includes("sensitive-credential-marker"), false);
+      state.single = { data: { data: { [field]: value } }, error: null };
+      const recovered = await getter();
+      assert.deepEqual(recovered[field], value);
+      assert.equal(state.reads.length, 2);
+      assert.ok(persistentCache.size > 0);
+    } finally { console.error = errorLog; }
   });
 }

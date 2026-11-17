@@ -114,6 +114,17 @@ GitHub → Vercel 연동을 사용합니다. 로컬 커밋 자체는 원격 배�
 
 개선 항목은 [lib/admin-data.ts](lib/admin-data.ts)의 `IMPROVEMENT_ITEMS`와 `/admin/system/devtools/project`에서 관리합니다. 별도 TODO 목록은 중복 유지하지 않습니다.
 
+## 사이트 설정 조회 모드
+
+개발 서버는 시작할 때 병원 정보·진료시간·링크·발행 요일을 한 번에 읽어 `.cache/site-config/snapshot.json`에 보관합니다. 같은 프로젝트의 1시간 이내 스냅샷은 재사용하며, 개발 중 갱신 실패 시 이전 스냅샷이나 코드 기본값을 사용합니다. `pnpm site-config:refresh`는 강제 갱신하며 실패하면 이전 파일을 보존합니다.
+
+`pnpm dev:test`는 사이트 설정만 고정 기본값으로 처리해 해당 DB 호출을 하지 않습니다. 스냅샷·테스트 모드에서 설정 저장은 차단됩니다. 실제 설정 편집이 필요한 개발 작업은 `pnpm dev:live`를 사용합니다. 블로그·연구자료·인증 경로까지 오프라인으로 바뀌는 것은 아닙니다.
+
+빌드는 최신 설정 조회가 성공해야 진행하며, 페이지 생성에는 준비된 스냅샷을 재사용합니다. `SITE_CONFIG_DATA_SOURCE=snapshot`은 빌드 프로세스에만 적용하며 Vercel 런타임 환경변수로 상시 등록하지 않습니다. 배포 후에는 기존 Supabase 조회와 캐시를 사용합니다. 조회 실패 시 코드 기본값은 장기 캐시에 저장하지 않으며 이후 DB 조회가 다시 성공하면 복구됩니다. RootLayout이 읽은 병원 정보·시간·링크를 Footer에도 전달합니다.
+
+설정 스냅샷에는 허용한 공개 필드만 저장하고 Git에는 포함하지 않습니다. 검증 명령은 `pnpm verify:site-config-snapshot`, `node --test scripts/verify-research-settings.cjs`, `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm build`입니다.
+
 ## 라이선스
 
 Private repository. All rights reserved.
+

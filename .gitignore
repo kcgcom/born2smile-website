@@ -59,3 +59,7 @@ supabase/.temp/
 # cargo / rust build outputs
 services/ai-ops-agent/target/
 .gstack/
+
+
+# Local public site-config snapshots
+.cache/site-config/
