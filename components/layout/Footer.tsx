@@ -2,14 +2,11 @@ import Link from "next/link";
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
-import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
+import type { ResolvedSiteClinic, SiteHours, SiteLinks } from "@/lib/site-config-supabase";
 
-export async function Footer() {
-  const [clinic, hours, links] = await Promise.all([
-    getSiteClinic(),
-    getSiteHours(),
-    getSiteLinks(),
-  ]);
+export function Footer({ clinic, hours, links }: {
+  clinic: ResolvedSiteClinic; hours: SiteHours; links: SiteLinks;
+}) {
   const footerClinicName = clinic.name === "서울본치과" ? "서울본치과의원" : clinic.name;
 
   return (
@@ -266,3 +263,4 @@ export async function Footer() {
     </footer>
   );
 }
+
