@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { ResearchPage } from "./types";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { RESEARCH_PAGES_SNAPSHOT } from "./generated/pages-snapshot";
@@ -13,19 +14,61 @@ export function getAllResearchSlugs(): string[] {
 
 // ─── Public (verified only) ───────────────────────────────────────────────────
 
+// React cache is scoped to a server render, not shared across requests. Metadata
+// and the page body reuse the same live row without delaying publication changes.
+const getResearchRowForRequest = cache(async (slug: string) => {
+  const { data, error } = await getSupabaseAdmin()
+    .from("research_pages")
+    .select("data, verified")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { data: ResearchPage; verified: boolean } | null;
+});
+
+/** Public hub: one live query instead of a slug query followed by N detail reads. */
+export async function getAllResearchPagesFresh(): Promise<ResearchPage[]> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("research_pages")
+      .select("slug, data, verified")
+      .eq("verified", true)
+      .order("slug");
+    if (error) throw error;
+    return (data ?? [])
+      .filter((row) => row.verified === true && row.data)
+      .map((row) => row.data as ResearchPage);
+  } catch {
+    throw new Error("연구 자료 목록을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  }
+}
+
+/** Admin hub: retain live verification state and the existing admin-only fallback. */
+export async function getAllResearchPagesAdmin(): Promise<Array<{ page: ResearchPage; verified: boolean }>> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("research_pages")
+      .select("slug, data, verified")
+      .order("slug");
+    if (error) throw error;
+    if (data?.length) {
+      return data.filter((row) => row.data).map((row) => ({
+        page: row.data as ResearchPage,
+        verified: row.verified === true,
+      }));
+    }
+  } catch {
+    // Snapshot fallback is for authenticated admin screens only.
+  }
+  return RESEARCH_PAGES_SNAPSHOT.map((page) => ({ page, verified: false }));
+}
+
 /** 런타임 공개용 — verified=true인 페이지만 반환 */
 export async function getResearchPageFresh(
   slug: string,
 ): Promise<ResearchPage | undefined> {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("research_pages")
-      .select("data, verified")
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (error) throw error;
+    const data = await getResearchRowForRequest(slug);
     return data?.verified === true ? data.data as ResearchPage : undefined;
   } catch {
     throw new Error("연구 자료의 공개 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
@@ -56,12 +99,7 @@ export async function getResearchPageAdmin(
   slug: string,
 ): Promise<{ page: ResearchPage; verified: boolean } | undefined> {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data } = await supabase
-      .from("research_pages")
-      .select("data, verified")
-      .eq("slug", slug)
-      .single();
+    const data = await getResearchRowForRequest(slug);
 
     if (data?.data) {
       return { page: data.data as ResearchPage, verified: data.verified ?? false };
@@ -93,3 +131,4 @@ export async function getAllResearchSlugsAdmin(): Promise<
   }
   return getAllResearchSlugs().map((slug) => ({ slug, verified: false }));
 }
+

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FlaskConical, BookOpen, ArrowRight, EyeOff } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
-import { getAllResearchSlugsFresh, getAllResearchSlugsAdmin, getResearchPageFresh, getResearchPageAdmin } from "@/lib/research/papers";
+import { getAllResearchPagesFresh, getAllResearchPagesAdmin } from "@/lib/research/papers";
 import { getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { getIsAdminServer } from "@/lib/server-admin-check";
@@ -36,29 +36,9 @@ const CATEGORY_COLOR: Record<string, string> = {
 export default async function ResearchHubPage() {
   const isAdmin = await getIsAdminServer();
 
-  let pages: Array<{ page: NonNullable<Awaited<ReturnType<typeof getResearchPageFresh>>>; verified: boolean }>;
-
-  if (isAdmin) {
-    const slugEntries = await getAllResearchSlugsAdmin();
-    const results = await Promise.all(
-      slugEntries.map(({ slug, verified }) =>
-        getResearchPageAdmin(slug).then((r) =>
-          r ? { page: r.page, verified } : null,
-        ),
-      ),
-    );
-    pages = results.filter(Boolean) as typeof pages;
-  } else {
-    const slugs = await getAllResearchSlugsFresh();
-    const results = await Promise.all(
-      slugs.map((slug) =>
-        getResearchPageFresh(slug).then((page) =>
-          page ? { page, verified: true } : null,
-        ),
-      ),
-    );
-    pages = results.filter(Boolean) as typeof pages;
-  }
+  const pages = isAdmin
+    ? await getAllResearchPagesAdmin()
+    : (await getAllResearchPagesFresh()).map((page) => ({ page, verified: true }));
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -188,3 +168,4 @@ export default async function ResearchHubPage() {
     </>
   );
 }
+
