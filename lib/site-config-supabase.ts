@@ -148,17 +148,18 @@ export async function updateSiteLinks(
   updatedBy: string,
 ): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data: current } = await admin
+  const { data: current, error: readError } = await admin
     .from(TABLE)
     .select("data")
     .eq("type", "links")
-    .single();
+    .maybeSingle();
+  if (readError) throw readError;
   const merged = {
     ...LINKS,
     ...pickSiteLinks((current?.data ?? {}) as Record<string, unknown>),
     ...pickSiteLinks(data as Record<string, unknown>),
   };
-  await admin
+  const { error: writeError } = await admin
     .from(TABLE)
     .upsert({
       type: "links",
@@ -166,6 +167,7 @@ export async function updateSiteLinks(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
+  if (writeError) throw writeError;
   safeRevalidateTag(CACHE_TAG_LINKS);
 }
 
@@ -174,16 +176,17 @@ export async function updateSiteClinic(
   updatedBy: string,
 ): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data: current } = await admin
+  const { data: current, error: readError } = await admin
     .from(TABLE)
     .select("data")
     .eq("type", "clinic")
-    .single();
+    .maybeSingle();
+  if (readError) throw readError;
   const currentBase = stripLegacyClinicContactFields(
     (current?.data ?? {}) as Partial<SiteClinic & Partial<ClinicContactFields>>,
   );
   const merged = { ...currentBase, ...data };
-  await admin
+  const { error: writeError } = await admin
     .from(TABLE)
     .upsert({
       type: "clinic",
@@ -191,6 +194,7 @@ export async function updateSiteClinic(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
+  if (writeError) throw writeError;
   safeRevalidateTag(CACHE_TAG_CLINIC);
 }
 
@@ -199,13 +203,14 @@ export async function updateSiteHours(
   updatedBy: string,
 ): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data: current } = await admin
+  const { data: current, error: readError } = await admin
     .from(TABLE)
     .select("data")
     .eq("type", "hours")
-    .single();
+    .maybeSingle();
+  if (readError) throw readError;
   const merged = { ...(current?.data ?? {}), ...data };
-  await admin
+  const { error: writeError } = await admin
     .from(TABLE)
     .upsert({
       type: "hours",
@@ -213,6 +218,7 @@ export async function updateSiteHours(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
+  if (writeError) throw writeError;
   safeRevalidateTag(CACHE_TAG_HOURS);
 }
 
@@ -241,13 +247,14 @@ export async function updateSiteSchedule(
   updatedBy: string,
 ): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data: current } = await admin
+  const { data: current, error: readError } = await admin
     .from(TABLE)
     .select("data")
     .eq("type", "schedule")
-    .single();
+    .maybeSingle();
+  if (readError) throw readError;
   const merged = { ...(current?.data ?? {}), ...data };
-  await admin
+  const { error: writeError } = await admin
     .from(TABLE)
     .upsert({
       type: "schedule",
@@ -255,5 +262,7 @@ export async function updateSiteSchedule(
       updated_at: new Date().toISOString(),
       updated_by: updatedBy,
     }, { onConflict: "type" });
+  if (writeError) throw writeError;
   safeRevalidateTag(CACHE_TAG_SCHEDULE);
 }
+
