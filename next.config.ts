@@ -73,6 +73,7 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["born2smile.dev.born2smile.co.kr"],
   poweredByHeader: false,
   async redirects() {
     return [{

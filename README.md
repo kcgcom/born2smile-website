@@ -26,6 +26,20 @@ cp -n .env.example .env.local
 pnpm dev  # http://localhost:3000
 ```
 
+로컬 네트워크 개발은 OPNsense DNS와 os-caddy를 공통 HTTPS 진입점으로 사용합니다. 프로젝트마다 도메인과 포트를 고정하고, DNS는 Caddy 서버로, Caddy는 해당 개발 PC의 프로젝트 포트로 연결합니다.
+
+```bash
+pnpm dev:lan  # HTTP 0.0.0.0:3000, Caddy upstream용
+```
+
+이 프로젝트는 3000번 포트를 사용하며, 사용 중이면 다른 포트로 자동 이동하지 않고 종료합니다. 다른 프로젝트는 별도 포트를 사용합니다. 개발 PC는 DHCP 예약으로 IP를 고정합니다. 요청에 따라 개발 포트 전용 Windows 방화벽 제한은 사용하지 않으며 기존 Windows 방화벽 정책을 따릅니다. Caddy의 개발 도메인 접근은 LAN 대역으로 제한합니다. 개발 서버를 실행하면 기존 방화벽이 허용하는 LAN 기기에서 포트로 직접 접속할 수 있습니다.
+
+접속 주소는 `https://born2smile.dev.born2smile.co.kr`입니다. OPNsense/Caddy 서버는 `192.168.1.1`, 개발 PC는 `192.168.1.222`, 이 프로젝트의 Caddy upstream은 `http://192.168.1.222:3000`입니다. eunkyo 프로젝트는 `https://eunkyo.dev.born2smile.co.kr`과 3002번 포트를 사용합니다.
+
+LAN 기기는 OPNsense를 DNS로 사용해야 합니다. AdGuard Home의 업스트림에는 `[/dev.born2smile.co.kr/]127.0.0.1:5353`을 추가해 개발 도메인 질의를 Unbound로 전달하고, Unbound의 호스트 재정의는 두 도메인을 `192.168.1.1`로 응답합니다. Caddy는 DNS-01로 발급한 HTTPS 인증서와 `192.168.1.0/24` 접근 목록을 사용합니다. WAN 공개나 포트포워딩은 추가하지 않습니다. Tailscale Serve 전용 명령은 제거했으며 Tailscale VPN 클라이언트 사용 여부와는 별개입니다.
+
+개발 서버를 종료하거나 PC를 재시작하면 `pnpm dev:lan`을 다시 실행해야 합니다. DNS와 인증서가 정상이지만 502가 표시되면 개발 서버 실행 여부와 upstream IP·포트를 확인합니다.
+
 개발/빌드는 Supabase 데이터를 읽어 생성 파일을 갱신합니다. 빌드는 최신 블로그 스냅샷을 필수로 요구하므로 Supabase 환경변수와 네트워크 접근이 필요합니다. 정확한 도구 버전과 실행 순서는 [package.json](package.json)을 기준으로 합니다.
 
 ## 주요 명령어
@@ -33,6 +47,7 @@ pnpm dev  # http://localhost:3000
 | 명령어 | 설명 |
 |--------|------|
 | `pnpm dev` | 블로그·연구·택소노미 스냅샷과 메타데이터·개발 매니페스트 생성 후 개발 서버 실행 |
+| `pnpm dev:lan` | 공통 Caddy에서 프록시할 LAN 개발 서버, 고정 포트 3000 |
 | `pnpm build` | 프로덕션 빌드 (빌드 직전 생성한 블로그 snapshot 기준으로 공개 페이지 정적 생성) |
 | `pnpm start` | 로컬 프로덕션 서버 |
 | `pnpm exec tsc --noEmit` | TypeScript 검사 |

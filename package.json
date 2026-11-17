@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev:lan": "pnpm --config.shell-emulator=true run dev --hostname 0.0.0.0 --port 3000",
     "agent:context": "tsx scripts/agent-context.ts",
     "agent:revision": "tsx scripts/agent-revision.ts",
     "agent:task": "tsx scripts/agent-task.ts",
