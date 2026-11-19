@@ -92,6 +92,20 @@ export async function getAllResearchSlugsFresh(): Promise<string[]> {
   }
 }
 
+/** Resolve the live public status of research pages referenced by a blog post. */
+export async function getPublicResearchSlugsFresh(slugs: string[]): Promise<Set<string>> {
+  if (slugs.length === 0) return new Set();
+
+  const { data, error } = await getSupabaseAdmin()
+    .from("research_pages")
+    .select("slug, data")
+    .eq("verified", true)
+    .in("slug", slugs);
+
+  if (error) throw error;
+  return new Set(data.filter((row) => row.data).map((row) => row.slug));
+}
+
 // ─── Admin (all pages) ────────────────────────────────────────────────────────
 
 /** 관리자용 — verified 상관없이 단일 페이지 조회 */

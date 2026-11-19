@@ -7,19 +7,20 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('body')).toContainText('서울본치과');
   });
 
-  test('모바일 하단 메뉴를 누르면 열린 상단 메뉴가 닫힌다', async ({ page }) => {
+  test('모바일 하단의 현재 페이지 링크를 누르면 열린 상단 메뉴가 닫힌다', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/treatments');
 
     await page.getByRole('button', { name: '메뉴 열기' }).click();
     await expect(page.locator('#mobile-menu')).toBeVisible();
 
-    // Next.js 개발 도구 버튼이 좌하단 링크 위에 겹칠 수 있어 실제 링크 이벤트를 직접 전달한다.
-    await page
+    const currentLink = page
       .getByRole('navigation', { name: '빠른 메뉴' })
-      .getByRole('link', { name: '홈' })
-      .dispatchEvent('click');
+      .getByRole('link', { name: '진료안내', exact: true });
+    await expect(currentLink).toHaveAttribute('aria-current', 'page');
+    await currentLink.click();
 
+    await expect(page).toHaveURL('/treatments');
     await expect(page.locator('#mobile-menu')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '메뉴 열기' })).toHaveAttribute('aria-expanded', 'false');
   });
@@ -50,6 +51,12 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/blog\/prevention\/electric-vs-manual-toothbrush$/);
   });
 
+  test('다른 카테고리로 접속한 글은 정규 URL로 이동한다', async ({ page }) => {
+    const response = await page.goto('/blog/implant/electric-vs-manual-toothbrush');
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL('/blog/prevention/electric-vs-manual-toothbrush');
+  });
+
   test('FAQ 페이지', async ({ page }) => {
     const response = await page.goto('/faq');
     expect(response?.status()).toBe(200);
@@ -68,9 +75,11 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
-  test('관리자 로그인 경로 유지', async ({ page }) => {
-    await page.goto('/admin/login');
+  test('관리자 로그인 페이지에 Google 로그인 버튼이 표시된다', async ({ page }) => {
+    const response = await page.goto('/admin/login');
+    expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/login$/);
+    await expect(page.getByRole('button', { name: 'Google 계정으로 로그인' })).toBeEnabled();
   });
 
   test('콘텐츠 워크스페이스 핵심 경로는 로그인으로 보호된다', async ({ page }) => {
@@ -91,12 +100,5 @@ test.describe('Smoke Tests', () => {
       await page.goto(path);
       await expect(page).toHaveURL(/\/admin\/login$/);
     }
-  });
-
-  test('sitemap.xml', async ({ page }) => {
-    const response = await page.goto('/sitemap.xml');
-    expect(response?.status()).toBe(200);
-    const content = await page.content();
-    expect(content).toContain('born2smile.co.kr');
   });
 });

@@ -14,6 +14,7 @@ import { getTodayKST } from "./date";
 import { BLOG_POSTS_SNAPSHOT } from "./blog/generated/posts-snapshot";
 
 const TABLE = "blog_posts";
+const POST_META_COLUMNS = "slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time";
 const CACHE_TAG = "blog-posts";
 const CACHE_TTL = 3600; // 1 hour
 const DEPLOY_CACHE_SEGMENT = process.env.VERCEL_GIT_COMMIT_SHA ?? "local";
@@ -123,9 +124,11 @@ function normalizeCategoryOrThrow(category: string): BlogCategorySlug {
   return normalized;
 }
 
-function rowToMeta(
-  row: DbRow,
-): BlogPostMeta & { published: boolean; createdAt?: string } {
+type PostMetaRow = Pick<DbRow,
+  "slug" | "title" | "subtitle" | "excerpt" | "category" | "tags" | "date" | "date_modified" | "read_time"
+>;
+
+function rowToMeta(row: PostMetaRow): BlogPostMeta {
   return {
     slug: row.slug,
     title: row.title,
@@ -136,24 +139,18 @@ function rowToMeta(
     date: row.date,
     dateModified: row.date_modified ?? undefined,
     readTime: row.read_time ?? "1분",
-    published: row.published ?? true,
-    createdAt: row.created_at ?? undefined,
   };
 }
 
 function rowToPost(row: DbRow): BlogPost {
   return {
-    slug: row.slug,
-    title: row.title,
-    subtitle: row.subtitle,
-    excerpt: row.excerpt,
-    category: normalizeCategoryOrThrow(row.category),
-    tags: (row.tags ?? []) as BlogPostMeta["tags"],
-    date: row.date,
-    dateModified: row.date_modified ?? undefined,
+    ...rowToMeta(row),
     blocks: isBlogBlockArray(row.content) ? row.content : [],
-    readTime: row.read_time ?? "1분",
   };
+}
+
+function postToMeta({ blocks, readTime, ...meta }: BlogPost): BlogPostMeta {
+  return { ...meta, readTime: readTime ?? calculateReadTimeFromBlocks(blocks) };
 }
 
 // ---------------------------------------------------------------------------
@@ -228,23 +225,7 @@ export const getAllPublishedPosts: () => Promise<BlogPost[]> =
   unstable_cache(
     async (): Promise<BlogPost[]> => {
       if (FORCE_PUBLIC_SNAPSHOT) return getSnapshotPublishedPosts();
-      if (!isSupabaseAdminConfigured) return getSnapshotPublishedPosts();
-      try {
-        const today = getTodayKST();
-        const { data, error } = await getSupabaseAdmin()
-          .from(TABLE)
-          .select("*")
-          .eq("published", true)
-          .lte("date", today)
-          .order("date", { ascending: false });
-
-        if (error) throw error;
-
-        return (data as DbRow[]).map((row) => rowToPost(row));
-      } catch (e) {
-        console.warn("[blog-supabase] Supabase query failed, using snapshot fallback", e);
-        return getSnapshotPublishedPosts();
-      }
+      return getAllPublishedPostsUncached();
     },
     [PUBLIC_POSTS_CACHE_KEY],
     { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
@@ -258,18 +239,22 @@ export const getAllPublishedPosts: () => Promise<BlogPost[]> =
 export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
   unstable_cache(
     async (): Promise<BlogPostMeta[]> => {
-      const posts = await getAllPublishedPosts();
-      return posts.map((post) => ({
-        slug: post.slug,
-        title: post.title,
-        subtitle: post.subtitle,
-        excerpt: post.excerpt,
-        category: post.category,
-        tags: post.tags,
-        date: post.date,
-        dateModified: post.dateModified,
-        readTime: post.readTime ?? calculateReadTime(post),
-      }));
+      if (!FORCE_PUBLIC_SNAPSHOT && isSupabaseAdminConfigured) {
+        try {
+          const { data, error } = await getSupabaseAdmin()
+            .from(TABLE)
+            .select(POST_META_COLUMNS)
+            .eq("published", true)
+            .lte("date", getTodayKST())
+            .order("date", { ascending: false });
+
+          if (error) throw error;
+          return data.map(rowToMeta);
+        } catch (error) {
+          console.warn("[blog-supabase] Metadata query failed, using snapshot fallback", error);
+        }
+      }
+      return getSnapshotPublishedPosts().map(postToMeta);
     },
     [`blog-posts-published-${DEPLOY_CACHE_SEGMENT}`],
     { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
@@ -280,12 +265,16 @@ export async function getAllPostMetasFresh(): Promise<
 > {
   const { data, error } = await getSupabaseAdmin()
     .from(TABLE)
-    .select("slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time, published, created_at")
+    .select(`${POST_META_COLUMNS}, published, created_at`)
     .order("date", { ascending: false });
 
   if (error) throw error;
 
-  return (data as DbRow[]).map((row) => rowToMeta(row));
+  return data.map((row) => ({
+    ...rowToMeta(row),
+    published: row.published ?? true,
+    createdAt: row.created_at ?? undefined,
+  }));
 }
 
 /**
@@ -387,17 +376,7 @@ export function getRelatedPosts(
       return posts
         .filter((post) => post.category === category && post.slug !== excludeSlug)
         .slice(0, limit)
-        .map((post) => ({
-          slug: post.slug,
-          title: post.title,
-          subtitle: post.subtitle,
-          excerpt: post.excerpt,
-          category: post.category,
-          tags: post.tags,
-          date: post.date,
-          dateModified: post.dateModified,
-          readTime: post.readTime ?? calculateReadTime(post),
-        }));
+        .map(postToMeta);
     },
     [`${getRelatedPostsCacheKey(category, excludeSlug, limit)}-${DEPLOY_CACHE_SEGMENT}`],
     {

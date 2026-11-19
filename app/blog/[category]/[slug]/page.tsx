@@ -29,7 +29,7 @@ import {
   getAllPublishedPostMetas,
   getRelatedPosts,
 } from "@/lib/blog-supabase";
-import { getResearchPageAdmin, getResearchPageFresh } from "@/lib/research/papers";
+import { getPublicResearchSlugsFresh, getResearchPageAdmin } from "@/lib/research/papers";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
 import type { BlogBlock } from "@/lib/blog";
@@ -71,24 +71,23 @@ function getFaqEntries(post: { blocks: BlogBlock[] }) {
 
 async function filterVisibleBlocks(blocks: BlogBlock[], isAdmin: boolean): Promise<BlogBlock[]> {
   if (isAdmin) return blocks;
-  const checkedBlocks = await filterPublicBlogCitations(blocks);
-  const results = await Promise.all(
-    checkedBlocks.map(async (block) => {
-      if (block.type !== "researchCallout") return block;
+  const slugsByHref = new Map<string, string>();
+  for (const block of blocks) {
+    if (block.type !== "researchCallout") continue;
+    const match = block.href.match(/^\/research\/([^/?#]+)\/?$/);
+    if (match) slugsByHref.set(block.href, match[1]);
+  }
 
-      const match = block.href.match(/^\/research\/([^/?#]+)\/?$/);
-      if (!match) return block;
+  const [checkedBlocks, publicSlugs] = await Promise.all([
+    filterPublicBlogCitations(blocks),
+    getPublicResearchSlugsFresh([...new Set(slugsByHref.values())]).catch(() => new Set<string>()),
+  ]);
 
-      try {
-        const researchPage = await getResearchPageFresh(match[1]);
-        return researchPage ? block : null;
-      } catch {
-        return null;
-      }
-    }),
-  );
-
-  return results.filter((block): block is BlogBlock => block !== null);
+  return checkedBlocks.filter((block) => {
+    if (block.type !== "researchCallout") return true;
+    const slug = slugsByHref.get(block.href);
+    return !slug || publicSlugs.has(slug);
+  });
 }
 
 function getBlogCtaCopy(slug: string, category: string, relatedTreatmentName?: string | null) {
@@ -226,18 +225,16 @@ export default async function BlogPostPage({
 
   const post = await getPostBySlug(slug);
   if (!post) notFound();
-  const isAdmin = await getIsAdminServer();
-  const visibleBlocks = await filterVisibleBlocks(post.blocks, isAdmin);
-  const researchNotices = isAdmin ? await getResearchCalloutNotices(post.blocks, getResearchPageAdmin) : {};
-  const categoryLabel = getCategoryLabel(post.category);
 
   // URL의 카테고리와 포스트의 실제 카테고리가 다르면 정규 URL로 리다이렉트
   if (post.category !== category) {
     permanentRedirect(getBlogPostUrl(slug, post.category));
   }
 
-  // 같은 카테고리의 관련 포스트 (현재 포스트 제외, 최대 3개)
-  const relatedPosts = await getRelatedPosts(post.category, post.slug, 3);
+  const isAdmin = await getIsAdminServer();
+  const visibleBlocks = await filterVisibleBlocks(post.blocks, isAdmin);
+  const researchNotices = isAdmin ? await getResearchCalloutNotices(post.blocks, getResearchPageAdmin) : {};
+  const categoryLabel = getCategoryLabel(post.category);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
 
@@ -246,8 +243,8 @@ export default async function BlogPostPage({
     ? getFaqJsonLd(faqEntries)
     : null;
   const headings = getHeadingList({ blocks: visibleBlocks });
-  const hasManualRelatedLinks =
-    !!visibleBlocks?.some((block) => block.type === "relatedLinks");
+  const hasManualRelatedLinks = visibleBlocks.some((block) => block.type === "relatedLinks");
+  const relatedPosts = hasManualRelatedLinks ? [] : await getRelatedPosts(post.category, post.slug, 3);
 
   const breadcrumbJsonLd = getBreadcrumbJsonLd([
     { name: "홈", href: "/" },
@@ -471,7 +468,7 @@ export default async function BlogPostPage({
       </section>
 
       {/* 관련 포스트 */}
-      {!hasManualRelatedLinks && relatedPosts.length > 0 && (
+      {relatedPosts.length > 0 && (
         <section className="section-padding bg-[var(--background)]">
           <div className="container-narrow">
             <FadeIn>
