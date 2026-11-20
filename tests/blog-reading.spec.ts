@@ -196,15 +196,17 @@ test("노출 기준 전 클릭은 조건 미충족으로 기록하고 노출을 
   const { events } = await interceptAnalytics(page);
   await page.clock.install();
   await page.goto("/blog");
-  await expect.poll(() => events.filter(e => e.event === "$pageview").length).toBeGreaterThan(0);
+  await expect.poll(() => events.some(e => e.event === "blog_card_impression")).toBe(true);
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   const card = page.locator('[data-blog-card][data-card-surface="listing"]').last();
   await expect(card).not.toBeInViewport();
-  const slug = await card.getAttribute("data-blog-card");
-  await card.evaluate(node => node.scrollIntoView({ block: "center", behavior: "instant" }));
-  await card.locator("h2 a").evaluate((link: HTMLAnchorElement) => {
+  const slug = await card.locator("h2 a").evaluate((link: HTMLAnchorElement) => {
+    const body = link.closest<HTMLElement>("[data-blog-card]");
+    if (!body?.dataset.blogCard) throw new Error("블로그 카드 식별자가 필요합니다.");
+    body.scrollIntoView({ block: "center", behavior: "instant" });
     link.addEventListener("click", event => event.preventDefault(), { once: true });
     link.click();
+    return body.dataset.blogCard;
   });
   await page.clock.runFor(4000);
   await expect.poll(() => events.filter(e => e.event === "blog_card_clicked" && e.properties.target_slug === slug).length).toBe(1);
