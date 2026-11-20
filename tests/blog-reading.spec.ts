@@ -202,7 +202,10 @@ test("노출 기준 전 클릭은 조건 미충족으로 기록하고 노출을 
   await expect(card).not.toBeInViewport();
   const slug = await card.getAttribute("data-blog-card");
   await card.evaluate(node => node.scrollIntoView({ block: "center", behavior: "instant" }));
-  await card.locator("h2 a").click({ force: true });
+  await card.locator("h2 a").evaluate((link: HTMLAnchorElement) => {
+    link.addEventListener("click", event => event.preventDefault(), { once: true });
+    link.click();
+  });
   await page.clock.runFor(4000);
   await expect.poll(() => events.filter(e => e.event === "blog_card_clicked" && e.properties.target_slug === slug).length).toBe(1);
   const clicked = events.find(e => e.event === "blog_card_clicked" && e.properties.target_slug === slug)!;
