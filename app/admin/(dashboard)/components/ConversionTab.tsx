@@ -3,7 +3,7 @@
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import { ConversionSubTab } from "@/app/admin/(dashboard)/components/insight/ConversionSubTab";
 
-export function ConversionReportTab() {
+export function ConversionReportTab({ initialMobileLocations = false }: { initialMobileLocations?: boolean }) {
   return (
     <div className="space-y-6">
       <AdminSurface tone="white" className="rounded-2xl px-4 py-3">
@@ -15,7 +15,7 @@ export function ConversionReportTab() {
 
         </div>
       </AdminSurface>
-      <ConversionSubTab />
+      <ConversionSubTab initialMobileLocations={initialMobileLocations} />
     </div>
   );
 }

@@ -10,7 +10,7 @@ const POSTHOG_CONVERSION_QUERY_EVENTS = [
   ...new Set([...POSTHOG_CTA_EVENTS, ...POSTHOG_SHARE_EVENTS, "$pageview"]),
 ] as const;
 
-export const POSTHOG_PERIODS = ["7d", "30d", "90d", "180d"] as const;
+export const POSTHOG_PERIODS = ["7d", "28d", "30d", "90d", "180d"] as const;
 
 export type PostHogPeriod = (typeof POSTHOG_PERIODS)[number];
 
@@ -105,6 +105,7 @@ interface PostHogQueryResponse {
 const PERIOD_TO_DAYS: Record<PostHogPeriod, number> = {
   "7d": 7,
   "30d": 30,
+  "28d": 28,
   "90d": 90,
   "180d": 180,
 };

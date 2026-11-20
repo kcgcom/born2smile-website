@@ -13,12 +13,6 @@ import type {
 // Constants
 // ---------------------------------------------------------------
 
-export const PERIODS = [
-  { value: "28d", label: "1개월" },
-  { value: "90d", label: "3개월" },
-  { value: "180d", label: "6개월" },
-];
-
 export const DEFAULT_SORT_DIRECTION = {
   impressions: "desc",
   clicks: "desc",

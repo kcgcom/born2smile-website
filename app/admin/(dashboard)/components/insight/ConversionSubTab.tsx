@@ -10,6 +10,7 @@ import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { MetricCard } from "../MetricCard";
 import { PeriodSelector } from "../PeriodSelector";
+import { REPORT_PERIODS, useReportPeriod } from "../useReportPeriod";
 import { ApiSourceBadge } from "./ApiSourceBadge";
 import { forceRefetchAdminApi, useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
@@ -89,12 +90,6 @@ interface ConversionData {
   }>;
 }
 
-const PERIODS = [
-  { value: "30d", label: "1개월" },
-  { value: "90d", label: "3개월" },
-  { value: "180d", label: "6개월" },
-] as const;
-
 const PERIOD_LABELS: Record<ConversionData["period"], string> = {
   "30d": "30일",
   "90d": "90일",
@@ -134,14 +129,18 @@ const CTA_LOCATION_LABELS: Record<string, string> = {
   footer_naver_map_icon: "하단 지도 아이콘",
 };
 
-export function ConversionSubTab() {
-  const [period, setPeriod] = useState<"30d" | "90d" | "180d">("30d");
+const MOBILE_LOCATIONS = new Set(["mobile_sticky_cta", "mobile_menu_phone", "floating_mobile_nav"]);
+
+export function ConversionSubTab({ initialMobileLocations = false }: { initialMobileLocations?: boolean }) {
+  const [period, setPeriod] = useReportPeriod();
+  const [mobileLocations, setMobileLocations] = useState(initialMobileLocations);
   const [retryingDetails, setRetryingDetails] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
   const endpoint = `/api/admin/posthog/conversion?period=${period}`;
-  const { data, loading, isValidating, error, refetch } = useAdminApi<ConversionData>(
+  const { data: response, loading, isValidating, error, refetch } = useAdminApi<ConversionData>(
     endpoint,
   );
+  const data = response?.period === period ? response : null;
   const { data: healthData } = useAdminApi<PostHogHealthData>("/api/admin/posthog/health");
   const { data: postsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const slugToTitleMap = useMemo(() => {
@@ -162,12 +161,12 @@ export function ConversionSubTab() {
 
         <div className="flex flex-wrap items-center gap-3">
           <PeriodSelector
-            periods={PERIODS.map((item) => ({ value: item.value, label: item.label }))}
+            periods={REPORT_PERIODS}
             selected={period}
             disabled={isValidating || retryingDetails}
             onChange={(value) => {
               setRetryError(null);
-              setPeriod(value as "30d" | "90d" | "180d");
+              setPeriod(value);
             }}
           />
           {data && (
@@ -364,6 +363,10 @@ export function ConversionSubTab() {
                 title="CTA 위치별 성과"
                 subtitle="문의 버튼이 표시된 위치별 클릭 분포"
               />
+              <label className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm">
+                <input type="checkbox" checked={mobileLocations} onChange={event => setMobileLocations(event.target.checked)} />
+                모바일 전용 버튼만 보기
+              </label>
               <DataTable mobileCards
                 columns={[
                   { key: "ctaLocation", label: "위치", align: "left", className: "md:w-2/5", render: row => CTA_LOCATION_LABELS[row.ctaLocation] ?? "기타 위치" },
@@ -375,10 +378,11 @@ export function ConversionSubTab() {
                     render: (row) => `${row.percentage}%`,
                   },
                 ]}
-                rows={data.byLocation}
+                rows={mobileLocations ? data.byLocation.filter(row => MOBILE_LOCATIONS.has(row.ctaLocation)) : data.byLocation}
                 keyField="ctaLocation"
                 emptyMessage="집계된 CTA 위치 데이터가 없습니다"
               />
+              {mobileLocations && <p className="mt-2 text-xs text-slate-600">비중은 전체 버튼 클릭을 기준으로 계산합니다.</p>}
             </section>
 
             <section>

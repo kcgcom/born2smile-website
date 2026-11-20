@@ -48,7 +48,7 @@ PostHog에서 두 이벤트를 위 속성으로 집계할 수 있다. 관리자 
 
 ## 제어와 구현 위치
 
-- `NEXT_PUBLIC_BLOG_CARD_TRACKING_ENABLED=false`로 카드 측정만 중단한다. 미설정 시 활성, 변경 적용에는 재빌드가 필요하다.
+- 카드 노출·클릭 측정은 공통 PostHog 연결 설정과 수집 제외 조건을 따른다.
 - [트래커](../components/blog/BlogCardTracker.tsx): IntersectionObserver·노출 타이머·링크 클릭 위임·동적 카드 관찰. 타이머/관찰자는 페이지 해제 시 정리한다.
 - [카드 표식](../lib/blog/card-tracking.ts): 정규 내부 글 링크 검증·위치 속성·면적 계산.
 - [테스트](../tests/blog-reading.spec.ts): 실제 이벤트 payload를 가로채 운영 전송 없이 검증한다.

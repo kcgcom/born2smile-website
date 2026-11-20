@@ -30,7 +30,7 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
   const stateRef = useRef<ReadState | null>(null);
 
   useEffect(() => {
-    if (disabled || admin || process.env.NEXT_PUBLIC_BLOG_READING_ENABLED === "false"
+    if (disabled || admin
       || !process.env.NEXT_PUBLIC_POSTHOG_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST) return;
     const path = `/blog/${category}/${slug}`;
     const root = document.querySelector<HTMLElement>("[data-blog-reading-root]");

@@ -35,7 +35,10 @@ for (const width of [360, 390]) {
     await setupOutcomes(page);
     await page.route("**/api/admin/posthog/conversion?**", route => route.fulfill({ json: { data: {
       ...conversion,
-      byLocation: [{ ctaLocation: "mobile_sticky_cta", clicks: 120, percentage: 45 }],
+      byLocation: [
+        { ctaLocation: "mobile_sticky_cta", clicks: 120, percentage: 45 },
+        { ctaLocation: "header_desktop", clicks: 12, percentage: 5 },
+      ],
       topBlogPosts: [{ slug: post.slug, totalClicks: 1234, phoneClicks: 234, contactClicks: 1000 }],
       topSharedBlogPosts: [{ slug: post.slug, shareActions: 25, shareVisits: 60, visitRate: 240, copiedShares: 15, nativeShares: 10 }],
     } } }));
@@ -47,6 +50,14 @@ for (const width of [360, 390]) {
     await expect(cards.filter({ hasText: "2.4회" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("conversion-mobile.png"), fullPage: true });
+    if (width === 360) {
+      await page.goto("/admin/operations/conversion?location=mobile");
+      const filter = page.getByRole("checkbox", { name: "모바일 전용 버튼만 보기" });
+      await expect(filter).toBeChecked();
+      await expect(page.getByText("PC 상단 문의", { exact: true })).toHaveCount(0);
+      await filter.uncheck();
+      await expect(page.getByText("PC 상단 문의", { exact: true }).filter({ visible: true })).toBeVisible();
+    }
   });
 }
 

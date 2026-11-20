@@ -24,16 +24,21 @@ import { SectionCard } from "./traffic/SectionCard";
 import { useTrafficData } from "./traffic/useTrafficData";
 import { TrafficBlogView } from "./traffic/TrafficBlogView";
 import { BlogReadingPanel } from "./traffic/BlogReadingPanel";
+import { BlogCardReportPanel } from "./traffic/BlogCardReportPanel";
 import { SourceDetailModal } from "./traffic/SourceDetailModal";
 import { TopPageDetailModal } from "./traffic/TopPageDetailModal";
-import { PERIODS, TRAFFIC_VIEWS, getTopPageDisplayTitle } from "./traffic/types";
-import type { Period, TrafficView } from "./traffic/types";
+import { TRAFFIC_VIEWS, getTopPageDisplayTitle } from "./traffic/types";
+import type { TrafficView } from "./traffic/types";
+import { REPORT_PERIODS, useReportPeriod } from "./useReportPeriod";
 
-export function TrafficTab() {
-  const [period, setPeriod] = useState<Period>("30d");
-  const [view, setView] = useState<TrafficView>("overall");
+export function TrafficTab({ initialBlogView = false, initialTreatmentSection = false }: {
+  initialBlogView?: boolean;
+  initialTreatmentSection?: boolean;
+}) {
+  const [period, setPeriod] = useReportPeriod();
+  const [view, setView] = useState<TrafficView>(initialBlogView ? "blog" : "overall");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
-  const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
+  const [selectedTopPage, setSelectedTopPage] = useState<string | null>(initialTreatmentSection && !initialBlogView ? "/treatments (전체)" : null);
 
   const td = useTrafficData(period);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -67,10 +72,10 @@ export function TrafficTab() {
         {/* Period selector */}
         <div className="flex flex-wrap items-center gap-3">
           <PeriodSelector
-            periods={PERIODS}
+            periods={REPORT_PERIODS}
             selected={period}
             onChange={(v) => {
-              setPeriod(v as Period);
+              setPeriod(v);
               setSelectedSource(null);
               setSelectedTopPage(null);
             }}
@@ -80,6 +85,9 @@ export function TrafficTab() {
 
         <DataFreshness metricHelp="검색 성과와 방문 통계는 반영 지연 기준이 달라 집계 기간이 다를 수 있습니다." dataAsOf={td.data?.dataAsOf} period={td.data?.period} comparePeriod={td.data?.comparePeriod} updatedAt={td.updatedAt} isValidating={td.isValidating} onRefresh={td.refetch} />
       </ReportToolbar>
+      {selectedTopPage === "/treatments (전체)" && !activeTopPage && td.data && !td.isValidating && !td.error && (
+        <p role="status" className="text-sm text-slate-600">선택 기간에 표시할 진료 페이지 상세 데이터가 없습니다.</p>
+      )}
 
       <div aria-label="트래픽 보기" role="tablist" className="flex w-fit gap-1 rounded-xl bg-[var(--background)]/80 p-1">
         {TRAFFIC_VIEWS.map((item, index) => (
@@ -116,6 +124,7 @@ export function TrafficTab() {
 
       <div role="tabpanel" id={`traffic-panel-${view}`} aria-labelledby={`traffic-tab-${view}`} tabIndex={0} className="space-y-6 focus-visible:outline-2 focus-visible:outline-blue-700">
       {view === "blog" && <BlogReadingPanel key={period} period={period} titles={td.blogTitleMap} />}
+      {view === "blog" && <BlogCardReportPanel period={period} />}
       {/* Loading */}
       {td.loading && <AdminLoadingSkeleton variant="full" />}
 

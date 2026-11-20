@@ -22,7 +22,7 @@ export function BlogReadingPanel({ period, titles }: { period: ReadingPeriod; ti
       <p className="mb-4 text-sm text-[var(--muted)]">글 길이를 고려한 활성 시간과 본문 도달 깊이로 읽기를 추정합니다. 다음 글 이동은 평가에 포함하지 않습니다.</p>
       {loading && <p role="status">읽기 데이터를 불러오는 중…</p>}
       {error && <AdminErrorState message={error} onRetry={refetch} />}
-      {!loading && !error && data && !data.configured && <p>PostHog 읽기 리포트 설정이 필요합니다.</p>}
+      {!loading && !error && data && !data.configured && <p>연결 필요 · PostHog 조회 설정을 확인하세요.</p>}
       {!loading && !error && data?.configured && data.period === period && data.cursor === cursor && <>
         <p className="mb-3 text-xs text-[var(--muted)]">
           집계: {dateKST(data.meta.periodStart)} ~ {dateKST(new Date(Date.parse(data.meta.periodEndExclusive) - 1).toISOString())} KST · 전일까지 완료된 기간 · {data.meta.measurementVersion}
@@ -30,9 +30,9 @@ export function BlogReadingPanel({ period, titles }: { period: ReadingPeriod; ti
           {data.meta.firstObservedAt && <> · 최초 관찰: {dateKST(data.meta.firstObservedAt)}</>}
         </p>
         {data.warnings.map(warning => <p key={warning} role="status" className="my-2 text-sm text-amber-700">{warning}</p>)}
-        {!data.meta.firstObservedAt && !data.meta.partial && <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">측정 전 또는 수집 미확인입니다. 새 읽기 이벤트가 아직 관찰되지 않았으며 0% 성과를 뜻하지 않습니다.</p>}
+        {data.summary.visits === 0 && <p className="mb-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">선택 기간에 조회된 본문 읽기 데이터가 없습니다.</p>}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard label="측정 가능 세션·글" value={data.summary.eligibleVisits.toLocaleString("ko-KR")} />
+          <MetricCard label="측정 가능 세션·글" value={data.summary.visits ? data.summary.eligibleVisits.toLocaleString("ko-KR") : "—"} />
           <MetricCard label="유효 읽기율 (추정)" value={readingRate(data.summary.qualified, data.summary.eligibleVisits)} />
           <MetricCard label="30초 이상 읽기" value={readingRate(data.summary.time30, data.summary.eligibleVisits)} />
           <MetricCard label="본문 75% 도달" value={readingRate(data.summary.depth75, data.summary.eligibleVisits)} />

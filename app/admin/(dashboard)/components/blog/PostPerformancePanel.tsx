@@ -19,12 +19,13 @@ function Source<T>({ title, source, children }: { title: string; source: Perform
   </section>;
 }
 
-export function PostPerformancePanel({ post, onClose }: { post: AdminBlogPost; onClose: () => void }) {
+export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBlogPost; endDate?: string; onClose: () => void }) {
   const [period, setPeriod] = useState<PerformancePeriod>("30d");
   const modal = useModalA11y(onClose);
   const isPublic = isPublicPerformancePost(post, getTodayKST());
-  const { data, loading, error, refetch } = useAdminApi<PostPerformance>(`/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}`, isPublic);
-  const report = data?.post?.slug === post.slug && data.period === period ? data : null;
+  const endQuery = endDate ? `&end=${encodeURIComponent(endDate)}` : "";
+  const { data, loading, error, refetch } = useAdminApi<PostPerformance>(`/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}${endQuery}`, isPublic);
+  const report = data?.post?.slug === post.slug && data.period === period && (!endDate || data.range.end === endDate) ? data : null;
   useEffect(() => {
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -52,7 +53,7 @@ export function PostPerformancePanel({ post, onClose }: { post: AdminBlogPost; o
         {loading && <p role="status" className="text-sm text-slate-600">포스트 성과를 불러오는 중…</p>}
         {error && <AdminErrorState message={error} onRetry={refetch} />}
         {!loading && !error && report && <>
-          <p className="text-sm text-slate-600">기간별 성과: {report.range.start} ~ {report.range.end}<br /><span className="text-xs">검색 반영 지연을 고려해 3일 전까지의 같은 날짜 범위를 조회합니다. 조회 시각: {new Date(report.fetchedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST</span></p>
+          <p className="text-sm text-slate-600">기간별 성과: {report.range.start} ~ {report.range.end}<br /><span className="text-xs">{endDate ? "운영 개요에서 확인한 집계 종료일을 사용합니다." : "검색 반영 지연을 고려해 3일 전까지의 같은 날짜 범위를 조회합니다."} 조회 시각 {new Date(report.fetchedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST</span></p>
           {report.partial && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">일부 데이터를 불러오지 못했습니다. 조회된 다른 결과는 그대로 확인할 수 있습니다.</p>}
           <Source title="누적 독자 응답 · DB" source={report.feedback}>{feedback => <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -65,6 +66,11 @@ export function PostPerformancePanel({ post, onClose }: { post: AdminBlogPost; o
           </>}</Source>
           <Source title="검색 유입 · Search Console" source={report.search}>{search => <>
             <div className="grid grid-cols-2 gap-3"><MetricCard label="검색 노출" value={`${search.impressions.toLocaleString("ko-KR")}회`} /><MetricCard label="검색 클릭" value={`${search.clicks.toLocaleString("ko-KR")}회`} /></div>
+            {report.previousSearch && <p className="mt-3 text-sm text-slate-600">
+              직전 기간 {report.previousSearch.start} ~ {report.previousSearch.end} · {report.previousSearch.clicks === null
+                ? "검색 클릭 조회 불가"
+                : `검색 클릭 ${report.previousSearch.clicks.toLocaleString("ko-KR")}회 → ${search.clicks.toLocaleString("ko-KR")}회`}
+            </p>}
             {!search.queriesAvailable ? <p className="mt-3 text-sm text-amber-800">유입 검색어 조회 실패</p> : search.queries.length ? <ul className="mt-3 divide-y divide-slate-100">{search.queries.map(item => <li key={item.query} className="flex justify-between gap-3 py-2 text-sm"><span className="min-w-0 break-words">{item.query}</span><span className="shrink-0 text-slate-600">클릭 {item.clicks}회</span></li>)}</ul> : <p className="mt-3 text-sm text-slate-600">표시할 유입 검색어가 없습니다.</p>}
             <p className="mt-3 text-xs text-slate-500">정규 URL 기준 · 미국 태평양 시간(PT). 검색어는 일부만 공개되므로 검색어 클릭 합계가 전체 클릭과 다를 수 있습니다.</p>
           </>}</Source>

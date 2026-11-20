@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../../../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../../../_lib/cache";
 import { getPerformancePost, fetchPostPerformance } from "@/lib/admin-post-performance";
-import { PERFORMANCE_PERIODS, performanceRange, type PerformancePeriod, type PostPerformance } from "@/lib/post-performance";
+import { PERFORMANCE_PERIODS, performanceRange, validPerformanceEnd, type PerformancePeriod, type PostPerformance } from "@/lib/post-performance";
 
 const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" };
 class PartialPerformance extends Error {
@@ -13,16 +13,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!auth.ok) return unauthorizedResponse(auth);
   const { slug } = await params;
   const period = (request.nextUrl.searchParams.get("period") ?? "30d") as PerformancePeriod;
-  if (!/^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/.test(slug) || !PERFORMANCE_PERIODS.includes(period)) {
+  const endDate = request.nextUrl.searchParams.get("end");
+  const now = new Date();
+  if (!/^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/.test(slug) || !PERFORMANCE_PERIODS.includes(period)
+    || (endDate !== null && !validPerformanceEnd(endDate, now))) {
     return Response.json({ message: "글 또는 기간이 올바르지 않습니다." }, { status: 400, headers: HEADERS });
   }
   try {
     const post = await getPerformancePost(slug);
     if (!post) return Response.json({ message: "글을 찾을 수 없습니다." }, { status: 404, headers: HEADERS });
-    const now = new Date();
-    const range = performanceRange(period, now);
-    const fetcher = createCachedFetcher(`post-performance-v1-${slug}-${post.updatedAt}-${period}-${range.end}`, async () => {
-      const result = await fetchPostPerformance(post, period, now);
+    const range = performanceRange(period, now, endDate ?? undefined);
+    const fetcher = createCachedFetcher(`post-performance-v2-${slug}-${post.updatedAt}-${period}-${range.end}-${endDate !== null}`, async () => {
+      const result = await fetchPostPerformance(post, period, now, endDate ?? undefined);
       if (result.partial) throw new PartialPerformance(result);
       return result;
     }, CACHE_TTL.POSTHOG);

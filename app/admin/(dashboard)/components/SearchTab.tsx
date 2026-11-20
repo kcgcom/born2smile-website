@@ -20,7 +20,8 @@ import { AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminDisclosureSection } from "@/components/admin/AdminDisclosureSection";
 import { BlogSearchConsoleSection } from "./search/BlogSearchConsoleSection";
 import type { SearchConsoleData } from "./search/search-types";
-import { formatCtr, PERIODS } from "./search/search-utils";
+import { formatCtr } from "./search/search-utils";
+import { REPORT_PERIODS, useReportPeriod } from "./useReportPeriod";
 import { useSearchTableSort } from "./search/search-hooks";
 import { PageQueryDrilldown, QueryPageDrilldown } from "./search/search-components";
 import { ClusteredKeywordTable } from "./search/ClusteredKeywordTable";
@@ -52,7 +53,7 @@ function formatSitemapDate(value: string | null): string {
 
 export function SearchTab() {
   const router = useRouter();
-  const [period, setPeriod] = useState<"28d" | "90d" | "180d">("28d");
+  const [period, setPeriod] = useReportPeriod();
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(null);
   const [clustered, setClustered] = useState(true);
@@ -68,7 +69,7 @@ export function SearchTab() {
   const pageSort = useSearchTableSort(data?.topPages ?? []);
 
   const handlePeriodChange = (value: string) => {
-    setPeriod(value as "28d" | "90d" | "180d");
+    setPeriod(value);
     setSelectedQuery(null);
     setSelectedTopPage(null);
   };
@@ -101,7 +102,7 @@ export function SearchTab() {
         <ApiSourceBadge sources={["searchConsole"]} />
 
         <div className="flex flex-wrap items-center gap-3">
-          <PeriodSelector periods={PERIODS} selected={period} onChange={handlePeriodChange} />
+          <PeriodSelector periods={REPORT_PERIODS} selected={period} onChange={handlePeriodChange} />
           {data?.siteUrl && (
             <details className="relative text-xs text-[var(--muted)]">
               <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-[var(--background)] px-2.5 py-1 font-medium">

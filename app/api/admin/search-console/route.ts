@@ -5,7 +5,7 @@ import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
 import { fetchSearchConsoleData } from "@/lib/admin-search-console";
 import { computeSemanticClusterGroups } from "@/lib/admin-keyword-embeddings";
 
-const VALID_PERIODS = ["7d", "28d", "90d", "180d"];
+const VALID_PERIODS = ["7d", "28d", "30d", "90d", "180d"];
 
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminRequest(request);
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const includeClusters = request.nextUrl.searchParams.get("includeClusters") === "true";
   if (!VALID_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 90d, 180d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 30d, 90d, 180d)" },
       { status: 400, headers: { "Cache-Control": "private, no-store" } },
     );
   }

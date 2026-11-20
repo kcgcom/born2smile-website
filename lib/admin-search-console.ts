@@ -114,7 +114,7 @@ export async function createSearchConsoleContext() {
   return { searchconsole, siteUrl, configuredSiteUrl };
 }
 
-export async function fetchPostSearch(url: string, start: string, end: string) {
+export async function fetchPostSearch(url: string, start: string, end: string, includeQueries = true) {
   const { searchconsole, siteUrl } = await createSearchConsoleContext();
   const requestBody = {
     startDate: start, endDate: end, dataState: "final",
@@ -122,14 +122,14 @@ export async function fetchPostSearch(url: string, start: string, end: string) {
   };
   const [summary, queries] = await Promise.allSettled([
     searchconsole.searchanalytics.query({ siteUrl, requestBody: { ...requestBody, dimensions: [], rowLimit: 1 } }, { timeout: 15000 }),
-    searchconsole.searchanalytics.query({ siteUrl, requestBody: { ...requestBody, dimensions: ["query"], rowLimit: 10 } }, { timeout: 15000 }),
+    includeQueries ? searchconsole.searchanalytics.query({ siteUrl, requestBody: { ...requestBody, dimensions: ["query"], rowLimit: 10 } }, { timeout: 15000 }) : null,
   ]);
   if (summary.status === "rejected") throw summary.reason;
   const row = summary.value.data.rows?.[0];
   return {
     clicks: row?.clicks ?? 0, impressions: row?.impressions ?? 0, ctr: (row?.ctr ?? 0) * 100,
     position: row?.position ?? null, queriesAvailable: queries.status === "fulfilled",
-    queries: queries.status === "fulfilled" ? (queries.value.data.rows ?? []).map(item => ({
+    queries: queries.status === "fulfilled" ? (queries.value?.data.rows ?? []).map(item => ({
       query: item.keys?.[0] ?? "", clicks: item.clicks ?? 0, impressions: item.impressions ?? 0,
     })) : [],
   };
@@ -177,7 +177,7 @@ function getPeriodDates(period: string) {
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstNow = new Date(Date.now() + kstOffset);
 
-  const days = period === "7d" ? 7 : period === "28d" ? 28 : period === "90d" ? 90 : 180;
+  const days = period === "30d" ? 30 : period === "7d" ? 7 : period === "28d" ? 28 : period === "90d" ? 90 : 180;
   const DELAY_DAYS = 3; // SC data is delayed 2-3 days
 
   const endDate = new Date(kstNow);

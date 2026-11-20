@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BLOG_CATEGORY_SLUGS, type BlogCategoryFilter } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
+import { validPerformanceEnd } from "@/lib/post-performance";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { AdminErrorState } from "../AdminErrorState";
@@ -48,6 +49,9 @@ export function PostsSubTab() {
   const sortKey: SortKey = sortParam === "oldest" || sortParam === "unresolved" || sortParam === "newest" ? sortParam : statusFilter === "draft" ? "recommended" : "newest";
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const performanceSlug = searchParams.get("performance");
+  const requestedPerformanceEnd = searchParams.get("performanceEnd");
+  const performanceEnd = requestedPerformanceEnd && validPerformanceEnd(requestedPerformanceEnd, new Date())
+    ? requestedPerformanceEnd : undefined;
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState<{ error: boolean; message: string } | null>(null);
   const [editingDateSlug, setEditingDateSlug] = useState<string | null>(null);
@@ -97,17 +101,20 @@ export function PostsSubTab() {
   const showPerformance = (slug: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set("performance", slug);
+    url.searchParams.delete("performanceEnd");
     window.history.pushState(null, "", url);
   };
   const closePerformance = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete("performance");
+    url.searchParams.delete("performanceEnd");
     window.history.replaceState(null, "", url);
   };
 
   const handleEdit = (post: AdminBlogPost) => {
     const query = new URLSearchParams(window.location.search);
     query.delete("performance");
+    query.delete("performanceEnd");
     const suffix = query.size ? `?list=${encodeURIComponent(query.toString())}` : "";
     router.push(`/admin/content/posts/${post.slug}${suffix}`);
   };
@@ -248,7 +255,7 @@ export function PostsSubTab() {
         </>
       )}
 
-      {performancePost && <PostPerformancePanel key={performancePost.slug} post={performancePost} onClose={closePerformance} />}
+      {performancePost && <PostPerformancePanel key={`${performancePost.slug}:${performanceEnd ?? ""}`} post={performancePost} endDate={performanceEnd} onClose={closePerformance} />}
     </div>
   );
 }

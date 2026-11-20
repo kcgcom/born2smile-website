@@ -48,7 +48,7 @@ function getPeriodDates(period: string): {
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstNow = new Date(now.getTime() + kstOffset);
 
-  const days = period === "7d" ? 7 : period === "30d" ? 30 : period === "180d" ? 180 : 90;
+  const days = period === "28d" ? 28 : period === "7d" ? 7 : period === "30d" ? 30 : period === "180d" ? 180 : 90;
 
   const endDate = new Date(kstNow);
   endDate.setDate(endDate.getDate() - 1); // yesterday (today's data is incomplete)
@@ -893,8 +893,7 @@ export async function fetchBlogPostGA4Data(period: string) {
 
   const client = getClient();
 
-  // Search Console과 동일한 기간 지원: 28d, 90d, 180d
-  const days = period === "90d" ? 90 : period === "180d" ? 180 : 28;
+  const days = period === "30d" ? 30 : period === "90d" ? 90 : period === "180d" ? 180 : 28;
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstNow = new Date(now.getTime() + kstOffset);

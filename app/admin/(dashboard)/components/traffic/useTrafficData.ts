@@ -4,7 +4,6 @@ import { useCallback, useMemo } from "react";
 import { useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
 import type { AnalyticsData, BlogGA4Data, ConversionData, Period, TopPageDetail, SourceDetail } from "./types";
-import { toBlogAnalyticsPeriod } from "./types";
 
 export function useTrafficData(period: Period) {
   // 점진적 로딩: basic(Stage 1)을 먼저 표시, full이 오면 상세 데이터 병합
@@ -23,7 +22,7 @@ export function useTrafficData(period: Period) {
     loading: blogGa4Loading,
     error: blogGa4Error,
   } = useAdminApi<BlogGA4Data>(
-    `/api/admin/blog-analytics?period=${toBlogAnalyticsPeriod(period)}`,
+    `/api/admin/blog-analytics?period=${period}`,
   );
   const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>(
     `/api/admin/posthog/conversion?period=${period}`,

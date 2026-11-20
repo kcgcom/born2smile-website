@@ -54,6 +54,7 @@ playwright-report/
 
 # local tooling scratch
 .tmp/
+/_workspace/
 supabase/.temp/
 
 # cargo / rust build outputs

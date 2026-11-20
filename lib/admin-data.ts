@@ -1,9 +1,7 @@
 // =============================================================
 // 관리자 대시보드 데이터 모듈
-// 개선 항목, 블로그 통계, 사이트 설정 상태
+// 개선 항목과 블로그 통계
 // =============================================================
-
-import { LINKS } from "./constants";
 
 // -------------------------------------------------------------
 // 개선 항목 데이터
@@ -221,26 +219,4 @@ export function getImprovementStats(): ImprovementStats {
   });
 
   return { total, done, pending, ownerDecision, byPriority };
-}
-
-// -------------------------------------------------------------
-// 사이트 설정 상태
-// -------------------------------------------------------------
-
-export interface ConfigItem {
-  label: string;
-  configured: boolean;
-  value?: string;
-}
-
-export type SiteConfigStatus = ConfigItem[];
-
-export function getSiteConfigStatus(): SiteConfigStatus {
-  return [
-    { label: "카카오톡 채널", configured: !!LINKS.kakaoChannel, value: LINKS.kakaoChannel || "미설정" },
-    { label: "인스타그램", configured: !!LINKS.instagram, value: LINKS.instagram || "미설정" },
-    { label: "네이버 블로그", configured: !!LINKS.naverBlog, value: LINKS.naverBlog || "미설정" },
-    { label: "네이버 지도", configured: !!LINKS.naverMap, value: LINKS.naverMap || "미설정" },
-    { label: "카카오맵", configured: !!LINKS.kakaoMap, value: LINKS.kakaoMap || "미설정" },
-  ];
 }

@@ -167,7 +167,9 @@ test("실제 카드 노출과 글 클릭을 연결하고 반응 버튼 클릭은
   await page.goto("/blog?q=" + encodeURIComponent("임플란트"));
   await expect.poll(() => events.filter(e => e.event === "$pageview").length).toBeGreaterThan(0);
   const card = page.locator('[data-blog-card][data-card-surface="listing"]').first();
-  await card.scrollIntoViewIfNeeded();
+  await expect(async () => {
+    await card.scrollIntoViewIfNeeded({ timeout: 1000 });
+  }).toPass({ timeout: 5000 });
   const slug = await card.getAttribute("data-blog-card");
   const impressions = () => events.filter(e => e.event === "blog_card_impression" && e.properties.target_slug === slug);
   await expect.poll(() => impressions().length).toBe(1);

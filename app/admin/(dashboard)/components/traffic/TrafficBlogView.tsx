@@ -94,13 +94,13 @@ export function TrafficBlogView({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard
-          label={`${period === "30d" ? "30일" : period === "90d" ? "90일" : "180일"} 공유 시도`}
+          label={`${period.slice(0, -1)}일 공유 시도`}
           value={conversionData?.configured ? conversionData.summary.totalShareActions.toLocaleString("ko-KR") : "설정 필요"}
           color="text-sky-700"
           loading={conversionLoading}
         />
         <MetricCard
-          label={`${period === "30d" ? "30일" : period === "90d" ? "90일" : "180일"} 공유 유입`}
+          label={`${period.slice(0, -1)}일 공유 유입`}
           value={conversionData?.configured ? conversionData.summary.totalShareVisits.toLocaleString("ko-KR") : "설정 필요"}
           color="text-violet-700"
           loading={conversionLoading}

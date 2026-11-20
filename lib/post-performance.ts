@@ -17,18 +17,30 @@ export interface PostPerformance {
   range: ReturnType<typeof performanceRange>;
   fetchedAt: string;
   partial: boolean;
+  previousSearch?: { start: string; end: string; clicks: number | null };
   search: PerformanceSource<{ clicks: number; impressions: number; ctr: number; position: number | null; queries: Array<{ query: string; clicks: number; impressions: number }>; queriesAvailable: boolean }>;
   traffic: PerformanceSource<{ views: number; sessions: number; timeZone: string; thresholded: boolean }>;
   reading: PerformanceSource<{ counts: ReadingCounts; firstObservedAt: string | null; warnings: string[] }>;
   feedback: PerformanceSource<{ solved: number; unresolved: number; total: number }>;
 }
 
-export function performanceRange(period: PerformancePeriod, now = new Date()) {
+export function performanceRange(period: PerformancePeriod, now = new Date(), endDate?: string) {
   // End three calendar days before today so recently incomplete search data is not compared with fresh traffic.
-  const anchor = new Date(now.getTime() - 2 * 86400_000);
+  const anchor = new Date(endDate
+    ? Date.parse(`${endDate}T00:00:00+09:00`) + 86400_000
+    : now.getTime() - 2 * 86400_000);
   const range = readingPeriodRange(period, anchor);
   const dateKST = (value: number) => new Date(value + 9 * 3600_000).toISOString().slice(0, 10);
   return { ...range, start: dateKST(Date.parse(range.periodStart)), end: dateKST(Date.parse(range.periodEndExclusive) - 1), anchor: anchor.toISOString() };
+}
+
+export function validPerformanceEnd(value: string, now: Date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(timestamp)
+    && new Date(timestamp).toISOString().slice(0, 10) === value
+    && value <= performanceRange("30d", now).end
+    && value >= performanceRange("30d", new Date(now.getTime() - 365 * 86400_000)).end;
 }
 
 export function isPublicPerformancePost(post: Pick<PerformancePost, "published" | "date">, today: string) {

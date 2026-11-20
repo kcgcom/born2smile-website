@@ -46,6 +46,7 @@
     "submit-indexnow:all": "node scripts/submit-indexnow.mjs --all",
     "db:sql": "supabase db query --linked",
     "test:e2e": "playwright test",
+    "test:e2e:production": "pnpm --config.shell-emulator=true run build && playwright test --config playwright.production.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "dev:live": "node --import tsx scripts/generate-blog-snapshot.ts && node --import tsx scripts/generate-blog-meta.ts && node --import tsx scripts/generate-dev-manifest.ts && node --import tsx scripts/generate-research-snapshot.ts && node --import tsx scripts/generate-keyword-taxonomy-snapshot.ts && SITE_CONFIG_DATA_SOURCE=live BLOG_PUBLIC_DATA_SOURCE=snapshot next dev",
     "dev:test": "SITE_CONFIG_DATA_SOURCE=fixture pnpm dev",

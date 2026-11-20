@@ -22,8 +22,7 @@ export default function BlogCardTracker({ contextKey = "default", hasSearch = fa
   const pathname = usePathname();
   const state = useRef<CardState | null>(null);
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_POSTHOG_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST
-      || process.env.NEXT_PUBLIC_BLOG_CARD_TRACKING_ENABLED === "false") return;
+    if (!process.env.NEXT_PUBLIC_POSTHOG_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST) return;
     const context = `${pathname}:${contextKey}`;
     const records = new Map<HTMLElement, ReturnType<typeof setTimeout> | null>();
     let frame = 0;

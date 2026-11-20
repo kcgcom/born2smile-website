@@ -30,15 +30,15 @@ export function buildReadingQueries(period: ReadingPeriod, cursor: string | null
     AND match(properties.page_path, '^/blog/(${BLOG_CATEGORY_SLUGS.join("|")})/[^/]+$')
     AND properties.blog_slug = extract(properties.page_path, '^/blog/[^/]+/([^/]+)$')
     AND properties.category = extract(properties.page_path, '^/blog/([^/]+)/')
-    AND properties.readable_char_count >= 0 AND properties.estimated_read_seconds >= 0
-    AND ((properties.reading_eligible = true AND properties.readable_char_count > 0
-      AND properties.required_active_seconds >= 15 AND properties.required_active_seconds <= 90)
-      OR (properties.reading_eligible = false AND properties.readable_char_count = 0 AND properties.required_active_seconds IS NULL))
+    AND toFloat64OrNull(toString(properties.readable_char_count)) >= 0 AND toFloat64OrNull(toString(properties.estimated_read_seconds)) >= 0
+    AND ((toString(properties.reading_eligible) IN ('true', '1') AND toFloat64OrNull(toString(properties.readable_char_count)) > 0
+      AND toFloat64OrNull(toString(properties.required_active_seconds)) >= 15 AND toFloat64OrNull(toString(properties.required_active_seconds)) <= 90)
+      OR (toString(properties.reading_eligible) IN ('false', '0') AND toFloat64OrNull(toString(properties.readable_char_count)) = 0 AND toFloat64OrNull(toString(properties.required_active_seconds)) IS NULL))
     AND (event NOT IN ('blog_read_progress','blog_read_qualified')
-      OR (properties.active_read_seconds >= 0 AND properties.max_body_depth_pct >= 0 AND properties.max_body_depth_pct <= 100))
+      OR (toFloat64OrNull(toString(properties.active_read_seconds)) >= 0 AND toFloat64OrNull(toString(properties.max_body_depth_pct)) >= 0 AND toFloat64OrNull(toString(properties.max_body_depth_pct)) <= 100))
     AND (event != 'blog_read_progress'
-      OR (properties.milestone_type = 'depth' AND properties.milestone_value IN (25,50,75,90))
-      OR (properties.milestone_type = 'active_time' AND properties.milestone_value IN (15,30,60,90)))`;
+      OR (properties.milestone_type = 'depth' AND toFloat64OrNull(toString(properties.milestone_value)) IN (25,50,75,90))
+      OR (properties.milestone_type = 'active_time' AND toFloat64OrNull(toString(properties.milestone_value)) IN (15,30,60,90)))`;
   const cte = `WITH raw AS (
     SELECT * FROM events WHERE ${where} AND event IN ${READ_EVENTS}${postFilter}
   ), valid_events AS (
@@ -49,21 +49,21 @@ export function buildReadingQueries(period: ReadingPeriod, cursor: string | null
       any(properties.page_path) AS path,
       countIf(event='blog_article_viewed') AS starts,
       minIf(timestamp, event='blog_article_viewed') AS started_at,
-      anyIf(properties.required_active_seconds, event='blog_article_viewed') AS required_seconds,
-      maxIf(properties.reading_eligible = true AND properties.readable_char_count > 0
-        AND properties.required_active_seconds >= 15 AND properties.required_active_seconds <= 90,
+      anyIf(toFloat64OrNull(toString(properties.required_active_seconds)), event='blog_article_viewed') AS required_seconds,
+      maxIf(toString(properties.reading_eligible) IN ('true', '1') AND toFloat64OrNull(toString(properties.readable_char_count)) > 0
+        AND toFloat64OrNull(toString(properties.required_active_seconds)) >= 15 AND toFloat64OrNull(toString(properties.required_active_seconds)) <= 90,
         event='blog_article_viewed') AS eligible
     FROM valid_events GROUP BY view_id, session_id, slug, revision
   ), actions AS (
     SELECT v.view_id AS view_id, v.session_id AS session_id, v.slug AS slug, v.revision AS revision,
-      max(e.event='blog_read_qualified' AND e.properties.max_body_depth_pct >= 75
-        AND e.properties.max_body_depth_pct <= 100
-        AND e.properties.active_read_seconds >= e.properties.required_active_seconds
-        AND e.properties.required_active_seconds = v.required_seconds
-        AND e.properties.required_active_seconds >= 15 AND e.properties.required_active_seconds <= 90) AS qualified,
-      max(e.event IN ('blog_read_progress','blog_read_qualified') AND e.properties.max_body_depth_pct >= 75
-        AND e.properties.max_body_depth_pct <= 100) AS depth75,
-      max(e.event IN ('blog_read_progress','blog_read_qualified') AND e.properties.active_read_seconds >= 30) AS time30,
+      max(e.event='blog_read_qualified' AND toFloat64OrNull(toString(e.properties.max_body_depth_pct)) >= 75
+        AND toFloat64OrNull(toString(e.properties.max_body_depth_pct)) <= 100
+        AND toFloat64OrNull(toString(e.properties.active_read_seconds)) >= toFloat64OrNull(toString(e.properties.required_active_seconds))
+        AND toFloat64OrNull(toString(e.properties.required_active_seconds)) = v.required_seconds
+        AND toFloat64OrNull(toString(e.properties.required_active_seconds)) >= 15 AND toFloat64OrNull(toString(e.properties.required_active_seconds)) <= 90) AS qualified,
+      max(e.event IN ('blog_read_progress','blog_read_qualified') AND toFloat64OrNull(toString(e.properties.max_body_depth_pct)) >= 75
+        AND toFloat64OrNull(toString(e.properties.max_body_depth_pct)) <= 100) AS depth75,
+      max(e.event IN ('blog_read_progress','blog_read_qualified') AND toFloat64OrNull(toString(e.properties.active_read_seconds)) >= 30) AS time30,
       max(e.event='blog_feedback_prompt_viewed') AS feedbackPrompts,
       argMaxIf(e.properties.answer, toString(e.properties.feedback_updated_at), e.event='blog_question_feedback') AS answer,
       maxIf(ifNull(toString(e.properties.feedback_updated_at), ''), e.event='blog_question_feedback') AS answer_at,

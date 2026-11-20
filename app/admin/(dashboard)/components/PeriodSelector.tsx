@@ -1,7 +1,7 @@
 "use client";
 
 interface PeriodSelectorProps {
-  periods: Array<{ value: string; label: string }>;
+  periods: ReadonlyArray<{ value: string; label: string }>;
   selected: string;
   onChange: (value: string) => void;
   disabled?: boolean;

@@ -31,6 +31,7 @@ export function DataFreshness({ dataAsOf, period, comparePeriod, updatedAt, isVa
       <div className="min-w-0 lg:col-start-1 lg:row-start-1">
         <div className="space-y-1 lg:text-xs">
           {period && <p>집계 기간: {period.start} ~ {period.end}</p>}
+          {comparePeriod && <p>직전 기간: {comparePeriod.start} ~ {comparePeriod.end}</p>}
           {dataAsOf && <p>데이터 기준: {dataAsOf}{ageLabel && ` (${ageLabel} 데이터)`}</p>}
         </div>
       </div>
@@ -41,7 +42,7 @@ export function DataFreshness({ dataAsOf, period, comparePeriod, updatedAt, isVa
           <div className="space-y-2 pb-2 lg:absolute lg:right-0 lg:top-full lg:z-20 lg:w-96 lg:max-w-[calc(100vw-3rem)] lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-4 lg:text-slate-700 lg:shadow-lg">
             {updatedAt && <p>응답 확인: {new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "short", timeStyle: "short" }).format(updatedAt)} KST · 원천 데이터 기준일과 다를 수 있습니다.</p>}
             <p>원천 서비스의 반영 지연이 있을 수 있습니다.</p>
-            {comparePeriod && <p>증감률 비교: {comparePeriod.start} ~ {comparePeriod.end} 대비 상대 변화(%)입니다.</p>}
+            {comparePeriod && <p>증감률은 직전 기간 대비 상대 변화(%)입니다.</p>}
             {metricHelp && <p>{metricHelp}</p>}
           </div>
         </details>

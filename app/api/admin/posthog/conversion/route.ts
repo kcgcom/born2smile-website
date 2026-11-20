@@ -7,6 +7,7 @@ import { fetchPostHogConversion, POSTHOG_PERIODS, type PostHogPeriod } from "@/l
 const POSTHOG_CACHE_TTL: Record<PostHogPeriod, number> = {
   "7d": CACHE_TTL.POSTHOG,
   "30d": 600,
+  "28d": 600,
   "90d": 1800,
   "180d": 3600,
 };
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   const force = request.nextUrl.searchParams.get("force") === "true";
   if (!POSTHOG_PERIODS.includes(period)) {
     return Response.json(
-      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 30d, 90d, 180d)" },
+      { error: "BAD_REQUEST", message: "유효하지 않은 기간입니다 (7d, 28d, 30d, 90d, 180d)" },
       {
         status: 400,
         headers: {

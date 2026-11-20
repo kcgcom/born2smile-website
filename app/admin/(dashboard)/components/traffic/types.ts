@@ -1,4 +1,5 @@
 import type { MetricValue } from "../insight/shared";
+import type { ReportPeriod } from "../useReportPeriod";
 
 export interface AnalyticsData {
   propertyId: string;
@@ -60,7 +61,7 @@ export interface BlogGA4Data {
 
 export interface ConversionData {
   configured: boolean;
-  period: "7d" | "30d" | "90d" | "180d";
+  period: "7d" | "28d" | "30d" | "90d" | "180d";
   summary: {
     totalShareActions: number;
     totalShareVisits: number;
@@ -70,14 +71,8 @@ export interface ConversionData {
   };
 }
 
-export type Period = "30d" | "90d" | "180d";
+export type Period = ReportPeriod;
 export type TrafficView = "overall" | "blog";
-
-export const PERIODS: Array<{ value: Period; label: string }> = [
-  { value: "30d", label: "1개월" },
-  { value: "90d", label: "3개월" },
-  { value: "180d", label: "6개월" },
-];
 
 export const TRAFFIC_VIEWS: Array<{ value: TrafficView; label: string }> = [
   { value: "overall", label: "전체" },
@@ -98,12 +93,6 @@ export function formatDurationDelta(current: number, baseline: number) {
   return diff > 0
     ? `평균보다 ${formatDuration(diff)} 긴 세션`
     : `평균보다 ${formatDuration(Math.abs(diff))} 짧은 세션`;
-}
-
-export function toBlogAnalyticsPeriod(period: Period): "28d" | "90d" | "180d" {
-  if (period === "90d") return "90d";
-  if (period === "180d") return "180d";
-  return "28d";
 }
 
 export function getBlogSlugFromPath(path: string) {

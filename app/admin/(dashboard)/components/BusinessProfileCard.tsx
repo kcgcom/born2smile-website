@@ -44,7 +44,7 @@ export function BusinessProfileCard() {
           </div>
         </>
       ) : (
-        <p className="mt-3 text-sm text-slate-600">Google Business Profile API 연결 설정이 필요합니다.</p>
+        <p className="mt-3 text-sm text-slate-600">연결 필요 · Google Business Profile API 접근을 승인받고 병원 계정을 연결하면 성과를 볼 수 있습니다.</p>
       )}
     </AdminSurface>
   );

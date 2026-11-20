@@ -7,13 +7,10 @@ import {
   IMPROVEMENT_ITEMS,
   IMPROVEMENT_LAST_SYNC,
   getImprovementStats,
-  getSiteConfigStatus,
   type ImprovementStatus,
-  type SiteConfigStatus,
 } from "@/lib/admin-data";
 import { ENV_GROUP_LABELS, type EnvGroup } from "@/lib/dev-data";
 import { getAccessToken } from "@/lib/supabase";
-import { ConfigRow } from "./ConfigRow";
 import { useAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
@@ -418,28 +415,6 @@ export function ProjectTab() {
 
       {/* 환경변수 건강 상태 */}
       <EnvHealthSection />
-
-      {/* 사이트 설정 상태 */}
-      <SiteConfigSection config={getSiteConfigStatus()} />
     </div>
-  );
-}
-
-// -------------------------------------------------------------
-// 사이트 설정 상태
-// -------------------------------------------------------------
-
-function SiteConfigSection({ config }: { config: SiteConfigStatus }) {
-  return (
-    <AdminSurface tone="white" className="rounded-2xl p-6">
-      <h3 className="mb-4 text-lg font-bold text-[var(--foreground)]">
-        SNS 링크 상태
-      </h3>
-      <ul className="space-y-2">
-        {config.map((item) => (
-          <ConfigRow key={item.label} item={item} />
-        ))}
-      </ul>
-    </AdminSurface>
   );
 }

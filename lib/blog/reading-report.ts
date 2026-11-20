@@ -1,6 +1,6 @@
 import { READING_VERSION } from "./reading";
 
-export const READING_PERIODS = ["7d", "30d", "90d", "180d"] as const;
+export const READING_PERIODS = ["7d", "28d", "30d", "90d", "180d"] as const;
 export type ReadingPeriod = typeof READING_PERIODS[number];
 export function readingPeriodRange(period: ReadingPeriod, now = new Date()) {
   const kstDate = new Date(now.getTime() + 9 * 3600_000).toISOString().slice(0, 10);

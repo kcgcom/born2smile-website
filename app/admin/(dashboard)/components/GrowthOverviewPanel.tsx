@@ -19,6 +19,13 @@ const ANALYSIS_LINKS = [
   { title: "색인 상태", href: "/admin/analysis/indexing" },
 ];
 
+const REPORT_SHORTCUTS = [
+  { title: "검색 유입이 줄어든 글", href: "#search-review" },
+  { title: "모바일 문의 버튼", href: "/admin/operations/conversion?location=mobile" },
+  { title: "진료 페이지 방문", href: "/admin/analysis/traffic?section=treatments" },
+  { title: "블로그 카드 성과", href: "/admin/analysis/traffic?view=blog" },
+];
+
 export function GrowthOverviewPanel() {
   const posts = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const feedback = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
@@ -86,7 +93,7 @@ export function GrowthOverviewPanel() {
           </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 검토 후보 없음</p>}
         </section>
       </div>
-      <section aria-label="검색 유입 변화 검토" className="mt-5 border-t border-slate-200 pt-4">
+      <section id="search-review" aria-label="검색 유입 변화 검토" className="mt-5 scroll-mt-24 border-t border-slate-200 pt-4">
         <h3 className="font-semibold text-slate-900">검색 유입이 줄어든 글</h3>
         <details className="mt-1 text-xs text-slate-500"><summary className="min-h-11 cursor-pointer py-3">선정 기준</summary><p className="pb-2">두 기간 모두 기록이 있고, 이전 클릭 {MIN_PREVIOUS_SEARCH_CLICKS}회 이상·감소 {MIN_SEARCH_CLICK_DROP}회 이상·감소율 {MIN_SEARCH_DROP_PERCENT}% 이상인 공개 글입니다. 검색 변화가 곧 글의 품질 문제라는 뜻은 아닙니다.</p></details>
         {searchAttention.loading || posts.loading ? <p role="status" className="mt-2 text-sm">검색 변화 확인 중…</p>
@@ -98,7 +105,7 @@ export function GrowthOverviewPanel() {
             {searchReview.length ? <ul className="mt-3 grid gap-3">{searchReview.slice(0, 3).map(item => <li key={item.post.slug} className="rounded-xl bg-slate-50 p-3">
               <p className="text-sm font-medium text-slate-900">{item.post.title}</p>
               <p className="mt-1 text-xs text-slate-600">검색 클릭 {item.previousClicks} → {item.clicks}회 ({Math.round(item.changePercent)}%)</p>
-              <a href={`/admin/content/posts?performance=${encodeURIComponent(item.post.slug)}`} className="mt-2 inline-flex min-h-11 items-center py-2 text-sm text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">검색과 글 성과 보기</a>
+              <a href={`/admin/content/posts?performance=${encodeURIComponent(item.post.slug)}&performanceEnd=${encodeURIComponent(searchAttention.data!.end)}`} className="mt-2 inline-flex min-h-11 items-center py-2 text-sm text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">검색과 글 성과 보기</a>
             </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 기준을 충족하는 검색 변화 후보가 없습니다.</p>}
           </>}
       </section>
@@ -129,6 +136,9 @@ export function GrowthOverviewPanel() {
 
     <details className="rounded-2xl border border-slate-200 bg-white p-4">
       <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>
+      <nav className="mt-3 flex flex-wrap gap-2" aria-label="자주 보는 성과">
+        {REPORT_SHORTCUTS.map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}
+      </nav>
       <div className="mt-3 flex flex-wrap gap-2">{ANALYSIS_LINKS.map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}</div>
     </details>
   </div>;

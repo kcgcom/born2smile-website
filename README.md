@@ -53,6 +53,7 @@ LAN 기기는 OPNsense를 DNS로 사용해야 합니다. AdGuard Home의 업스�
 | `pnpm exec tsc --noEmit` | TypeScript 검사 |
 | `pnpm lint` | ESLint 실행 |
 | `pnpm test:e2e` | tests/의 Playwright 전체 테스트 |
+| `pnpm test:e2e:production` | 로컬 프로덕션 빌드 후 Playwright 배포 전 검증 |
 | `pnpm agent:context --target /treatments/implant --period 90d` | 에이전트 분석 자료 수집 (부분 수집·offline은 종료 코드 2) |
 | `pnpm verify:agent-context` | 외부 호출 없이 수집 계약 검증 |
 | `pnpm agent:revision --file .tmp/proposal.json --check` | 검토용 수정안 입력 검증. `--check` 생략 시 수정안만 저장 |
