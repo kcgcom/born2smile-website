@@ -22,6 +22,8 @@ const posthogConnectSrc = getCspOrigins(
   process.env.NEXT_PUBLIC_POSTHOG_HOST,
   process.env.POSTHOG_BASE_URL,
 );
+const sentryConnectSrc = getCspOrigins(process.env.NEXT_PUBLIC_SENTRY_DSN)
+  .filter((origin) => origin.startsWith("https://"));
 
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseImageOrigins = [
@@ -66,6 +68,7 @@ const CSP = [
     "https://wcs.naver.com",
     "https://nam.veta.naver.com",
     ...posthogConnectSrc,
+    ...sentryConnectSrc,
   ].join(" "),
   "font-src 'self'",
   "frame-src 'self' https://accounts.google.com",

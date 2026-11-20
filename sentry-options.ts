@@ -1,3 +1,16 @@
+import type { ErrorEvent } from "@sentry/nextjs";
+
+function scrubErrorEvent(event: ErrorEvent) {
+  delete event.user;
+  delete event.breadcrumbs;
+
+  if (event.request) {
+    event.request = { method: event.request.method };
+  }
+
+  return event;
+}
+
 function parseSampleRate(value: string | undefined): number {
   const parsed = Number(value);
 
@@ -15,11 +28,14 @@ export function getClientSentryOptions() {
     dsn,
     enabled: Boolean(dsn),
     environment:
-      process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
+      process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT
+      ?? process.env.NEXT_PUBLIC_VERCEL_ENV
+      ?? process.env.NODE_ENV,
     tracesSampleRate: parseSampleRate(
       process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE,
     ),
     sendDefaultPii: false,
+    beforeSend: scrubErrorEvent,
   };
 }
 
@@ -38,5 +54,6 @@ export function getServerSentryOptions() {
       process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE,
     ),
     sendDefaultPii: false,
+    beforeSend: scrubErrorEvent,
   };
 }

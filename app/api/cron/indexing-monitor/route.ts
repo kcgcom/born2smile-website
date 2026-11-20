@@ -17,18 +17,25 @@ export async function GET(request: Request) {
     if (!data.skipped && shouldAlertRunFailures(data.succeeded, data.failed)) {
       Sentry.captureMessage("Search Console URL 검사가 다수 실패했습니다.", {
         level: "warning",
-        extra: { ...data },
+        tags: { job: "indexing-monitor", reason: "inspection-failures" },
+        extra: { succeeded: data.succeeded, failed: data.failed },
       });
     }
     if (data.confirmedRegressions > 0 || data.confirmedCanonicalMismatches > 0) {
       Sentry.captureMessage("Search Console 색인 상태 악화가 확인되었습니다.", {
         level: "warning",
-        extra: { ...data },
+        tags: { job: "indexing-monitor", reason: "indexing-regression" },
+        extra: {
+          confirmedRegressions: data.confirmedRegressions,
+          confirmedCanonicalMismatches: data.confirmedCanonicalMismatches,
+        },
       });
     }
     return Response.json({ data });
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: { job: "indexing-monitor", reason: "run-failed" },
+    });
     const message = error instanceof Error ? error.message : "색인 상태 검사에 실패했습니다";
     return Response.json(
       { error: "INDEXING_MONITOR_FAILED", message },

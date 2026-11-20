@@ -1,6 +1,9 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { sanitizeCardEventProperties } from "@/lib/blog/card-tracking";
+import { getClientSentryOptions } from "@/sentry-options";
+
+Sentry.init(getClientSentryOptions());
 
 const POSTHOG_TOKEN = process.env.NEXT_PUBLIC_POSTHOG_TOKEN;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST;
