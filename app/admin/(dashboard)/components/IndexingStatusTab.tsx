@@ -7,6 +7,7 @@ import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 import { useAdminApi } from "./useAdminApi";
+import type { IndexNowHistory, IndexNowRun } from "@/lib/indexnow";
 import type {
   IndexingMonitorData,
   IndexMonitorStatus,
@@ -32,6 +33,94 @@ function formatDate(value: string | null): string {
     timeStyle: "short",
     timeZone: "Asia/Seoul",
   }).format(new Date(value));
+}
+
+const INDEXNOW_STATUS: Record<IndexNowRun["status"], string> = {
+  accepted: "접수 완료",
+  pending_validation: "키 검증 대기",
+  no_urls: "대상 URL 없음",
+  missing_key: "키 미설정",
+  failed: "제출 실패",
+};
+
+const INDEXNOW_SOURCE: Record<IndexNowRun["source"], string> = {
+  scheduled: "예약 발행 작업",
+  post_publish: "글 발행",
+  post_update: "글 수정",
+  revision_apply: "리비전 적용",
+};
+
+function IndexNowRunDetails({ run }: { run: IndexNowRun }) {
+  return (
+    <>
+      <p className="mt-1 font-medium text-slate-900">{INDEXNOW_STATUS[run.status]}</p>
+      <p className="mt-1 text-sm text-slate-600">
+        <time dateTime={run.ran_at}>{formatDate(run.ran_at)}</time> · {INDEXNOW_SOURCE[run.source]}
+      </p>
+      <p className="text-sm text-slate-600">
+        URL {run.url_count.toLocaleString("ko-KR")}개
+        {run.http_status !== null && ` · HTTP ${run.http_status}`}
+      </p>
+    </>
+  );
+}
+
+function IndexNowSummary() {
+  const [slugInput, setSlugInput] = useState("");
+  const [slug, setSlug] = useState("");
+  const endpoint = slug ? `/api/admin/indexnow-status?slug=${encodeURIComponent(slug)}` : "/api/admin/indexnow-status";
+  const { data, loading, error, refetch } = useAdminApi<IndexNowHistory>(endpoint);
+
+  return (
+    <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
+      <h2 className="font-semibold text-slate-900">IndexNow 자동 제출</h2>
+      <p className="mt-1 text-sm text-slate-600">IndexNow 접수 후 실제 색인 여부는 검색엔진에서 확인할 수 있습니다.</p>
+      <form className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(event) => {
+        event.preventDefault();
+        setSlug(slugInput.trim());
+      }}>
+        <label className="min-w-0 text-sm text-slate-700">
+          게시물 슬러그
+          <input className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            value={slugInput} onChange={(event) => setSlugInput(event.target.value)} />
+        </label>
+        <button type="submit" className="min-h-11 rounded-lg border border-slate-300 px-3 text-sm">조회</button>
+        {slug && <button type="button" className="min-h-11 px-3 text-sm underline" onClick={() => {
+          setSlugInput("");
+          setSlug("");
+        }}>전체 상태 보기</button>}
+      </form>
+      <p className="mt-2 break-all text-sm text-slate-600">{slug || "사이트 전체"}</p>
+      {loading && <p role="status" className="mt-3 text-sm text-slate-600">제출 기록을 불러오는 중입니다.</p>}
+      {error && <AdminErrorState message={error} onRetry={refetch} />}
+      {!loading && !error && data && (
+        data.storageReady ? (
+          slug && !data.post ? (
+            <p className="mt-3 text-sm text-slate-600">공개된 게시물을 찾을 수 없습니다.</p>
+          ) : <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <h3 className="text-sm font-medium text-slate-700">{data.post ? "게시물 제출 상태" : "최근 실행"}</h3>
+              {data.post ? <>
+                <p className="mt-1">
+                  <AdminPill tone={data.post.needsSubmission ? "warning" : "white"}>
+                    {data.post.needsSubmission ? "제출 필요" : "최신 수정본 접수 완료"}
+                  </AdminPill>
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  최근 수정 <time dateTime={data.post.updatedAt}>{formatDate(data.post.updatedAt)}</time>
+                </p>
+              </> : data.latest ? <IndexNowRunDetails run={data.latest} />
+                : <p className="mt-1 text-sm text-slate-600">실행 기록이 없습니다.</p>}
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <h3 className="text-sm font-medium text-slate-700">최근 접수</h3>
+              {data.latestAccepted ? <IndexNowRunDetails run={data.latestAccepted} /> : <p className="mt-1 text-sm text-slate-600">접수 기록이 없습니다.</p>}
+            </div>
+          </div>
+        ) : <p className="mt-3 text-sm text-slate-600">기록을 보려면 IndexNow 기록 테이블을 적용해야 합니다.</p>
+      )}
+    </AdminSurface>
+  );
 }
 
 function effectiveStatus(item: IndexStatusItem): IndexMonitorStatus {
@@ -87,6 +176,7 @@ export function IndexingStatusTab() {
   return (
     <div className="space-y-6">
       <ApiSourceBadge sources={["searchConsole"]} />
+      <IndexNowSummary />
 
       {error && <AdminErrorState message={error} onRetry={refetch} />}
       {loading && <AdminLoadingSkeleton variant="metrics" />}

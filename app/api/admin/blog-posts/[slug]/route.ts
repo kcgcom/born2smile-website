@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { revalidateBlogCaches } from "../../_lib/blog-cache";
@@ -133,11 +133,9 @@ export async function PUT(
 
     const category = updateData.category ?? existing.category;
     revalidateBlogCaches({ slug, category, previousCategory: existing.category });
-    const becamePublished = !previousPublished && updateData.published === true;
-    if (becamePublished || publishedAndDatedTodayOrPast) {
-      void submitBlogPostToIndexNow(slug, category).catch((error) => {
-        console.error("[indexnow] blog post submit failed:", error);
-      });
+    if (publishedAndDatedTodayOrPast) {
+      const source = previousPublished && existingMeta.date <= todayKST ? "post_update" : "post_publish";
+      after(() => submitBlogPostToIndexNow(slug, category, source));
     }
 
     return Response.json({ data: { slug } }, { headers: HEADERS });

@@ -479,6 +479,35 @@ test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼�
   expect(ratio).toBeGreaterThanOrEqual(4.5);
 });
 
+test("IndexNow는 게시물의 최근 수정본에 제출이 필요한지 표시한다", async ({ page }) => {
+  await setup(page);
+  const accepted = {
+    status: "accepted", source: "post_publish", url_count: 3, http_status: 200,
+    started_at: "2026-11-12T01:00:00Z", ran_at: "2026-11-12T01:00:01Z",
+  };
+  await page.route("**/api/admin/indexnow-status*", (route) => {
+    const slug = new URL(route.request().url()).searchParams.get("slug");
+    return route.fulfill({ json: { data: {
+      storageReady: true,
+      latest: slug ? null : accepted,
+      latestAccepted: accepted,
+      post: slug ? { updatedAt: "2026-11-12T03:00:00Z", needsSubmission: slug === post.slug } : undefined,
+    } } });
+  });
+
+  await page.goto("/admin/analysis/indexing");
+  await expect(page.getByRole("heading", { name: "최근 실행" })).toBeVisible();
+  await page.getByLabel("게시물 슬러그").fill(post.slug);
+  await page.getByRole("button", { name: "조회", exact: true }).click();
+  await expect(page.getByText("제출 필요", { exact: true })).toBeVisible();
+  await expect(page.getByText("URL 3개 · HTTP 200")).toBeVisible();
+  await page.getByLabel("게시물 슬러그").fill("recently-accepted");
+  await page.getByRole("button", { name: "조회", exact: true }).click();
+  await expect(page.getByText("최신 수정본 접수 완료")).toBeVisible();
+  await page.getByRole("button", { name: "전체 상태 보기" }).click();
+  await expect(page.getByRole("heading", { name: "최근 실행" })).toBeVisible();
+});
+
 test("모바일 색인은 카드에서 상태와 시각을 함께 보고 빈 결과에서 복구한다", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);

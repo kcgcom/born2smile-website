@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { after } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../../../_lib/auth";
 import { revisionContentSchema, revisionReadTime } from "@/lib/content-revisions";
 import { getContentRevision, getRevisionSource, REVISION_HEADERS, revisionResult, revisionUnavailable } from "@/lib/content-revisions-server";
@@ -34,7 +35,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     let cacheRefreshPending = false;
     try { revalidateBlogCaches({ slug: data.slug, category: normalizeBlogCategory(data.category) ?? undefined, previousCategory: normalizeBlogCategory(data.previousCategory) ?? undefined }); }
     catch { cacheRefreshPending = true; }
-    if (data.published && data.date <= getTodayKST()) void submitBlogPostToIndexNow(data.slug, data.category).catch(() => {});
+    if (data.published && data.date <= getTodayKST()) {
+      after(() => submitBlogPostToIndexNow(data.slug, data.category, "revision_apply"));
+    }
     return revisionResult({ ...data, cacheRefreshPending });
   } catch { return revisionUnavailable(); }
 }

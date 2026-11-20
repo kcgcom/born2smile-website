@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { revalidateBlogCaches } from "../_lib/blog-cache";
@@ -11,6 +11,7 @@ import {
 import { blogPostSchema } from "@/lib/blog-validation";
 import { normalizeBlogBlocks } from "@/lib/blog/normalize-blocks";
 import { submitBlogPostToIndexNow } from "@/lib/indexnow";
+import { getTodayKST } from "@/lib/date";
 import { CitationResearchUnavailableError, validateBlogCitationTargets } from "@/lib/blog/citation-targets-server";
 
 const HEADERS = { "Cache-Control": "private, no-store" } as const;
@@ -76,10 +77,8 @@ export async function POST(request: NextRequest) {
     await createBlogPost(data, auth.email);
 
     revalidateBlogCaches({ slug: data.slug, category: data.category });
-    if (data.published) {
-      void submitBlogPostToIndexNow(data.slug, data.category).catch((error) => {
-        console.error("[indexnow] blog post submit failed:", error);
-      });
+    if (data.published && data.date <= getTodayKST()) {
+      after(() => submitBlogPostToIndexNow(data.slug, data.category, "post_publish"));
     }
 
     return Response.json(

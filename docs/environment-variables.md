@@ -60,6 +60,8 @@
 - 서버 라우트(`lib/indexnow.ts`)는 `INDEXNOW_KEY`가 있을 때만 제출합니다.
 - 공개 키 파일은 `public/<INDEXNOW_KEY>.txt` 형식으로 함께 존재해야 합니다.
 - 수동 제출 스크립트는 `pnpm submit-indexnow`, `pnpm submit-indexnow:all`입니다.
+- 기간을 지정하면 한국시간 기준 시작일과 종료일을 포함해 해당 기간에 발행된 글만 선택합니다. `node scripts/submit-indexnow.mjs --from 2026-01-01 --to 2026-01-31 --dry-run`으로 대상 URL을 먼저 확인할 수 있습니다. 실제 제출에는 `--dry-run`을 제거합니다.
+- 관리자 색인 화면의 자동 제출 상태를 사용하려면 `027_indexnow_runs.sql` 마이그레이션을 적용합니다. 사이트 전체의 최근 실행과 최근 HTTP 200 접수를 보관합니다. 게시물별로는 마지막 HTTP 200 접수를 보관하고, 제출 시작 시각과 게시물 수정 시각을 비교해 제출 필요 여부를 표시합니다. 수동 CLI 결과는 터미널에 표시됩니다.
 
 ## 기능별 메모
 

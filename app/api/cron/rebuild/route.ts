@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { revalidateBlogCaches } from "../../admin/_lib/blog-cache";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { submitIndexNowUrls } from "@/lib/indexnow";
+import { runIndexNowSubmission } from "@/lib/indexnow";
 import { BASE_URL } from "@/lib/constants";
 import { getCategorySlug } from "@/lib/blog";
 import { getTodayKST } from "@/lib/date";
@@ -15,6 +15,7 @@ export async function GET(request: Request) {
 
   const today = getTodayKST();
   let urls: string[] = [];
+  let postSlugs: string[] = [];
 
   try {
     const { data, error } = await getSupabaseAdmin()
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
       .eq("date", today);
 
     if (error) throw error;
+    postSlugs = (data ?? []).map((post) => post.slug);
 
     revalidateBlogCaches((data ?? []).map((post) => ({
       slug: post.slug,
@@ -51,21 +53,12 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    await submitIndexNowUrls(urls);
-    return NextResponse.json({
-      revalidated: true,
-      indexNowOk: true,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    Sentry.captureException(error);
-    console.error("[indexnow] cron submit failed:", error);
-    return NextResponse.json({
-      revalidated: true,
-      indexNowOk: false,
-      warning: "캐시는 갱신했지만 IndexNow 제출에 실패했습니다",
-      timestamp: new Date().toISOString(),
-    });
-  }
+  const indexNow = await runIndexNowSubmission("scheduled", urls, postSlugs);
+  return NextResponse.json({
+    revalidated: true,
+    indexNowOk: indexNow.status === "accepted" || indexNow.status === "pending_validation",
+    indexNow,
+    ...(indexNow.status === "failed" && { warning: "캐시는 갱신했지만 IndexNow 제출에 실패했습니다" }),
+    timestamp: new Date().toISOString(),
+  });
 }

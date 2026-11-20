@@ -9,6 +9,7 @@
 import { readFile } from "fs/promises";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { parseArgs } from "node:util";
 
 const BASE_URL = "https://www.born2smile.co.kr";
 const INDEXNOW_KEY = "7d01a83dddd13f9abf9186b937921369";
@@ -57,7 +58,7 @@ function loadLocalEnv() {
   loadEnvFile(join(process.cwd(), ".env.local"));
 }
 
-async function fetchPublishedPosts() {
+async function fetchPublishedPosts(from, to) {
   loadLocalEnv();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,20 +69,24 @@ async function fetchPublishedPosts() {
   const endpoint = new URL("/rest/v1/blog_posts", url);
   endpoint.searchParams.set("select", "slug,category,date,published");
   endpoint.searchParams.set("published", "eq.true");
-  endpoint.searchParams.set("order", "date.desc");
-
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Supabase blog_posts 조회 실패: HTTP ${response.status}`);
+  endpoint.searchParams.set("order", "date.desc,slug.asc");
+  if (from) endpoint.searchParams.append("date", `gte.${from}`);
+  endpoint.searchParams.append("date", `lte.${to}`);
+  const posts = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    endpoint.searchParams.set("offset", String(offset));
+    endpoint.searchParams.set("limit", String(pageSize));
+    const response = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase blog_posts 조회 실패: HTTP ${response.status}`);
+    }
+    const page = await response.json();
+    posts.push(...page);
+    if (page.length < pageSize) return posts;
   }
-
-  return response.json();
 }
 
 // lib/constants.ts에서 진료 과목 ID 추출
@@ -115,9 +120,29 @@ async function submitToIndexNow(urls) {
 }
 
 async function main() {
-  const isAll = process.argv.includes("--all");
+  const { values } = parseArgs({ options: {
+    all: { type: "boolean" },
+    from: { type: "string" },
+    to: { type: "string" },
+    "dry-run": { type: "boolean" },
+    help: { type: "boolean" },
+  } });
+  if (values.help) {
+    console.log("node scripts/submit-indexnow.mjs [--all | --from YYYY-MM-DD --to YYYY-MM-DD] [--dry-run]");
+    return;
+  }
+  const { all: isAll, from, to, "dry-run": dryRun } = values;
   const today = getTodayKST();
-  const publishedPosts = await fetchPublishedPosts();
+  const isRange = from !== undefined || to !== undefined;
+  const isDate = (date) => typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().startsWith(date);
+  if (isRange && (isAll || !isDate(from) || !isDate(to) || from > to || to > today)) {
+    throw new Error("날짜 범위는 --all 없이 --from과 --to를 함께 지정하세요. 범위는 한국시간 기준 오늘 이하여야 합니다.");
+  }
+  const publishedPosts = await fetchPublishedPosts(isAll ? undefined : from ?? today, to ?? today);
+  const postUrls = publishedPosts.map(({ slug, category }) =>
+    `${BASE_URL}/blog/${getCategorySlug(category)}/${slug}`,
+  );
 
   let urls;
 
@@ -139,46 +164,34 @@ async function main() {
       ...treatmentIds.map((id) => `${BASE_URL}/treatments/${id}`),
       `${BASE_URL}/blog`,
       ...categoryHubUrls,
-      ...publishedPosts
-        .filter(({ date }) => date <= today)
-        .map(({ slug, category }) =>
-        `${BASE_URL}/blog/${getCategorySlug(category)}/${slug}`,
-      ),
+      ...postUrls,
       `${BASE_URL}/contact`,
     ];
   } else {
-    console.log(`[IndexNow] ${today} 발행 포스트 확인 중...`);
-
-    const newPosts = publishedPosts.filter(({ date }) => date === today);
-
-    if (newPosts.length === 0) {
-      console.log("[IndexNow] 오늘 발행된 포스트가 없습니다. 제출 생략.");
+    if (postUrls.length === 0) {
+      console.log("[IndexNow] 선택한 기간에 발행된 포스트가 없습니다.");
       return;
     }
 
     urls = [
-      ...newPosts.map(({ slug, category }) =>
-        `${BASE_URL}/blog/${getCategorySlug(category)}/${slug}`,
-      ),
-      // 블로그 목록과 사이트맵도 변경되므로 함께 제출
-      `${BASE_URL}/blog`,
-      `${BASE_URL}/sitemap.xml`,
+      ...postUrls,
+      ...(isRange ? [] : [`${BASE_URL}/blog`, `${BASE_URL}/sitemap.xml`]),
     ];
   }
 
-  console.log(`[IndexNow] ${urls.length}개 URL 제출:`);
+  urls = [...new Set(urls)];
+  console.log(`[IndexNow] ${urls.length}개 URL ${dryRun ? "제출 예정" : "제출"}`);
   urls.forEach((url) => console.log(`  - ${url}`));
+  if (dryRun) return;
 
   const response = await submitToIndexNow(urls);
 
-  // IndexNow API 응답: 200 OK, 202 Accepted 모두 성공
-  if (response.ok || response.status === 202) {
-    console.log(`[IndexNow] 성공! (HTTP ${response.status})`);
+  if (response.status === 200) {
+    console.log("[IndexNow] 접수 완료 (HTTP 200)");
+  } else if (response.status === 202) {
+    console.log("[IndexNow] 키 검증 대기 (HTTP 202)");
   } else {
-    const text = await response.text();
-    console.error(
-      `[IndexNow] 실패! (HTTP ${response.status}) 응답: ${text}`
-    );
+    console.error(`[IndexNow] 실패 (HTTP ${response.status})`);
     process.exit(1);
   }
 }
