@@ -123,11 +123,13 @@ test("읽기 관리자 API는 인증 전 데이터 조회를 허용하지 않는
 
 test("본문 밖·숨김 시간은 읽기 조건을 채우지 않고 단계는 중복되지 않는다", async ({ page }) => {
   const { events } = await interceptAnalytics(page);
+  await page.setViewportSize({ width: 390, height: 320 });
   await page.clock.install();
   await page.goto(PATH);
   await expect.poll(() => events.filter(e => e.event === "blog_article_viewed").length, { timeout: 15000 }).toBe(1);
   await page.clock.runFor(16_000);
   expect(events.filter(e => e.event === "blog_read_progress" && e.properties.milestone_type === "active_time")).toHaveLength(0);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("[data-reading-block]").last().scrollIntoViewIfNeeded();
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
@@ -196,7 +198,8 @@ test("노출 기준 전 클릭은 조건 미충족으로 기록하고 노출을 
   await page.goto("/blog");
   await expect.poll(() => events.filter(e => e.event === "$pageview").length).toBeGreaterThan(0);
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-  const card = page.locator('[data-blog-card][data-card-surface="listing"]').first();
+  const card = page.locator('[data-blog-card][data-card-surface="listing"]').last();
+  await expect(card).not.toBeInViewport();
   const slug = await card.getAttribute("data-blog-card");
   await card.evaluate(node => node.scrollIntoView({ block: "center", behavior: "instant" }));
   await card.locator("h2 a").click({ force: true });

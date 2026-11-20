@@ -24,7 +24,8 @@ for (const width of [360, 390, 1280, 1440]) {
     await expect(page.getByRole("heading", { name: "전체 글 목록", exact: true })).toBeInViewport();
     await page.goto(ARTICLE);
     const toc = page.getByRole("navigation", { name: "목차" });
-    const root = page.locator("[data-blog-reading-root]");
+    const root = page.locator("[data-blog-reading-root]").filter({ visible: true });
+    await expect(root).toHaveCount(1);
     await expect(root).toBeVisible();
     if (width < 768) {
       const toggle = toc.getByRole("button", { name: "목차", exact: true });

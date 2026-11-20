@@ -29,7 +29,7 @@ export function DataFreshness({ dataAsOf, period, comparePeriod, updatedAt, isVa
   return (
     <div className={`relative rounded-xl border p-3 text-sm lg:grid lg:min-w-96 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-3 lg:gap-y-1 lg:py-2 ${stale ? "border-amber-300 bg-amber-50 text-amber-950" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
       <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-        <div className="space-y-1 lg:text-xs">
+        <div className="space-y-1 lg:space-y-0 lg:text-xs">
           {period && <p>집계 기간: {period.start} ~ {period.end}</p>}
           {comparePeriod && <p>직전 기간: {comparePeriod.start} ~ {comparePeriod.end}</p>}
           {dataAsOf && <p>데이터 기준: {dataAsOf}{ageLabel && ` (${ageLabel} 데이터)`}</p>}

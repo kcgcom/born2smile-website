@@ -10,7 +10,7 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await interceptAnalytics(page);
     await page.goto(PATH);
-    const feedback = page.getByLabel("질문 해결 피드백", { exact: true });
+    const feedback = page.getByLabel("질문 해결 피드백", { exact: true }).filter({ visible: true });
     await expect(feedback).toHaveCount(1);
     const positions = await page.evaluate(() => {
       const feedback = document.querySelector('[aria-label="질문 해결 피드백"]')!;
