@@ -8,6 +8,7 @@ import { MIN_REVIEW_RESPONSES, MIN_UNRESOLVED_RESPONSES, MIN_PREVIOUS_SEARCH_CLI
 import { BASE_URL } from "@/lib/constants";
 import { getBlogPostUrl } from "@/lib/blog/category-slugs";
 import { AdminErrorState } from "./AdminErrorState";
+import { BusinessProfileCard } from "./BusinessProfileCard";
 import { useAdminApi } from "./useAdminApi";
 import type { AdminBlogPost, BlogFeedbackData } from "./blog/blog-helpers";
 
@@ -123,6 +124,8 @@ export function GrowthOverviewPanel() {
       </div>
     </AdminSurface>
     </div>
+
+    <BusinessProfileCard />
 
     <details className="rounded-2xl border border-slate-200 bg-white p-4">
       <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>

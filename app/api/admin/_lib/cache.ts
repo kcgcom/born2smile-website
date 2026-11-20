@@ -20,6 +20,7 @@ export function secondsUntilMidnightKST(): number {
 }
 
 export const CACHE_TTL = {
+  BUSINESS_PROFILE: 21600,
   SEARCH_CONSOLE: 21600,   // 6 hours
   NAVER_DATALAB: 86400,    // 24 hours — 트렌드 데이터는 일별/주별이므로 하루 1회 갱신 충분
   POSTHOG: 300,            // 5 minutes — CTA/전환 모니터링

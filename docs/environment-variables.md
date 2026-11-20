@@ -65,6 +65,13 @@
 
 ## 기능별 메모
 
+### Google Business Profile 성과
+
+- 운영 개요의 구글 지도·병원 프로필 카드는 선택 기능이다. Google Cloud 프로젝트에서 [Business Profile API 접근 권한](https://developers.google.com/my-business/content/prereqs)을 확인하고 Business Profile Performance API를 활성화한다.
+- 병원 프로필을 관리할 권한이 있는 Google 계정으로 [OAuth 동의](https://developers.google.com/my-business/content/implement-oauth)를 받고, `https://www.googleapis.com/auth/business.manage` 범위의 오프라인 갱신 토큰을 발급한다.
+- 서버 환경에 `GOOGLE_BUSINESS_PROFILE_CLIENT_ID`, `GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET`, `GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN`을 설정한다. `GOOGLE_BUSINESS_PROFILE_LOCATION_ID`에는 API의 `locations/{locationId}`에서 숫자 부분을 입력한다.
+- 연결 후 운영 개요에서 구글 프로필 성과를 확인한다. 집계 지연을 고려해 한국시간 기준 3일 전까지 최근 28일과 직전 28일을 비교한다. 노출은 기기별 수치의 합계다.
+
 ### 네이버 검색광고 API
 
 - `hintKeywords`는 공백 없는 형태로 요청합니다. (`normalizeKeyword()`가 자동 처리)

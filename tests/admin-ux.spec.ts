@@ -307,6 +307,17 @@ test("운영 개요는 반복 미해결과 가까운 일정만 보여주고 조�
   await page.route("**/api/admin/blog-feedback", route => route.fulfill({ json: { data: { feedback: { [post.slug]: { solved: 2, unresolved: 3, total: 5 } }, totalResponses: 5 } } }));
   await page.route("**/api/admin/search-attention", route => route.fulfill({ json: { data: { configured: true, start: "2026-10-13", end: "2026-11-11", previousStart: "2026-09-13", previousEnd: "2026-10-12", truncated: false, items: [{ page: `https://www.born2smile.co.kr${path}`, clicks: 12, previousClicks: 20, drop: 8, changePercent: -40 }] } } }));
   await page.route("**/api/admin/site-config/hours", route => route.fulfill({ status: 503, json: { message: "진료시간 조회 테스트 오류" } }));
+  await page.route("**/api/admin/business-profile", route => route.fulfill({ json: { data: {
+    configured: true,
+    start: "2026-10-15",
+    end: "2026-11-11",
+    previousStart: "2026-09-17",
+    previousEnd: "2026-10-14",
+    metrics: [
+      { label: "지도 노출", current: 1234, previous: 1000 },
+      { label: "전화 버튼 클릭", current: 0, previous: null },
+    ],
+  } } }));
   await page.goto("/admin/operations/overview");
   await expect(page.getByRole("heading", { name: "오늘 할 일", exact: true })).toBeVisible();
   await expect(page.getByText("진료시간 조회 테스트 오류", { exact: true })).toBeVisible();
@@ -315,6 +326,10 @@ test("운영 개요는 반복 미해결과 가까운 일정만 보여주고 조�
   await expect(page.getByRole("link", { name: "근거와 성과 보기" })).toHaveAttribute("href", `/admin/content/posts?performance=${post.slug}`);
   await expect(page.getByRole("link", { name: "곧 발행할 글", exact: true })).toBeVisible();
   await expect(page.getByText("검색 클릭 20 → 12회 (-40%)", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "구글 지도·병원 프로필" })).toBeVisible();
+  await expect(page.getByText("1,234", { exact: true })).toBeVisible();
+  await expect(page.getByText("직전 1,000 · 증감 +234", { exact: true })).toBeVisible();
+  await expect(page.getByText("직전 데이터 없음", { exact: true })).toBeVisible();
   await page.route("**/api/admin/site-config/hours", route => route.fulfill({ json: { data: { schedule: [], notice: "", exceptions: [
     { date: "2026-11-13", open: false, time: "", note: "지난 휴진" },
     { date: "2026-11-16", open: false, time: "", note: "가까운 휴진" },
