@@ -88,6 +88,7 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
   const slow = isSlowEndpoint(endpoint);
   const keepPrevious = shouldKeepPreviousData(endpoint);
   const freshAnalytics = needsFreshAnalytics(endpoint);
+  const freshContentActions = endpoint === "/api/admin/content-coverage/actions";
   const cached = useMemo(() => slow ? getSessionData<T>(endpoint) : undefined, [endpoint, slow]);
   const [lastResponse, setLastResponse] = useState<{ endpoint: string; at: number } | null>(null);
 
@@ -100,6 +101,8 @@ export function useAdminApi<T>(endpoint: string, enabled: boolean = true) {
       keepPreviousData: keepPrevious,
       fallbackData: cached?.data,
       ...(freshAnalytics && { revalidateOnMount: true, refreshInterval: 5 * 60 * 1000 }),
+      // SWR shares pending requests. A completed request should not delay a new visit.
+      ...(freshContentActions && { revalidateOnMount: true, dedupingInterval: 0 }),
       onSuccess: (d: T) => {
         setLastResponse({ endpoint, at: Date.now() });
         if (slow || keepPrevious) setSessionData(endpoint, d);

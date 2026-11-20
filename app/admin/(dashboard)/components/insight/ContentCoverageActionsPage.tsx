@@ -78,7 +78,6 @@ export function ContentCoverageActionsPage() {
     });
     if (!result.error) {
       setMessage(status === "completed" ? "검토 판단을 기록했습니다. 연결된 콘텐츠 작업을 다시 평가했습니다." : "검토를 다시 열었습니다.");
-      query.refetch();
     }
   };
 
@@ -90,7 +89,6 @@ export function ContentCoverageActionsPage() {
     });
     if (!result.error) {
       setMessage("행동추천을 콘텐츠 작업함에 등록했습니다.");
-      query.refetch();
     }
   };
 
