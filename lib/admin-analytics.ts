@@ -1,9 +1,14 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { calcChange } from "./admin-utils";
+import { getGoogleWorkloadIdentity } from "./google-workload-identity";
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID ?? "";
+const GA4_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
 
 function getClient(): BetaAnalyticsDataClient {
+  const workloadIdentity = getGoogleWorkloadIdentity([GA4_SCOPE]);
+  if (workloadIdentity) return new BetaAnalyticsDataClient(workloadIdentity);
+
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (keyJson) {
     try {

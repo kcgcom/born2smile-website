@@ -4,6 +4,7 @@ import { calcChange } from "./admin-utils";
 import { BASE_URL } from "./constants";
 import { performanceRange } from "./post-performance";
 import { searchReviewCandidates, type SearchAttention } from "./admin-overview";
+import { getGoogleWorkloadIdentity } from "./google-workload-identity";
 
 const SEARCH_CONSOLE_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
 const SEARCH_CONSOLE_READABLE_PERMISSION_LEVELS = new Set([
@@ -80,11 +81,15 @@ export async function createSearchConsoleContext() {
   if (!configuredSiteUrl) throw new Error("SEARCH_CONSOLE_SITE_URL 환경변수가 설정되지 않았습니다");
 
   const { google } = await import("googleapis");
+  const workloadIdentity = getGoogleWorkloadIdentity([SEARCH_CONSOLE_SCOPE]);
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   let auth;
   let actorLabel = "현재 인증 계정이";
 
-  if (keyJson) {
+  if (workloadIdentity) {
+    auth = new google.auth.GoogleAuth(workloadIdentity);
+    actorLabel = `서비스 계정(${process.env.GCP_SERVICE_ACCOUNT_EMAIL?.trim()})이`;
+  } else if (keyJson) {
     try {
       const key = JSON.parse(keyJson) as { client_email: string; private_key: string };
       auth = new google.auth.JWT({

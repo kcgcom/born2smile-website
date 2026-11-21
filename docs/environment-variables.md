@@ -20,7 +20,12 @@
 | `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 브라우저 관리자 로그인·권한 확인 시 필수 |
 | `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증 등 관리자 작업 시 사용. 호출 대상 서버와 동일한 값 |
 | `AGENT_CONTENT_SECRET` | 허용된 조회·작업 제안/보고·비공개 원고/수정안 생성·이미지 업로드용 키 | `agent:task`, `content-tasks` API, `agent:revision`, `POST /api/admin/upload`에 사용. 작업 승인·완료·기존 원본 직접 수정·발행·삭제·적용 권한 없음 |
-| `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | GA4/SC 사용 시 |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | WIF 미설정 환경에서 기존 인증 사용 시 |
+| `GCP_PROJECT_ID` | Google Cloud 프로젝트 ID | WIF 사용 시 |
+| `GCP_PROJECT_NUMBER` | Workload Identity Pool이 속한 Google Cloud 프로젝트 번호 | WIF 사용 시 |
+| `GCP_WORKLOAD_IDENTITY_POOL_ID` | Workload Identity Pool ID | WIF 사용 시 |
+| `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID` | Vercel OIDC 공급자 ID | WIF 사용 시 |
+| `GCP_SERVICE_ACCOUNT_EMAIL` | GA4 및 Search Console 조회 권한을 가진 서비스 계정 이메일 | WIF 사용 시 |
 | `GA4_PROPERTY_ID` | GA4 속성 ID | `/admin/analysis/traffic` 사용 시 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | `/admin/analysis/search` 사용 시 |
 | `NAVER_DATALAB_CLIENT_ID` | DataLab Client ID | 트렌드 사용 시 |
@@ -64,6 +69,12 @@
 - 관리자 색인 화면의 자동 제출 상태를 사용하려면 `027_indexnow_runs.sql` 마이그레이션을 적용합니다. 사이트 전체의 최근 실행과 최근 HTTP 200 접수를 보관합니다. 게시물별로는 마지막 HTTP 200 접수를 보관하고, 제출 시작 시각과 게시물 수정 시각을 비교해 제출 필요 여부를 표시합니다. 수동 CLI 결과는 터미널에 표시됩니다.
 
 ## 기능별 메모
+
+### GA4 및 Search Console의 Vercel 인증
+
+1. Vercel 프로젝트의 OIDC를 활성화하고, Google Cloud에서 Vercel 발급자를 신뢰하는 Workload Identity Pool과 OIDC 공급자를 구성한다. 공급자의 허용 대상(audience)은 Vercel 팀에 맞추고, 서비스 계정의 `roles/iam.workloadIdentityUser`는 연결할 Vercel 프로젝트와 환경의 정확한 subject에만 부여한다. [Vercel 설정 가이드](https://vercel.com/docs/oidc/gcp)
+2. Vercel의 해당 환경에 위 표의 `GCP_*` 다섯 값을 설정한다. 앱은 값이 모두 설정되면 WIF를 사용하며, 일부만 설정된 경우 설정 오류를 반환한다. 다섯 값이 모두 비어 있으면 기존 JSON 키 또는 Application Default Credentials를 사용한다.
+3. 배포 후 새로 조회한 GA4 보고서, Search Console 검색 성과와 사이트맵, 색인 모니터의 URL 검사 결과를 확인한다. 기존 키를 다른 작업에서 사용 중인지 확인한 뒤 Vercel에서 `GOOGLE_SERVICE_ACCOUNT_KEY`를 제거하고 Google Cloud에서 해당 키를 폐기한다.
 
 ### Google Business Profile 성과
 
