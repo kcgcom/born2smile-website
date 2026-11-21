@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { interceptAnalytics } from "./helpers/blog-analytics";
 import { activeReadingDelta, getReadingMetadata, measureReadingRects } from "../lib/blog/reading";
 import { readingPeriodRange, readingRate } from "../lib/blog/reading-report";
-import { buildReadingQueries, fetchBlogReading } from "../lib/admin-blog-reading";
+import { buildReadingQueries, fetchBlogReading, fetchPostReadingFirstObservedAt, fetchPostReadingSummary, type CacheReadingQuery } from "../lib/admin-blog-reading";
 import { getAnalyticsPage, getContactChannel } from "../lib/analytics-events";
 import { blogCardAttributes, visibleCardRatio } from "../lib/blog/card-tracking";
 
@@ -59,14 +59,19 @@ test("집계 조회는 부분 실패를 0으로 숨기지 않고 커서를 반�
   const keys = ["POSTHOG_PROJECT_ID", "POSTHOG_API_KEY", "POSTHOG_BASE_URL"] as const;
   const originalEnv = keys.map(key => process.env[key]);
   let failSummary = false;
+  let failQuality = true;
+  const queries: { name: string; query: { query: string } }[] = [];
   Object.assign(process.env, { POSTHOG_PROJECT_ID: "test", POSTHOG_API_KEY: "test-only", POSTHOG_BASE_URL: "https://analytics.example.invalid" });
   globalThis.fetch = async (_input, init) => {
     const body = JSON.parse(String(init?.body));
+    queries.push(body);
     if (body.name.startsWith("blog_read_summary")) return failSummary
       ? Response.json({}, { status: 503 })
       : Response.json({ results: [{ visits: 3, eligibleVisits: 3, qualified: 2, total_posts: 26 }] });
     if (body.name.startsWith("blog_read_rows")) return Response.json({ results: Array.from({ length: 26 }, (_, i) => ({ slug: `post-${String(i).padStart(2, "0")}`, path: `/blog/implant/post-${i}`, visits: 1 })) });
-    if (body.name.startsWith("blog_read_quality")) return Response.json({}, { status: 503 });
+    if (body.name.startsWith("blog_read_quality")) return failQuality
+      ? Response.json({}, { status: 503 })
+      : Response.json({ results: [{ invalid_events: 0, orphan_views: 0, duplicate_starts: 0 }] });
     return Response.json({ results: [{ first_at: "2026-11-01T00:00:00Z", starts: 3 }] });
   };
   try {
@@ -77,6 +82,33 @@ test("집계 조회는 부분 실패를 0으로 숨기지 않고 커서를 반�
     expect(report.quality).toBeNull();
     expect(report.meta.partial).toBe(true);
     expect(report.warnings).toContain("수집 품질 데이터를 불러오지 못했습니다.");
+    queries.length = 0;
+    const [summary, first] = await Promise.all([
+      fetchPostReadingSummary("after-care", "30d", new Date("2026-11-14T00:00:00Z")),
+      fetchPostReadingFirstObservedAt("after-care"),
+    ]);
+    expect(summary.qualified).toBe(report.summary.qualified);
+    expect(first).toBe(report.meta.firstObservedAt);
+    expect(queries.map(query => query.name)).toEqual(["blog_read_summary_30d", "blog_read_first"]);
+    expect(queries.every(({ query }) => query.query.includes("properties.blog_slug = 'after-care'"))).toBe(true);
+    expect(queries[1].query.query).not.toContain("timestamp >=");
+    failQuality = false;
+    const cache = new Map<string, unknown>();
+    const cacheForPage = (cursor: string | null): CacheReadingQuery => async (section, run) => {
+      const key = section === "rows" ? `rows-${cursor}` : section;
+      if (cache.has(key)) return cache.get(key) as Awaited<ReturnType<typeof run>>;
+      const value = await run();
+      cache.set(key, value);
+      return value;
+    };
+    const firstPage = await fetchBlogReading("30d", null, { cacheQuery: cacheForPage(null) });
+    queries.length = 0;
+    const nextPage = await fetchBlogReading("30d", firstPage.nextCursor, { cacheQuery: cacheForPage(firstPage.nextCursor) });
+    expect(queries.map(query => query.name)).toEqual(["blog_read_rows_30d"]);
+    expect(queries[0].query.query).toContain("WHERE slug > 'post-24'");
+    expect(nextPage.summary).toEqual(firstPage.summary);
+    expect(nextPage.quality).toEqual(firstPage.quality);
+    expect(nextPage.meta.fetchedAt).toBe(firstPage.meta.fetchedAt);
     failSummary = true;
     await expect(fetchBlogReading("30d", null)).rejects.toThrow();
   } finally {
@@ -175,7 +207,7 @@ test("실제 카드 노출과 글 클릭을 연결하고 반응 버튼 클릭은
   const slug = await card.getAttribute("data-blog-card");
   const impressions = () => events.filter(e => e.event === "blog_card_impression" && e.properties.target_slug === slug);
   await expect.poll(() => impressions().length).toBe(1);
-  expect(impressions()[0].properties.$current_url).toBe("http://localhost:3000/blog");
+  expect(impressions()[0].properties.$current_url).toBe(new URL("/blog", page.url()).href);
   expect(impressions()[0].properties.has_search).toBe(true);
   expect(Object.keys(impressions()[0].properties).filter(key =>
     JSON.stringify(impressions()[0].properties[key]).includes(encodeURIComponent("임플란트")))).toEqual([]);

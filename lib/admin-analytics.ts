@@ -43,7 +43,7 @@ export async function fetchPostGA4(path: string, start: string, end: string) {
   };
 }
 
-function getPeriodDates(period: string): {
+export function getGA4PeriodDates(period: string): {
   start: string;
   end: string;
   compareStart: string;
@@ -104,16 +104,10 @@ function createPathAggregate(
   };
 }
 
-export async function fetchGA4Data(period: string, scope: "basic" | "full" = "full") {
-  if (!GA4_PROPERTY_ID) {
-    throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
-  }
-
+export async function fetchGA4BaseReports({ start, end, compareStart, compareEnd }: ReturnType<typeof getGA4PeriodDates>) {
+  if (!GA4_PROPERTY_ID) throw new Error("GA4_PROPERTY_ID 환경변수가 설정되지 않았습니다");
   const client = getClient();
-  const { start, end, compareStart, compareEnd } = getPeriodDates(period);
-
-  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport, cityReport, returningReport, hourReport, dayOfWeekReport] =
-    await Promise.all([
+  const reports = await Promise.all([
       // Summary metrics - current period
       client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,
@@ -204,7 +198,18 @@ export async function fetchGA4Data(period: string, scope: "basic" | "full" = "fu
         metrics: [{ name: "sessions" }],
         orderBys: [{ dimension: { dimensionName: "dayOfWeek" }, desc: false }],
       }),
-    ]);
+  ]);
+  return reports.map(([report]) => [report] as const);
+}
+
+export async function fetchGA4Data(
+  dates: ReturnType<typeof getGA4PeriodDates>,
+  scope: "basic" | "full",
+  baseReports: Awaited<ReturnType<typeof fetchGA4BaseReports>>,
+) {
+  const { start, end, compareStart, compareEnd } = dates;
+  const [currentReport, compareReport, pagesReport, sourcesReport, devicesReport, dailyReport, cityReport, returningReport, hourReport, dayOfWeekReport] =
+    baseReports;
 
   const topSourceRows = (sourcesReport[0]?.rows ?? [])
     .map((row) => ({
@@ -323,6 +328,7 @@ export async function fetchGA4Data(period: string, scope: "basic" | "full" = "fu
     };
   }
 
+  const client = getClient();
   const [sourceSummaryReport, sourceLandingReport, sourceDailyReport, sourceDeviceReport] =
     trackedSources.length > 0
       ? await Promise.all([

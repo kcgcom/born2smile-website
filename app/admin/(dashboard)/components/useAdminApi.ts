@@ -8,17 +8,21 @@ import { getAccessToken } from "@/lib/supabase";
 // SWR fetcher — Supabase Auth 토큰 주입
 // -------------------------------------------------------------
 
-async function adminFetcher<T>(endpoint: string): Promise<T> {
+export async function fetchAdminResponse(endpoint: string, accept?: string): Promise<Response> {
   const token = await getAccessToken();
   const res = await fetch(endpoint, {
     cache: "no-store",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, ...(accept && { Accept: accept }) },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "데이터를 불러올 수 없습니다" }));
     throw new Error(err.message ?? "데이터를 불러올 수 없습니다");
   }
-  const json = await res.json();
+  return res;
+}
+
+async function adminFetcher<T>(endpoint: string): Promise<T> {
+  const json = await (await fetchAdminResponse(endpoint)).json();
   // "data" 키가 있으면 그 값을 반환 (null 포함), 없으면 전체 json 반환
   return ("data" in json ? json.data : json) as T;
 }

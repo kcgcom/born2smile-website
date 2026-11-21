@@ -35,6 +35,10 @@ export interface ReadingReport {
   quality: { invalidEvents: number; orphanViews: number; duplicateStarts: number } | null;
 }
 
+export type ReadingReportUpdate = Partial<Omit<ReadingReport, "meta">> & {
+  meta?: Partial<ReadingReport["meta"]>;
+};
+
 export function readingRate(numerator: number, denominator: number): string {
   return denominator > 0 ? `${(100 * numerator / denominator).toFixed(1)}%` : "—";
 }

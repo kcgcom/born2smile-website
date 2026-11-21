@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import sharp from "sharp";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getAllPostDetailsFresh } from "@/lib/blog-supabase";
@@ -25,8 +24,6 @@ interface ImageItem {
   name: string;
   url: string;
   size: number;
-  width?: number;
-  height?: number;
   format?: string;
   createdAt: string;
   usage: ImageUsage[];
@@ -47,22 +44,6 @@ function getStoragePathFromPublicUrl(src: string): string | null {
 
 function isImageBlock(block: BlogBlock): block is Extract<BlogBlock, { type: "image" }> {
   return block.type === "image";
-}
-
-async function getStorageImageMetadata(path: string): Promise<Pick<ImageItem, "width" | "height" | "format">> {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-
-  if (error) return {};
-
-  const buffer = Buffer.from(await data.arrayBuffer());
-  const metadata = await sharp(buffer, { animated: true }).metadata();
-
-  return {
-    width: metadata.width,
-    height: metadata.height,
-    format: metadata.format,
-  };
 }
 
 async function getImageUsageMap(): Promise<Map<string, ImageUsage[]>> {
@@ -113,13 +94,15 @@ async function listImages(prefix: string, depth = 0): Promise<ImageItem[]> {
       }
 
       const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      const metadata = await getStorageImageMetadata(path);
+      const mimetype = item.metadata?.mimetype;
       return [{
         path,
         name: item.name,
         url: publicUrl,
         size: item.metadata?.size ?? 0,
-        ...metadata,
+        format: typeof mimetype === "string" && mimetype.startsWith("image/")
+          ? mimetype.slice("image/".length)
+          : undefined,
         createdAt: item.created_at ?? "",
         usage: [],
         isVisible: false,

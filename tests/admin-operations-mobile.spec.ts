@@ -8,7 +8,7 @@ const usages = [
   { slug: "scheduled", title: "예약 글", category: "implant", visible: false, hidden: false, published: true },
   { slug: "hidden", title: "숨김 글", category: "implant", visible: false, hidden: true, published: true },
 ];
-const images = [0, 1].map(i => ({ path: `blog/${i}/${imageName}`, name: `${i}-${imageName}`, url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'/%3E", size: 12000, width: 100, height: 100, format: "webp", createdAt: "2026-11-15T00:00:00Z", usage: usages, isUsed: true, isVisible: true }));
+const images = [0, 1].map(i => ({ path: `blog/${i}/${imageName}`, name: `${i}-${imageName}`, url: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${100 + i}' height='100'/%3E`, size: 12000, format: "webp", createdAt: "2026-11-15T00:00:00Z", usage: usages, isUsed: true, isVisible: true }));
 
 for (const width of [360, 390, 1280]) {
   test(`${width}px 이미지 조작과 전체 정보·상태별 링크·키보드 미리보기`, async ({ page }) => {
@@ -31,10 +31,12 @@ for (const width of [360, 390, 1280]) {
     await opener.click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByText(/WEBP · 100×100/)).toBeVisible();
     await page.getByRole("button", { name: "다음 이미지", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(images[1].name, { exact: true })).toBeVisible();
+    await expect(dialog.getByText(/WEBP · 101×100/)).toBeVisible();
     await page.getByRole("button", { name: "이전 이미지", exact: true }).focus();
     await page.keyboard.press("Space");
     await expect(dialog.getByText(images[0].name, { exact: true })).toBeVisible();

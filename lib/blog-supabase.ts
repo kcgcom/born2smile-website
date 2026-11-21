@@ -6,12 +6,13 @@
  */
 
 import { unstable_cache, revalidateTag } from "next/cache";
+import { cache } from "react";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 import type { BlogBlock, BlogPost, BlogPostMeta } from "./blog/types";
 import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
-import { getCategorySlug, normalizeBlogCategory } from "./blog";
+import { normalizeBlogCategory } from "./blog";
 import { getTodayKST } from "./date";
-import { BLOG_POSTS_SNAPSHOT } from "./blog/generated/posts-snapshot";
+import { BLOG_POSTS_SNAPSHOT, type BlogSnapshotPost } from "./blog/generated/posts-snapshot";
 
 const TABLE = "blog_posts";
 const POST_META_COLUMNS = "slug, title, subtitle, excerpt, category, tags, date, date_modified, read_time";
@@ -23,6 +24,7 @@ const PUBLIC_BLOG_DATA_SOURCE = process.env.BLOG_PUBLIC_DATA_SOURCE;
 // 빌드 명령에만 이 값을 주입한다. 배포된 Serverless 런타임에는 값이 없으므로
 // ISR과 관리자 수정 후 재검증은 계속 Supabase 최신 데이터를 우선 조회한다.
 const FORCE_PUBLIC_SNAPSHOT = PUBLIC_BLOG_DATA_SOURCE === "snapshot";
+const PUBLIC_QUERY_CACHE_SEGMENT = `${DEPLOY_CACHE_SEGMENT}-${FORCE_PUBLIC_SNAPSHOT ? "snapshot" : "live"}`;
 
 function safeRevalidateTag(tag: string) {
   try {
@@ -34,18 +36,6 @@ function safeRevalidateTag(tag: string) {
 
 function getBlogPostCacheTag(slug: string): string {
   return `blog-post-${slug}`;
-}
-
-function getRelatedPostsCacheKey(
-  category: BlogCategoryValue,
-  excludeSlug: string,
-  limit: number,
-): string {
-  return `blog-related-${getCategorySlug(category)}-${excludeSlug}-${limit}`;
-}
-
-function getRelatedPostsCacheTag(category: BlogCategoryValue): string {
-  return `blog-related-${getCategorySlug(category)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,23 +132,19 @@ function rowToMeta(row: PostMetaRow): BlogPostMeta {
   };
 }
 
-function rowToPost(row: DbRow): BlogPost {
+function rowToPost(row: PostMetaRow & Pick<DbRow, "content">): BlogPost {
   return {
     ...rowToMeta(row),
     blocks: isBlogBlockArray(row.content) ? row.content : [],
   };
 }
 
-function postToMeta({ blocks, readTime, ...meta }: BlogPost): BlogPostMeta {
-  return { ...meta, readTime: readTime ?? calculateReadTimeFromBlocks(blocks) };
-}
-
 // ---------------------------------------------------------------------------
 // Snapshot fallback helpers (used when Supabase is unreachable)
 // ---------------------------------------------------------------------------
 
-function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
-  return BLOG_POSTS_SNAPSHOT.map((post) => ({
+function snapshotToMeta(post: BlogSnapshotPost): BlogPostMeta {
+  return {
     slug: post.slug,
     title: post.title,
     subtitle: post.subtitle,
@@ -167,10 +153,16 @@ function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
     tags: post.tags as BlogPost["tags"],
     date: post.date,
     dateModified: post.dateModified,
-    blocks: isBlogBlockArray(post.blocks) ? post.blocks : [],
-    readTime: post.readTime,
-    published: post.published,
-  }));
+    readTime: post.readTime ?? calculateReadTimeFromBlocks(isBlogBlockArray(post.blocks) ? post.blocks : []),
+  };
+}
+
+function snapshotToPost(post: BlogSnapshotPost): BlogPost {
+  return { ...snapshotToMeta(post), blocks: isBlogBlockArray(post.blocks) ? post.blocks : [] };
+}
+
+function getSnapshotPosts(): (BlogPost & { published: boolean })[] {
+  return BLOG_POSTS_SNAPSHOT.map(post => ({ ...snapshotToPost(post), published: post.published }));
 }
 
 function getSnapshotPublishedPosts(): BlogPost[] {
@@ -185,12 +177,10 @@ function getSnapshotPublishedPosts(): BlogPost[] {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function getSnapshotPost(slug: string): BlogPost | null {
-  const post = getSnapshotPosts().find((entry) => entry.slug === slug);
-  if (!post) return null;
-  const { published: _published, ...rest } = post;
-  void _published;
-  return rest;
+function getSnapshotPost(slug: string, publicThrough?: string): BlogPost | null {
+  const post = BLOG_POSTS_SNAPSHOT.find(entry => entry.slug === slug);
+  if (!post || (publicThrough !== undefined && (!post.published || post.date > publicThrough))) return null;
+  return snapshotToPost(post);
 }
 
 // ---------------------------------------------------------------------------
@@ -236,29 +226,35 @@ export const getAllPublishedPosts: () => Promise<BlogPost[]> =
  * Ordered by date DESC.
  * Falls back to snapshot data if Supabase query fails.
  */
-export const getAllPublishedPostMetas: () => Promise<BlogPostMeta[]> =
-  unstable_cache(
-    async (): Promise<BlogPostMeta[]> => {
-      if (!FORCE_PUBLIC_SNAPSHOT && isSupabaseAdminConfigured) {
-        try {
-          const { data, error } = await getSupabaseAdmin()
-            .from(TABLE)
-            .select(POST_META_COLUMNS)
-            .eq("published", true)
-            .lte("date", getTodayKST())
-            .order("date", { ascending: false });
+const getPublishedPostMetasForDate = unstable_cache(
+  async (today: string): Promise<BlogPostMeta[]> => {
+    if (!FORCE_PUBLIC_SNAPSHOT && isSupabaseAdminConfigured) {
+      try {
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select(POST_META_COLUMNS)
+          .eq("published", true)
+          .lte("date", today)
+          .order("date", { ascending: false });
 
-          if (error) throw error;
-          return data.map(rowToMeta);
-        } catch (error) {
-          console.warn("[blog-supabase] Metadata query failed, using snapshot fallback", error);
-        }
+        if (error) throw error;
+        return data.map(rowToMeta);
+      } catch (error) {
+        console.warn("[blog-supabase] Metadata query failed, using snapshot fallback", error);
       }
-      return getSnapshotPublishedPosts().map(postToMeta);
-    },
-    [`blog-posts-published-${DEPLOY_CACHE_SEGMENT}`],
-    { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
-  );
+    }
+    return BLOG_POSTS_SNAPSHOT
+      .filter(post => post.published && post.date <= today)
+      .map(snapshotToMeta)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  },
+  [`blog-posts-published-${PUBLIC_QUERY_CACHE_SEGMENT}`],
+  { revalidate: CACHE_TTL, tags: [CACHE_TAG] },
+);
+
+export function getAllPublishedPostMetas(): Promise<BlogPostMeta[]> {
+  return getPublishedPostMetasForDate(getTodayKST());
+}
 
 export async function getAllPostMetasFresh(): Promise<
   (BlogPostMeta & { published: boolean; createdAt?: string })[]
@@ -282,18 +278,31 @@ export async function getAllPostMetasFresh(): Promise<
  * Returns null when not found.
  * Falls back to snapshot data if Supabase fails.
  */
-export function getPostBySlug(
-  slug: string,
-): Promise<BlogPost | null> {
+export const getPostBySlug = cache(async (slug: string): Promise<BlogPost | null> => {
+  const today = getTodayKST();
   return unstable_cache(
     async (): Promise<BlogPost | null> => {
-      const posts = await getAllPublishedPosts();
-      return posts.find((post) => post.slug === slug) ?? null;
+      if (!FORCE_PUBLIC_SNAPSHOT && isSupabaseAdminConfigured) {
+        try {
+          const { data, error } = await getSupabaseAdmin()
+            .from(TABLE)
+            .select(`${POST_META_COLUMNS}, content`)
+            .eq("slug", slug)
+            .eq("published", true)
+            .lte("date", today)
+            .maybeSingle();
+          if (error) throw error;
+          return data ? rowToPost(data) : null;
+        } catch (error) {
+          console.warn("[blog-supabase] Public post query failed, using snapshot fallback", error);
+        }
+      }
+      return getSnapshotPost(slug, today);
     },
-    [`${getBlogPostCacheTag(slug)}-${DEPLOY_CACHE_SEGMENT}`],
+    [`${getBlogPostCacheTag(slug)}-single-${PUBLIC_QUERY_CACHE_SEGMENT}-${today}`],
     { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
   )();
-}
+});
 
 /**
  * Fetch a single post by slug without any caching — always fresh from Supabase.
@@ -365,25 +374,13 @@ export async function getPostAdminBySlugFresh(slug: string): Promise<BlogPostAdm
  * Only published posts with date <= today KST.
  * Falls back to snapshot data if Supabase query fails.
  */
-export function getRelatedPosts(
+export async function getRelatedPosts(
   category: BlogCategoryValue,
   excludeSlug: string,
   limit = 3,
 ): Promise<BlogPostMeta[]> {
-  return unstable_cache(
-    async (): Promise<BlogPostMeta[]> => {
-      const posts = await getAllPublishedPosts();
-      return posts
-        .filter((post) => post.category === category && post.slug !== excludeSlug)
-        .slice(0, limit)
-        .map(postToMeta);
-    },
-    [`${getRelatedPostsCacheKey(category, excludeSlug, limit)}-${DEPLOY_CACHE_SEGMENT}`],
-    {
-      revalidate: CACHE_TTL,
-      tags: [getRelatedPostsCacheTag(category)],
-    },
-  )();
+  const posts = await getAllPublishedPostMetas();
+  return posts.filter(post => post.category === category && post.slug !== excludeSlug).slice(0, limit);
 }
 
 // ---------------------------------------------------------------------------

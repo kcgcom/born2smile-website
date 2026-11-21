@@ -5,17 +5,32 @@ import Link from "next/link";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { getTodayKST } from "@/lib/date";
 import { getAdminPreviewUrl, getBlogPostUrl } from "@/lib/blog/category-slugs";
-import { isPublicPerformancePost, type PerformanceSource, type PostPerformance, type PerformancePeriod } from "@/lib/post-performance";
+import { isPublicPerformancePost, performanceRange, type PerformanceSource, type PerformanceSourceKey, type PerformancePeriod } from "@/lib/post-performance";
 import { readingRate } from "@/lib/blog/reading-report";
-import { useAdminApi } from "../useAdminApi";
+import { usePostPerformance } from "./usePostPerformance";
 import { MetricCard } from "../MetricCard";
 import { AdminErrorState } from "../AdminErrorState";
 import type { AdminBlogPost } from "./blog-helpers";
 
-function Source<T>({ title, source, children }: { title: string; source: PerformanceSource<T>; children: (data: T) => ReactNode }) {
-  return <section aria-label={title} className="rounded-2xl border border-slate-200 bg-white p-4">
+function Source<T>({ title, source, fetchedAt, failed, retry, updating, children }: {
+  title: string;
+  source?: PerformanceSource<T>;
+  fetchedAt?: string;
+  failed?: boolean;
+  retry: () => void;
+  updating: boolean;
+  children: (data: T) => ReactNode;
+}) {
+  return <section aria-label={title} className="min-h-36 rounded-2xl border border-slate-200 bg-white p-4">
     <h3 className="mb-3 font-semibold text-slate-900">{title}</h3>
-    {source.status === "ready" ? children(source.data) : <p className={source.status === "error" ? "text-sm text-red-700" : "text-sm text-slate-600"} role={source.status === "error" ? "status" : undefined}>{source.message}</p>}
+    {source?.status === "ready" ? children(source.data) : <p className={source?.status === "error" ? "text-sm text-red-700" : "text-sm text-slate-600"}>
+      {source?.message ?? (updating ? "불러오는 중…" : "결과를 받지 못했습니다.")}
+    </p>}
+    {fetchedAt && <p className="mt-2 text-xs text-slate-600">결과 조회 시각 {new Date(fetchedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST</p>}
+    {failed && <div className="mt-2 flex flex-wrap items-center gap-2">
+      {source?.status === "ready" && <p role="status" className="text-sm text-amber-800">일부 데이터를 갱신하지 못했습니다.</p>}
+      <button type="button" onClick={retry} disabled={updating} className="min-h-11 rounded-xl border border-slate-300 px-3 text-sm disabled:opacity-50">{title} 다시 조회</button>
+    </div>}
   </section>;
 }
 
@@ -24,8 +39,16 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
   const modal = useModalA11y(onClose);
   const isPublic = isPublicPerformancePost(post, getTodayKST());
   const endQuery = endDate ? `&end=${encodeURIComponent(endDate)}` : "";
-  const { data, loading, error, refetch } = useAdminApi<PostPerformance>(`/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}${endQuery}`, isPublic);
-  const report = data?.post?.slug === post.slug && data.period === period && (!endDate || data.range.end === endDate) ? data : null;
+  const range = performanceRange(period, new Date(), endDate);
+  const { report: data, updating, error, refetch, retrySource } = usePostPerformance(
+    `/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}${endQuery}`, isPublic, range.end,
+  );
+  const report = data?.post?.slug === post.slug && data.period === period && data.range?.end === range.end ? data : null;
+  const firstObservation = report?.readingFirstObserved;
+  const firstObservationFailed = report?.failed?.includes("readingFirstObserved");
+  function sourceProps(key: PerformanceSourceKey) {
+    return { fetchedAt: report?.sourceTimes?.[key], failed: report?.failed?.includes(key), retry: () => void retrySource(key), updating };
+  }
   useEffect(() => {
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -48,14 +71,13 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
       {!isPublic ? <p className="rounded-2xl bg-white p-5 text-sm text-slate-600">공개 발행 후 성과를 확인할 수 있습니다. 초안·예약 글에 조회 수 0이나 해결률 0%를 표시하지 않습니다.</p> : <>
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-sm font-medium">조회 기간 <select aria-label="포스트 성과 조회 기간" value={period} onChange={event => setPeriod(event.target.value as PerformancePeriod)} className="ml-2 min-h-11 rounded-xl border border-slate-300 bg-white px-3"><option value="30d">30일</option><option value="90d">90일</option></select></label>
-          <button type="button" onClick={refetch} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">성과 새로고침</button>
+          <button type="button" onClick={refetch} disabled={updating} title="최근 서버 조회 결과를 재사용할 수 있습니다." className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm disabled:opacity-50">성과 새로고침</button>
         </div>
-        {loading && <p role="status" className="text-sm text-slate-600">포스트 성과를 불러오는 중…</p>}
+        <p role="status" className="min-h-5 text-sm text-slate-600">{updating ? "포스트 성과를 불러오는 중…" : ""}</p>
         {error && <AdminErrorState message={error} onRetry={refetch} />}
-        {!loading && !error && report && <>
-          <p className="text-sm text-slate-600">기간별 성과: {report.range.start} ~ {report.range.end}<br /><span className="text-xs">{endDate ? "운영 개요에서 확인한 집계 종료일을 사용합니다." : "검색 반영 지연을 고려해 3일 전까지의 같은 날짜 범위를 조회합니다."} 조회 시각 {new Date(report.fetchedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST</span></p>
-          {report.partial && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">일부 데이터를 불러오지 못했습니다. 조회된 다른 결과는 그대로 확인할 수 있습니다.</p>}
-          <Source title="누적 독자 응답 · DB" source={report.feedback}>{feedback => <>
+        <>
+          <p className="text-sm text-slate-600">기간별 성과: {range.start} ~ {range.end}<br /><span className="text-xs">{endDate ? "운영 개요에서 확인한 집계 종료일을 사용합니다." : "검색 반영 지연을 고려해 3일 전까지의 같은 날짜 범위를 조회합니다."}</span></p>
+          <Source title="누적 독자 응답 · DB" source={report?.feedback} {...sourceProps("feedback")}>{feedback => <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard label="총 응답" value={`${feedback.total}건`} />
               <MetricCard label="해결" value={`${feedback.solved}건`} />
@@ -64,30 +86,43 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
             </div>
             <p className="mt-3 text-xs text-slate-600">조회 기간과 무관한 현재 누적 최종 응답입니다. 미응답은 미해결이 아니며 전체 독자의 만족도를 뜻하지 않습니다.{feedback.total > 0 && feedback.total < 5 ? " 응답 표본이 적어 참고용으로만 보세요." : ""}</p>
           </>}</Source>
-          <Source title="검색 유입 · Search Console" source={report.search}>{search => <>
+          <Source title="검색 유입 · Search Console" source={report?.search} {...sourceProps("search")}>{search => <>
             <div className="grid grid-cols-2 gap-3"><MetricCard label="검색 노출" value={`${search.impressions.toLocaleString("ko-KR")}회`} /><MetricCard label="검색 클릭" value={`${search.clicks.toLocaleString("ko-KR")}회`} /></div>
-            {report.previousSearch && <p className="mt-3 text-sm text-slate-600">
+            {report?.previousSearch && <p className="mt-3 text-sm text-slate-600">
               직전 기간 {report.previousSearch.start} ~ {report.previousSearch.end} · {report.previousSearch.clicks === null
                 ? "검색 클릭 조회 불가"
                 : `검색 클릭 ${report.previousSearch.clicks.toLocaleString("ko-KR")}회 → ${search.clicks.toLocaleString("ko-KR")}회`}
             </p>}
+            {report?.sourceTimes?.previousSearch && <p className="mt-1 text-xs text-slate-600">
+              직전 검색 조회 시각 {new Date(report.sourceTimes.previousSearch).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST
+            </p>}
+            {report?.failed?.includes("previousSearch") && <button type="button" onClick={() => void retrySource("previousSearch")} disabled={updating} className="mt-2 min-h-11 rounded-xl border border-slate-300 px-3 text-sm disabled:opacity-50">직전 검색 클릭 다시 조회</button>}
             {!search.queriesAvailable ? <p className="mt-3 text-sm text-amber-800">유입 검색어 조회 실패</p> : search.queries.length ? <ul className="mt-3 divide-y divide-slate-100">{search.queries.map(item => <li key={item.query} className="flex justify-between gap-3 py-2 text-sm"><span className="min-w-0 break-words">{item.query}</span><span className="shrink-0 text-slate-600">클릭 {item.clicks}회</span></li>)}</ul> : <p className="mt-3 text-sm text-slate-600">표시할 유입 검색어가 없습니다.</p>}
             <p className="mt-3 text-xs text-slate-500">정규 URL 기준 · 미국 태평양 시간(PT). 검색어는 일부만 공개되므로 검색어 클릭 합계가 전체 클릭과 다를 수 있습니다.</p>
           </>}</Source>
-          <Source title="방문 · GA4" source={report.traffic}>{traffic => <>
+          <Source title="방문 · GA4" source={report?.traffic} {...sourceProps("traffic")}>{traffic => <>
             <div className="grid grid-cols-2 gap-3"><MetricCard label="페이지뷰" value={`${traffic.views.toLocaleString("ko-KR")}회`} /><MetricCard label="방문 세션" value={`${traffic.sessions.toLocaleString("ko-KR")}개`} /></div>
             <p className="mt-3 text-xs text-slate-500">이 글의 경로를 직접 조회 · {traffic.timeZone} 기준{traffic.thresholded ? " · 개인정보 보호 기준으로 일부 데이터가 생략될 수 있습니다." : ""}</p>
           </>}</Source>
-          <Source title="읽기·후속 행동 · PostHog" source={report.reading}>{reading => <>
-            {!reading.firstObservedAt && <p className="mb-3 text-sm text-slate-600">이 글의 읽기 측정 전 또는 수집 미확인입니다.</p>}
-            {reading.firstObservedAt && Date.parse(reading.firstObservedAt) >= Date.parse(report.range.periodEndExclusive) && <p className="mb-3 text-sm text-slate-600">선택 기간이 이 글의 읽기 수집 시작보다 앞섭니다.</p>}
+          <Source title="읽기·후속 행동 · PostHog" source={report?.reading} {...sourceProps("reading")}>{reading => {
+            const firstObservedAt = firstObservation?.status === "ready"
+              ? firstObservation.data.firstObservedAt : reading.firstObservedAt;
+            return <>
             <div className="grid grid-cols-2 gap-3"><MetricCard label="읽기 표본 (세션·글)" value={`${reading.counts.eligibleVisits}개`} /><MetricCard label="유효 읽기율 (추정)" value={readingRate(reading.counts.qualified, reading.counts.eligibleVisits)} /><MetricCard label="공유 동작 방문" value={`${reading.counts.shares}건`} /><MetricCard label="글 이용 후 문의 시도" value={`${reading.counts.inquiries}건`} /></div>
+            {firstObservedAt === undefined && !firstObservation && updating && <p className="mt-3 text-sm text-slate-600">읽기 수집 시작 시각 확인 중…</p>}
+            {firstObservedAt === null && !firstObservationFailed && <p className="mt-3 text-sm text-slate-600">이 글의 읽기 측정 전 또는 수집 미확인입니다.</p>}
+            {firstObservedAt && Date.parse(firstObservedAt) >= Date.parse(range.periodEndExclusive) && <p className="mt-3 text-sm text-slate-600">선택 기간이 이 글의 읽기 수집 시작보다 앞섭니다.</p>}
+            {firstObservationFailed && <div className="mt-3 flex flex-wrap items-center gap-2">
+              <p role="status" className="text-sm text-amber-800">수집 시작 시각을 확인하지 못했습니다.</p>
+              <button type="button" onClick={() => void retrySource("readingFirstObserved")} disabled={updating} className="min-h-11 rounded-xl border border-slate-300 px-3 text-sm disabled:opacity-50">수집 시작 시각 다시 조회</button>
+            </div>}
             {reading.counts.eligibleVisits < 30 && <p className="mt-3 text-sm text-amber-800">읽기 표본 부족 · 우열을 판단하지 않습니다.</p>}
-            {reading.warnings.map(warning => <p key={warning} className="mt-2 text-sm text-amber-800">{warning}</p>)}
+            {!firstObservation && reading.warnings?.map(warning => <p key={warning} className="mt-2 text-sm text-amber-800">{warning}</p>)}
             <p className="mt-3 text-xs text-slate-500">KST 기준. 문의는 같은 세션에서 글 이용 이후 전화·카카오를 실행한 경우이며, 실제 상담·예약이나 글의 인과 효과가 아닙니다.</p>
-          </>}</Source>
+            </>;
+          }}</Source>
           <p className="text-xs text-slate-500">서비스별 시간대·수집 대상이 달라 서로 다른 출처의 수치를 나눠 전환율로 계산하지 않습니다. 카드 노출·클릭 집계는 이번 패널에 포함하지 않습니다.</p>
-        </>}
+        </>
       </>}
     </div>
   </div>;

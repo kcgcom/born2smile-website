@@ -102,6 +102,45 @@ test("새 읽기 리포트는 표본·오류·기간을 구분하고 세션 시�
   await expect(page.getByText("표본 부족", { exact: true })).toHaveCount(0);
 });
 
+test("전체 읽기 리포트는 수집 품질이 늦어도 읽기 요약과 글별 목록을 먼저 표시한다", async ({ page }) => {
+  await setup(page);
+  const meta = readingPeriodRange("30d", new Date("2026-11-14T07:00:00Z"));
+  await page.addInitScript(({ meta, path, slug }) => {
+    const originalFetch = window.fetch.bind(window);
+    let releaseQuality = () => {};
+    Object.assign(window, { releaseReadingQuality: () => releaseQuality() });
+    window.fetch = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+      if (url.pathname !== "/api/admin/posthog/reading" || new Headers(init?.headers).get("accept") !== "application/x-ndjson") {
+        return originalFetch(input, init);
+      }
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const encoder = new TextEncoder();
+          const send = (event: object) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+          const summary = { visits: 4, eligibleVisits: 4, qualified: 3, depth75: 3, time30: 3, feedbackPrompts: 0, solved: 0, unresolved: 0, shares: 0, inquiries: 0 };
+          send({ update: { configured: true, cursor: null, period: "30d", pageSize: 25, meta } });
+          send({ update: { summary, totalPosts: 1 } });
+          send({ update: { rows: [{ ...summary, path, slug }], nextCursor: null } });
+          releaseQuality = () => {
+            send({ update: { quality: { invalidEvents: 0, orphanViews: 2, duplicateStarts: 1 } } });
+            send({ done: true });
+            controller.close();
+          };
+        },
+      });
+      return new Response(body, { headers: { "Content-Type": "application/x-ndjson" } });
+    };
+  }, { meta, path, slug: post.slug });
+  await page.goto("/admin/analysis/traffic?view=blog");
+  const reading = page.getByRole("heading", { name: "본문 읽기와 독자 반응 · PostHog" }).locator("..");
+  await expect(reading.getByText("75.0%", { exact: true }).first()).toBeVisible();
+  await expect(reading.getByRole("link", { name: new RegExp(post.title) }).filter({ visible: true })).toBeVisible();
+  await expect(reading.getByText("수집 품질을 확인하는 중…")).toBeVisible();
+  await page.evaluate(() => (window as unknown as { releaseReadingQuality(): void }).releaseReadingQuality());
+  await expect(reading.getByText(/시작 없는 view 2건/)).toBeVisible();
+});
+
 test("기간 전환 중 이전 기간 수치를 숨기고 늦은 응답 후 새 기간을 표시한다", async ({ page }) => {
   let release!: () => void;
   const hold = new Promise<void>(resolve => { release = resolve; });
@@ -170,6 +209,56 @@ test("모바일 일정은 예약을 먼저 표시하고 문의 성과는 정상 
   expect((await page.getByText("30일 전화 클릭", { exact: true }).boundingBox())!.y).toBeLessThan((await health.boundingBox())!.y);
   await health.locator("summary").click();
   await expect(page.getByText("24시간 이벤트", { exact: true })).toBeVisible();
+});
+
+test("방문 분석은 기본 집계 표시 후 블로그 GA4와 카드 성과를 미리 조회하고 탭 전환 시 재사용한다", async ({ page }) => {
+  await setup(page);
+  const requests: string[] = [];
+  let releaseBasic!: () => void;
+  const basicResponse = new Promise<void>(resolve => { releaseBasic = resolve; });
+  let releaseBlog!: () => void;
+  const blogResponse = new Promise<void>(resolve => { releaseBlog = resolve; });
+  await page.route("**/api/admin/analytics?*", async route => {
+    const basic = new URL(route.request().url()).searchParams.get("scope") === "basic";
+    requests.push(basic ? "basic" : "full");
+    if (basic) await basicResponse;
+    await route.fulfill({ json: { data: analytics } });
+  });
+  await page.route("**/api/admin/blog-analytics?*", async route => {
+    await blogResponse;
+    await route.fulfill({ json: { data: { blogPostStats: [], dataAsOf: analytics.dataAsOf } } });
+  });
+  await page.route("**/api/admin/posthog/blog-cards?*", async route => {
+    await blogResponse;
+    const period = new URL(route.request().url()).searchParams.get("period");
+    const range = readingPeriodRange("30d", new Date("2026-11-14T07:00:00Z"));
+    await route.fulfill({ json: { data: { configured: true, period, range, impressions: 24, clicks: 3 } } });
+  });
+  page.on("request", request => {
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith("/blog-analytics") || path.includes("/posthog/")) requests.push(path);
+  });
+  await page.goto("/admin/analysis/traffic");
+  await expect.poll(() => requests).toEqual(["basic"]);
+  releaseBasic();
+  await expect.poll(() => [...requests].sort()).toEqual([
+    "/api/admin/blog-analytics",
+    "/api/admin/posthog/blog-cards",
+    "basic",
+    "full",
+  ]);
+  await page.getByRole("tab", { name: "블로그", exact: true }).click();
+  await expect.poll(() => [...requests].sort()).toEqual([
+    "/api/admin/blog-analytics",
+    "/api/admin/posthog/blog-cards",
+    "/api/admin/posthog/conversion",
+    "/api/admin/posthog/reading",
+    "basic",
+    "full",
+  ]);
+  releaseBlog();
+  await expect(page.getByText("24건", { exact: true })).toBeVisible();
+  expect(requests.filter(path => path === "/api/admin/posthog/blog-cards")).toHaveLength(1);
 });
 
 test("트래픽 탭은 방향키로 이동하고 표의 버튼으로 상세를 열고 복귀한다", async ({ page }) => {
@@ -248,8 +337,70 @@ test("개요 검토 기준과 공통 날짜 범위는 표본·예약·KST 경계
 });
 
 test("포스트 성과 API는 비인증 조회를 차단한다", async ({ request }) => {
-  const result = await request.get(`/api/admin/blog-posts/${post.slug}/performance?period=30d`);
+  const result = await request.get(`/api/admin/blog-posts/${post.slug}/performance?period=30d`, {
+    headers: { Accept: "application/x-ndjson" },
+  });
   expect(result.status()).toBe(401);
+});
+
+test("포스트 성과는 한 요청에서 먼저 도착한 지표를 표시하고 실패한 출처만 다시 조회한다", async ({ page }) => {
+  await setup(page);
+  const now = new Date("2026-11-14T00:00:00Z");
+  await page.clock.setFixedTime(now);
+  const published = { ...post, category: "restorative" as const, date: "2026-11-01", published: true };
+  await page.route("**/api/admin/blog-posts", route => route.fulfill({ json: { data: [published] } }));
+  await page.addInitScript(({ published, range, fetchedAt }) => {
+    const originalFetch = window.fetch.bind(window);
+    const sources: string[] = [];
+    let release = () => {};
+    Object.assign(window, { performanceSources: sources, releasePerformance: () => release() });
+    window.fetch = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+      if (!url.pathname.endsWith("/performance") || new Headers(init?.headers).get("accept") !== "application/x-ndjson") {
+        return originalFetch(input, init);
+      }
+      const source = url.searchParams.get("source");
+      sources.push(source ?? "all");
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const encoder = new TextEncoder();
+          const send = (event: object) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+          const finish = () => { send({ done: true }); controller.close(); };
+          send({ update: { post: published, period: "30d", range } });
+          if (source === "search") {
+            send({ update: { search: { status: "ready", data: { clicks: 7, impressions: 11, queries: [], queriesAvailable: true } }, sourceTimes: { search: fetchedAt } } });
+            finish();
+            return;
+          }
+          send({ update: { feedback: { status: "ready", data: { solved: 2, unresolved: 3, total: 5 } }, sourceTimes: { feedback: fetchedAt } } });
+          send({ update: { reading: { status: "ready", data: { counts: { eligibleVisits: 4, qualified: 2, shares: 1, inquiries: 0 } } } } });
+          release = () => {
+            send({ update: { search: { status: "error", data: null, message: "검색 데이터를 불러오지 못했습니다." } } });
+            send({ update: { traffic: { status: "ready", data: { views: 42, sessions: 30, timeZone: "Asia/Seoul" } } } });
+            send({ update: { readingFirstObserved: { status: "ready", data: { firstObservedAt: null } } } });
+            finish();
+          };
+        },
+      });
+      return new Response(body, { headers: { "Content-Type": "application/x-ndjson" } });
+    };
+  }, { published, range: performanceRange("30d", now), fetchedAt: now.toISOString() });
+  await page.goto("/admin/content/posts");
+  await page.getByRole("button", { name: `${post.title} 성과 보기`, exact: true }).click();
+  const panel = page.getByRole("dialog", { name: `${post.title} 성과`, exact: true });
+  await expect(panel.getByText("5건", { exact: true })).toBeVisible();
+  const reading = panel.getByRole("region", { name: "읽기·후속 행동 · PostHog" });
+  await expect(reading.getByText("50.0%", { exact: true })).toBeVisible();
+  await expect(reading.getByText("읽기 수집 시작 시각 확인 중…")).toBeVisible();
+  await expect(panel.getByText("42회", { exact: true })).toHaveCount(0);
+  await expect(panel.getByRole("region", { name: "방문 · GA4" }).getByText("불러오는 중…")).toBeVisible();
+  await page.evaluate(() => (window as unknown as { releasePerformance(): void }).releasePerformance());
+  await expect(panel.getByText("42회", { exact: true })).toBeVisible();
+  await expect(reading.getByText("이 글의 읽기 측정 전 또는 수집 미확인입니다.")).toBeVisible();
+  await panel.getByRole("button", { name: "검색 유입 · Search Console 다시 조회" }).click();
+  await expect(panel.getByText("7회", { exact: true })).toBeVisible();
+  await expect(panel.getByText("5건", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { performanceSources: string[] }).performanceSources)).toEqual(["all", "search"]);
 });
 
 test("포스트 성과는 선택한 글만 조회하고 오류·누적 응답·기간 전환을 구분한다", async ({ page }, testInfo) => {

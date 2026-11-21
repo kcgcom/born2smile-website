@@ -4,9 +4,9 @@ import { BASE_URL } from "./constants";
 import { getTodayKST } from "./date";
 import { fetchPostGA4 } from "./admin-analytics";
 import { fetchPostSearch } from "./admin-search-console";
-import { fetchBlogReading } from "./admin-blog-reading";
+import { fetchPostReadingFirstObservedAt, fetchPostReadingSummary } from "./admin-blog-reading";
 import { getPostHogEnvStatus } from "./admin-posthog";
-import { isPublicPerformancePost, performanceRange, type PerformancePeriod, type PerformancePost, type PerformanceSource, type PostPerformance } from "./post-performance";
+import { isPublicPerformancePost, performanceRange, type PerformancePeriod, type PerformancePost, type PerformanceSource, type PerformanceSourceKey, type PerformanceUpdate } from "./post-performance";
 
 export async function getPerformancePost(slug: string): Promise<PerformancePost | null> {
   const { data, error } = await getSupabaseAdmin().from("blog_posts")
@@ -22,39 +22,86 @@ export async function performanceSource<T>(configured: boolean, label: string, r
   catch { return { status: "error", data: null, message: `${label} 데이터를 불러오지 못했습니다.` }; }
 }
 
-export async function fetchPostPerformance(post: PerformancePost, period: PerformancePeriod, now = new Date(), endDate?: string): Promise<PostPerformance> {
+export type CachePerformanceSource = <T>(source: PerformanceSourceKey, run: () => Promise<{ data: T; fetchedAt: string }>) => Promise<{ data: T; fetchedAt: string }>;
+
+export async function fetchPostPerformance(
+  post: PerformancePost,
+  period: PerformancePeriod,
+  now: Date,
+  endDate: string | undefined,
+  cache: CachePerformanceSource,
+  emit: (update: PerformanceUpdate) => void,
+  only?: PerformanceSourceKey,
+) {
   const range = performanceRange(period, now, endDate);
   const path = getBlogPostUrl(post.slug, post.category);
   const base = { post, path, period, range, fetchedAt: now.toISOString(), partial: false };
+  emit(base);
   if (!isPublicPerformancePost(post, getTodayKST(now))) {
     const absent = { status: "not_public" as const, data: null, message: "공개 발행 후 성과를 확인할 수 있습니다." };
-    return { ...base, search: absent, traffic: absent, reading: absent, feedback: absent };
+    emit({ search: absent, traffic: absent, reading: absent, readingFirstObserved: absent, feedback: absent });
+    return;
   }
   const ph = getPostHogEnvStatus();
+  const readingConfigured = ph.projectIdConfigured && ph.apiKeyConfigured && ph.baseUrlConfigured;
   const searchConfigured = Boolean(process.env.SEARCH_CONSOLE_SITE_URL?.trim());
   const searchUrl = `${BASE_URL}${path}`;
   const previousEnd = new Date(Date.parse(`${range.start}T00:00:00Z`) - 86400_000).toISOString().slice(0, 10);
   const previous = endDate ? performanceRange(period, now, previousEnd) : null;
-  const [search, traffic, reading, feedback, comparison] = await Promise.all([
-    performanceSource(searchConfigured, "검색", () => fetchPostSearch(searchUrl, range.start, range.end)),
-    performanceSource(Boolean(process.env.GA4_PROPERTY_ID?.trim()), "방문", () => fetchPostGA4(path, range.start, range.end)),
-    performanceSource(ph.projectIdConfigured && ph.apiKeyConfigured && ph.baseUrlConfigured, "읽기·후속 행동", async () => {
-      const report = await fetchBlogReading(period, null, { slug: post.slug, now: new Date(range.anchor) });
-      return { counts: report.summary, firstObservedAt: report.meta.firstObservedAt, warnings: report.warnings };
-    }),
-    performanceSource(true, "누적 피드백", async () => {
+  let partial = false;
+  async function load<T>(
+    key: PerformanceSourceKey,
+    configured: boolean,
+    label: string,
+    run: () => Promise<T>,
+    update: (source: PerformanceSource<T>) => PerformanceUpdate,
+    complete: (data: T) => boolean = () => true,
+  ) {
+    if (only && only !== key) return;
+    let fetchedAt: string | undefined;
+    let incomplete = false;
+    const source = await performanceSource(configured, label, async () => {
+      let fresh: { data: T; fetchedAt: string } | undefined;
+      const result = await cache(key, async () => {
+        const data = await run();
+        fresh = { data, fetchedAt: new Date().toISOString() };
+        if (!complete(data)) throw new Error("부분 조회 실패");
+        return fresh;
+      }).catch(error => {
+        if (fresh && !complete(fresh.data)) {
+          incomplete = true;
+          return fresh;
+        }
+        throw error;
+      });
+      fetchedAt = result.fetchedAt;
+      return result.data;
+    });
+    partial ||= source.status === "error" || incomplete;
+    emit({ ...update(source), sourceTimes: fetchedAt ? { [key]: fetchedAt } : undefined });
+  }
+  await Promise.all([
+    load("search", searchConfigured, "검색", () => fetchPostSearch(searchUrl, range.start, range.end),
+      search => ({ search }), data => data.queriesAvailable),
+    load("traffic", Boolean(process.env.GA4_PROPERTY_ID?.trim()), "방문", () => fetchPostGA4(path, range.start, range.end),
+      traffic => ({ traffic })),
+    load("reading", readingConfigured, "읽기·후속 행동", async () => ({
+      counts: await fetchPostReadingSummary(post.slug, period, new Date(range.anchor)),
+    }), reading => ({ reading })),
+    load("readingFirstObserved", readingConfigured, "읽기 수집 시작 시각", async () => ({
+      firstObservedAt: await fetchPostReadingFirstObservedAt(post.slug),
+    }), readingFirstObserved => ({ readingFirstObserved })),
+    load("feedback", true, "누적 피드백", async () => {
       const { data, error } = await getSupabaseAdmin().rpc("get_blog_question_feedback_stats").eq("slug", post.slug).maybeSingle<{ solved: number | string; unresolved: number | string }>();
       if (error) throw error;
       const solved = Number(data?.solved ?? 0), unresolved = Number(data?.unresolved ?? 0);
       return { solved, unresolved, total: solved + unresolved };
-    }),
-    previous ? performanceSource(searchConfigured, "직전 검색", () => fetchPostSearch(searchUrl, previous.start, previous.end, false)) : null,
+    }, feedback => ({ feedback })),
+    previous && load("previousSearch", searchConfigured, "직전 검색", () => fetchPostSearch(searchUrl, previous.start, previous.end, false),
+      source => ({
+        previousSearch: { start: previous.start, end: previous.end, clicks: source.data?.clicks ?? null },
+        previousSearchStatus: source.status,
+      })),
   ]);
-  const partial = [search, traffic, reading, feedback, comparison].some(source => source?.status === "error")
-    || (search.status === "ready" && !search.data.queriesAvailable)
-    || (reading.status === "ready" && reading.data.warnings.length > 0);
-  const previousSearch = previous ? {
-    start: previous.start, end: previous.end, clicks: comparison?.data?.clicks ?? null,
-  } : undefined;
-  return { ...base, partial, search, traffic, reading, feedback, previousSearch };
+  emit({ partial });
 }

@@ -1,31 +1,50 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { BlogCardReport } from "@/lib/admin-blog-cards";
 import { useAdminApi } from "../useAdminApi";
 import type { AdminBlogPost } from "../blog/blog-helpers";
 import type { AnalyticsData, BlogGA4Data, ConversionData, Period, TopPageDetail, SourceDetail } from "./types";
 
-export function useTrafficData(period: Period) {
+export function useTrafficData(period: Period, blogView: boolean, blogPageDetail: boolean) {
   // 점진적 로딩: basic(Stage 1)을 먼저 표시, full이 오면 상세 데이터 병합
   const { data: basicData, loading: basicLoading, error: basicError, isValidating: basicValidating, updatedAt: basicUpdatedAt, refetch: refetchBasic } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}&scope=basic`,
   );
   const { data: fullData, error: fullError, isValidating: fullValidating, updatedAt: fullUpdatedAt, refetch: refetchFull } = useAdminApi<AnalyticsData>(
     `/api/admin/analytics?period=${period}`,
+    Boolean(basicData || basicError),
   );
   const data = fullData && (!basicData || fullData.dataAsOf >= basicData.dataAsOf) ? fullData : basicData;
   const loading = basicLoading && !data;
-  const error = fullError ?? basicError;
+  const error = fullError ?? (fullData ? null : basicError);
   const refetch = useCallback(() => { refetchBasic(); refetchFull(); }, [refetchBasic, refetchFull]);
+  const [backgroundBlogPeriod, setBackgroundBlogPeriod] = useState<Period | null>(null);
+  const canPrefetch = Boolean(data && !error);
+  useEffect(() => {
+    if (!canPrefetch || backgroundBlogPeriod === period) return;
+    // Give the overview a frame to paint before starting the background request.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setBackgroundBlogPeriod(period));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [canPrefetch, period, backgroundBlogPeriod]);
+  const loadBlogReports = blogView || (canPrefetch && backgroundBlogPeriod === period);
   const {
     data: blogGa4Data,
     loading: blogGa4Loading,
     error: blogGa4Error,
   } = useAdminApi<BlogGA4Data>(
     `/api/admin/blog-analytics?period=${period}`,
+    loadBlogReports || blogPageDetail,
+  );
+  const blogCardReport = useAdminApi<BlogCardReport>(
+    `/api/admin/posthog/blog-cards?period=${period}`,
+    loadBlogReports,
   );
   const { data: conversionData, loading: conversionLoading } = useAdminApi<ConversionData>(
     `/api/admin/posthog/conversion?period=${period}`,
+    blogView,
   );
   const { data: blogPostsData } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
 
@@ -86,6 +105,7 @@ export function useTrafficData(period: Period) {
     blogGa4Data,
     blogGa4Loading,
     blogGa4Error,
+    blogCardReport,
     // Conversion
     conversionData: conversionData?.period === period ? conversionData : null,
     conversionLoading: conversionLoading || Boolean(conversionData && conversionData.period !== period),

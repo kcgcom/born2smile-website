@@ -88,10 +88,14 @@ export function ImagesSubTab() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("newest");
   const [previewImage, setPreviewImage] = useState<ImageItem | null>(null);
+  const [previewDimensions, setPreviewDimensions] = useState<{ path: string; width: number; height: number } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const deleteLock = useRef(false);
   const previewOpen = Boolean(previewImage);
+  const previewMeta = previewImage && previewDimensions?.path === previewImage.path
+    ? { ...previewImage, width: previewDimensions.width, height: previewDimensions.height }
+    : previewImage;
   const closePreview = useCallback(() => setPreviewImage(null), []);
 
   const handleCopy = useCallback(async (url: string, path: string) => {
@@ -312,6 +316,7 @@ export function ImagesSubTab() {
                     <img
                       src={img.url}
                       alt={img.name}
+                      loading="lazy"
                       className="max-h-full max-w-full object-contain"
                     />
                   </button>
@@ -399,7 +404,7 @@ export function ImagesSubTab() {
                   {previewImage.name}
                 </p>
                 <p className="mt-0.5 text-xs text-[var(--muted)]">
-                  {[formatBytes(previewImage.size), formatImageMeta(previewImage)].filter(Boolean).join(" · ")}
+                  {[formatBytes(previewImage.size), formatImageMeta(previewMeta ?? previewImage)].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -431,8 +436,14 @@ export function ImagesSubTab() {
               )}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                key={previewImage.path}
                 src={previewImage.url}
                 alt={previewImage.name}
+                onLoad={({ currentTarget }) => setPreviewDimensions({
+                  path: previewImage.path,
+                  width: currentTarget.naturalWidth,
+                  height: currentTarget.naturalHeight,
+                })}
                 className="max-h-[50dvh] max-w-full object-contain"
               />
               {previewIndex < filteredImages.length - 1 && (

@@ -40,7 +40,7 @@ export function TrafficTab({ initialBlogView = false, initialTreatmentSection = 
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTopPage, setSelectedTopPage] = useState<string | null>(initialTreatmentSection && !initialBlogView ? "/treatments (전체)" : null);
 
-  const td = useTrafficData(period);
+  const td = useTrafficData(period, view === "blog", selectedTopPage?.startsWith("/blog/") ?? false);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectView = (next: TrafficView) => {
     setView(next);
@@ -124,7 +124,7 @@ export function TrafficTab({ initialBlogView = false, initialTreatmentSection = 
 
       <div role="tabpanel" id={`traffic-panel-${view}`} aria-labelledby={`traffic-tab-${view}`} tabIndex={0} className="space-y-6 focus-visible:outline-2 focus-visible:outline-blue-700">
       {view === "blog" && <BlogReadingPanel key={period} period={period} titles={td.blogTitleMap} />}
-      {view === "blog" && <BlogCardReportPanel period={period} />}
+      {view === "blog" && <BlogCardReportPanel period={period} {...td.blogCardReport} />}
       {/* Loading */}
       {td.loading && <AdminLoadingSkeleton variant="full" />}
 

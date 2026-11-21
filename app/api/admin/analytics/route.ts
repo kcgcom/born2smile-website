@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, secondsUntilMidnightKST } from "../_lib/cache";
-import { fetchGA4Data } from "@/lib/admin-analytics";
+import { fetchGA4BaseReports, fetchGA4Data, getGA4PeriodDates } from "@/lib/admin-analytics";
 
 const VALID_PERIODS = ["7d", "28d", "30d", "90d", "180d"];
 
@@ -20,9 +20,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const dates = getGA4PeriodDates(period);
+    const loadBaseReports = createCachedFetcher(
+      `ga4-base-v1-${period}-${dates.end}`,
+      () => fetchGA4BaseReports(dates),
+      secondsUntilMidnightKST,
+    );
+    const baseReports = await loadBaseReports();
     const getData = createCachedFetcher(
-      `ga4-${period}-${scope}`,
-      () => fetchGA4Data(period, scope),
+      `ga4-v2-${period}-${dates.end}-${scope}`,
+      () => fetchGA4Data(dates, scope, baseReports),
       secondsUntilMidnightKST,
     );
     const data = await getData();

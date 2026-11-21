@@ -2,14 +2,18 @@ import type { BlogCardReport } from "@/lib/admin-blog-cards";
 import type { ReadingPeriod } from "@/lib/blog/reading-report";
 import { AdminErrorState } from "../AdminErrorState";
 import { MetricCard } from "../MetricCard";
-import { useAdminApi } from "../useAdminApi";
 import { SectionCard } from "./SectionCard";
 
 const DATE = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium" });
 const COUNT = new Intl.NumberFormat("ko-KR");
 
-export function BlogCardReportPanel({ period }: { period: ReadingPeriod }) {
-  const { data, error, loading, refetch } = useAdminApi<BlogCardReport>(`/api/admin/posthog/blog-cards?period=${period}`);
+export function BlogCardReportPanel({ period, data, error, loading, refetch }: {
+  period: ReadingPeriod;
+  data: BlogCardReport | null;
+  error: string | null;
+  loading: boolean;
+  refetch: () => void;
+}) {
   const report = data?.configured && data.period === period ? data : null;
 
   return (

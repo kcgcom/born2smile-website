@@ -20,9 +20,17 @@ export interface PostPerformance {
   previousSearch?: { start: string; end: string; clicks: number | null };
   search: PerformanceSource<{ clicks: number; impressions: number; ctr: number; position: number | null; queries: Array<{ query: string; clicks: number; impressions: number }>; queriesAvailable: boolean }>;
   traffic: PerformanceSource<{ views: number; sessions: number; timeZone: string; thresholded: boolean }>;
-  reading: PerformanceSource<{ counts: ReadingCounts; firstObservedAt: string | null; warnings: string[] }>;
+  reading: PerformanceSource<{ counts: ReadingCounts; firstObservedAt?: string | null; warnings?: string[] }>;
+  readingFirstObserved?: PerformanceSource<{ firstObservedAt: string | null }>;
   feedback: PerformanceSource<{ solved: number; unresolved: number; total: number }>;
 }
+
+export const PERFORMANCE_SOURCES = ["feedback", "search", "traffic", "reading", "readingFirstObserved", "previousSearch"] as const;
+export type PerformanceSourceKey = typeof PERFORMANCE_SOURCES[number];
+export type PerformanceUpdate = Partial<PostPerformance> & {
+  sourceTimes?: Partial<Record<PerformanceSourceKey, string>>;
+  previousSearchStatus?: PerformanceSource<unknown>["status"];
+};
 
 export function performanceRange(period: PerformancePeriod, now = new Date(), endDate?: string) {
   // End three calendar days before today so recently incomplete search data is not compared with fresh traffic.
