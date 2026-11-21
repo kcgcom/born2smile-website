@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { getAllPublishedPostsUncached } from "../blog-supabase";
+import { getCategoryFromSlug } from "../blog/category-slugs";
 import { TREATMENT_DETAILS } from "../treatments";
 import { buildEvidenceSnapshot } from "./evidence";
 import type { EvidenceSnapshot } from "./types";
@@ -16,7 +17,17 @@ export function calculateTargetEvidenceRevision(snapshot: EvidenceSnapshot, targ
 }
 
 export async function getCurrentTargetEvidenceRevision(targetPath: string): Promise<string | null> {
-  const posts = await getAllPublishedPostsUncached();
-  const snapshot = buildEvidenceSnapshot(posts, TREATMENT_DETAILS, new Date().toISOString());
+  if (targetPath === "/faq" || targetPath.startsWith("/treatments/")) {
+    return calculateTargetEvidenceRevision(buildEvidenceSnapshot([], TREATMENT_DETAILS), targetPath);
+  }
+  if (targetPath === "/blog") {
+    return calculateTargetEvidenceRevision(buildEvidenceSnapshot(await getAllPublishedPostsUncached(), {}), targetPath);
+  }
+  const match = /^\/blog\/([^/]+)(?:\/([^/]+))?$/.exec(targetPath);
+  const category = match && getCategoryFromSlug(match[1]);
+  if (!category) return null;
+
+  const posts = await getAllPublishedPostsUncached({ category, slug: match[2] });
+  const snapshot = buildEvidenceSnapshot(posts, {});
   return calculateTargetEvidenceRevision(snapshot, targetPath);
 }

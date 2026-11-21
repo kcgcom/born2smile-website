@@ -44,7 +44,10 @@ stub("../lib/supabase-admin.ts", {
       const query = {
         select(fields) { state.reads.push({ table, fields, filters: [] }); return query; },
         eq(key, value) { state.reads.at(-1).filters.push([key, value]); return query; },
+        in(key, values) { state.reads.at(-1).filters.push([key, values]); return query; },
+        not(key, operator, value) { state.reads.at(-1).filters.push([key, operator, value]); return query; },
         order() { return query; },
+        overrideTypes() { return query; },
         maybeSingle() { return Promise.resolve(state.single); },
         then(resolve, reject) { return Promise.resolve(state.list).then(resolve, reject); },
         upsert(row) { state.writes.push(row); return Promise.resolve({ error: state.writeError }); },
@@ -68,12 +71,12 @@ beforeEach(() => {
 
 test("public hub performs one verified-only read and never returns unverified rows", async () => {
   state.list.data = [
-    { slug: "public", data: { slug: "public" }, verified: true },
-    { slug: "private", data: { slug: "private" }, verified: false },
+    { slug: "public", verified: true },
+    { slug: "private", verified: false },
   ];
   assert.deepEqual(await research.getAllResearchPagesFresh(), [{ slug: "public" }]);
   assert.equal(state.reads.length, 1);
-  assert.deepEqual(state.reads[0].filters, [["verified", true]]);
+  assert.deepEqual(state.reads[0].filters, [["verified", true], ["data", "is", null]]);
 });
 
 test("public hub failures do not expose snapshot fallback", async () => {
@@ -82,7 +85,7 @@ test("public hub failures do not expose snapshot fallback", async () => {
 });
 
 test("admin hub loads data and verification states in one read", async () => {
-  state.list.data = [{ data: { slug: "draft" }, verified: false }, { data: { slug: "live" }, verified: true }];
+  state.list.data = [{ slug: "draft", verified: false }, { slug: "live", verified: true }];
   assert.deepEqual(await research.getAllResearchPagesAdmin(), [
     { page: { slug: "draft" }, verified: false }, { page: { slug: "live" }, verified: true },
   ]);
@@ -92,6 +95,15 @@ test("admin hub loads data and verification states in one read", async () => {
 test("admin-only snapshot fallback always marks entries unverified", async () => {
   state.list.error = new Error("database unavailable");
   assert.deepEqual(await research.getAllResearchPagesAdmin(), RESEARCH_PAGES_SNAPSHOT.map((page) => ({ page, verified: false })));
+});
+
+test("blog links check publication without selecting research content", async () => {
+  state.list.data = [{ slug: "live" }];
+  assert.deepEqual(await research.getPublicResearchSlugsFresh(["live", "draft"]), new Set(["live"]));
+  assert.deepEqual(state.reads, [{
+    table: "research_pages", fields: "slug",
+    filters: [["verified", true], ["data", "is", null], ["slug", ["live", "draft"]]],
+  }]);
 });
 
 test("metadata and body share a live row within a simulated render but refresh next render", async () => {
@@ -149,12 +161,15 @@ for (const [type, getter, field, value] of [
     console.error = (...args) => logs.push(args);
     try {
       state.single.error = new Error("sensitive-credential-marker");
+      state.list.error = state.single.error;
       await getter();
       assert.equal(persistentCache.size, 0);
       assert.equal(state.noStore, 1);
       assert.equal(logs.length, 1);
       assert.equal(JSON.stringify(logs).includes("sensitive-credential-marker"), false);
       state.single = { data: { data: { [field]: value } }, error: null };
+      state.list = { data: [{ type, data: { [field]: value } }], error: null };
+      requestCaches.forEach((memo) => memo.clear());
       const recovered = await getter();
       assert.deepEqual(recovered[field], value);
       assert.equal(state.reads.length, 2);
@@ -162,3 +177,21 @@ for (const [type, getter, field, value] of [
     } finally { console.error = errorLog; }
   });
 }
+
+test("public settings share a single read for clinic, hours, and links", async () => {
+  state.list.data = [
+    { type: "clinic", data: { name: "테스트 치과" } },
+    { type: "hours", data: { notice: "진료 안내" } },
+    { type: "links", data: { instagram: "https://example.com/" } },
+  ];
+  const [clinic, hours, links] = await Promise.all([
+    settings.getSiteClinic(), settings.getSiteHours(), settings.getSiteLinks(),
+  ]);
+  assert.equal(clinic.name, "테스트 치과");
+  assert.equal(hours.notice, "진료 안내");
+  assert.equal(links.instagram, "https://example.com/");
+  assert.deepEqual(state.reads, [{
+    table: "site_config", fields: "type, data",
+    filters: [["type", ["links", "clinic", "hours"]]],
+  }]);
+});

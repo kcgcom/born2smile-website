@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache, revalidateTag, unstable_noStore as noStore } from "next/cache";
 import { localSiteConfig, assertLiveSiteConfigWrite } from "./site-config-local";
 import { getSupabaseAdmin } from "./supabase-admin";
@@ -82,66 +83,24 @@ export type SiteSchedule = {
 // Read Functions
 // =============================================================
 
-const getSiteLinksLive = unstable_cache(
-  async (): Promise<SiteLinks> => {
-    const defaults: SiteLinks = { ...LINKS };
-    const { data: row, error } = await getSupabaseAdmin()
+const getPublicSiteConfigLive = cache(unstable_cache(
+  async () => {
+    const { data, error } = await getSupabaseAdmin()
       .from(TABLE)
-      .select("data")
-      .eq("type", "links")
-      .maybeSingle();
-    if (error) throw new Error("Site config links read failed");
-    if (!row?.data) return defaults;
-    return { ...defaults, ...pickSiteLinks(row.data as Record<string, unknown>) };
-  },
-  [CACHE_TAG_LINKS],
-  { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS] },
-);
+      .select("type, data")
+      .in("type", ["links", "clinic", "hours"]);
+    if (error) throw new Error("Public site config read failed");
 
-const getSiteClinicDraftLive = unstable_cache(
-  async (): Promise<SiteClinic> => {
-    const defaults: SiteClinic = { ...CLINIC_BASE };
-    const { data: row, error } = await getSupabaseAdmin()
-      .from(TABLE)
-      .select("data")
-      .eq("type", "clinic")
-      .maybeSingle();
-    if (error) throw new Error("Site config clinic read failed");
-    if (!row?.data) return defaults;
-    const rest = stripLegacyClinicContactFields(row.data as Partial<SiteClinic & Partial<ClinicContactFields>>);
-    return { ...defaults, ...rest };
-  },
-  [CACHE_TAG_CLINIC],
-  { revalidate: CACHE_TTL, tags: [CACHE_TAG_CLINIC] },
-);
-
-const getSiteClinicLive = unstable_cache(
-  async (): Promise<ResolvedSiteClinic> => enrichClinicWithContact(await getSiteClinicDraftLive()),
-  [`${CACHE_TAG_CLINIC}-resolved`],
-  { revalidate: CACHE_TTL, tags: [CACHE_TAG_CLINIC] },
-);
-
-const getSiteHoursLive = unstable_cache(
-  async (): Promise<SiteHours> => {
-    const defaults: SiteHours = {
-      schedule: HOURS.schedule.map((s) => ({ ...s })),
-      exceptions: HOURS.exceptions.map((exception) => ({ ...exception })),
-      lunchTime: HOURS.lunchTime,
-      closedDays: HOURS.closedDays,
-      notice: HOURS.notice,
+    const rows = Object.fromEntries(data.map((row) => [row.type, row.data]));
+    return {
+      links: { ...LINKS, ...pickSiteLinks(rows.links) },
+      clinic: { ...CLINIC_BASE, ...stripLegacyClinicContactFields(rows.clinic ?? {}) },
+      hours: { ...defaultSiteHours(), ...rows.hours },
     };
-    const { data: row, error } = await getSupabaseAdmin()
-      .from(TABLE)
-      .select("data")
-      .eq("type", "hours")
-      .maybeSingle();
-    if (error) throw new Error("Site config hours read failed");
-    if (!row?.data) return defaults;
-    return { ...defaults, ...(row.data as Partial<SiteHours>) };
   },
-  [CACHE_TAG_HOURS],
-  { revalidate: CACHE_TTL, tags: [CACHE_TAG_HOURS] },
-);
+  ["site-config-public"],
+  { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS, CACHE_TAG_CLINIC, CACHE_TAG_HOURS] },
+));
 
 // =============================================================
 // Write Functions
@@ -297,33 +256,33 @@ function defaultSiteHours(): SiteHours {
   };
 }
 
-export async function getSiteLinks(): Promise<SiteLinks> {
+export const getSiteLinks = cache(async (): Promise<SiteLinks> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("links", getSiteLinksLive, () => ({ ...LINKS }))
+    ? readLiveOrDefaults("links", async () => (await getPublicSiteConfigLive()).links, () => ({ ...LINKS }))
     : { ...LINKS, ...local.links };
-}
+});
 
-export async function getSiteClinicDraft(): Promise<SiteClinic> {
+export const getSiteClinicDraft = cache(async (): Promise<SiteClinic> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("clinic", getSiteClinicDraftLive, () => ({ ...CLINIC_BASE }))
+    ? readLiveOrDefaults("clinic", async () => (await getPublicSiteConfigLive()).clinic, () => ({ ...CLINIC_BASE }))
     : { ...CLINIC_BASE, ...local.clinic };
-}
+});
 
-export async function getSiteClinic(): Promise<ResolvedSiteClinic> {
+export const getSiteClinic = cache(async (): Promise<ResolvedSiteClinic> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("clinic", getSiteClinicLive, () => enrichClinicWithContact({ ...CLINIC_BASE }))
+    ? readLiveOrDefaults("clinic", async () => enrichClinicWithContact((await getPublicSiteConfigLive()).clinic), () => enrichClinicWithContact({ ...CLINIC_BASE }))
     : enrichClinicWithContact({ ...CLINIC_BASE, ...local.clinic });
-}
+});
 
-export async function getSiteHours(): Promise<SiteHours> {
+export const getSiteHours = cache(async (): Promise<SiteHours> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("hours", getSiteHoursLive, defaultSiteHours)
+    ? readLiveOrDefaults("hours", async () => (await getPublicSiteConfigLive()).hours, defaultSiteHours)
     : { ...defaultSiteHours(), ...local.hours };
-}
+});
 
 export async function getSiteSchedule(): Promise<SiteSchedule> {
   const local = localSiteConfig();

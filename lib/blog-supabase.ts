@@ -11,6 +11,7 @@ import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 import type { BlogBlock, BlogPost, BlogPostMeta } from "./blog/types";
 import type { BlogCategorySlug, BlogCategoryValue } from "./blog/types";
 import { normalizeBlogCategory } from "./blog";
+import { getCategoryLabel } from "./blog/category-slugs";
 import { getTodayKST } from "./date";
 import { BLOG_POSTS_SNAPSHOT, type BlogSnapshotPost } from "./blog/generated/posts-snapshot";
 
@@ -188,21 +189,29 @@ function getSnapshotPost(slug: string, publicThrough?: string): BlogPost | null 
 // ---------------------------------------------------------------------------
 
 /** 관리자 분석·검증 작업용 전체 게시글 직접 조회. Next.js 캐시 컨텍스트 밖에서도 사용할 수 있다. */
-export async function getAllPublishedPostsUncached(): Promise<BlogPost[]> {
-  if (!isSupabaseAdminConfigured) return getSnapshotPublishedPosts();
+export async function getAllPublishedPostsUncached(
+  scope?: { category: BlogCategorySlug; slug?: string },
+): Promise<BlogPost[]> {
+  const fallback = () => getSnapshotPublishedPosts().filter((post) =>
+    !scope || (post.category === scope.category && (scope.slug === undefined || post.slug === scope.slug)),
+  );
+  if (!isSupabaseAdminConfigured) return fallback();
   try {
     const today = getTodayKST();
-    const { data, error } = await getSupabaseAdmin()
+    let query = getSupabaseAdmin()
       .from(TABLE)
-      .select("*")
+      .select(`${POST_META_COLUMNS}, content`)
       .eq("published", true)
       .lte("date", today)
       .order("date", { ascending: false });
+    if (scope) query = query.in("category", [scope.category, getCategoryLabel(scope.category)]);
+    if (scope?.slug !== undefined) query = query.eq("slug", scope.slug);
+    const { data, error } = await query;
     if (error) throw error;
-    return (data as DbRow[]).map((row) => rowToPost(row));
+    return data.map(rowToPost);
   } catch (error) {
     console.warn("[blog-supabase] Direct query failed, using snapshot fallback", error);
-    return getSnapshotPublishedPosts();
+    return fallback();
   }
 }
 

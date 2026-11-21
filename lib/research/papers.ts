@@ -3,6 +3,14 @@ import type { ResearchPage } from "./types";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { RESEARCH_PAGES_SNAPSHOT } from "./generated/pages-snapshot";
 
+type ResearchHubPage = Pick<ResearchPage,
+  "slug" | "title" | "category" | "description" | "hubSummary" |
+  "hubHighlightStat" | "hubHighlightLabel" | "hubHighlightContext" | "papers"
+>;
+
+const HUB_COLUMNS = "verified, slug:data->>slug, title:data->>title, category:data->>category, description:data->>description, hubSummary:data->>hubSummary, hubHighlightStat:data->>hubHighlightStat, hubHighlightLabel:data->>hubHighlightLabel, hubHighlightContext:data->>hubHighlightContext, papers:data->papers";
+type ResearchHubRow = ResearchHubPage & { verified: boolean };
+
 /** 빌드 타임 SSG용 — snapshot 기반 (verified 페이지만 포함) */
 export function getResearchPage(slug: string): ResearchPage | undefined {
   return RESEARCH_PAGES_SNAPSHOT.find((p) => p.slug === slug);
@@ -27,34 +35,37 @@ const getResearchRowForRequest = cache(async (slug: string) => {
 });
 
 /** Public hub: one live query instead of a slug query followed by N detail reads. */
-export async function getAllResearchPagesFresh(): Promise<ResearchPage[]> {
+export async function getAllResearchPagesFresh(): Promise<ResearchHubPage[]> {
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("research_pages")
-      .select("slug, data, verified")
+      .select(HUB_COLUMNS)
       .eq("verified", true)
-      .order("slug");
+      .not("data", "is", null)
+      .order("slug")
+      .overrideTypes<ResearchHubRow[], { merge: false }>();
     if (error) throw error;
     return (data ?? [])
-      .filter((row) => row.verified === true && row.data)
-      .map((row) => row.data as ResearchPage);
+      .flatMap(({ verified, ...page }) => verified === true ? [page] : []);
   } catch {
     throw new Error("연구 자료 목록을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 }
 
 /** Admin hub: retain live verification state and the existing admin-only fallback. */
-export async function getAllResearchPagesAdmin(): Promise<Array<{ page: ResearchPage; verified: boolean }>> {
+export async function getAllResearchPagesAdmin(): Promise<Array<{ page: ResearchHubPage; verified: boolean }>> {
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("research_pages")
-      .select("slug, data, verified")
-      .order("slug");
+      .select(HUB_COLUMNS)
+      .not("data", "is", null)
+      .order("slug")
+      .overrideTypes<ResearchHubRow[], { merge: false }>();
     if (error) throw error;
     if (data?.length) {
-      return data.filter((row) => row.data).map((row) => ({
-        page: row.data as ResearchPage,
-        verified: row.verified === true,
+      return data.map(({ verified, ...page }) => ({
+        page,
+        verified: verified === true,
       }));
     }
   } catch {
@@ -98,12 +109,13 @@ export async function getPublicResearchSlugsFresh(slugs: string[]): Promise<Set<
 
   const { data, error } = await getSupabaseAdmin()
     .from("research_pages")
-    .select("slug, data")
+    .select("slug")
     .eq("verified", true)
+    .not("data", "is", null)
     .in("slug", slugs);
 
   if (error) throw error;
-  return new Set(data.filter((row) => row.data).map((row) => row.slug));
+  return new Set(data.map((row) => row.slug));
 }
 
 // ─── Admin (all pages) ────────────────────────────────────────────────────────
