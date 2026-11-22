@@ -75,6 +75,8 @@ export default async function RootLayout({
       className={`${pretendard.variable} ${notoSerifKR.variable} ${gowunBatang.variable}`}
     >
       <head>
+        {/* Safari가 hydration 전에 본문을 자동 링크로 바꾸지 않도록 한다. */}
+        <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
         <meta name="theme-color" content="#2563EB" />
         <link
           rel="alternate"
