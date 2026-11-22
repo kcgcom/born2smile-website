@@ -39,6 +39,10 @@ function getBlogPostCacheTag(slug: string): string {
   return `blog-post-${slug}`;
 }
 
+export function expireBlogPostCache(slug: string): void {
+  revalidateTag(getBlogPostCacheTag(slug), { expire: 0 });
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -289,28 +293,31 @@ export async function getAllPostMetasFresh(): Promise<
  */
 export const getPostBySlug = cache(async (slug: string): Promise<BlogPost | null> => {
   const today = getTodayKST();
-  return unstable_cache(
-    async (): Promise<BlogPost | null> => {
-      if (!FORCE_PUBLIC_SNAPSHOT && isSupabaseAdminConfigured) {
-        try {
-          const { data, error } = await getSupabaseAdmin()
-            .from(TABLE)
-            .select(`${POST_META_COLUMNS}, content`)
-            .eq("slug", slug)
-            .eq("published", true)
-            .lte("date", today)
-            .maybeSingle();
-          if (error) throw error;
-          return data ? rowToPost(data) : null;
-        } catch (error) {
-          console.warn("[blog-supabase] Public post query failed, using snapshot fallback", error);
-        }
-      }
-      return getSnapshotPost(slug, today);
-    },
-    [`${getBlogPostCacheTag(slug)}-single-${PUBLIC_QUERY_CACHE_SEGMENT}-${today}`],
-    { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
-  )();
+  if (FORCE_PUBLIC_SNAPSHOT || !isSupabaseAdminConfigured) {
+    return getSnapshotPost(slug, today);
+  }
+
+  try {
+    const post = await unstable_cache(
+      async (): Promise<BlogPost | null> => {
+        const { data, error } = await getSupabaseAdmin()
+          .from(TABLE)
+          .select(`${POST_META_COLUMNS}, content`)
+          .eq("slug", slug)
+          .eq("published", true)
+          .maybeSingle();
+        if (error) throw error;
+        return data ? rowToPost(data) : null;
+      },
+      [`${getBlogPostCacheTag(slug)}-single-${PUBLIC_QUERY_CACHE_SEGMENT}`],
+      { revalidate: CACHE_TTL, tags: [getBlogPostCacheTag(slug)] },
+    )();
+    // Apply the publication date after reading the server cache, including on a cache hit.
+    return post && post.date <= today ? post : null;
+  } catch (error) {
+    console.warn("[blog-supabase] Public post query failed, using snapshot fallback", error);
+    return getSnapshotPost(slug, today);
+  }
 });
 
 /**
@@ -519,12 +526,12 @@ export async function updateBlogPost(
       .maybeSingle();
     if (error) throw error;
     if (saved) {
+      expireBlogPostCache(slug);
       const today = getTodayKST();
       if (!(privateState.published && privateState.date <= today) && !(saved.published && saved.date <= today)) {
         return false;
       }
       safeRevalidateTag(CACHE_TAG);
-      safeRevalidateTag(getBlogPostCacheTag(slug));
       return true;
     }
   }
@@ -536,8 +543,8 @@ export async function updateBlogPost(
 
   if (error) throw error;
 
+  expireBlogPostCache(slug);
   safeRevalidateTag(CACHE_TAG);
-  safeRevalidateTag(getBlogPostCacheTag(slug));
   return true;
 }
 
@@ -552,6 +559,6 @@ export async function deleteBlogPost(slug: string): Promise<void> {
 
   if (error) throw error;
 
+  expireBlogPostCache(slug);
   safeRevalidateTag(CACHE_TAG);
-  safeRevalidateTag(getBlogPostCacheTag(slug));
 }

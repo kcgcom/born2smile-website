@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getBlogPostUrl, getCategorySlug } from "@/lib/blog";
+import { expireBlogPostCache } from "@/lib/blog-supabase";
 import type { BlogCategoryValue } from "@/lib/blog/types";
 
 interface BlogCacheTarget {
@@ -22,7 +23,7 @@ export function revalidateBlogCaches(target: BlogCacheTarget | BlogCacheTarget[]
   revalidatePath("/sitemap.xml");
 
   for (const item of targets) {
-    if (item.slug) revalidateTag(`blog-post-${item.slug}`, "max");
+    if (item.slug) expireBlogPostCache(item.slug);
 
     if (item.category) {
       revalidateCategory(item.category);
