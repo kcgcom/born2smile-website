@@ -75,12 +75,19 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
-  test('관리자 로그인 페이지에 Google 로그인 버튼이 표시된다', async ({ page }) => {
+  test('원장 로그인을 펼치면 Google 로그인 버튼이 표시된다', async ({ page }) => {
     const response = await page.goto('/admin/login');
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/login$/);
-    await expect(page.getByRole('button', { name: '원장 Google 로그인' })).toBeEnabled();
     await expect(page.getByRole('button', { name: '직원 로그인' })).toBeEnabled();
+    await expect(page.getByLabel('이메일', { exact: true })).toBeVisible();
+    const googleLogin = page.getByRole('button', { name: '원장 Google 로그인', exact: true });
+    await expect(googleLogin).toBeHidden();
+    const ownerLogin = page.getByText('원장 로그인', { exact: true });
+    await ownerLogin.press('Enter');
+    await expect(googleLogin).toBeVisible();
+    await ownerLogin.press('Enter');
+    await expect(googleLogin).toBeHidden();
   });
 
   test('콘텐츠 워크스페이스 핵심 경로는 로그인으로 보호된다', async ({ page }) => {
