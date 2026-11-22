@@ -5,6 +5,7 @@
  * - Clusters via cosine similarity + Union-Find
  */
 
+import { createHash } from "node:crypto";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "./supabase-admin";
 import {
   embedGeminiTexts,
@@ -77,54 +78,102 @@ export async function embedKeywordsForClustering(texts: string[]): Promise<numbe
 // Embedding cache (Supabase api_cache)
 // ---------------------------------------------------------------
 
-async function loadEmbeddingCache(): Promise<EmbeddingCache> {
-  if (!isSupabaseAdminConfigured) return {};
+const EMBEDDING_CACHE_BATCH_SIZE = 40;
+const LEGACY_PROJECTION_BATCH_SIZE = 12;
 
-  const admin = getSupabaseAdmin();
-  const { data, error } = await admin
-    .from("api_cache")
-    .select("data")
-    .eq("key", CACHE_KEY)
-    .maybeSingle();
+function embeddingCacheKey(query: string): string {
+  return `${CACHE_KEY}:query:${createHash("sha256").update(query).digest("hex")}`;
+}
 
+async function loadEmbeddingCache(queries: string[]): Promise<EmbeddingCache> {
+  const cache: EmbeddingCache = Object.create(null);
+  if (queries.length === 0) return cache;
+
+  const { data, error } = await getSupabaseAdmin().rpc("get_keyword_embedding_cache_entries", {
+    p_cache_key: CACHE_KEY,
+    p_query_keys: Object.fromEntries(queries.map((query) => [query, embeddingCacheKey(query)])),
+    p_dimensions: EMBEDDING_DIMS,
+  });
+  if (error?.code === "PGRST202") return loadEmbeddingCacheWithoutRpc(queries);
   if (error) throw error;
-
-  if (!data?.data) return {};
-  const rawEmbeddings = (data.data as { embeddings?: unknown }).embeddings;
-  if (!rawEmbeddings || typeof rawEmbeddings !== "object" || Array.isArray(rawEmbeddings)) {
-    return {};
-  }
-
-  const cache: EmbeddingCache = {};
-  let invalidCount = 0;
-  for (const [query, vector] of Object.entries(rawEmbeddings)) {
-    if (isValidEmbeddingVector(vector)) {
-      cache[query] = vector;
-    } else {
-      invalidCount++;
-    }
-  }
-  if (invalidCount > 0) {
-    console.warn(`[keyword-embeddings] Ignored ${invalidCount} invalid cached vectors`);
+  if (!Array.isArray(data)) throw new Error("Invalid keyword embedding cache response");
+  for (const row of data as Array<{ query: string; embedding: unknown }>) {
+    if (isValidEmbeddingVector(row.embedding)) cache[row.query] = row.embedding;
   }
   return cache;
 }
 
-async function saveEmbeddingCache(cache: EmbeddingCache): Promise<void> {
-  if (!isSupabaseAdminConfigured) return;
-
+// Retain the projection path while the database migration is pending.
+async function loadEmbeddingCacheWithoutRpc(queries: string[]): Promise<EmbeddingCache> {
   const admin = getSupabaseAdmin();
-  const { error } = await admin.from("api_cache").upsert({
-    key: CACHE_KEY,
-    data: {
-      model: GEMINI_MODEL,
-      dimensions: EMBEDDING_DIMS,
-      embeddings: cache,
-    },
-    fetched_at: new Date().toISOString(),
-  });
+  const cache: EmbeddingCache = Object.create(null);
+  const queriesByKey = new Map(queries.map((query) => [embeddingCacheKey(query), query]));
+  const keys = [...queriesByKey.keys()];
+  for (let offset = 0; offset < keys.length; offset += EMBEDDING_CACHE_BATCH_SIZE) {
+    const { data, error } = await admin.from("api_cache")
+      .select("key,data")
+      .in("key", keys.slice(offset, offset + EMBEDDING_CACHE_BATCH_SIZE));
+    if (error) throw error;
+    for (const row of data) {
+      const query = queriesByKey.get(row.key);
+      if (query !== undefined && isValidEmbeddingVector(row.data)) cache[query] = row.data;
+    }
+  }
 
-  if (error) throw error;
+  const missing = queries.filter((query) => !cache[query]);
+  const projected: string[] = [];
+  const other: string[] = [];
+  for (const query of missing) {
+    // The client strips whitespace outside quotes and does not recognize escaped
+    // quotes. Keep uncommon keys and oversized URLs on the legacy read path.
+    if (!query || /["\\\x00-\x1f]/.test(query) || Buffer.byteLength(query) > 120) {
+      other.push(query);
+    } else {
+      projected.push(query);
+    }
+  }
+
+  for (let offset = 0; offset < projected.length; offset += LEGACY_PROJECTION_BATCH_SIZE) {
+    const batch = projected.slice(offset, offset + LEGACY_PROJECTION_BATCH_SIZE);
+    const columns = batch.map((query, index) => `v${index}:data->embeddings->"${query}"`).join(",");
+    const { data, error } = await admin.from("api_cache").select(columns).eq("key", CACHE_KEY)
+      .maybeSingle().overrideTypes<Record<string, unknown> | null, { merge: false }>();
+    if (error) throw error;
+    batch.forEach((query, index) => {
+      const vector = data?.[`v${index}`];
+      if (isValidEmbeddingVector(vector)) cache[query] = vector;
+    });
+  }
+
+  if (other.length > 0) {
+    const { data, error } = await admin.from("api_cache")
+      .select("embeddings:data->embeddings").eq("key", CACHE_KEY).maybeSingle();
+    if (error) throw error;
+    const embeddings = data?.embeddings as Record<string, unknown> | undefined;
+    for (const query of other) {
+      const vector = embeddings?.[query];
+      if (isValidEmbeddingVector(vector)) cache[query] = vector;
+    }
+  }
+  return cache;
+}
+
+async function saveEmbeddingCache(queries: string[], vectors: number[][]): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const fetchedAt = new Date().toISOString();
+  const rows = queries.map((query, index) => ({
+    key: embeddingCacheKey(query),
+    data: vectors[index],
+    fetched_at: fetchedAt,
+  }));
+
+  for (let offset = 0; offset < rows.length; offset += EMBEDDING_CACHE_BATCH_SIZE) {
+    const { error } = await admin.from("api_cache").upsert(
+      rows.slice(offset, offset + EMBEDDING_CACHE_BATCH_SIZE),
+      { onConflict: "key" },
+    );
+    if (error) throw error;
+  }
 }
 
 // ---------------------------------------------------------------
@@ -402,30 +451,23 @@ export async function computeSemanticClusterGroups(
   }
 
   try {
-    // 1. Load cached embeddings
-    const cache = await loadEmbeddingCache();
+    const queries = [...new Set(queryGroups.flatMap((group) => group.map((row) => row.query)))];
+    const cache = await loadEmbeddingCache(queries);
+    const newKeywords = queries.filter((query) => !cache[query]);
 
-    // 2. Find new keywords
-    const newKeywords = Array.from(
-      new Set(queryGroups.flatMap((queries) => queries.map((q) => q.query))),
-    )
-      .filter((q) => !cache[q]);
-
-    // 3. Embed new keywords if any
     if (newKeywords.length > 0) {
       try {
         const newEmbeddings = await embedKeywordsForClustering(newKeywords);
         for (let i = 0; i < newKeywords.length; i++) {
           cache[newKeywords[i]] = newEmbeddings[i];
         }
-        await saveEmbeddingCache(cache);
+        await saveEmbeddingCache(newKeywords, newEmbeddings);
       } catch (apiErr) {
         // API 실패 시 캐시된 임베딩만으로 클러스터링 진행 (새 키워드는 단독 처리)
         console.warn("[keyword-embeddings] Gemini API failed, using cached embeddings:", apiErr);
       }
     }
 
-    // 4. Cluster (캐시에 있는 키워드만 클러스터링됨)
     return queryGroups.map((queries) => {
       const result = clusterByEmbeddings(queries, cache, CLUSTER_THRESHOLD);
       return result.length > 0 ? result : null;

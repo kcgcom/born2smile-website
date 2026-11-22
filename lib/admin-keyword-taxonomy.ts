@@ -11,7 +11,7 @@ import {
   GENERATED_KEYWORD_TAXONOMY_VERSION,
 } from "@/lib/keyword-taxonomy/generated/active-snapshot";
 import { isRelevantRelatedKeyword } from "@/lib/admin-naver-datalab-keywords";
-import type { SearchAdKeywordData } from "@/lib/admin-naver-searchad";
+import { getActiveSearchAdSnapshotRecord } from "@/lib/admin-searchad-active-snapshot";
 import { validateKeywordCandidateBatchSize } from "@/lib/keyword-candidate-triage";
 
 const topicAngleSchema = z.object({
@@ -193,7 +193,7 @@ async function savePendingKeywordTaxonomy(
 export async function refreshKeywordTaxonomyCandidates(): Promise<number> {
   const [{ taxonomy }, snapshot] = await Promise.all([
     getActiveKeywordTaxonomy(),
-    getCandidateSourceSnapshot(),
+    getActiveSearchAdSnapshotRecord({ allowMissingPointerTable: false }),
   ]);
   if (!snapshot) return 0;
 
@@ -263,24 +263,6 @@ export async function refreshKeywordTaxonomyCandidates(): Promise<number> {
   });
   if (error) throw error;
   return candidates.length;
-}
-
-async function getCandidateSourceSnapshot(): Promise<{ id: string; data: SearchAdKeywordData[] } | null> {
-  const admin = getSupabaseAdmin();
-  const { data: pointer, error: pointerError } = await admin
-    .from("searchad_snapshot_pointer")
-    .select("snapshot_id")
-    .eq("singleton", true)
-    .maybeSingle();
-  if (pointerError) throw pointerError;
-  if (!pointer?.snapshot_id) return null;
-  const { data, error } = await admin
-    .from("searchad_snapshots")
-    .select("id,data")
-    .eq("id", pointer.snapshot_id)
-    .single();
-  if (error) throw error;
-  return Array.isArray(data.data) ? { id: data.id, data: data.data as SearchAdKeywordData[] } : null;
 }
 
 export async function listKeywordTaxonomyCandidates(): Promise<KeywordTaxonomyCandidate[]> {

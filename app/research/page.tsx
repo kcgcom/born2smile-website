@@ -98,7 +98,7 @@ export default async function ResearchHubPage() {
                         {page.category}
                       </span>
                       <span className="text-xs text-gray-400">
-                        논문 {page.papers.length}편
+                        논문 {page.paperCount}편
                       </span>
                       {!verified && (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
@@ -130,7 +130,7 @@ export default async function ResearchHubPage() {
                         </>
                       ) : (
                         (() => {
-                          const fallback = page.papers[0]?.keyFindings[0];
+                          const fallback = page.firstFinding;
                           return fallback ? (
                             <>
                               <p className="text-2xl font-bold leading-none text-blue-700">

@@ -9,9 +9,10 @@ import { fetchNaverDatalabByCategory } from "@/lib/admin-naver-datalab";
 import {
   fetchKeywordSearchVolume,
   isSearchAdConfigured,
-  type SearchAdKeywordData,
 } from "@/lib/admin-naver-searchad";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+
+export { getActiveSearchAdSnapshotRecord, type ActiveSearchAdSnapshot } from "@/lib/admin-searchad-active-snapshot";
 
 export type SearchAdSyncStatus = "idle" | "queued" | "running" | "completed" | "failed";
 
@@ -29,13 +30,6 @@ export interface SearchAdSyncState {
   candidateAnalysisStatus: "pending" | "running" | "completed" | "failed" | null;
   candidateAnalysisError: string | null;
   candidateAnalyzedAt: string | null;
-}
-
-export interface ActiveSearchAdSnapshot {
-  id: string;
-  createdAt: string;
-  data: SearchAdKeywordData[];
-  taxonomyVersion: number | null;
 }
 
 interface SyncJobRow {
@@ -57,36 +51,6 @@ export function getAllSearchAdKeywords(taxonomy: CategoryKeywords[]): string[] {
       category.subGroups.flatMap((subGroup) => subGroup.keywords),
     ),
   )];
-}
-
-export async function getActiveSearchAdSnapshotRecord(): Promise<ActiveSearchAdSnapshot | null> {
-  const admin = getSupabaseAdmin();
-  const { data: pointer, error: pointerError } = await admin
-    .from("searchad_snapshot_pointer")
-    .select("snapshot_id")
-    .eq("singleton", true)
-    .maybeSingle();
-
-  if (pointerError) {
-    if (pointerError.code === "42P01") return null;
-    throw pointerError;
-  }
-  if (!pointer?.snapshot_id) return null;
-
-  const { data: snapshot, error } = await admin
-    .from("searchad_snapshots")
-    .select("id,data,created_at,taxonomy_version")
-    .eq("id", pointer.snapshot_id)
-    .single();
-  if (error) throw error;
-  return Array.isArray(snapshot.data)
-    ? {
-        id: snapshot.id,
-        createdAt: snapshot.created_at,
-        data: snapshot.data as SearchAdKeywordData[],
-        taxonomyVersion: snapshot.taxonomy_version,
-      }
-    : null;
 }
 
 export async function createSearchAdSyncJob(createdBy: string): Promise<SearchAdSyncState> {

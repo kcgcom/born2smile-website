@@ -3,13 +3,41 @@ import type { ResearchPage } from "./types";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { RESEARCH_PAGES_SNAPSHOT } from "./generated/pages-snapshot";
 
-type ResearchHubPage = Pick<ResearchPage,
+type ResearchHubCard = Pick<ResearchPage,
   "slug" | "title" | "category" | "description" | "hubSummary" |
-  "hubHighlightStat" | "hubHighlightLabel" | "hubHighlightContext" | "papers"
->;
+  "hubHighlightStat" | "hubHighlightLabel" | "hubHighlightContext"
+> & {
+  paperCount: number;
+  firstFinding?: ResearchPage["papers"][number]["keyFindings"][number] | null;
+};
 
 const HUB_COLUMNS = "verified, slug:data->>slug, title:data->>title, category:data->>category, description:data->>description, hubSummary:data->>hubSummary, hubHighlightStat:data->>hubHighlightStat, hubHighlightLabel:data->>hubHighlightLabel, hubHighlightContext:data->>hubHighlightContext, papers:data->papers";
-type ResearchHubRow = ResearchHubPage & { verified: boolean };
+type ResearchHubRow = Omit<ResearchHubCard, "paperCount" | "firstFinding"> & Pick<ResearchPage, "papers">;
+type VerifiedResearchHubCard = { card: ResearchHubCard; verified: boolean };
+
+function toResearchHubCard({ papers, ...page }: ResearchHubRow): ResearchHubCard {
+  return { ...page, paperCount: papers?.length ?? 0, firstFinding: papers?.[0]?.keyFindings[0] };
+}
+
+async function readResearchHubCards(includeUnverified: boolean): Promise<VerifiedResearchHubCard[]> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.rpc("get_research_hub_cards", {
+    p_include_unverified: includeUnverified,
+  });
+  if (!error) {
+    if (!Array.isArray(data)) throw new Error("Invalid research hub response");
+    return data as VerifiedResearchHubCard[];
+  }
+  if (error.code !== "PGRST202") throw error;
+
+  // Keep the hub available while the database migration is pending.
+  let query = admin.from("research_pages").select(HUB_COLUMNS).not("data", "is", null);
+  if (!includeUnverified) query = query.eq("verified", true);
+  const legacy = await query.order("slug")
+    .overrideTypes<Array<ResearchHubRow & { verified: boolean }>, { merge: false }>();
+  if (legacy.error) throw legacy.error;
+  return (legacy.data ?? []).map(({ verified, ...page }) => ({ verified, card: toResearchHubCard(page) }));
+}
 
 /** 빌드 타임 SSG용 — snapshot 기반 (verified 페이지만 포함) */
 export function getResearchPage(slug: string): ResearchPage | undefined {
@@ -35,43 +63,29 @@ const getResearchRowForRequest = cache(async (slug: string) => {
 });
 
 /** Public hub: one live query instead of a slug query followed by N detail reads. */
-export async function getAllResearchPagesFresh(): Promise<ResearchHubPage[]> {
+export async function getAllResearchPagesFresh(): Promise<ResearchHubCard[]> {
   try {
-    const { data, error } = await getSupabaseAdmin()
-      .from("research_pages")
-      .select(HUB_COLUMNS)
-      .eq("verified", true)
-      .not("data", "is", null)
-      .order("slug")
-      .overrideTypes<ResearchHubRow[], { merge: false }>();
-    if (error) throw error;
-    return (data ?? [])
-      .flatMap(({ verified, ...page }) => verified === true ? [page] : []);
+    return (await readResearchHubCards(false))
+      .flatMap(({ verified, card }) => verified === true ? [card] : []);
   } catch {
     throw new Error("연구 자료 목록을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 }
 
 /** Admin hub: retain live verification state and the existing admin-only fallback. */
-export async function getAllResearchPagesAdmin(): Promise<Array<{ page: ResearchHubPage; verified: boolean }>> {
+export async function getAllResearchPagesAdmin(): Promise<Array<{ page: ResearchHubCard; verified: boolean }>> {
   try {
-    const { data, error } = await getSupabaseAdmin()
-      .from("research_pages")
-      .select(HUB_COLUMNS)
-      .not("data", "is", null)
-      .order("slug")
-      .overrideTypes<ResearchHubRow[], { merge: false }>();
-    if (error) throw error;
-    if (data?.length) {
-      return data.map(({ verified, ...page }) => ({
-        page,
+    const cards = await readResearchHubCards(true);
+    if (cards.length) {
+      return cards.map(({ verified, card }) => ({
+        page: card,
         verified: verified === true,
       }));
     }
   } catch {
     // Snapshot fallback is for authenticated admin screens only.
   }
-  return RESEARCH_PAGES_SNAPSHOT.map((page) => ({ page, verified: false }));
+  return RESEARCH_PAGES_SNAPSHOT.map((page) => ({ page: toResearchHubCard(page), verified: false }));
 }
 
 /** 런타임 공개용 — verified=true인 페이지만 반환 */

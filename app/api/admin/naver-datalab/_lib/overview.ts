@@ -180,10 +180,26 @@ function buildSubGroupVolumes(
 }
 
 type DatalabSettledResults = PromiseSettledResult<{ ck: CategoryKeywords; raw: NaverDatalabData }>[];
+type DatalabSnapshotCategory = { slug: KeywordCategorySlug; raw: NaverDatalabData };
+type DatalabSnapshotRow = {
+  taxonomy_version: number;
+  short_term_data?: DatalabSnapshotCategory[];
+  long_term_data?: DatalabSnapshotCategory[];
+};
 
-async function getActiveDatalabSnapshot(taxonomyVersion: number): Promise<{
-  shortTerm: DatalabSettledResults;
-  longTerm: DatalabSettledResults;
+const DATALAB_SNAPSHOT_COLUMNS = {
+  short: "taxonomy_version,short_term_data",
+  long: "taxonomy_version,long_term_data",
+  both: "taxonomy_version,short_term_data,long_term_data",
+} as const;
+
+async function getActiveDatalabSnapshot(
+  taxonomyVersion: number,
+  taxonomy: CategoryKeywords[],
+  detail: TrendDetailScope,
+): Promise<{
+  shortTerm: DatalabSettledResults | null;
+  longTerm: DatalabSettledResults | null;
 } | null> {
   const admin = getSupabaseAdmin();
   const { data: pointer, error: pointerError } = await admin
@@ -199,14 +215,14 @@ async function getActiveDatalabSnapshot(taxonomyVersion: number): Promise<{
 
   const { data, error } = await admin
     .from("datalab_snapshots")
-    .select("taxonomy_version,short_term_data,long_term_data")
+    .select(DATALAB_SNAPSHOT_COLUMNS[detail])
     .eq("id", pointer.snapshot_id)
-    .single();
+    .single()
+    .overrideTypes<DatalabSnapshotRow, { merge: false }>();
   if (error) throw error;
   if (data.taxonomy_version !== taxonomyVersion) return null;
 
-  const taxonomy = (await getActiveKeywordTaxonomy()).taxonomy;
-  const toSettled = (rows: Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>): DatalabSettledResults =>
+  const toSettled = (rows: DatalabSnapshotCategory[]): DatalabSettledResults =>
     taxonomy.map((ck) => {
       const row = rows.find((item) => item.slug === ck.slug);
       return row
@@ -215,8 +231,8 @@ async function getActiveDatalabSnapshot(taxonomyVersion: number): Promise<{
     });
 
   return {
-    shortTerm: toSettled(data.short_term_data as Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>),
-    longTerm: toSettled(data.long_term_data as Array<{ slug: KeywordCategorySlug; raw: NaverDatalabData }>),
+    shortTerm: data.short_term_data ? toSettled(data.short_term_data) : null,
+    longTerm: data.long_term_data ? toSettled(data.long_term_data) : null,
   };
 }
 
@@ -271,7 +287,7 @@ export async function getTrendOverviewBaseData(period: string, mode: TrendOvervi
   // DataLab 단기/장기를 직렬 호출 (API 속도 제한 방지)
   // SearchAd 볼륨은 독립 API이므로 병렬 가능
   const storedDatalab = fetchDatalab && activeTaxonomy.version != null
-    ? await getActiveDatalabSnapshot(activeTaxonomy.version)
+    ? await getActiveDatalabSnapshot(activeTaxonomy.version, keywordTaxonomy, detail)
     : null;
   const volumeResultPromise = fetchVolume
     ? fetchVolumeOverviewData(keywordTaxonomy, activeTaxonomy.version)

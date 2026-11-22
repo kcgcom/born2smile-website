@@ -40,6 +40,10 @@ stub("next/cache", {
 });
 stub("../lib/supabase-admin.ts", {
   getSupabaseAdmin: () => ({
+    rpc(name, args) {
+      state.reads.push({ name, args });
+      return Promise.resolve(state.rpc);
+    },
     from(table) {
       const query = {
         select(fields) { state.reads.push({ table, fields, filters: [] }); return query; },
@@ -64,28 +68,32 @@ beforeEach(() => {
   state.reads = []; state.writes = []; state.tags = [];
   state.single = { data: null, error: null };
   state.list = { data: [], error: null };
+  state.rpc = { data: [], error: null };
   state.writeError = null; state.noStore = 0;
   requestCaches.forEach((memo) => memo.clear());
   persistentCache.clear();
 });
 
 test("public hub performs one verified-only read and never returns unverified rows", async () => {
-  state.list.data = [
-    { slug: "public", verified: true },
-    { slug: "private", verified: false },
+  state.rpc.data = [
+    { card: { slug: "public" }, verified: true },
+    { card: { slug: "private" }, verified: false },
   ];
   assert.deepEqual(await research.getAllResearchPagesFresh(), [{ slug: "public" }]);
   assert.equal(state.reads.length, 1);
-  assert.deepEqual(state.reads[0].filters, [["verified", true], ["data", "is", null]]);
+  assert.deepEqual(state.reads[0], { name: "get_research_hub_cards", args: { p_include_unverified: false } });
 });
 
 test("public hub failures do not expose snapshot fallback", async () => {
-  state.list.error = new Error("database unavailable");
+  state.rpc.error = new Error("database unavailable");
   await assert.rejects(research.getAllResearchPagesFresh(), /목록을 확인하지 못했습니다/);
 });
 
 test("admin hub loads data and verification states in one read", async () => {
-  state.list.data = [{ slug: "draft", verified: false }, { slug: "live", verified: true }];
+  state.rpc.data = [
+    { card: { slug: "draft" }, verified: false },
+    { card: { slug: "live" }, verified: true },
+  ];
   assert.deepEqual(await research.getAllResearchPagesAdmin(), [
     { page: { slug: "draft" }, verified: false }, { page: { slug: "live" }, verified: true },
   ]);
@@ -93,8 +101,18 @@ test("admin hub loads data and verification states in one read", async () => {
 });
 
 test("admin-only snapshot fallback always marks entries unverified", async () => {
-  state.list.error = new Error("database unavailable");
-  assert.deepEqual(await research.getAllResearchPagesAdmin(), RESEARCH_PAGES_SNAPSHOT.map((page) => ({ page, verified: false })));
+  state.rpc.error = new Error("database unavailable");
+  const cards = await research.getAllResearchPagesAdmin();
+  assert.deepEqual(cards.map(({ page, verified }) => [page.slug, page.paperCount, verified]),
+    RESEARCH_PAGES_SNAPSHOT.map((page) => [page.slug, page.papers.length, false]));
+});
+
+test("public hub falls back to the existing verified-only query until migration", async () => {
+  state.rpc.error = { code: "PGRST202" };
+  const firstFinding = { stat: "95%", label: "대표 근거" };
+  state.list.data = [{ slug: "public", verified: true, papers: [{ keyFindings: [firstFinding] }] }];
+  assert.deepEqual(await research.getAllResearchPagesFresh(), [{ slug: "public", paperCount: 1, firstFinding }]);
+  assert.deepEqual(state.reads[1].filters, [["data", "is", null], ["verified", true]]);
 });
 
 test("blog links check publication without selecting research content", async () => {
