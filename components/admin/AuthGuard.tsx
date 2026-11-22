@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
-import { getAdminHome, canOpenAdminPage } from "@/lib/admin-access";
+import { getStaffHome, canOpenStaffPage } from "@/lib/admin-access";
 
 export function AuthGuard({
   children,
@@ -15,15 +15,17 @@ export function AuthGuard({
   const { access, loading, user } = useAdminAuthState();
   const router = useRouter();
   const pathname = usePathname();
-  const allowed = access && canOpenAdminPage(access, pathname);
+  const staff = pathname === "/staff" || pathname.startsWith("/staff/");
+  const login = staff ? "/staff/login" : "/admin/login";
+  const allowed = access && (staff ? canOpenStaffPage(access, pathname) : access.isOwner);
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/admin/login");
+      router.replace(login);
     } else if (access && !allowed) {
-      router.replace(getAdminHome(access));
+      router.replace(getStaffHome(access));
     }
-  }, [allowed, loading, access, router, user]);
+  }, [allowed, loading, access, login, router, user]);
 
   if (loading) {
     return (
@@ -58,7 +60,7 @@ export function AuthGuard({
           <AdminActionButton
             onClick={() => {
               import("@/lib/admin-auth").then(({ signOutAdmin }) => signOutAdmin());
-              router.replace("/admin/login");
+              router.replace(login);
             }}
             tone="primary"
             className="px-6 py-3"

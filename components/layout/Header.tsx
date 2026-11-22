@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Phone, Settings } from "lucide-react";
+import { Phone, Settings } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
-import { CLOSE_MOBILE_MENU_EVENT } from "@/components/layout/mobileMenuEvents";
+import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
@@ -14,8 +14,7 @@ export function Header() {
   const pathname = usePathname();
   const isAdmin = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const mobileMenu = useMobileNavigation("mobile-menu");
   const headerClinicName = CLINIC.name === "서울본치과" ? "서울본치과의원" : CLINIC.name;
   const adminHref = pathname.startsWith("/blog")
     ? "/admin/content/posts"
@@ -35,48 +34,6 @@ export function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    const handleCloseMobileMenu = () => setIsMobileMenuOpen(false);
-
-    window.addEventListener(CLOSE_MOBILE_MENU_EVENT, handleCloseMobileMenu);
-    return () => window.removeEventListener(CLOSE_MOBILE_MENU_EVENT, handleCloseMobileMenu);
-  }, []);
-
-  // 모바일 메뉴 열림 시 배경 스크롤 방지 + Escape 키 닫기
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          setIsMobileMenuOpen(false);
-        }
-        // 포커스 트랩: Tab 키가 메뉴 밖으로 나가지 않도록
-        if (e.key === "Tab" && menuRef.current) {
-          const focusable = menuRef.current.querySelectorAll<HTMLElement>(
-            'a[href], button, [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length === 0) return;
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      };
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        document.body.style.overflow = "";
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [isMobileMenuOpen]);
 
   const handleNavClick = useCallback(
     (href: string) => {
@@ -176,73 +133,32 @@ export function Header() {
               <Phone size={16} aria-hidden="true" />
               <span className="hidden whitespace-nowrap min-[390px]:inline">{CLINIC.phone}</span>
             </TrackedAnchor>
-            <button
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <MobileMenuButton menu={mobileMenu} />
           </div>
         </div>
 
-        {/* 모바일 메뉴: 닫힌 상태에서는 DOM에서 제거해 포커스/스크린리더 혼선 방지 */}
-        {isMobileMenuOpen && (
-          <div
-            id="mobile-menu"
-            ref={menuRef}
-            className="min-h-0 overflow-y-auto overscroll-contain border-t border-[var(--border)] bg-[var(--surface)] lg:hidden"
+        <MobileMenuPanel menu={mobileMenu} pathname={pathname} onNavigate={handleNavClick}>
+          <TrackedAnchor
+            href={CLINIC.phoneHref}
+            event="header_phone_click"
+            properties={{ cta_location: "mobile_menu_phone", page_type: "global" }}
+            className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+            aria-label={`전화 상담 ${CLINIC.phone}`}
           >
-            <nav className="flex flex-col px-4 py-4" aria-label="모바일 메뉴">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex min-h-[44px] items-center border-b border-[var(--background)] text-base font-medium ${
-                      isActive
-                        ? "text-[var(--color-primary)]"
-                        : "text-[var(--foreground)]"
-                    }`}
-                    aria-current={isActive ? "page" : undefined}
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleNavClick(item.href);
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-              <TrackedAnchor
-                href={CLINIC.phoneHref}
-                event="header_phone_click"
-                properties={{ cta_location: "mobile_menu_phone", page_type: "global" }}
-                className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
-                aria-label={`전화 상담 ${CLINIC.phone}`}
-              >
-                <Phone size={18} aria-hidden="true" />
-                전화 상담 {CLINIC.phone}
-              </TrackedAnchor>
-              {isAdmin && (
-                <Link
-                  href={adminHref}
-                  className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-slate-900 px-5 py-3 text-base font-medium text-white"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Settings size={18} aria-hidden="true" />
-                  관리자 페이지
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
+            <Phone size={18} aria-hidden="true" />
+            전화 상담 {CLINIC.phone}
+          </TrackedAnchor>
+          {isAdmin && (
+            <Link
+              href={adminHref}
+              className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-slate-900 px-5 py-3 text-base font-medium text-white"
+              onClick={() => mobileMenu.setOpen(false)}
+            >
+              <Settings size={18} aria-hidden="true" />
+              관리자 페이지
+            </Link>
+          )}
+        </MobileMenuPanel>
       </header>
     </>
   );

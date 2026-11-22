@@ -1,5 +1,5 @@
 "use client";
-import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
+import { useOwnerWorkspace } from "@/hooks/useWorkspaceHref";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -79,7 +79,7 @@ function UsageLinks({ usages }: { usages: ImageItem["usage"] }) {
 }
 
 export function ImagesSubTab() {
-  const canDelete = useAdminAuthState().access?.isOwner === true;
+  const canDelete = useOwnerWorkspace();
   const { data, loading, error, refetch } = useAdminApi<ImageItem[]>("/api/admin/images");
   const { mutate } = useAdminMutation<{ path: string }>();
   const [copiedPath, setCopiedPath] = useState<string | null>(null);

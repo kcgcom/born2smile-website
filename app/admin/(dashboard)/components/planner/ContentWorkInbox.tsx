@@ -1,5 +1,7 @@
 "use client";
 
+import { useWorkspaceHref } from "@/hooks/useWorkspaceHref";
+
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminActionButton, AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
@@ -86,6 +88,7 @@ export function ContentWorkInbox() {
 }
 
 function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerItem; highlighted: boolean; busy: boolean; onUpdate: (status: PlannerStatus) => void }) {
+  const workspaceHref = useWorkspaceHref();
   const result = workResult(item);
   const target = internalTarget(item.targetPage);
   const workflow = item.sourceSnapshot.taskWorkflow as TaskWorkflow | undefined;
@@ -106,13 +109,13 @@ function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerI
       {item.status !== "published" && item.status !== "deferred" && item.status !== "dismissed" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("deferred")}>보류</AdminActionButton>}
       {item.status === "deferred" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("dismissed")}>제외</AdminActionButton>}
       {item.status === "dismissed" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("deferred")}>제안 대기로 복원</AdminActionButton>}
-      {result.revisionId && <AdminActionLink tone="primary" href={`/admin/content/revisions/${result.revisionId}`}>연결된 수정안 검토</AdminActionLink>}
+      {result.revisionId && <AdminActionLink tone="primary" href={workspaceHref(`/admin/content/revisions/${result.revisionId}`)}>연결된 수정안 검토</AdminActionLink>}
       {submitted?.kind === "code" && <AdminActionLink tone="primary" href={submitted.pullRequestUrl} target="_blank" rel="noopener noreferrer">코드 변경안 검토 (새 창)</AdminActionLink>}
-      {result.postSlug ? <AdminActionLink tone="dark" href={`/admin/content/posts/${encodeURIComponent(result.postSlug)}`}>포스트 검토</AdminActionLink> : item.itemType === "blog" && <AdminActionLink tone="dark" href={`/admin/content/posts?q=${encodeURIComponent(item.title)}`}>관련 포스트 찾기</AdminActionLink>}
+      {result.postSlug ? <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts/${encodeURIComponent(result.postSlug)}`)}>포스트 검토</AdminActionLink> : item.itemType === "blog" && <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts?q=${encodeURIComponent(item.title)}`)}>관련 포스트 찾기</AdminActionLink>}
       {target && <AdminActionLink tone="dark" href={target} target="_blank" rel="noopener noreferrer">대상 페이지 (새 창)</AdminActionLink>}
     </div>
     {submitted?.kind === "code" && <p className="mt-3 break-words text-xs text-slate-500">변경 파일: {submitted.files.join(", ")}</p>}
-    {item.status === "scheduled" && <p className="mt-3 text-sm text-slate-600">발행·반영 예정 작업입니다. 실제 공개 상태와 예약일을 확인하세요. <a href="/admin/content/schedule" className="underline">발행 일정</a></p>}
+    {item.status === "scheduled" && <p className="mt-3 text-sm text-slate-600">발행·반영 예정 작업입니다. 실제 공개 상태와 예약일을 확인하세요. <a href={workspaceHref("/admin/content/schedule")} className="underline">발행 일정</a></p>}
     {(item.itemType === "page" || item.itemType === "faq") && item.status === "review" && <p className="mt-3 text-sm text-slate-600">페이지·FAQ 변경은 코드 변경안과 미리보기를 검토한 뒤 반영하세요.</p>}
     <div className="mt-3 grid gap-3 lg:mt-2 lg:grid-cols-2 lg:gap-4">
     <details className="min-w-0 text-sm"><summary className="min-h-11 cursor-pointer py-3 font-medium">제안 상세·근거</summary><StoredBrief brief={item.brief} /><details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs text-slate-500">저장된 기획·분석 자료 원문</summary><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-50 p-3 text-xs">{JSON.stringify({ brief: item.brief, evidence: item.sourceSnapshot }, null, 2)}</pre></details></details>

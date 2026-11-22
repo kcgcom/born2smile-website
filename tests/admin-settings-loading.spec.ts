@@ -144,6 +144,7 @@ test("여러 설정의 메뉴 이탈 확인은 한 번만 표시하며 재진입
   page.on("dialog", async dialog => { count++; await dialog.dismiss(); });
   await page.getByRole("link", { name: "성과", exact: true }).click();
   expect(count).toBe(1);
+  await page.locator("header summary").click();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   expect(count).toBe(2);
   await expect(page).toHaveURL("/admin/system/settings");

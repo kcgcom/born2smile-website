@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api/"],
+        disallow: ["/admin", "/staff", "/api/"],
       },
       // AI 크롤러 명시적 허용
       {
@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
           "cohere-ai",
         ],
         allow: "/",
-        disallow: ["/admin", "/api/"],
+        disallow: ["/admin", "/staff", "/api/"],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

@@ -1,5 +1,6 @@
 "use client";
-import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
+
+import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
@@ -27,7 +28,8 @@ import {
 const PostPerformancePanel = dynamic(() => import("./PostPerformancePanel").then(module => module.PostPerformancePanel), { loading: () => <p role="status">성과 패널을 준비하는 중…</p> });
 
 export function PostsSubTab() {
-  const canPublish = useAdminAuthState().access?.isOwner === true;
+  const workspaceHref = useWorkspaceHref();
+  const canPublish = useOwnerWorkspace();
   const router = useRouter();
   const searchParams = useSearchParams();
   const today = getTodayKST();
@@ -118,12 +120,12 @@ export function PostsSubTab() {
     query.delete("performance");
     query.delete("performanceEnd");
     const suffix = query.size ? `?list=${encodeURIComponent(query.toString())}` : "";
-    router.push(`/admin/content/posts/${post.slug}${suffix}`);
+    router.push(workspaceHref(`/admin/content/posts/${post.slug}${suffix}`));
   };
 
   const handleCreate = () => {
     window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
-    router.push("/admin/content/posts/new");
+    router.push(workspaceHref("/admin/content/posts/new"));
   };
 
   const handleDelete = async (slug: string) => {
@@ -165,8 +167,8 @@ export function PostsSubTab() {
       <PostsHero
         blogStats={blogStats}
         refreshing={refreshing}
-        onRefresh={handleRefreshCache}
-        onCreatePost={handleCreate}
+        onRefresh={canPublish ? handleRefreshCache : undefined}
+        onCreatePost={canPublish ? handleCreate : undefined}
       />
 
       {refreshNotice && <AdminNotice tone={refreshNotice.error ? "error" : "success"}>{refreshNotice.message}</AdminNotice>}

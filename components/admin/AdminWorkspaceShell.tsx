@@ -26,7 +26,7 @@ import { AdminSurface } from "@/components/admin/AdminChrome";
 import { signOutAdmin } from "@/lib/admin-auth";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { AdminBrowserPresence } from "@/components/admin/AdminBrowserPresence";
-import { type AdminAccess, type AdminPermission, ADMIN_HOME } from "@/lib/admin-access";
+import { ADMIN_HOME } from "@/lib/admin-access";
 import { preloadAdminApi } from "@/app/admin/(dashboard)/components/useAdminApi";
 
 interface AdminWorkspaceShellProps {
@@ -41,7 +41,7 @@ interface NavItem {
 }
 
 interface WorkspaceConfig {
-  id: AdminPermission;
+  id: string;
   href: string;
   label: string;
   icon: LucideIcon;
@@ -66,22 +66,6 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: LayoutDashboard,
     tabs: [
       { href: "/admin/operations/overview", label: "오늘 할 일", icon: LayoutDashboard },
-      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
-      { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
-      { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
-      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
-      { href: "/admin/system/monitoring", label: "사이트 성능", icon: Gauge },
-      { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
-      { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
-      { href: "/admin/operations/accounts", label: "계정·접속 관리", icon: Settings },
-    ],
-  },
-  {
-    id: "content",
-    href: ADMIN_HOME.content,
-    label: "콘텐츠",
-    icon: FileText,
-    tabs: [
       { href: ADMIN_HOME.content, label: "작업함", icon: KanbanSquare, aliases: ["/admin/content/planner"] },
       { href: "/admin/content/posts", label: "포스트", icon: FileText, aliases: ["/admin/content/revisions"] },
       { href: "/admin/content/review", label: "검토 대기", icon: ClipboardCheck },
@@ -90,12 +74,28 @@ const WORKSPACES: WorkspaceConfig[] = [
     ],
   },
   {
-    id: "staff",
+    id: "performance",
+    href: "/admin/analysis/search",
+    label: "성과",
+    icon: BarChart3,
+    tabs: [
+      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
+      { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
+      { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
+      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
+    ],
+  },
+  {
+    id: "site",
     href: ADMIN_HOME.staff,
-    label: "행정",
+    label: "사이트 관리",
     icon: Settings,
     tabs: [
       { href: "/admin/system/settings", label: "병원 정보·진료시간", icon: Settings },
+      { href: "/admin/operations/accounts", label: "계정·접속 관리", icon: Settings },
+      { href: "/admin/system/monitoring", label: "사이트 성능", icon: Gauge },
+      { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
+      { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
     ],
   },
 ];
@@ -165,13 +165,13 @@ function AuxiliaryTools({ pathname }: { pathname: string }) {
   );
 }
 
-function WorkspaceNav({ pathname, access }: { pathname: string; access: AdminAccess }) {
+function WorkspaceNav({ pathname }: { pathname: string }) {
   return (
     <nav
       className={`flex [&>a]:flex-1 lg:[&>a]:flex-none gap-1 rounded-2xl bg-slate-100/80 p-1 lg:flex lg:shrink-0`}
       aria-label="관리자 워크스페이스"
     >
-      {WORKSPACES.filter((workspace) => access.permissions.includes(workspace.id)).map((workspace) => {
+      {WORKSPACES.map((workspace) => {
         const Icon = workspace.icon;
         const active = isWorkspaceActive(pathname, workspace);
         return (
@@ -211,7 +211,7 @@ function SectionTabs({
       className="rounded-xl bg-slate-100/80 p-1 lg:min-w-0 lg:flex-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className={`grid gap-1 ${workspace.tabs.length === 1 ? "grid-cols-1" : workspace.tabs.length === 5 ? "grid-cols-5" : "grid-cols-4"} lg:flex lg:flex-wrap`}>
+      <div className={`grid gap-1 ${workspace.tabs.length === 6 ? "grid-cols-3 sm:grid-cols-6" : workspace.tabs.length === 5 ? "grid-cols-5" : "grid-cols-4"} lg:flex lg:flex-wrap`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);
@@ -257,7 +257,7 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
       <div className="mx-auto max-w-7xl px-3 py-2 sm:px-6 sm:py-6 lg:py-3">
         <AdminSurface tone="white" className="rounded-2xl px-2 py-2 sm:px-4 sm:py-3 lg:px-2 lg:py-2">
           <div className="flex flex-col gap-1.5 sm:gap-3 lg:flex-row lg:items-center lg:gap-2">
-            {access && <WorkspaceNav pathname={pathname} access={access} />}
+            {access?.isOwner && <WorkspaceNav pathname={pathname} />}
             {workspace && <SectionTabs pathname={pathname} workspace={workspace} />}
             {access?.isOwner && <AuxiliaryTools key={pathname} pathname={pathname} />}
           </div>

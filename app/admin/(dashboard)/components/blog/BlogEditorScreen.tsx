@@ -1,11 +1,12 @@
 "use client";
 
+import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
+
 import { useMemo, useRef, useState } from "react";
 import { mutate as refreshCache } from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
-import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { PublishPopup, type PublishMode } from "@/components/admin/PublishPopup";
 import BlogEditor, { type BlogEditorData } from "@/app/admin/(dashboard)/components/BlogEditor";
@@ -50,18 +51,18 @@ const EMPTY_CREATE_DRAFT: EditablePost = {
 };
 
 export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
-  const { access } = useAdminAuthState();
-  const canPublish = access?.isOwner === true;
+  const workspaceHref = useWorkspaceHref();
+  const canPublish = useOwnerWorkspace();
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromSchedule = searchParams.get("from") === "schedule";
   const listQuery = new URLSearchParams(searchParams.get("list") ?? "");
-  const listHref = `/admin/content/posts${listQuery.size ? `?${listQuery}` : ""}`;
+  const listHref = workspaceHref(`/admin/content/posts${listQuery.size ? `?${listQuery}` : ""}`);
   const editorQuery = new URLSearchParams();
   if (fromSchedule) editorQuery.set("from", "schedule");
   if (listQuery.size) editorQuery.set("list", listQuery.toString());
   const editorSuffix = editorQuery.size ? `?${editorQuery}` : "";
-  const closeHref = fromSchedule ? "/admin/content/schedule" : listHref;
+  const closeHref = fromSchedule ? workspaceHref("/admin/content/schedule") : listHref;
   const today = getTodayKST();
   const { mutate } = useAdminMutation<{ slug: string }>();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -164,7 +165,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         });
         if (!revisionError) {
           void refreshCache("/api/admin/publication-review").catch(() => {});
-          router.push("/admin/content/review");
+          router.push(workspaceHref("/admin/content/review"));
         }
         return { error: revisionError };
       }
@@ -173,7 +174,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         void refreshCache("/api/admin/blog-posts").catch(() => {});
         setSaveNotice(data.published ? "발행된 글을 수정했습니다." : "초안을 저장했습니다.");
         if (data.slug !== slug) {
-          router.replace(`/admin/content/posts/${data.slug}${editorSuffix}`);
+          router.replace(workspaceHref(`/admin/content/posts/${data.slug}${editorSuffix}`));
         } else {
           refetch();
         }
@@ -186,7 +187,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
       void refreshCache("/api/admin/blog-posts").catch(() => {});
       window.sessionStorage.removeItem(BLOG_EDITOR_DRAFT_KEY);
       setSaveNotice(data.published ? "새 포스트를 발행했습니다." : "새 포스트 초안을 저장했습니다.");
-      router.replace(`/admin/content/posts/${data.slug}`);
+      router.replace(workspaceHref(`/admin/content/posts/${data.slug}`));
     }
     return { error: saveError };
   };
@@ -197,7 +198,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     const { error: reviewError } = await mutate("/api/admin/publication-review", "POST", { slug: data.slug });
     if (reviewError) return { error: reviewError };
     void refreshCache("/api/admin/publication-review").catch(() => {});
-    router.push("/admin/content/review");
+    router.push(workspaceHref("/admin/content/review"));
     return { error: null };
   };
 
@@ -249,12 +250,12 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
     setPublishDraft(null);
     if (mode === "edit") refetch();
     setSaveNotice(publishDate <= today ? "포스트를 발행했습니다." : `포스트 발행을 예약했습니다. (${publishDate})`);
-    router.replace(`/admin/content/posts/${payload.slug}${editorSuffix}`);
+    router.replace(workspaceHref(`/admin/content/posts/${payload.slug}${editorSuffix}`));
   };
 
   const previewCategory = mode === "edit" && postData ? normalizeBlogCategory(postData.category) : null;
   const previewHref = postData?.slug && previewCategory
-    ? getAdminPreviewUrl(postData.slug, previewCategory)
+    ? workspaceHref(getAdminPreviewUrl(postData.slug, previewCategory))
     : null;
   const savedPost = mode === "edit" ? postData : null;
   const isPublic = Boolean(savedPost?.published && savedPost.date <= today);
@@ -284,7 +285,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {fromSchedule && <AdminActionLink tone="dark" href="/admin/content/schedule"><ArrowLeft className="h-4 w-4" />발행 일정으로 돌아가기</AdminActionLink>}
+            {fromSchedule && <AdminActionLink tone="dark" href={workspaceHref("/admin/content/schedule")}><ArrowLeft className="h-4 w-4" />발행 일정으로 돌아가기</AdminActionLink>}
             <AdminActionLink tone="dark" href={listHref}>
               <ArrowLeft className="h-4 w-4" />
               포스트 목록
@@ -301,7 +302,7 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
               </AdminActionLink>
             )}
             {isPublic && savedPost && (
-              <AdminActionLink tone="dark" href={`/admin/content/posts?performance=${encodeURIComponent(savedPost.slug)}`}>
+              <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts?performance=${encodeURIComponent(savedPost.slug)}`)}>
                 포스트 성과
               </AdminActionLink>
             )}

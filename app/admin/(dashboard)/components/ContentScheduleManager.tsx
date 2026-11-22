@@ -1,5 +1,5 @@
 "use client";
-import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
+import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 
 import { useState } from "react";
 import { Check, Loader2, Save, Sparkles } from "lucide-react";
@@ -20,8 +20,9 @@ interface SchedulePostItem {
 }
 
 function SchedulePostCard({ post, isPublic }: { post: SchedulePostItem; isPublic: boolean }) {
+  const workspaceHref = useWorkspaceHref();
   const category = normalizeBlogCategory(post.category ?? "");
-  const editorHref = `/admin/content/posts/${encodeURIComponent(post.slug)}?from=schedule`;
+  const editorHref = workspaceHref(`/admin/content/posts/${encodeURIComponent(post.slug)}?from=schedule`);
   return (
     <article aria-label={post.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <h5 className="break-words text-sm font-semibold text-slate-900">{post.title}</h5>
@@ -45,7 +46,7 @@ export function ContentScheduleManager({
   initialPosts?: SchedulePostItem[];
   loadingOverride?: boolean;
 }) {
-  const canEditPolicy = useAdminAuthState().access?.isOwner === true;
+  const canEditPolicy = useOwnerWorkspace();
   const today = getTodayKST();
   const shouldFetch = !embedded;
   const { data, loading, error: policyError, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule", shouldFetch);

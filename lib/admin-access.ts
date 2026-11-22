@@ -18,18 +18,15 @@ export const ADMIN_HOME: Record<AdminPermission, string> = {
   staff: "/admin/system/settings",
 };
 
-export function getAdminHome(access: AdminAccess) {
-  const first = ADMIN_PERMISSIONS.find((permission) => access.permissions.includes(permission));
-  return first ? ADMIN_HOME[first] : "/admin/login";
+export function getStaffHome(access: AdminAccess) {
+  return access.permissions.includes("content") ? "/staff/content/tasks" : "/staff/system/settings";
 }
 
-export function canOpenAdminPage(access: AdminAccess, pathname: string) {
-  if (access.isOwner) return true;
-  if (pathname === "/admin/operations/accounts") return false;
-  if (access.permissions.includes("operations") && /^\/admin\/(?:operations|analysis|system\/(?:monitoring|devtools))(?:\/|$)/.test(pathname)) return true;
-  if (access.permissions.includes("staff") && pathname === ADMIN_HOME.staff) return true;
+export function canOpenStaffPage(access: AdminAccess, pathname: string) {
+  if (pathname === "/staff") return true;
+  if (pathname === "/staff/system/settings") return access.permissions.includes("staff");
   return access.permissions.includes("content")
-    && /^\/admin\/(?:content\/(?:tasks|planner|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
+    && /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
 }
 
 export function canUseAdminApi(access: AdminAccess, method: string, pathname: string) {

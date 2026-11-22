@@ -31,8 +31,8 @@ interface FilterPostsParams {
 interface PostsHeroProps {
   blogStats: BlogStats;
   refreshing: boolean;
-  onRefresh: () => void;
-  onCreatePost: () => void;
+  onRefresh?: () => void;
+  onCreatePost?: () => void;
 }
 
 interface PostsSummaryCardsProps {
@@ -178,12 +178,12 @@ export function PostsHero({
             초안 {blogStats.draft}건 · 예약 {blogStats.scheduled}건 · 발행 {blogStats.published}건
           </p>
         </div>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-11 w-full px-3 py-2 text-sm sm:w-auto">
+        {(onCreatePost || onRefresh) && <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          {onCreatePost && <AdminActionButton tone="primary" onClick={onCreatePost} className="min-h-11 w-full px-3 py-2 text-sm sm:w-auto">
             <Pencil className="h-4 w-4" />
             새 글 작성
-          </AdminActionButton>
-          <button
+          </AdminActionButton>}
+          {onRefresh && <button
             onClick={onRefresh}
             disabled={refreshing}
             title="캐시 새로고침 (Supabase 직접 수정 후 사용)"
@@ -191,8 +191,8 @@ export function PostsHero({
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "새로고침 중..." : "캐시 갱신"}
-          </button>
-        </div>
+          </button>}
+        </div>}
       </div>
 
     </AdminSurface>

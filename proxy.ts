@@ -15,13 +15,14 @@ export function proxy(request: NextRequest) {
 
   // ─── 관리자 경로 보호 ───
   // /admin (login 제외) → Supabase 인증 쿠키 없으면 로그인으로 리다이렉트
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+  const workspace = pathname === "/staff" || pathname.startsWith("/staff/") ? "/staff" : "/admin";
+  if ((pathname === workspace || pathname.startsWith(`${workspace}/`)) && pathname !== `${workspace}/login`) {
     const hasAuthCookie = request.cookies
       .getAll()
       .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
 
     if (!hasAuthCookie) {
-      const loginUrl = new URL("/admin/login", request.url);
+      const loginUrl = new URL(`${workspace}/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -55,5 +56,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/blog/:path*"],
+  matcher: ["/admin/:path*", "/staff/:path*", "/blog/:path*"],
 };

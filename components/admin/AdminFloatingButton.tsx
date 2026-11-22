@@ -33,7 +33,7 @@ export function AdminFloatingButton() {
     return () => window.removeEventListener("born2smile:blog-edit-mode", handleModeChange);
   }, []);
 
-  if (!isAdmin || isBlogEditMode || pathname.startsWith("/admin")) return null;
+  if (!isAdmin || isBlogEditMode || pathname.startsWith("/admin") || pathname === "/staff" || pathname.startsWith("/staff/")) return null;
 
   const href = pathname.startsWith("/blog") ? "/admin/content/posts" : "/admin/operations/overview";
 

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { canOpenAdminPage, canUseAdminApi, getAdminHome, hasPasswordAuthentication, OWNER_ACCESS, type AdminAccess } from "../lib/admin-access";
+import { canOpenStaffPage, canUseAdminApi, getStaffHome, hasPasswordAuthentication, OWNER_ACCESS, type AdminAccess } from "../lib/admin-access";
 
 test("Google 세션과 인증 수단이 누락된 세션은 직원 비밀번호 로그인으로 인정하지 않는다", () => {
   assert.equal(hasPasswordAuthentication([{ method: "oauth" }]), false);
@@ -15,10 +15,10 @@ test("Google 세션과 인증 수단이 누락된 세션은 직원 비밀번호 
 test("직원 역할의 화면과 API 범위는 각각 허용된 작업으로 제한된다", () => {
   const content: AdminAccess = { isOwner: false, permissions: ["content"] };
   const staff: AdminAccess = { isOwner: false, permissions: ["staff"] };
-  assert.equal(canOpenAdminPage(content, "/admin/content/posts/draft"), true);
-  assert.equal(canOpenAdminPage(content, "/admin/system/monitoring"), false);
-  assert.equal(canOpenAdminPage(staff, "/admin/system/settings"), true);
-  assert.equal(canOpenAdminPage(staff, "/admin/content/posts"), false);
+  assert.equal(canOpenStaffPage(content, "/staff/content/posts/draft"), true);
+  assert.equal(canOpenStaffPage(content, "/admin/system/monitoring"), false);
+  assert.equal(canOpenStaffPage(staff, "/staff/system/settings"), true);
+  assert.equal(canOpenStaffPage(staff, "/admin/content/posts"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/hours"), true);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/blog-posts"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/schedule"), false);
@@ -30,10 +30,10 @@ test("직원 역할의 화면과 API 범위는 각각 허용된 작업으로 제
 
 test("업무 권한은 합산되며 세 권한을 모두 부여해도 원장 전용 API는 차단된다", () => {
   const access: AdminAccess = { isOwner: false, permissions: ["content", "staff", "operations"] };
-  assert.equal(getAdminHome(access), "/admin/operations/overview");
-  assert.equal(canOpenAdminPage(access, "/admin/system/monitoring"), true);
-  assert.equal(canOpenAdminPage(access, "/admin/system/settings"), true);
-  assert.equal(canOpenAdminPage(access, "/admin/content/posts"), true);
+  assert.equal(getStaffHome(access), "/staff/content/tasks");
+  assert.equal(canOpenStaffPage(access, "/admin/system/monitoring"), false);
+  assert.equal(canOpenStaffPage(access, "/staff/system/settings"), true);
+  assert.equal(canOpenStaffPage(access, "/staff/content/posts"), true);
   assert.equal(canUseAdminApi(access, "GET", "/api/dev/pagespeed"), true);
   assert.equal(canUseAdminApi(access, "GET", "/api/dev/env-value"), false);
   assert.equal(canUseAdminApi(access, "POST", "/api/admin/content-revisions/123/apply"), false);

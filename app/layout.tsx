@@ -87,7 +87,7 @@ export default async function RootLayout({
         {/* /admin 경로 또는 관리자 로그인 브라우저에서 GA 비활성화 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var p=location.pathname;if(p.startsWith("/admin")||localStorage.getItem("born2smile-admin")==="1")window["ga-disable-G-3ZDMMFGP6Z"]=true}catch(e){}`,
+            __html: `try{var p=location.pathname;if(p.startsWith("/admin")||p==="/staff"||p.startsWith("/staff/")||localStorage.getItem("born2smile-admin")==="1")window["ga-disable-G-3ZDMMFGP6Z"]=true}catch(e){}`,
           }}
         />
         {/* Firebase preconnect 제거 — AdminFloatingButton 동적 임포트로
