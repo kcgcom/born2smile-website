@@ -5,5 +5,6 @@
 - env-status는 설정 여부, env-value는 허용된 키의 실제 값을 반환하는 별개 경로다. env-value 응답·테스트·로그에 비밀값이 남지 않도록 하며 허용 범위를 임의 확대하지 않는다.
 - PageSpeed는 코드에 정의된 홈페이지 대상 URL과 mobile/desktop 전략을 사용한다. 임의 URL 프록시로 바꾸지 않는다.
 - PageSpeed는 strategy=mobile 또는 strategy=desktop을 필수로 받는다. 누락·잘못된 값은 400이다. force=true는 선택한 환경만 재측정한다.
-- PageSpeed는 Supabase의 환경별 일별 캐시만 사용한다. 이전 날짜 결과는 stale 표시와 함께 반환하고 응답 후 갱신한다. 통합 캐시·통합 측정·unstable_cache 경로는 없다.
+- PageSpeed는 Supabase에 환경별 최신 성공 결과만 저장한다. 이전 날짜 결과는 stale 표시와 함께 반환하고 응답 후 갱신한다. 통합 캐시·통합 측정·unstable_cache 경로는 없다.
+- PageSpeed 수동·자동 갱신은 Supabase에서 환경별 실행 권한을 공유한다. 진행 중인 측정이 있으면 수동 요청은 결과를 기다리며, 수동 요청은 실패 후 자동 재시도 대기 시간에도 새 측정을 시작할 수 있다. 실행 조정 마이그레이션은 이 경로를 사용하는 앱 배포 전에 적용한다.
 - 인증 실패·미설정·외부 서비스 실패를 화면에서 구분할 수 있게 응답 계약을 유지한다.

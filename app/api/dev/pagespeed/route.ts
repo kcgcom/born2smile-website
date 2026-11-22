@@ -1,3 +1,4 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { after, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -10,6 +11,12 @@ import { getTodayKST } from "@/lib/date";
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const TARGET_URL = "https://www.born2smile.co.kr";
 const CATEGORIES = ["performance", "accessibility", "seo", "best-practices"];
+const MEASUREMENT_TIMEOUT_MS = 75_000;
+const WAIT_TIMEOUT_MS = 90_000;
+const DB_TIMEOUT_MS = 5_000;
+const POLL_INTERVAL_MS = 2_000;
+
+export const maxDuration = 120;
 
 // Lazy getter — 환경변수 초기화 타이밍 보장
 function getApiKey(): string | undefined {
@@ -148,30 +155,47 @@ function parsePSIResponse(
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 async function fetchPSI(
-  strategy: "mobile" | "desktop",
+  strategy: PSIStrategy,
+  trigger: "background" | "manual" | "cache-miss",
+  runId: string,
+  cachedFetchedAt?: string,
 ): Promise<PSIResult | null> {
+  const startedAt = Date.now();
+  let measured = false;
+  console.info("PSI measurement started", { strategy, trigger, runId, cachedFetchedAt, startedAt });
   try {
     const params = new URLSearchParams({ url: TARGET_URL, strategy });
     CATEGORIES.forEach((c) => params.append("category", c));
     const apiKey = getApiKey();
     if (apiKey) params.set("key", apiKey);
 
-    const res = await fetch(`${PSI_API}?${params}`, { cache: "no-store" });
+    const res = await fetch(`${PSI_API}?${params}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(MEASUREMENT_TIMEOUT_MS),
+    });
 
     if (!res.ok) {
-      console.error(
-        `PSI API error (${strategy}):`,
-        res.status,
-        await res.text(),
-      );
+      console.error(`PSI API error (${strategy}):`, res.status);
       return null;
     }
 
     const json = await res.json();
-    return parsePSIResponse(json, strategy);
+    const result = parsePSIResponse(json, strategy);
+    measured = true;
+    return result;
   } catch (e) {
-    console.error(`PSI fetch error (${strategy}):`, e);
+    console.error(`PSI fetch error (${strategy}):`, e instanceof Error ? e.name : "UnknownError");
     return null;
+  } finally {
+    console.info("PSI measurement", {
+      strategy,
+      trigger,
+      runId,
+      cachedFetchedAt,
+      startedAt,
+      durationMs: Date.now() - startedAt,
+      measured,
+    });
   }
 }
 
@@ -182,86 +206,140 @@ interface SinglePSIResponse {
 
 type PSIStrategy = "mobile" | "desktop";
 
-interface PSICacheRow {
-  key: string;
-  data: unknown;
+function getStrategyCacheKey(strategy: PSIStrategy) {
+  return `psi-homepage-latest-${strategy}`;
 }
 
-function getStrategyCacheKey(date: string, strategy: PSIStrategy) {
-  return `psi-homepage-${date}-${strategy}`;
-}
+type MeasurementClaim =
+  | { status: "claimed" | "running"; runId: string; startedAt: string }
+  | { status: "fresh" | "cooldown" };
 
-async function saveStrategyCache(
-  strategy: PSIStrategy,
-  date: string,
-  result: PSIResult,
-) {
-  const { error } = await getSupabaseAdmin()
+async function readLatestResult(strategy: PSIStrategy) {
+  const { data, error } = await getSupabaseAdmin()
     .from("api_cache")
-    .upsert({
-      key: getStrategyCacheKey(date, strategy),
-      data: result,
-      fetched_at: new Date().toISOString(),
-    });
+    .select("data")
+    .eq("key", getStrategyCacheKey(strategy))
+    .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS))
+    .maybeSingle();
   if (error) throw error;
+  return data?.data as PSIResult | undefined;
 }
 
-/**
- * 선택한 측정 환경의 일별 캐시 조회 및 이전 결과 폴백
- * unstable_cache 미사용 — stale 응답이 L1에 캐싱되는 문제 방지
- */
+async function claimMeasurement(strategy: PSIStrategy, manual: boolean) {
+  const { data, error } = await getSupabaseAdmin()
+    .rpc("claim_pagespeed_measurement", { p_strategy: strategy, p_manual: manual })
+    .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS));
+  if (error) throw error;
+  return data as MeasurementClaim;
+}
+
+async function measureAndSave(
+  strategy: PSIStrategy,
+  trigger: "background" | "manual" | "cache-miss",
+  runId: string,
+  cachedFetchedAt?: string,
+) {
+  const result = await fetchPSI(strategy, trigger, runId, cachedFetchedAt);
+  const { data: finished, error } = await getSupabaseAdmin()
+    .rpc("finish_pagespeed_measurement", {
+      p_strategy: strategy,
+      p_run_id: runId,
+      p_result: result,
+    })
+    .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS));
+  if (error) throw error;
+  if (!finished || !result) throw new Error("PSI_FETCH_FAILED");
+  return result;
+}
+
+async function waitForMeasurement(
+  strategy: PSIStrategy,
+  runId: string,
+  startedAt: string,
+  requestSignal: AbortSignal,
+) {
+  const deadline = Date.now() + WAIT_TIMEOUT_MS;
+  const signal = AbortSignal.any([requestSignal, AbortSignal.timeout(WAIT_TIMEOUT_MS)]);
+
+  while (Date.now() < deadline) {
+    const { data: run, error } = await getSupabaseAdmin()
+      .from("pagespeed_measurement_runs")
+      .select("run_id, expires_at, retry_at, last_success_at")
+      .eq("strategy", strategy)
+      .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(DB_TIMEOUT_MS)]))
+      .maybeSingle();
+    if (error) throw error;
+
+    const joinedRunFinished = run?.run_id === runId && !run.expires_at && !run.retry_at;
+    const newerResultExists = run?.last_success_at && Date.parse(run.last_success_at) > Date.parse(startedAt);
+    if (joinedRunFinished || newerResultExists) {
+      const result = await readLatestResult(strategy);
+      if (result?.strategy === strategy) return result;
+      throw new Error("PSI_FETCH_FAILED");
+    }
+
+    if (run?.run_id !== runId || !run.expires_at || Date.parse(run.expires_at) <= Date.now()) {
+      throw new Error("PSI_FETCH_FAILED");
+    }
+
+    await delay(Math.min(POLL_INTERVAL_MS, deadline - Date.now()), undefined, { signal });
+  }
+
+  throw new Error("PSI_WAIT_TIMEOUT");
+}
+
 async function fetchSingleStrategyPSI(
   strategy: PSIStrategy,
   force: boolean,
+  requestSignal: AbortSignal,
 ): Promise<SinglePSIResponse> {
-  try {
-    const admin = getSupabaseAdmin();
-    const today = getTodayKST();
-
-    if (!force) {
-      // 선택한 환경의 최신 캐시만 조회한다. 통합 캐시는 사용하지 않는다.
-      const { data: rows, error } = await admin
+  if (!force) {
+    let cached = await readLatestResult(strategy);
+    let cachedDate = cached && getTodayKST(new Date(cached.fetchedAt));
+    if (!cached) {
+      // 데이터 정리 마이그레이션 전에도 기존 날짜별 결과를 표시한다.
+      const { data: rows, error } = await getSupabaseAdmin()
         .from("api_cache")
         .select("key, data")
-        .like("key", `psi-homepage-%-${strategy}`)
+        .like("key", `psi-homepage-____-__-__-${strategy}`)
         .order("key", { ascending: false })
-        .limit(1);
+        .limit(1)
+        .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS));
       if (error) throw error;
+      cached = rows?.[0]?.data as PSIResult | undefined;
+      cachedDate = rows?.[0]?.key.slice("psi-homepage-".length, "psi-homepage-".length + 10);
+    }
 
-      const row = (rows as PSICacheRow[] | null)?.[0];
-      const cached = row?.data as PSIResult | null | undefined;
-      if (cached?.strategy === strategy) {
-        if (row?.key === getStrategyCacheKey(today, strategy)) return { result: cached };
-        after(async () => {
-          try {
-            const fresh = await fetchPSI(strategy);
-            if (fresh) await saveStrategyCache(strategy, today, fresh);
-          } catch (error) {
-            console.error(`PSI background refresh error (${strategy}):`, error);
+    if (cached?.strategy === strategy) {
+      if (cachedDate === getTodayKST()) return { result: cached };
+      const cachedFetchedAt = cached.fetchedAt;
+      after(async () => {
+        try {
+          const claim = await claimMeasurement(strategy, false);
+          if (claim.status === "claimed") {
+            await measureAndSave(strategy, "background", claim.runId, cachedFetchedAt);
           }
-        });
-        return { result: cached, stale: true };
-      }
+        } catch (error) {
+          console.error(`PSI background refresh error (${strategy}):`, error);
+        }
+      });
+      return { result: cached, stale: true };
     }
+  }
 
-    // 캐시 없음 또는 force → PSI API 직접 호출
-    const fresh = await fetchPSI(strategy);
-    if (!fresh) throw new Error("PSI_FETCH_FAILED");
-
-    try {
-      await saveStrategyCache(strategy, today, fresh);
-    } catch (error) {
-      console.error(`PSI cache write error (${strategy}):`, error);
+  const claim = await claimMeasurement(strategy, force);
+  switch (claim.status) {
+    case "claimed":
+      return { result: await measureAndSave(strategy, force ? "manual" : "cache-miss", claim.runId) };
+    case "running":
+      return { result: await waitForMeasurement(strategy, claim.runId, claim.startedAt, requestSignal) };
+    case "fresh": {
+      const result = await readLatestResult(strategy);
+      if (result?.strategy === strategy) return { result };
+      throw new Error("PSI_FETCH_FAILED");
     }
-
-    return { result: fresh };
-  } catch (e) {
-    if (e instanceof Error && e.message === "PSI_FETCH_FAILED") throw e;
-
-    // Supabase 접근 실패 → PSI API 직접 호출
-    const fresh = await fetchPSI(strategy);
-    if (!fresh) throw new Error("PSI_FETCH_FAILED");
-    return { result: fresh };
+    case "cooldown":
+      throw new Error("PSI_COOLDOWN");
   }
 }
 
@@ -280,12 +358,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetchSingleStrategyPSI(strategy, force);
+    const response = await fetchSingleStrategyPSI(strategy, force, request.signal);
     return NextResponse.json(
       { data: response },
       { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "PSI_COOLDOWN") {
+      return NextResponse.json(
+        { error: "PSI_COOLDOWN", message: "자동 분석을 잠시 쉬고 있습니다. 새로 분석을 눌러 다시 시도할 수 있습니다." },
+        { status: 503, headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
+      );
+    }
     Sentry.captureException(error);
     const hasKey = !!getApiKey();
     const message = hasKey
