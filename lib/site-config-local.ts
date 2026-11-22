@@ -17,15 +17,19 @@ export function localSiteConfig(): SiteConfigData | null {
   // Empty overrides intentionally resolve to the fixed defaults in constants.ts.
   if (source === "fixture") return {};
   try {
-    const snapshot = siteConfigSnapshotSchema.parse(JSON.parse(readFileSync(SITE_CONFIG_SNAPSHOT_PATH, "utf8")));
-    const expected = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (expected && snapshot.sourceOrigin !== new URL(expected).origin) throw new Error("Project mismatch");
-    return snapshot.data;
+    return readSiteConfigSnapshot();
   } catch {
     if (process.env.NODE_ENV === "production") throw new Error("Required build site-config snapshot is unavailable");
     // The preparation script reports missing/stale snapshots. Never fall through to DB.
     return {};
   }
+}
+
+export function readSiteConfigSnapshot(): SiteConfigData {
+  const snapshot = siteConfigSnapshotSchema.parse(JSON.parse(readFileSync(SITE_CONFIG_SNAPSHOT_PATH, "utf8")));
+  const expected = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (expected && snapshot.sourceOrigin !== new URL(expected).origin) throw new Error("Project mismatch");
+  return snapshot.data;
 }
 
 export function assertLiveSiteConfigWrite(): void {

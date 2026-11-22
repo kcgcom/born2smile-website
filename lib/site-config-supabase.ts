@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache, revalidateTag, unstable_noStore as noStore } from "next/cache";
-import { localSiteConfig, assertLiveSiteConfigWrite } from "./site-config-local";
+import { localSiteConfig, assertLiveSiteConfigWrite, readSiteConfigSnapshot } from "./site-config-local";
+import { getTodayKST } from "./date";
 import { getSupabaseAdmin } from "./supabase-admin";
 import { CLINIC_BASE, LINKS, HOURS, enrichClinicWithContact, type ClinicContactFields } from "./constants";
 
@@ -84,6 +85,8 @@ export type SiteHours = {
   closedDays: string;
   notice: string;
 };
+
+export type PublicSiteHours = SiteHours & { needsVisitConfirmation?: true };
 
 export type SiteSchedule = {
   publishDays: number[]; // 0=일, 1=월, ..., 6=토
@@ -287,11 +290,34 @@ export const getSiteClinic = cache(async (): Promise<ResolvedSiteClinic> => {
     : enrichClinicWithContact({ ...CLINIC_BASE, ...local.clinic });
 });
 
-export const getSiteHours = cache(async (): Promise<SiteHours> => {
+export const getSiteHoursDraft = cache(async (): Promise<SiteHours> => {
   const local = localSiteConfig();
   return local === null
     ? readLiveOrDefaults("hours", async () => (await getPublicSiteConfigLive()).hours, defaultSiteHours)
     : { ...defaultSiteHours(), ...local.hours };
+});
+
+export const getSiteHours = cache(async (): Promise<PublicSiteHours> => {
+  const local = localSiteConfig();
+  if (local !== null) return { ...defaultSiteHours(), ...local.hours };
+
+  try {
+    return (await getPublicSiteConfigLive()).hours;
+  } catch {
+    noStore();
+    const hours = defaultSiteHours();
+    try {
+      Object.assign(hours, readSiteConfigSnapshot().hours);
+    } catch {
+      console.warn("[site-config] deployed hours snapshot unavailable; using code defaults");
+    }
+    const today = getTodayKST();
+    return {
+      ...hours,
+      exceptions: hours.exceptions.filter(({ date }) => date >= today),
+      needsVisitConfirmation: true,
+    };
+  }
 });
 
 export async function getSiteSchedule(): Promise<SiteSchedule> {

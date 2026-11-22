@@ -76,6 +76,9 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/*": ["./.cache/site-config/snapshot.json"],
+  },
   allowedDevOrigins: ["born2smile.dev.born2smile.co.kr"],
   poweredByHeader: false,
   async redirects() {

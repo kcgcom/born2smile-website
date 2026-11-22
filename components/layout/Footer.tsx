@@ -2,10 +2,10 @@ import Link from "next/link";
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
-import type { ResolvedSiteClinic, SiteHours, SiteLinks } from "@/lib/site-config-supabase";
+import type { ResolvedSiteClinic, PublicSiteHours, SiteLinks } from "@/lib/site-config-supabase";
 
 export function Footer({ clinic, hours, links }: {
-  clinic: ResolvedSiteClinic; hours: SiteHours; links: SiteLinks;
+  clinic: ResolvedSiteClinic; hours: PublicSiteHours; links: SiteLinks;
 }) {
   const footerClinicName = clinic.name === "서울본치과" ? "서울본치과의원" : clinic.name;
 
@@ -116,6 +116,9 @@ export function Footer({ clinic, hours, links }: {
               <li className="mt-2 border-t border-gray-700 pt-2 text-gray-400">
                 점심시간 {hours.lunchTime} · 공휴일 휴진
               </li>
+              {hours.needsVisitConfirmation && (
+                <li className="text-sm font-medium text-white">오늘 진료 여부는 방문 전 전화로 확인해 주세요.</li>
+              )}
               {hours.exceptions.length > 0 && (
                 <li className="border-t border-gray-700 pt-2 text-gray-400">
                   <div className="mb-1 text-white">운영 예외</div>

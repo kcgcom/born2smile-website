@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prepareSiteConfigSnapshot } from "./generate-site-config-snapshot";
-import { siteConfigDataSchema, SITE_CONFIG_MAX_AGE_MS } from "../lib/site-config-snapshot-schema";
+import { siteConfigDataSchema, SITE_CONFIG_MAX_AGE_MS, SITE_CONFIG_SNAPSHOT_PATH } from "../lib/site-config-snapshot-schema";
 import { localSiteConfig, assertLiveSiteConfigWrite } from "../lib/site-config-local";
 
 const now = Date.parse("2026-11-16T12:00:00Z");
@@ -146,3 +146,40 @@ test("missing local snapshot never falls through to live DB; build fails closed"
     if (mode === undefined) Reflect.deleteProperty(process.env, "NODE_ENV"); else Object.assign(process.env, { NODE_ENV: mode });
   }
 }));
+
+test("public hours fall back to the deployed snapshot with a visit warning", async () => {
+  const cwd = process.cwd();
+  const source = process.env.SITE_CONFIG_DATA_SOURCE;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const dir = await mkdtemp(join(tmpdir(), "site-hours-fallback-"));
+  try {
+    process.chdir(dir);
+    process.env.SITE_CONFIG_DATA_SOURCE = "live";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = origin;
+    await mkdir(".cache/site-config", { recursive: true });
+    await writeFile(SITE_CONFIG_SNAPSHOT_PATH, JSON.stringify({
+      ...valid(),
+      data: { hours: { notice: "배포 사본 공지", exceptions: [
+        { date: "2000-01-01", time: "", open: false },
+        { date: "2099-12-31", time: "", open: false },
+      ] } },
+    }));
+
+    const { getSiteHours, getSiteHoursDraft } = await import("../lib/site-config-supabase");
+    const hours = await getSiteHours();
+    assert.equal(hours.notice, "배포 사본 공지");
+    assert.deepEqual(hours.exceptions.map(({ date }) => date), ["2099-12-31"]);
+    assert.equal(hours.needsVisitConfirmation, true);
+    assert.notEqual((await getSiteHoursDraft()).notice, "배포 사본 공지");
+
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://other.supabase.co";
+    const mismatched = await getSiteHours();
+    assert.notEqual(mismatched.notice, "배포 사본 공지");
+    assert.equal(mismatched.needsVisitConfirmation, true);
+  } finally {
+    process.chdir(cwd);
+    if (source === undefined) delete process.env.SITE_CONFIG_DATA_SOURCE; else process.env.SITE_CONFIG_DATA_SOURCE = source;
+    if (supabaseUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

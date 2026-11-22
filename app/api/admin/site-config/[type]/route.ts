@@ -5,7 +5,7 @@ import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
   getSiteLinks,
   getSiteClinicDraft,
-  getSiteHours,
+  getSiteHoursDraft,
   getSiteSchedule,
   updateSiteLinks,
   updateSiteClinic,
@@ -47,7 +47,7 @@ export async function GET(
     let config;
     if (type === "links") config = await getSiteLinks();
     else if (type === "clinic") config = await getSiteClinicDraft();
-    else if (type === "hours") config = await getSiteHours();
+    else if (type === "hours") config = await getSiteHoursDraft();
     else config = await getSiteSchedule();
 
     return Response.json({ data: config }, { headers: CACHE_HEADERS });

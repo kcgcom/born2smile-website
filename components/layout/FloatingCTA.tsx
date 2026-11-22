@@ -8,7 +8,7 @@ import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
-import type { SiteHours } from "@/lib/site-config-supabase";
+import type { PublicSiteHours } from "@/lib/site-config-supabase";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
 const NAV_ICONS: Record<string, typeof Home> = {
@@ -19,7 +19,7 @@ const NAV_ICONS: Record<string, typeof Home> = {
   "/contact": Phone,
 };
 
-export function FloatingCTA({ hours }: { hours: SiteHours }) {
+export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
   const pathname = usePathname();
   const showDesktopPhone = !pathname.startsWith("/contact");
 
@@ -114,7 +114,7 @@ const STATUS_STYLES: Record<ClinicStatusInfo["status"], { dot: string; text: str
   closed: { dot: "bg-[var(--muted-light)]", text: "text-[var(--muted)]" },
 };
 
-function DesktopPhoneButton({ hours }: { hours: SiteHours }) {
+function DesktopPhoneButton({ hours }: { hours: PublicSiteHours }) {
   const [info, setInfo] = useState<ClinicStatusInfo | null>(null);
 
   useEffect(() => {
@@ -133,17 +133,18 @@ function DesktopPhoneButton({ hours }: { hours: SiteHours }) {
     };
   }, [hours]);
 
-  const style = info ? STATUS_STYLES[info.status] : STATUS_STYLES.closed;
+  const status = hours.needsVisitConfirmation ? null : info;
+  const style = status ? STATUS_STYLES[status.status] : STATUS_STYLES.closed;
 
   return (
     <div className="group relative flex flex-col items-end">
-      {info && (
+      {status && (
         <div
           className="pointer-events-none absolute right-0 bottom-[calc(100%+0.5rem)] flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border)]/70 bg-[var(--surface)]/95 px-3 py-1.5 text-xs font-medium opacity-0 shadow-md backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 min-[1440px]:opacity-100"
           data-testid="desktop-floating-status"
         >
           <span className={`inline-block h-2 w-2 rounded-full ${style.dot}`} aria-hidden="true" />
-          <span className={style.text}>{info.message}</span>
+          <span className={style.text}>{status.message}</span>
         </div>
       )}
       <TrackedAnchor
@@ -151,7 +152,7 @@ function DesktopPhoneButton({ hours }: { hours: SiteHours }) {
         event="floating_phone_click"
         properties={{ cta_location: "floating_desktop_phone", page_type: "global" }}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg ring-2 ring-blue-200/60 transition-transform hover:scale-110 hover:bg-[var(--color-primary-dark)]"
-        aria-label={`전화 상담${info ? ` — ${info.message}` : ""}`}
+        aria-label={`전화 상담${status ? ` — ${status.message}` : ""}`}
       >
         <Phone size={24} aria-hidden="true" />
       </TrackedAnchor>

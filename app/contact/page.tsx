@@ -126,6 +126,11 @@ export default async function ContactPage() {
                 {hours.notice && (
                   <p className="mt-1 text-sm text-[var(--muted)]">{hours.notice}</p>
                 )}
+                {hours.needsVisitConfirmation && (
+                  <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                    오늘 진료 여부는 방문 전 전화로 확인해 주세요.
+                  </p>
+                )}
                 {hours.exceptions.length > 0 && (
                   <div className="mt-3 border-t border-[var(--border)] pt-3">
                     <p className="text-sm font-medium text-[var(--foreground)]">운영 예외 / 날짜별 공지</p>
