@@ -11,9 +11,10 @@ export default defineConfig({
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
   webServer: {
-    command: 'pnpm dev:test',
+    command: 'pnpm dev',
     port: 3000,
-    reuseExistingServer: false,
+    env: { SITE_CONFIG_DATA_SOURCE: 'fixture' },
+    reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
 });

@@ -26,10 +26,14 @@ cp -n .env.example .env.local
 pnpm dev  # http://localhost:3000
 ```
 
+Windows PowerShell에서 처음 설정할 때는 `if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }`을 사용합니다. 개발 스크립트의 셸 문법은 프로젝트의 pnpm 설정에서 처리합니다.
+
+pnpm 11이 기존 `pnpm.overrides`를 무시하거나 설치를 다시 시도하는 환경에서는 `pnpm dlx pnpm@10.34.9 run dev`로 개발 서버를 실행할 수 있습니다.
+
 로컬 네트워크 개발은 OPNsense DNS와 os-caddy를 공통 HTTPS 진입점으로 사용합니다. 프로젝트마다 도메인과 포트를 고정하고, DNS는 Caddy 서버로, Caddy는 해당 개발 PC의 프로젝트 포트로 연결합니다.
 
 ```bash
-pnpm dev:lan  # HTTP 0.0.0.0:3000, Caddy upstream용
+pnpm dev  # HTTP 0.0.0.0:3000, Caddy에서도 연결 가능
 ```
 
 이 프로젝트는 3000번 포트를 사용하며, 사용 중이면 다른 포트로 자동 이동하지 않고 종료합니다. 다른 프로젝트는 별도 포트를 사용합니다. 개발 PC는 DHCP 예약으로 IP를 고정합니다. 요청에 따라 개발 포트 전용 Windows 방화벽 제한은 사용하지 않으며 기존 Windows 방화벽 정책을 따릅니다. Caddy의 개발 도메인 접근은 LAN 대역으로 제한합니다. 개발 서버를 실행하면 기존 방화벽이 허용하는 LAN 기기에서 포트로 직접 접속할 수 있습니다.
@@ -38,7 +42,7 @@ pnpm dev:lan  # HTTP 0.0.0.0:3000, Caddy upstream용
 
 LAN 기기는 OPNsense를 DNS로 사용해야 합니다. AdGuard Home의 업스트림에는 `[/dev.born2smile.co.kr/]127.0.0.1:5353`을 추가해 개발 도메인 질의를 Unbound로 전달하고, Unbound의 호스트 재정의는 두 도메인을 `192.168.1.1`로 응답합니다. Caddy는 DNS-01로 발급한 HTTPS 인증서와 `192.168.1.0/24` 접근 목록을 사용합니다. WAN 공개나 포트포워딩은 추가하지 않습니다. Tailscale Serve 전용 명령은 제거했으며 Tailscale VPN 클라이언트 사용 여부와는 별개입니다.
 
-개발 서버를 종료하거나 PC를 재시작하면 `pnpm dev:lan`을 다시 실행해야 합니다. DNS와 인증서가 정상이지만 502가 표시되면 개발 서버 실행 여부와 upstream IP·포트를 확인합니다.
+개발 서버를 종료하거나 PC를 재시작하면 `pnpm dev`를 다시 실행해야 합니다. DNS와 인증서가 정상이지만 502가 표시되면 개발 서버 실행 여부와 upstream IP·포트를 확인합니다.
 
 개발/빌드는 Supabase 데이터를 읽어 생성 파일을 갱신합니다. 빌드는 최신 블로그 스냅샷을 필수로 요구하므로 Supabase 환경변수와 네트워크 접근이 필요합니다. 정확한 도구 버전과 실행 순서는 [package.json](package.json)을 기준으로 합니다.
 
@@ -46,8 +50,7 @@ LAN 기기는 OPNsense를 DNS로 사용해야 합니다. AdGuard Home의 업스�
 
 | 명령어 | 설명 |
 |--------|------|
-| `pnpm dev` | 블로그·연구·택소노미 스냅샷과 메타데이터·개발 매니페스트 생성 후 개발 서버 실행 |
-| `pnpm dev:lan` | 공통 Caddy에서 프록시할 LAN 개발 서버, 고정 포트 3000 |
+| `pnpm dev` | 스냅샷·메타데이터·개발 매니페스트를 준비한 후 3000번 포트에서 개발 서버 실행 |
 | `pnpm build` | 프로덕션 빌드 (빌드 직전 생성한 블로그 snapshot 기준으로 공개 페이지 정적 생성) |
 | `pnpm start` | 로컬 프로덕션 서버 |
 | `pnpm exec tsc --noEmit` | TypeScript 검사 |
@@ -119,7 +122,7 @@ GitHub → Vercel 연동을 사용합니다. 로컬 커밋 자체는 원격 배�
 
 개발 서버는 시작할 때 병원 정보·진료시간·링크·발행 요일을 한 번에 읽어 `.cache/site-config/snapshot.json`에 보관합니다. 같은 프로젝트의 1시간 이내 스냅샷은 재사용하며, 개발 중 갱신 실패 시 이전 스냅샷이나 코드 기본값을 사용합니다. `pnpm site-config:refresh`는 강제 갱신하며 실패하면 이전 파일을 보존합니다.
 
-`pnpm dev:test`는 사이트 설정만 고정 기본값으로 처리해 해당 DB 호출을 하지 않습니다. 스냅샷·테스트 모드에서 설정 저장은 차단됩니다. 실제 설정 편집이 필요한 개발 작업은 `pnpm dev:live`를 사용합니다. 블로그·연구자료·인증 경로까지 오프라인으로 바뀌는 것은 아닙니다.
+Playwright는 로컬에서 실행 중인 3000번 포트의 서버와 해당 사이트 설정을 재사용합니다. Playwright가 직접 `pnpm dev`를 시작할 때는 `SITE_CONFIG_DATA_SOURCE=fixture`로 사이트 설정의 고정 기본값을 사용합니다. CI에서는 항상 이 방식으로 테스트 서버를 시작합니다. 스냅샷·테스트 모드에서 설정 저장은 차단됩니다. 실제 설정 편집이 필요한 개발 작업은 `pnpm dev:live`를 사용합니다. 블로그·연구자료·인증은 각 기능의 데이터 설정을 따릅니다.
 
 빌드는 최신 설정 조회가 성공해야 진행하며, 페이지 생성에는 준비된 스냅샷을 재사용합니다. `SITE_CONFIG_DATA_SOURCE=snapshot`은 빌드 프로세스에만 적용하며 Vercel 런타임 환경변수로 상시 등록하지 않습니다. 배포 후 공개 진료시간 조회가 실패하면 배포에 포함된 스냅샷을 사용하고, 스냅샷을 읽을 수 없으면 코드 기본값을 표시합니다. 지난 날짜의 운영 예외는 한국 시간 기준으로 제외하고, 연락처 페이지와 Footer에 방문 전 전화 확인 안내를 표시합니다. 폴백 값은 장기 캐시에 저장하지 않습니다. 마지막 배포 이후의 운영 변경은 장애 중 표시되지 않을 수 있습니다.
 
