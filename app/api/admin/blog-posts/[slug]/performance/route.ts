@@ -2,9 +2,11 @@ import { NextRequest } from "next/server";
 import { verifyAdminRequest, unauthorizedResponse } from "../../../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../../../_lib/cache";
 import { streamAdminUpdates } from "../../../_lib/stream";
+import { getLatestFinalSearchDate } from "../../../_lib/search-console-cache";
 import { getPerformancePost, fetchPostPerformance } from "@/lib/admin-post-performance";
+import { getTodayKST } from "@/lib/date";
 import { READING_VERSION } from "@/lib/blog/reading";
-import { PERFORMANCE_PERIODS, PERFORMANCE_SOURCES, performanceRange, validPerformanceEnd, type PerformancePeriod, type PerformanceSourceKey, type PerformanceUpdate } from "@/lib/post-performance";
+import { isPublicPerformancePost, PERFORMANCE_PERIODS, PERFORMANCE_SOURCES, performanceRange, validPerformanceEnd, type PerformancePeriod, type PerformanceSourceKey, type PerformanceUpdate } from "@/lib/post-performance";
 
 const HEADERS = { "Cache-Control": "private, no-store", Vary: "Authorization" };
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -23,19 +25,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const post = await getPerformancePost(slug);
     if (!post) return Response.json({ message: "글을 찾을 수 없습니다." }, { status: 404, headers: HEADERS });
-    const range = performanceRange(period, now, endDate ?? undefined);
-    const load = (emit: (update: PerformanceUpdate) => void) => fetchPostPerformance(
-      post, period, now, endDate ?? undefined,
-      (key, run) => {
-        if (key === "readingFirstObserved") {
-          return createCachedFetcher(`post-reading-first-${READING_VERSION}-${slug}`, run, CACHE_TTL.POSTHOG_READING_FIRST_OBSERVED)();
-        }
-        const scope = key === "feedback" ? "" : `-${period}-${range.end}`;
-        const version = key === "reading" ? "v4" : "v3";
-        return createCachedFetcher(`post-performance-${version}-${slug}-${post.updatedAt}-${key}${scope}`, run, CACHE_TTL.POSTHOG)();
-      },
-      emit, source ?? undefined,
-    );
+    const load = async (emit: (update: PerformanceUpdate) => void) => {
+      const latest = !endDate && isPublicPerformancePost(post, getTodayKST(now)) && process.env.SEARCH_CONSOLE_SITE_URL?.trim()
+        ? await getLatestFinalSearchDate(now).catch(() => undefined)
+        : undefined;
+      const range = performanceRange(period, now, endDate ?? latest);
+      await fetchPostPerformance(
+        post, period, now, endDate ?? undefined,
+        (key, run) => {
+          if (key === "readingFirstObserved") {
+            return createCachedFetcher(`post-reading-first-${READING_VERSION}-${slug}`, run, CACHE_TTL.POSTHOG_READING_FIRST_OBSERVED)();
+          }
+          const scope = key === "feedback" ? "" : `-${period}-${range.end}`;
+          const version = key === "reading" ? "v4" : "v3";
+          return createCachedFetcher(`post-performance-${version}-${slug}-${post.updatedAt}-${key}${scope}`, run, CACHE_TTL.POSTHOG)();
+        },
+        emit, source ?? undefined, latest,
+      );
+    };
     if (request.headers.get("accept") === "application/x-ndjson") {
       return streamAdminUpdates(load, HEADERS);
     }

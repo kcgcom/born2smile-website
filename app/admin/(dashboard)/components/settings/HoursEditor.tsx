@@ -114,6 +114,7 @@ export function HoursEditor() {
         recovery={recovery}
         onSave={handleSave}
         saveError={saveError}
+        mobileSaveBar
       >
         <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
           <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 md:grid md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)]">

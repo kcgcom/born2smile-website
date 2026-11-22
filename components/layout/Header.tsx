@@ -119,7 +119,7 @@ export function Header() {
               alt="서울대학교 엠블럼"
               width={40}
               height={40}
-              sizes="40px"
+              sizes="(min-width: 768px) 40px, 32px"
               priority
               className="h-8 w-8 shrink-0 md:h-10 md:w-10"
             />

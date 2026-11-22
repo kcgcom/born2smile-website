@@ -12,6 +12,7 @@ import { readAdminUpdates } from "../readAdminUpdates";
 type PerformanceView = PerformanceUpdate & { failed?: PerformanceSourceKey[] };
 
 function mergeUpdate(current: PerformanceView, update: PerformanceUpdate): PerformanceView {
+  if (update.range && current.range?.end !== update.range.end) return update;
   const next = { ...current, ...update, sourceTimes: { ...current.sourceTimes, ...update.sourceTimes } };
   const failed = new Set(current.failed);
   for (const key of PERFORMANCE_SOURCES) {
@@ -63,7 +64,10 @@ export function usePostPerformance(endpoint: string, enabled: boolean, asOf: str
   const [retryError, setRetryError] = useState<{ key: string; message: string } | null>(null);
   async function load(url: string, initial: PerformanceView = {}, source?: PerformanceSourceKey) {
     let report = initial;
-    await readPerformance(source ? `${url}&source=${source}` : url, update => {
+    const pinnedEnd = initial.range?.end && !new URLSearchParams(url.split("?")[1]).has("end")
+      ? `&end=${initial.range.end}`
+      : "";
+    await readPerformance(source ? `${url}&source=${source}${pinnedEnd}` : url, update => {
       report = mergeUpdate(report, update);
       const snapshot = report;
       setProgress(current => ({ ...current, [url]: snapshot }));

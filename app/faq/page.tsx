@@ -6,6 +6,7 @@ import { TREATMENT_DETAILS } from "@/lib/treatments";
 import { getFaqJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
+import { TrackedFaq } from "@/components/analytics/TrackedFaq";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문 (FAQ)",
@@ -103,8 +104,8 @@ export default function FaqPage() {
               </FadeIn>
               <StaggerContainer className="space-y-4">
                 {detail.faq.map((item) => (
-                  <StaggerItem key={item.q}>
-                    <details className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+                  <StaggerItem key={item.id}>
+                    <TrackedFaq id={item.id} surface="faq">
                       <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-[var(--foreground)]">
                         {item.q}
                         <ArrowRight
@@ -136,7 +137,7 @@ export default function FaqPage() {
                           </Link>
                         ) : null}
                       </div>
-                    </details>
+                    </TrackedFaq>
                   </StaggerItem>
                 ))}
               </StaggerContainer>

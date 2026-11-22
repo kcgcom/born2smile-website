@@ -25,14 +25,14 @@ export async function GET(request: Request) {
       .eq("date", today);
 
     if (error) throw error;
-    postSlugs = (data ?? []).map((post) => post.slug);
+    const posts = data ?? [];
+    postSlugs = posts.map((post) => post.slug);
 
-    revalidateBlogCaches((data ?? []).map((post) => ({
-      slug: post.slug,
-      category: post.category,
-    })));
+    if (posts.length > 0) {
+      revalidateBlogCaches(posts);
+    }
 
-    urls = (data ?? []).flatMap((post) => [
+    urls = posts.flatMap((post) => [
       `${BASE_URL}/blog/${getCategorySlug(post.category)}/${post.slug}`,
       `${BASE_URL}/blog/${getCategorySlug(post.category)}`,
       `${BASE_URL}/blog`,
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
   const indexNow = await runIndexNowSubmission("scheduled", urls, postSlugs);
   return NextResponse.json({
-    revalidated: true,
+    revalidated: postSlugs.length > 0,
     indexNowOk: indexNow.status === "accepted" || indexNow.status === "pending_validation",
     indexNow,
     ...(indexNow.status === "failed" && { warning: "캐시는 갱신했지만 IndexNow 제출에 실패했습니다" }),

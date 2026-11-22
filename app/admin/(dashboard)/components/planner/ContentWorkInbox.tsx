@@ -10,7 +10,7 @@ import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { RevisionList } from "../blog/RevisionList";
-import { internalTarget, workResult, workStage, WORK_STAGES, type WorkStage } from "./work-inbox";
+import { internalTarget, needsWorkAttention, workResult, workStage, WORK_ATTENTION, WORK_STAGES, type WorkStage } from "./work-inbox";
 
 const TYPE_LABELS = { blog: "블로그", page: "진료 페이지", faq: "FAQ" };
 const STATUS_LABELS: Record<PlannerStatus, string> = { approved: "승인됨", in_progress: "진행 중", review: "검토 대기", scheduled: "예약·반영 예정", published: "완료", deferred: "보류", dismissed: "제외" };
@@ -18,6 +18,7 @@ const STATUS_LABELS: Record<PlannerStatus, string> = { approved: "승인됨", in
 export function ContentWorkInbox() {
   const params = useSearchParams();
   const stageParam = params.get("stage");
+  const attention = WORK_ATTENTION.find(entry => entry.id === params.get("attention"));
   const typeParam = params.get("type");
   const type = typeParam === "blog" || typeParam === "page" || typeParam === "faq" ? typeParam : "all";
   const query = params.get("q") ?? "";
@@ -29,7 +30,11 @@ export function ContentWorkInbox() {
   const items = useMemo(() => Array.isArray(tasks.data) ? tasks.data : [], [tasks.data]);
   const requestedItem = opportunity ? items.find(item => item.opportunityKey === opportunity) : null;
   const stage: WorkStage = stageParam === "working" || stageParam === "review" || stageParam === "done" || stageParam === "archive" || stageParam === "proposals" ? stageParam : requestedItem ? workStage(requestedItem) : "proposals";
-  const filtered = items.filter(item => workStage(item) === stage && (type === "all" || item.itemType === type) && `${item.title} ${item.targetPage}`.toLowerCase().includes(query.toLowerCase()));
+  const filtered = items.filter(item => (
+    (attention ? needsWorkAttention(item, attention.id) : workStage(item) === stage)
+    && (type === "all" || item.itemType === type)
+    && `${item.title} ${item.targetPage}`.toLowerCase().includes(query.toLowerCase())
+  ));
   const updateQuery = (values: Record<string, string>) => {
     const url = new URL(window.location.href);
     for (const [key, value] of Object.entries(values)) {
@@ -62,16 +67,20 @@ export function ContentWorkInbox() {
     {error && <AdminNotice tone="error">작업 상태 변경 실패: {error}</AdminNotice>}
     {tasks.loading ? <AdminLoadingSkeleton variant="table" /> : tasks.error ? <AdminErrorState message={tasks.error} onRetry={tasks.refetch} /> : !Array.isArray(tasks.data) ? <AdminErrorState message="작업 목록의 형식을 확인할 수 없습니다." onRetry={tasks.refetch} /> : <>
       <div role="group" aria-label="콘텐츠 작업 상태" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {WORK_STAGES.map(entry => <button key={entry.id} type="button" aria-pressed={stage === entry.id} onClick={() => updateQuery({ stage: entry.id })} className={`min-h-11 rounded-xl border px-3 py-3 text-sm ${stage === entry.id ? "border-blue-700 bg-blue-50 font-semibold text-blue-800" : "border-slate-200 bg-white text-slate-700"}`}>{entry.label} <span className="ml-1 font-bold">{items.filter(item => workStage(item) === entry.id).length}</span></button>)}
+        {WORK_STAGES.map(entry => {
+          const selected = !attention && stage === entry.id;
+          return <button key={entry.id} type="button" aria-pressed={selected} onClick={() => updateQuery({ stage: entry.id, attention: "" })} className={`min-h-11 rounded-xl border px-3 py-3 text-sm ${selected ? "border-blue-700 bg-blue-50 font-semibold text-blue-800" : "border-slate-200 bg-white text-slate-700"}`}>{entry.label} <span className="ml-1 font-bold">{items.filter(item => workStage(item) === entry.id).length}</span></button>;
+        })}
       </div>
+      {attention && <AdminNotice tone="info">{attention.label} 필터 적용 중 <button type="button" className="ml-2 min-h-11 font-medium underline" onClick={() => updateQuery({ attention: "" })}>필터 해제</button></AdminNotice>}
       <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
         <input type="search" aria-label="작업 검색" placeholder="제목·대상 검색" value={query} onChange={event => updateQuery({ q: event.target.value })} className="col-span-2 min-h-11 min-w-0 w-full rounded-xl border border-slate-300 bg-white px-3 text-base sm:flex-1 sm:text-sm" />
         <select aria-label="작업 유형" value={type} onChange={event => updateQuery({ type: event.target.value })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="all">전체 유형</option>{Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <button type="button" aria-pressed={stage === "archive"} onClick={() => updateQuery({ stage: stage === "archive" ? "proposals" : "archive" })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">제외한 작업 {items.filter(item => item.status === "dismissed").length}</button>
+        <button type="button" aria-pressed={!attention && stage === "archive"} onClick={() => updateQuery({ stage: !attention && stage === "archive" ? "proposals" : "archive", attention: "" })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">제외한 작업 {items.filter(item => item.status === "dismissed").length}</button>
       </div>
-      {stage === "proposals" && <p className="text-xs text-slate-500">기존 플래너의 보류 작업도 함께 표시합니다. 승인 전 내용을 다시 확인하세요.</p>}
+      {!attention && stage === "proposals" && <p className="text-xs text-slate-500">기존 플래너의 보류 작업도 함께 표시합니다. 승인 전 내용을 다시 확인하세요.</p>}
       {opportunity && !items.some(item => item.opportunityKey === opportunity) && <AdminNotice tone="info">해당 제안이 작업함에 없습니다. 기존에 저장된 작업은 아래 상태별 목록에서 확인할 수 있습니다.</AdminNotice>}
-      {filtered.length ? <ul aria-label="콘텐츠 작업 목록" className="space-y-3">{filtered.map(item => <li key={item.id}><WorkItem item={item} highlighted={item.opportunityKey === opportunity} busy={Boolean(saving)} onUpdate={status => update(item, status)} /></li>)}</ul> : <AdminSurface tone="white" className="rounded-2xl p-6 text-sm text-slate-600">{query || type !== "all" ? "검색 조건에 맞는 작업이 없습니다." : "이 상태의 작업이 없습니다."}</AdminSurface>}
+      {filtered.length ? <ul aria-label="콘텐츠 작업 목록" className="space-y-3">{filtered.map(item => <li key={item.id}><WorkItem item={item} highlighted={item.opportunityKey === opportunity} busy={Boolean(saving)} onUpdate={status => update(item, status)} /></li>)}</ul> : <AdminSurface tone="white" className="rounded-2xl p-6 text-sm text-slate-600">{attention || query || type !== "all" ? "조건에 맞는 작업이 없습니다." : "이 상태의 작업이 없습니다."}</AdminSurface>}
     </>}
   </div>;
 }

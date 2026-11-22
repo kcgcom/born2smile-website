@@ -2,6 +2,7 @@
 
 import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import type { IndexingMonitorData } from "@/lib/admin-indexing-monitor";
+import type { ContentPlannerItem } from "@/lib/content-planner";
 import type { SiteHours } from "@/lib/site-config-supabase";
 import { getTodayKST } from "@/lib/date";
 import { MIN_REVIEW_RESPONSES, MIN_UNRESOLVED_RESPONSES, MIN_PREVIOUS_SEARCH_CLICKS, MIN_SEARCH_CLICK_DROP, MIN_SEARCH_DROP_PERCENT, OVERVIEW_WINDOW_DAYS, overviewContent, type SearchAttention } from "@/lib/admin-overview";
@@ -11,6 +12,7 @@ import { AdminErrorState } from "./AdminErrorState";
 import { BusinessProfileCard } from "./BusinessProfileCard";
 import { useAdminApi } from "./useAdminApi";
 import type { AdminBlogPost, BlogFeedbackData } from "./blog/blog-helpers";
+import { needsWorkAttention, WORK_ATTENTION } from "./planner/work-inbox";
 
 const ANALYSIS_LINKS = [
   { title: "검색 성과", href: "/admin/analysis/search" },
@@ -27,6 +29,8 @@ const REPORT_SHORTCUTS = [
 ];
 
 export function GrowthOverviewPanel() {
+  const tasks = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
+  const taskItems = !tasks.error && Array.isArray(tasks.data) ? tasks.data : null;
   const posts = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
   const feedback = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
   const indexing = useAdminApi<IndexingMonitorData>("/api/admin/indexing-status");
@@ -60,6 +64,16 @@ export function GrowthOverviewPanel() {
 
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">지금 처리할 일</h2>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {taskItems ? WORK_ATTENTION.map(({ id, label }) => (
+          <AdminActionLink key={id} tone="dark" href={`/admin/content/tasks?attention=${id}`}>
+            {label} {taskItems.filter(item => needsWorkAttention(item, id)).length}건
+          </AdminActionLink>
+        )) : <>
+          <p role="status" className="text-sm text-slate-600">{tasks.loading ? "작업 상태를 확인하는 중…" : "작업 현황을 확인하지 못했습니다."}</p>
+          <AdminActionLink tone="dark" href="/admin/content/tasks">작업함 열기</AdminActionLink>
+        </>}
+      </div>
       {pending && <p role="status" className="mt-3 text-sm text-slate-600">운영 상태를 확인하는 중…</p>}
       {issues.map(source => <div key={source.name} className="mt-3"><p className="mb-1 text-sm font-semibold">{source.name} 조회 실패</p><AdminErrorState message={source.error!} onRetry={source.refetch} /></div>)}
       {!indexing.error && (failedChecks > 0 || failedRun) && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">

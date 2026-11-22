@@ -127,7 +127,7 @@ for (const section of ["clinic", "hours", "links"] as const) {
     await expect(card.getByText("저장 완료", { exact: true })).toHaveCount(0);
     expect(mock.writes[0][EDIT_FIELDS[section].key]).toBe("처음 저장할 값");
     await card.getByRole("button", { name: "저장", exact: true }).click();
-    await expect(card.getByText("저장 완료", { exact: true })).toBeVisible();
+    await expect(card.getByText("저장 완료", { exact: true }).filter({ visible: true })).toBeVisible();
     expect(mock.writes[1][EDIT_FIELDS[section].key]).toBe("요청 도중 추가한 값");
     expect(await page.evaluate(key => sessionStorage.getItem(key), `born2smile-settings-recovery:/api/admin/site-config/${section}`)).toBeNull();
   });
@@ -260,6 +260,7 @@ test("이전 화면의 늦은 저장 완료가 재진입 후 복구본을 삭제
 test("모바일 설정은 요약을 먼저 보여주고 상세와 편집은 별도로 연다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const { writes } = await openSettings(page, "clinic", "success");
+  await expect(page.getByText("편집 가능", { exact: true })).toHaveCount(0);
   const card = settingsSection(page, "clinic");
   await expect(card.getByText("테스트 치과 · 031-000-0000", { exact: true })).toBeVisible();
   await expect(card.getByText("테스트 슬로건", { exact: true })).toBeHidden();
@@ -270,6 +271,27 @@ test("모바일 설정은 요약을 먼저 보여주고 상세와 편집은 별�
   await edit.click();
   await expect(card.getByRole("textbox", { name: "병원명", exact: true })).toHaveValue("테스트 치과");
   expect(writes).toHaveLength(0);
+});
+
+test("모바일 진료시간은 예외 일정을 편집하는 위치에서 저장하고 결과를 확인한다", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  const mock = await openSettings(page, "hours", "success");
+  const card = settingsSection(page, "hours");
+  await card.getByRole("button", { name: "편집", exact: true }).click();
+  await card.getByRole("button", { name: "예외 추가" }).click();
+  await card.getByLabel("예외 일정 1 날짜").fill("2026-12-25");
+  const note = card.getByRole("textbox", { name: "예외 일정 1 비고" });
+  await note.fill("성탄절 휴진");
+  const save = card.getByRole("button", { name: "저장", exact: true });
+  await expect(save).toBeInViewport({ ratio: 1 });
+  await save.click();
+  await expect(card.getByRole("status")).toHaveText("저장 완료");
+  expect(mock.writes).toHaveLength(1);
+  await note.fill("수정한 휴진 안내");
+  mock.failSave();
+  await save.click();
+  await expect(card.getByRole("status")).toContainText("테스트 저장 실패");
+  await expect(note).toHaveValue("수정한 휴진 안내");
 });
 
 test("데스크톱 설정은 요약을 2열로 배치하고 편집 중인 구역을 전체 너비로 확장한다", async ({ page }) => {

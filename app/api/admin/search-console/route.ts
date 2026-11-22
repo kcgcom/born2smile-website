@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { createCachedFetcher, CACHE_TTL } from "../_lib/cache";
+import { getLatestFinalSearchDate } from "../_lib/search-console-cache";
 import { fetchSearchConsoleData } from "@/lib/admin-search-console";
 import { computeSemanticClusterGroups } from "@/lib/admin-keyword-embeddings";
 
@@ -21,9 +22,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const end = await getLatestFinalSearchDate();
     const getData = createCachedFetcher(
-      `sc-v3-${period}`,
-      () => fetchSearchConsoleData(period),
+      `sc-v4-${period}-${end}`,
+      () => fetchSearchConsoleData(period, end),
       CACHE_TTL.SEARCH_CONSOLE,
     );
     const data = await getData();

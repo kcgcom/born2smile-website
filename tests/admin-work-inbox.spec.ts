@@ -6,7 +6,7 @@ import { workStage, internalTarget, workResult } from "../app/admin/(dashboard)/
 const statuses: PlannerStatus[] = ["deferred", "approved", "in_progress", "review", "scheduled", "published", "dismissed"];
 const tasks: ContentPlannerItem[] = statuses.map((status, i) => ({ id: `task-${i}`, opportunityKey: `blog:sample:${i}`, itemType: "blog", title: `${status} 콘텐츠 작업 제목`, category: "implant", targetPage: "/blog/implant/example-post", status, priority: "now", rationale: "환자 질문에 대한 설명을 보강합니다.", brief: { outline: ["진료 후 관리 안내"], checklist: ["설명과 근거 확인"] }, sourceSnapshot: { source: "legacy" }, dueDate: null, createdBy: "test@example.invalid", createdAt: "2026-11-15T00:00:00Z", updatedAt: "2026-11-15T00:00:00Z" }));
 
-async function openInbox(page: Page, path = "/admin/content/tasks", fail = false, initialTasks = tasks) {
+async function openInbox(page: Page, initialPath = "/admin/content/tasks", fail = false, initialTasks = tasks) {
   const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? readFileSync(".env.local", "utf8").match(/^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (!publicUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL이 필요합니다.");
   const name = `sb-${new URL(publicUrl).hostname.split(".")[0]}-auth-token`;
@@ -36,11 +36,17 @@ async function openInbox(page: Page, path = "/admin/content/tasks", fail = false
       item.status = request.postDataJSON().status;
       return route.fulfill({ json: { data: item } });
     }
-    return route.fulfill({ json: { data: path === "/api/admin/content-planner" ? stored : [] } });
+    if (path === "/api/admin/content-planner") return route.fulfill({ json: { data: stored } });
+    if (initialPath === "/admin/operations/overview" && path !== "/api/admin/blog-posts") {
+      return route.fulfill({ status: 503, json: { message: "테스트 자료 없음" } });
+    }
+    return route.fulfill({ json: { data: [] } });
   });
-  await page.goto(path);
-  await expect(page.getByRole("heading", { name: "콘텐츠 작업함", exact: true })).toBeVisible();
-  await expect(page.getByRole("group", { name: "콘텐츠 작업 상태" })).toBeVisible();
+  await page.goto(initialPath);
+  if (initialPath !== "/admin/operations/overview") {
+    await expect(page.getByRole("heading", { name: "콘텐츠 작업함", exact: true })).toBeVisible();
+    await expect(page.getByRole("group", { name: "콘텐츠 작업 상태" })).toBeVisible();
+  }
   return { writes, calls, succeed: () => { failed = false; } };
 }
 
@@ -80,6 +86,22 @@ test("에이전트의 승인 대기·막힌 이유·코드 결과를 작업함�
   await page.getByRole("button", { name: /^검토 필요/ }).click();
   await expect(page.getByRole("link", { name: "코드 변경안 검토 (새 창)" })).toHaveAttribute("href", result.pullRequestUrl);
   await expect(page.getByText("변경 파일: lib/treatments.ts", { exact: true })).toBeVisible();
+});
+
+test("오늘 할 일의 건수와 작업함에서 필터한 작업이 일치한다", async ({ page }) => {
+  const pending = { ...tasks[0], sourceSnapshot: { taskWorkflow: { proposalPending: true } } };
+  const blocked = { ...tasks[2], sourceSnapshot: { taskWorkflow: { blockedReason: "추가 확인이 필요합니다." } } };
+  const completed = { ...tasks[5], sourceSnapshot: blocked.sourceSnapshot };
+  await openInbox(page, "/admin/operations/overview", false, [pending, blocked, completed, tasks[1]]);
+  await page.getByRole("link", { name: "승인 대기 1건" }).click();
+  await expect(page.getByRole("list", { name: "콘텐츠 작업 목록" }).getByRole("listitem")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: pending.title })).toBeVisible();
+  await page.goBack();
+  await page.getByRole("link", { name: "막힌 작업 1건" }).click();
+  await expect(page.getByRole("list", { name: "콘텐츠 작업 목록" }).getByRole("listitem")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: blocked.title })).toBeVisible();
+  await page.getByRole("button", { name: /^작업 중/ }).click();
+  await expect(page.getByRole("heading", { name: tasks[1].title })).toBeVisible();
 });
 
 test("승인 실패는 작업과 근거를 보존하고 재시도로 상태만 변경한다", async ({ page }) => {

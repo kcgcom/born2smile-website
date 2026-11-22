@@ -1,5 +1,6 @@
 import { readingPeriodRange, type ReadingCounts } from "./blog/reading-report";
 import type { BlogCategoryValue } from "./blog/types";
+import { getTodayKST } from "./date";
 
 export const PERFORMANCE_PERIODS = ["30d", "90d"] as const;
 export type PerformancePeriod = typeof PERFORMANCE_PERIODS[number];
@@ -33,7 +34,7 @@ export type PerformanceUpdate = Partial<PostPerformance> & {
 };
 
 export function performanceRange(period: PerformancePeriod, now = new Date(), endDate?: string) {
-  // End three calendar days before today so recently incomplete search data is not compared with fresh traffic.
+  // Use a three-day fallback when the latest finalized Search Console date is unavailable.
   const anchor = new Date(endDate
     ? Date.parse(`${endDate}T00:00:00+09:00`) + 86400_000
     : now.getTime() - 2 * 86400_000);
@@ -47,7 +48,7 @@ export function validPerformanceEnd(value: string, now: Date) {
   const timestamp = Date.parse(`${value}T00:00:00Z`);
   return Number.isFinite(timestamp)
     && new Date(timestamp).toISOString().slice(0, 10) === value
-    && value <= performanceRange("30d", now).end
+    && value < getTodayKST(now)
     && value >= performanceRange("30d", new Date(now.getTime() - 365 * 86400_000)).end;
 }
 

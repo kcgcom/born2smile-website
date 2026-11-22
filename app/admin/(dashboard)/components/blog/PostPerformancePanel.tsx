@@ -39,11 +39,12 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
   const modal = useModalA11y(onClose);
   const isPublic = isPublicPerformancePost(post, getTodayKST());
   const endQuery = endDate ? `&end=${encodeURIComponent(endDate)}` : "";
-  const range = performanceRange(period, new Date(), endDate);
+  const requestedRange = performanceRange(period, new Date(), endDate);
   const { report: data, updating, error, refetch, retrySource } = usePostPerformance(
-    `/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}${endQuery}`, isPublic, range.end,
+    `/api/admin/blog-posts/${encodeURIComponent(post.slug)}/performance?period=${period}${endQuery}`, isPublic, endDate ?? getTodayKST(),
   );
-  const report = data?.post?.slug === post.slug && data.period === period && data.range?.end === range.end ? data : null;
+  const report = data?.post?.slug === post.slug && data.period === period && (!endDate || data.range?.end === endDate) ? data : null;
+  const range = report?.range ?? (endDate ? requestedRange : undefined);
   const firstObservation = report?.readingFirstObserved;
   const firstObservationFailed = report?.failed?.includes("readingFirstObserved");
   function sourceProps(key: PerformanceSourceKey) {
@@ -76,7 +77,7 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
         <p role="status" className="min-h-5 text-sm text-slate-600">{updating ? "포스트 성과를 불러오는 중…" : ""}</p>
         {error && <AdminErrorState message={error} onRetry={refetch} />}
         <>
-          <p className="text-sm text-slate-600">기간별 성과: {range.start} ~ {range.end}<br /><span className="text-xs">{endDate ? "운영 개요에서 확인한 집계 종료일을 사용합니다." : "검색 반영 지연을 고려해 3일 전까지의 같은 날짜 범위를 조회합니다."}</span></p>
+          {range && <p className="text-sm text-slate-600">기간별 성과: {range.start} ~ {range.end}<br /><span className="text-xs">{endDate ? "운영 개요에서 확인한 집계 종료일을 사용합니다." : "검색과 방문을 같은 날짜 범위로 집계합니다."}</span></p>}
           <Source title="누적 독자 응답 · DB" source={report?.feedback} {...sourceProps("feedback")}>{feedback => <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard label="총 응답" value={`${feedback.total}건`} />
@@ -111,7 +112,7 @@ export function PostPerformancePanel({ post, endDate, onClose }: { post: AdminBl
             <div className="grid grid-cols-2 gap-3"><MetricCard label="읽기 표본 (세션·글)" value={`${reading.counts.eligibleVisits}개`} /><MetricCard label="유효 읽기율 (추정)" value={readingRate(reading.counts.qualified, reading.counts.eligibleVisits)} /><MetricCard label="공유 동작 방문" value={`${reading.counts.shares}건`} /><MetricCard label="글 이용 후 문의 시도" value={`${reading.counts.inquiries}건`} /></div>
             {firstObservedAt === undefined && !firstObservation && updating && <p className="mt-3 text-sm text-slate-600">읽기 수집 시작 시각 확인 중…</p>}
             {firstObservedAt === null && !firstObservationFailed && <p className="mt-3 text-sm text-slate-600">이 글의 읽기 측정 전 또는 수집 미확인입니다.</p>}
-            {firstObservedAt && Date.parse(firstObservedAt) >= Date.parse(range.periodEndExclusive) && <p className="mt-3 text-sm text-slate-600">선택 기간이 이 글의 읽기 수집 시작보다 앞섭니다.</p>}
+            {firstObservedAt && range && Date.parse(firstObservedAt) >= Date.parse(range.periodEndExclusive) && <p className="mt-3 text-sm text-slate-600">선택 기간이 이 글의 읽기 수집 시작보다 앞섭니다.</p>}
             {firstObservationFailed && <div className="mt-3 flex flex-wrap items-center gap-2">
               <p role="status" className="text-sm text-amber-800">수집 시작 시각을 확인하지 못했습니다.</p>
               <button type="button" onClick={() => void retrySource("readingFirstObserved")} disabled={updating} className="min-h-11 rounded-xl border border-slate-300 px-3 text-sm disabled:opacity-50">수집 시작 시각 다시 조회</button>

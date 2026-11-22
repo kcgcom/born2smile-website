@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Check, AlertTriangle, Circle, ChevronDown, X, Copy, CheckCheck } from "lucide-react";
 import { AdminSurface } from "@/components/admin/AdminChrome";
 import {
@@ -97,25 +97,25 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
 
 function EnvHealthSection() {
   const [expanded, setExpanded] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<{ key: string; status: "pending" | "success" | "error" } | null>(null);
 
-  const copyEnvValue = useCallback(async (key: string) => {
+  const copyEnvValue = async (key: string) => {
+    setCopyState({ key, status: "pending" });
     try {
       const token = await getAccessToken();
       const res = await fetch(`/api/dev/env-value?key=${encodeURIComponent(key)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error();
       const json = await res.json();
-      const value: string = json.data?.value ?? "";
-      if (!value) return;
+      const value: unknown = json.data?.value;
+      if (typeof value !== "string" || !value) throw new Error();
       await navigator.clipboard.writeText(value);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 1500);
+      setCopyState({ key, status: "success" });
     } catch {
-      // silently fail
+      setCopyState({ key, status: "error" });
     }
-  }, []);
+  };
 
   const {
     data: envData,
@@ -231,21 +231,28 @@ function EnvHealthSection() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="font-medium text-[var(--foreground)]">{v.label}</span>
-                        <span className="ml-1.5 text-[var(--muted)]">({v.key})</span>
+                        <span className="ml-1.5 break-all text-[var(--muted)]">({v.key})</span>
                       </span>
                       {v.configured && (
-                        <button
-                          onClick={() => copyEnvValue(v.key)}
-                          aria-label={`${v.label} 값 복사`}
-                          title="값 복사"
-                          className="shrink-0 rounded p-1 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)]"
-                        >
-                          {copiedKey === v.key ? (
-                            <CheckCheck className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                          )}
-                        </button>
+                        <div className="flex shrink-0 flex-col items-end">
+                          <button
+                            type="button"
+                            onClick={() => copyEnvValue(v.key)}
+                            disabled={copyState?.status === "pending"}
+                            aria-label={`${v.label} 값 복사`}
+                            title="값 복사"
+                            className="rounded p-1 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-[var(--foreground)] disabled:opacity-50"
+                          >
+                            {copyState?.key === v.key && copyState.status === "success" ? (
+                              <CheckCheck className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                          </button>
+                          <span role="status" className={copyState?.status === "error" ? "text-red-700" : "text-green-800"}>
+                            {copyState?.key === v.key && (copyState.status === "success" ? "복사 완료" : copyState.status === "error" ? "복사 실패" : "복사 중…")}
+                          </span>
+                        </div>
                       )}
                       <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         v.configured

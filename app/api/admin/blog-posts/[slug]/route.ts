@@ -129,12 +129,18 @@ export async function PUT(
       updateData = { ...updateData, dateModified: null };
     }
 
-    await updateBlogPost(slug, updateData, auth.email);
+    const wasPublic = previousPublished && existingMeta.date <= todayKST;
+    const privateState = !wasPublic && !publishedAndDatedTodayOrPast
+      ? { published: previousPublished, date: existingMeta.date }
+      : undefined;
+    const revalidatePublic = await updateBlogPost(slug, updateData, auth.email, privateState);
 
     const category = updateData.category ?? existing.category;
-    revalidateBlogCaches({ slug, category, previousCategory: existing.category });
+    if (revalidatePublic) {
+      revalidateBlogCaches({ slug, category, previousCategory: existing.category });
+    }
     if (publishedAndDatedTodayOrPast) {
-      const source = previousPublished && existingMeta.date <= todayKST ? "post_update" : "post_publish";
+      const source = wasPublic ? "post_update" : "post_publish";
       after(() => submitBlogPostToIndexNow(slug, category, source));
     }
 

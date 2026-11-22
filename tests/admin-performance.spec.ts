@@ -36,6 +36,10 @@ for (const width of [360, 390]) {
     await page.goto("/admin/system/monitoring");
     const heading = page.getByRole("heading", { name: "Lighthouse 점수", exact: true });
     await expect(heading).toBeVisible();
+    const opportunities = page.getByRole("link", { name: "개선 항목 1개 보기" });
+    await expect(opportunities).toBeInViewport({ ratio: 1 });
+    await opportunities.press("Enter");
+    await expect(page.getByRole("heading", { name: "개선 기회 (1개)" })).toBeFocused();
     for (const name of ["모바일", "데스크톱", "새로 분석"]) {
       const box = await page.getByRole("button", { name, exact: true }).boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);

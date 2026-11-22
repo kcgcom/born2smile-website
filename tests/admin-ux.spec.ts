@@ -167,6 +167,10 @@ for (const width of [360, 390]) {
     for (const [path, name] of [["/admin/content/posts", "운영"], ["/admin/analysis/search", "성과"]]) {
       await page.goto(path);
       const nav = page.getByRole("navigation", { name: `${name} 세부 화면`, exact: true });
+      if (name === "운영") {
+        const label = nav.getByRole("link", { name: "오늘 할 일" }).locator("span");
+        expect((await label.boundingBox())!.height).toBeLessThanOrEqual(20);
+      }
       for (const link of await nav.getByRole("link").all()) {
         const box = await link.boundingBox();
         expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -610,7 +614,7 @@ test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼�
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
   await page.goto("/admin/content/posts");
-  const filters = page.getByRole("heading", { name: "목록 필터", exact: true });
+  const filters = page.getByRole("searchbox", { name: "제목 검색", exact: true });
   await expect(filters).toBeVisible();
   const filterY = await filters.evaluate(node => node.getBoundingClientRect().top + window.scrollY);
   expect(filterY).toBeLessThan(1000);

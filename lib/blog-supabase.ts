@@ -486,7 +486,8 @@ export async function updateBlogPost(
   slug: string,
   data: UpdateBlogPostData,
   updatedBy: string,
-): Promise<void> {
+  privateState?: { published: boolean; date: string },
+): Promise<boolean> {
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
     updated_by: updatedBy,
@@ -506,7 +507,29 @@ export async function updateBlogPost(
     update.read_time = calculateReadTime({ blocks: data.blocks });
   }
 
-  const { error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  if (privateState) {
+    // A concurrent publication must go through the normal invalidation path.
+    const { data: saved, error } = await admin.from(TABLE)
+      .update(update)
+      .eq("slug", slug)
+      .eq("published", privateState.published)
+      .eq("date", privateState.date)
+      .select("published, date")
+      .maybeSingle();
+    if (error) throw error;
+    if (saved) {
+      const today = getTodayKST();
+      if (!(privateState.published && privateState.date <= today) && !(saved.published && saved.date <= today)) {
+        return false;
+      }
+      safeRevalidateTag(CACHE_TAG);
+      safeRevalidateTag(getBlogPostCacheTag(slug));
+      return true;
+    }
+  }
+
+  const { error } = await admin
     .from(TABLE)
     .update(update)
     .eq("slug", slug);
@@ -515,6 +538,7 @@ export async function updateBlogPost(
 
   safeRevalidateTag(CACHE_TAG);
   safeRevalidateTag(getBlogPostCacheTag(slug));
+  return true;
 }
 
 /**

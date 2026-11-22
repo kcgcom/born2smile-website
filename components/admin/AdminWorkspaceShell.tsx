@@ -206,7 +206,7 @@ function SectionTabs({
       className="rounded-xl bg-slate-100/80 p-1 lg:min-w-0 lg:flex-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className={`grid gap-1 ${workspace.tabs.length === 2 ? "grid-cols-2" : workspace.tabs.length === 5 ? "grid-cols-5" : "grid-cols-4"} lg:flex`}>
+      <div className={`grid gap-1 ${workspace.tabs.length === 2 ? "grid-cols-2" : workspace.tabs.length === 5 ? "grid-cols-[1.2fr_1fr_1fr_1.1fr_1fr] sm:grid-cols-5" : "grid-cols-4"} lg:flex`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);
@@ -217,7 +217,7 @@ function SectionTabs({
               onPointerEnter={() => preloadTabData(tab.href)}
               onFocus={() => preloadTabData(tab.href)}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-normal rounded-lg border-b-2 border-transparent px-1 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:px-3 lg:flex-1 lg:whitespace-nowrap ${
+              className={`flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-normal rounded-lg border-b-2 border-transparent px-0.5 py-2 text-center text-sm leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:px-3 lg:flex-1 lg:whitespace-nowrap ${
                 active
                   ? "border-amber-800 bg-white font-semibold text-amber-900 shadow-sm"
                   : "font-medium text-[var(--muted)] hover:text-[var(--foreground)]"

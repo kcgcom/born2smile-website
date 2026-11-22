@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useState } from "react";
 import { BarChart3, MessageCircle, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
@@ -41,6 +42,7 @@ interface PostsSummaryCardsProps {
 }
 
 interface PostsFilterPanelProps {
+  blogStats: BlogStats;
   searchQuery: string;
   filteredCount: number;
   categoryFilter: BlogCategoryFilter;
@@ -198,7 +200,7 @@ export function PostsHero({
 
 export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChange }: PostsSummaryCardsProps) {
   return (
-    <div className="space-y-2">
+    <div className="hidden space-y-2 lg:block">
       <div role="group" aria-label="포스트 상태" className="grid grid-cols-4 gap-2 lg:w-fit">
         {([
           ["all", "전체 포스트", blogStats.total], ["published", "발행", blogStats.published],
@@ -211,6 +213,7 @@ export function PostsSummaryCards({ blogStats, statusFilter, onStatusFilterChang
 }
 
 export function PostsFilterPanel({
+  blogStats,
   searchQuery,
   filteredCount,
   categoryFilter,
@@ -222,6 +225,8 @@ export function PostsFilterPanel({
   onSortKeyChange,
   onResetFilters,
 }: PostsFilterPanelProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersId = useId();
   const statusLabels: Record<StatusFilter, string> = {
     all: "전체 상태",
     published: "발행",
@@ -235,20 +240,13 @@ export function PostsFilterPanel({
     recommended: "추천순",
   };
   const categoryLabel = categoryFilter === "all" ? "전체 카테고리" : getCategoryLabel(categoryFilter);
+  const extraFilterCount = Number(categoryFilter !== "all") + Number(sortKey !== (statusFilter === "draft" ? "recommended" : "newest"));
   const hasActiveFilters = searchQuery.trim().length > 0 || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
 
   return (
     <section className="rounded-xl bg-[var(--surface)] p-3 shadow-sm sm:p-5 lg:p-0 lg:shadow-none">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="lg:sr-only">
-          <h3 className="text-sm font-semibold text-[var(--foreground)]">목록 필터</h3>
-          <p className="mt-1 hidden text-xs text-[var(--muted)] sm:block">검색, 상태, 카테고리, 정렬을 바로 조정합니다.</p>
-        </div>
-        <p className="text-xs font-medium text-[var(--muted)]">{filteredCount.toLocaleString("ko-KR")}개 표시</p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-[minmax(220px,1fr)_180px_140px_140px_auto]">
-        <label className="relative col-span-2 block lg:col-span-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 lg:grid-cols-[minmax(180px,1fr)_140px_180px_140px_auto]">
+        <label className="relative block min-w-0">
           <span className="sr-only">제목 검색</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <input
@@ -261,54 +259,68 @@ export function PostsFilterPanel({
         </label>
 
         <select
-          value={categoryFilter}
-          onChange={(event) => onCategoryFilterChange(event.target.value as BlogCategoryFilter)}
-          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
-          aria-label="카테고리 필터"
-        >
-          <option value="all">전체 카테고리</option>
-          {BLOG_CATEGORY_SLUGS.map((category) => (
-            <option key={category} value={category}>{getCategoryLabel(category)}</option>
-          ))}
-        </select>
-
-        <select
           value={statusFilter}
           onChange={(event) => onStatusFilterChange(event.target.value as StatusFilter)}
-          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           aria-label="상태 필터"
         >
-          <option value="all">전체 상태</option>
-          <option value="published">발행</option>
-          <option value="scheduled">예약</option>
-          <option value="draft">초안</option>
-        </select>
-
-        <select
-          value={sortKey}
-          onChange={(event) => onSortKeyChange(event.target.value as SortKey)}
-          className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
-          aria-label="정렬"
-        >
-          <option value="newest">최신순</option>
-          <option value="oldest">오래된순</option>
-          <option value="unresolved">미해결 많은순</option>
-          {statusFilter === "draft" && <option value="recommended">추천순</option>}
+          <option value="all">전체 {blogStats.total}</option>
+          <option value="published">발행 {blogStats.published}</option>
+          <option value="scheduled">예약 {blogStats.scheduled}</option>
+          <option value="draft">초안 {blogStats.draft}</option>
         </select>
 
         <AdminActionButton
           type="button"
           tone="dark"
-          onClick={onResetFilters}
-          disabled={!hasActiveFilters}
-          className="min-h-11 w-full rounded-lg px-3 py-1.5 text-xs lg:w-auto"
+          aria-expanded={filtersOpen}
+          aria-controls={filtersId}
+          onClick={() => setFiltersOpen(open => !open)}
+          className="min-h-11 px-2 text-sm lg:hidden"
         >
-          <RotateCcw className="h-3.5 w-3.5" />
-          초기화
+          필터{extraFilterCount > 0 && <span>{extraFilterCount}</span>}
         </AdminActionButton>
-      </div>
 
-      {hasActiveFilters && <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <div id={filtersId} className={`col-span-full grid grid-cols-2 gap-2 lg:contents ${filtersOpen ? "" : "max-lg:hidden"}`}>
+          <select
+            value={categoryFilter}
+            onChange={(event) => onCategoryFilterChange(event.target.value as BlogCategoryFilter)}
+            className="h-11 min-w-0 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            aria-label="카테고리 필터"
+          >
+            <option value="all">전체 카테고리</option>
+            {BLOG_CATEGORY_SLUGS.map((category) => (
+              <option key={category} value={category}>{getCategoryLabel(category)}</option>
+            ))}
+          </select>
+
+          <select
+            value={sortKey}
+            onChange={(event) => onSortKeyChange(event.target.value as SortKey)}
+            className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            aria-label="정렬"
+          >
+            <option value="newest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="unresolved">미해결 많은순</option>
+            {statusFilter === "draft" && <option value="recommended">추천순</option>}
+          </select>
+
+          <AdminActionButton
+            type="button"
+            tone="dark"
+            onClick={onResetFilters}
+            disabled={!hasActiveFilters}
+            className="min-h-11 w-full rounded-lg px-3 py-1.5 text-xs lg:w-auto"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            초기화
+          </AdminActionButton>
+        </div>
+      </div>
+      <p className="mt-2 text-xs font-medium text-[var(--muted)]">{filteredCount.toLocaleString("ko-KR")}개 표시</p>
+
+      {hasActiveFilters && <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${filtersOpen ? "" : "max-lg:hidden"}`}>
         <span className="font-medium text-[var(--muted)]">적용 필터</span>
         {searchQuery.trim() && (
           <button

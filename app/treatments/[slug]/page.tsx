@@ -14,6 +14,7 @@ import { TREATMENT_CATEGORY_MAP, categoryColors, getBlogPostUrl, getCategoryLabe
 import { getRelatedPosts } from "@/lib/blog-supabase";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { CTABanner } from "@/components/ui/CTABanner";
+import { TrackedFaq } from "@/components/analytics/TrackedFaq";
 import { formatDate } from "@/lib/format";
 import { fitMetaDescription } from "@/lib/seo";
 
@@ -286,10 +287,7 @@ export default async function TreatmentDetailPage({
             </FadeIn>
             <div className="space-y-4">
               {detail.faq.map((item) => (
-                <details
-                  key={item.q}
-                  className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
-                >
+                <TrackedFaq key={item.id} id={item.id} surface="treatment">
                   <summary className="flex cursor-pointer items-center justify-between p-5 font-medium text-[var(--foreground)]">
                     {item.q}
                     <ArrowRight
@@ -321,7 +319,7 @@ export default async function TreatmentDetailPage({
                       </Link>
                     ) : null}
                   </div>
-                </details>
+                </TrackedFaq>
               ))}
             </div>
           </div>

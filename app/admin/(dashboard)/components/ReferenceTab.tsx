@@ -224,9 +224,15 @@ function TsEslintContent() {
 
 function RoutesContent() {
   const { routes, routeStats, projectStats } = DEV_MANIFEST;
+  const [query, setQuery] = useState("");
+  const [routeType, setRouteType] = useState("all");
+  const searchTerm = query.trim().toLowerCase();
+  const filteredRoutes = routes.filter(route =>
+    (routeType === "all" || route.type === routeType) && route.path.toLowerCase().includes(searchTerm),
+  );
 
   const routeColumns = [
-    { key: "path", label: "경로", sortable: true },
+    { key: "path", label: "경로", className: "break-all" },
     {
       key: "type",
       label: "타입",
@@ -275,11 +281,32 @@ function RoutesContent() {
         <StatCard label="블로그 포스트" value={projectStats.blogPosts} color="text-purple-600" />
       </div>
 
-      {/* 라우트 테이블 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          aria-label="경로 검색"
+          placeholder="경로 검색"
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          className="min-h-11 min-w-32 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm"
+        />
+        <select
+          aria-label="경로 유형"
+          value={routeType}
+          onChange={event => setRouteType(event.target.value)}
+          className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm"
+        >
+          <option value="all">전체 유형</option>
+          <option value="page">페이지</option>
+          <option value="api">API</option>
+        </select>
+        <p role="status" className="w-full text-xs text-slate-600 sm:w-auto">{filteredRoutes.length}개 표시</p>
+      </div>
       <DataTable
         columns={routeColumns}
-        rows={routes as unknown as Record<string, unknown>[]}
+        rows={filteredRoutes}
         keyField="path"
+        emptyMessage="조건에 맞는 경로가 없습니다."
       />
     </div>
   );
@@ -512,7 +539,7 @@ export function ReferenceTab() {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
           >
             {link.label}
             <ExternalLink aria-hidden="true" className="h-3 w-3 text-[var(--muted)]" />

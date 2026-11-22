@@ -188,6 +188,7 @@ export function PostsSubTab() {
           />
 
           <PostsFilterPanel
+            blogStats={blogStats}
             searchQuery={searchQuery}
             filteredCount={filteredPosts.length}
             categoryFilter={categoryFilter}
@@ -201,8 +202,8 @@ export function PostsSubTab() {
           />
           </div>
 
-          <section className="rounded-xl bg-[var(--surface)] p-5 shadow-sm">
-            <h3 className="mb-4 text-base font-bold text-[var(--foreground)]">포스트 목록</h3>
+          <section className="rounded-xl bg-[var(--surface)] p-3 shadow-sm sm:p-5">
+            <h3 className="mb-3 text-base font-bold text-[var(--foreground)] sm:mb-4">포스트 목록</h3>
             {filteredPosts.length === 0 ? (
               <div className="rounded-lg bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted)]">
                 검색 결과가 없습니다

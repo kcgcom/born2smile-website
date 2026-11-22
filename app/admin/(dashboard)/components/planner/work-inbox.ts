@@ -1,4 +1,18 @@
 import type { ContentPlannerItem } from "@/lib/content-planner";
+import type { TaskWorkflow } from "@/lib/content-tasks";
+
+export const WORK_ATTENTION = [
+  { id: "approval", label: "승인 대기" },
+  { id: "blocked", label: "막힌 작업" },
+] as const;
+
+export function needsWorkAttention(item: ContentPlannerItem, attention: typeof WORK_ATTENTION[number]["id"]) {
+  const stage = workStage(item);
+  const workflow = item.sourceSnapshot.taskWorkflow as TaskWorkflow | undefined;
+  return attention === "approval"
+    ? stage === "proposals" && workflow?.proposalPending === true
+    : stage !== "done" && stage !== "archive" && Boolean(workflow?.blockedReason);
+}
 
 export const WORK_STAGES = [
   { id: "proposals", label: "제안 대기" },

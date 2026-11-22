@@ -263,6 +263,11 @@ export function PerformanceTab() {
             {refreshing ? "분석 중…" : "새로 분석"}
           </AdminActionButton>
         </div>
+        {result && result.audits.length > 0 && (
+          <a href="#performance-opportunities" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-blue-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-700">
+            개선 항목 {result.audits.length}개 보기
+          </a>
+        )}
         {isStaleResponse && <AdminPill tone="warning">이전 측정 결과</AdminPill>}
         {(refreshing || (currentLoading && !result)) && <p role="status" className="text-sm text-slate-600">PageSpeed 분석 중… 잠시 기다려 주세요.</p>}
         {isStaleResponse && !refreshing && <p className="text-xs leading-5 text-slate-600">서버에서 최신 결과를 갱신합니다. 잠시 후 새로 분석하여 확인할 수 있습니다.</p>}
@@ -317,7 +322,7 @@ export function PerformanceTab() {
         {/* 개선 기회 */}
         {result.audits.length > 0 && (
           <AdminSurface tone="white" className="rounded-2xl p-6">
-            <h2 className="mb-4 text-sm font-semibold text-[var(--foreground)]">
+            <h2 id="performance-opportunities" tabIndex={-1} className="mb-4 scroll-mt-4 text-sm font-semibold text-[var(--foreground)]">
               개선 기회 ({result.audits.length}개)
             </h2>
             <div className="space-y-2">

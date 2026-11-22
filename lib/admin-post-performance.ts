@@ -32,8 +32,9 @@ export async function fetchPostPerformance(
   cache: CachePerformanceSource,
   emit: (update: PerformanceUpdate) => void,
   only?: PerformanceSourceKey,
+  latestFinalDate?: string,
 ) {
-  const range = performanceRange(period, now, endDate);
+  const range = performanceRange(period, now, endDate ?? latestFinalDate);
   const path = getBlogPostUrl(post.slug, post.category);
   const base = { post, path, period, range, fetchedAt: now.toISOString(), partial: false };
   emit(base);

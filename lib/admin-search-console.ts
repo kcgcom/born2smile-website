@@ -119,6 +119,26 @@ export async function createSearchConsoleContext() {
   return { searchconsole, siteUrl, configuredSiteUrl };
 }
 
+export async function fetchLatestFinalSearchDate(today: string): Promise<string> {
+  const { searchconsole, siteUrl } = await createSearchConsoleContext();
+  const start = new Date(`${today}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - 30);
+  const { data } = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: start.toISOString().slice(0, 10),
+      endDate: today,
+      dimensions: ["date"],
+      dataState: "final",
+      rowLimit: 31,
+    },
+  }, { timeout: 15000 });
+  const latest = (data.rows ?? []).map(row => row.keys?.[0] ?? "")
+    .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date) && date < today).sort().at(-1);
+  if (!latest) throw new Error("최근 30일 내 확정된 검색 실적 날짜를 확인할 수 없습니다.");
+  return latest;
+}
+
 export async function fetchPostSearch(url: string, start: string, end: string, includeQueries = true) {
   const { searchconsole, siteUrl } = await createSearchConsoleContext();
   const requestBody = {
@@ -140,9 +160,10 @@ export async function fetchPostSearch(url: string, start: string, end: string, i
   };
 }
 
-export async function fetchSearchAttention(now = new Date()): Promise<SearchAttention> {
-  const range = performanceRange("30d", now);
-  const previous = performanceRange("30d", new Date(now.getTime() - 30 * 86400_000));
+export async function fetchSearchAttention(now: Date, end?: string): Promise<SearchAttention> {
+  const range = performanceRange("30d", now, end);
+  const previousEnd = new Date(Date.parse(`${range.start}T00:00:00Z`) - 86400_000).toISOString().slice(0, 10);
+  const previous = performanceRange("30d", now, previousEnd);
   const result: SearchAttention = {
     configured: Boolean(process.env.SEARCH_CONSOLE_SITE_URL?.trim()), start: range.start, end: range.end,
     previousStart: previous.start, previousEnd: previous.end, fetchedAt: now.toISOString(), truncated: false, items: [],
@@ -177,23 +198,16 @@ function unavailableSitemapStatus(checkedAt = new Date().toISOString()): SearchC
   };
 }
 
-// Period helper with 3-day offset for SC data delay
-function getPeriodDates(period: string) {
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstNow = new Date(Date.now() + kstOffset);
-
+function getPeriodDates(period: string, end: string) {
   const days = period === "30d" ? 30 : period === "7d" ? 7 : period === "28d" ? 28 : period === "90d" ? 90 : 180;
-  const DELAY_DAYS = 3; // SC data is delayed 2-3 days
-
-  const endDate = new Date(kstNow);
-  endDate.setDate(endDate.getDate() - DELAY_DAYS);
+  const endDate = new Date(`${end}T00:00:00Z`);
   const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - days + 1);
+  startDate.setUTCDate(startDate.getUTCDate() - days + 1);
 
   const compareEnd = new Date(startDate);
-  compareEnd.setDate(compareEnd.getDate() - 1);
+  compareEnd.setUTCDate(compareEnd.getUTCDate() - 1);
   const compareStart = new Date(compareEnd);
-  compareStart.setDate(compareStart.getDate() - days + 1);
+  compareStart.setUTCDate(compareStart.getUTCDate() - days + 1);
 
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return {
@@ -351,10 +365,10 @@ function toMetricRow(row: searchconsole_v1.Schema$ApiDataRow): SearchConsoleMetr
   };
 }
 
-export async function fetchSearchConsoleData(period: string) {
+export async function fetchSearchConsoleData(period: string, latestFinalDate: string) {
   const { searchconsole, siteUrl, configuredSiteUrl } = await createSearchConsoleContext();
 
-  const { start, end, compareStart, compareEnd, dataAsOf } = getPeriodDates(period);
+  const { start, end, compareStart, compareEnd, dataAsOf } = getPeriodDates(period, latestFinalDate);
 
   const sitemapStatusPromise = searchconsole.sitemaps.get({
     siteUrl,

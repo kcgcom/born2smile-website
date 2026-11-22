@@ -19,6 +19,7 @@ export function SectionShell({
   onSave,
   saveError,
   defaultOpen = false,
+  mobileSaveBar = false,
   children,
 }: {
   title: string;
@@ -32,9 +33,11 @@ export function SectionShell({
   onSave: () => void;
   saveError: string | null;
   defaultOpen?: boolean;
+  mobileSaveBar?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const saveButton = <SaveButton saving={saving} saved={saved} disabled={recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />;
 
   const handleToggle = () => {
     if (open && dirty && !window.confirm("저장하지 않은 변경사항이 있습니다. 편집을 닫으시겠습니까?")) {
@@ -49,9 +52,11 @@ export function SectionShell({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-bold text-[var(--foreground)]">{title}</h3>
-            <AdminPill tone={dirty ? "warning" : saved ? "success" : "white"} className="text-xs">
-              {dirty ? "수정됨" : saved ? "저장 완료" : "편집 가능"}
-            </AdminPill>
+            {(dirty || saved) && (
+              <AdminPill tone={dirty ? "warning" : "success"} className={mobileSaveBar && open ? "text-xs max-sm:hidden" : "text-xs"}>
+                {dirty ? "수정됨" : "저장 완료"}
+              </AdminPill>
+            )}
           </div>
           {open && <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>}
           {summary && (
@@ -68,12 +73,12 @@ export function SectionShell({
             {open ? <X className="h-3.5 w-3.5" /> : <PencilLine className="h-3.5 w-3.5" />}
             {open ? "편집 닫기" : "편집"}
           </AdminActionButton>
-          {open && <SaveButton saving={saving} saved={saved} disabled={recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />}
+          {open && (mobileSaveBar ? <div className="hidden sm:block">{saveButton}</div> : saveButton)}
         </div>
       </div>
       {recovery && (recovery.hasConflict || recovery.recoveryNotice) && <div className="mb-4"><DraftRecoveryNotice recovery={recovery} /></div>}
       {saveError && (
-        <AdminNotice tone="error" className="mb-4">
+        <AdminNotice tone="error" className={mobileSaveBar && open ? "mb-4 hidden sm:flex" : "mb-4"}>
           저장 실패: {saveError}
         </AdminNotice>
       )}
@@ -82,6 +87,14 @@ export function SectionShell({
         <div className="pb-4">{preview}</div>
       </details>
       {open ? <fieldset disabled={recovery?.hasConflict} className="mt-4 min-w-0">{children}</fieldset> : null}
+      {open && mobileSaveBar && (
+        <div className="sticky bottom-0 z-20 -mx-4 mt-4 flex items-center justify-between gap-2 rounded-b-2xl border-t border-slate-200 bg-white px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(15,23,42,0.06)] sm:hidden">
+          <p role="status" className={`min-w-0 break-words text-xs ${saveError ? "text-red-700" : saved ? "text-emerald-700" : "text-slate-600"}`}>
+            {saving ? "저장 중…" : saveError ? `저장 실패: ${saveError}` : saved ? "저장 완료" : dirty ? "저장하지 않은 변경사항이 있습니다." : ""}
+          </p>
+          <div className="shrink-0">{saveButton}</div>
+        </div>
+      )}
     </AdminSurface>
   );
 }
