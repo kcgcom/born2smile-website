@@ -14,7 +14,7 @@
 
 ## 목적
 
-콘텐츠 커버리지 엔진이 주제와 관련된 근거 문단을 안정적으로 찾는지 평가하기 위한 기준선 문서다. 관리자 화면 `/admin/content/strategy/retrieval-review`에서 고정된 후보 스냅샷을 검토하며, 운영 라벨은 Supabase `api_cache`에 저장한다. 완료된 50건은 `lib/content-coverage/generated/retrieval-review-baseline.json`에 개인정보 없이 고정해 평가 기준으로 사용한다.
+콘텐츠 커버리지 엔진이 주제와 관련된 근거 문단을 안정적으로 찾는지 평가하기 위한 기준선 문서다. 초기에는 관리자 화면 `/admin/content/strategy/retrieval-review`에서 고정 후보를 검토하고 라벨을 Supabase `api_cache`에 저장했다. 완료된 50건은 `lib/content-coverage/generated/retrieval-review-baseline.json`에 개인정보 없이 고정해 평가 기준으로 사용한다.
 
 초기 고정 후보 스냅샷은 `gemini-embedding-2`, 768차원 임베딩으로 만든 5개 대표 주제별 상위 10건, 총 50건이다. 후보 생성 시점 이후 검색 로직을 바꾸더라도 이 스냅샷은 최초 기준선 비교를 마칠 때까지 유지한다.
 

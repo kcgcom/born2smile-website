@@ -1,6 +1,6 @@
 # 고객 분석 측정 명세 v1과 구현 작업 목록
 
-작성일: 2026-11-14. 상태: 1차 로컬 구현 완료, 운영 미배포. 검증 결과는 [구현 기록](customer-analytics-implementation.md)을 따른다.
+2026-11-14에 작성한 1차 측정 계약과 구현 작업 기록이다. 당시 검증과 후속 전환은 [구현 기록](customer-analytics-implementation.md), [질문 해결 피드백 전환](question-feedback-rollout.md)에서 확인한다.
 후속 변경: 좋아요는 질문 해결 피드백으로 대체됐다. 현재 응답 정의와 삭제 상태는 [피드백 전환 기록](question-feedback-rollout.md)을 따른다. 아래 좋아요 항목은 초기 설계 이력이다.
 
 근거: [실제 수집 점검](customer-analytics-audit-2026-11-14.md), [전체 재설계안](customer-analytics-redesign-plan.md).

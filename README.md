@@ -11,7 +11,7 @@
 | 프레임워크 | Next.js 16, React 19, TypeScript 5 (strict) |
 | 스타일링 | Tailwind CSS 4, CSS custom properties |
 | 데이터베이스 | Supabase (PostgreSQL with RLS) |
-| 인증 | Supabase Auth (Google 로그인, 관리자 전용) |
+| 인증 | Supabase Auth (원장 Google 로그인, 직원 이메일·비밀번호 로그인) |
 | 분석 | GA4 Data API, Search Console API, 네이버 DataLab/검색광고 API, PostHog |
 | 모니터링 | Sentry |
 | 배포 | Vercel (Edge Network + Serverless Functions) |
@@ -51,7 +51,9 @@ LAN 기기는 OPNsense를 DNS로 사용해야 합니다. AdGuard Home의 업스�
 | 명령어 | 설명 |
 |--------|------|
 | `pnpm dev` | 스냅샷·메타데이터·개발 매니페스트를 준비한 후 3000번 포트에서 개발 서버 실행 |
-| `pnpm build` | 프로덕션 빌드 (빌드 직전 생성한 블로그 snapshot 기준으로 공개 페이지 정적 생성) |
+| `pnpm dev:live` | 사이트 설정을 Supabase에서 조회하는 개발 서버 |
+| `pnpm site-config:refresh` | 사이트 설정 스냅샷 강제 갱신 |
+| `pnpm build` | 최신 사이트 설정·블로그 스냅샷을 필수로 준비하고 공개 페이지를 정적 생성 |
 | `pnpm start` | 로컬 프로덕션 서버 |
 | `pnpm exec tsc --noEmit` | TypeScript 검사 |
 | `pnpm lint` | ESLint 실행 |
@@ -101,6 +103,9 @@ scripts/              # 빌드/마이그레이션/IndexNow 스크립트
 | [docs/admin-post-performance.md](docs/admin-post-performance.md) | 포스트 성과 패널과 운영 개요의 정보 구성·집계 기준 |
 | [docs/customer-analytics-card-measurement.md](docs/customer-analytics-card-measurement.md) | 글 카드 노출·클릭 측정 기준 |
 | [docs/customer-analytics-measurement-contract.md](docs/customer-analytics-measurement-contract.md) | 읽기 측정 계약과 초기 설계 이력 |
+| [docs/customer-analytics-implementation.md](docs/customer-analytics-implementation.md) | 읽기 측정 초기 구현 기록 |
+| [docs/customer-analytics-redesign-plan.md](docs/customer-analytics-redesign-plan.md) | 고객 분석 초기 재설계안 |
+| [docs/customer-analytics-audit-2026-11-14.md](docs/customer-analytics-audit-2026-11-14.md) | 2026-11-14 PostHog 수집 점검 기록 |
 | [docs/opportunity-scoring.md](docs/opportunity-scoring.md) | 콘텐츠 기회 점수 모델 |
 | [docs/content-coverage-retrieval-evaluation.md](docs/content-coverage-retrieval-evaluation.md) | 검색 평가 기준선과 운영 검토 흐름 |
 | [docs/designs/keyword-candidate-recommendation-v2.md](docs/designs/keyword-candidate-recommendation-v2.md) | 키워드 후보 shadow 평가 설계·구현 이력 |

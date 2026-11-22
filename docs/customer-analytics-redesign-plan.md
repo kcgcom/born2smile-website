@@ -1,6 +1,6 @@
 # 방문자·콘텐츠 반응 분석 재설계안
 
-작성일: 2026-11-14. 아래는 초기 조사·설계 기록이다. 이후 1차 로컬 구현을 진행했으며 현재 상태와 검증은 [구현 기록](customer-analytics-implementation.md), 구체적인 계약은 [측정 명세](customer-analytics-measurement-contract.md)를 따른다. 운영에는 배포하지 않았다.
+2026-11-14의 초기 조사·설계 기록이다. 이후 구현과 검증은 [구현 기록](customer-analytics-implementation.md), 구체적인 이벤트와 집계 계약은 [측정 명세](customer-analytics-measurement-contract.md)에서 확인한다.
 초기 설계 후 2026-11-14에 최근 30일 운영 이벤트 집계를 추가 점검했다. 결과는 [수집 상태 점검](customer-analytics-audit-2026-11-14.md)을 따른다. 아래 설계의 미확인 항목 중 이벤트 존재·누락 현황은 해당 점검으로 보완됐다. 프로젝트 설정·과금·배포 후 실제 동작 검증은 남아 있다.
 
 ## 1. 목적과 범위

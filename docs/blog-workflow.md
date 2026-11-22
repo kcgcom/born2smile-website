@@ -8,6 +8,8 @@
 
 ## 발행과 예약
 
+콘텐츠 권한을 가진 직원은 미발행 초안을 저장한 후 발행 검토를 요청한다. `/admin/content/review`에는 검토를 요청한 미발행 초안과 검토 대기 중인 수정안이 표시된다. 실제 발행과 예약 상태 변경은 원장 계정으로 처리한다.
+
 `PublishPopup`과 `hooks/usePublishPopup.ts`에서 스케줄 추천·즉시 발행·날짜 직접 선택을 처리한다. 발행 요일은 `/admin/content/schedule`에서 관리한다.
 
 추천 로직은 `lib/publish-schedule.ts`에서 KST 달력 날짜와 기존 예약을 기준으로 계산한다. 인라인 편집·관리자 목록·편집 화면이 같은 계산을 사용한다. 조회 실패·설정 누락·90일 내 빈 날짜 없음은 임의의 다음 날로 대체하지 않고 추천을 비우고 오류를 표시한다. 이 경우 다시 시도하거나 즉시 발행·날짜 직접 선택을 사용한다.
@@ -17,6 +19,7 @@
 ## 공개 반영과 캐시
 
 - 저장 후 블로그 캐시 갱신은 `app/api/admin/_lib/blog-cache.ts`의 `revalidateBlogCaches`가 처리한다. 목록·사이트맵·상세·카테고리·이전 카테고리의 영향을 함께 고려한다.
+- Supabase에서 직접 변경한 글은 DB 웹훅으로 공개 캐시를 갱신한다. 트리거, 수신 상태 및 실제 페이지 반영은 [Supabase 아키텍처](supabase-architecture.md#db-변경에-따른-공개-캐시-갱신)에서 확인한다.
 - `vercel.json`의 블로그 cron은 KST 00:05에 `/api/cron/rebuild`를 호출한다. CRON_SECRET 인증 후 당일 발행된 글을 조회하고 캐시를 재검증한다.
 - INDEXNOW_KEY가 설정되면 당일 글과 관련 URL을 IndexNow에 제출한다. 제출은 검색엔진의 수집·색인을 보장하지 않는다.
 - 이 cron은 새 Vercel 배포를 만들지 않는다. 새 빌드와 캐시 재검증은 별도 작업이다.

@@ -24,7 +24,7 @@ components/layout/Header.tsx        # skip link, nav landmark
 components/layout/Footer.tsx        # landmark, link text
 app/faq/page.tsx                    # native details/summary accessibility
 components/blog/TableOfContents.tsx # nav ARIA
-components/blog/LikeButton.tsx      # button labeling
+components/blog/QuestionFeedback.tsx # 응답 버튼 레이블과 저장 상태 안내
 app/contact/page.tsx                # contact links and map accessibility
 app/globals.css                     # color tokens for contrast
 ```

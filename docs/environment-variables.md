@@ -30,6 +30,10 @@
 | `GCP_SERVICE_ACCOUNT_EMAIL` | GA4 및 Search Console 조회 권한을 가진 서비스 계정 이메일 | WIF 사용 시 |
 | `GA4_PROPERTY_ID` | GA4 속성 ID | `/admin/analysis/traffic` 사용 시 |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console 속성 URL | `/admin/analysis/search` 사용 시 |
+| `GOOGLE_BUSINESS_PROFILE_LOCATION_ID` | 조회할 병원 프로필의 위치 ID | 운영 개요의 병원 프로필 성과 사용 시 |
+| `GOOGLE_BUSINESS_PROFILE_CLIENT_ID` | Business Profile용 Google OAuth 클라이언트 ID | 병원 프로필 성과 사용 시 |
+| `GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET` | Business Profile용 Google OAuth 클라이언트 비밀키 | 병원 프로필 성과 사용 시 |
+| `GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN` | Business Profile API 토큰 갱신에 쓰는 서버 비밀값 | 병원 프로필 성과 사용 시 |
 | `NAVER_DATALAB_CLIENT_ID` | DataLab Client ID | 트렌드 사용 시 |
 | `NAVER_DATALAB_CLIENT_SECRET` | DataLab Client Secret | 트렌드 사용 시 |
 | `NAVER_SEARCHAD_API_KEY` | 검색광고 API Key | 절대 검색량 사용 시 |
@@ -54,7 +58,7 @@
 | `DATABASE_WEBHOOK_SECRET` | Supabase 변경 알림 수신용 서버 비밀키 | DB 변경에 따른 캐시 갱신 사용 시 필수 |
 | `INDEXNOW_KEY` | IndexNow 제출 키 | 자동/수동 IndexNow 제출 시 권장 |
 
-에이전트 키 두 개와 `ADMIN_CLI_SECRET`은 서로 다른 값이어야 한다. 에이전트 키는 허용 경로만 통과하며 `/api/admin/content-revisions/{id}/apply`는 관리자 Supabase 로그인 토큰이 필요하다. 기존 `ADMIN_CLI_SECRET` 자체의 광범위한 권한은 변경하지 않았으므로 에이전트에 해당 키를 제공하면 이 제한을 우회할 수 있다.
+통합 에이전트 키 `AGENT_CONTENT_SECRET`과 원장용 `ADMIN_CLI_SECRET`에는 각각 다른 값을 사용한다. 에이전트 키는 허용된 경로와 메서드에만 사용한다. `/api/admin/content-revisions/{id}/apply`는 관리자 Supabase 로그인 토큰으로 인증한다.
 
 ## 운영 자동화 메모
 
@@ -117,6 +121,7 @@
 |---|---|
 | `BLOG_PUBLIC_DATA_SOURCE` | `snapshot`이면 공개 조회에 생성 스냅샷 사용. dev/build가 설정 |
 | `BLOG_SNAPSHOT_REQUIRED` | `true`이면 스냅샷 조회 실패 시 중단. build가 설정 |
+| `SITE_CONFIG_DATA_SOURCE` | `snapshot`은 설정 스냅샷, `live`는 Supabase, `fixture`는 테스트 기본값을 사용. 설정하지 않은 런타임은 Supabase 조회가 기본 |
 | `REVALIDATE_BASE_URL` | 재검증 스크립트의 대상 사이트 URL |
 | `ANALYZE` | next.config.ts의 번들 분석 옵션 |
 | `VERCEL_GIT_COMMIT_SHA` | 배포별 공개 블로그 캐시 키 분리 |

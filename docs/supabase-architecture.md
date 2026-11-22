@@ -2,7 +2,7 @@
 
 블로그 포스트의 Single Source of Truth는 **Supabase**(`blog_posts` 테이블)다. 다만 공개 블로그는 안정적인 정적 생성을 위해 `pnpm dev`, `pnpm build` 시점에는 빌드 직전 생성한 snapshot(`lib/blog/generated/posts-snapshot.ts`)을 기준으로 렌더링하며, 런타임 공개 조회는 Supabase 우선 + snapshot 폴백 전략을 사용한다.
 
-> 코드·마이그레이션 대조: 2026-11-12. 이 문서는 저장소 구현을 설명하며 운영 DB에 모든 마이그레이션이 적용됐음을 보증하지 않는다.
+> 2026-11-22 코드·마이그레이션 기준. 운영 적용 이력은 연결된 프로젝트에서 별도로 확인한다.
 
 ## 테이블 구조
 
@@ -10,13 +10,16 @@
 
 | 테이블 | 키 | 용도 | 접근 |
 |--------|---------|------|------|
-| `blog_posts` | `slug` | 블로그 포스트 | Supabase Admin 전용 |
+| `blog_posts` | `slug` | 블로그 포스트와 초안의 발행 검토 요청 시각 | Supabase Admin 전용 |
+| `blog_content_revisions` | `id` | 검토용 수정안과 적용 상태 | Supabase Admin 전용 |
 | `blog_question_feedback` | `id`, `slug + visitor_hash` 고유 | 질문 해결 여부·구 클라이언트 호환용 선택 이유 | 서버 API 전용 |
 | `blog_likes` | `slug` | 폐기된 좋아요 저장소, 025에서 기록 삭제 | 기존 조회만 유지 |
 | `site_config` | `type` (`links\|clinic\|hours\|schedule`) | 사이트 설정 + 발행 스케줄 | Supabase Admin 전용 |
 | `api_cache` | `key` | 외부 API 캐시와 관리자 검토 결과 | Supabase Admin 전용 |
 | `gsc_index_status` / `gsc_index_events` / `gsc_index_monitor_runs` | `url` / `id` | URL 색인 상태·변경 이력·검사 작업 | Supabase Admin 전용 |
 | `research_pages` | `slug` | 검증 상태를 포함한 연구 자료 페이지 | 공개 읽기 + Supabase Admin 쓰기 |
+| `admin_staff_accounts` | `email` | 직원 권한과 사용 여부 | Supabase Admin 전용 |
+| `admin_browser_presence` | `email + browser_id` | 관리자 브라우저의 최근 접속 상태 | Supabase Admin 전용 |
 
 ### 콘텐츠 계획
 
@@ -49,13 +52,14 @@ Row Level Security로 보안:
 | `research_pages` | 모든 사용자 | 차단 | 공개 SELECT, 쓰기는 service_role 전용 |
 | 나머지 | 차단 | 차단 | RLS 정책 없이 service_role만 접근 |
 
-관리자 API는 `app/api/admin/_lib/auth.ts`에서 access token·관리자 이메일 또는 설정된 ADMIN_CLI_SECRET 경로로 인증한 뒤 service_role 클라이언트로 접근한다. 브라우저 UI의 관리자 플래그만으로 접근을 허용하지 않는다.
+관리자 API는 `app/api/admin/_lib/auth.ts`에서 Supabase access token, 원장용 CLI 키, 콘텐츠 에이전트 키의 권한을 요청 경로·메서드별로 검증한다. 직원 권한은 `lib/admin-account-store.ts`에서 조회하고 비밀번호 인증 세션을 확인한다. 권한 검증 후 service_role 클라이언트로 접근한다.
 
 ## RPC 함수
 
 - `toggle_like(p_slug, p_user_id)`: 폐기됨, 공개 실행 권한 회수
 - `get_like(p_slug)`: 구 클라이언트 호환용 읽기 함수
 - `get_blog_question_feedback_stats()`: 글별 최종 해결/미해결 응답 집계, service_role만 실행
+- `find_admin_staff_auth_user(account_email)`: 직원 비밀번호 설정 시 기존 Supabase Auth 사용자 ID 조회, service_role만 실행
 - `activate_keyword_taxonomy(...)`: 새 택소노미를 즉시 활성화하고 기존 active 버전을 보관
 - `save_pending_keyword_taxonomy(...)`: 검토 중인 택소노미 버전과 승인 후보 저장
 - `discard_pending_keyword_taxonomy()`: pending 버전을 폐기하고 연결된 후보 상태 복원
@@ -85,9 +89,10 @@ snapshot(`BLOG_POSTS_SNAPSHOT`)은 `pnpm generate-blog-snapshot`으로 생성되
 | GA4 트래픽 | KST 다음 자정까지, 최소 10분 | `secondsUntilMidnightKST` |
 | Search Console | 6시간 | 서버 캐시 |
 | DataLab | 24시간 | 서버 캐시 |
-| PSI | KST 날짜별 | 환경별 Supabase 캐시. 이전 결과는 stale 표시 후 백그라운드 갱신, force=true는 재측정 |
+| PageSpeed | KST 날짜별 갱신 | mobile·desktop 전략별 최근 성공 결과를 유지한다. 이전 결과는 stale로 표시하며 백그라운드에서 갱신한다. 수동 재측정도 DB의 전략별 실행 조정을 공유한다. |
 | 검색광고 검색량 | 수집·게시 시 갱신 | SearchAd 스냅샷과 활성 포인터 사용 |
 | 블로그 목록 (공개) | 1시간 | ISR `revalidate: 3600` |
+| 블로그 상세 (공개) | 코드의 `CACHE_TTL` 기준 | 글별 태그를 사용하며 상세 본문과 메타데이터 조회를 재사용 |
 | 블로그 목록 (관리자) | 서버 조회 캐시 없음 | `getAllPostMetasFresh` 직접 조회 |
 | 질문 해결 응답 집계 | 코드의 `CACHE_TTL.POSTHOG` 기준 | `unstable_cache` |
 | 사이트 설정 | 1시간 | `unstable_cache` |
@@ -108,10 +113,14 @@ CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`�
 | DataLab 스냅샷과 분석 게시 | `015_keyword_analysis_publish.sql` |
 | 수정일 정리·reviewed_date 제거 | `021_cleanup_blog_date_modified.sql`~`023_cleanup_march25_blog_date_modified.sql` |
 | Search Console 색인 모니터 | `024_gsc_index_monitor.sql` |
+| 질문 해결 피드백 및 기존 좋아요 삭제 | `025_blog_question_feedback.sql` |
+| 블로그 수정안과 원본 버전 확인 | `026_blog_content_revisions.sql` |
+| IndexNow 실행·게시물별 접수 상태 | `027_indexnow_runs.sql` |
+| 연구 자료 조회·캐시 페이로드 최적화 | `20261122002356_reduce_cache_and_research_payloads.sql` |
+| 원고 검토·직원 계정·브라우저 접속 관리 | `20261122061923_add_blog_publication_review.sql`, `20261122061940_admin_accounts_and_presence.sql`, `20261122061943_admin_staff_password_lookup.sql` |
+| PageSpeed 측정 조정·최신 결과 유지 및 API 캐시 정리 | `20261122061953_coordinate_pagespeed_measurements.sql`, `20261122070941_optimize_api_cache.sql`, `20261122072047_keep_latest_pagespeed_results.sql` |
 
 `003_ai_write_logs.sql`~`006_ai_ops_low_traffic.sql`은 과거 기능의 이력이다. 해당 테이블은 `010_drop_ai_ops.sql`과 `011_drop_ai_write_logs.sql`에서 삭제되므로 현재 스키마에 포함하지 않는다.
-
-질문 해결 피드백 전환 및 기존 좋아요 삭제는 `025_blog_question_feedback.sql`을 따른다.
 
 ## DB 변경에 따른 공개 캐시 갱신
 

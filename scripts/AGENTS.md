@@ -1,6 +1,6 @@
 # scripts/
 
-- 실행 명령과 생성 순서는 `package.json`이 기준이다. dev/build 스크립트가 blog snapshot → blog meta → dev manifest → research snapshot → keyword taxonomy snapshot을 생성한 뒤 Next.js를 실행한다.
+- 실행 명령과 생성 순서는 `package.json`이 기준이다. dev/build는 사이트 설정 스냅샷을 먼저 준비하고 블로그 스냅샷·메타데이터·개발 매니페스트·연구·택소노미 스냅샷을 생성한다. build는 사이트 설정 강제 갱신과 최신 블로그 스냅샷을 요구한다. dev:live는 사이트 설정을 런타임에 조회한다.
 - 블로그 생성 규칙은 `lib/blog/AGENTS.md`를 따른다. 생성 파일은 직접 편집하지 않는다.
 - `generate-dev-manifest.ts`는 의존성·라우트·프로젝트 통계를 생성한다. 환경변수 실제 값을 산출물에 넣지 않는다.
 - verify/evaluate/report 계열도 파일 쓰기·외부 API 호출을 포함할 수 있다. 이름만 보고 읽기 전용이라고 판단하지 말고 실행 모드·출력 경로·비용을 확인한다.
