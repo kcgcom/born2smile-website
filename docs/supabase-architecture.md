@@ -115,11 +115,12 @@ CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`�
 
 ## DB 변경에 따른 공개 캐시 갱신
 
-Supabase에서 직접 수정한 블로그와 병원 설정을 공개 사이트에 반영하려면 다음과 같이 연결합니다.
+운영 Supabase에서는 `public.blog_posts`와 `public.site_config`에 각각 `born2smile_cache_webhook` 트리거가 활성화되어 있다. 두 트리거는 `INSERT`, `UPDATE`, `DELETE` 후 행 단위로 `born2smile_internal.send_cache_webhook()`을 실행한다. 같은 테이블에 대시보드에서 Database Webhook을 추가하면 이벤트가 중복 전송될 수 있다.
 
-1. Vercel 대상 환경에 서버 변수 `DATABASE_WEBHOOK_SECRET`을 설정하고 해당 변수가 포함된 앱을 배포합니다.
-2. Supabase Database Webhooks에서 `public.blog_posts`, `public.site_config`에 각각 웹훅을 생성합니다. 각 웹훅은 `INSERT`, `UPDATE`, `DELETE`를 선택하고 해당 환경의 `/api/webhooks/database`로 JSON POST 요청을 전송합니다.
-3. 각 웹훅에 `Authorization: Bearer <DATABASE_WEBHOOK_SECRET>` 헤더를 추가합니다. 비밀키는 코드나 Git에 저장하지 않습니다.
-4. 테스트 환경에서 설정 변경과 공개 글의 수정·카테고리 이동·삭제를 확인합니다. Supabase 웹훅 기록의 HTTP 204 응답과 다음 페이지 요청에서의 반영 여부를 확인합니다.
+함수는 Supabase Vault에서 비밀값을 읽어 `pg_net`으로 `https://www.born2smile.co.kr/api/webhooks/database`에 JSON POST를 보낸다. 수신 라우트는 `Authorization: Bearer <비밀값>`을 Vercel 서버 환경변수 `DATABASE_WEBHOOK_SECRET`과 대조한다. 점검할 때 비밀값과 인증 헤더 원문은 출력하지 않는다.
 
-공개 글 변경은 이전 행과 새 행을 기준으로 글·카테고리·목록·사이트맵·RSS 캐시를 갱신합니다. 병원 설정 변경은 해당 유형의 태그를 만료합니다. 웹훅 전송 실패에 대비해 기존 시간 기반 재검증을 유지합니다.
+1. Supabase의 `pg_trigger`에서 두 트리거의 활성 상태와 이벤트를 확인한다. 함수의 대상 URL이 운영 주소와 일치하는지, Vault에 비밀값이 등록되어 있는지 확인한다.
+2. `net._http_response`에서 전송 시각의 HTTP 상태와 타임아웃 여부를 확인한다. 이 테이블은 다른 `pg_net` 요청의 응답도 보관하므로, 해당 웹훅의 결과인지 확인하려면 전송 시각과 Vercel의 수신 경로 로그를 대조한다. `204`는 수신 라우트가 이벤트를 받아 처리했다는 뜻이고, `401`이면 Vault와 운영 배포의 비밀값 설정을 확인한다.
+3. 페이지 반영은 별도로 확인한다. 테스트 환경에서 병원 설정 변경과 공개 글의 수정·카테고리 이동·삭제를 재현하고, 해당 공개 페이지를 다시 요청해 변경 사항이 반영되는지 확인한다.
+
+변경 전후 행 중 하나라도 발행 상태인 글은 글·카테고리·목록·사이트맵·RSS 캐시를 갱신한다. 병원 설정 변경은 해당 유형의 태그를 만료하고, 발행 요일 외 설정은 루트 레이아웃과 `/llms.txt`도 재검증한다. 웹훅 전송 실패에 대비해 기존 시간 기반 재검증을 유지한다.
