@@ -63,15 +63,25 @@ for (const width of [360, 390]) {
 test("재측정 실패는 이전 결과와 오류를 표시하고 성공하면 캐시까지 복구한다", async ({ page }) => {
   await setup(page);
   let fail = true;
-  await page.route("**/api/dev/pagespeed?**", route => {
+  const firstMeasurement = Promise.withResolvers<void>();
+  await page.route("**/api/dev/pagespeed?**", async route => {
     const url = new URL(route.request().url());
-    if (url.searchParams.has("force") && fail) return route.fulfill({ status: 503, json: { message: "재측정 연결 실패" } });
+    if (url.searchParams.has("force") && fail) {
+      await firstMeasurement.promise;
+      return route.fulfill({ status: 503, json: { message: "재측정 연결 실패" } });
+    }
     return route.fulfill({ json: response(url.searchParams.get("strategy")!, url.searchParams.has("force") ? 88 : 62) });
   });
   await page.goto("/admin/system/monitoring");
   await expect(page.getByRole("heading", { name: "Lighthouse 점수" })).toBeVisible();
   await page.getByRole("button", { name: "새로 분석", exact: true }).click();
+  try {
+    await expect(page.getByRole("button", { name: "분석 중…", exact: true })).toBeDisabled();
+  } finally {
+    firstMeasurement.resolve();
+  }
   await expect(page.getByText("재측정 연결 실패", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "새로 분석", exact: true })).toBeEnabled();
   await expect(page.getByText("분석에 실패해 이전 측정 결과를 표시합니다.")).toBeVisible();
   await page.getByRole("button", { name: "데스크톱", exact: true }).click();
   await expect(page.getByText("재측정 연결 실패", { exact: true })).toHaveCount(0);

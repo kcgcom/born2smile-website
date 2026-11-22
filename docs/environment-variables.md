@@ -51,6 +51,7 @@
 | `POSTHOG_API_KEY` | PostHog query API key | 전환 리포트 API 사용 시 |
 | `POSTHOG_BASE_URL` | PostHog API base URL | 전환 리포트 API 사용 시 |
 | `CRON_SECRET` | rebuild/searchad-sync/indexing-monitor cron 인증 토큰 | 운영 자동화 시 필수 |
+| `DATABASE_WEBHOOK_SECRET` | Supabase 변경 알림 수신용 서버 비밀키 | DB 변경에 따른 캐시 갱신 사용 시 필수 |
 | `INDEXNOW_KEY` | IndexNow 제출 키 | 자동/수동 IndexNow 제출 시 권장 |
 
 에이전트 키 두 개와 `ADMIN_CLI_SECRET`은 서로 다른 값이어야 한다. 에이전트 키는 허용 경로만 통과하며 `/api/admin/content-revisions/{id}/apply`는 관리자 Supabase 로그인 토큰이 필요하다. 기존 `ADMIN_CLI_SECRET` 자체의 광범위한 권한은 변경하지 않았으므로 에이전트에 해당 키를 제공하면 이 제한을 우회할 수 있다.

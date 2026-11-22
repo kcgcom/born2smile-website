@@ -75,16 +75,18 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
-  test('원장 로그인을 펼치면 Google 로그인 버튼이 표시된다', async ({ page }) => {
+  test('방패 아이콘을 누르면 Google 로그인 버튼이 표시된다', async ({ page }) => {
     const response = await page.goto('/admin/login');
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/login$/);
-    await expect(page.getByRole('button', { name: '직원 로그인' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '로그인', exact: true })).toBeEnabled();
     await expect(page.getByLabel('이메일', { exact: true })).toBeVisible();
-    const googleLogin = page.getByRole('button', { name: '원장 Google 로그인', exact: true });
+    const googleLogin = page.getByRole('button', { name: 'Google 로그인', exact: true });
     await expect(googleLogin).toBeHidden();
-    const ownerLogin = page.getByText('원장 로그인', { exact: true });
-    await ownerLogin.press('Enter');
+    const ownerLogin = page.getByRole('button', { name: '원장 로그인', exact: true });
+    await expect(ownerLogin).toHaveAttribute('aria-expanded', 'false');
+    await ownerLogin.click();
+    await expect(ownerLogin).toHaveAttribute('aria-expanded', 'true');
     await expect(googleLogin).toBeVisible();
     await ownerLogin.press('Enter');
     await expect(googleLogin).toBeHidden();

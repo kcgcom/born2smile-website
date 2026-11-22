@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showGoogleLogin, setShowGoogleLogin] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -141,9 +142,16 @@ export default function AdminLoginPage() {
       >
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.14),rgba(245,158,11,0.12))] text-[var(--color-primary)]">
-              <ShieldCheck className="h-7 w-7" />
-            </span>
+            <button
+              type="button"
+              aria-label="원장 로그인"
+              aria-expanded={showGoogleLogin}
+              aria-controls="google-login"
+              onClick={() => setShowGoogleLogin((show) => !show)}
+              className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,235,0.14),rgba(245,158,11,0.12))] text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700"
+            >
+              <ShieldCheck aria-hidden="true" className="h-7 w-7" />
+            </button>
           </div>
           <div className="flex justify-center">
             <AdminPill tone="white" className="text-[11px]">관리자 전용</AdminPill>
@@ -168,12 +176,9 @@ export default function AdminLoginPage() {
           <label className="flex flex-col gap-1 text-sm font-medium">비밀번호
             <input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 px-3 focus-visible:outline-2 focus-visible:outline-blue-700" />
           </label>
-          <AdminActionButton type="submit" disabled={loading} tone="primary" className="w-full justify-center">직원 로그인</AdminActionButton>
+          <AdminActionButton type="submit" disabled={loading} tone="primary" className="w-full justify-center">로그인</AdminActionButton>
         </form>
-        <details className="text-center">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center rounded-lg px-3 text-sm font-medium text-slate-600 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue-700 [&::-webkit-details-marker]:hidden">
-            원장 로그인
-          </summary>
+        <div id="google-login" hidden={!showGoogleLogin}>
           <AdminActionButton
             onClick={handleLogin}
             disabled={loading}
@@ -198,9 +203,9 @@ export default function AdminLoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            원장 Google 로그인
+            Google 로그인
           </AdminActionButton>
-        </details>
+        </div>
 
         <div className="mt-4 text-center text-sm text-slate-500">
           등록된 관리자 계정만 접근 가능합니다

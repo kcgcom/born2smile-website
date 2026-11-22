@@ -9,12 +9,22 @@ const CACHE_TAG_LINKS = "site-config-links";
 const CACHE_TAG_CLINIC = "site-config-clinic";
 const CACHE_TAG_HOURS = "site-config-hours";
 const CACHE_TAG_SCHEDULE = "site-config-schedule";
+const SITE_CONFIG_CACHE_TAGS = {
+  links: CACHE_TAG_LINKS,
+  clinic: CACHE_TAG_CLINIC,
+  hours: CACHE_TAG_HOURS,
+  schedule: CACHE_TAG_SCHEDULE,
+};
+
+export function expireSiteConfigCache(type: keyof typeof SITE_CONFIG_CACHE_TAGS) {
+  revalidateTag(SITE_CONFIG_CACHE_TAGS[type], { expire: 0 });
+}
 const CACHE_TTL = 3600; // 1 hour
 const SITE_LINK_KEYS = ["kakaoChannel", "instagram", "naverBlog", "naverMap", "kakaoMap"] as const;
 
-function safeRevalidateTag(tag: string) {
+function safeRevalidateTag(tag: string, profile: Parameters<typeof revalidateTag>[1] = "max") {
   try {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, profile);
   } catch (error) {
     console.warn(`[site-config-supabase] failed to revalidate tag '${tag}'`, error);
   }
@@ -185,7 +195,7 @@ export async function updateSiteHours(
       updated_by: updatedBy,
     }, { onConflict: "type" });
   if (writeError) throw writeError;
-  safeRevalidateTag(CACHE_TAG_HOURS);
+  safeRevalidateTag(CACHE_TAG_HOURS, { expire: 0 });
 }
 
 // =============================================================
