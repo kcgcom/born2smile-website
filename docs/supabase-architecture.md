@@ -112,3 +112,14 @@ CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`�
 `003_ai_write_logs.sql`~`006_ai_ops_low_traffic.sql`은 과거 기능의 이력이다. 해당 테이블은 `010_drop_ai_ops.sql`과 `011_drop_ai_write_logs.sql`에서 삭제되므로 현재 스키마에 포함하지 않는다.
 
 질문 해결 피드백 전환 및 기존 좋아요 삭제는 `025_blog_question_feedback.sql`을 따른다.
+
+## DB 변경에 따른 공개 캐시 갱신
+
+Supabase에서 직접 수정한 블로그와 병원 설정을 공개 사이트에 반영하려면 다음과 같이 연결합니다.
+
+1. Vercel 대상 환경에 서버 변수 `DATABASE_WEBHOOK_SECRET`을 설정하고 해당 변수가 포함된 앱을 배포합니다.
+2. Supabase Database Webhooks에서 `public.blog_posts`, `public.site_config`에 각각 웹훅을 생성합니다. 각 웹훅은 `INSERT`, `UPDATE`, `DELETE`를 선택하고 해당 환경의 `/api/webhooks/database`로 JSON POST 요청을 전송합니다.
+3. 각 웹훅에 `Authorization: Bearer <DATABASE_WEBHOOK_SECRET>` 헤더를 추가합니다. 비밀키는 코드나 Git에 저장하지 않습니다.
+4. 테스트 환경에서 설정 변경과 공개 글의 수정·카테고리 이동·삭제를 확인합니다. Supabase 웹훅 기록의 HTTP 204 응답과 다음 페이지 요청에서의 반영 여부를 확인합니다.
+
+공개 글 변경은 이전 행과 새 행을 기준으로 글·카테고리·목록·사이트맵·RSS 캐시를 갱신합니다. 병원 설정 변경은 해당 유형의 태그를 만료합니다. 웹훅 전송 실패에 대비해 기존 시간 기반 재검증을 유지합니다.

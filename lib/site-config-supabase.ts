@@ -9,6 +9,16 @@ const CACHE_TAG_LINKS = "site-config-links";
 const CACHE_TAG_CLINIC = "site-config-clinic";
 const CACHE_TAG_HOURS = "site-config-hours";
 const CACHE_TAG_SCHEDULE = "site-config-schedule";
+const SITE_CONFIG_CACHE_TAGS = {
+  links: CACHE_TAG_LINKS,
+  clinic: CACHE_TAG_CLINIC,
+  hours: CACHE_TAG_HOURS,
+  schedule: CACHE_TAG_SCHEDULE,
+};
+
+export function expireSiteConfigCache(type: keyof typeof SITE_CONFIG_CACHE_TAGS) {
+  revalidateTag(SITE_CONFIG_CACHE_TAGS[type], { expire: 0 });
+}
 const CACHE_TTL = 3600; // 1 hour
 const SITE_LINK_KEYS = ["kakaoChannel", "instagram", "naverBlog", "naverMap", "kakaoMap"] as const;
 
