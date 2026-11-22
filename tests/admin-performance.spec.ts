@@ -14,7 +14,7 @@ async function setup(page: Page) {
   }, cookieName);
   await page.context().addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", domain: "localhost", path: "/" }]);
   await page.route("**/*.supabase.co/**", route => route.abort());
-  await page.route("**/api/admin/**", route => route.fulfill({ json: { ok: true } }));
+  await page.route("**/api/admin/**", route => route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } }));
 }
 
 const resource = "https://www.born2smile.co.kr/_next/static/chunks/very-long-resource-file-name-for-mobile-layout.css";

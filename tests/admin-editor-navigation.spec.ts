@@ -34,7 +34,7 @@ async function openEditor(page: Page, failSave = false, blocks = POST.blocks) {
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
     let data: unknown = [];
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (path === "/api/admin/blog-posts/navigation-test") {
       if (route.request().method() === "PUT") {
         writes.push(route.request().postDataJSON());

@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   if (!auth.ok) return unauthorizedResponse(auth);
 
   return NextResponse.json(
-    { ok: true, email: auth.email },
+    { ok: true, email: auth.email, access: auth.access },
     {
       headers: {
         "Cache-Control": "private, no-store",

@@ -1,26 +1,31 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
+import { getAdminHome, canOpenAdminPage } from "@/lib/admin-access";
 
 export function AuthGuard({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAdmin, loading, user } = useAdminAuthState();
+  const { access, loading, user } = useAdminAuthState();
   const router = useRouter();
+  const pathname = usePathname();
+  const allowed = access && canOpenAdminPage(access, pathname);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/admin/login");
+    } else if (access && !allowed) {
+      router.replace(getAdminHome(access));
     }
-  }, [loading, router, user]);
+  }, [allowed, loading, access, router, user]);
 
-  if (loading && !isAdmin) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)]">
         <div className="flex flex-col items-center gap-4">
@@ -35,7 +40,7 @@ export function AuthGuard({
     return null;
   }
 
-  if (!isAdmin) {
+  if (!access) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#eef4ff_0%,#f8fafc_55%,#f8fafc_100%)] px-4">
         <AdminSurface tone="white" className="mx-4 max-w-md rounded-[1.75rem] border-white/70 bg-white/92 p-8 text-center shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur-sm">
@@ -65,5 +70,5 @@ export function AuthGuard({
     );
   }
 
-  return <>{children}</>;
+  return allowed ? <>{children}</> : null;
 }

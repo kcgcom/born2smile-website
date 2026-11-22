@@ -69,6 +69,7 @@ interface PostListItemProps {
   onToggleExpanded: (slug: string) => void;
   onShowPerformance: (slug: string) => void;
   onEdit: (post: AdminBlogPost) => void;
+  canPublish: boolean;
   onDelete: (slug: string) => void;
   onStartEditingDate: (post: AdminBlogPost) => void;
   onEditingDateValueChange: (value: string) => void;
@@ -381,6 +382,7 @@ export function PostListItem({
   onToggleExpanded,
   onShowPerformance,
   onEdit,
+  canPublish,
   onDelete,
   onStartEditingDate,
   onEditingDateValueChange,
@@ -537,7 +539,7 @@ export function PostListItem({
               </>
             ) : (
               <>
-                {dDay !== null && (
+                {canPublish && dDay !== null && (
                   <button
                     onClick={() => onStartEditingDate(post)}
                     disabled={rescheduling}
@@ -549,19 +551,19 @@ export function PostListItem({
                 <button
                   onClick={() => onEdit(post)}
                   className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
-                  aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
+                  aria-label={`${post.title} ${isDraft && canPublish ? "검토·발행" : "수정"}`}
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  {isDraft ? "검토·발행" : "수정"}
+                  {isDraft && canPublish ? "검토·발행" : "수정"}
                 </button>
-                <button
+                {canPublish && <button
                   onClick={() => onDelete(post.slug)}
                   className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600"
                   aria-label={`${post.title} 삭제`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   삭제
-                </button>
+                </button>}
               </>
             )}
           </div>

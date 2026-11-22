@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import type { AuthSession } from "@supabase/supabase-js";
 import { ShieldCheck } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
-import { signOutAdmin, verifyAdminUser } from "@/lib/admin-auth";
+import { signOutAdmin, fetchAdminAccess } from "@/lib/admin-auth";
+import { getAdminHome } from "@/lib/admin-access";
 import { CLINIC } from "@/lib/constants";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -12,6 +13,8 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -24,18 +27,18 @@ export default function AdminLoginPage() {
     async function handleAdminRedirect(email?: string, accessToken?: string) {
       if (handled) return;
       handled = true;
-      const isAdmin = await verifyAdminUser(accessToken);
+      const access = await fetchAdminAccess(accessToken);
       if (cancelled) return;
 
-      if (isAdmin) {
+      if (access) {
         try {
           localStorage.setItem("born2smile-admin", "1");
         } catch {
           // ignore private browsing failures
         }
-        window.location.replace("/admin");
+        window.location.replace(getAdminHome(access));
       } else {
-        setError(`${email ?? "알 수 없는 계정"} 은(는) 관리자 계정이 아닙니다.`);
+        setError(`${email ?? "현재 계정"}으로 접속할 수 없습니다. 직원은 이메일과 비밀번호로 로그인해 주세요.`);
         await signOutAdmin();
         handled = false;
         if (!cancelled) setChecking(false);
@@ -74,7 +77,9 @@ export default function AdminLoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event: string, session: AuthSession | null) => {
       if (session?.user) {
-        await handleAdminRedirect(session.user.email ?? undefined, session.access_token);
+        void setTimeout(() => {
+          if (!cancelled) void handleAdminRedirect(session.user.email ?? undefined, session.access_token);
+        }, 0);
       } else if (!cancelled) {
         setChecking(false);
       }
@@ -86,6 +91,20 @@ export default function AdminLoginPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handlePasswordLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const { error: loginError } = await getSupabaseBrowserClient().auth.signInWithPassword({ email: email.trim(), password });
+      if (loginError) setError("이메일 또는 비밀번호를 확인해 주세요.");
+    } catch {
+      setError("로그인에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setPassword("");
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     setError(null);
@@ -142,6 +161,15 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        <form className="mb-4 space-y-3" onSubmit={(event) => { event.preventDefault(); void handlePasswordLogin(); }}>
+          <label className="flex flex-col gap-1 text-sm font-medium">직원 이메일
+            <input required type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 px-3 focus-visible:outline-2 focus-visible:outline-blue-700" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">비밀번호
+            <input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 px-3 focus-visible:outline-2 focus-visible:outline-blue-700" />
+          </label>
+          <AdminActionButton type="submit" disabled={loading} tone="primary" className="w-full justify-center">직원 로그인</AdminActionButton>
+        </form>
         <AdminActionButton
           onClick={handleLogin}
           disabled={loading}
@@ -166,7 +194,7 @@ export default function AdminLoginPage() {
               fill="#EA4335"
             />
           </svg>
-          {loading ? "로그인 중..." : "Google 계정으로 로그인"}
+          원장 Google 로그인
         </AdminActionButton>
 
         <div className="mt-4 text-center text-sm text-slate-500">

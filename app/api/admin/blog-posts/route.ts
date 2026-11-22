@@ -1,6 +1,6 @@
 import { after, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
+import { forbidden, verifyAdminRequest, unauthorizedResponse } from "../_lib/auth";
 import { revalidateBlogCaches } from "../_lib/blog-cache";
 import {
   getAllPostMetasFresh,
@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const posts = await getAllPostMetasFresh();
-    return Response.json({ data: posts }, { headers: HEADERS });
+    const operationsOnly = auth.access && !auth.access.permissions.includes("content");
+    const today = getTodayKST();
+    return Response.json({ data: operationsOnly ? posts.filter((post) => post.published && post.date <= today) : posts }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(
@@ -61,6 +63,10 @@ export async function POST(request: NextRequest) {
       { error: "VALIDATION_ERROR", message: (issues[0] as { message?: string } | undefined)?.message ?? "입력값이 올바르지 않습니다", issues },
       { status: 400, headers: HEADERS },
     );
+  }
+
+  if (!auth.access?.isOwner && data.published) {
+    return unauthorizedResponse(forbidden("발행과 예약 발행은 원장만 확정할 수 있습니다."));
   }
 
   try {

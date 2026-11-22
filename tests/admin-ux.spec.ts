@@ -6,6 +6,7 @@ import { readingPeriodRange, type ReadingReport } from "../lib/blog/reading-repo
 import { performanceRange, type PostPerformance } from "../lib/post-performance";
 import { overviewContent, searchReviewCandidates } from "../lib/admin-overview";
 import { performanceSource } from "../lib/admin-post-performance";
+import { OWNER_ACCESS, type AdminAccess } from "../lib/admin-access";
 
 const metric = { value: 100, change: 5 };
 const path = "/blog/restorative/after-filling-care";
@@ -17,7 +18,7 @@ const search = { siteUrl: "sc-domain:born2smile.co.kr", configuredSiteUrl: "sc-d
 const indexing = { summary: { indexed: 0, needsAttention: 1, failed: 0, unchecked: 0, pendingChanges: 0 }, lastRun: null, events: [], items: [{ url: `https://www.born2smile.co.kr${path}`, path, status: "discovered", coverageState: "Discovered - currently not indexed", canonicalMismatch: false, pendingCount: 0, lastCrawlTime: null, inspectedAt: "2026-11-12T00:00:00Z", error: null }] };
 const conversion = { configured: true, period: "30d", meta: { fetchedAt: "2026-11-12T15:00:00Z", partial: false }, warnings: [], summary: { totalCtaClicks: 28, totalPhoneClicks: 13, contactPageViews: 43, contactToPhoneRate: 11, totalShareActions: 5, totalShareVisits: 11, shareVisitRate: 220, nativeShareActions: 5, copyShareActions: 0 }, byLocation: [], topPages: [], topBlogPosts: [], topSharedBlogPosts: [], shareSources: [] };
 
-async function setup(page: Page, hold90?: Promise<void>) {
+async function setup(page: Page, hold90?: Promise<void>, access: AdminAccess = OWNER_ACCESS) {
   const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? readFileSync(".env.local", "utf8").match(/^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (!publicUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL이 필요합니다.");
   const cookieName = `sb-${new URL(publicUrl).hostname.split(".")[0]}-auth-token`;
@@ -34,7 +35,7 @@ async function setup(page: Page, hold90?: Promise<void>) {
     const url = new URL(route.request().url());
     if (route.request().method() !== "GET") throw new Error("UI 점검은 데이터를 변경하지 않습니다.");
     const end = url.pathname;
-    if (end.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (end.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access } });
     let data: unknown = {};
     if (end.endsWith("/analytics")) {
       if (url.searchParams.get("period") === "90d") {
@@ -155,7 +156,7 @@ test("기간 전환 중 이전 기간 수치를 숨기고 늦은 응답 후 새 
   await expect(page.getByText("집계 기간: 2026-08-15 ~ 2026-11-12", { exact: true })).toBeVisible();
   const searchRequest = page.waitForRequest(request => new URL(request.url()).searchParams.get("period") === "90d"
     && new URL(request.url()).pathname.endsWith("/search-console"));
-  await page.getByRole("navigation", { name: "성과 세부 화면" }).getByRole("link", { name: "검색 성과" }).click();
+  await page.getByRole("navigation", { name: "운영 세부 화면" }).getByRole("link", { name: "검색 성과" }).click();
   await searchRequest;
   await expect(page.getByRole("button", { name: "90일 기간 선택" })).toHaveAttribute("aria-pressed", "true");
 });
@@ -164,7 +165,7 @@ for (const width of [360, 390]) {
   test(`${width}px 관리자 메뉴는 모든 하위 화면을 가리지 않고 터치 영역을 확보한다`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await setup(page);
-    for (const [path, name] of [["/admin/content/posts", "운영"], ["/admin/analysis/search", "성과"]]) {
+    for (const [path, name] of [["/admin/content/posts", "콘텐츠"], ["/admin/analysis/search", "운영"]]) {
       await page.goto(path);
       const nav = page.getByRole("navigation", { name: `${name} 세부 화면`, exact: true });
       if (name === "운영") {
@@ -536,15 +537,15 @@ test("운영 개요는 반복 미해결과 가까운 일정만 보여주고 조�
   await expect(report.getByText("직전 기간 2026-09-13 ~ 2026-10-12 · 검색 클릭 20회 → 12회")).toBeVisible();
 });
 
-test("주 메뉴는 운영·성과·사이트 관리로 나뉘고 보조 도구는 접혀 있다", async ({ page }) => {
+test("원장은 운영·콘텐츠·행정 메뉴와 보조 도구를 사용할 수 있다", async ({ page }) => {
   await setup(page);
   await page.route("**/api/admin/site-config/*", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
   await page.goto("/admin/content/posts/new");
   const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
-  await expect(main.getByRole("link")).toHaveText(["운영", "성과", "사이트 관리"]);
-  await expect(main.getByRole("link", { name: "운영", exact: true })).toHaveAttribute("aria-current", "page");
-  const operation = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
-  await expect(operation.getByRole("link")).toHaveText(["오늘 할 일", "작업함", "포스트", "발행 일정", "이미지"]);
+  await expect(main.getByRole("link")).toHaveText(["운영", "콘텐츠", "행정"]);
+  await expect(main.getByRole("link", { name: "콘텐츠", exact: true })).toHaveAttribute("aria-current", "page");
+  const operation = page.getByRole("navigation", { name: "콘텐츠 세부 화면", exact: true });
+  await expect(operation.getByRole("link")).toHaveText(["작업함", "포스트", "검토 대기", "발행 일정", "이미지"]);
   await expect(operation.getByRole("link", { name: "포스트", exact: true })).toHaveAttribute("aria-current", "page");
   const tools = page.getByRole("navigation", { name: "관리자 보조 도구", exact: true });
   await expect(tools).toBeHidden();
@@ -557,13 +558,92 @@ test("주 메뉴는 운영·성과·사이트 관리로 나뉘고 보조 도구�
     "개념별 근거 검토", "변경 후 재평가", "키워드 경계 검토",
   ]);
   await expect(operation.getByRole("link", { name: "작업함", exact: true })).toHaveAttribute("href", "/admin/content/tasks");
-  await main.getByRole("link", { name: "성과", exact: true }).click();
-  await expect(page).toHaveURL("/admin/analysis/search");
-  await expect(page.getByRole("navigation", { name: "성과 세부 화면", exact: true }).getByRole("link")).toHaveText(["검색 성과", "방문·읽기", "문의·공유", "색인 상태"]);
-  await main.getByRole("link", { name: "사이트 관리", exact: true }).click();
+  await main.getByRole("link", { name: "운영", exact: true }).click();
+  await expect(page).toHaveURL("/admin/operations/overview");
+  await expect(page.getByRole("navigation", { name: "운영 세부 화면", exact: true }).getByRole("link")).toHaveText(["오늘 할 일", "검색 성과", "방문·읽기", "문의·공유", "색인 상태", "사이트 성능", "프로젝트 현황", "레퍼런스", "계정·접속 관리"]);
+  await main.getByRole("link", { name: "행정", exact: true }).click();
   await expect(page).toHaveURL("/admin/system/settings");
-  await expect(main.getByRole("link", { name: "사이트 관리", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 정보·진료시간", "사이트 성능", "프로젝트 현황", "레퍼런스"]);
+  await expect(main.getByRole("link", { name: "행정", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "행정 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 정보·진료시간"]);
+});
+
+for (const [role, label, home, blocked] of [
+  ["content", "콘텐츠", "/admin/content/tasks", "/admin/system/monitoring"],
+  ["staff", "행정", "/admin/system/settings", "/admin/content/posts"],
+] as const) {
+  test(`${label} 계정은 다른 역할 화면에 직접 접근해도 자기 메뉴로 돌아간다`, async ({ page }) => {
+    await setup(page, undefined, { isOwner: false, permissions: [role] });
+    await page.goto(blocked);
+    await expect(page).toHaveURL(home);
+    await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" }).getByRole("link")).toHaveText([label]);
+    await expect(page.getByRole("navigation", { name: "관리자 보조 도구" })).toHaveCount(0);
+  });
+}
+
+test("콘텐츠와 행정 권한을 함께 가진 계정은 두 메뉴를 연다", async ({ page }) => {
+  await setup(page, undefined, { isOwner: false, permissions: ["content", "staff"] });
+  await page.goto("/admin/system/monitoring");
+  await expect(page).toHaveURL("/admin/content/tasks");
+  const nav = page.getByRole("navigation", { name: "관리자 워크스페이스" });
+  await expect(nav.getByRole("link")).toHaveText(["콘텐츠", "행정"]);
+  await nav.getByRole("link", { name: "행정" }).click();
+  await expect(page).toHaveURL("/admin/system/settings");
+});
+
+test("원장은 계정 목록과 접속 기록을 보고 설정에서 직원 접근을 중지한다", async ({ page }) => {
+  await setup(page);
+  const email = "desk@example.invalid";
+  let enabled = true;
+  await page.route("**/api/admin/accounts", async (route) => {
+    if (route.request().method() === "PUT") {
+      const body = route.request().postDataJSON();
+      expect(body).toEqual({ email, permissions: ["staff"], enabled: false });
+      enabled = body.enabled;
+      return route.fulfill({ json: { data: { email } } });
+    }
+    return route.fulfill({ json: { data: {
+      accounts: [{ email, permissions: ["staff"], isOwner: false, enabled }],
+      presence: [{ email, browser_id: "desk-browser", device_name: "데스크", public_ip: "192.0.2.1", last_seen_at: new Date().toISOString() }],
+      checkedAt: Date.now(),
+    } } });
+  });
+  await page.goto("/admin/operations/accounts");
+  await expect(page.getByText("192.0.2.1")).toBeVisible();
+  await expect(page.getByRole("button", { name: "권한·상태 변경" })).toHaveCount(0);
+  await page.getByRole("button", { name: "계정 설정" }).click();
+  await page.getByRole("button", { name: "권한·상태 변경" }).click();
+  await page.getByRole("checkbox", { name: "사용 허용" }).uncheck();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.getByText("행정 · 중지", { exact: false })).toBeVisible();
+});
+
+test("콘텐츠 관리자는 초안을 저장해 원장에게 검토를 요청할 수 있다", async ({ page }) => {
+  await setup(page, undefined, { isOwner: false, permissions: ["content", "operations"] });
+  const draft = { ...post, subtitle: "치료 후 관리", excerpt: "치료 후 식사 방법을 안내하는 초안입니다.", date: "2026-11-22", blocks: [{ type: "paragraph", text: "치료 후에는 마취가 풀린 다음 식사하세요." }] };
+  const actions: string[] = [];
+  await page.route(`**/api/admin/blog-posts/${post.slug}`, async (route) => {
+    if (route.request().method() === "PUT") {
+      expect(route.request().postDataJSON().published).toBe(false);
+      actions.push("save");
+      return route.fulfill({ json: { data: { slug: post.slug } } });
+    }
+    return route.fulfill({ json: { data: draft } });
+  });
+  await page.route("**/api/admin/publication-review", async (route) => {
+    if (route.request().method() === "POST") {
+      expect(route.request().postDataJSON()).toEqual({ slug: post.slug });
+      actions.push("review");
+      return route.fulfill({ json: { data: { slug: post.slug } } });
+    }
+    return route.fulfill({ json: { data: { drafts: [draft], revisions: [] } } });
+  });
+  await page.goto(`/admin/content/posts/${post.slug}`);
+  await expect(page.getByRole("button", { name: "저장 후 발행", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "저장 후 검토 요청", exact: true }).click();
+  await expect(page).toHaveURL("/admin/content/review", { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "검토 대기 원고" })).toBeVisible();
+  await expect(page.getByRole("link", { name: draft.title })).toBeVisible();
+  expect(actions).toEqual(["save", "review"]);
 });
 
 for (const [path, label] of [
@@ -574,7 +654,7 @@ for (const [path, label] of [
     await page.setViewportSize({ width: 390, height: 844 });
     await setup(page);
     await page.route("**/api/admin/**", route => new URL(route.request().url()).pathname.endsWith("auth-check")
-      ? route.fulfill({ json: { ok: true } })
+      ? route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } })
       : route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
     await page.goto(path);
     const tools = page.getByRole("navigation", { name: "관리자 보조 도구", exact: true });
@@ -592,14 +672,14 @@ for (const [path, label] of [
   ["/admin/system/devtools/project", "프로젝트 현황"],
   ["/admin/system/devtools/ref", "레퍼런스"],
 ] as const) {
-  test(`사이트 관리 직접 진입 시 ${label} 탭을 선택한다`, async ({ page }) => {
+  test(`원장 화면 직접 진입 시 ${label} 탭을 선택한다`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await setup(page);
     await page.route("**/api/dev/**", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
     await page.goto(path);
     const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
-    await expect(main.getByRole("link", { name: "사이트 관리", exact: true })).toHaveAttribute("aria-current", "page");
-    const tabs = page.getByRole("navigation", { name: "사이트 관리 세부 화면", exact: true });
+    await expect(main.getByRole("link", { name: "운영", exact: true })).toHaveAttribute("aria-current", "page");
+    const tabs = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
     await expect(tabs.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(tabs.getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
     if (label === "프로젝트 현황") {
@@ -623,7 +703,7 @@ test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼�
   expect(await page.getByRole("navigation", { name: "관리자 워크스페이스" }).evaluate(node => node.getBoundingClientRect().height)).toBeLessThan(70);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("mobile-posts.png") });
-  const active = page.getByRole("navigation", { name: "운영 세부 화면" }).getByRole("link", { name: "포스트", exact: true });
+  const active = page.getByRole("navigation", { name: "콘텐츠 세부 화면" }).getByRole("link", { name: "포스트", exact: true });
   expect(await active.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(14);
   const ratio = await active.evaluate(node => {
     const style = getComputedStyle(node), canvas = document.createElement("canvas"); canvas.width = canvas.height = 1;
@@ -704,7 +784,7 @@ for (const width of [1280, 1440]) {
     await setup(page);
     await page.goto("/admin/content/posts");
     const main = await page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true }).boundingBox();
-    const section = await page.getByRole("navigation", { name: "운영 세부 화면", exact: true }).boundingBox();
+    const section = await page.getByRole("navigation", { name: "콘텐츠 세부 화면", exact: true }).boundingBox();
     expect(Math.abs(main!.y - section!.y)).toBeLessThan(5);
     expect((await page.getByRole("heading", { name: "포스트 목록", exact: true }).boundingBox())!.y).toBeLessThan(600);
     await expect(page.getByRole("button", { name: "캐시 갱신", exact: true })).toBeVisible();

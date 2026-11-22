@@ -1,4 +1,5 @@
 "use client";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
@@ -26,6 +27,7 @@ import {
 const PostPerformancePanel = dynamic(() => import("./PostPerformancePanel").then(module => module.PostPerformancePanel), { loading: () => <p role="status">성과 패널을 준비하는 중…</p> });
 
 export function PostsSubTab() {
+  const canPublish = useAdminAuthState().access?.isOwner === true;
   const router = useRouter();
   const searchParams = useSearchParams();
   const today = getTodayKST();
@@ -226,6 +228,7 @@ export function PostsSubTab() {
                     onToggleExpanded={(slug) => setExpandedSlug((current) => (current === slug ? null : slug))}
                     onShowPerformance={showPerformance}
                     onEdit={handleEdit}
+                    canPublish={canPublish}
                     onDelete={handleDelete}
                     onStartEditingDate={(targetPost) => {
                       if (rescheduling) return;

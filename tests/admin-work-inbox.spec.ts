@@ -27,7 +27,7 @@ async function openInbox(page: Page, initialPath = "/admin/content/tasks", fail 
     const request = route.request();
     const path = new URL(request.url()).pathname;
     calls.push(path);
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (request.method() !== "GET") {
       if (request.method() !== "PUT" || !path.startsWith("/api/admin/content-planner/task-")) return route.fulfill({ status: 403, json: { message: "테스트 쓰기 차단" } });
       writes.push(request.postDataJSON());

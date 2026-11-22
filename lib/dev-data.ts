@@ -121,7 +121,9 @@ export const ENV_VARIABLES: EnvVariable[] = [
   { key: "SUPABASE_SERVICE_ROLE_KEY", label: "Supabase Service Role Key", required: true, scope: "private", group: "supabase" },
 
   // ── 인증 ──
-  { key: "ADMIN_EMAILS", label: "관리자 이메일", required: true, scope: "private", group: "auth" },
+  { key: "ADMIN_EMAILS", label: "원장 이메일", required: true, scope: "private", group: "auth" },
+  { key: "ADMIN_CONTENT_EMAILS", label: "콘텐츠 권한 이메일", required: false, scope: "private", group: "auth" },
+  { key: "ADMIN_STAFF_EMAILS", label: "행정 권한 이메일", required: false, scope: "private", group: "auth" },
 
   // ── Google ──
   { key: "GOOGLE_SERVICE_ACCOUNT_KEY", label: "Google 서비스 계정 JSON", required: false, scope: "private", group: "google" },

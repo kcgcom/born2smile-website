@@ -27,7 +27,7 @@ export async function setupOutcomes(page: Page) {
     const url = new URL(route.request().url());
     if (route.request().method() !== "GET") throw new Error("UI 점검은 데이터를 변경하지 않습니다.");
     const end = url.pathname;
-    if (end.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (end.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     let data: unknown = {};
     if (end.endsWith("/analytics")) {
       if (url.searchParams.get("period") === "90d") {

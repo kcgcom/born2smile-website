@@ -17,7 +17,9 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 필수 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | 필수 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Admin key | 필수 |
-| `ADMIN_EMAILS` | 관리자 이메일 화이트리스트 | 브라우저 관리자 로그인·권한 확인 시 필수 |
+| `ADMIN_EMAILS` | 원장 계정 이메일 목록 | 기존 관리자 계정. 전체 메뉴와 최종 발행 권한 |
+| `ADMIN_CONTENT_EMAILS` | 콘텐츠 관리자 이메일 목록 | 선택. 콘텐츠 메뉴, 원고 편집·검토 요청 |
+| `ADMIN_STAFF_EMAILS` | 행정 직원 이메일 목록 | 선택. 병원 안내 정보·진료시간 설정 |
 | `ADMIN_CLI_SECRET` | 관리자 API의 CLI 인증용 서버 비밀키 | CLI 재검증 등 관리자 작업 시 사용. 호출 대상 서버와 동일한 값 |
 | `AGENT_CONTENT_SECRET` | 허용된 조회·작업 제안/보고·비공개 원고/수정안 생성·이미지 업로드용 키 | `agent:task`, `content-tasks` API, `agent:revision`, `POST /api/admin/upload`에 사용. 작업 승인·완료·기존 원본 직접 수정·발행·삭제·적용 권한 없음 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | GA4/Search Console 서버 인증 JSON | WIF 미설정 환경에서 기존 인증 사용 시 |
@@ -69,6 +71,10 @@
 - 관리자 색인 화면의 자동 제출 상태를 사용하려면 `027_indexnow_runs.sql` 마이그레이션을 적용합니다. 사이트 전체의 최근 실행과 최근 HTTP 200 접수를 보관합니다. 게시물별로는 마지막 HTTP 200 접수를 보관하고, 제출 시작 시각과 게시물 수정 시각을 비교해 제출 필요 여부를 표시합니다. 수동 CLI 결과는 터미널에 표시됩니다.
 
 ## 기능별 메모
+
+### 관리자 업무 권한
+
+원장은 `운영 → 계정·접속 관리`에서 직원 이메일을 등록하고 콘텐츠·행정 권한과 사용 여부를 설정한다. 저장된 직원 설정은 기존 이메일 허용 목록에 우선한다. 직원은 계정 설정에서 원장이 지정한 비밀번호와 이메일로 로그인한다. Supabase Auth에서 Email 제공자가 활성화되어 있어야 한다. 직원의 Google 세션에는 관리자 권한을 부여하지 않는다. 기존 직원이 Google로만 로그인했다면 원장이 비밀번호를 설정한 후 새 방식으로 로그인한다. 운영 메뉴, 계정 설정, 최종 발행은 `ADMIN_EMAILS`에 등록한 원장 계정에서 사용한다.
 
 ### GA4 및 Search Console의 Vercel 인증
 

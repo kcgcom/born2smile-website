@@ -38,7 +38,7 @@ async function openEditorWithoutWrites(page: Page, options: { blocks?: BlogBlock
   // request, then return a validation response so the edit remains inspectable.
   await page.route("**/api/admin/**", async (route) => {
     if (new URL(route.request().url()).pathname === "/api/admin/auth-check") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } }) });
     }
     if (route.request().method() === "GET" && route.request().url().includes("/api/admin/blog-posts/")) {
       if (options.failRead) return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ message: "테스트: 원문 조회에 실패했습니다." }) });

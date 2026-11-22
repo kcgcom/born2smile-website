@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import type { IndexingMonitorData } from "@/lib/admin-indexing-monitor";
 import type { ContentPlannerItem } from "@/lib/content-planner";
 import type { SiteHours } from "@/lib/site-config-supabase";
@@ -29,13 +30,16 @@ const REPORT_SHORTCUTS = [
 ];
 
 export function GrowthOverviewPanel() {
-  const tasks = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner");
+  const { access } = useAdminAuthState();
+  const canReadContent = access?.permissions.includes("content") === true;
+  const canReadStaff = access?.permissions.includes("staff") === true;
+  const tasks = useAdminApi<ContentPlannerItem[]>("/api/admin/content-planner", canReadContent);
   const taskItems = !tasks.error && Array.isArray(tasks.data) ? tasks.data : null;
-  const posts = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
-  const feedback = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
+  const posts = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts", canReadContent);
+  const feedback = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback", canReadContent);
   const indexing = useAdminApi<IndexingMonitorData>("/api/admin/indexing-status");
-  const hours = useAdminApi<SiteHours>("/api/admin/site-config/hours");
-  const searchAttention = useAdminApi<SearchAttention>("/api/admin/search-attention");
+  const hours = useAdminApi<SiteHours>("/api/admin/site-config/hours", canReadStaff);
+  const searchAttention = useAdminApi<SearchAttention>("/api/admin/search-attention", canReadContent);
   const today = getTodayKST();
   const content = overviewContent(posts.data ?? [], feedback.data?.feedback ?? {}, today);
   const exceptions = (hours.data?.exceptions ?? []).filter(item => item.date >= today && item.date <= content.end).sort((a, b) => a.date.localeCompare(b.date));
@@ -48,9 +52,9 @@ export function GrowthOverviewPanel() {
     return post ? [{ ...item, post }] : [];
   });
   const sources = [
-    { name: "포스트 목록", ...posts }, { name: "독자 응답", ...feedback },
-    { name: "색인 상태", ...indexing }, { name: "진료시간", ...hours },
-    { name: "검색 변화", ...searchAttention },
+    { name: "색인 상태", ...indexing },
+    ...(canReadContent ? [{ name: "포스트 목록", ...posts }, { name: "독자 응답", ...feedback }, { name: "검색 변화", ...searchAttention }] : []),
+    ...(canReadStaff ? [{ name: "진료시간", ...hours }] : []),
   ];
   const issues = sources.filter(source => source.error);
   const pending = sources.some(source => source.loading);
@@ -64,7 +68,8 @@ export function GrowthOverviewPanel() {
 
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">지금 처리할 일</h2>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      {canReadContent && <div className="mt-3 flex flex-wrap items-center gap-2">
+        <AdminActionLink tone="dark" href="/admin/content/review">검토 대기 원고</AdminActionLink>
         {taskItems ? WORK_ATTENTION.map(({ id, label }) => (
           <AdminActionLink key={id} tone="dark" href={`/admin/content/tasks?attention=${id}`}>
             {label} {taskItems.filter(item => needsWorkAttention(item, id)).length}건
@@ -73,7 +78,7 @@ export function GrowthOverviewPanel() {
           <p role="status" className="text-sm text-slate-600">{tasks.loading ? "작업 상태를 확인하는 중…" : "작업 현황을 확인하지 못했습니다."}</p>
           <AdminActionLink tone="dark" href="/admin/content/tasks">작업함 열기</AdminActionLink>
         </>}
-      </div>
+      </div>}
       {pending && <p role="status" className="mt-3 text-sm text-slate-600">운영 상태를 확인하는 중…</p>}
       {issues.map(source => <div key={source.name} className="mt-3"><p className="mb-1 text-sm font-semibold">{source.name} 조회 실패</p><AdminErrorState message={source.error!} onRetry={source.refetch} /></div>)}
       {!indexing.error && (failedChecks > 0 || failedRun) && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -85,8 +90,8 @@ export function GrowthOverviewPanel() {
       {!indexing.error && indexing.data && indexing.data.summary.needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {indexing.data.summary.needsAttention}개 ·  <a href="/admin/analysis/indexing" className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">색인 상세 보기</a></p>}
     </AdminSurface>
 
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-    <AdminSurface tone="white" className="min-w-0 rounded-2xl p-4 sm:p-6">
+    {(canReadContent || canReadStaff) && <div className={`grid items-start gap-6 ${canReadContent ? "lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]" : ""}`}>
+    {canReadContent && <AdminSurface tone="white" className="min-w-0 rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">검토할 콘텐츠</h2>
       <div className="mt-4 grid gap-5 xl:grid-cols-2">
         <section aria-label="초안 검토">
@@ -123,35 +128,35 @@ export function GrowthOverviewPanel() {
             </li>)}</ul> : <p className="mt-3 text-sm text-slate-600">현재 기준을 충족하는 검색 변화 후보가 없습니다.</p>}
           </>}
       </section>
-    </AdminSurface>
+    </AdminSurface>}
 
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">가까운 일정</h2>
       <p className="mt-1 text-xs text-slate-500">{today} ~ {content.end} · 앞으로 {OVERVIEW_WINDOW_DAYS}일</p>
       <div className="mt-4 grid gap-5">
-        <section aria-label="발행 예정">
+        {canReadContent && <section aria-label="발행 예정">
           <h3 className="font-semibold text-slate-900">발행 예정 글</h3>
           {posts.loading ? <p className="mt-2 text-sm">일정 확인 중…</p> : posts.error || !posts.data ? <p className="mt-2 text-sm text-slate-600">발행 일정을 확인할 수 없습니다.</p> : content.scheduled.length ? <ul className="mt-3 space-y-2">{content.scheduled.slice(0, 5).map(post => <li key={post.slug} className="flex flex-wrap gap-x-3 gap-y-1 text-sm"><time dateTime={post.date} className="text-slate-600">{post.date}</time><a href={`/admin/content/posts/${post.slug}`} className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">{post.title}</a></li>)}</ul> : <p className="mt-2 text-sm text-slate-600">이 기간에 예약된 글이 없습니다.</p>}
           <AdminActionLink tone="dark" href="/admin/content/schedule" className="mt-3">발행 일정 보기</AdminActionLink>
-        </section>
-        <section aria-label="진료 일정 변경">
+        </section>}
+        {canReadStaff && <section aria-label="진료 일정 변경">
           <h3 className="font-semibold text-slate-900">휴진·진료시간 변경</h3>
           {hours.loading ? <p className="mt-2 text-sm">진료 일정 확인 중…</p> : hours.error || !hours.data ? <p className="mt-2 text-sm text-slate-600">진료시간 설정을 확인할 수 없습니다.</p> : <>
             {exceptions.length ? <ul className="mt-3 space-y-2">{exceptions.map(item => <li key={item.date} className="rounded-xl bg-slate-50 p-3 text-sm"><time dateTime={item.date}>{item.date}</time> · {item.open ? `변경 진료 ${item.time}` : "휴진"}{item.note && <p className="mt-1 text-slate-600">{item.note}</p>}</li>)}</ul> : <p className="mt-2 text-sm text-slate-600">현재 설정에 이 기간의 예외 일정이 없습니다.</p>}
             {hours.data.notice && <p className="mt-3 text-sm text-slate-600">현재 진료 안내: {hours.data.notice}</p>}
           </>}
           <AdminActionLink tone="dark" href="/admin/system/settings" className="mt-3">진료시간·휴진 설정</AdminActionLink>
-        </section>
+        </section>}
       </div>
     </AdminSurface>
-    </div>
+    </div>}
 
     <BusinessProfileCard />
 
     <details className="rounded-2xl border border-slate-200 bg-white p-4">
       <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-slate-800">상세 분석으로 이동</summary>
       <nav className="mt-3 flex flex-wrap gap-2" aria-label="자주 보는 성과">
-        {REPORT_SHORTCUTS.map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}
+        {REPORT_SHORTCUTS.filter(link => canReadContent || link.href !== "#search-review").map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}
       </nav>
       <div className="mt-3 flex flex-wrap gap-2">{ANALYSIS_LINKS.map(link => <AdminActionLink tone="dark" key={link.href} href={link.href}>{link.title}</AdminActionLink>)}</div>
     </details>

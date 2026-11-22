@@ -1,12 +1,13 @@
 import { after, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
+import { forbidden, verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import { revalidateBlogCaches } from "../../_lib/blog-cache";
 import {
   getPostAdminBySlugFresh,
   getPostBySlugFresh,
   updateBlogPost,
   deleteBlogPost,
+  DraftPublicationConflictError,
   type UpdateBlogPostData,
 } from "@/lib/blog-supabase";
 import { blogPostUpdateSchema } from "@/lib/blog-validation";
@@ -84,6 +85,11 @@ export async function PUT(
     );
   }
 
+  const draftOnly = !auth.access?.isOwner;
+  if (draftOnly && data.published === true) {
+    return unauthorizedResponse(forbidden("발행과 예약 발행은 원장만 확정할 수 있습니다."));
+  }
+
   try {
     const existing = await getPostBySlugFresh(slug);
     if (!existing) {
@@ -102,6 +108,9 @@ export async function PUT(
 
     const todayKST = getTodayKST();
     const previousPublished = existingMeta?.published === true;
+    if (draftOnly && previousPublished) {
+      return unauthorizedResponse(forbidden("공개 또는 예약된 글은 수정안을 검토 요청해 주세요."));
+    }
     const effectivePublished = data.published ?? previousPublished;
     if (data.blocks !== undefined || data.published === true) {
       const issues = await validateBlogCitationTargets(data.blocks ?? existing.blocks, effectivePublished);
@@ -133,7 +142,7 @@ export async function PUT(
     const privateState = !wasPublic && !publishedAndDatedTodayOrPast
       ? { published: previousPublished, date: existingMeta.date }
       : undefined;
-    const revalidatePublic = await updateBlogPost(slug, updateData, auth.email, privateState);
+    const revalidatePublic = await updateBlogPost(slug, updateData, auth.email, privateState, draftOnly);
 
     const category = updateData.category ?? existing.category;
     if (revalidatePublic) {
@@ -146,6 +155,7 @@ export async function PUT(
 
     return Response.json({ data: { slug } }, { headers: HEADERS });
   } catch (error) {
+    if (error instanceof DraftPublicationConflictError) return Response.json({ error: "CONFLICT", message: "글의 발행 상태가 바뀌었습니다. 새로고침 후 다시 확인해 주세요." }, { status: 409, headers: HEADERS });
     if (error instanceof CitationResearchUnavailableError) return Response.json({ error: "RESEARCH_UNAVAILABLE", message: error.message }, { status: 503, headers: HEADERS });
     Sentry.captureException(error);
     return Response.json(

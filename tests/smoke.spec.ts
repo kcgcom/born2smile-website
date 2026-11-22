@@ -79,7 +79,8 @@ test.describe('Smoke Tests', () => {
     const response = await page.goto('/admin/login');
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/admin\/login$/);
-    await expect(page.getByRole('button', { name: 'Google 계정으로 로그인' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '원장 Google 로그인' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '직원 로그인' })).toBeEnabled();
   });
 
   test('콘텐츠 워크스페이스 핵심 경로는 로그인으로 보호된다', async ({ page }) => {

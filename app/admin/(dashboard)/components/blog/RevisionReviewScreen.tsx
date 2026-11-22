@@ -4,6 +4,7 @@ import { useState } from "react";
 import { mutate as refreshCache } from "swr";
 import { AdminActionButton, AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { renderBlocks } from "@/components/blog/BlogPostRenderer";
 import type { RevisionContent } from "@/lib/content-revisions";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
@@ -16,6 +17,7 @@ interface Proposal {
 }
 
 export function RevisionReviewScreen({ id }: { id: string }) {
+  const { access } = useAdminAuthState();
   const proposal = useAdminApi<Proposal>(`/api/admin/content-revisions/${encodeURIComponent(id)}`);
   const source = useAdminApi<{ revision: string; published: boolean; date: string }>(proposal.data ? `/api/admin/blog-posts/${encodeURIComponent(proposal.data.slug)}/source` : "", Boolean(proposal.data));
   const { mutate, loading: applying, error } = useAdminMutation<{ cacheRefreshPending?: boolean }>();
@@ -36,6 +38,7 @@ export function RevisionReviewScreen({ id }: { id: string }) {
     setApplied(true);
     setCachePending(Boolean(result.data?.cacheRefreshPending));
     void refreshCache("/api/admin/blog-posts").catch(() => {});
+    void refreshCache("/api/admin/publication-review").catch(() => {});
     void refreshCache(`/api/admin/blog-posts/${item.slug}`).catch(() => {});
     proposal.refetch();
     source.refetch();
@@ -63,7 +66,7 @@ export function RevisionReviewScreen({ id }: { id: string }) {
         <div className="mt-6 space-y-5">{renderBlocks(preview.blocks)}</div>
       </section>
     </AdminSurface>
-    {!done && <AdminSurface tone="white" className="rounded-2xl p-5">
+    {!done && access?.isOwner && <AdminSurface tone="white" className="rounded-2xl p-5">
       <p className="mb-3 text-sm text-slate-700">반영하면 원본 글의 내용이 바뀝니다. 공개 중인 글에는 즉시 반영되며, 초안·예약 상태와 발행 날짜는 유지됩니다.</p>
       <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={confirmed} disabled={applying || conflict} onChange={event => setConfirmed(event.target.checked)} />수정 전후 내용을 검토했으며 원본 반영에 동의합니다.</label>
       <AdminActionButton tone="primary" onClick={apply} disabled={!confirmed || applying || conflict || !source.data || Boolean(source.error)}>{applying ? "반영 중…" : "검토한 수정안 반영"}</AdminActionButton>

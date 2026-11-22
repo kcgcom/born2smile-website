@@ -33,7 +33,7 @@ async function openRevision(page: Page, options: { conflict?: boolean; failApply
   const writes: unknown[] = [];
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (path.endsWith("/apply") && route.request().method() === "POST") {
       writes.push(route.request().postDataJSON());
       if (options.hold) await options.hold;
@@ -56,7 +56,7 @@ async function openRevision(page: Page, options: { conflict?: boolean; failApply
 
 test("관리자가 수정 전후를 검토하고 동의한 뒤 한 번만 반영한다", async ({ page }) => {
   const { writes } = await openRevision(page);
-  await expect(page.getByRole("navigation", { name: "운영 세부 화면", exact: true }).getByRole("link", { name: "포스트", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "콘텐츠 세부 화면", exact: true }).getByRole("link", { name: "포스트", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "수정 후 검토할 제목", exact: true })).toBeVisible();
   const apply = page.getByRole("button", { name: "검토한 수정안 반영", exact: true });
   await expect(apply).toBeDisabled();

@@ -489,11 +489,14 @@ export async function getAllPostDetailsFresh(): Promise<BlogPostAdminRecord[]> {
  * Update an existing blog post row (partial update).
  * Recalculates readTime if blocks are provided.
  */
+export class DraftPublicationConflictError extends Error {}
+
 export async function updateBlogPost(
   slug: string,
   data: UpdateBlogPostData,
   updatedBy: string,
   privateState?: { published: boolean; date: string },
+  draftOnly = false,
 ): Promise<boolean> {
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -515,6 +518,18 @@ export async function updateBlogPost(
   }
 
   const admin = getSupabaseAdmin();
+  if (draftOnly) {
+    const { data: saved, error } = await admin.from(TABLE)
+      .update(update)
+      .eq("slug", slug)
+      .eq("published", false)
+      .select("slug")
+      .maybeSingle();
+    if (error) throw error;
+    if (!saved) throw new DraftPublicationConflictError();
+    expireBlogPostCache(slug);
+    return false;
+  }
   if (privateState) {
     // A concurrent publication must go through the normal invalidation path.
     const { data: saved, error } = await admin.from(TABLE)

@@ -1,4 +1,5 @@
 "use client";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
 import { useState } from "react";
 import { Check, Loader2, Save, Sparkles } from "lucide-react";
@@ -44,6 +45,7 @@ export function ContentScheduleManager({
   initialPosts?: SchedulePostItem[];
   loadingOverride?: boolean;
 }) {
+  const canEditPolicy = useAdminAuthState().access?.isOwner === true;
   const today = getTodayKST();
   const shouldFetch = !embedded;
   const { data, loading, error: policyError, refetch } = useAdminApi<{ publishDays: number[] }>("/api/admin/site-config/schedule", shouldFetch);
@@ -164,7 +166,7 @@ export function ContentScheduleManager({
               새 글의 추천 요일입니다. 기존 예약일은 바뀌지 않습니다.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          {canEditPolicy && <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={handleSave}
@@ -174,7 +176,7 @@ export function ContentScheduleManager({
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
               {saving ? "저장 중..." : saved ? "저장됨" : "저장"}
             </button>
-          </div>
+          </div>}
         </div>
 
         {policyError && <AdminNotice tone="error">발행 요일 정책을 불러오지 못했습니다. <button type="button" onClick={refetch} className="underline">다시 시도</button></AdminNotice>}
@@ -189,7 +191,7 @@ export function ContentScheduleManager({
                 type="button"
                 onClick={() => toggleDay(index)}
                 aria-pressed={selected}
-                disabled={saving || (!embedded && (Boolean(policyError) || !data))}
+                disabled={!canEditPolicy || saving || (!embedded && (Boolean(policyError) || !data))}
                 className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 lg:w-auto ${
                   selected
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"

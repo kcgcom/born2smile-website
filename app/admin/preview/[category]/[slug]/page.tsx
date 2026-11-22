@@ -23,7 +23,7 @@ import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
 import { InlineBlogEditButton } from "@/components/admin/InlineBlogEditButton";
 import { getResearchCalloutNotices } from "@/lib/blog/research-callout-notices";
-import { getIsAdminServer } from "@/lib/server-admin-check";
+import { getAdminAccessServer } from "@/lib/server-admin-check";
 
 // 항상 최신 내용을 반환 (캐시 우회)
 export const dynamic = "force-dynamic";
@@ -38,7 +38,8 @@ export default async function BlogPreviewPage({
   params: Promise<{ category: string; slug: string }>;
 }) {
   // Validate the session and administrator role before reading unpublished data.
-  if (!(await getIsAdminServer())) redirect("/admin/login");
+  const access = await getAdminAccessServer();
+  if (!access?.permissions.includes("content")) redirect("/admin/login");
 
   const { category, slug } = await params;
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Pencil, Calendar, Check, FileEdit } from "lucide-react";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useAdminAuthState } from "./AdminAuthProvider";
 import { AdminActionButton, AdminActionLink, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { getAccessToken } from "@/lib/supabase";
 import { usePublishPopup } from "@/hooks/usePublishPopup";
@@ -18,7 +18,7 @@ interface AdminDraftBarProps {
  * 수정 링크 + 발행 예약 팝업을 제공.
  */
 export function AdminDraftBar({ slug }: AdminDraftBarProps) {
-  const isAdmin = useAdminAuth();
+  const isAdmin = useAdminAuthState().access?.isOwner === true;
   const [isDraft, setIsDraft] = useState<boolean | null>(null);
   const [publishedDate, setPublishedDate] = useState<string | null>(null);
 

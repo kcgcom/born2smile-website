@@ -41,7 +41,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   let failWrite = false;
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (path.endsWith("/search-console")) return route.fulfill({ json: { data: null } });
     if (path.endsWith("/blog-posts")) return route.fulfill({ json: { data: [] } });
     if (path.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });

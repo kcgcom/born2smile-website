@@ -4,19 +4,24 @@
 // =============================================================
 
 import { getSupabaseBrowserClient } from "./supabase";
+import { ADMIN_PERMISSIONS, type AdminAccess } from "./admin-access";
 
 /** 서버 API를 통해 관리자 권한 검증 — accessToken을 넘기면 getSession() 재호출 생략 */
-export async function verifyAdminUser(accessToken?: string): Promise<boolean> {
+export async function fetchAdminAccess(accessToken?: string): Promise<AdminAccess | null> {
   try {
     const token = accessToken ?? (await getSupabaseBrowserClient().auth.getSession()).data.session?.access_token;
-    if (!token) return false;
+    if (!token) return null;
     const response = await fetch("/api/admin/auth-check", {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    return response.ok;
+    if (!response.ok) return null;
+    const { access } = await response.json();
+    if (!Array.isArray(access?.permissions) || typeof access.isOwner !== "boolean") return null;
+    const permissions = ADMIN_PERMISSIONS.filter((permission) => access.permissions.includes(permission));
+    return permissions.length ? { isOwner: access.isOwner, permissions } : null;
   } catch {
-    return false;
+    return null;
   }
 }
 

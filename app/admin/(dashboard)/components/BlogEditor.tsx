@@ -34,12 +34,15 @@ interface BlogEditorProps {
     date: string;
     blocks?: BlogBlock[];
     published?: boolean;
+    revision?: string;
   };
-  onSave: (data: BlogEditorData) => Promise<{ error: string | null }>;
+  onSave: (data: BlogEditorData, baseRevision?: string) => Promise<{ error: string | null }>;
   onPublish?: (
     data: BlogEditorData,
     onPublished: (saved: BlogEditorData) => void,
   ) => Promise<{ error: string | null }>;
+  onReview?: (data: BlogEditorData) => Promise<{ error: string | null }>;
+  revisionOnly?: boolean;
   onClose: () => void;
 }
 
@@ -49,9 +52,12 @@ export default function BlogEditor({
   initialData,
   onSave,
   onPublish,
+  onReview,
+  revisionOnly,
   onClose,
 }: BlogEditorProps) {
   const isPage = presentation === "page";
+  const [baseRevision] = React.useState(initialData?.revision);
 
   const {
     dirty,
@@ -81,7 +87,11 @@ export default function BlogEditor({
     toggleTag,
     handleSubmit,
     handlePublish,
-  } = useBlogEditorForm({ mode, initialData, onSave, onPublish });
+  } = useBlogEditorForm({ mode, initialData, onSave: (data) => onSave(data, baseRevision), onPublish: onReview ? async (data, onSubmitted) => {
+    const result = await onReview(data);
+    if (!result.error) onSubmitted(data);
+    return result;
+  } : onPublish });
 
   const handleClose = () => {
     if (!saving && !publishing && confirmLeave()) onClose();
@@ -254,7 +264,7 @@ export default function BlogEditor({
             </Field>
 
             {/* Date — 신규 작성 시 숨김 (발행 시점에 날짜 결정), 수정 모드에서 발행 포스트만 표시 */}
-            {mode === "edit" && form.published && (
+            {mode === "edit" && form.published && !revisionOnly && (
               <Field label="발행일" required hint="발행 시 변경 가능">
                 <input
                   type="date"
@@ -388,7 +398,7 @@ export default function BlogEditor({
           >
             취소
           </AdminActionButton>
-          {onPublish && mode === "edit" && !form.published && (
+          {(onPublish || onReview) && mode === "edit" && !form.published && (
             <AdminActionButton
               type="button"
               onClick={handlePublish}
@@ -397,7 +407,7 @@ export default function BlogEditor({
               className="px-3 sm:px-5"
             >
               <Send className="h-4 w-4" />
-              {publishing ? "발행 중..." : "저장 후 발행"}
+              {onReview ? (publishing ? "요청 중…" : "저장 후 검토 요청") : (publishing ? "발행 중..." : "저장 후 발행")}
             </AdminActionButton>
           )}
           <AdminActionButton
@@ -408,7 +418,7 @@ export default function BlogEditor({
             className="px-3 sm:px-5"
           >
             <Save className="h-4 w-4" />
-            {saving ? "저장 중..." : saveButtonLabel}
+            {revisionOnly ? (saving ? "요청 중…" : "수정안 검토 요청") : (saving ? "저장 중..." : saveButtonLabel)}
           </AdminActionButton>
         </div>
       </AdminSurface>

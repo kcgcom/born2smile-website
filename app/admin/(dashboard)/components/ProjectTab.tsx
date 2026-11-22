@@ -1,4 +1,5 @@
 "use client";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
 import { useState } from "react";
 import { Check, AlertTriangle, Circle, ChevronDown, X, Copy, CheckCheck } from "lucide-react";
@@ -96,6 +97,7 @@ function StatusIcon({ status }: { status: ImprovementStatus }) {
 // -------------------------------------------------------------
 
 function EnvHealthSection() {
+  const canCopy = useAdminAuthState().access?.isOwner === true;
   const [expanded, setExpanded] = useState(false);
   const [copyState, setCopyState] = useState<{ key: string; status: "pending" | "success" | "error" } | null>(null);
 
@@ -233,7 +235,7 @@ function EnvHealthSection() {
                         <span className="font-medium text-[var(--foreground)]">{v.label}</span>
                         <span className="ml-1.5 break-all text-[var(--muted)]">({v.key})</span>
                       </span>
-                      {v.configured && (
+                      {v.configured && canCopy && (
                         <div className="flex shrink-0 flex-col items-end">
                           <button
                             type="button"

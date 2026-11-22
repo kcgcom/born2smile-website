@@ -32,7 +32,7 @@ async function openPosts(page: Page, hold?: Promise<void>) {
   let stored = { ...POST };
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (path === "/api/admin/blog-posts/schedule-test" && route.request().method() === "PUT") {
       writes.push(route.request().postDataJSON());
       if (hold) await hold;

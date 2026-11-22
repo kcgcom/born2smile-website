@@ -1,4 +1,5 @@
 "use client";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -78,6 +79,7 @@ function UsageLinks({ usages }: { usages: ImageItem["usage"] }) {
 }
 
 export function ImagesSubTab() {
+  const canDelete = useAdminAuthState().access?.isOwner === true;
   const { data, loading, error, refetch } = useAdminApi<ImageItem[]>("/api/admin/images");
   const { mutate } = useAdminMutation<{ path: string }>();
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
@@ -366,7 +368,7 @@ export function ImagesSubTab() {
                       }
                       {copiedPath === img.path ? "복사됨" : "복사"}
                     </button>
-                    <button
+                    {canDelete && <button
                       type="button"
                       onClick={() => void handleDelete(img)}
                       aria-label={img.name + " 삭제"}
@@ -376,7 +378,7 @@ export function ImagesSubTab() {
                     >
                       <Trash2 size={13} aria-hidden="true" />
                       {deletingPath === img.path ? "삭제 중" : "삭제"}
-                    </button>
+                    </button>}
                   </div>
                 </div>
               ))}

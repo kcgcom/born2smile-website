@@ -34,7 +34,6 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
             </Link>
             <div className="hidden flex-col gap-1 md:flex">
               <AdminPill tone="amber" className="w-fit text-xs">관리자 콘솔</AdminPill>
-              <p className="text-xs text-slate-400">콘텐츠 운영, 성과 확인, 사이트 관리</p>
             </div>
           </div>
         </div>

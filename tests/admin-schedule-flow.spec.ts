@@ -34,7 +34,7 @@ async function openSchedule(page: Page, options: { listError?: boolean; policyEr
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
     const method = route.request().method();
-    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true } });
+    if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
     if (path === `/api/admin/blog-posts/${POST.slug}` && method === "PUT") {
       const body = route.request().postDataJSON();
       writes.push(body);

@@ -21,7 +21,7 @@ for (const failSchedule of [false, true]) {
       // All admin requests are mocked; no writes or fabricated credentials reach the server.
       if (route.request().method() !== "GET") return route.fulfill({ status: 403, json: { message: "테스트 저장 차단" } });
       if (pathname.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
-      if (pathname.endsWith("/auth-check")) return route.fulfill({ json: { ok: true } });
+      if (pathname.endsWith("/auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } });
       if (pathname.endsWith("/site-config/schedule")) return route.fulfill({ status: failSchedule ? 503 : 200, json: failSchedule ? { message: "일정 조회 실패" } : { data: { publishDays: [1, 3, 5] } } });
       if (pathname === "/api/admin/blog-posts/schedule-test") return route.fulfill({ json: { data: {
         slug: "schedule-test", title: "일정 검사 원고", subtitle: "일정 추천을 확인하는 테스트 원고입니다", excerpt: "발행 추천 날짜와 일정 조회 실패 시의 동작을 확인하는 원고입니다.",
