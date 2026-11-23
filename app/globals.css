@@ -190,6 +190,39 @@ h1, h2, h3, h4 {
   scroll-margin-top: 5rem;
 }
 
+/* 건강칼럼 본문의 문단과 소제목 사이 간격 */
+[data-blog-reading-root] {
+  --blog-block-spacing: 2rem;
+  --blog-heading-spacing: 1.5rem;
+}
+
+[data-blog-reading-root] > :not(:last-child) {
+  margin-block-end: var(--blog-block-spacing);
+}
+
+[data-blog-reading-root] > div[id] > :is(h2, h3),
+[data-blog-reading-root] > [data-reading-block] > div[id] > :is(h2, h3) {
+  margin-block-end: 0;
+}
+
+[data-blog-reading-root] > div[id]:has(> :is(h2, h3)):not(:last-child),
+[data-blog-reading-root] > [data-reading-block]:has(> div[id] > :is(h2, h3)):not(:last-child) {
+  margin-block-end: var(--blog-heading-spacing);
+}
+
+@media (width < 48rem) {
+  [data-blog-reading-root] {
+    --blog-block-spacing: 1.5rem;
+    --blog-heading-spacing: 1rem;
+  }
+
+  [data-blog-reading-root] > div[id]:has(> :is(h2, h3)),
+  [data-blog-reading-root] > [data-reading-block] > div[id]:has(> :is(h2, h3)),
+  [data-blog-reading-root] > section[aria-labelledby] {
+    padding-block-start: 0.5rem;
+  }
+}
+
 /* 편지 스타일 카드 */
 .greeting-letter {
   background: linear-gradient(135deg, #FFFEF9 0%, #FFF9EE 50%, #FFFEF9 100%);
