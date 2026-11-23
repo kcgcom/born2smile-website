@@ -15,7 +15,7 @@ export interface BlogCitation {
   title: string;
   summary: string;
   sourceLabel: string;
-  researchHref: string;
+  researchHref?: string;
   sourceHref: string;
 }
 
@@ -72,7 +72,7 @@ export type BlogBlock =
 export interface BlogPostMeta {
   slug: string;
   category: BlogCategoryValue;
-  tags: (typeof BLOG_TAGS)[number][];
+  tags: string[];
   title: string;
   subtitle: string;
   excerpt: string;

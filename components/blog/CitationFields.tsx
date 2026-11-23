@@ -7,8 +7,8 @@ const FIELDS: { key: Exclude<keyof BlogCitation, "id">; label: string; placehold
   { key: "quote", label: "근거를 연결할 본문 문장", placeholder: "이 문단에서 한 번만 나오는 문장을 그대로 입력하세요", max: 1000 },
   { key: "title", label: "근거 설명 제목", placeholder: "예: X-ray에서 보이지 않을 수도 있나요?", max: 150 },
   { key: "summary", label: "짧은 근거 설명", placeholder: "독자가 알아야 할 결과와 적용 한계를 적어 주세요", max: 600 },
-  { key: "sourceLabel", label: "자료 유형·학술지·연도", placeholder: "예: 영상검사 종설 · Korean Journal of Radiology, 2025", max: 150 },
-  { key: "researchHref", label: "연구 해설의 논문 위치", placeholder: "/research/주제#paper-논문ID", max: 300 },
+  { key: "sourceLabel", label: "출처 링크에 표시할 이름", placeholder: "예: NHS 구강수술 후 안내", max: 150 },
+  { key: "researchHref", label: "연구 해설의 논문 위치 (선택)", placeholder: "/research/주제#paper-논문ID", max: 300 },
   { key: "sourceHref", label: "원문 링크", placeholder: "https://pubmed.ncbi.nlm.nih.gov/…/", max: 500 },
 ];
 
@@ -36,8 +36,8 @@ export function CitationFields({ text, citations = [], onChange, disabled = fals
               <label key={key} className="block text-xs font-medium text-slate-700">
                 {label}
                 <textarea
-                  required
-                  value={citation[key]}
+                  required={key !== "researchHref"}
+                  value={citation[key] ?? ""}
                   maxLength={max}
                   minLength={key === "summary" ? 10 : 2}
                   rows={key === "summary" || key === "quote" ? 3 : 2}

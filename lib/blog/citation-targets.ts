@@ -10,7 +10,7 @@ export interface CitationTargetIssue {
   message: string;
 }
 
-export function parseCitationResearchHref(href: string) {
+export function parseCitationResearchHref(href?: string) {
   if (typeof href !== "string") return null;
   const match = href.match(/^\/research\/([a-z0-9-]+)#paper-([a-z0-9-]+)$/);
   return match ? { slug: match[1], paperId: match[2] } : null;
@@ -28,6 +28,7 @@ export function getCitationResearchSlugs(blocks: BlogBlock[]): string[] {
 }
 
 function targetError(citation: BlogCitation, targets: ReadonlyMap<string, CitationResearchTarget>, requirePublished: boolean): string | null {
+  if (!citation.researchHref) return null;
   const ref = parseCitationResearchHref(citation.researchHref);
   if (!ref) return "연구 해설 링크 형식을 확인해 주세요.";
   const target = targets.get(ref.slug);

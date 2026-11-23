@@ -31,7 +31,7 @@ export function getTextCitations(text: string, citations: BlogCitation[] = []): 
     && typeof citation.sourceLabel === "string"
     && text.indexOf(citation.quote) >= 0
     && text.indexOf(citation.quote) === text.lastIndexOf(citation.quote)
-    && isResearchCitationHref(citation.researchHref)
+    && (!citation.researchHref || isResearchCitationHref(citation.researchHref))
     && isCitationSourceHref(citation.sourceHref)
   )).sort((a, b) => text.indexOf(a.quote) - text.indexOf(b.quote));
 

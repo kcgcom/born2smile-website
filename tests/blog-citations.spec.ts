@@ -6,6 +6,16 @@ import citations from "../scripts/data/swallowed-prosthesis-citations.json";
 
 const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 
+test("내부 해설 없이 외부 원문만 있는 근거도 저장하고 표시한다", () => {
+  const { researchHref, ...externalCitation } = citations[0];
+  expect(researchHref).toBeTruthy();
+  for (const citation of [externalCitation, { ...externalCitation, researchHref: "" }]) {
+    const blocks = normalizeBlogBlocks([{ type: "paragraph", text: citation.quote, citations: [citation] }]);
+    const saved = blogPostUpdateSchema.parse({ blocks });
+    expect(getBlogCitations(saved.blocks!)).toMatchObject([externalCitation]);
+  }
+});
+
 test("관리자 저장 정규화는 주석을 보존하고 잘못된 연결을 거부한다", () => {
   const blocks = citations.map((citation, index) => index === 2
     ? { type: "faq", question: "병원에서는 어떤 검사를 하나요?", answer: citation.quote, citations: [citation] }
@@ -34,6 +44,14 @@ test("키보드로 근거를 열고 닫으며 초점을 복원한다", async ({ 
   const triggers = page.getByRole("button", { name: /^근거 \d:/ });
   await expect(triggers).toHaveCount(3);
   const first = triggers.first();
+  const source = page.getByRole("button", { name: citations[0].sourceLabel, exact: true }).first();
+  await source.click();
+  const sourceDialog = page.getByRole("dialog", { name: `근거 1: ${citations[0].title}` });
+  await expect(sourceDialog.getByText(citations[0].summary)).toBeVisible();
+  await expect(sourceDialog.getByRole("link", { name: "원문 보기 (새 창)" })).toHaveAttribute("href", citations[0].sourceHref);
+  await page.keyboard.press("Escape");
+  await expect(sourceDialog).toHaveCount(0);
+  await expect(source).toBeFocused();
   await expect(first).toHaveAccessibleName(`근거 1: ${citations[0].title}`);
   await first.focus();
   await page.keyboard.press("Enter");

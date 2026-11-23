@@ -22,7 +22,11 @@ function getPopoverPosition(button: HTMLButtonElement) {
   };
 }
 
-function CitationPopover({ citation, number }: { citation: BlogCitation; number: number }) {
+function CitationPopover({ citation, number, showSourceLabel = false }: {
+  citation: BlogCitation;
+  number: number;
+  showSourceLabel?: boolean;
+}) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -70,29 +74,35 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
     };
   }, [isOpen]);
 
+  const button = (
+    <button
+      ref={trigger}
+      type="button"
+      aria-label={showSourceLabel ? undefined : `근거 ${number}: ${citation.title}`}
+      aria-haspopup="dialog"
+      aria-expanded={!!position}
+      aria-controls={position ? id : undefined}
+      className={showSourceLabel
+        ? "inline-flex min-h-11 items-center rounded text-left text-blue-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+        : "group absolute -top-8 -left-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold text-teal-800 focus-visible:outline-none"}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (position) { setPosition(null); return; }
+        // Keyboard focus may still be smoothly scrolling to this button.
+        // Finish that movement before applying the offscreen dismissal rule.
+        event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+        setPosition(getPopoverPosition(event.currentTarget));
+      }}
+    >
+      {showSourceLabel ? citation.sourceLabel : (
+        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded group-hover:bg-teal-50 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-teal-700">[{number}]</span>
+      )}
+    </button>
+  );
+
   return (
     <>
-      <sup className="relative inline-block h-0 w-5 align-baseline leading-none">
-        <button
-          ref={trigger}
-          type="button"
-          aria-label={`근거 ${number}: ${citation.title}`}
-          aria-haspopup="dialog"
-          aria-expanded={!!position}
-          aria-controls={position ? id : undefined}
-          className="group absolute -top-8 -left-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold text-teal-800 focus-visible:outline-none"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (position) { setPosition(null); return; }
-            // Keyboard focus may still be smoothly scrolling to this button.
-            // Finish that movement before applying the offscreen dismissal rule.
-            event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
-            setPosition(getPopoverPosition(event.currentTarget));
-          }}
-        >
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded group-hover:bg-teal-50 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-teal-700">[{number}]</span>
-        </button>
-      </sup>
+      {showSourceLabel ? button : <sup className="relative inline-block h-0 w-5 align-baseline leading-none">{button}</sup>}
       {position && createPortal(
         <div
           ref={dialog}
@@ -120,7 +130,7 @@ function CitationPopover({ citation, number }: { citation: BlogCitation; number:
           <p className="mt-2 text-sm leading-relaxed">{citation.summary}</p>
           <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">{citation.sourceLabel}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-            <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>연구 해설 보기</a>
+            {citation.researchHref && <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>연구 해설 보기</a>}
             <a href={citation.sourceHref} target="_blank" rel="noopener noreferrer" className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>원문 보기 (새 창)</a>
           </div>
         </div>, document.body,
@@ -148,6 +158,28 @@ export function CitationText({ text, citations, references }: {
   })}{text.slice(tail)}</>;
 }
 
+export function CitationSourceButtons({ text, citations, references }: {
+  text: string;
+  citations?: BlogCitation[];
+  references: BlogCitation[];
+}) {
+  const sources = new Map<string, BlogCitation>();
+  for (const citation of getTextCitations(text, citations)) {
+    if (!sources.has(citation.sourceHref)) sources.set(citation.sourceHref, citation);
+  }
+  if (!sources.size) return null;
+
+  return (
+    <ul className="mt-1 flex flex-wrap gap-x-4 text-sm">
+      {[...sources.values()].map((citation) => (
+        <li key={citation.sourceHref} className="min-w-0 [overflow-wrap:anywhere]">
+          <CitationPopover citation={citation} number={references.findIndex((reference) => reference.id === citation.id) + 1} showSourceLabel />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function CitationReferences({ references }: { references: BlogCitation[] }) {
   if (!references.length) return null;
   return (
@@ -159,7 +191,7 @@ export function CitationReferences({ references }: { references: BlogCitation[] 
             <p className="font-medium break-keep">[{index + 1}] {citation.title}</p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">{citation.sourceLabel}</p>
             <div className="flex flex-wrap gap-x-5">
-              <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>연구 해설</a>
+              {citation.researchHref && <a href={citation.researchHref} className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>연구 해설</a>}
               <a href={citation.sourceHref} target="_blank" rel="noopener noreferrer" className={`${LINK_CLASS} inline-flex min-h-11 items-center`}>원문 <span className="sr-only">(새 창)</span></a>
             </div>
           </li>

@@ -25,7 +25,9 @@ const citationSchema = z.object({
   title: z.string().min(2).max(150),
   summary: z.string().min(10).max(600),
   sourceLabel: z.string().min(2).max(150),
-  researchHref: z.string().max(300).refine(isResearchCitationHref, "연구 자료의 논문 위치 링크를 입력해 주세요"),
+  researchHref: z.string().trim().max(300)
+    .refine((href) => !href || isResearchCitationHref(href), "연구 자료의 논문 위치 링크를 입력해 주세요")
+    .optional(),
   sourceHref: z.string().max(500).refine(isCitationSourceHref, "https 원문 링크를 입력해 주세요"),
 });
 

@@ -7,7 +7,7 @@ import { ArrowUpRight, BookOpenText, FlaskConical } from "lucide-react";
 import type { BlogBlock } from "@/lib/blog";
 import type { BlogCitation } from "@/lib/blog/types";
 import { getBlogCitations } from "@/lib/blog/citations";
-import { CitationText, CitationReferences } from "./BlogCitations";
+import { CitationText, CitationReferences, CitationSourceButtons } from "./BlogCitations";
 
 // ----------------------------------------------------------------
 // 블로그 포스트 렌더 유틸리티
@@ -89,9 +89,12 @@ export function renderSingleBlock(
     }
     case "paragraph":
       return (
-        <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
-          <CitationText text={block.text} citations={block.citations} references={references} />
-        </p>
+        <>
+          <p className="text-base leading-relaxed text-[var(--foreground)] md:text-lg">
+            <CitationText text={block.text} citations={block.citations} references={references} />
+          </p>
+          <CitationSourceButtons text={block.text} citations={block.citations} references={references} />
+        </>
       );
     case "list": {
       const ListTag = block.style === "number" ? "ol" : "ul";
@@ -142,7 +145,7 @@ export function renderSingleBlock(
       );
     case "relatedLinks": {
       const items = block.items.filter((item) => !references.some((reference) => (
-        reference.researchHref.split("#")[0] === item.href
+        reference.researchHref?.split("#")[0] === item.href
       )));
       if (!items.length) return null;
       const allExternal = items.every((item) =>
