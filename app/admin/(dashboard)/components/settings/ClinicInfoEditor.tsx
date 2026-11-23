@@ -1,14 +1,15 @@
 "use client";
 
+import { BriefcaseBusiness, MapPin, Phone } from "lucide-react";
 import { FormField, SectionShell, LoadingPlaceholder } from "../shared";
 import { AdminErrorState } from "../AdminErrorState";
 import { useSettingsEditor } from "./useSettingsEditor";
 import { formatClinicPhoneInput } from "@/lib/constants";
 import type { SiteClinic } from "@/lib/site-config-supabase";
 
-export function ClinicInfoEditor() {
-  const { form, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, handleSave, updateForm } =
-    useSettingsEditor<SiteClinic>("/api/admin/site-config/clinic");
+export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
+  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, handleSave, updateForm } =
+    useSettingsEditor<SiteClinic>("/api/admin/site-config/clinic", { readOnly });
 
   const set = (key: keyof SiteClinic) => (value: string) =>
     updateForm((prev) => ({
@@ -22,24 +23,40 @@ export function ClinicInfoEditor() {
   }
 
   return (
-    <div className="space-y-4">
+    <div role="region" aria-label="병원 정보" className="space-y-4">
       {loadError && <AdminErrorState message={`병원 정보 조회 실패: ${loadError}`} onRetry={refetch} />}
       <SectionShell
-        title="병원 정보"
+        title={data?.name || "병원명 미설정"}
+        canEdit={!readOnly}
         description="사이트 전반에 쓰이는 기본 병원 정보를 관리합니다."
-        summary={`${form.name || "병원명 미설정"} · ${form.phone || "전화번호 미설정"}`}
         preview={(
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="space-y-2">
-              <div className="text-sm font-semibold text-[var(--foreground)]">{form.name || "병원명 미설정"}</div>
-              <div className="text-sm text-[var(--muted)]">{form.slogan || "슬로건 미설정"}</div>
-              <div className="text-sm text-[var(--foreground)]">{form.phone || "전화번호 미설정"}</div>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div><span className="mr-2 text-[var(--muted)]">주소</span>{form.addressShort || form.address || "미설정"}</div>
-              <div><span className="mr-2 text-[var(--muted)]">지역</span>{form.neighborhood || "미설정"}</div>
-              <div><span className="mr-2 text-[var(--muted)]">대표자</span>{form.representative || "미설정"}</div>
-            </div>
+          <div className="text-[var(--foreground)]">
+            <dl className="space-y-1 text-sm leading-5">
+              <div className="flex items-start gap-2">
+                <dt className="flex h-5 shrink-0 items-center text-slate-700">
+                  <Phone className="size-3" aria-hidden="true" />
+                  <span className="sr-only">전화번호</span>
+                </dt>
+                <dd className="min-w-0 break-words tabular-nums">{form.phone || "미설정"}</dd>
+              </div>
+              <div className="flex items-start gap-2">
+                <dt className="flex h-5 shrink-0 items-center text-slate-700">
+                  <MapPin className="size-3" aria-hidden="true" />
+                  <span className="sr-only">주소</span>
+                </dt>
+                <dd className="min-w-0 break-words break-keep">{form.address || "미설정"}</dd>
+              </div>
+              <div className="flex items-start gap-2">
+                <dt className="flex h-5 shrink-0 items-center text-slate-700">
+                  <BriefcaseBusiness className="size-3" aria-hidden="true" />
+                  <span className="sr-only">사업자 정보</span>
+                </dt>
+                <dd className="flex min-w-0 flex-wrap gap-x-2 gap-y-1">
+                  <span className="min-w-0 break-words">대표 {form.representative || "미설정"}</span>
+                  <span className="min-w-0 break-words tabular-nums">{form.businessNumber || "등록번호 미설정"}</span>
+                </dd>
+              </div>
+            </dl>
           </div>
         )}
         saving={saving}

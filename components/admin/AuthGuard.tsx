@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
-import { getStaffHome, canOpenStaffPage } from "@/lib/admin-access";
+import { STAFF_HOME, canOpenStaffPage } from "@/lib/admin-access";
 
 export function AuthGuard({
   children,
@@ -17,13 +17,13 @@ export function AuthGuard({
   const pathname = usePathname();
   const staff = pathname === "/staff" || pathname.startsWith("/staff/");
   const login = staff ? "/staff/login" : "/admin/login";
-  const allowed = access && (staff ? canOpenStaffPage(access, pathname) : access.isOwner);
+  const allowed = access && (staff ? canOpenStaffPage(pathname) : access.isOwner);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace(login);
     } else if (access && !allowed) {
-      router.replace(getStaffHome(access));
+      router.replace(STAFF_HOME);
     }
   }, [allowed, loading, access, login, router, user]);
 

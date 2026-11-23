@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { readBrowserId, setDeviceName } from "@/components/admin/AdminBrowserPresence";
-import type { AdminPermission } from "@/lib/admin-access";
 import { AdminErrorState } from "../../components/AdminErrorState";
 import { useAdminApi, useAdminMutation } from "../../components/useAdminApi";
 
@@ -12,7 +11,6 @@ interface Account {
   email: string;
   isOwner: boolean;
   enabled: boolean;
-  permissions: AdminPermission[];
 }
 
 interface Presence {
@@ -24,8 +22,7 @@ interface Presence {
 }
 
 const endpoint = "/api/admin/accounts";
-const labels: Record<AdminPermission, string> = { operations: "운영", content: "콘텐츠", staff: "행정" };
-const emptyAccount: Account = { email: "", isOwner: false, enabled: true, permissions: [] };
+const emptyAccount: Account = { email: "", isOwner: false, enabled: true };
 const timeFormat = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "short", timeStyle: "short" });
 const inputClass = "min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm focus-visible:outline-2 focus-visible:outline-blue-700";
 
@@ -59,7 +56,7 @@ export default function AdminAccountsPage() {
   }
 
   const save = async () => {
-    const result = await mutate(endpoint, "PUT", { email: form.email.trim(), permissions: form.permissions, enabled: form.enabled });
+    const result = await mutate(endpoint, "PUT", { email: form.email.trim(), enabled: form.enabled });
     if (!result.error) {
       setNotice("계정 설정을 저장했습니다.");
       setEditing(false);
@@ -94,10 +91,10 @@ export default function AdminAccountsPage() {
         {data?.accounts.map((account) => <li key={account.email} className="flex flex-wrap items-center justify-between gap-x-3 py-2">
           <button type="button" aria-pressed={selected === account.email} onClick={() => setSelected(selected === account.email ? "" : account.email)}
             className="min-h-11 break-all rounded px-2 text-left font-medium text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-700">{account.email}</button>
-          <span className="text-sm text-slate-600">{account.isOwner ? "원장" : account.permissions.map((grant) => labels[grant]).join(" · ")} · {account.enabled ? "사용 허용" : "중지"}
+          <span className="text-sm text-slate-600">{account.isOwner ? "원장" : "직원"} · {account.enabled ? "사용 허용" : "중지"}
             {lastSeen.has(account.email) && ` · 최근 ${timeFormat.format(new Date(lastSeen.get(account.email)!))}`}
           </span>
-          {settings && !account.isOwner && <AdminActionButton tone="dark" onClick={() => { setForm(account); setEmailLocked(true); setEditing(true); setNotice(""); }}>권한·상태 변경</AdminActionButton>}
+          {settings && !account.isOwner && <AdminActionButton tone="dark" onClick={() => { setForm(account); setEmailLocked(true); setEditing(true); setNotice(""); }}>사용 상태 변경</AdminActionButton>}
           {settings && !account.isOwner && account.enabled && <AdminActionButton tone="dark" onClick={() => { setPasswordEmail(account.email); setPassword(""); setEditing(false); setNotice(""); }}>비밀번호 설정</AdminActionButton>}
         </li>)}
       </ul>
@@ -119,19 +116,11 @@ export default function AdminAccountsPage() {
               readOnly={emailLocked}
               onChange={(event) => setForm({ ...form, email: event.target.value })} />
           </label>
-          <fieldset className="flex flex-wrap gap-4">
-            <legend className="text-sm font-medium">권한</legend>
-            {(["content", "staff"] as const).map((permission) => <label key={permission} className="flex min-h-11 items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.permissions.includes(permission)} onChange={(event) => setForm({
-                ...form, permissions: event.target.checked ? [...form.permissions, permission] : form.permissions.filter((grant) => grant !== permission),
-              })} />{labels[permission]}
-            </label>)}
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.enabled} onChange={(event) => setForm({ ...form, enabled: event.target.checked })} />사용 허용
-            </label>
-          </fieldset>
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.enabled} onChange={(event) => setForm({ ...form, enabled: event.target.checked })} />사용 허용
+          </label>
           {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
-          <AdminActionButton type="submit" tone="primary" disabled={saving || !form.permissions.length}>저장</AdminActionButton>
+          <AdminActionButton type="submit" tone="primary" disabled={saving}>저장</AdminActionButton>
         </form>}
       </section>}
     </AdminSurface>

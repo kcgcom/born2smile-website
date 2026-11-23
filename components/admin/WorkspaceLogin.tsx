@@ -5,7 +5,7 @@ import type { AuthSession } from "@supabase/supabase-js";
 import { ShieldCheck } from "lucide-react";
 import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/AdminChrome";
 import { signOutAdmin, fetchAdminAccess } from "@/lib/admin-auth";
-import { getStaffHome } from "@/lib/admin-access";
+import { STAFF_HOME } from "@/lib/admin-access";
 import { CLINIC } from "@/lib/constants";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -37,7 +37,7 @@ export function WorkspaceLogin({ staff = false }: { staff?: boolean }) {
         } catch {
           // ignore private browsing failures
         }
-        window.location.replace(staff || !access.isOwner ? getStaffHome(access) : "/admin");
+        window.location.replace(staff || !access.isOwner ? STAFF_HOME : "/admin");
       } else {
         setError(`${email ?? "현재 계정"}으로 접속할 수 없습니다. 등록된 계정인지 확인해 주세요.`);
         await signOutAdmin();

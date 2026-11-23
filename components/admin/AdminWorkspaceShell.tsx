@@ -45,7 +45,7 @@ interface WorkspaceConfig {
   href: string;
   label: string;
   icon: LucideIcon;
-  tabs?: NavItem[];
+  tabs: NavItem[];
 }
 
 const PERFORMANCE_PATH = "/admin/system/monitoring";
@@ -66,6 +66,18 @@ const WORKSPACES: WorkspaceConfig[] = [
     icon: LayoutDashboard,
     tabs: [
       { href: "/admin/operations/overview", label: "오늘 할 일", icon: LayoutDashboard },
+      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
+      { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
+      { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
+      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
+    ],
+  },
+  {
+    id: "content",
+    href: ADMIN_HOME.content,
+    label: "콘텐츠",
+    icon: FileText,
+    tabs: [
       { href: ADMIN_HOME.content, label: "작업함", icon: KanbanSquare, aliases: ["/admin/content/planner"] },
       { href: "/admin/content/posts", label: "포스트", icon: FileText, aliases: ["/admin/content/revisions"] },
       { href: "/admin/content/review", label: "검토 대기", icon: ClipboardCheck },
@@ -74,27 +86,15 @@ const WORKSPACES: WorkspaceConfig[] = [
     ],
   },
   {
-    id: "performance",
-    href: "/admin/analysis/search",
-    label: "성과",
-    icon: BarChart3,
-    tabs: [
-      { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
-      { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
-      { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
-      { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
-    ],
-  },
-  {
-    id: "site",
-    href: ADMIN_HOME.staff,
-    label: "사이트 관리",
+    id: "system",
+    href: ADMIN_HOME.system,
+    label: "시스템",
     icon: Settings,
     tabs: [
-      { href: "/admin/system/settings", label: "병원 정보·진료시간", icon: Settings },
-      { href: "/admin/operations/accounts", label: "계정·접속 관리", icon: Settings },
-      { href: "/admin/system/monitoring", label: "사이트 성능", icon: Gauge },
-      { href: "/admin/system/devtools/project", label: "프로젝트 현황", icon: ClipboardCheck },
+      { href: "/admin/system/settings", label: "병원 설정", icon: Settings },
+      { href: "/admin/operations/accounts", label: "계정 관리", icon: Settings },
+      { href: "/admin/system/monitoring", label: "성능", icon: Gauge },
+      { href: "/admin/system/devtools/project", label: "프로젝트", icon: ClipboardCheck },
       { href: "/admin/system/devtools/ref", label: "레퍼런스", icon: BookOpen },
     ],
   },
@@ -124,7 +124,7 @@ function isWorkspaceActive(pathname: string, workspace: WorkspaceConfig) {
     return true;
   }
 
-  return workspace.tabs?.some((tab) => isItemActive(pathname, tab)) ?? false;
+  return workspace.tabs.some((tab) => isItemActive(pathname, tab));
 }
 
 function isItemActive(pathname: string, item: NavItem) {
@@ -211,7 +211,7 @@ function SectionTabs({
       className="rounded-xl bg-slate-100/80 p-1 lg:min-w-0 lg:flex-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className={`grid gap-1 ${workspace.tabs.length === 6 ? "grid-cols-3 sm:grid-cols-6" : workspace.tabs.length === 5 ? "grid-cols-5" : "grid-cols-4"} lg:flex lg:flex-wrap`}>
+      <div className="grid grid-cols-6 gap-1 max-sm:[&>a]:col-span-2 max-sm:[&>a:nth-child(-n+2)]:col-span-3 sm:grid-cols-5 lg:flex lg:flex-wrap">
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);

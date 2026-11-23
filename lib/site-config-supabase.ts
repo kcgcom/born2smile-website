@@ -182,23 +182,32 @@ export async function updateSiteHours(
 ): Promise<void> {
   assertLiveSiteConfigWrite();
   const admin = getSupabaseAdmin();
-  const { data: current, error: readError } = await admin
-    .from(TABLE)
-    .select("data")
-    .eq("type", "hours")
-    .maybeSingle();
-  if (readError) throw readError;
-  const merged = { ...(current?.data ?? {}), ...data };
-  const { error: writeError } = await admin
-    .from(TABLE)
-    .upsert({
-      type: "hours",
-      data: merged,
-      updated_at: new Date().toISOString(),
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: current, error: readError } = await admin
+      .from(TABLE)
+      .select("data, updated_at")
+      .eq("type", "hours")
+      .maybeSingle();
+    if (readError) throw readError;
+
+    // A staff exception edit must merge into the latest owner schedule.
+    const previousTime = current ? Date.parse(current.updated_at) : 0;
+    const change = {
+      data: { ...(current?.data ?? {}), ...data },
+      updated_at: new Date(Math.max(Date.now(), previousTime + 1)).toISOString(),
       updated_by: updatedBy,
-    }, { onConflict: "type" });
-  if (writeError) throw writeError;
-  safeRevalidateTag(CACHE_TAG_HOURS, { expire: 0 });
+    };
+    const write = current
+      ? admin.from(TABLE).update(change).eq("type", "hours").eq("updated_at", current.updated_at)
+      : admin.from(TABLE).upsert({ type: "hours", ...change }, { onConflict: "type", ignoreDuplicates: true });
+    const { data: updated, error: writeError } = await write.select("type").maybeSingle();
+    if (writeError) throw writeError;
+    if (updated) {
+      safeRevalidateTag(CACHE_TAG_HOURS, { expire: 0 });
+      return;
+    }
+  }
+  throw new Error("다른 사용자가 진료시간을 수정 중입니다. 잠시 후 다시 저장해 주세요.");
 }
 
 // =============================================================

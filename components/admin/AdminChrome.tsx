@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { forwardRef } from "react";
-import type { ButtonHTMLAttributes, ComponentPropsWithoutRef, HTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ComponentPropsWithoutRef, HTMLAttributes, ReactNode, Ref } from "react";
 
 function cx(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -105,6 +105,7 @@ export function AdminActionButton({
   tone: ActionTone;
   className?: string;
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }) {
   return (
     <button

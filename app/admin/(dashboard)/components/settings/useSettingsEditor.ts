@@ -5,7 +5,11 @@ import { useDraftRecovery } from "@/hooks/useDraftRecovery";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 
-export function useSettingsEditor<T extends object>(endpoint: string) {
+export function useSettingsEditor<T extends object>(endpoint: string, options?: {
+  readOnly?: boolean;
+  patch?: (form: T) => Partial<T>;
+}) {
+  const { readOnly = false, patch } = options ?? {};
   const { data, loading, error, refetch } = useAdminApi<T>(endpoint);
   const { mutate, loading: saving } = useAdminMutation();
   const [formEdits, setFormEdits] = useState<T | null>(null);
@@ -13,8 +17,8 @@ export function useSettingsEditor<T extends object>(endpoint: string) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const savingRef = useRef(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const form = useMemo(() => formEdits ?? data ?? null, [formEdits, data]);
-  const recovery = useDraftRecovery(form, setFormEdits, `born2smile-settings-recovery:${endpoint}`);
+  const form = useMemo(() => (readOnly ? data : formEdits ?? data) ?? null, [readOnly, formEdits, data]);
+  const recovery = useDraftRecovery(readOnly ? null : form, setFormEdits, `born2smile-settings-recovery:${endpoint}${patch ? ":patch" : ""}`);
   const { dirty, ready, hasConflict, markSaved } = recovery;
   useUnsavedChanges(dirty || saving);
 
@@ -28,12 +32,12 @@ export function useSettingsEditor<T extends object>(endpoint: string) {
   }, []);
 
   const handleSave = async () => {
-    if (!form || hasConflict || !ready || savingRef.current) return;
+    if (readOnly || !form || hasConflict || !ready || savingRef.current) return;
     savingRef.current = true;
     const submitted = form;
     setSaved(false);
     setSaveError(null);
-    const { error } = await mutate(endpoint, "PUT", submitted);
+    const { error } = await mutate(endpoint, patch ? "PATCH" : "PUT", patch ? patch(submitted) : submitted);
     savingRef.current = false;
     if (error) {
       setSaveError(error);

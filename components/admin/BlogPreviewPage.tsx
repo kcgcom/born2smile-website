@@ -38,7 +38,7 @@ export async function BlogPreviewPage({
 }) {
   // Validate the session and administrator role before reading unpublished data.
   const access = await getAdminAccessServer();
-  if (!(staff ? access?.permissions.includes("content") : access?.isOwner)) redirect(staff ? "/staff/login" : access ? "/staff" : "/admin/login");
+  if (!access || (!staff && !access.isOwner)) redirect(staff ? "/staff/login" : access ? "/staff" : "/admin/login");
 
   const { category, slug } = await params;
 

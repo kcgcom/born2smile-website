@@ -1,46 +1,35 @@
-export const ADMIN_PERMISSIONS = ["operations", "content", "staff"] as const;
-export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
-
 export interface AdminAccess {
   isOwner: boolean;
-  permissions: readonly AdminPermission[];
 }
 
-export const OWNER_ACCESS: AdminAccess = { isOwner: true, permissions: ADMIN_PERMISSIONS };
+export const OWNER_ACCESS: AdminAccess = { isOwner: true };
+export const STAFF_ACCESS: AdminAccess = { isOwner: false };
 
 export function hasPasswordAuthentication(methods?: readonly (string | { method: string })[]) {
   return methods?.some((entry) => (typeof entry === "string" ? entry : entry.method) === "password") ?? false;
 }
 
-export const ADMIN_HOME: Record<AdminPermission, string> = {
+export const ADMIN_HOME = {
   operations: "/admin/operations/overview",
   content: "/admin/content/tasks",
-  staff: "/admin/system/settings",
+  system: "/admin/system/settings",
 };
 
-export function getStaffHome(access: AdminAccess) {
-  return access.permissions.includes("content") ? "/staff/content/tasks" : "/staff/system/settings";
-}
+export const STAFF_HOME = "/staff/content/tasks";
 
-export function canOpenStaffPage(access: AdminAccess, pathname: string) {
-  if (pathname === "/staff") return true;
-  if (pathname === "/staff/system/settings") return access.permissions.includes("staff");
-  return access.permissions.includes("content")
-    && /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
+export function canOpenStaffPage(pathname: string) {
+  return pathname === "/staff" || pathname === "/staff/system/settings"
+    || /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
 }
 
 export function canUseAdminApi(access: AdminAccess, method: string, pathname: string) {
   if (access.isOwner || pathname === "/api/admin/auth-check") return true;
   if (pathname === "/api/admin-presence" && method === "POST") return true;
-  if (access.permissions.includes("operations") && method === "GET"
-    && /^\/api\/(?:dev\/(?:pagespeed|env-status)|admin\/(?:analytics|blog-analytics|blog-posts|business-profile|indexing-status|indexnow-status|search-attention|search-console|posthog\/(?:blog-cards|conversion|health|reading)))$/.test(pathname)) return true;
-  if (access.permissions.includes("staff") && /^(GET|PUT)$/.test(method)
-    && /^\/api\/admin\/site-config\/(clinic|hours|links)$/.test(pathname)) return true;
-  if (!access.permissions.includes("content")) return false;
   if (method === "GET") {
-    return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/schedule)$/.test(pathname);
+    return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/(?:clinic|hours|schedule))$/.test(pathname);
   }
   if (method === "POST") return /^\/api\/admin\/(?:blog-posts|content-planner|content-tasks(?:\/[a-f0-9-]+\/draft)?|content-revisions|publication-review|upload)$/.test(pathname);
   if (method === "PUT") return /^\/api\/admin\/(?:blog-posts\/[a-z0-9-]+|content-planner\/[a-z0-9-]+)$/.test(pathname);
-  return method === "PATCH" && /^\/api\/admin\/content-tasks\/[a-f0-9-]+$/.test(pathname);
+  return method === "PATCH" && (pathname === "/api/admin/site-config/hours"
+    || /^\/api\/admin\/content-tasks\/[a-f0-9-]+$/.test(pathname));
 }

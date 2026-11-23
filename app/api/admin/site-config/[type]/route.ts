@@ -16,6 +16,7 @@ import {
   siteLinksSchema,
   siteClinicSchema,
   siteHoursSchema,
+  siteHoursExceptionsSchema,
   siteScheduleSchema,
 } from "@/lib/blog-validation";
 
@@ -61,7 +62,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
+async function writeSetting(
   request: NextRequest,
   { params }: { params: Promise<{ type: string }> },
 ) {
@@ -73,6 +74,14 @@ export async function PUT(
     return Response.json(
       { error: "BAD_REQUEST", message: "유효하지 않은 타입입니다 (links, clinic, hours, schedule)" },
       { status: 400, headers: CACHE_HEADERS },
+    );
+  }
+
+  const exceptionsOnly = request.method === "PATCH";
+  if (exceptionsOnly && type !== "hours") {
+    return Response.json(
+      { error: "METHOD_NOT_ALLOWED", message: "부분 수정은 진료시간 예외 일정에만 사용할 수 있습니다" },
+      { status: 405, headers: { ...CACHE_HEADERS, Allow: "GET, PUT" } },
     );
   }
 
@@ -95,7 +104,7 @@ export async function PUT(
       validated = siteClinicSchema.parse(body);
       await updateSiteClinic(validated, auth.email);
     } else if (type === "hours") {
-      validated = siteHoursSchema.parse(body);
+      validated = (exceptionsOnly ? siteHoursExceptionsSchema : siteHoursSchema).parse(body);
       await updateSiteHours(validated, auth.email);
     } else {
       validated = siteScheduleSchema.parse(body);
@@ -126,3 +135,6 @@ export async function PUT(
     );
   }
 }
+
+export const PUT = writeSetting;
+export const PATCH = writeSetting;

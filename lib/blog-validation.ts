@@ -193,6 +193,8 @@ export const siteHoursSchema = z.object({
   notice: z.string().max(200),
 });
 
+export const siteHoursExceptionsSchema = siteHoursSchema.pick({ exceptions: true }).strict();
+
 // ---------------------------------------------------------------------------
 // Publish Schedule Schema
 // ---------------------------------------------------------------------------
