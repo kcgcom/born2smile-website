@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUserRound, LayoutDashboard, LogOut, UsersRound } from "lucide-react";
+import { CircleUserRound, LogOut } from "lucide-react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
 import { CLINIC } from "@/lib/constants";
@@ -18,19 +18,21 @@ interface DashboardHeaderProps {
   canReturnToAdmin?: boolean;
 }
 
+const WORKSPACE_LINK_CLASS = "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1.5 font-serif text-base font-medium italic underline-offset-4 focus-visible:outline-2 focus-visible:outline-amber-200 sm:px-2 sm:text-xl";
+const ACTIVE_WORKSPACE_CLASS = "text-amber-200 underline [text-shadow:0_0_10px_rgba(253,230,138,0.45)]";
+const INACTIVE_WORKSPACE_CLASS = "text-slate-300 hover:text-white";
+
 export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: DashboardHeaderProps) {
   const pathname = usePathname();
   const mobileMenu = useMobileNavigation();
-  const WorkspaceIcon = staff ? LayoutDashboard : UsersRound;
-  const workspaceLabel = staff ? "원장 관리로 돌아가기" : "직원 화면 열기";
   return (
     <AdminSurface
       tone="dark"
       className="relative z-50 border-x-0 border-t-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))]"
     >
-      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 sm:py-4 md:gap-4 lg:py-2">
+      <header data-workspace-header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 sm:py-4 md:gap-4 lg:py-2">
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-4">
             <Link href="/" className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80">
               <Image
                 src="/images/Logo_SNU.png"
@@ -41,22 +43,19 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
               />
               <span className="truncate text-xl font-bold tracking-tight text-white sm:text-2xl">{CLINIC.name}</span>
             </Link>
-            <span lang="en" className="shrink-0 font-serif text-lg font-medium italic tracking-wide text-amber-200 sm:text-xl">
-              {staff ? "Staff" : "Admin"}
-            </span>
+            <nav aria-label="업무 화면 전환" className="flex shrink-0 items-center whitespace-nowrap">
+              {(!staff || canReturnToAdmin) && (
+                <Link href="/admin" lang="en" aria-current={!staff ? "location" : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? INACTIVE_WORKSPACE_CLASS : ACTIVE_WORKSPACE_CLASS}`}>
+                  Admin
+                </Link>
+              )}
+              <Link href="/staff" lang="en" aria-current={staff ? "location" : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? ACTIVE_WORKSPACE_CLASS : INACTIVE_WORKSPACE_CLASS}`}>
+                Staff
+              </Link>
+            </nav>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 md:justify-end">
-          {(!staff || canReturnToAdmin) && (
-            <Link
-              href={staff ? "/admin" : "/staff"}
-              aria-label={workspaceLabel}
-              title={workspaceLabel}
-              className="hidden size-11 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white hover:bg-white/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
-            >
-              <WorkspaceIcon size={20} aria-hidden="true" />
-            </Link>
-          )}
           <div className="lg:hidden">
             <MobileMenuButton menu={mobileMenu} />
           </div>
@@ -98,17 +97,6 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
           <LogOut size={18} aria-hidden="true" />
           로그아웃
         </AdminActionButton>
-        {(!staff || canReturnToAdmin) && (
-          <Link
-            href={staff ? "/admin" : "/staff"}
-            aria-label={workspaceLabel}
-            onClick={() => mobileMenu.setOpen(false)}
-            className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--border)] px-5 py-3 text-base font-medium text-[var(--foreground)] hover:bg-[var(--background)] focus-visible:outline-2 focus-visible:outline-blue-700"
-          >
-            <WorkspaceIcon size={18} aria-hidden="true" />
-            {staff ? "Admin" : "Staff"}
-          </Link>
-        )}
       </MobileMenuPanel>
     </AdminSurface>
   );

@@ -55,6 +55,12 @@ html, body, *, *::before, *::after {
   text-size-adjust: 100%;
 }
 
+@media (min-width: 64rem) {
+  html:has([data-workspace-header]) {
+    scrollbar-gutter: stable;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

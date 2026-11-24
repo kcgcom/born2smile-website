@@ -581,7 +581,7 @@ test("직원은 원장 화면에 접근하면 작업함으로 돌아간다", asy
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "관리자 보조 도구" })).toHaveCount(0);
   await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
-  await expect(page.getByRole("link", { name: "원장 관리로 돌아가기" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "업무 화면 전환" }).getByRole("link", { name: "Admin", exact: true })).toHaveCount(0);
   await page.goto("/staff/content/posts/new");
   await expect(page).toHaveURL("/staff/content/posts");
   await expect(page.getByRole("button", { name: "새 글 작성", exact: true })).toHaveCount(0);
@@ -607,18 +607,37 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
   await page.goto("/admin/operations/overview");
-  await expect(page.locator("header").getByText("Admin", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "직원 화면 열기" })).toBeHidden();
-  await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
-  await page.getByRole("navigation", { name: "모바일 메뉴", exact: true }).getByRole("link", { name: "직원 화면 열기" }).click();
+  const switcher = page.getByRole("navigation", { name: "업무 화면 전환" });
+  const admin = switcher.getByRole("link", { name: "Admin", exact: true });
+  const staff = switcher.getByRole("link", { name: "Staff", exact: true });
+  await expect(admin).toHaveAttribute("aria-current", "location");
+  await expect(admin).toHaveCSS("text-decoration-line", "underline");
+  await expect(admin).not.toHaveCSS("text-shadow", "none");
+  await expect(staff).toHaveCSS("text-shadow", "none");
+  for (const width of [320, 1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", width === 1280 ? "stable" : "auto");
+    const adminBox = (await admin.boundingBox())!;
+    const staffBox = (await staff.boundingBox())!;
+    expect(adminBox.y).toBe(staffBox.y);
+    expect(adminBox.width).toBeGreaterThanOrEqual(44);
+    expect(staffBox.width).toBeGreaterThanOrEqual(44);
+    expect(adminBox.height).toBeGreaterThanOrEqual(44);
+    expect(staffBox.height).toBeGreaterThanOrEqual(44);
+    expect(staffBox.x + staffBox.width).toBeLessThanOrEqual(width);
+  }
+  await staff.click();
   await expect(page).toHaveURL("/staff/content/tasks");
-  await expect(page.locator("header").getByText("Staff", { exact: true })).toBeVisible();
+  await expect(staff).toHaveAttribute("aria-current", "location");
+  await expect(admin).not.toHaveAttribute("aria-current", "location");
+  await expect(staff).not.toHaveCSS("text-shadow", "none");
+  await expect(admin).toHaveCSS("text-shadow", "none");
   const account = page.getByRole("button", { name: /^메뉴 (열기|닫기)$/ });
   const logout = page.getByRole("button", { name: "로그아웃", exact: true });
   await expect(logout).toBeHidden();
   await account.click();
   const mobileMenu = page.getByRole("navigation", { name: "모바일 메뉴", exact: true });
-  await expect(mobileMenu.getByRole("link")).toHaveText(["홈", "병원 소개", "진료 안내", "건강칼럼", "상담 안내", "Admin"]);
+  await expect(mobileMenu.getByRole("link")).toHaveText(["홈", "병원 소개", "진료 안내", "건강칼럼", "상담 안내"]);
   const panel = await mobileMenu.boundingBox();
   expect(panel?.x).toBe(0);
   expect(panel?.width).toBe(390);
@@ -629,13 +648,17 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await expect(logout).toBeHidden();
   await expect(account).toBeFocused();
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+  await page.setViewportSize({ width: 1280, height: 844 });
+  await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", "stable");
+  const staffViewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
   const menu = page.getByRole("navigation", { name: "직원 업무 메뉴" });
   await expect(menu.getByRole("link")).toHaveText(["콘텐츠", "행정"]);
   await expect(page.getByRole("navigation", { name: "콘텐츠 세부 화면" }).getByRole("link")).toHaveText(["작업함", "원고 목록", "검토 요청", "발행 일정", "이미지"]);
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
-  await account.click();
-  await mobileMenu.getByRole("link", { name: "원장 관리로 돌아가기" }).click();
+  await admin.press("Enter");
   await expect(page).toHaveURL("/admin/operations/overview");
+  await expect(admin).toHaveAttribute("aria-current", "location");
+  await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBe(staffViewportWidth);
 });
 
 test("원장은 계정 목록과 접속 기록을 보고 설정에서 직원 접근을 중지한다", async ({ page }) => {
