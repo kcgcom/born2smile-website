@@ -15,10 +15,11 @@ export const ADMIN_HOME = {
   system: "/admin/system/settings",
 };
 
-export const STAFF_HOME = "/staff/content/tasks";
+export const STAFF_HOME = "/staff/system/settings";
 
 export function canOpenStaffPage(pathname: string) {
-  return pathname === "/staff" || pathname === "/staff/system/settings"
+  return pathname === "/staff" || pathname === "/staff/system/settings" || pathname === "/staff/system/hours"
+    || pathname === "/staff/system/first-visit"
     || /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
 }
 

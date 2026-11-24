@@ -1,12 +1,18 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { FormField, SectionShell, LoadingPlaceholder } from "../shared";
 import { AdminErrorState } from "../AdminErrorState";
 import { useSettingsEditor } from "./useSettingsEditor";
+import { HoursExceptionCalendar } from "./HoursExceptionCalendar";
+import { HoursScheduleSummary } from "./HoursSummaryCard";
+import { getIntervals } from "@/lib/clinic-hours";
 import type { SiteHours } from "@/lib/site-config-supabase";
+
+const EXCEPTION_DESCRIPTION = "특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다";
+const SETTINGS_COLUMNS = "grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]";
 
 function formatExceptionDateLabel(date: string) {
   if (!date) return "날짜 미설정";
@@ -15,13 +21,16 @@ function formatExceptionDateLabel(date: string) {
   return `${year}.${month}.${day}`;
 }
 
-export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
-  const { form, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, handleSave, updateForm, setField } =
+export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: boolean; clinicCard?: ReactNode }) {
+  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, handleSave, discardChanges, updateForm, setField } =
     useSettingsEditor<SiteHours>("/api/admin/site-config/hours", {
       patch: exceptionsOnly ? ({ exceptions }) => ({ exceptions }) : undefined,
+      persistDraft: !exceptionsOnly,
     });
   const [exceptionEditor, setExceptionEditor] = useState<number | "list" | null>(null);
+  const [calendarNotice, setCalendarNotice] = useState<string | null>(null);
   const addExceptionButton = useRef<HTMLButtonElement>(null);
+  const calendarRegion = useRef<HTMLDivElement>(null);
   const pendingDateFocus = useRef<number | null>(null);
 
   const setScheduleField = (
@@ -50,11 +59,14 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
     }));
   };
 
-  const addException = () => {
-    if (!form) return;
-    const index = form.exceptions.length;
+  const openExceptionEditor = (index: number) => {
     pendingDateFocus.current = index;
     setExceptionEditor(index);
+  };
+
+  const addException = () => {
+    if (!form) return;
+    openExceptionEditor(form.exceptions.length);
     updateForm((prev) => ({
       ...prev,
       exceptions: [
@@ -70,37 +82,83 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
       exceptions: (prev.exceptions ?? []).filter((_, i) => i !== index),
     }));
     setExceptionEditor("list");
-    addExceptionButton.current?.focus();
+    (addExceptionButton.current ?? calendarRegion.current)?.focus();
   };
 
   if (!form) {
-    if (loading && !loadError) return <LoadingPlaceholder />;
-    return <AdminErrorState message={`진료시간 조회 실패: ${loadError ?? "설정 데이터를 불러올 수 없습니다."}`} onRetry={refetch} />;
+    const status = loading && !loadError
+      ? <LoadingPlaceholder />
+      : <AdminErrorState message={`진료시간 조회 실패: ${loadError ?? "설정 데이터를 불러올 수 없습니다."}`} onRetry={refetch} />;
+    return clinicCard ? <div className={SETTINGS_COLUMNS}>{clinicCard}{status}</div> : status;
   }
 
   const exceptionActionsDisabled = !recovery.ready || recovery.hasConflict;
+  const closeExceptionEditor = () => {
+    setExceptionEditor(null);
+    (addExceptionButton.current ?? calendarRegion.current)?.focus();
+  };
+  const selectCalendarDate = (date: string, regularlyClosed: boolean, weekday: string) => {
+    setCalendarNotice(null);
+    const index = form.exceptions.findIndex((entry) => entry.date === date);
+    const current = form.exceptions[index];
+    if (current?.open && !regularlyClosed) {
+      openExceptionEditor(index);
+      return;
+    }
+
+    const savedExceptions = data?.exceptions ?? [];
+    const savedIndex = savedExceptions.findIndex((entry) => entry.date === date);
+    const savedException = savedExceptions[savedIndex];
+    const removing = current?.open === regularlyClosed;
+    const restore = savedException && (removing ? savedException.open !== regularlyClosed : savedException.open === regularlyClosed)
+      ? savedException : undefined;
+    let replacement = restore;
+    if (!removing && !restore) {
+      const regularTime = form.schedule.find((row) => row.day === weekday)?.time ?? "";
+      const firstOpenTime = form.schedule.find((row) => row.open && getIntervals(row.time, "", "").length)?.time;
+      const time = regularlyClosed ? (getIntervals(regularTime, "", "").length ? regularTime : firstOpenTime) : "휴진";
+      if (!time) {
+        setCalendarNotice("정상진료 예외를 등록하려면 기본 진료시간을 먼저 설정해 주세요.");
+        return;
+      }
+      replacement = { date, open: regularlyClosed, time, note: "" };
+    }
+
+    updateForm((prev) => {
+      const exceptions = [...prev.exceptions];
+      if (index !== -1) {
+        exceptions.splice(index, 1, ...(replacement ? [replacement] : []));
+      } else if (replacement) {
+        const laterDates = new Set(savedExceptions.slice(savedIndex + 1).map((entry) => entry.date));
+        const next = restore ? exceptions.findIndex((entry) => laterDates.has(entry.date)) : -1;
+        exceptions.splice(next === -1 ? exceptions.length : next, 0, replacement);
+      }
+      return { ...prev, exceptions };
+    });
+    setExceptionEditor(null);
+  };
+  const orderedExceptions = form.exceptions
+    .map((exception, index) => ({ exception, index }))
+    .sort((a, b) => Number(!a.exception.date) - Number(!b.exception.date) || a.exception.date.localeCompare(b.exception.date));
+
   const exceptionSection = (
-    <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h4 className="text-sm font-semibold text-[var(--foreground)]">예외 일정</h4>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다.
-          </p>
-        </div>
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4">
+      {(!exceptionsOnly || exceptionEditor !== null) && <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <AdminActionButton ref={addExceptionButton} tone="dark" onClick={addException} disabled={exceptionActionsDisabled} className="min-h-11 px-3 text-sm">
+          {!exceptionsOnly && <AdminActionButton ref={addExceptionButton} tone="dark" onClick={addException} disabled={exceptionActionsDisabled} className="min-h-11 px-3 text-sm">
             <Plus className="h-3.5 w-3.5" />
             예외 일정 추가
-          </AdminActionButton>
+          </AdminActionButton>}
           {exceptionEditor !== null && (
             <AdminActionButton
               tone="ghost"
               disabled={saving}
               onClick={() => {
-                if (dirty && !window.confirm("저장하지 않은 변경사항이 있습니다. 편집을 닫으시겠습니까?")) return;
-                setExceptionEditor(null);
-                addExceptionButton.current?.focus();
+                if (dirty && !window.confirm(exceptionsOnly
+                  ? "저장하지 않은 변경사항을 폐기하고 편집을 닫으시겠습니까?"
+                  : "저장하지 않은 변경사항이 있습니다. 편집을 닫으시겠습니까?")) return;
+                if (exceptionsOnly && dirty && !discardChanges()) return;
+                closeExceptionEditor();
               }}
               className="min-h-11 px-3 text-sm"
             >
@@ -108,30 +166,27 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
             </AdminActionButton>
           )}
         </div>
-      </div>
+      </div>}
 
       {form.exceptions.length === 0 ? (
         <div className="rounded-xl bg-[var(--background)]/72 px-4 py-3 text-sm text-[var(--muted)]">
           등록된 예외 일정이 없습니다.
         </div>
       ) : (
-        <div className="space-y-3">
-          {form.exceptions.map((exception, index) => (
+        <div className="divide-y divide-[var(--border)]">
+          {orderedExceptions.map(({ exception, index }) => (
             exceptionEditor !== index ? (
-              <div key={index} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2 text-sm first:pt-0 last:pb-0">
                 <div className="min-w-0 break-words">
                   <span className="font-medium">{formatExceptionDateLabel(exception.date)}</span>
                   {" · "}{exception.time || (exception.open ? "운영시간 미설정" : "휴진")}
                   {exception.note ? ` · ${exception.note}` : null}
                 </div>
                 <AdminActionButton
-                  tone="ghost"
+                  tone="dark"
                   aria-label={`${formatExceptionDateLabel(exception.date)} 예외 일정 편집`}
                   disabled={exceptionActionsDisabled}
-                  onClick={() => {
-                    pendingDateFocus.current = index;
-                    setExceptionEditor(index);
-                  }}
+                  onClick={() => openExceptionEditor(index)}
                   className="min-h-11 shrink-0 px-3"
                 >
                   수정
@@ -142,7 +197,7 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
                 key={index}
                 disabled={recovery.hasConflict}
                 aria-label={`예외 일정 ${index + 1} 편집`}
-                className="grid min-w-0 gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/72 p-4 md:grid-cols-[160px_96px_minmax(0,1fr)_minmax(0,1fr)_84px] md:items-center"
+                className="grid min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/72 p-4 sm:grid-cols-2"
               >
                 <input
                   ref={(input) => {
@@ -198,70 +253,75 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
     </div>
   );
 
-  return (
-    <div className="space-y-4">
+  const exceptionColumn = (
+    <div className="min-w-0 space-y-4">
       {loadError && <AdminErrorState message={`진료시간 조회 실패: ${loadError}`} onRetry={refetch} />}
+      <HoursExceptionCalendar ref={calendarRegion} schedule={form.schedule} exceptions={form.exceptions}
+        disabled={exceptionActionsDisabled || saving} notice={calendarNotice} onSelectDate={selectCalendarDate} />
+      <SectionShell
+        title="예외 일정"
+        canEdit={false}
+        description={EXCEPTION_DESCRIPTION}
+        summary={EXCEPTION_DESCRIPTION}
+        preview={exceptionSection}
+        saving={saving}
+        saved={saved}
+        dirty={dirty}
+        pendingSaveMessage="저장을 눌러야 서버에 반영됩니다."
+        recovery={recovery}
+        onSave={handleSave}
+        saveError={saveError}
+        additionalEditing={exceptionEditor !== null || dirty || saved}
+      >
+        {null}
+      </SectionShell>
+    </div>
+  );
+
+  const scheduleColumn = !exceptionsOnly && (
+    <div className="@container min-w-0 space-y-6">
+      {clinicCard}
       <SectionShell
         title="진료시간"
-        canEdit={!exceptionsOnly}
         description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
-        preview={(
-          <div className="space-y-2 rounded-xl bg-[var(--background)]/72 p-3">
-            <div className="space-y-2">
-              {form.schedule.map((row) => (
-                <div key={row.day} className="flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0 text-[var(--foreground)]">
-                    {row.day}
-                    {row.note ? <span className="ml-1 text-xs text-[var(--muted)]">({row.note})</span> : null}
-                  </div>
-                  <div className={row.open ? "text-[var(--foreground)]" : "text-[var(--muted)]"}>{row.time}</div>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-[var(--border)] pt-2 text-sm text-[var(--muted)]">
-              점심시간 {form.lunchTime || "미설정"} · {form.closedDays || "휴진일 미설정"}
-              {form.notice ? <span className="block pt-1">{form.notice}</span> : null}
-            </div>
-          </div>
-        )}
+        preview={<HoursScheduleSummary hours={form} />}
         saving={saving}
         saved={saved}
         dirty={dirty}
         recovery={recovery}
         onSave={handleSave}
         saveError={saveError}
-        additionalSection={exceptionSection}
-        additionalEditing={exceptionEditor !== null}
       >
         <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
-          <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 md:grid md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 @min-[440px]:grid @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)]">
             <span className="text-xs font-medium text-[var(--muted)]">요일</span>
-            <span className="text-xs font-medium text-[var(--muted)]">운영</span>
+            <span className="text-xs font-medium text-[var(--muted)]">휴진</span>
             <span className="text-xs font-medium text-[var(--muted)]">시간</span>
             <span className="text-xs font-medium text-[var(--muted)]">비고</span>
           </div>
           {form.schedule.map((row, i) => (
             <div
               key={row.day}
-              className={`grid gap-3 px-4 py-4 md:grid-cols-[88px_92px_minmax(0,1fr)_minmax(0,1fr)] md:items-center ${
+              className={`grid items-center gap-3 px-4 py-4 @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)] ${
                 i === 0 ? "" : "border-t border-[var(--border)]/50"
               } ${row.open ? "bg-[var(--background)]" : "bg-[var(--background)]/60"}`}
             >
               <div>
                 <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
-                <div className="mt-1 text-xs text-[var(--muted)] md:hidden">
-                  {row.open ? "운영 중" : "휴진"}
+                <div className="mt-1 text-xs text-[var(--muted)] @min-[440px]:hidden">
+                  {row.open ? "진료일" : "휴진"}
                 </div>
               </div>
 
               <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
                 <input
                   type="checkbox"
-                  checked={row.open}
-                  onChange={(e) => setScheduleField(i, "open", e.target.checked)}
+                  checked={!row.open}
+                  onChange={(e) => setScheduleField(i, "open", !e.target.checked)}
+                  aria-label={`${row.day} 휴진`}
                   className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
                 />
-                운영
+                휴진
               </label>
 
               <input
@@ -269,7 +329,7 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
                 value={row.time}
                 onChange={(e) => setScheduleField(i, "time", e.target.value)}
                 placeholder="09:30 - 18:30"
-                className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
                 aria-label={`${row.day} 진료 시간`}
               />
 
@@ -278,7 +338,7 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
                 value={row.note ?? ""}
                 onChange={(e) => setScheduleField(i, "note", e.target.value)}
                 placeholder="예: 야간진료"
-                className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
                 aria-label={`${row.day} 비고`}
               />
             </div>
@@ -306,6 +366,14 @@ export function HoursEditor({ exceptionsOnly }: { exceptionsOnly: boolean }) {
           />
         </div>
       </SectionShell>
+    </div>
+  );
+
+  if (exceptionsOnly && !clinicCard) return exceptionColumn;
+  return (
+    <div className={SETTINGS_COLUMNS}>
+      {exceptionsOnly ? clinicCard : scheduleColumn}
+      {exceptionColumn}
     </div>
   );
 }

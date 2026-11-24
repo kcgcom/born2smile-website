@@ -7,6 +7,7 @@ import { CircleUserRound, LogOut } from "lucide-react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
 import { CLINIC } from "@/lib/constants";
+import styles from "./DashboardHeader.module.css";
 
 // -------------------------------------------------------------
 // 관리자 대시보드 헤더
@@ -18,9 +19,9 @@ interface DashboardHeaderProps {
   canReturnToAdmin?: boolean;
 }
 
-const WORKSPACE_LINK_CLASS = "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-1.5 font-serif text-base font-medium italic underline-offset-4 focus-visible:outline-2 focus-visible:outline-amber-200 sm:px-2 sm:text-xl";
-const ACTIVE_WORKSPACE_CLASS = "text-amber-200 underline [text-shadow:0_0_10px_rgba(253,230,138,0.45)]";
-const INACTIVE_WORKSPACE_CLASS = "text-slate-300 hover:text-white";
+const WORKSPACE_LINK_CLASS = "inline-flex min-h-11 w-14 items-center justify-center rounded-lg text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 sm:w-20 sm:text-lg";
+const ACTIVE_WORKSPACE_CLASS = `${styles.activeWorkspace} text-amber-200`;
+const INACTIVE_WORKSPACE_CLASS = "text-slate-300 hover:bg-white/8 hover:text-white motion-safe:transition-colors motion-safe:duration-150";
 
 export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: DashboardHeaderProps) {
   const pathname = usePathname();
@@ -30,20 +31,20 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
       tone="dark"
       className="relative z-50 border-x-0 border-t-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.94))]"
     >
-      <header data-workspace-header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 sm:py-4 md:gap-4 lg:py-2">
+      <header data-workspace-header className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-6 sm:py-4 md:gap-4 lg:py-2">
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-1 sm:gap-4">
-            <Link href="/" className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-6">
+            <Link href="/" className="flex min-w-0 items-center gap-1.5 transition-opacity hover:opacity-80 sm:gap-2">
               <Image
                 src="/images/Logo_SNU.png"
                 alt="서울대학교 엠블럼"
                 width={40}
                 height={40}
-                className="h-8 w-8 shrink-0 brightness-0 invert md:h-10 md:w-10"
+                className="size-7 shrink-0 brightness-0 invert sm:size-8 md:size-10"
               />
-              <span className="truncate text-xl font-bold tracking-tight text-white sm:text-2xl">{CLINIC.name}</span>
+              <span className="truncate text-lg font-bold tracking-tight text-white max-[359px]:text-base sm:text-2xl">{CLINIC.name}</span>
             </Link>
-            <nav aria-label="업무 화면 전환" className="flex shrink-0 items-center whitespace-nowrap">
+            <nav aria-label="업무 화면 전환" className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               {(!staff || canReturnToAdmin) && (
                 <Link href="/admin" lang="en" aria-current={!staff ? "location" : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? INACTIVE_WORKSPACE_CLASS : ACTIVE_WORKSPACE_CLASS}`}>
                   Admin

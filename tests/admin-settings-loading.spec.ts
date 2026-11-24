@@ -1,15 +1,20 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import type { SiteHours } from "../lib/site-config-supabase";
 
 const FIXTURES = {
   clinic: { name: "테스트 치과", nameEn: "Test Clinic", slogan: "테스트 슬로건", phone: "031-000-0000", address: "경기도 김포시 테스트로 123, 테스트빌딩 2층 진료실 201호", addressShort: "김포", neighborhood: "김포", representative: "테스트", businessNumber: "000-00-00000" },
-  hours: { schedule: [{ day: "월요일", open: true, time: "09:30 - 18:30" }], exceptions: [], lunchTime: "13:00 - 14:00", closedDays: "일요일", notice: "테스트 공지" },
+  hours: { schedule: [
+    { day: "월요일", open: true, time: "09:30 - 18:30" },
+    { day: "수요일", open: false, time: "휴진" },
+    { day: "일요일", open: false, time: "휴진" },
+  ], exceptions: [], lunchTime: "13:00 - 14:00", closedDays: "수요일, 일요일", notice: "테스트 공지" },
   links: { kakaoChannel: "", instagram: "", naverBlog: "", naverMap: "", kakaoMap: "" },
 };
 const TITLES = { clinic: "병원 정보", hours: "진료시간", links: "SNS 링크" };
 type Section = keyof typeof FIXTURES;
 
-async function openSettings(page: Page, section: Section, initial: "error" | "empty" | "success" = "error", holdWrite?: Promise<void>, isOwner = true, staffWorkspace = !isOwner) {
+async function openSettings(page: Page, section: Section, initial: "error" | "empty" | "success" = "error", holdWrite?: Promise<void>, isOwner = true, staffWorkspace = !isOwner, hours: SiteHours = FIXTURES.hours) {
   const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     ?? readFileSync(".env.local", "utf8").match(/^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (!publicUrl) throw new Error("브라우저 편집 테스트에 NEXT_PUBLIC_SUPABASE_URL이 필요합니다.");
@@ -37,7 +42,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   let state = initial;
   const requests: string[] = [];
   const writes: Record<string, unknown>[] = [];
-  const fixtures = structuredClone(FIXTURES);
+  const fixtures = structuredClone({ ...FIXTURES, hours });
   let failWrite = false;
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
@@ -64,23 +69,168 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   return { requests, writes, failSave: () => { failWrite = true; }, setState: (next: typeof state) => { state = next; } };
 }
 
+test("휴진일 달력은 기본 요일보다 날짜별 운영 예외를 우선해 표시한다", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
+  await openSettings(page, "hours", "success", undefined, false, true, {
+    ...FIXTURES.hours,
+    schedule: [
+      { day: "수요일", open: true, time: "09:30 - 18:30" },
+      { day: "목요일", open: false, time: "휴진" },
+      { day: "일요일", open: true, time: "09:30 - 18:30" },
+    ],
+    exceptions: [
+      { date: "2026-12-02", open: false, time: "휴진" },
+      { date: "2026-12-03", open: true, time: "10:00 - 15:00" },
+    ],
+  });
+  await page.goto("/staff/system/hours");
+  await expect(page).toHaveURL("/staff/system/settings#staff-hours");
+  const calendar = page.getByRole("region", { name: "휴진일 달력" });
+  for (const label of ["2026년 12월 2일 휴진", "2026년 12월 10일 정기 휴진"]) {
+    await expect(calendar.getByRole("button", { name: label, exact: true })).toHaveClass(/\btext-red-700\b/);
+  }
+  for (const label of ["2026년 12월 3일 정상진료", "2026년 12월 6일", "2026년 12월 9일"]) {
+    await expect(calendar.getByRole("button", { name: label, exact: true })).not.toHaveClass(/\btext-red-700\b/);
+  }
+});
+
 for (const { role, isOwner } of [{ role: "스태프", isOwner: false }, { role: "원장", isOwner: true }]) {
   test(`${role} 계정의 스태프 화면은 기본 설정을 조회하고 예외 일정만 저장한다`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
+    await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
     const { requests, writes } = await openSettings(page, "hours", "success", undefined, isOwner, true);
     const clinic = settingsSection(page, "clinic");
-    const hours = settingsSection(page, "hours");
     await expect(clinic.getByText(FIXTURES.clinic.name, { exact: true })).toBeVisible();
-    await expect(hours.getByText(FIXTURES.hours.schedule[0].time, { exact: true })).toBeVisible();
     await expect(clinic.getByRole("button", { name: "편집", exact: true })).toHaveCount(0);
+    const hoursSummary = page.getByRole("region", { name: "진료시간", exact: true });
+    await expect(hoursSummary.getByText(FIXTURES.hours.schedule[0].time, { exact: true })).toBeVisible();
+    const draftKey = "born2smile-settings-recovery:/api/admin/site-config/hours:patch";
+    await page.evaluate(({ key, baseline }) => {
+      sessionStorage.setItem(key, JSON.stringify({
+        baseline: JSON.stringify(baseline),
+        form: { ...baseline, exceptions: [{ date: "2026-12-15", open: false, time: "휴진" }] },
+      }));
+    }, { key: draftKey, baseline: FIXTURES.hours });
+    await page.reload();
+    const nav = page.getByRole("navigation", { name: "직원 업무 메뉴" });
+    const home = nav.getByRole("link", { name: "홈", exact: true });
+    const blog = nav.getByRole("link", { name: "블로그 공유", exact: true });
+    await expect(home).toHaveAttribute("aria-current", "page");
+    const hours = page.locator("div.rounded-2xl").filter({ has: page.getByRole("heading", { name: "예외 일정", exact: true }) });
+    await expect(hours.getByRole("heading", { name: "예외 일정", exact: true })).toHaveCount(1);
+    await expect(hours.getByText("특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다", { exact: true })).toBeVisible();
+    await expect(hours.getByText(FIXTURES.hours.schedule[0].time, { exact: true })).toHaveCount(0);
     await expect(hours.getByRole("button", { name: "편집", exact: true })).toHaveCount(0);
+    await expect(hours.getByRole("button", { name: "예외 일정 추가", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "SNS 링크", exact: true })).toHaveCount(0);
     expect(requests).not.toContain("links");
-    await hours.getByRole("button", { name: "예외 일정 추가", exact: true }).click();
-    await hours.getByLabel("예외 일정 1 날짜").fill("2026-12-25");
+    const calendar = page.getByRole("region", { name: "휴진일 달력" });
+    await expect(hours.getByRole("region", { name: "휴진일 달력" })).toHaveCount(0);
+    await expect(calendar.getByText("2026년 12월", { exact: true })).toBeVisible();
+    await expect(calendar.getByText("저장을 눌러야 서버에 반영됩니다.")).toHaveCount(0);
+    await expect(hours.getByText("저장을 눌러야 서버에 반영됩니다.")).toHaveCount(0);
+    await expect(calendar.getByRole("button", { name: "2026년 12월 15일", exact: true })).toBeEnabled();
+    expect(await page.evaluate(key => sessionStorage.getItem(key), draftKey)).toBeNull();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const desktopClinic = (await clinic.boundingBox())!;
+    const desktopSummary = (await hoursSummary.boundingBox())!;
+    const desktopCalendar = (await calendar.boundingBox())!;
+    expect(desktopClinic.x).toBe(desktopSummary.x);
+    expect(desktopCalendar.x).toBeGreaterThan(desktopSummary.x + desktopSummary.width);
+    expect(desktopCalendar.y).toBe(desktopClinic.y);
+    await page.setViewportSize({ width: 360, height: 640 });
+    const calendarBox = await calendar.boundingBox();
+    const hoursBox = await hours.boundingBox();
+    const mobileSummary = (await hoursSummary.boundingBox())!;
+    expect(mobileSummary.y + mobileSummary.height).toBeLessThanOrEqual(calendarBox!.y);
+    expect(calendarBox!.y + calendarBox!.height).toBeLessThanOrEqual(hoursBox!.y);
+    expect(calendarBox!.width).toBeGreaterThan(hoursBox!.width);
+    const dateBox = await calendar.getByRole("button", { name: "2026년 12월 15일", exact: true }).boundingBox();
+    expect(dateBox!.width).toBeGreaterThanOrEqual(44);
+    expect(dateBox!.height).toBeGreaterThanOrEqual(64);
+    for (const label of ["이전 달", "다음 달"]) {
+      const arrow = calendar.getByRole("button", { name: label });
+      await expect(arrow.locator("svg")).toBeVisible();
+      await expect(arrow).toHaveClass(/\btext-slate-800\b/);
+      const box = await arrow.boundingBox();
+      expect(box!.width).toBeGreaterThanOrEqual(48);
+      expect(box!.height).toBeGreaterThanOrEqual(48);
+    }
+    for (const day of [2, 6]) {
+      await expect(calendar.getByRole("button", { name: `2026년 12월 ${day}일 정기 휴진`, exact: true })).toHaveClass(/\btext-red-700\b/);
+    }
+    await calendar.getByRole("button", { name: "다음 달" }).click();
+    await expect(calendar.getByText("2027년 1월", { exact: true })).toBeVisible();
+    await calendar.getByRole("button", { name: "이전 달" }).click();
+    await calendar.getByRole("button", { name: "이전 달" }).click();
+    await expect(calendar.getByRole("heading", { name: "2026년 11월" })).toBeVisible();
+    await calendar.getByRole("button", { name: "다음 달" }).click();
+    const regularClosure = calendar.getByRole("button", { name: "2026년 12월 2일 정기 휴진", exact: true });
+    const regularOpening = calendar.getByRole("button", { name: "2026년 12월 2일 정상진료", exact: true });
+    await regularClosure.click();
+    await expect(regularOpening).toHaveAttribute("aria-pressed", "true");
+    await expect(hours.getByText(FIXTURES.hours.schedule[0].time, { exact: false })).toBeVisible();
+    await regularOpening.click();
+    await expect(regularClosure).toHaveClass(/\btext-red-700\b/);
+    await expect(hours.getByRole("button", { name: "저장", exact: true })).toHaveCount(0);
+    const availableDate = calendar.getByRole("button", { name: "2026년 12월 25일", exact: true });
+    const closedDate = calendar.getByRole("button", { name: "2026년 12월 25일 휴진", exact: true });
+    const followingWeek = calendar.getByRole("button", { name: "2026년 12월 28일", exact: true });
+    const dayOffset = await availableDate.getByText("25", { exact: true }).evaluate(node => (node as HTMLElement).offsetTop);
+    const followingWeekOffset = await followingWeek.evaluate(node => (node as HTMLElement).offsetTop);
+    await availableDate.click();
+    await expect(closedDate).toHaveAttribute("aria-pressed", "true");
+    expect(await closedDate.getByText("25", { exact: true }).evaluate(node => (node as HTMLElement).offsetTop)).toBe(dayOffset);
+    expect(await followingWeek.evaluate(node => (node as HTMLElement).offsetTop)).toBe(followingWeekOffset);
+    await expect(hours.getByRole("status")).toHaveText("저장을 눌러야 서버에 반영됩니다.");
+    expect(await page.evaluate(key => sessionStorage.getItem(key), draftKey)).toBeNull();
+    await closedDate.click();
+    await expect(availableDate).toHaveAttribute("aria-pressed", "false");
+    await expect(hours.getByRole("button", { name: "저장", exact: true })).toHaveCount(0);
+    expect(writes).toHaveLength(0);
+    expect(await page.evaluate(key => sessionStorage.getItem(key), draftKey)).toBeNull();
+    const dialogs: string[] = [];
+    page.on("dialog", async (dialog) => { dialogs.push(dialog.message()); await dialog.accept(); });
+    await blog.click();
+    await expect(page).toHaveURL("/staff/content/posts");
+    expect(dialogs).toHaveLength(0);
+    await home.click();
+    await availableDate.click();
     await hours.getByRole("button", { name: "저장", exact: true }).click();
     await expect(hours.getByRole("status")).toHaveText("저장 완료");
     expect(writes).toEqual([{ exceptions: [{ date: "2026-12-25", open: false, time: "휴진", note: "" }] }]);
+    await closedDate.click();
+    await expect(availableDate).toHaveAttribute("aria-pressed", "false");
+    await availableDate.click();
+    await expect(closedDate).toHaveAttribute("aria-pressed", "true");
+    await expect(hours.getByRole("button", { name: "저장", exact: true })).toHaveCount(0);
+    await regularClosure.click();
+    await hours.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(hours.getByRole("status")).toHaveText("저장 완료");
+    expect(writes[1]).toEqual({ exceptions: [
+      { date: "2026-12-25", open: false, time: "휴진", note: "" },
+      { date: "2026-12-02", open: true, time: FIXTURES.hours.schedule[0].time, note: "" },
+    ] });
+    const editButtons = hours.getByRole("button", { name: /예외 일정 편집$/ });
+    await expect(editButtons).toHaveCount(2);
+    const firstEdit = editButtons.nth(0);
+    const secondEdit = editButtons.nth(1);
+    await expect(firstEdit).toHaveAccessibleName("2026.12.02 예외 일정 편집");
+    await expect(secondEdit).toHaveAccessibleName("2026.12.25 예외 일정 편집");
+    await expect(firstEdit).toHaveClass(/\btext-slate-800\b/);
+    expect((await firstEdit.boundingBox())!.x).toBe((await secondEdit.boundingBox())!.x);
+    const unsavedDate = calendar.getByRole("button", { name: "2026년 12월 24일", exact: true });
+    await unsavedDate.click();
+    await expect(calendar.getByRole("button", { name: "2026년 12월 24일 휴진", exact: true })).toBeVisible();
+    await blog.click();
+    await expect(page).toHaveURL("/staff/content/posts");
+    expect(dialogs).toEqual(["저장하지 않은 변경사항이 있습니다. 이 화면을 나가시겠습니까?"]);
+    await home.click();
+    await expect(unsavedDate).toHaveAttribute("aria-pressed", "false");
+    await expect(closedDate).toHaveAttribute("aria-pressed", "true");
+    await expect(regularOpening).toHaveAttribute("aria-pressed", "true");
+    expect(writes).toHaveLength(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   });
 }
 
@@ -137,6 +287,12 @@ for (const section of ["clinic", "hours", "links"] as const) {
     const card = settingsSection(page, section);
     await card.getByRole("button", { name: "편집", exact: true }).click();
     const input = card.getByRole("textbox", { name: EDIT_FIELDS[section].label, exact: true });
+    if (section === "hours") {
+      await expect(card.getByRole("checkbox", { name: "수요일 휴진", exact: true })).toBeChecked();
+      const monday = card.getByRole("checkbox", { name: "월요일 휴진", exact: true });
+      await expect(monday).not.toBeChecked();
+      await monday.check();
+    }
     await input.fill("처음 저장할 값");
     await card.getByRole("button", { name: "저장", exact: true }).click();
     await expect.poll(() => mock.writes.length).toBe(1);
@@ -147,6 +303,12 @@ for (const section of ["clinic", "hours", "links"] as const) {
     await expect(card.getByText("수정됨", { exact: true })).toBeVisible();
     await expect(card.getByText("저장 완료", { exact: true })).toHaveCount(0);
     expect(mock.writes[0][EDIT_FIELDS[section].key]).toBe("처음 저장할 값");
+    if (section === "hours") {
+      expect(mock.writes[0].schedule).toEqual([
+        { ...FIXTURES.hours.schedule[0], open: false },
+        ...FIXTURES.hours.schedule.slice(1),
+      ]);
+    }
     await card.getByRole("button", { name: "저장", exact: true }).click();
     await expect(card.getByText("저장 완료", { exact: true }).filter({ visible: true })).toBeVisible();
     expect(mock.writes[1][EDIT_FIELDS[section].key]).toBe("요청 도중 추가한 값");
@@ -333,7 +495,8 @@ test("모바일 설정은 병원 정보와 진료시간을 바로 보여주고 �
 test("모바일 진료시간은 예외 일정을 편집하는 위치에서 저장하고 결과를 확인한다", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   const mock = await openSettings(page, "hours", "success");
-  const card = settingsSection(page, "hours");
+  const schedule = settingsSection(page, "hours");
+  const card = page.locator("div.rounded-2xl").filter({ has: page.getByRole("heading", { name: "예외 일정", exact: true }) });
   const tabs = page.getByRole("navigation", { name: "시스템 세부 화면" }).getByRole("link");
   await expect(tabs).toHaveCount(5);
   await expect(tabs.first()).toHaveAttribute("aria-current", "page");
@@ -343,8 +506,8 @@ test("모바일 진료시간은 예외 일정을 편집하는 위치에서 저�
   await card.getByRole("button", { name: "예외 일정 추가", exact: true }).click();
   const date = card.getByLabel("예외 일정 1 날짜");
   await expect(date).toBeFocused();
-  await expect(card.getByRole("button", { name: "편집", exact: true })).toHaveAttribute("aria-expanded", "false");
-  await expect(card.getByLabel("월요일 진료 시간")).toHaveCount(0);
+  await expect(schedule.getByRole("button", { name: "편집", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await expect(schedule.getByLabel("월요일 진료 시간")).toHaveCount(0);
   await date.fill("2026-12-25");
   const note = card.getByRole("textbox", { name: "예외 일정 1 비고" });
   await note.fill("성탄절 휴진");
@@ -365,19 +528,32 @@ test("모바일 진료시간은 예외 일정을 편집하는 위치에서 저�
   await expect(note).toHaveValue("수정한 휴진 안내");
 });
 
-test("데스크톱 설정은 요약을 2열로 배치하고 편집 중인 구역을 전체 너비로 확장한다", async ({ page }) => {
+test("데스크톱 설정은 진료시간과 휴진일을 나란히 표시하고 함께 저장한다", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  const { writes } = await openSettings(page, "clinic", "success");
+  await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
+  const { writes } = await openSettings(page, "hours", "success");
   const clinic = settingsSection(page, "clinic");
   const hours = settingsSection(page, "hours");
-  const initial = await clinic.boundingBox();
-  const hoursBox = await hours.boundingBox();
-  expect(Math.abs(initial!.y - hoursBox!.y)).toBeLessThan(2);
-  expect(hoursBox!.x).toBeGreaterThan(initial!.x);
-  await clinic.getByRole("button", { name: "편집", exact: true }).click();
-  await expect(clinic.getByRole("textbox", { name: "병원명", exact: true })).toBeVisible();
-  expect((await clinic.boundingBox())!.width).toBeGreaterThan(initial!.width * 1.8);
-  await clinic.getByRole("button", { name: "편집 닫기", exact: true }).click();
-  expect((await clinic.boundingBox())!.width).toBeLessThan(initial!.width + 2);
-  expect(writes).toHaveLength(0);
+  const calendar = page.getByRole("region", { name: "휴진일 달력" });
+  const exceptions = page.locator("div.rounded-2xl").filter({ has: page.getByRole("heading", { name: "예외 일정", exact: true }) });
+  await expect(clinic).toBeVisible();
+  await expect(hours).toBeVisible();
+  await expect(calendar).toBeVisible();
+  const clinicBox = (await clinic.boundingBox())!;
+  const hoursBox = (await hours.boundingBox())!;
+  const calendarBox = (await calendar.boundingBox())!;
+  expect(clinicBox.x).toBe(hoursBox.x);
+  expect(calendarBox.x).toBeGreaterThan(hoursBox.x + hoursBox.width);
+  expect(calendarBox.y).toBe(clinicBox.y);
+
+  await hours.getByRole("button", { name: "편집", exact: true }).click();
+  await hours.getByLabel("월요일 진료 시간").fill("10:00 - 18:30");
+  await calendar.getByRole("button", { name: "2026년 12월 25일", exact: true }).click();
+  await exceptions.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(exceptions.getByText("저장 완료", { exact: true }).filter({ visible: true })).toBeVisible();
+  expect(writes).toEqual([{
+    ...FIXTURES.hours,
+    schedule: [{ ...FIXTURES.hours.schedule[0], time: "10:00 - 18:30" }, ...FIXTURES.hours.schedule.slice(1)],
+    exceptions: [{ date: "2026-12-25", open: false, time: "휴진", note: "" }],
+  }]);
 });

@@ -8,8 +8,9 @@ import { useAdminApi, useAdminMutation } from "../useAdminApi";
 export function useSettingsEditor<T extends object>(endpoint: string, options?: {
   readOnly?: boolean;
   patch?: (form: T) => Partial<T>;
+  persistDraft?: boolean;
 }) {
-  const { readOnly = false, patch } = options ?? {};
+  const { readOnly = false, patch, persistDraft = true } = options ?? {};
   const { data, loading, error, refetch } = useAdminApi<T>(endpoint);
   const { mutate, loading: saving } = useAdminMutation();
   const [formEdits, setFormEdits] = useState<T | null>(null);
@@ -18,7 +19,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
   const savingRef = useRef(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const form = useMemo(() => (readOnly ? data : formEdits ?? data) ?? null, [readOnly, formEdits, data]);
-  const recovery = useDraftRecovery(readOnly ? null : form, setFormEdits, `born2smile-settings-recovery:${endpoint}${patch ? ":patch" : ""}`);
+  const recovery = useDraftRecovery(readOnly ? null : form, setFormEdits, `born2smile-settings-recovery:${endpoint}${patch ? ":patch" : ""}`, persistDraft);
   const { dirty, ready, hasConflict, markSaved } = recovery;
   useUnsavedChanges(dirty || saving);
 
@@ -60,10 +61,19 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
     });
   };
 
+  const discardChanges = () => {
+    if (!data || !ready || !dirty || hasConflict || savingRef.current) return false;
+    setFormEdits(null);
+    setSaved(false);
+    setSaveError(null);
+    markSaved(data);
+    return true;
+  };
+
   const setField = (key: keyof T) => (value: string) =>
     updateForm((prev) => ({ ...prev, [key]: value }));
 
   const loadError = error ?? (!loading && data === null ? "설정 데이터가 없습니다. 다시 시도해 주세요." : null);
 
-  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, handleSave, updateForm, setField };
+  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, handleSave, discardChanges, updateForm, setField };
 }

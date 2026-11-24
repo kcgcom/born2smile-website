@@ -25,6 +25,7 @@ export function useDraftRecovery<T extends object>(
   form: T | null,
   restore: (value: T) => void,
   storageKey: string,
+  persist = true,
 ) {
   const mounted = useRef(false);
   useEffect(() => {
@@ -47,6 +48,11 @@ export function useDraftRecovery<T extends object>(
       if (cancelled) return;
       const initial = JSON.stringify(form);
       setBaseline(initial);
+      if (!persist) {
+        try { sessionStorage.removeItem(storageKey); } catch {}
+        setReady(true);
+        return;
+      }
       try {
         const raw = sessionStorage.getItem(storageKey);
         if (raw) {
@@ -64,10 +70,10 @@ export function useDraftRecovery<T extends object>(
       setReady(true);
     });
     return () => { cancelled = true; };
-  }, [form, ready, restore, storageKey]);
+  }, [form, persist, ready, restore, storageKey]);
 
   useEffect(() => {
-    if (!ready || conflict || form === null) return;
+    if (!persist || !ready || conflict || form === null) return;
     let cancelled = false;
     try {
       if (dirty) sessionStorage.setItem(storageKey, JSON.stringify({ baseline, form }));
@@ -78,7 +84,7 @@ export function useDraftRecovery<T extends object>(
       });
     }
     return () => { cancelled = true; };
-  }, [baseline, conflict, dirty, form, ready, storageKey]);
+  }, [baseline, conflict, dirty, form, persist, ready, storageKey]);
 
   const markSaved = useCallback((saved: T) => {
     // An old request may complete after the user has opened a new editor for
@@ -87,10 +93,10 @@ export function useDraftRecovery<T extends object>(
     setBaseline(JSON.stringify(saved));
     setRecoveryNotice(null);
     // Do not clear a conflict as a side effect of saving or revalidation.
-    if (!conflict) {
+    if (persist && !conflict) {
       try { sessionStorage.removeItem(storageKey); } catch {}
     }
-  }, [conflict, storageKey]);
+  }, [conflict, persist, storageKey]);
 
   const restoreConflict = () => {
     if (!conflict?.draft) return;

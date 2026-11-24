@@ -596,11 +596,11 @@ test("원장은 작업함에서 콘텐츠 기획 도구에 접근할 수 있다"
   await expect(page.getByRole("navigation", { name: "시스템 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 설정", "계정 관리", "성능", "프로젝트", "레퍼런스"]);
 });
 
-test("직원은 원장 화면에 접근하면 작업함으로 돌아간다", async ({ page }) => {
+test("직원은 원장 화면에 접근하면 직원 홈으로 돌아간다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, undefined, { isOwner: false });
   await page.goto("/admin/system/monitoring");
-  await expect(page).toHaveURL("/staff/content/tasks");
+  await expect(page).toHaveURL("/staff/system/settings");
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "관리자 보조 도구" })).toHaveCount(0);
   await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
@@ -610,20 +610,42 @@ test("직원은 원장 화면에 접근하면 작업함으로 돌아간다", asy
   await expect(page.getByRole("button", { name: "새 글 작성", exact: true })).toHaveCount(0);
 });
 
-test("직원은 콘텐츠와 행정 메뉴를 모두 연다", async ({ page }) => {
+test("직원은 홈과 블로그 공유를 한 줄 메뉴에서 전환한다", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
   await setup(page, undefined, { isOwner: false });
-  await page.goto("/admin/system/monitoring");
-  await expect(page).toHaveURL("/staff/content/tasks");
-  const nav = page.getByRole("navigation", { name: "직원 업무 메뉴" });
-  await expect(nav.getByRole("link")).toHaveText(["콘텐츠", "행정"]);
-  await expect(nav.getByRole("link", { name: "콘텐츠", exact: true })).toHaveAttribute("aria-current", "true");
-  const content = page.getByRole("navigation", { name: "콘텐츠 세부 화면" });
-  await expect(content.getByRole("link")).toHaveText(["작업함", "원고 목록", "검토 요청", "발행 일정", "이미지"]);
-  await nav.getByRole("link", { name: "행정", exact: true }).click();
+  await page.goto("/staff");
   await expect(page).toHaveURL("/staff/system/settings");
-  await expect(nav.getByRole("link", { name: "행정", exact: true })).toHaveAttribute("aria-current", "true");
-  await expect(content).toHaveCount(0);
-  await expect(page.getByRole("navigation", { name: "행정 세부 화면" }).getByRole("link")).toHaveText(["병원 정보·진료시간"]);
+  const nav = page.getByRole("navigation", { name: "직원 업무 메뉴" });
+  const links = nav.getByRole("link");
+  await expect(links).toHaveText(["홈", "내원안내", "블로그 공유"]);
+  const boxes = await Promise.all((await links.all()).map(link => link.boundingBox()));
+  expect(new Set(boxes.map(box => box?.y)).size).toBe(1);
+  const home = nav.getByRole("link", { name: "홈", exact: true });
+  const blog = nav.getByRole("link", { name: "블로그 공유", exact: true });
+  await expect(home).toHaveAttribute("aria-current", "page");
+  await blog.click();
+  await expect(page).toHaveURL("/staff/content/posts");
+  await expect(blog).toHaveAttribute("aria-current", "page");
+  await home.click();
+  await expect(page).toHaveURL("/staff/system/settings");
+});
+
+test("직원은 내원안내에서 환자용 상담 주소를 복사한다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page, undefined, { isOwner: false });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/staff/system/settings");
+  const link = page.getByRole("navigation", { name: "직원 업무 메뉴" })
+    .getByRole("link", { name: "내원안내", exact: true });
+  await link.click();
+  await expect(page).toHaveURL("/staff/system/first-visit", { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "내원안내", exact: true })).toBeVisible();
+  await expect(link).toHaveAttribute("aria-current", "page");
+  const url = "https://www.born2smile.co.kr/contact";
+  await expect(page.getByRole("link", { name: /https:\/\/www\.born2smile\.co\.kr\/contact/ })).toHaveAttribute("href", url);
+  await page.getByRole("button", { name: "안내 링크 복사" }).click();
+  await expect(page.getByRole("status")).toContainText("안내 링크를 복사했습니다.");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
 });
 
 test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으로 돌아갈 수 있다", async ({ page }) => {
@@ -631,30 +653,38 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await setup(page);
   await page.goto("/admin/operations/overview");
   const switcher = page.getByRole("navigation", { name: "업무 화면 전환" });
+  const clinicName = page.getByRole("link", { name: /서울대학교 엠블럼/ }).locator("span");
   const admin = switcher.getByRole("link", { name: "Admin", exact: true });
   const staff = switcher.getByRole("link", { name: "Staff", exact: true });
   await expect(admin).toHaveAttribute("aria-current", "location");
-  await expect(admin).toHaveCSS("text-decoration-line", "underline");
-  await expect(admin).not.toHaveCSS("text-shadow", "none");
-  await expect(staff).toHaveCSS("text-shadow", "none");
+  await expect(admin).toHaveCSS("text-decoration-line", "none");
+  await expect(admin).toHaveCSS("font-weight", "700");
+  await expect(admin).toHaveCSS("animation-name", /workspace-highlight/);
+  await expect(admin).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(admin).toHaveCSS("background-image", /linear-gradient/);
+  await expect(admin).not.toHaveCSS("box-shadow", "none");
+  await expect(staff).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(staff).toHaveCSS("box-shadow", "none");
   for (const width of [320, 1280, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", width === 1280 ? "stable" : "auto");
     const adminBox = (await admin.boundingBox())!;
     const staffBox = (await staff.boundingBox())!;
     expect(adminBox.y).toBe(staffBox.y);
+    expect(adminBox.width).toBe(staffBox.width);
     expect(adminBox.width).toBeGreaterThanOrEqual(44);
     expect(staffBox.width).toBeGreaterThanOrEqual(44);
     expect(adminBox.height).toBeGreaterThanOrEqual(44);
     expect(staffBox.height).toBeGreaterThanOrEqual(44);
     expect(staffBox.x + staffBox.width).toBeLessThanOrEqual(width);
+    expect(await clinicName.evaluate((name) => name.scrollWidth <= name.clientWidth)).toBe(true);
   }
   await staff.click();
-  await expect(page).toHaveURL("/staff/content/tasks");
+  await expect(page).toHaveURL("/staff/system/settings", { timeout: 15_000 });
   await expect(staff).toHaveAttribute("aria-current", "location");
   await expect(admin).not.toHaveAttribute("aria-current", "location");
-  await expect(staff).not.toHaveCSS("text-shadow", "none");
-  await expect(admin).toHaveCSS("text-shadow", "none");
+  await expect(staff).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(admin).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const account = page.getByRole("button", { name: /^메뉴 (열기|닫기)$/ });
   const logout = page.getByRole("button", { name: "로그아웃", exact: true });
   await expect(logout).toBeHidden();
@@ -666,7 +696,7 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   expect(panel?.width).toBe(390);
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("hidden");
   await expect(logout).toBeVisible();
-  await expect(page).toHaveURL("/staff/content/tasks");
+  await expect(page).toHaveURL("/staff/system/settings");
   await logout.press("Escape");
   await expect(logout).toBeHidden();
   await expect(account).toBeFocused();
@@ -675,13 +705,15 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", "stable");
   const staffViewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
   const menu = page.getByRole("navigation", { name: "직원 업무 메뉴" });
-  await expect(menu.getByRole("link")).toHaveText(["콘텐츠", "행정"]);
-  await expect(page.getByRole("navigation", { name: "콘텐츠 세부 화면" }).getByRole("link")).toHaveText(["작업함", "원고 목록", "검토 요청", "발행 일정", "이미지"]);
+  await expect(menu.getByRole("link")).toHaveText(["홈", "내원안내", "블로그 공유"]);
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
   await admin.press("Enter");
   await expect(page).toHaveURL("/admin/operations/overview");
   await expect(admin).toHaveAttribute("aria-current", "location");
   await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBe(staffViewportWidth);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(admin).toHaveCSS("animation-name", "none");
+  await expect(admin).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
 test("원장은 계정 목록과 접속 기록을 보고 설정에서 직원 접근을 중지한다", async ({ page }) => {

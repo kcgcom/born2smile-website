@@ -15,6 +15,7 @@ export function SectionShell({
   saving,
   saved,
   dirty = false,
+  pendingSaveMessage,
   recovery,
   onSave,
   saveError,
@@ -31,6 +32,7 @@ export function SectionShell({
   saving: boolean;
   saved: boolean;
   dirty?: boolean;
+  pendingSaveMessage?: string;
   recovery?: DraftRecoveryState;
   onSave: () => void;
   saveError: string | null;
@@ -43,6 +45,7 @@ export function SectionShell({
   const [editorOpen, setOpen] = useState(defaultOpen);
   const open = canEdit && editorOpen;
   const editing = open || additionalEditing;
+  const showPendingMessage = dirty && Boolean(pendingSaveMessage);
   const saveButton = <SaveButton saving={saving} saved={saved} disabled={recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />;
 
   const handleToggle = () => {
@@ -95,8 +98,8 @@ export function SectionShell({
       {additionalSection}
       {editing && (
         <div className={`sticky bottom-0 z-20 -mx-4 mt-4 flex items-center justify-between gap-2 rounded-b-2xl border-t border-slate-200 bg-white px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(15,23,42,0.06)] sm:static sm:mx-0 sm:justify-end sm:rounded-none sm:px-0 sm:shadow-none ${open ? "sm:hidden" : ""}`}>
-          <p role="status" className={`min-w-0 break-words text-xs sm:hidden ${saveError ? "text-red-700" : saved ? "text-emerald-700" : "text-slate-600"}`}>
-            {saving ? "저장 중…" : saveError ? `저장 실패: ${saveError}` : saved ? "저장 완료" : dirty ? "저장하지 않은 변경사항이 있습니다." : ""}
+          <p role="status" className={`min-w-0 break-words text-xs ${showPendingMessage ? "" : "sm:hidden"} ${saveError ? "text-red-700" : saved ? "text-emerald-700" : "text-slate-600"}`}>
+            {saving ? "저장 중…" : saveError ? `저장 실패: ${saveError}` : saved ? "저장 완료" : dirty ? (pendingSaveMessage ?? "저장하지 않은 변경사항이 있습니다.") : ""}
           </p>
           <div className="shrink-0">{saveButton}</div>
         </div>
