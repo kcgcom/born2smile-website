@@ -84,6 +84,21 @@ body {
   border-radius: 4px;
 }
 
+@layer components {
+  .naver-booking-button {
+    border: 1px solid #067a3e;
+    background-color: #fff;
+    color: #067a3e;
+    @apply transition-colors motion-reduce:transition-none;
+  }
+
+  @media (hover: hover) {
+    .naver-booking-button:hover {
+      background-color: #f0faf4;
+    }
+  }
+}
+
 /* 섹션 공통 */
 .section-padding {
   @apply px-4 py-16 md:px-6 md:py-24 lg:px-8 lg:py-32;

@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Phone, Home, Building2, BookOpen, Stethoscope, CalendarDays } from "lucide-react";
+import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
+import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
 import { CLINIC, NAV_ITEMS, NAVER_BOOKING_URL } from "@/lib/constants";
 import type { PublicSiteHours } from "@/lib/site-config-supabase";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
@@ -59,9 +60,9 @@ export function FloatingCTA({ hours, phoneHref }: { hours: PublicSiteHours; phon
             href={NAVER_BOOKING_URL}
             event="naver_booking_click"
             properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
-            className="flex min-h-11 items-center justify-center gap-2 bg-[var(--color-primary)] text-sm font-medium text-white hover:bg-[var(--color-primary-dark)]"
+            className="naver-booking-button flex min-h-11 items-center justify-center gap-2 text-sm font-medium"
           >
-            <CalendarDays size={16} aria-hidden="true" />
+            <NaverBookingIcon />
             네이버 예약
           </TrackedAnchor>
         </div>

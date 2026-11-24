@@ -1,9 +1,10 @@
-import { Phone, MessageCircle, MapPin, Clock, CalendarDays } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
 import { NAVER_BOOKING_URL } from "@/lib/constants";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
+import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
 
 export default async function ContactPage() {
   const [clinic, hours, links] = await Promise.all([
@@ -64,10 +65,10 @@ export default async function ContactPage() {
                 href={NAVER_BOOKING_URL}
                 event="naver_booking_click"
                 properties={{ cta_location: "contact_main", page_type: "contact" }}
-                className="flex items-center gap-4 rounded-2xl border border-[var(--color-primary)] p-6 font-bold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+                className="naver-booking-button flex items-center gap-4 rounded-2xl p-6 font-bold"
               >
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
-                  <CalendarDays size={28} aria-hidden="true" />
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F0FAF4]">
+                  <NaverBookingIcon />
                 </span>
                 네이버 예약
               </TrackedAnchor>

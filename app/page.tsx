@@ -5,12 +5,10 @@ import {
   Star,
   ExternalLink,
   ShieldCheck,
-  Phone,
   Smile,
   HelpCircle,
   Plane,
   Building2,
-  CalendarDays,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, NAVER_BOOKING_URL, STAFF } from "@/lib/constants";
 import { getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
@@ -18,6 +16,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CTABanner } from "@/components/ui/CTABanner";
+import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 
 const WHO_WE_SERVE = [
@@ -116,9 +115,9 @@ export default function Home() {
                   href={NAVER_BOOKING_URL}
                   event="naver_booking_click"
                   properties={{ cta_location: "hero", page_type: "home" }}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] sm:px-8 sm:py-4 sm:text-base"
+                  className="naver-booking-button inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-3 text-sm font-medium sm:px-8 sm:py-4 sm:text-base"
                 >
-                  <CalendarDays size={16} aria-hidden="true" />
+                  <NaverBookingIcon />
                   네이버 예약
                 </TrackedAnchor>
                 <TrackedLink
@@ -130,17 +129,6 @@ export default function Home() {
                   상담 안내
                   <ArrowRight size={16} />
                 </TrackedLink>
-                <TrackedAnchor
-                  href={CLINIC.phoneHref}
-                  event="hero_phone_click"
-                  properties={{ cta_location: "hero", page_type: "home" }}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-5 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5 sm:px-8 sm:py-4 sm:text-base"
-                  aria-label={`전화 상담 ${CLINIC.phone}`}
-                >
-                  <Phone size={16} aria-hidden="true" />
-                  <span className="sm:hidden">전화 상담</span>
-                  <span className="hidden sm:inline">{CLINIC.phone}</span>
-                </TrackedAnchor>
               </div>
             </FadeIn>
           </div>
