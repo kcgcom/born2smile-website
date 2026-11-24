@@ -63,6 +63,22 @@ async function setup(page: Page, hold90?: Promise<void>, access: AdminAccess = O
   });
 }
 
+test("사이트맵 동기화 보류와 최근 색인 검사 결과를 구분해 표시한다", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/admin-presence", route => route.fulfill({ status: 204 }));
+  await page.route("**/api/admin/indexing-status", route => route.fulfill({ json: { data: {
+    ...indexing,
+    summary: { ...indexing.summary, total: 1 },
+    lastRun: { status: "completed", processed: 1, succeeded: 1, failed: 0, completedAt: null, error: null },
+    sitemapHold: { reason: "url_mismatch", differences: 2, since: null },
+  } } }));
+  await page.goto("/admin/analysis/indexing");
+  const hold = page.getByRole("status").filter({ hasText: "사이트맵 목록 동기화 보류" });
+  await expect(hold).toContainText("공개 사이트맵과 기준 목록의 차이 2개");
+  await expect(hold).toContainText("마지막으로 확인한 URL 목록을 사용합니다.");
+  await expect(page.getByText(/최근 작업.*성공 1개/)).toBeVisible();
+});
+
 for (const workspace of ["admin", "staff"] as const) {
   test(`${workspace} 치료 후 안내에서 공개 글을 검색하고 환자용 링크를 복사한다`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

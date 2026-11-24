@@ -208,6 +208,24 @@ export function IndexingStatusTab() {
                     {data.lastRun.error && <p className="mt-1 text-red-600">{data.lastRun.error}</p>}
                   </div>
                 )}
+                {data.sitemapHold && (
+                  <div role="status" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <p className="font-semibold">사이트맵 목록 동기화 보류</p>
+                    <p>
+                      {data.sitemapHold.reason === "url_mismatch"
+                        ? `공개 사이트맵과 기준 목록의 차이 ${data.sitemapHold.differences ?? 0}개`
+                        : data.sitemapHold.reason === "sitemap_unavailable"
+                          ? "공개 사이트맵을 읽을 수 없습니다."
+                          : "기준 URL 목록을 확인할 수 없습니다."}
+                      {data.sitemapHold.since ? ` · ${formatDate(data.sitemapHold.since)}부터` : ""}
+                    </p>
+                    <p>
+                      {data.summary.total > 0
+                        ? "마지막으로 확인한 URL 목록을 사용합니다."
+                        : "확인된 URL 목록이 없어 검사를 보류했습니다."}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-4 gap-2 lg:min-w-[480px]">

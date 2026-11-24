@@ -4,6 +4,7 @@ import type { MetadataRoute } from "next";
 import { BASE_URL, TREATMENTS } from "@/lib/constants";
 import { getAllPublishedPostMetas } from "@/lib/blog-supabase";
 import { ALL_CATEGORY_SLUGS, getBlogLastModifiedDate, getBlogPostUrl } from "@/lib/blog";
+import { SITEMAP_BLOG_PATH, SITEMAP_CORE_PAGES, SITEMAP_OTHER_PAGES } from "@/lib/sitemap-urls";
 
 // 정적 페이지는 실제 콘텐츠 수정일을 추적하지 않으므로 lastModified를 생략합니다.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -29,30 +30,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   return [
-    {
-      url: BASE_URL,
-      changeFrequency: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: `${BASE_URL}/about`,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/treatments`,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
+    ...SITEMAP_CORE_PAGES,
     ...treatmentPages,
     {
-      url: `${BASE_URL}/blog`,
+      url: `${BASE_URL}${SITEMAP_BLOG_PATH}`,
       lastModified: latestPostDate,
       changeFrequency: "weekly",
       priority: 0.7,
     },
     ...ALL_CATEGORY_SLUGS.map((categorySlug) => ({
-      url: `${BASE_URL}/blog/${categorySlug}`,
+      url: `${BASE_URL}${SITEMAP_BLOG_PATH}/${categorySlug}`,
       lastModified: latestDateByCategory.get(categorySlug),
       changeFrequency: "weekly" as const,
       priority: 0.7,
@@ -63,20 +50,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
-    {
-      url: `${BASE_URL}/faq`,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/contact`,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/privacy`,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    ...SITEMAP_OTHER_PAGES,
   ];
 }

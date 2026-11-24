@@ -133,3 +133,25 @@ CRUD 후 태그·경로 재검증을 요청한다. `revalidateTag(tag, "max")`�
 3. 페이지 반영은 별도로 확인한다. 테스트 환경에서 병원 설정 변경과 공개 글의 수정·카테고리 이동·삭제를 재현하고, 해당 공개 페이지를 다시 요청해 변경 사항이 반영되는지 확인한다.
 
 변경 전후 행 중 하나라도 발행 상태인 글은 글·카테고리·목록·사이트맵·RSS 캐시를 갱신한다. 병원 설정 변경은 해당 유형의 태그를 만료하고, 발행 요일 외 설정은 루트 레이아웃과 `/llms.txt`도 재검증한다. 웹훅 전송 실패에 대비해 기존 시간 기반 재검증을 유지한다.
+## 색인 검사 사이트맵 목록
+
+색인 검사 작업과 관리자 화면은 `gsc_index_sitemap`의 활성 URL 목록을 함께 읽는다. 목록이 바뀌거나 마지막 검증일에서 KST 기준 7일이 지나면 공개 사이트맵을 현재 배포의 고정 URL 및 Supabase의 공개 글 목록과 대조한다. 보류 중인 목록은 다음 작업에서 다시 대조한다. 검증 실패 시 이전 목록으로 검사하고, 관리자 화면에서 목록 동기화 상태를 별도로 표시한다. 제거된 URL은 활성 목록에서만 빠지며 검사 상태와 이력은 보존한다.
+
+배포 시 `20261124235140_track_active_gsc_sitemap.sql`을 새 앱 버전보다 먼저 적용한다. 이전 버전이 그 사이 목록을 갱신할 수 있으므로 가능한 한 같은 배포 작업에서 전환한다. 새 버전의 첫 정상 작업은 활성 목록을 다시 검증한다.
+
+이전 앱 버전은 `gsc_index_status.last_seen_in_sitemap_at`의 최신 그룹을 읽는다. 이전 버전으로 되돌릴 때는 실행 중인 색인 작업이 없는 상태에서 아래 쿼리로 활성 목록의 타임스탬프 그룹을 복원하고, 복원한 그룹과 활성 목록의 URL 집합이 같은지 확인한다. 활성 목록이 비어 있으면 이 복원 절차로 진행할 수 있는지 먼저 확인한다.
+
+```sql
+with active as (
+  select urls
+  from public.gsc_index_sitemap
+  where singleton and cardinality(urls) > 0
+), marker as (
+  select greatest(clock_timestamp(), max(last_seen_in_sitemap_at) + interval '1 microsecond') as seen_at
+  from public.gsc_index_status
+)
+update public.gsc_index_status as status
+set last_seen_in_sitemap_at = marker.seen_at
+from active cross join marker
+where status.url = any(active.urls);
+```

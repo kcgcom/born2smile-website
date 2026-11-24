@@ -1,5 +1,6 @@
 import { isValidCronAuthorization } from "../lib/cron-auth";
 import { expect, test } from "@playwright/test";
+import { decideSitemapSync, parseSitemapUrls } from "../lib/gsc-index-sitemap";
 import {
   classifyIndexStatus,
   getDailyInspectionLimit,
@@ -10,6 +11,59 @@ import {
   selectInspectionBatch,
   shouldAlertRunFailures,
 } from "../lib/admin-indexing-monitor";
+
+test.describe("색인 검사 사이트맵 동기화", () => {
+  const home = "https://www.born2smile.co.kr";
+  const about = `${home}/about`;
+  const faq = `${home}/faq`;
+  const state = { urls: [about, home], lastVerifiedAt: "2026-11-17T15:20:30Z", holdReason: null };
+  const beforeWeeklyCheck = new Date("2026-11-23T15:20:00Z");
+  const weeklyCheck = new Date("2026-11-24T15:20:00Z");
+
+  test("URL 순서나 중복만 달라지면 기준 목록을 조회하지 않는다", async () => {
+    let checks = 0;
+    const result = await decideSitemapSync(state, async () => [home, about, home], async () => {
+      checks++;
+      return [about, home];
+    }, beforeWeeklyCheck);
+    expect(result).toEqual({ kind: "unchanged" });
+    expect(checks).toBe(0);
+  });
+
+  test("KST 기준 7일째에는 같은 목록도 다시 확인한다", async () => {
+    const result = await decideSitemapSync(state, async () => [home, about], async () => [about, home], weeklyCheck);
+    expect(result).toEqual({ kind: "verified", urls: [home, about] });
+  });
+
+  test("기준 데이터가 동의한 추가와 제거만 반영한다", async () => {
+    const result = await decideSitemapSync(state, async () => [home, faq], async () => [faq, home], beforeWeeklyCheck);
+    expect(result).toEqual({ kind: "verified", urls: [home, faq] });
+
+    const incomplete = await decideSitemapSync(state, async () => [home], async () => [home, about], beforeWeeklyCheck);
+    expect(incomplete).toEqual({ kind: "deferred", reason: "url_mismatch", differences: 1 });
+  });
+
+  test("사이트맵 오류와 검증 오류를 구분하고 보류 후 다시 확인한다", async () => {
+    const unavailable = async () => { throw new Error("unavailable"); };
+    await expect(decideSitemapSync(state, unavailable, async () => [home, about], beforeWeeklyCheck))
+      .resolves.toEqual({ kind: "deferred", reason: "sitemap_unavailable", differences: null });
+    await expect(decideSitemapSync(state, async () => [home, faq], unavailable, beforeWeeklyCheck))
+      .resolves.toEqual({ kind: "deferred", reason: "verification_unavailable", differences: null });
+    const held = { ...state, holdReason: "url_mismatch" as const };
+    await expect(decideSitemapSync(held, async () => [about, home], async () => [home, about], beforeWeeklyCheck))
+      .resolves.toEqual({ kind: "verified", urls: [home, about] });
+  });
+
+  test("표준 XML의 실제 위치만 읽고 잘못된 사이트맵을 거부한다", () => {
+    const root = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    const sitemap = `${root}<url><loc>${about}</loc></url><url><loc>${home}</loc><lastmod>2026-11-25</lastmod></url><url><loc>${about}</loc></url></urlset>`;
+    expect(parseSitemapUrls(sitemap)).toEqual([home, about]);
+    expect(() => parseSitemapUrls(`${root}<url><loc>${home}</loc></url>`)).toThrow();
+    expect(() => parseSitemapUrls(`${root}<url><loc>https://example.com/</loc></url></urlset>`)).toThrow();
+    expect(() => parseSitemapUrls(`${root}<url><loc>${home}</loc></url><url /></urlset>`)).toThrow();
+    expect(() => parseSitemapUrls(`${root}</urlset>`)).toThrow();
+  });
+});
 
 test.describe("색인 상태 감시", () => {
   test("Search Console 결과를 운영 상태로 분류한다", () => {

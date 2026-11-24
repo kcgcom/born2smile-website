@@ -2,6 +2,10 @@ import type { searchconsole_v1 } from "googleapis";
 import { BASE_URL } from "./constants";
 import { createSearchConsoleContext } from "./admin-search-console";
 import { getSupabaseAdmin } from "./supabase-admin";
+import { getBlogPostUrl, normalizeBlogCategory } from "./blog/category-slugs";
+import { getTodayKST } from "./date";
+import { decideSitemapSync, parseSitemapUrls, type SitemapHoldReason } from "./gsc-index-sitemap";
+import { getStaticSitemapUrls } from "./sitemap-urls";
 
 export const INDEXING_BATCH_SIZE = 50;
 export const INDEXING_MAX_BATCH_SIZE = 200;
@@ -58,7 +62,6 @@ interface IndexStatusRow {
   pending_count: number;
   inspected_at: string | null;
   last_changed_at: string | null;
-  last_seen_in_sitemap_at: string;
   next_inspect_at: string;
   error_message: string | null;
 }
@@ -77,6 +80,22 @@ interface IndexObservation {
   signature: string;
 }
 
+interface ActiveSitemap {
+  urls: string[];
+  last_verified_at: string | null;
+  hold_reason: SitemapHoldReason | null;
+  hold_since: string | null;
+  hold_differences: number | null;
+  items: IndexStatusRow[];
+  events: Array<{
+    id: number;
+    url: string;
+    from_status: string | null;
+    to_status: string;
+    observed_at: string;
+  }>;
+}
+
 export interface IndexingMonitorData {
   summary: Record<IndexMonitorStatus, number> & {
     total: number;
@@ -84,6 +103,7 @@ export interface IndexingMonitorData {
     pendingChanges: number;
   };
   items: IndexStatusItem[];
+  sitemapHold: { reason: SitemapHoldReason; since: string | null; differences: number | null } | null;
   events: Array<{
     id: number;
     url: string;
@@ -260,19 +280,62 @@ export function nextObservationState(
   return { confirmedSignature, pendingSignature: observedSignature, pendingCount: 1, changed: false };
 }
 
-function pathFromUrl(url: string): string {
-  try {
-    return new URL(url).pathname || "/";
-  } catch {
-    return url;
-  }
+async function fetchSitemapUrls(): Promise<string[]> {
+  const response = await fetch(`${BASE_URL}/sitemap.xml`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error(`Sitemap 조회 실패 (HTTP ${response.status})`);
+  return parseSitemapUrls(await response.text());
 }
 
-async function fetchSitemapUrls(): Promise<string[]> {
-  const response = await fetch(`${BASE_URL}/sitemap.xml`, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Sitemap 조회 실패 (HTTP ${response.status})`);
-  const xml = await response.text();
-  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+async function fetchExpectedSitemapUrls(today: string): Promise<string[]> {
+  const { data, error } = await getSupabaseAdmin()
+    .rpc("read_gsc_sitemap_blog_posts", { p_today: today })
+    .abortSignal(AbortSignal.timeout(15_000));
+  if (error) throw error;
+  const posts = data as Array<{ slug: string; category: string }>;
+  return [
+    ...getStaticSitemapUrls(),
+    ...posts.map(({ slug, category }) => {
+      const categorySlug = normalizeBlogCategory(category);
+      if (!categorySlug) throw new Error("공개 글의 카테고리가 올바르지 않습니다.");
+      return `${BASE_URL}${getBlogPostUrl(slug, categorySlug)}`;
+    }),
+  ];
+}
+
+async function readActiveSitemap(includeEvents = false): Promise<ActiveSitemap> {
+  const { data, error } = await getSupabaseAdmin().rpc("read_gsc_active_sitemap", { p_include_events: includeEvents });
+  if (error) throw error;
+  if (!data) throw new Error("저장된 사이트맵 목록을 가져올 수 없습니다.");
+  return data as ActiveSitemap;
+}
+
+async function syncActiveSitemap(runId: string): Promise<ActiveSitemap> {
+  const state = await readActiveSitemap();
+  const now = new Date();
+  const decision = await decideSitemapSync({
+    urls: state.urls,
+    lastVerifiedAt: state.last_verified_at,
+    holdReason: state.hold_reason,
+  }, fetchSitemapUrls, () => fetchExpectedSitemapUrls(getTodayKST(now)), now);
+  if (decision.kind === "unchanged") return state;
+
+  const { error } = await getSupabaseAdmin().rpc("save_gsc_sitemap_check", {
+    p_run_id: runId,
+    p_check_at: now.toISOString(),
+    ...(decision.kind === "verified" ? {
+      p_urls: decision.urls.map((url) => ({ url, path: new URL(url).pathname })),
+    } : {
+      p_hold_reason: decision.reason,
+      p_hold_differences: decision.differences,
+    }),
+  });
+  if (error) throw error;
+  if (decision.kind === "verified") return readActiveSitemap();
+  if (!state.urls.length) throw new Error("확인된 사이트맵 목록이 없어 색인 검사를 시작할 수 없습니다.");
+  return state;
 }
 
 function mapStatusRow(row: IndexStatusRow): IndexStatusItem {
@@ -400,29 +463,15 @@ export async function runIndexingMonitor(requestedBatchSize?: number): Promise<I
   let confirmedCanonicalMismatches = 0;
 
   try {
-    const sitemapUrls = await fetchSitemapUrls();
-    const batchSize = requestedBatchSize ?? getDailyInspectionLimit(sitemapUrls.length);
+    const activeSitemap = await syncActiveSitemap(runId);
+    const batchSize = requestedBatchSize ?? getDailyInspectionLimit(activeSitemap.urls.length);
     const { error: batchSizeError } = await admin.from(RUNS_TABLE).update({
       batch_size: batchSize,
     }).eq("id", runId);
     if (batchSizeError) throw batchSizeError;
 
-    const seenAt = new Date().toISOString();
-    const placeholders = sitemapUrls.map((url) => ({
-      url,
-      path: pathFromUrl(url),
-      last_seen_in_sitemap_at: seenAt,
-    }));
-    const { error: upsertError } = await admin.from(TABLE).upsert(placeholders, { onConflict: "url" });
-    if (upsertError) throw upsertError;
-
-    const { data: rows, error: rowsError } = await admin.from(TABLE)
-      .select("*")
-      .eq("last_seen_in_sitemap_at", seenAt);
-    if (rowsError) throw rowsError;
-
     const batch = selectInspectionBatch(
-      ((rows ?? []) as IndexStatusRow[]).map((row) => ({
+      activeSitemap.items.map((row) => ({
         ...row,
         inspectedAt: row.inspected_at,
         pendingCount: row.pending_count,
@@ -431,7 +480,7 @@ export async function runIndexingMonitor(requestedBatchSize?: number): Promise<I
       })),
       batchSize,
     );
-    const rowByUrl = new Map(((rows ?? []) as IndexStatusRow[]).map((row) => [row.url, row]));
+    const rowByUrl = new Map(activeSitemap.items.map((row) => [row.url, row]));
     const { searchconsole, siteUrl } = await createSearchConsoleContext();
     let cursor = 0;
     let fatalError: unknown = null;
@@ -520,28 +569,12 @@ export async function runIndexingMonitor(requestedBatchSize?: number): Promise<I
 
 export async function getIndexingMonitorData(): Promise<IndexingMonitorData> {
   const admin = getSupabaseAdmin();
-  const [latestSeenResult, eventsResult, runResult] = await Promise.all([
-    admin.from(TABLE).select("last_seen_in_sitemap_at").order("last_seen_in_sitemap_at", { ascending: false }).limit(1).maybeSingle(),
-    admin.from(EVENTS_TABLE).select("id,url,from_status,to_status,observed_at").order("observed_at", { ascending: false }).limit(200),
+  const [activeSitemap, runResult] = await Promise.all([
+    readActiveSitemap(true),
     admin.from(RUNS_TABLE).select("status,processed_count,success_count,failure_count,completed_at,error_message").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  if (latestSeenResult.error) throw latestSeenResult.error;
-  if (eventsResult.error) throw eventsResult.error;
   if (runResult.error) throw runResult.error;
-
-  let statusRows: IndexStatusRow[] = [];
-  const latestSeenAt = latestSeenResult.data?.last_seen_in_sitemap_at;
-  if (latestSeenAt) {
-    const { data, error } = await admin.from(TABLE)
-      .select("*")
-      .eq("last_seen_in_sitemap_at", latestSeenAt)
-      .order("path");
-    if (error) throw error;
-    statusRows = (data ?? []) as IndexStatusRow[];
-  }
-
-  const items = statusRows.map(mapStatusRow);
-  const activeUrls = new Set(items.map((item) => item.url));
+  const items = activeSitemap.items.map(mapStatusRow);
   const baseSummary = {
     unchecked: 0,
     indexed: 0,
@@ -565,7 +598,12 @@ export async function getIndexingMonitorData(): Promise<IndexingMonitorData> {
       pendingChanges: items.filter((item) => item.pendingCount > 0).length,
     },
     items,
-    events: (eventsResult.data ?? []).filter((row) => activeUrls.has(row.url)).slice(0, 50).map((row) => ({
+    sitemapHold: activeSitemap.hold_reason ? {
+      reason: activeSitemap.hold_reason,
+      since: activeSitemap.hold_since,
+      differences: activeSitemap.hold_differences,
+    } : null,
+    events: activeSitemap.events.map((row) => ({
       id: row.id,
       url: row.url,
       fromStatus: row.from_status,
