@@ -7,6 +7,7 @@ import { forceRefetchAdminApi, useAdminApi } from "@/app/admin/(dashboard)/compo
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 import { ApiSourceBadge } from "@/app/admin/(dashboard)/components/insight/ApiSourceBadge";
+import { CruxPanel } from "./CruxPanel";
 
 // --- Types ---
 
@@ -438,6 +439,7 @@ export function PerformanceTab() {
           테스트 URL: {result.url}
         </p>
       </>}
+      <CruxPanel />
     </div>
   );
 }

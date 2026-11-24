@@ -40,6 +40,7 @@
 | `NAVER_SEARCHAD_SECRET_KEY` | 검색광고 Secret Key | 절대 검색량 사용 시 |
 | `NAVER_SEARCHAD_CUSTOMER_ID` | 검색광고 고객 ID | 절대 검색량 사용 시 |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API 키 | PageSpeed 조회 시 선택. 설정된 경우 요청에 포함 |
+| `CRUX_API_KEY` | Chrome UX Report API로 제한한 Google Cloud API 키 | 관리자 성능 화면에서 전체 사이트의 최신 집계와 주간 추세를 조회할 때 사용 |
 | `GEMINI_API_KEY` | Gemini Embedding API 키 | 검색 성과의 의미 기반 키워드 클러스터링 사용 시 |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry 클라이언트 DSN | 에러 모니터링 사용 시 |
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | 공개 환경명 | Sentry 사용 시 |

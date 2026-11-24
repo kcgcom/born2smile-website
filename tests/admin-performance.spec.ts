@@ -15,7 +15,30 @@ async function setup(page: Page) {
   await page.context().addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", domain: "localhost", path: "/" }]);
   await page.route("**/*.supabase.co/**", route => route.abort());
   await page.route("**/api/admin/**", route => route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } }));
+  await page.route("**/api/dev/crux", route => route.fulfill({ json: { latest: null, history: [], latestUnavailable: false, historyUnavailable: false } }));
 }
+
+test("CrUX 통합 집계는 Lighthouse 오류와 별개로 누락 지표와 주간 수치를 표시한다", async ({ page }) => {
+  await setup(page);
+  const latest = { start: "2026-10-26", end: "2026-11-22", lcp: 1183, inp: null, cls: 0 };
+  await page.route("**/api/dev/crux", route => route.fulfill({ json: {
+    latest,
+    history: [{ start: "2026-10-19", end: "2026-11-15", lcp: null, cls: null, inp: null }, latest],
+    latestUnavailable: false,
+    historyUnavailable: false,
+  } }));
+  await page.route("**/api/dev/pagespeed?**", route => route.fulfill({ status: 502, json: { message: "Lighthouse 조회 실패" } }));
+  await page.goto("/admin/system/monitoring");
+  await expect(page.getByText("전체 사이트 · 모든 기기 · CrUX")).toBeVisible();
+  await expect(page.getByText("1,183 ms", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("0.00", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "LCP 추세 (ms)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "INP 추세" })).toHaveCount(0);
+  await page.getByText("기간별 수치 보기").click();
+  const missingWeek = page.getByRole("row").filter({ hasText: "2026-10-19" });
+  await expect(missingWeek.getByText("데이터 없음")).toHaveCount(3);
+  await expect(page.getByText("Lighthouse 조회 실패")).toBeVisible();
+});
 
 const resource = "https://www.born2smile.co.kr/_next/static/chunks/very-long-resource-file-name-for-mobile-layout.css";
 const title = "Eliminate render-blocking resources that delay the first paint";
