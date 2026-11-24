@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef } from "react";
 import { CircleUserRound, LogOut } from "lucide-react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
@@ -19,13 +20,30 @@ interface DashboardHeaderProps {
   canReturnToAdmin?: boolean;
 }
 
-const WORKSPACE_LINK_CLASS = "inline-flex min-h-11 w-14 items-center justify-center rounded-lg text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 sm:w-20 sm:text-lg";
-const ACTIVE_WORKSPACE_CLASS = `${styles.activeWorkspace} text-amber-200`;
-const INACTIVE_WORKSPACE_CLASS = "text-slate-300 hover:bg-white/8 hover:text-white motion-safe:transition-colors motion-safe:duration-150";
+const WORKSPACE_WIDTH_CLASS = "w-14 sm:w-20";
+const WORKSPACE_LINK_CLASS = `relative inline-flex min-h-11 ${WORKSPACE_WIDTH_CLASS} items-center justify-center rounded-lg text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-200 sm:text-lg`;
+const ACTIVE_WORKSPACE_CLASS = "text-slate-900";
+const INACTIVE_WORKSPACE_CLASS = "text-slate-200 hover:text-white";
+let pendingWorkspace: "admin" | "staff" | undefined;
 
 export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: DashboardHeaderProps) {
   const pathname = usePathname();
   const mobileMenu = useMobileNavigation();
+  const indicator = useRef<HTMLSpanElement>(null);
+  const workspace = staff ? "staff" : "admin";
+
+  useLayoutEffect(() => {
+    if (pendingWorkspace !== workspace) return;
+    pendingWorkspace = undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const from = staff ? "calc(-100% - 0.25rem)" : "calc(100% + 0.25rem)";
+    const animation = indicator.current?.animate(
+      { transform: [`translateX(${from})`, "translateX(0)"] },
+      { duration: 280, easing: "cubic-bezier(0.3, 0, 0.25, 1)" },
+    );
+    return () => animation?.cancel();
+  }, [staff, workspace]);
+
   return (
     <AdminSurface
       tone="dark"
@@ -44,13 +62,19 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
               />
               <span className="truncate text-lg font-bold tracking-tight text-white max-[359px]:text-base sm:text-2xl">{CLINIC.name}</span>
             </Link>
-            <nav aria-label="업무 화면 전환" className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+            <nav aria-label="업무 화면 전환" className={`${styles.track} relative isolate flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl p-0.5`}>
+              <span
+                ref={indicator}
+                aria-hidden="true"
+                data-workspace-indicator
+                className={`${styles.indicator} pointer-events-none absolute inset-y-0.5 ${staff ? "right-0.5" : "left-0.5"} ${WORKSPACE_WIDTH_CLASS} rounded-lg`}
+              />
               {(!staff || canReturnToAdmin) && (
-                <Link href="/admin" lang="en" aria-current={!staff ? "location" : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? INACTIVE_WORKSPACE_CLASS : ACTIVE_WORKSPACE_CLASS}`}>
+                <Link href="/admin" lang="en" aria-current={!staff ? "location" : undefined} onNavigate={staff ? () => { pendingWorkspace = "admin"; } : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? INACTIVE_WORKSPACE_CLASS : ACTIVE_WORKSPACE_CLASS}`}>
                   Admin
                 </Link>
               )}
-              <Link href="/staff" lang="en" aria-current={staff ? "location" : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? ACTIVE_WORKSPACE_CLASS : INACTIVE_WORKSPACE_CLASS}`}>
+              <Link href="/staff" lang="en" aria-current={staff ? "location" : undefined} onNavigate={!staff ? () => { pendingWorkspace = "staff"; } : undefined} className={`${WORKSPACE_LINK_CLASS} ${staff ? ACTIVE_WORKSPACE_CLASS : INACTIVE_WORKSPACE_CLASS}`}>
                 Staff
               </Link>
             </nav>

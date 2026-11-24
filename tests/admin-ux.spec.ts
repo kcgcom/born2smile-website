@@ -651,20 +651,30 @@ test("직원은 내원안내에서 환자용 상담 주소를 복사한다", asy
 test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으로 돌아갈 수 있다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (keyframes, options) {
+      if (this.hasAttribute("data-workspace-indicator")) {
+        this.setAttribute("data-test-slide", JSON.stringify(keyframes));
+        this.setAttribute("data-test-slide-duration", String(typeof options === "number" ? options : options?.duration));
+      }
+      return animate.call(this, keyframes, options);
+    };
+  });
   await page.goto("/admin/operations/overview");
   const switcher = page.getByRole("navigation", { name: "업무 화면 전환" });
+  const indicator = switcher.locator("[data-workspace-indicator]");
   const clinicName = page.getByRole("link", { name: /서울대학교 엠블럼/ }).locator("span");
   const admin = switcher.getByRole("link", { name: "Admin", exact: true });
   const staff = switcher.getByRole("link", { name: "Staff", exact: true });
   await expect(admin).toHaveAttribute("aria-current", "location");
   await expect(admin).toHaveCSS("text-decoration-line", "none");
   await expect(admin).toHaveCSS("font-weight", "700");
-  await expect(admin).toHaveCSS("animation-name", /workspace-highlight/);
-  await expect(admin).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(admin).toHaveCSS("background-image", /linear-gradient/);
-  await expect(admin).not.toHaveCSS("box-shadow", "none");
-  await expect(staff).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(staff).toHaveCSS("box-shadow", "none");
+  await expect(indicator).toHaveCSS("background-image", "none");
+  await expect(indicator).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(switcher).toHaveCSS("box-shadow", /inset/);
+  await expect(indicator).toHaveCSS("box-shadow", /inset/);
+  await expect(indicator).not.toHaveAttribute("data-test-slide", /.+/);
   for (const width of [320, 1280, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", width === 1280 ? "stable" : "auto");
@@ -683,8 +693,8 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await expect(page).toHaveURL("/staff/system/settings", { timeout: 15_000 });
   await expect(staff).toHaveAttribute("aria-current", "location");
   await expect(admin).not.toHaveAttribute("aria-current", "location");
-  await expect(staff).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(admin).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(indicator).toHaveAttribute("data-test-slide", /translateX\(calc\(-100%/);
+  await expect(indicator).toHaveAttribute("data-test-slide-duration", "280");
   const account = page.getByRole("button", { name: /^메뉴 (열기|닫기)$/ });
   const logout = page.getByRole("button", { name: "로그아웃", exact: true });
   await expect(logout).toBeHidden();
@@ -710,10 +720,12 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await admin.press("Enter");
   await expect(page).toHaveURL("/admin/operations/overview");
   await expect(admin).toHaveAttribute("aria-current", "location");
+  await expect(indicator).toHaveAttribute("data-test-slide", /translateX\(calc\(100%/);
   await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBe(staffViewportWidth);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(admin).toHaveCSS("animation-name", "none");
-  await expect(admin).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await staff.click();
+  await expect(staff).toHaveAttribute("aria-current", "location");
+  await expect(indicator).not.toHaveAttribute("data-test-slide", /.+/);
 });
 
 test("원장은 계정 목록과 접속 기록을 보고 설정에서 직원 접근을 중지한다", async ({ page }) => {

@@ -1,20 +1,15 @@
-.activeWorkspace {
-  background-color: rgb(251 191 36 / 0.12);
-  background-image: linear-gradient(to bottom, rgb(253 230 138 / 0.20), transparent 72%);
+.track {
+  background-color: color-mix(in srgb, var(--color-slate-700) 65%, var(--color-slate-800));
   box-shadow:
-    inset 0 1px 0 rgb(253 230 138 / 0.46),
-    inset 0 -2px 0 rgb(2 6 23 / 0.5),
-    0 3px 6px rgb(2 6 23 / 0.5);
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    inset 0 0 0 1px rgb(255 255 255 / 0.07),
+    0 1px 2px rgb(2 6 23 / 0.42),
+    0 3px 7px rgb(2 6 23 / 0.32);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .activeWorkspace {
-    animation: workspace-highlight 180ms ease-out;
-  }
-}
-
-@keyframes workspace-highlight {
-  from {
-    filter: brightness(0.82);
-  }
+.indicator {
+  background-color: color-mix(in srgb, var(--color-blue-200) 40%, var(--color-slate-300));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 1px 2px rgb(2 6 23 / 0.30);
 }
