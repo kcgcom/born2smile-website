@@ -31,6 +31,7 @@
 - 앱 코드 변경 후 `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm build`를 실행한다. 각 명령의 성공 여부를 구분해 보고한다.
 - Playwright 테스트가 `tests/`에 있다. UI·라우팅 변경은 관련 spec을 `pnpm exec playwright test tests/<파일>.spec.ts`로 실행하고, 전체 회귀 확인은 `pnpm test:e2e`를 사용한다.
 - Playwright는 로컬에서 3000번 포트의 개발 서버를 재사용한다. 기존 서버가 이 작업의 코드와 필요한 설정으로 실행 중인지 확인한다. Playwright가 서버를 직접 시작할 때는 `pnpm dev`에 `SITE_CONFIG_DATA_SOURCE=fixture`를 전달한다. CI에서는 3000번 포트가 비어 있어야 한다.
+- 로컬 개발 서버를 시작하면 [HTTPS 개발 도메인](https://born2smile.dev.born2smile.co.kr/)에서 홈페이지가 정상 응답하는지 확인하고 해당 주소를 사용자에게 안내한다. HTTPS 접속이 실패하면 로컬 HTTP 응답도 확인하고 HTTPS 오류를 함께 보고한다. 접속 구성은 `README.md`의 시작하기를 참고한다.
 - `pnpm dev/build`는 snapshot과 매니페스트를 생성한다. build는 `BLOG_SNAPSHOT_REQUIRED=true`로 실행되므로 환경변수·데이터 접근 문제로 실패할 수 있다. 검사를 우회하거나 운영 데이터를 바꾸지 말고 실패 원인과 미검증 범위를 보고한다.
 - 문서·지침·스킬만 바꾼 경우 경로, 링크, 명령, 스킬 메타데이터와 변경 diff를 검증한다. 앱 빌드가 필요한 변경인지 구분한다.
 - 실패가 기존 변경이나 환경 문제에서 비롯되면 요청한 수정과 구분해 보고한다. 통과하지 않은 검사를 통과했다고 적지 않는다.

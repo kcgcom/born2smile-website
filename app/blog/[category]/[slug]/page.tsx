@@ -369,6 +369,16 @@ export default async function BlogPostPage({
             <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 md:p-6">
               <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} adminVisitor={isAdmin} />
             </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" className="min-h-11" />
+              <BlogListReturnLink
+                href={`/blog/${post.category}`}
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
+              >
+                <ArrowLeft size={16} />
+                칼럼 목록으로
+              </BlogListReturnLink>
+            </div>
             <FadeIn className="mt-10">
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--background)] p-6">
                 <p className="text-xs font-semibold tracking-[0.16em] text-[var(--color-gold-text)] uppercase">
@@ -446,26 +456,6 @@ export default async function BlogPostPage({
           </FadeIn>
         </section>
       )}
-
-      {/* 공유 + 목록 돌아가기 */}
-      <section className="bg-[var(--surface)] px-4 pt-6 pb-12">
-        <div className="mx-auto max-w-3xl border-t border-[var(--border)] pt-8">
-          <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-rose-50/50 p-5 shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" />
-              </div>
-            <div className="mt-5 border-t border-white/70 pt-4">
-              <BlogListReturnLink
-                href={`/blog/${post.category}`}
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--color-primary)]"
-              >
-                <ArrowLeft size={16} />
-                칼럼 목록으로
-              </BlogListReturnLink>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 관련 포스트 */}
       {relatedPosts.length > 0 && (

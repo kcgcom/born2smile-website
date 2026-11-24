@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import { BarChart3, MessageCircle, ChevronDown, ChevronUp, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { BarChart3, Check, MessageCircle, ChevronDown, ChevronUp, Copy, Pencil, RefreshCw, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { BASE_URL } from "@/lib/constants";
 import { BLOG_CATEGORY_SLUGS } from "@/lib/blog/types";
 import type { BlogCategoryFilter, BlogCategorySlug } from "@/lib/blog/types";
 import { categoryColors } from "@/lib/blog/category-colors";
@@ -10,6 +11,8 @@ import { AdminActionButton, AdminPill, AdminSurface } from "@/components/admin/A
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { calcDraftRecommendationOrder } from "./blog-helpers";
 import type { AdminBlogPost, BlogFeedbackData, SortKey, StatusFilter } from "./blog-helpers";
+
+export const UNTAGGED_FILTER = "__untagged";
 
 export interface BlogStats {
   total: number;
@@ -25,6 +28,7 @@ interface FilterPostsParams {
   searchQuery: string;
   categoryFilter: BlogCategoryFilter;
   statusFilter: StatusFilter;
+  tagFilter: string;
   sortKey: SortKey;
 }
 
@@ -46,11 +50,14 @@ interface PostsFilterPanelProps {
   searchQuery: string;
   filteredCount: number;
   categoryFilter: BlogCategoryFilter;
+  tagFilter: string;
+  tagOptions: string[];
   statusFilter: StatusFilter;
   sortKey: SortKey;
   onSearchQueryChange: (value: string) => void;
   onCategoryFilterChange: (value: BlogCategoryFilter) => void;
-  onStatusFilterChange: (value: StatusFilter) => void;
+  onTagFilterChange: (value: string) => void;
+  onStatusFilterChange?: (value: StatusFilter) => void;
   onSortKeyChange: (value: SortKey) => void;
   onResetFilters: () => void;
 }
@@ -98,6 +105,7 @@ export function getFilteredPosts({
   searchQuery,
   categoryFilter,
   statusFilter,
+  tagFilter,
   sortKey,
 }: FilterPostsParams): AdminBlogPost[] {
   let filtered = [...posts];
@@ -108,6 +116,12 @@ export function getFilteredPosts({
     filtered = filtered.filter((post) => post.published && post.date > today);
   } else if (statusFilter === "draft") {
     filtered = filtered.filter((post) => !post.published);
+  }
+
+  if (tagFilter) {
+    filtered = tagFilter === UNTAGGED_FILTER
+      ? filtered.filter((post) => post.tags.length === 0)
+      : filtered.filter((post) => post.tags.includes(tagFilter));
   }
 
   if (categoryFilter !== "all") {
@@ -218,10 +232,13 @@ export function PostsFilterPanel({
   searchQuery,
   filteredCount,
   categoryFilter,
+  tagFilter,
+  tagOptions,
   statusFilter,
   sortKey,
   onSearchQueryChange,
   onCategoryFilterChange,
+  onTagFilterChange,
   onStatusFilterChange,
   onSortKeyChange,
   onResetFilters,
@@ -241,12 +258,13 @@ export function PostsFilterPanel({
     recommended: "추천순",
   };
   const categoryLabel = categoryFilter === "all" ? "전체 카테고리" : getCategoryLabel(categoryFilter);
-  const extraFilterCount = Number(categoryFilter !== "all") + Number(sortKey !== (statusFilter === "draft" ? "recommended" : "newest"));
-  const hasActiveFilters = searchQuery.trim().length > 0 || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
+  const tagLabel = tagFilter === UNTAGGED_FILTER ? "미분류" : tagFilter === "치료후관리" ? "치료 후 관리" : tagFilter;
+  const extraFilterCount = Number(categoryFilter !== "all") + Number(Boolean(tagFilter)) + Number(sortKey !== (statusFilter === "draft" ? "recommended" : "newest"));
+  const hasActiveFilters = searchQuery.trim().length > 0 || !!tagFilter || categoryFilter !== "all" || statusFilter !== "all" || sortKey !== "newest";
 
   return (
     <section className="rounded-xl bg-[var(--surface)] p-3 shadow-sm sm:p-5 lg:p-0 lg:shadow-none">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 lg:grid-cols-[minmax(180px,1fr)_140px_180px_140px_auto]">
+      <div className={`grid gap-2 ${onStatusFilterChange ? "grid-cols-[minmax(0,1fr)_auto_auto] lg:grid-cols-[minmax(140px,1.5fr)_repeat(4,minmax(0,1fr))_auto]" : "grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(140px,1.5fr)_repeat(3,minmax(0,1fr))_auto]"}`}>
         <label className="relative block min-w-0">
           <span className="sr-only">제목 검색</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
@@ -259,17 +277,19 @@ export function PostsFilterPanel({
           />
         </label>
 
-        <select
+        {onStatusFilterChange && <select
           value={statusFilter}
           onChange={(event) => onStatusFilterChange(event.target.value as StatusFilter)}
           className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
           aria-label="상태 필터"
         >
           <option value="all">전체 {blogStats.total}</option>
-          <option value="published">발행 {blogStats.published}</option>
-          <option value="scheduled">예약 {blogStats.scheduled}</option>
-          <option value="draft">초안 {blogStats.draft}</option>
-        </select>
+          <optgroup label="상태별">
+            <option value="published">발행 {blogStats.published}</option>
+            <option value="scheduled">예약 {blogStats.scheduled}</option>
+            <option value="draft">초안 {blogStats.draft}</option>
+          </optgroup>
+        </select>}
 
         <AdminActionButton
           type="button"
@@ -290,9 +310,26 @@ export function PostsFilterPanel({
             aria-label="카테고리 필터"
           >
             <option value="all">전체 카테고리</option>
-            {BLOG_CATEGORY_SLUGS.map((category) => (
-              <option key={category} value={category}>{getCategoryLabel(category)}</option>
-            ))}
+            <optgroup label="카테고리별">
+              {BLOG_CATEGORY_SLUGS.map((category) => (
+                <option key={category} value={category}>{getCategoryLabel(category)}</option>
+              ))}
+            </optgroup>
+          </select>
+
+          <select
+            value={tagFilter}
+            onChange={(event) => onTagFilterChange(event.target.value)}
+            className="h-11 min-w-0 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            aria-label="태그 필터"
+          >
+            <option value="">전체 태그</option>
+            <optgroup label="분류 상태">
+              <option value={UNTAGGED_FILTER}>미분류</option>
+            </optgroup>
+            <optgroup label="태그별">
+              {tagOptions.map((tag) => <option key={tag} value={tag}>{tag === "치료후관리" ? "치료 후 관리" : tag}</option>)}
+            </optgroup>
           </select>
 
           <select
@@ -343,7 +380,17 @@ export function PostsFilterPanel({
             <X className="h-3 w-3 text-[var(--muted)]" />
           </button>
         )}
-        {statusFilter !== "all" && (
+        {tagFilter && (
+          <button
+            type="button"
+            onClick={() => onTagFilterChange("")}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[var(--background)] px-2.5 font-medium text-[var(--foreground)] ring-1 ring-[var(--border)]"
+          >
+            {tagFilter === UNTAGGED_FILTER ? tagLabel : `태그 ${tagLabel}`}
+            <X className="h-3 w-3 text-[var(--muted)]" aria-hidden="true" />
+          </button>
+        )}
+        {onStatusFilterChange && statusFilter !== "all" && (
           <button
             type="button"
             onClick={() => onStatusFilterChange("all")}
@@ -390,6 +437,17 @@ export function PostListItem({
   onCancelEditingDate,
 }: PostListItemProps) {
   const isPublished = post.published && post.date <= today;
+  const publicUrl = new URL(getBlogPostUrl(post.slug, post.category), BASE_URL).href;
+  const [copyStatus, setCopyStatus] = useState<"copied" | "failed" | null>(null);
+
+  const copyPublicUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+  };
   const responseCounts = feedbackData?.feedback[post.slug];
   const dDay = post.published && post.date > today
     ? Math.ceil((new Date(post.date).getTime() - new Date(today).getTime()) / 86400000)
@@ -453,7 +511,27 @@ export function PostListItem({
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+        <div className="flex shrink-0 flex-wrap items-start gap-2 border-t border-slate-200 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+          {isPublished && (
+            <div className="flex w-32 max-w-full flex-col">
+              <AdminActionButton
+                type="button"
+                tone="dark"
+                onClick={copyPublicUrl}
+                title={copyStatus === "copied" ? publicUrl : undefined}
+                className="h-11 w-full whitespace-nowrap px-2 text-xs"
+              >
+                {copyStatus === "copied" ? (
+                  <><Check size={14} aria-hidden="true" />복사 완료!</>
+                ) : (
+                  <><Copy size={14} aria-hidden="true" />환자용 링크 복사</>
+                )}
+              </AdminActionButton>
+              <span role="status" className="sr-only">
+                {copyStatus === "copied" && "환자용 링크를 복사했습니다."}
+              </span>
+            </div>
+          )}
           <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-11 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
           {!expanded && (
             <button
@@ -475,6 +553,13 @@ export function PostListItem({
           </button>
         </div>
       </div>
+
+      {isPublished && copyStatus === "failed" && (
+        <div className="text-xs">
+          <p role="alert">복사하지 못했습니다. 이 주소를 직접 복사해 주세요.</p>
+          <input aria-label="환자용 공개 주소" readOnly value={publicUrl} onFocus={(event) => event.target.select()} className="mt-1 min-h-11 w-full rounded border border-[var(--border)] px-2" />
+        </div>
+      )}
 
       {expanded && (
         <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-3">

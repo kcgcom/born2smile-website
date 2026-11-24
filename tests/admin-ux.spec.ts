@@ -63,6 +63,89 @@ async function setup(page: Page, hold90?: Promise<void>, access: AdminAccess = O
   });
 }
 
+for (const workspace of ["admin", "staff"] as const) {
+  test(`${workspace} 치료 후 안내에서 공개 글을 검색하고 환자용 링크를 복사한다`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setup(page, undefined, workspace === "admin" ? OWNER_ACCESS : { isOwner: false });
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    const published = { ...post, title: "발치 후 안내", slug: "after-tooth-extraction-care", published: true, date: "2025-01-01", tags: ["치료후관리"] };
+    await page.route(url => url.pathname === "/api/admin/blog-posts", route => route.fulfill({ json: { data: [
+      published,
+      { ...published, slug: "implant-care", title: "임플란트 수술 후 안내" },
+      { ...published, slug: "other-guide", title: "다른 주제 안내", tags: ["증상가이드", "기존 태그"] },
+      { ...published, slug: "scheduled", title: "예약 글", date: "2099-01-01" },
+      { ...published, slug: "draft", title: "초안 글", published: false, tags: [] },
+    ] } }));
+    const listResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/admin/blog-posts");
+    await page.goto(`/${workspace}/content/posts${workspace === "staff" ? "?status=draft" : ""}`);
+    expect(new URL((await listResponse).url()).searchParams.get("status")).toBe(workspace === "staff" ? "published" : null);
+    await expect(page.getByRole("button", { name: "치료 후 안내", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "환자용 링크 복사" })).toHaveCount(3);
+    await page.getByRole("button", { name: /^필터/ }).click();
+    const tag = page.getByRole("combobox", { name: "태그 필터" });
+    await tag.selectOption({ label: "치료 후 관리" });
+    const status = page.getByRole("combobox", { name: "상태 필터" });
+    if (workspace === "admin") {
+      await status.selectOption("published");
+    } else {
+      await expect(status).toHaveCount(0);
+    }
+    await expect(page.getByRole("button", { name: "환자용 링크 복사" })).toHaveCount(2);
+    await expect(page.getByRole("link", { name: /다른 주제 안내|예약 글|초안 글/ })).toHaveCount(0);
+    await page.getByRole("searchbox", { name: "제목 검색" }).fill("발치");
+    const copy = page.getByRole("button", { name: "환자용 링크 복사" });
+    await expect(copy).toHaveCount(1);
+    if (workspace === "admin") await page.setViewportSize({ width: 1440, height: 900 });
+    await copy.scrollIntoViewIfNeeded();
+    const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: "발치 후 안내", exact: true }) });
+    const beforeCopy = await copy.boundingBox();
+    const rowBefore = await row.boundingBox();
+    await copy.click();
+    const completed = page.getByRole("button", { name: "복사 완료!", exact: true });
+    const publicUrl = "https://www.born2smile.co.kr/blog/restorative/after-tooth-extraction-care";
+    await expect(completed).toHaveAttribute("title", publicUrl);
+    await expect(row.getByText(publicUrl, { exact: true })).toHaveCount(0);
+    await expect(completed.locator("..").getByRole("status")).toHaveText("환자용 링크를 복사했습니다.");
+    const buttonBox = await completed.boundingBox();
+    const rowAfter = await row.boundingBox();
+    expect(beforeCopy).not.toBeNull();
+    expect(buttonBox).not.toBeNull();
+    expect(rowAfter?.height).toBe(rowBefore?.height);
+    expect(Math.abs(beforeCopy!.x - buttonBox!.x)).toBeLessThan(1);
+    expect(Math.abs(beforeCopy!.y - buttonBox!.y)).toBeLessThan(1);
+    expect(buttonBox!.width).toBe(beforeCopy!.width);
+    expect(buttonBox!.height).toBe(beforeCopy!.height);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(publicUrl);
+    if (workspace === "admin") await page.setViewportSize({ width: 390, height: 844 });
+
+    await expect(tag).toHaveValue("치료후관리");
+    await tag.selectOption("기존 태그");
+    await page.getByRole("searchbox", { name: "제목 검색" }).fill("다른");
+    await expect(page.getByRole("link", { name: "다른 주제 안내" })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("link", { name: "다른 주제 안내" })).toBeVisible();
+    await page.getByRole("button", { name: /^필터/ }).click();
+    await expect(tag).toHaveValue("기존 태그");
+    await page.getByRole("button", { name: "초기화", exact: true }).click();
+    await expect(tag).toHaveValue("");
+    if (workspace === "admin") {
+      await expect(page.getByRole("link", { name: "초안 글" })).toBeVisible();
+    } else {
+      await expect(page.getByRole("link", { name: /예약 글|초안 글/ })).toHaveCount(0);
+    }
+    await expect(tag.locator('optgroup[label="분류 상태"] option')).toHaveText("미분류");
+    await tag.selectOption({ label: "미분류" });
+    await expect(page.getByRole("button", { name: "미분류", exact: true })).toBeVisible();
+    if (workspace === "admin") {
+      await expect(page.getByRole("link", { name: "초안 글" })).toBeVisible();
+    } else {
+      await expect(page.getByText("검색 결과가 없습니다")).toBeVisible();
+    }
+    await expect(page.getByRole("link", { name: /발치 후 안내|임플란트 수술 후 안내|다른 주제 안내|예약 글/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "환자용 링크 복사" })).toHaveCount(0);
+  });
+}
+
 test("기준일은 KST와 실제 지연으로 계산하고 공유량을 전환율로 표현하지 않는다", () => {
   expect(dataAgeDays("2026-11-06", new Date("2026-11-12T15:01:00Z"))).toBe(7);
   expect(dataAgeDays("2026-11-12", new Date("2026-11-12T15:01:00Z"))).toBe(1);
@@ -630,6 +713,42 @@ test("직원은 홈과 블로그 공유를 한 줄 메뉴에서 전환한다", a
   await expect(page).toHaveURL("/staff/system/settings");
 });
 
+test("직원은 공개 글 수정안을 보내고 블로그 공유에서 처리 상태를 확인한다", async ({ page }) => {
+  await setup(page, undefined, { isOwner: false });
+  const published = { ...post, published: true, date: "2026-01-01", subtitle: "치료 후 식사 방법", excerpt: "치료 후 식사 방법을 안내하는 공개 글입니다.", blocks: [{ type: "paragraph", text: "치료 후에는 마취가 풀린 다음 식사하세요." }] };
+  const baseRevision = "00000000-0000-4000-8000-000000000001";
+  const createdAt = "2026-11-22T16:00:00.000Z";
+  await page.route("**/api/admin/blog-posts?status=published", route => route.fulfill({ json: { data: [published] } }));
+  await page.route(`**/api/admin/blog-posts/${post.slug}`, route => route.fulfill({ json: { data: published } }));
+  await page.route(`**/api/admin/blog-posts/${post.slug}/source`, route => route.fulfill({
+    json: { data: { ...published, revision: baseRevision, source: "supabase" } },
+  }));
+  let submitted = false;
+  await page.route("**/api/admin/content-revisions", async route => {
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().postDataJSON()).toMatchObject({ slug: post.slug, baseRevision });
+    submitted = true;
+    await route.fulfill({ status: 201, json: { data: { id: "new-revision", status: "created" } } });
+  });
+  await page.route("**/api/admin/content-revisions?scope=mine", route => route.fulfill({
+    json: { data: submitted ? [
+      { id: "new-revision", slug: post.slug, title: published.title, status: "draft", created_at: createdAt },
+      { id: "old-revision", slug: "older-post", title: "이미 반영한 글", status: "applied", created_at: createdAt },
+    ] : [] },
+  }));
+
+  await page.goto("/staff/content/posts");
+  const revisions = page.getByRole("region", { name: "내 수정안" });
+  await expect(revisions.getByText("보낸 수정안이 없습니다.")).toBeVisible();
+  await page.getByRole("button", { name: `${published.title} 수정` }).click();
+  await page.getByRole("button", { name: "수정안 검토 요청", exact: true }).click();
+  await expect(page).toHaveURL("/staff/content/posts#my-revisions");
+  const pending = revisions.getByRole("listitem").filter({ hasText: published.title });
+  await expect(pending.getByText("검토 대기")).toBeVisible();
+  await expect(pending.getByText("2026-11-23", { exact: true })).toBeVisible();
+  await expect(revisions.getByRole("listitem").filter({ hasText: "이미 반영한 글" }).getByText("반영 완료")).toBeVisible();
+});
+
 test("직원은 내원안내에서 환자용 상담 주소를 복사한다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, undefined, { isOwner: false });
@@ -864,7 +983,7 @@ for (const [path, label] of [
       await expect(page.getByRole("heading", { name: "환경변수 상태" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "SNS 링크 상태" })).toHaveCount(0);
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 }
 

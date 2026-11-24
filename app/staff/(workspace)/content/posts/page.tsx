@@ -8,7 +8,7 @@ export default function StaffPostsPage() {
     <div className="space-y-4">
       <StaffRevisionList />
       <Suspense fallback={<AdminLoadingSkeleton variant="table" />}>
-        <PostsSubTab />
+        <PostsSubTab publishedOnly />
       </Suspense>
     </div>
   );

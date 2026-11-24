@@ -6,6 +6,19 @@ import citations from "../scripts/data/swallowed-prosthesis-citations.json";
 
 const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 
+test("관련 글 링크를 렌더링할 때 React 목록 키 경고가 발생하지 않는다", async ({ page }) => {
+  const keyWarnings: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" && message.text().includes('unique "key" prop')) {
+      keyWarnings.push(message.text());
+    }
+  });
+
+  await page.goto("/blog/restorative/after-tooth-extraction-care", { waitUntil: "load" });
+  await expect(page.locator('article:visible a[href="/blog/restorative/after-root-canal-care"]').filter({ visible: true })).toBeVisible();
+  expect(keyWarnings).toEqual([]);
+});
+
 test("내부 해설 없이 외부 원문만 있는 근거도 저장하고 표시한다", () => {
   const { researchHref, ...externalCitation } = citations[0];
   expect(researchHref).toBeTruthy();

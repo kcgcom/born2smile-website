@@ -46,6 +46,16 @@ for (const width of [360, 390, 1280, 1440]) {
     for (const name of ["칼럼 목록", "칼럼 목록으로"]) {
       expect((await page.getByRole("link", { name, exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
+    const shareButtons = page.getByRole("button", { name: "이 글 공유하기", exact: true });
+    await expect(shareButtons).toHaveCount(width < 768 ? 1 : 2);
+    const share = (await shareButtons.last().boundingBox())!;
+    const feedback = (await page.getByText("궁금했던 점이 해결됐나요?", { exact: true }).boundingBox())!;
+    const returnLink = (await page.getByRole("link", { name: "칼럼 목록으로", exact: true }).boundingBox())!;
+    const author = (await page.getByRole("link", { name: "병원 소개 보기", exact: true }).boundingBox())!;
+    expect(share.height).toBeGreaterThanOrEqual(44);
+    expect(share.y).toBeGreaterThan(feedback.y + feedback.height);
+    expect(share.y).toBe(returnLink.y);
+    expect(share.y + share.height).toBeLessThan(author.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }

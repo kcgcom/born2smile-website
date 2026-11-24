@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const posts = await getAllPostMetasFresh();
-    return Response.json({ data: posts }, { headers: HEADERS });
+    const publishedOnly = request.nextUrl.searchParams.get("status") === "published";
+    const today = getTodayKST();
+    return Response.json({
+      data: publishedOnly ? posts.filter((post) => post.published && post.date <= today) : posts,
+    }, { headers: HEADERS });
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(

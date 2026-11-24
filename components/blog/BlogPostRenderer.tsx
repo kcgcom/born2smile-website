@@ -183,37 +183,39 @@ export function renderSingleBlock(
                   rel={external ? "noopener noreferrer" : undefined}
                   className={cardClasses}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      {source && (
-                        <div className="mb-2 flex items-center gap-2 text-xs">
-                          <span className="rounded-full bg-sky-100 px-2 py-1 font-medium text-sky-800">
-                            {source.label}
-                          </span>
-                          <span className="truncate text-[var(--muted)]">
-                            {source.host}
-                          </span>
-                        </div>
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        {source && (
+                          <div className="mb-2 flex items-center gap-2 text-xs">
+                            <span className="rounded-full bg-sky-100 px-2 py-1 font-medium text-sky-800">
+                              {source.label}
+                            </span>
+                            <span className="truncate text-[var(--muted)]">
+                              {source.host}
+                            </span>
+                          </div>
+                        )}
+                        <p className="font-semibold text-[var(--foreground)]">{item.title}</p>
+                      </div>
+                      {external && (
+                        <ArrowUpRight
+                          className="mt-0.5 h-4 w-4 shrink-0 text-sky-700"
+                          aria-hidden="true"
+                        />
                       )}
-                      <p className="font-semibold text-[var(--foreground)]">{item.title}</p>
                     </div>
-                    {external && (
-                      <ArrowUpRight
-                        className="mt-0.5 h-4 w-4 shrink-0 text-sky-700"
-                        aria-hidden="true"
-                      />
+                    {item.description && (
+                      <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                        {item.description}
+                      </p>
+                    )}
+                    {source?.isOfficial && (
+                      <p className="mt-2 text-xs text-[var(--muted)]">
+                        새 창에서 열리는 공식 환자 안내 자료입니다.
+                      </p>
                     )}
                   </div>
-                  {item.description && (
-                    <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                      {item.description}
-                    </p>
-                  )}
-                  {source?.isOfficial && (
-                    <p className="mt-2 text-xs text-[var(--muted)]">
-                      새 창에서 열리는 공식 환자 안내 자료입니다.
-                    </p>
-                  )}
                 </Link>
               );
             })}

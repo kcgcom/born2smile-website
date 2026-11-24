@@ -5,7 +5,7 @@ import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BLOG_CATEGORY_SLUGS, type BlogCategoryFilter } from "@/lib/blog/types";
+import { BLOG_CATEGORY_SLUGS, BLOG_TAGS, type BlogCategoryFilter } from "@/lib/blog/types";
 import { getTodayKST } from "@/lib/date";
 import { validPerformanceEnd } from "@/lib/post-performance";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
@@ -20,6 +20,7 @@ import {
   PostsFilterPanel,
   PostsHero,
   PostsSummaryCards,
+  UNTAGGED_FILTER,
   getBlogStats,
   getDraftRankMap,
   getFilteredPosts,
@@ -27,7 +28,7 @@ import {
 
 const PostPerformancePanel = dynamic(() => import("./PostPerformancePanel").then(module => module.PostPerformancePanel), { loading: () => <p role="status">성과 패널을 준비하는 중…</p> });
 
-export function PostsSubTab() {
+export function PostsSubTab({ publishedOnly = false }: { publishedOnly?: boolean }) {
   const workspaceHref = useWorkspaceHref();
   const canPublish = useOwnerWorkspace();
   const router = useRouter();
@@ -39,7 +40,7 @@ export function PostsSubTab() {
     loading: postsLoading,
     error: postsError,
     refetch: refetchPosts,
-  } = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts");
+  } = useAdminApi<AdminBlogPost[]>(publishedOnly ? "/api/admin/blog-posts?status=published" : "/api/admin/blog-posts");
   const { data: feedbackData, loading: feedbackLoading } = useAdminApi<BlogFeedbackData>("/api/admin/blog-feedback");
   const { mutate } = useAdminMutation();
 
@@ -48,7 +49,7 @@ export function PostsSubTab() {
   const categoryParam = searchParams.get("category");
   const categoryFilter: BlogCategoryFilter = BLOG_CATEGORY_SLUGS.includes(categoryParam as typeof BLOG_CATEGORY_SLUGS[number]) ? categoryParam as BlogCategoryFilter : "all";
   const statusParam = searchParams.get("status");
-  const statusFilter: StatusFilter = statusParam === "draft" || statusParam === "published" || statusParam === "scheduled" ? statusParam : "all";
+  const statusFilter: StatusFilter = !publishedOnly && (statusParam === "draft" || statusParam === "published" || statusParam === "scheduled") ? statusParam : "all";
   const sortParam = searchParams.get("sort");
   const sortKey: SortKey = sortParam === "oldest" || sortParam === "unresolved" || sortParam === "newest" ? sortParam : statusFilter === "draft" ? "recommended" : "newest";
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
@@ -64,7 +65,17 @@ export function PostsSubTab() {
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const posts = useMemo(() => postsData ?? [], [postsData]);
+  const posts = useMemo(() => {
+    const allPosts = postsData ?? [];
+    return publishedOnly ? allPosts.filter((post) => post.published && post.date <= today) : allPosts;
+  }, [postsData, publishedOnly, today]);
+  const tagOptions = useMemo(() => {
+    const configured = new Set<string>(BLOG_TAGS);
+    const legacyTags = new Set(posts.flatMap((post) => post.tags).filter((tag) => tag.trim() && !configured.has(tag)));
+    return [...configured, ...[...legacyTags].sort((a, b) => a.localeCompare(b, "ko"))];
+  }, [posts]);
+  const tagParam = searchParams.get("tag") ?? "";
+  const tagFilter = tagParam === UNTAGGED_FILTER || tagOptions.includes(tagParam) ? tagParam : "";
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -74,7 +85,7 @@ export function PostsSubTab() {
   const updateFilters = (changes: Record<string, string>) => {
     const url = new URL(window.location.href);
     for (const [key, value] of Object.entries(changes)) {
-      if (value && (key === "q" || value !== "all")) url.searchParams.set(key, value);
+      if (value && (key === "q" || key === "tag" || value !== "all")) url.searchParams.set(key, value);
       else url.searchParams.delete(key);
     }
     window.history.replaceState(null, "", url);
@@ -84,7 +95,7 @@ export function PostsSubTab() {
   };
 
   const handleResetFilters = () => {
-    updateFilters({ q: "", category: "", status: "", sort: "" });
+    updateFilters({ q: "", category: "", status: "", sort: "", tag: "" });
   };
 
   const blogStats = useMemo(() => getBlogStats(posts, today), [posts, today]);
@@ -96,9 +107,10 @@ export function PostsSubTab() {
       searchQuery: debouncedQuery,
       categoryFilter,
       statusFilter,
+      tagFilter,
       sortKey,
     }),
-    [posts, feedbackData, today, debouncedQuery, categoryFilter, statusFilter, sortKey],
+    [posts, feedbackData, today, debouncedQuery, categoryFilter, statusFilter, tagFilter, sortKey],
   );
   const draftRankMap = useMemo(() => getDraftRankMap(filteredPosts, sortKey), [filteredPosts, sortKey]);
   const performancePost = posts.find(post => post.slug === performanceSlug);
@@ -164,12 +176,12 @@ export function PostsSubTab() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <PostsHero
+      {!publishedOnly && <PostsHero
         blogStats={blogStats}
         refreshing={refreshing}
         onRefresh={canPublish ? handleRefreshCache : undefined}
         onCreatePost={canPublish ? handleCreate : undefined}
-      />
+      />}
 
       {refreshNotice && <AdminNotice tone={refreshNotice.error ? "error" : "success"}>{refreshNotice.message}</AdminNotice>}
 
@@ -185,29 +197,32 @@ export function PostsSubTab() {
       {!postsLoading && !postsError && (
         <>
           <div className="space-y-3 sm:space-y-6 lg:space-y-3 lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:p-4">
-          <PostsSummaryCards
+          {!publishedOnly && <PostsSummaryCards
             blogStats={blogStats}
             statusFilter={statusFilter}
             onStatusFilterChange={handleStatusFilterChange}
-          />
+          />}
 
           <PostsFilterPanel
             blogStats={blogStats}
             searchQuery={searchQuery}
             filteredCount={filteredPosts.length}
             categoryFilter={categoryFilter}
+            tagFilter={tagFilter}
+            tagOptions={tagOptions}
             statusFilter={statusFilter}
             sortKey={sortKey}
             onSearchQueryChange={(value) => updateFilters({ q: value })}
             onCategoryFilterChange={(value) => updateFilters({ category: value })}
-            onStatusFilterChange={handleStatusFilterChange}
+            onTagFilterChange={(value) => updateFilters({ tag: value })}
+            onStatusFilterChange={publishedOnly ? undefined : handleStatusFilterChange}
             onSortKeyChange={(value) => updateFilters({ sort: value })}
             onResetFilters={handleResetFilters}
           />
           </div>
 
           <section className="rounded-xl bg-[var(--surface)] p-3 shadow-sm sm:p-5">
-            <h3 className="mb-3 text-base font-bold text-[var(--foreground)] sm:mb-4">포스트 목록</h3>
+            <h3 className="mb-3 text-base font-bold text-[var(--foreground)] sm:mb-4">{publishedOnly ? "발행된 블로그" : "포스트 목록"}</h3>
             {filteredPosts.length === 0 ? (
               <div className="rounded-lg bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted)]">
                 검색 결과가 없습니다

@@ -90,9 +90,8 @@ export interface BlogPost extends Omit<BlogPostMeta, "readTime"> {
 }
 
 export const BLOG_TAGS = [
+  "환자 안내",
   "치료후관리",
-  "생활습관",
-  "팩트체크",
   "증상가이드",
   "비교가이드",
   "임산부",
