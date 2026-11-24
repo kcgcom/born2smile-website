@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(
-      { error: "API_ERROR", message: "콘텐츠 플래너 작업을 불러올 수 없습니다" },
+      { error: "API_ERROR", message: "작업함 목록을 불러올 수 없습니다" },
       { status: 500, headers: HEADERS },
     );
   }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   const parsed = createPlannerItemSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json(
-      { error: "VALIDATION_ERROR", message: "플래너 작업 정보가 올바르지 않습니다", issues: parsed.error.issues },
+      { error: "VALIDATION_ERROR", message: "작업 정보가 올바르지 않습니다", issues: parsed.error.issues },
       { status: 400, headers: HEADERS },
     );
   }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     Sentry.captureException(error);
     return Response.json(
-      { error: "API_ERROR", message: "콘텐츠 플래너 작업을 저장할 수 없습니다" },
+      { error: "API_ERROR", message: "작업을 저장할 수 없습니다" },
       { status: 500, headers: HEADERS },
     );
   }

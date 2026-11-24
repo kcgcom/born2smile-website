@@ -70,7 +70,7 @@ export function GrowthOverviewPanel() {
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="text-base font-bold text-slate-900">지금 처리할 일</h2>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <AdminActionLink tone="dark" href="/admin/content/review">검토 대기 원고</AdminActionLink>
+        <AdminActionLink tone="dark" href="/admin/content/tasks?stage=review#pending-revisions">검토 대기 수정안</AdminActionLink>
         {taskItems ? WORK_ATTENTION.map(({ id, label }) => (
           <AdminActionLink key={id} tone="dark" href={`/admin/content/tasks?attention=${id}`}>
             {label} {taskItems.filter(item => needsWorkAttention(item, id)).length}건

@@ -98,14 +98,14 @@ export function ContentCoverageActionsPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <AdminPill tone="white">콘텐츠 행동추천</AdminPill>
-            <h1 className="mt-3 text-xl font-bold">근거 판정을 검토하고 실행 가능한 작업만 플래너로 넘깁니다.</h1>
+            <h1 className="mt-3 text-xl font-bold">근거 판정을 검토하고 실행할 작업을 작업함에 등록합니다.</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
               임상·근거 검토가 필요한 추천은 먼저 판단 근거를 기록합니다. 필수 선행 검토가 남은 콘텐츠 작업은 전환할 수 없습니다.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <AdminActionLink tone="dark" href="/admin/content/strategy/concept-review"><ArrowLeft className="h-4 w-4" />개념별 근거 검토</AdminActionLink>
               <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석으로</AdminActionLink>
-              <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">재평가 검토</AdminActionLink>
+              <AdminActionLink tone="dark" href="/admin/content/strategy/reevaluation-review">변경 후 재평가</AdminActionLink>
               <AdminActionLink tone="primary" href="/admin/content/tasks">콘텐츠 작업함</AdminActionLink>
             </div>
           </div>
@@ -113,7 +113,7 @@ export function ContentCoverageActionsPage() {
             <Metric label="검토 대기" value={query.data.stats.reviewsPending} />
             <Metric label="전환 가능" value={query.data.stats.ready} />
             <Metric label="차단" value={query.data.stats.blocked} />
-            <Metric label="플래너 등록" value={query.data.stats.promoted} />
+            <Metric label="작업함 등록" value={query.data.stats.promoted} />
             <Metric label="재평가 대기" value={query.data.stats.reevaluationPending} />
           </div>
         </div>

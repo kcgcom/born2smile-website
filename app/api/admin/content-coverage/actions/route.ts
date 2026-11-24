@@ -22,9 +22,9 @@ function knownError(error: unknown) {
     ACTION_NOT_FOUND: "현재 추천에서 해당 작업을 찾을 수 없습니다",
     ACTION_NOT_REVIEWABLE: "검토 상태를 기록할 수 없는 작업입니다",
     REVIEW_NOTES_REQUIRED: "검토 완료 시 판단 근거를 입력해 주세요",
-    REVIEW_HAS_PROMOTED_DEPENDENCY: "이미 플래너로 전환된 후속 작업이 있어 검토를 다시 열 수 없습니다",
+    REVIEW_HAS_PROMOTED_DEPENDENCY: "이미 작업함에 등록된 후속 작업이 있어 검토를 다시 열 수 없습니다",
     ASSESSMENT_INPUT_STALE: "개념 판정이 변경되었습니다. 최신 추천을 불러온 뒤 다시 확인해 주세요",
-    ACTION_NOT_PROMOTABLE: "콘텐츠 플래너로 전환할 수 없는 작업입니다",
+    ACTION_NOT_PROMOTABLE: "작업함에 등록할 수 없는 작업입니다",
     ACTION_BLOCKED: "선행 검토가 완료되지 않아 아직 전환할 수 없습니다",
     TOPIC_NOT_FOUND: "추천에 연결된 주제 명세를 찾을 수 없습니다",
   };
@@ -76,6 +76,6 @@ export async function POST(request: NextRequest) {
     const message = knownError(error);
     if (message) return Response.json({ error: "ACTION_ERROR", message }, { status: 400, headers: HEADERS });
     Sentry.captureException(error);
-    return Response.json({ error: "API_ERROR", message: "콘텐츠 플래너로 전환할 수 없습니다" }, { status: 500, headers: HEADERS });
+    return Response.json({ error: "API_ERROR", message: "작업함에 등록할 수 없습니다" }, { status: 500, headers: HEADERS });
   }
 }

@@ -120,7 +120,7 @@ export async function cancelContentReevaluation(item: ContentPlannerItem, cancel
   return persistState({
     ...existing,
     status: "cancelled",
-    reason: "플래너 작업이 완료 상태에서 다시 열려 재평가 요청을 취소했습니다.",
+    reason: "완료한 작업을 다시 열어 재평가 요청을 취소했습니다.",
     cancelledAt: new Date().toISOString(),
     cancelledBy,
   });

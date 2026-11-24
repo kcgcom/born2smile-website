@@ -17,8 +17,6 @@ import {
   Search,
   ScanSearch,
   Settings,
-  Target,
-  TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
@@ -78,9 +76,8 @@ const WORKSPACES: WorkspaceConfig[] = [
     label: "콘텐츠",
     icon: FileText,
     tabs: [
-      { href: ADMIN_HOME.content, label: "작업함", icon: KanbanSquare, aliases: ["/admin/content/planner"] },
-      { href: "/admin/content/posts", label: "포스트", icon: FileText, aliases: ["/admin/content/revisions"] },
-      { href: "/admin/content/review", label: "검토 대기", icon: ClipboardCheck },
+      { href: ADMIN_HOME.content, label: "작업함", icon: KanbanSquare, aliases: ["/admin/content/planner", "/admin/content/strategy", "/admin/content/trends", "/admin/content/revisions"] },
+      { href: "/admin/content/posts", label: "포스트", icon: FileText },
       { href: "/admin/content/schedule", label: "발행 일정", icon: Activity },
       { href: "/admin/content/images", label: "이미지", icon: Image },
     ],
@@ -100,21 +97,6 @@ const WORKSPACES: WorkspaceConfig[] = [
   },
 ];
 
-const TOOL_GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "기획·분석 자료", items: [
-    { href: "/admin/content/strategy", label: "기회 분석", icon: Target },
-    { href: "/admin/content/trends", label: "검색 트렌드·키워드 관리", icon: TrendingUp },
-  ] },
-  { label: "추천·근거 검토", items: [
-    { href: "/admin/content/strategy/actions", label: "콘텐츠 행동추천", icon: ClipboardCheck },
-    { href: "/admin/content/strategy/concept-review", label: "개념별 근거 검토", icon: ClipboardCheck },
-    { href: "/admin/content/strategy/reevaluation-review", label: "변경 후 재평가", icon: Activity },
-    { href: "/admin/content/trends/keyword-evaluation/boundary-review", label: "키워드 경계 검토", icon: ScanSearch },
-  ] },
-];
-
-const TOOL_ITEMS = TOOL_GROUPS.flatMap((group) => group.items);
-
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -133,36 +115,6 @@ function isItemActive(pathname: string, item: NavItem) {
 
 function getWorkspace(pathname: string) {
   return WORKSPACES.find((workspace) => isWorkspaceActive(pathname, workspace));
-}
-
-function getActiveTool(pathname: string) {
-  return TOOL_ITEMS.filter((item) => isActivePath(pathname, item.href))
-    .sort((a, b) => b.href.length - a.href.length)[0];
-}
-
-function AuxiliaryTools({ pathname }: { pathname: string }) {
-  const active = getActiveTool(pathname);
-  return (
-    <details className="relative rounded-xl border border-slate-200 bg-slate-50 px-2 lg:ml-auto lg:shrink-0" onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
-      <summary className="min-h-11 cursor-pointer rounded-lg px-1 py-3 text-xs font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
-        보조 도구{active ? ` · ${active.label}` : ""}
-      </summary>
-      <nav aria-label="관리자 보조 도구" className="mt-3 grid gap-5 pb-3 lg:absolute lg:right-0 lg:top-full lg:z-40 lg:w-[min(560px,calc(100vw-4rem))] lg:grid-cols-2 lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-4 lg:shadow-xl">
-        {TOOL_GROUPS.map((group) => (
-          <section key={group.label} aria-label={group.label}>
-            <h2 className="mb-2 text-xs font-semibold text-slate-500">{group.label}</h2>
-            <ul className="space-y-1">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const selected = item.href === active?.href;
-                return <li key={item.href}><Link href={item.href} aria-current={selected ? "page" : undefined} className={`flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${selected ? "bg-white font-semibold text-blue-800 shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-900"}`}><Icon size={14} aria-hidden="true" />{item.label}</Link></li>;
-              })}
-            </ul>
-          </section>
-        ))}
-      </nav>
-    </details>
-  );
 }
 
 function WorkspaceNav({ pathname }: { pathname: string }) {
@@ -211,7 +163,9 @@ function SectionTabs({
       className="rounded-xl bg-slate-100/80 p-1 lg:min-w-0 lg:flex-1"
       aria-label={`${workspace.label} 세부 화면`}
     >
-      <div className="grid grid-cols-6 gap-1 max-sm:[&>a]:col-span-2 max-sm:[&>a:nth-child(-n+2)]:col-span-3 sm:grid-cols-5 lg:flex lg:flex-wrap">
+      <div className={`grid gap-1 lg:flex lg:flex-wrap ${workspace.tabs.length === 4
+        ? "grid-cols-2 sm:grid-cols-4"
+        : "grid-cols-6 max-sm:[&>a]:col-span-2 max-sm:[&>a:nth-child(-n+2)]:col-span-3 sm:grid-cols-5"}`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);
@@ -259,7 +213,6 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
           <div className="flex flex-col gap-1.5 sm:gap-3 lg:flex-row lg:items-center lg:gap-2">
             {access?.isOwner && <WorkspaceNav pathname={pathname} />}
             {workspace && <SectionTabs pathname={pathname} workspace={workspace} />}
-            {access?.isOwner && <AuxiliaryTools key={pathname} pathname={pathname} />}
           </div>
         </AdminSurface>
 

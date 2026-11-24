@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { ADMIN_HOME } from "@/lib/admin-access";
 import { ALL_CATEGORY_SLUGS } from "@/lib/blog/category-slugs";
 import { BLOG_POSTS_META } from "@/lib/blog/generated/posts-meta";
 
@@ -25,6 +26,10 @@ export function proxy(request: NextRequest) {
       const loginUrl = new URL(`${workspace}/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
+  }
+
+  if (pathname === "/admin") {
+    return NextResponse.redirect(new URL(ADMIN_HOME.operations, request.url));
   }
 
   // ─── 블로그 구형 URL 리다이렉트 ───

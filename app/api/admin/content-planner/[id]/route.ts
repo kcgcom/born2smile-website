@@ -47,7 +47,7 @@ export async function PUT(
     if (error instanceof TaskError) return taskFailure(error);
     Sentry.captureException(error);
     return Response.json(
-      { error: "API_ERROR", message: "콘텐츠 플래너 작업을 수정할 수 없습니다" },
+      { error: "API_ERROR", message: "작업을 수정할 수 없습니다" },
       { status: 500, headers: HEADERS },
     );
   }

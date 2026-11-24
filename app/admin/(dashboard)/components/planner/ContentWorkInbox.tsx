@@ -1,6 +1,6 @@
 "use client";
 
-import { useWorkspaceHref } from "@/hooks/useWorkspaceHref";
+import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -12,12 +12,14 @@ import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { RevisionList } from "../blog/RevisionList";
+import { PublicationReviewQueue } from "../blog/PublicationReviewQueue";
 import { internalTarget, needsWorkAttention, workResult, workStage, WORK_ATTENTION, WORK_STAGES, type WorkStage } from "./work-inbox";
 
 const TYPE_LABELS = { blog: "블로그", page: "진료 페이지", faq: "FAQ" };
 const STATUS_LABELS: Record<PlannerStatus, string> = { approved: "승인됨", in_progress: "진행 중", review: "검토 대기", scheduled: "예약·반영 예정", published: "완료", deferred: "보류", dismissed: "제외" };
 
 export function ContentWorkInbox() {
+  const ownerWorkspace = useOwnerWorkspace();
   const params = useSearchParams();
   const stageParam = params.get("stage");
   const attention = WORK_ATTENTION.find(entry => entry.id === params.get("attention"));
@@ -63,7 +65,10 @@ export function ContentWorkInbox() {
   return <div className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="text-xl font-bold">콘텐츠 작업함</h1><p className="mt-1 text-sm text-slate-600">제안을 승인하고 작업 결과를 검토합니다.</p></div>
-      <AdminActionButton tone="dark" onClick={tasks.refetch}>새로고침</AdminActionButton>
+      <div className="flex flex-wrap items-center gap-2">
+        {ownerWorkspace && <WorkPlanningLinks />}
+        <AdminActionButton tone="dark" onClick={tasks.refetch}>새로고침</AdminActionButton>
+      </div>
     </header>
     {notice && <AdminNotice tone="info">{notice}</AdminNotice>}
     {error && <AdminNotice tone="error">작업 상태 변경 실패: {error}</AdminNotice>}
@@ -80,11 +85,29 @@ export function ContentWorkInbox() {
         <select aria-label="작업 유형" value={type} onChange={event => updateQuery({ type: event.target.value })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="all">전체 유형</option>{Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <button type="button" aria-pressed={!attention && stage === "archive"} onClick={() => updateQuery({ stage: !attention && stage === "archive" ? "proposals" : "archive", attention: "" })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">제외한 작업 {items.filter(item => item.status === "dismissed").length}</button>
       </div>
-      {!attention && stage === "proposals" && <p className="text-xs text-slate-500">기존 플래너의 보류 작업도 함께 표시합니다. 승인 전 내용을 다시 확인하세요.</p>}
+      {!attention && stage === "proposals" && <p className="text-xs text-slate-500">제안 대기에는 보류한 작업도 표시됩니다.</p>}
+      {ownerWorkspace && !attention && stage === "review" && <PublicationReviewQueue />}
       {opportunity && !items.some(item => item.opportunityKey === opportunity) && <AdminNotice tone="info">해당 제안이 작업함에 없습니다. 기존에 저장된 작업은 아래 상태별 목록에서 확인할 수 있습니다.</AdminNotice>}
       {filtered.length ? <ul aria-label="콘텐츠 작업 목록" className="space-y-3">{filtered.map(item => <li key={item.id}><WorkItem item={item} highlighted={item.opportunityKey === opportunity} busy={Boolean(saving)} onUpdate={status => update(item, status)} /></li>)}</ul> : <AdminSurface tone="white" className="rounded-2xl p-6 text-sm text-slate-600">{attention || query || type !== "all" ? "조건에 맞는 작업이 없습니다." : "이 상태의 작업이 없습니다."}</AdminSurface>}
     </>}
   </div>;
+}
+
+function WorkPlanningLinks() {
+  return <>
+    <AdminActionLink tone="primary" href="/admin/content/strategy/actions">콘텐츠 행동추천</AdminActionLink>
+    <details className="relative" onKeyDown={event => {
+      if (event.key !== "Escape" || !event.currentTarget.open) return;
+      event.currentTarget.open = false;
+      event.currentTarget.querySelector("summary")?.focus();
+    }}>
+      <summary className="min-h-11 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">기획·분석</summary>
+      <nav aria-label="기획·분석" className="absolute right-0 top-full z-20 mt-1 grid min-w-max gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg sm:left-0 sm:right-auto">
+        <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석</AdminActionLink>
+        <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드·키워드 관리</AdminActionLink>
+      </nav>
+    </details>
+  </>;
 }
 
 function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerItem; highlighted: boolean; busy: boolean; onUpdate: (status: PlannerStatus) => void }) {

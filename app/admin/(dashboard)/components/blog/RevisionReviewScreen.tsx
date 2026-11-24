@@ -50,7 +50,12 @@ export function RevisionReviewScreen({ id }: { id: string }) {
       <h1 className="text-xl font-bold">콘텐츠 수정안 검토</h1>
       <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{item.reason}</p>
       <p className="mt-2 text-xs text-slate-500">제안 시점의 원본과 수정안을 비교합니다. 원본이 이후 변경되면 반영할 수 없습니다.</p>
-      <div className="mt-4 flex flex-wrap gap-2"><AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts/${encodeURIComponent(item.slug)}`)}>원본 글 편집</AdminActionLink><AdminActionLink tone="dark" href={workspaceHref("/admin/content/posts")}>포스트 목록</AdminActionLink></div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts/${encodeURIComponent(item.slug)}`)}>원본 글 편집</AdminActionLink>
+        {canApply
+          ? <AdminActionLink tone="dark" href="/admin/content/tasks?stage=review#pending-revisions">검토 필요 목록</AdminActionLink>
+          : <AdminActionLink tone="dark" href={workspaceHref("/admin/content/posts")}>포스트 목록</AdminActionLink>}
+      </div>
     </AdminSurface>
     {done ? <AdminNotice tone="success">수정안을 반영했습니다.{cachePending && " 공개 캐시 갱신을 다시 확인해 주세요."}</AdminNotice>
       : conflict ? <AdminNotice tone="warning">원본이 변경됐습니다. 최신 원본을 바탕으로 수정안을 다시 작성해 주세요.</AdminNotice>

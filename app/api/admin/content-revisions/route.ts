@@ -7,7 +7,21 @@ import { validateBlogCitationTargets } from "@/lib/blog/citation-targets-server"
 export async function GET(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
-  const slug = new URL(request.url).searchParams.get("slug");
+  const params = new URL(request.url).searchParams;
+  if (params.get("scope") === "mine") {
+    try {
+      const { data, error } = await getSupabaseAdmin()
+        .from("blog_content_revisions")
+        .select("id,slug,title:original->>title,status,created_at")
+        .eq("created_by", auth.email)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return Response.json({ data }, { headers: REVISION_HEADERS });
+    } catch { return revisionUnavailable(); }
+  }
+  const slug = params.get("slug");
   if (!slug || !/^[a-z0-9][a-z0-9-]{0,200}[a-z0-9]$/.test(slug)) return Response.json({ error: "INVALID_SLUG" }, { status: 400, headers: REVISION_HEADERS });
   try {
     const { data, error } = await getSupabaseAdmin().from("blog_content_revisions").select("id,slug,base_revision,reason,status,created_at,applied_at").eq("slug", slug).order("created_at", { ascending: false }).limit(50);

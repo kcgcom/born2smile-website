@@ -16,10 +16,7 @@ import {
   type ShadowReference,
 } from "../lib/keyword-candidate-shadow";
 import { embedKeywordShadowTexts } from "../lib/keyword-candidate-shadow-embeddings";
-import {
-  getKeywordCandidateBoundaryReviewReferences,
-  publishKeywordCandidateBoundaryReview,
-} from "../lib/keyword-candidate-boundary-review-store";
+import { getKeywordCandidateBoundaryReviewReferences } from "../lib/keyword-candidate-boundary-review-store";
 import {
   getKeywordCandidateShadowAuditReferences,
   publishKeywordCandidateShadowAudit,
@@ -266,25 +263,6 @@ async function main() {
       })),
     });
   }
-  let boundaryPublication: { published: number; preservedLabels: number } | null = null;
-  if (process.argv.includes("--publish-boundary")) {
-    boundaryPublication = await publishKeywordCandidateBoundaryReview({
-      engineVersion: KEYWORD_SHADOW_ENGINE_VERSION,
-      snapshotId: evaluation.snapshotId,
-      snapshotCreatedAt: snapshot.created_at,
-      taxonomyVersion: evaluation.taxonomyVersion,
-      generatedAt,
-      items: boundaryReviewQueue.map((item) => ({
-        id: auditId(evaluation.snapshotId, item.keyword),
-        ...item,
-      })),
-      taxonomy: taxonomyState.taxonomy.map((category) => ({
-        slug: category.slug,
-        label: category.category,
-        subgroups: category.subGroups.map((subgroup) => subgroup.name),
-      })),
-    });
-  }
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(output, null, 2)}\n`);
   console.log(JSON.stringify({
@@ -293,7 +271,6 @@ async function main() {
     summary: output.summary,
     topPurposeCounts: Object.fromEntries(Object.entries(topByPurpose).map(([purpose, items]) => [purpose, items.length])),
     publication,
-    boundaryPublication,
     output: path.relative(process.cwd(), OUTPUT_PATH),
   }, null, 2));
 }

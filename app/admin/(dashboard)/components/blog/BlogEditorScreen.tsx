@@ -165,7 +165,8 @@ export function BlogEditorScreen({ mode, slug }: BlogEditorScreenProps) {
         });
         if (!revisionError) {
           void refreshCache("/api/admin/publication-review").catch(() => {});
-          router.push(workspaceHref("/admin/content/review"));
+          void refreshCache("/api/admin/content-revisions?scope=mine").catch(() => {});
+          router.push(workspaceHref("/admin/content/posts#my-revisions"));
         }
         return { error: revisionError };
       }

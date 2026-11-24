@@ -146,7 +146,7 @@ for (const width of [360, 1280]) {
     await expect(page.getByText("진료 후 관리 안내", { exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("searchbox", { name: "작업 검색" })).toHaveValue("approved");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`work-inbox-${width}.png`) });
   });
 }
