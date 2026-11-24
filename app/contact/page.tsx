@@ -165,8 +165,8 @@ export default async function ContactPage() {
             </FadeIn>
 
             {/* 오시는 길 + 지도 */}
-            <FadeIn direction="right" delay={0.2} className="space-y-6">
-              <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--foreground)]">
+            <FadeIn direction="right" delay={0.2} className="flex flex-col gap-6">
+              <h2 className="font-headline text-2xl font-bold text-[var(--foreground)]">
                 <MapPin
                   size={22}
                   aria-hidden="true"
@@ -174,7 +174,7 @@ export default async function ContactPage() {
                 />
                 오시는 길
               </h2>
-              <KakaoMap className="aspect-square md:aspect-[4/3]" />
+              <KakaoMap className="aspect-square md:aspect-auto md:min-h-64 md:flex-1" />
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6">
                 <p className="font-medium text-[var(--foreground)]">{clinic.name}</p>
                 <p className="mt-1 text-sm text-[var(--muted)]">{clinic.address}</p>
