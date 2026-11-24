@@ -174,7 +174,13 @@ export default async function ContactPage() {
                 />
                 오시는 길
               </h2>
-              <KakaoMap className="aspect-square md:aspect-auto md:min-h-64 md:flex-1" />
+              <KakaoMap
+                className="aspect-square md:aspect-auto md:min-h-64 md:flex-1"
+                zoomLevel={4}
+                markerOffsetY={0.18}
+                showZoomControl
+                labelPlacement="right"
+              />
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-6">
                 <p className="font-medium text-[var(--foreground)]">{clinic.name}</p>
                 <p className="mt-1 text-sm text-[var(--muted)]">{clinic.address}</p>
