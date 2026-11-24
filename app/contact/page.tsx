@@ -1,4 +1,5 @@
-import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Clock, CalendarDays } from "lucide-react";
+import { NAVER_BOOKING_URL } from "@/lib/constants";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { FadeIn } from "@/components/ui/Motion";
@@ -23,7 +24,7 @@ export default async function ContactPage() {
               상담 안내
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[var(--muted)]">
-              전화로 편리하게 상담받으세요. 친절하게 안내해 드리겠습니다.
+              네이버에서 진료를 예약하거나 전화로 상담받으실 수 있습니다.
             </p>
           </FadeIn>
         </div>
@@ -35,10 +36,10 @@ export default async function ContactPage() {
             {/* 전화 상담 안내 */}
             <FadeIn direction="left" className="space-y-6">
               <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--foreground)]">
-                전화 상담
+                진료 예약 및 상담
               </h2>
               <p className="text-[var(--foreground)]">
-                진료 예약 및 상담은 전화로 접수하고 있습니다.
+                온라인 진료 예약은 네이버에서 하실 수 있습니다.
                 <br />
                 궁금하신 점이 있으시면 언제든 연락주세요.
               </p>
@@ -57,6 +58,18 @@ export default async function ContactPage() {
                   <div className="text-sm text-blue-50">대표전화</div>
                   <div className="text-2xl font-bold">{clinic.phone}</div>
                 </div>
+              </TrackedAnchor>
+
+              <TrackedAnchor
+                href={NAVER_BOOKING_URL}
+                event="naver_booking_click"
+                properties={{ cta_location: "contact_main", page_type: "contact" }}
+                className="flex items-center gap-4 rounded-2xl border border-[var(--color-primary)] p-6 font-bold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+                  <CalendarDays size={28} aria-hidden="true" />
+                </span>
+                네이버 예약
               </TrackedAnchor>
 
               {links.kakaoChannel ? (

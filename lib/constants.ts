@@ -298,6 +298,8 @@ export const REVIEWS: Review[] = [
 // -------------------------------------------------------------
 // SNS / 외부 링크
 // -------------------------------------------------------------
+export const NAVER_BOOKING_URL = "https://m.booking.naver.com/booking/16/bizes/1768707?theme=place&lang=ko&area=ple";
+
 export const LINKS = {
   // 실제 URL을 입력하면 Footer, Contact 페이지, JSON-LD sameAs에 자동 반영됩니다.
   kakaoChannel: "", // 카카오톡 채널 URL → Contact 페이지 카카오 상담 버튼 + Footer 아이콘

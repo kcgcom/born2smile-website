@@ -11,7 +11,7 @@ export function Footer({ clinic, hours, links }: {
 
   return (
     <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 pt-12 pb-28 md:px-6 md:pb-12">
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-[calc(10rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-12">
         {/* 병원명 + 전화번호 */}
         <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <span className="text-xl font-bold text-white">{footerClinicName}</span>

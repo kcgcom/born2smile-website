@@ -115,7 +115,7 @@ export default async function RootLayout({
           <Header />
           <main id="main-content">{children}</main>
           <Footer clinic={clinic} hours={hours} links={links} />
-          <FloatingCTA hours={hours} />
+          <FloatingCTA hours={hours} phoneHref={clinic.phoneHref} />
           <AdminFloatingButton />
         </AdminAuthProvider>
         <Script

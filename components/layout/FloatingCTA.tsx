@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
+import { Phone, Home, Building2, BookOpen, Stethoscope, CalendarDays } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
-import { CLINIC, NAV_ITEMS } from "@/lib/constants";
+import { CLINIC, NAV_ITEMS, NAVER_BOOKING_URL } from "@/lib/constants";
 import type { PublicSiteHours } from "@/lib/site-config-supabase";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
@@ -19,7 +19,7 @@ const NAV_ICONS: Record<string, typeof Home> = {
   "/contact": Phone,
 };
 
-export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
+export function FloatingCTA({ hours, phoneHref }: { hours: PublicSiteHours; phoneHref: string }) {
   const pathname = usePathname();
   const showDesktopPhone = !pathname.startsWith("/contact");
 
@@ -45,6 +45,26 @@ export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label="빠른 메뉴"
       >
+        <div className="grid grid-cols-2 border-b border-[var(--border)]">
+          <TrackedAnchor
+            href={phoneHref}
+            event="floating_phone_click"
+            properties={{ cta_location: "floating_mobile_phone", page_type: "global" }}
+            className="flex min-h-11 items-center justify-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+          >
+            <Phone size={16} aria-hidden="true" />
+            전화 상담
+          </TrackedAnchor>
+          <TrackedAnchor
+            href={NAVER_BOOKING_URL}
+            event="naver_booking_click"
+            properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
+            className="flex min-h-11 items-center justify-center gap-2 bg-[var(--color-primary)] text-sm font-medium text-white hover:bg-[var(--color-primary-dark)]"
+          >
+            <CalendarDays size={16} aria-hidden="true" />
+            네이버 예약
+          </TrackedAnchor>
+        </div>
         <div className="grid grid-cols-5">
           {NAV_ITEMS.map((item) => {
             const isActive =

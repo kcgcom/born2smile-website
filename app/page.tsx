@@ -10,8 +10,9 @@ import {
   HelpCircle,
   Plane,
   Building2,
+  CalendarDays,
 } from "lucide-react";
-import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, STAFF } from "@/lib/constants";
+import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, NAVER_BOOKING_URL, STAFF } from "@/lib/constants";
 import { getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
@@ -94,7 +95,7 @@ export default function Home() {
       />
       {/* ───────────── 히어로 섹션 ───────────── */}
       <section id="hero">
-        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pb-16 md:pb-0">
+        <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pb-28 md:pb-0">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
@@ -110,12 +111,21 @@ export default function Home() {
               자연치아를 지키는 치료, 서울본치과에서 시작하세요.
             </p>
             <FadeIn delay={0.3}>
-              <div className="flex items-center justify-center gap-2 sm:gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                <TrackedAnchor
+                  href={NAVER_BOOKING_URL}
+                  event="naver_booking_click"
+                  properties={{ cta_location: "hero", page_type: "home" }}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] sm:px-8 sm:py-4 sm:text-base"
+                >
+                  <CalendarDays size={16} aria-hidden="true" />
+                  네이버 예약
+                </TrackedAnchor>
                 <TrackedLink
                   href="/contact"
                   event="hero_contact_click"
                   properties={{ cta_location: "hero", page_type: "home" }}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] sm:px-8 sm:py-4 sm:text-base"
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-5 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5 sm:px-8 sm:py-4 sm:text-base"
                 >
                   상담 안내
                   <ArrowRight size={16} />
