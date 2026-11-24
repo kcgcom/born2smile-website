@@ -15,7 +15,7 @@ async function setup(page: Page) {
   await page.context().addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", domain: "localhost", path: "/" }]);
   await page.route("**/*.supabase.co/**", route => route.abort());
   await page.route("**/api/admin/**", route => route.fulfill({ json: { ok: true, access: { isOwner: true, permissions: ["operations", "content", "staff"] } } }));
-  await page.route("**/api/dev/crux", route => route.fulfill({ json: { latest: null, history: [], latestUnavailable: false, historyUnavailable: false } }));
+  await page.route("**/api/dev/crux", route => route.fulfill({ json: { latest: null, history: [], latestError: null, historyError: null } }));
 }
 
 test("CrUX 통합 집계는 Lighthouse 오류와 별개로 누락 지표와 주간 수치를 표시한다", async ({ page }) => {
@@ -24,8 +24,8 @@ test("CrUX 통합 집계는 Lighthouse 오류와 별개로 누락 지표와 주�
   await page.route("**/api/dev/crux", route => route.fulfill({ json: {
     latest,
     history: [{ start: "2026-10-19", end: "2026-11-15", lcp: null, cls: null, inp: null }, latest],
-    latestUnavailable: false,
-    historyUnavailable: false,
+    latestError: null,
+    historyError: null,
   } }));
   await page.route("**/api/dev/pagespeed?**", route => route.fulfill({ status: 502, json: { message: "Lighthouse 조회 실패" } }));
   await page.goto("/admin/system/monitoring");

@@ -53,7 +53,7 @@ export function CruxPanel() {
           <div>
             <h3 className="text-sm font-medium text-slate-900">최신 28일 p75</h3>
             {data.latest && <p className="mt-1 text-xs text-slate-600">{data.latest.start} ~ {data.latest.end}</p>}
-            {data.latestUnavailable ? <p className="mt-1 text-sm text-slate-600">최신 집계를 불러오지 못했습니다.</p> : (
+            {data.latestError ? <p role="status" className="mt-1 text-sm text-slate-600">{data.latestError}</p> : (
               <dl className="mt-2 grid grid-cols-3 gap-2">
                 {METRICS.map(metric => (
                   <div key={metric.id} className="rounded-lg bg-slate-50 p-2 sm:p-3">
@@ -92,7 +92,7 @@ export function CruxPanel() {
                 </div>
               </details>
             </>
-          ) : <p className="text-sm text-slate-600">{data.historyUnavailable ? "주간 추세를 불러오지 못했습니다." : "표시할 주간 추세 데이터가 없습니다."}</p>}
+          ) : <p role="status" className="text-sm text-slate-600">{data.historyError ? `주간 추세 · ${data.historyError}` : "표시할 주간 추세 데이터가 없습니다."}</p>}
         </>
       )}
     </AdminSurface>
