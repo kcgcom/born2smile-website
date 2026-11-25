@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { interceptAnalytics } from "./helpers/blog-analytics";
+import { setupOutcomes } from "./helpers/admin-outcomes";
 import { activeReadingDelta, getReadingMetadata, measureReadingRects } from "../lib/blog/reading";
 import { readingPeriodRange, readingRate } from "../lib/blog/reading-report";
 import { buildReadingQueries, fetchBlogReading, fetchPostReadingFirstObservedAt, fetchPostReadingSummary, type CacheReadingQuery } from "../lib/admin-blog-reading";
@@ -54,7 +55,7 @@ for (const mode of ["missing", "throwing"] as const) {
     await expect.poll(() => events.find(e => e.event === "$pageview")?.properties.crypto_random_uuid_supported)
       .toBe(mode === "throwing");
 
-    const root = page.locator("[data-blog-reading-root]");
+    const root = page.locator("#main-content [data-blog-reading-root]");
     await expect(root).toBeVisible();
     await expect(root.locator("[data-reading-block]")).toHaveCount(17);
     await page.evaluate(() => {
@@ -194,7 +195,7 @@ test("집계 조회는 부분 실패를 0으로 숨기지 않고 커서를 반�
 test("상세 방문은 한 번 수집하고 공유는 같은 view에 연결한다", async ({ page }) => {
   const { events, undecoded } = await interceptAnalytics(page);
   await page.goto(PATH);
-  await expect(page.locator("[data-blog-reading-root]")).toBeVisible();
+  await expect(page.locator("#main-content [data-blog-reading-root]")).toBeVisible();
   await expect.poll(() => events.filter(e => e.event === "blog_article_viewed").length, { timeout: 15000 }).toBe(1);
   await page.getByRole("button", { name: "이 글 공유하기", exact: true }).first().click();
   await expect.poll(() => events.filter(e => e.event === "blog_post_shared").length).toBe(1);
@@ -341,9 +342,9 @@ test("수집 거부가 저장된 상태에서 글을 다시 열면 페이지뷰�
 
 test("관리자 표시가 있으면 새 읽기 이벤트를 수집하지 않는다", async ({ page }) => {
   const { events } = await interceptAnalytics(page);
-  await page.addInitScript(() => localStorage.setItem("born2smile-admin", "1"));
+  await setupOutcomes(page);
   await page.goto(PATH);
-  await page.locator("[data-blog-reading-root]").scrollIntoViewIfNeeded();
+  await page.locator("#main-content [data-blog-reading-root]").scrollIntoViewIfNeeded();
   await expect(page.getByRole("button", { name: "해결됐어요", exact: true })).toBeDisabled();
   await page.waitForTimeout(4000);
   expect(events.filter(e => e.event.startsWith("blog_read") || e.event === "blog_article_viewed")).toHaveLength(0);
