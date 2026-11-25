@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { AdminBrowserPresence } from "./AdminBrowserPresence";
 import { useAdminAuthState } from "./AdminAuthProvider";
 import { DashboardHeader } from "./DashboardHeader";
-import { signOutAdmin } from "@/lib/admin-auth";
 import { AdminSurface } from "./AdminChrome";
 import { STAFF_HOME } from "@/lib/admin-access";
 
@@ -21,10 +20,7 @@ export function StaffWorkspaceShell({ children }: { children: React.ReactNode })
 
   return <div className="min-h-screen bg-slate-50">
     <AdminBrowserPresence />
-    <DashboardHeader staff canReturnToAdmin={access?.isOwner} onLogout={async () => {
-      await signOutAdmin();
-      window.location.replace("/staff/login");
-    }} />
+    <DashboardHeader staff canReturnToAdmin={access?.isOwner} />
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6">
       <AdminSurface tone="white" className="mb-5 p-2">
         <nav aria-label="직원 업무 메뉴" className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 sm:flex sm:w-fit">

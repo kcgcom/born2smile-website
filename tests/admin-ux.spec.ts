@@ -1121,3 +1121,28 @@ for (const width of [1280, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 }
+
+
+for (const workspace of ["admin", "staff"] as const) {
+  test(`${workspace} 로그아웃 실패 후 재시도`, async ({ page }) => {
+    await setup(page);
+    await page.route("**/api/admin-presence", route => route.fulfill({ status: 204 }));
+    let attempts = 0;
+    await page.route(/\/auth\/v1\/logout(?:\?|$)/, route => {
+      attempts++;
+      return attempts === 1
+        ? route.fulfill({ status: 400, json: { code: "unexpected_failure", message: "Test logout failure" } })
+        : route.fulfill({ status: 204 });
+    });
+    await page.route(`**/${workspace}/login`, route => route.fulfill({ body: "Login" }));
+    await page.goto(workspace === "admin" ? "/admin/operations/overview" : "/staff");
+    await page.locator("header summary").click();
+    const logout = page.getByRole("button", { name: "로그아웃", exact: true });
+    await logout.click();
+    await expect(page.getByRole("alert").getByText("로그아웃하지 못했습니다. 다시 시도해 주세요.")).toBeVisible();
+    await expect(page).not.toHaveURL(`/${workspace}/login`);
+    await logout.click();
+    await expect(page).toHaveURL(`/${workspace}/login`);
+    expect(attempts).toBe(2);
+  });
+}

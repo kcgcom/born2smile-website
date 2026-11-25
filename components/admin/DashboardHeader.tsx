@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { CircleUserRound, LogOut } from "lucide-react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
+import { signOutAdmin } from "@/lib/admin-auth";
 import { CLINIC } from "@/lib/constants";
 import styles from "./DashboardHeader.module.css";
 
@@ -15,7 +16,6 @@ import styles from "./DashboardHeader.module.css";
 // -------------------------------------------------------------
 
 interface DashboardHeaderProps {
-  onLogout: () => void;
   staff?: boolean;
   canReturnToAdmin?: boolean;
 }
@@ -26,11 +26,26 @@ const ACTIVE_WORKSPACE_CLASS = "text-slate-900";
 const INACTIVE_WORKSPACE_CLASS = "text-slate-200 hover:text-white";
 let pendingWorkspace: "admin" | "staff" | undefined;
 
-export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: DashboardHeaderProps) {
+export function DashboardHeader({ staff, canReturnToAdmin }: DashboardHeaderProps) {
   const pathname = usePathname();
   const mobileMenu = useMobileNavigation();
   const indicator = useRef<HTMLSpanElement>(null);
   const workspace = staff ? "staff" : "admin";
+  const [logoutState, setLogoutState] = useState<"idle" | "pending" | "failed">("idle");
+
+  async function handleLogout() {
+    setLogoutState("pending");
+    try {
+      const { error } = await signOutAdmin();
+      if (error) {
+        setLogoutState("failed");
+        return;
+      }
+      window.location.replace(staff ? "/staff/login" : "/admin/login");
+    } catch {
+      setLogoutState("failed");
+    }
+  }
 
   useLayoutEffect(() => {
     if (pendingWorkspace !== workspace) return;
@@ -100,13 +115,14 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
             </summary>
             <div className="absolute right-0 top-full z-50 mt-2 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
               <AdminActionButton
-                onClick={onLogout}
+                onClick={handleLogout}
+                disabled={logoutState === "pending"}
                 data-confirm-navigation
                 tone="dark"
                 className="min-h-11 w-full justify-start rounded-lg px-3"
               >
                 <LogOut size={16} aria-hidden="true" />
-                로그아웃
+                {logoutState === "pending" ? "로그아웃 중…" : "로그아웃"}
               </AdminActionButton>
             </div>
           </details>
@@ -114,15 +130,21 @@ export function DashboardHeader({ onLogout, staff, canReturnToAdmin }: Dashboard
       </header>
       <MobileMenuPanel menu={mobileMenu} pathname={pathname} className="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] shadow-sm">
         <AdminActionButton
-          onClick={onLogout}
+          onClick={handleLogout}
+          disabled={logoutState === "pending"}
           data-confirm-navigation
           tone="dark"
           className="mt-4 min-h-11 w-full justify-center rounded-full px-5 py-3 text-base"
         >
           <LogOut size={18} aria-hidden="true" />
-          로그아웃
+          {logoutState === "pending" ? "로그아웃 중…" : "로그아웃"}
         </AdminActionButton>
       </MobileMenuPanel>
+      {logoutState === "failed" && (
+        <p role="alert" className="relative z-10 mx-auto max-w-7xl bg-red-50 px-4 py-2 text-sm text-red-800">
+          로그아웃하지 못했습니다. 다시 시도해 주세요.
+        </p>
+      )}
     </AdminSurface>
   );
 }

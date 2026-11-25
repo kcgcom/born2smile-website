@@ -21,7 +21,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { AdminSurface } from "@/components/admin/AdminChrome";
-import { signOutAdmin } from "@/lib/admin-auth";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { AdminBrowserPresence } from "@/components/admin/AdminBrowserPresence";
 import { ADMIN_HOME } from "@/lib/admin-access";
@@ -198,14 +197,9 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
 
   const workspace = useMemo(() => getWorkspace(pathname), [pathname]);
 
-  const handleLogout = async () => {
-    await signOutAdmin();
-    window.location.replace("/admin/login");
-  };
-
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f5f8ff_0%,#f8fafc_16%,#f8fafc_100%)] max-sm:[&_button]:min-h-11 max-sm:[&_summary]:min-h-11 max-sm:[&_select]:min-h-11 max-sm:[&_input:not([type=checkbox]):not([type=radio])]:min-h-11">
-      <DashboardHeader onLogout={handleLogout} />
+      <DashboardHeader />
       <AdminBrowserPresence />
 
       <div className="mx-auto max-w-7xl px-3 py-2 sm:px-6 sm:py-6 lg:py-3">
