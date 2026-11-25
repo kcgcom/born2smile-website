@@ -25,6 +25,7 @@ export function canOpenStaffPage(pathname: string) {
 
 export function canUseAdminApi(access: AdminAccess, method: string, pathname: string) {
   if (access.isOwner || pathname === "/api/admin/auth-check") return true;
+  if (pathname === "/api/admin/emergency-notice") return ["GET", "PUT", "DELETE"].includes(method);
   if (pathname === "/api/admin-presence" && method === "POST") return true;
   if (method === "GET") {
     return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/(?:clinic|hours|schedule))$/.test(pathname);

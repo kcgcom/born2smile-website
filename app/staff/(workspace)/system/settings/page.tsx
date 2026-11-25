@@ -1,11 +1,13 @@
 import { ClinicInfoEditor } from "@/app/admin/(dashboard)/components/settings/ClinicInfoEditor";
 import { HoursEditor } from "@/app/admin/(dashboard)/components/settings/HoursEditor";
+import { EmergencyNoticeEditor } from "@/app/admin/(dashboard)/components/settings/EmergencyNoticeEditor";
 import { HoursSummaryCard } from "@/app/admin/(dashboard)/components/settings/HoursSummaryCard";
 import { QuickLinksSection } from "@/app/admin/(dashboard)/components/settings/QuickLinksSection";
 
 export default function StaffSystemSettingsPage() {
   return (
     <div className="space-y-6">
+      <EmergencyNoticeEditor />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="min-w-0 space-y-6">
           <ClinicInfoEditor readOnly />

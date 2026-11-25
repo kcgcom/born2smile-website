@@ -3,6 +3,7 @@
 import { SnsLinksEditor } from "./settings/SnsLinksEditor";
 import { ClinicInfoEditor } from "./settings/ClinicInfoEditor";
 import { HoursEditor } from "./settings/HoursEditor";
+import { EmergencyNoticeEditor } from "./settings/EmergencyNoticeEditor";
 import { QuickLinksSection } from "./settings/QuickLinksSection";
 import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 
@@ -13,6 +14,7 @@ export function SettingsTab({ staffWorkspace }: { staffWorkspace: boolean }) {
 
   return (
     <div className="space-y-6">
+      <EmergencyNoticeEditor />
       <HoursEditor key={String(canEditBasics)} exceptionsOnly={!canEditBasics} clinicCard={clinicCard} />
       <div className="grid items-start gap-6 lg:grid-cols-2">
         {canEditBasics && <SnsLinksEditor />}

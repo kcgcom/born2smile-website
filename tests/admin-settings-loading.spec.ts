@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import type { SiteHours } from "../lib/site-config-supabase";
+import type { EmergencyNotice } from "../lib/emergency-notice";
 
 const FIXTURES = {
   clinic: { name: "테스트 치과", nameEn: "Test Clinic", slogan: "테스트 슬로건", phone: "031-000-0000", address: "경기도 김포시 테스트로 123, 테스트빌딩 2층 진료실 201호", addressShort: "김포", neighborhood: "김포", representative: "테스트", businessNumber: "000-00-00000" },
@@ -42,6 +43,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   let state = initial;
   const requests: string[] = [];
   const writes: Record<string, unknown>[] = [];
+  let emergencyNotice: EmergencyNotice | null = null;
   const fixtures = structuredClone({ ...FIXTURES, hours });
   let failWrite = false;
   await page.route("**/api/admin/**", async route => {
@@ -50,6 +52,12 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
     if (path.endsWith("/search-console")) return route.fulfill({ json: { data: null } });
     if (path.endsWith("/blog-posts")) return route.fulfill({ json: { data: [] } });
     if (path.endsWith("/blog-feedback")) return route.fulfill({ json: { data: { feedback: {}, totalResponses: 0 } } });
+    if (path.endsWith("/emergency-notice")) {
+      const method = route.request().method();
+      if (method === "PUT") emergencyNotice = route.request().postDataJSON();
+      if (method === "DELETE") emergencyNotice = null;
+      return route.fulfill({ json: { data: { notice: emergencyNotice } } });
+    }
     const key = path.split("/").at(-1) as Section;
     if (route.request().method() === (staffWorkspace ? "PATCH" : "PUT") && key === section) {
       const submitted = route.request().postDataJSON();
@@ -68,6 +76,39 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   await page.goto(staffWorkspace ? "/staff/system/settings" : "/admin/system/settings");
   return { requests, writes, failSave: () => { failWrite = true; }, setState: (next: typeof state) => { state = next; } };
 }
+
+for (const isOwner of [true, false]) {
+  test(`${isOwner ? "관리자" : "직원"} 설정에서 긴급 공지를 미리보고 게시한 뒤 내린다`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
+    await openSettings(page, "hours", "success", undefined, isOwner);
+    const card = page.getByRole("region", { name: "긴급 공지" });
+    await card.getByLabel("공지 문구").fill("방문 전 전화로 문의해 주세요.");
+    await card.getByLabel("종료 시각 (한국 시간)").fill("2026-12-01T18:00");
+    await expect(card.getByText("미리보기")).toBeVisible();
+    const payload = page.waitForRequest(request => request.url().endsWith("/api/admin/emergency-notice") && request.method() === "PUT");
+    await card.getByRole("button", { name: "즉시 게시" }).click();
+    expect((await payload).postDataJSON()).toEqual({
+      message: "방문 전 전화로 문의해 주세요.",
+      expiresAt: "2026-12-01T18:00:00+09:00",
+    });
+    await expect(card.getByText("게시된 공지")).toBeVisible();
+    await card.getByRole("button", { name: "지금 내리기" }).click();
+    await expect(card.getByText("긴급 공지를 내렸습니다.")).toBeVisible();
+    await expect(card.getByText("게시된 공지")).toHaveCount(0);
+  });
+}
+
+test("공개 긴급 공지는 종료 시각에 다시 로드하지 않아도 사라진다", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-12-01T08:59:00Z") });
+  await page.route("**/api/emergency-notice", route => route.fulfill({
+    json: { notice: { message: "방문 전 전화로 문의해 주세요.", expiresAt: "2026-12-01T18:00:00+09:00" } },
+  }));
+  await page.goto("/contact");
+  const banner = page.getByRole("complementary", { name: "긴급 공지" });
+  await expect(banner).toContainText("방문 전 전화로 문의해 주세요.");
+  await page.clock.fastForward(61_000);
+  await expect(banner).toHaveCount(0);
+});
 
 test("휴진일 달력은 기본 요일보다 날짜별 운영 예외를 우선해 표시한다", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));

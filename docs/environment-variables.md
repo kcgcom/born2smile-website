@@ -78,6 +78,26 @@
 
 ## 기능별 메모
 
+### 긴급 공지의 Vercel 직접 게시
+
+관리자와 직원은 각 설정 화면의 긴급 공지 카드에서 공지를 게시하거나 내릴 수 있다.
+관리자 화면에 접근할 수 없으면 Born2Smile 팀의 Vercel Storage에서
+`clinic-hours-fallback`의 Items를 열고 `public_emergency_notice` 항목에 다음 형식으로 저장한다.
+종료 시각은 한국 시간 오프셋 `+09:00`을 포함한 ISO 8601 형식으로 입력한다.
+
+```json
+{
+  "public_emergency_notice": {
+    "message": "오늘 전화 연결이 어려워 네이버 예약을 이용해 주세요.",
+    "expiresAt": "2026-12-01T18:00:00+09:00"
+  }
+}
+```
+
+기존 항목은 보존하고 실제 상황의 문구와 미래 종료 시각으로 바꾼다.
+즉시 내리려면 이 항목만 삭제하거나 값을 `null`로 설정한다.
+홈페이지와 상담 안내에서 게시·종료 상태를 확인한다.
+
 ### 관리자 업무 권한
 
 원장은 `시스템 → 계정 관리`에서 직원 이메일을 등록하고 계정 사용 여부를 설정한다. 활성 직원은 콘텐츠와 행정 업무를 모두 사용할 수 있다. 저장된 직원 설정은 기존 이메일 허용 목록에 우선한다. 직원은 원장이 지정한 비밀번호와 이메일로 로그인한다. Supabase Auth에서 Email 제공자가 활성화되어 있어야 한다. 직원의 Google 세션에는 관리자 권한을 부여하지 않는다. 기존 직원이 Google로만 로그인했다면 원장이 비밀번호를 설정한 후 새 방식으로 로그인한다. 운영 분석, 계정 설정, 최종 발행은 `ADMIN_EMAILS`에 등록한 원장 계정에서 사용한다.
@@ -123,9 +143,9 @@
 | `BLOG_PUBLIC_DATA_SOURCE` | `snapshot`이면 공개 조회에 생성 스냅샷 사용. dev/build가 설정 |
 | `BLOG_SNAPSHOT_REQUIRED` | `true`이면 스냅샷 조회 실패 시 중단. build가 설정 |
 | `SITE_CONFIG_DATA_SOURCE` | `snapshot`은 설정 스냅샷, `live`는 Supabase, `fixture`는 테스트 기본값을 사용. 설정하지 않은 런타임은 Supabase 조회가 기본 |
-| `SITE_HOURS_GLOBAL_CONFIG` | 운영 진료시간 사본을 읽는 Vercel Global Config 연결 문자열. 서버 전용 |
+| `SITE_HOURS_GLOBAL_CONFIG` | 운영 진료시간 사본과 긴급 공지를 읽는 Vercel Global Config 연결 문자열. 서버 전용 |
 | `GLOBAL_CONFIG` | Preview의 Global Config 연결 문자열. `SITE_HOURS_GLOBAL_CONFIG`가 없을 때 사용. 서버 전용 |
-| `SITE_HOURS_GLOBAL_CONFIG_TEAM_ID` | 진료시간 사본 저장소가 속한 Vercel 팀 ID |
+| `SITE_HOURS_GLOBAL_CONFIG_TEAM_ID` | 진료시간 사본과 긴급 공지 저장소가 속한 Vercel 팀 ID |
 | `SITE_HOURS_GLOBAL_CONFIG_WRITE_TOKEN` | 해당 팀의 Global Config 항목을 쓸 수 있는 Vercel API 토큰. 서버 전용 |
 | `REVALIDATE_BASE_URL` | 재검증 스크립트의 대상 사이트 URL |
 | `ANALYZE` | next.config.ts의 번들 분석 옵션 |

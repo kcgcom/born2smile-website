@@ -5,6 +5,7 @@ import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { FadeIn } from "@/components/ui/Motion";
 import { KakaoMap } from "@/components/ui/KakaoMap";
 import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
+import { EmergencyNoticeBanner } from "@/components/EmergencyNoticeBanner";
 
 export default async function ContactPage() {
   const [clinic, hours, links] = await Promise.all([
@@ -17,6 +18,7 @@ export default async function ContactPage() {
     <>
       <section className="bg-gradient-to-b from-blue-50 to-white pt-32 pb-0 text-center md:pb-16 lg:pb-0">
         <div className="mx-auto max-w-2xl px-4">
+          <EmergencyNoticeBanner />
           <FadeIn>
             <p className="mb-2 text-sm font-medium tracking-widest text-[var(--color-gold-text)] uppercase">
               Contact

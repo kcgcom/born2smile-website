@@ -18,6 +18,7 @@ import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
+import { EmergencyNoticeBanner } from "@/components/EmergencyNoticeBanner";
 
 const WHO_WE_SERVE = [
   {
@@ -96,6 +97,7 @@ export default function Home() {
       <section id="hero">
         <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-[var(--color-primary)]/5 to-[var(--surface)] pb-28 md:pb-0">
           <div className="mx-auto max-w-4xl px-4 text-center">
+            <EmergencyNoticeBanner />
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
             </p>

@@ -24,6 +24,10 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canOpenStaffPage("/admin/content/posts"), false);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/clinic"), true);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/hours"), true);
+  for (const method of ["GET", "PUT", "DELETE"]) {
+    assert.equal(canUseAdminApi(staff, method, "/api/admin/emergency-notice"), true);
+  }
+  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/emergency-notice"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/clinic"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/hours"), false);
   assert.equal(canUseAdminApi(staff, "PATCH", "/api/admin/site-config/clinic"), false);
