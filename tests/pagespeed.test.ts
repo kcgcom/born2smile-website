@@ -13,7 +13,8 @@ const code = ts.transpileModule(readFileSync("app/api/dev/pagespeed/route.ts", "
 }).outputText;
 const today = "2026-11-12";
 type Row = { key: string; data: unknown };
-const result = (strategy: string, fetchedAt = "2026-11-11T15:00:00Z") => ({ strategy, fetchedAt, url: "https://www.born2smile.co.kr", categories: [], coreWebVitals: [], audits: [], overallCategory: "NONE" });
+const result = (strategy: string, fetchedAt = "2026-11-11T15:00:00Z") => ({ strategy, fetchedAt, url: "https://www.born2smile.co.kr", categories: [], audits: [] });
+const retiredFields = { coreWebVitals: [{ label: "LCP", percentile: 1200 }], overallCategory: "FAST" };
 
 function setup(options: {
   rows?: Row[];
@@ -125,13 +126,17 @@ function setup(options: {
     fetch: async (url: string) => {
       const parsed = new URL(url);
       assert.equal(parsed.hostname, "www.googleapis.com");
+      assert.equal(parsed.searchParams.get("fields"), "lighthouseResult");
       calls.push(parsed.searchParams.get("strategy")!);
       const auditUrl = new URL(parsed.searchParams.get("url")!);
       assert.equal(auditUrl.searchParams.get(PERFORMANCE_AUDIT_PARAM), "1");
       auditUrl.searchParams.delete(PERFORMANCE_AUDIT_PARAM);
       urls.push(auditUrl.href);
       await options.beforeFetch?.();
-      return options.fetchError ? new Response("API unavailable", { status: 503 }) : Response.json({ lighthouseResult: { categories: { performance: { score: 0.9 } }, audits: {} } });
+      return options.fetchError ? new Response("API unavailable", { status: 503 }) : Response.json({
+        lighthouseResult: { categories: { performance: { score: 0.9 } }, audits: {} },
+        loadingExperience: { overall_category: "FAST", metrics: { LARGEST_CONTENTFUL_PAINT_MS: { percentile: 1200 } } },
+      });
     },
   });
   return { calls, urls, writes, filters, pending, measurementLogs, get: (queryString: string) => exports.GET!(new Request(`http://localhost/api/dev/pagespeed${queryString}`)) };
@@ -166,6 +171,7 @@ test("추가 페이지는 자동 측정 없이 페이지와 기기별 최신 수
     "https://www.born2smile.co.kr/contact",
   ]);
   assert.deepEqual(api.writes.map(row => row.key), ["psi-latest-blog-mobile", "psi-latest-contact-desktop"]);
+  assert.ok(api.writes.every(row => !("coreWebVitals" in (row.data as object)) && !("overallCategory" in (row.data as object))));
   assert.deepEqual(await (await api.get(blog)).json(), { data: { result: blogResult } });
   assert.deepEqual(await (await api.get(contact)).json(), { data: { result: contactResult } });
   assert.deepEqual(await (await api.get("?strategy=desktop&target=blog")).json(), { data: { result: null } });
@@ -176,7 +182,7 @@ test("추가 페이지는 자동 측정 없이 페이지와 기기별 최신 수
 for (const strategy of ["mobile", "desktop"]) {
   test(`${strategy}: 오늘 캐시를 반환하고 다른 환경·통합 캐시는 조회하지 않는다`, async () => {
     const cached = result(strategy);
-    const api = setup({ rows: [{ key: `psi-homepage-latest-${strategy}`, data: cached }] });
+    const api = setup({ rows: [{ key: `psi-homepage-latest-${strategy}`, data: { ...cached, ...retiredFields } }] });
     const response = await api.get(`?strategy=${strategy}`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { data: { result: cached } });
@@ -194,7 +200,7 @@ for (const strategy of ["mobile", "desktop"]) {
 
 test("이전 환경별 캐시는 stale로 반환한 뒤 같은 환경만 갱신한다", async () => {
   const cached = result("desktop", "2026-11-11T14:59:59Z");
-  const api = setup({ rows: [{ key: "psi-homepage-2026-11-11-desktop", data: cached }, { key: `psi-homepage-${today}-mobile`, data: result("mobile") }] });
+  const api = setup({ rows: [{ key: "psi-homepage-2026-11-11-desktop", data: { ...cached, ...retiredFields } }, { key: `psi-homepage-${today}-mobile`, data: result("mobile") }] });
   const response = await api.get("?strategy=desktop");
   assert.deepEqual(await response.json(), { data: { result: cached, stale: true } });
   assert.deepEqual(api.calls, []);

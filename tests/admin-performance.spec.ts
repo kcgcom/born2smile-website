@@ -29,10 +29,20 @@ test("CrUX 통합 집계는 Lighthouse 오류와 별개로 누락 지표와 주�
   } }));
   await page.route("**/api/dev/pagespeed?**", route => route.fulfill({ status: 502, json: { message: "Lighthouse 조회 실패" } }));
   await page.goto("/admin/system/monitoring");
-  await expect(page.getByText("전체 사이트 · 모든 기기 · CrUX")).toBeVisible();
+  const source = page.getByRole("link", { name: "PageSpeed Insights" });
+  await expect(source).toHaveAttribute("href", "https://pagespeed.web.dev/");
+  expect(await source.evaluate(link => {
+    const selector = document.getElementById("pagespeed-target");
+    return selector !== null && Boolean(link.compareDocumentPosition(selector) & Node.DOCUMENT_POSITION_FOLLOWING);
+  })).toBe(true);
+  await expect(page.getByRole("heading", { name: "실사용 성능 추세" })).toBeVisible();
+  await expect(page.getByText("전체 사이트 · 모든 기기 · Chrome 실사용 데이터(CrUX)")).toBeVisible();
   await expect(page.getByText("1,183 ms", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("0.00", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "LCP 추세 (ms)" })).toBeVisible();
+  const lcpChart = page.getByRole("heading", { name: "LCP 추세 (ms)" }).locator("..");
+  const clsChart = page.getByRole("heading", { name: "CLS 추세" }).locator("..");
+  await expect(lcpChart.getByText(/2\.5초 이하면 양호/)).toBeVisible();
+  await expect(clsChart.getByText(/0\.10 이하면 양호/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "INP 추세" })).toHaveCount(0);
   await page.getByText("기간별 수치 보기").click();
   const missingWeek = page.getByRole("row").filter({ hasText: "2026-10-19" });
@@ -44,9 +54,8 @@ const resource = "https://www.born2smile.co.kr/_next/static/chunks/very-long-res
 const title = "Eliminate render-blocking resources that delay the first paint";
 function response(strategy = "mobile", score = 62) {
   return { data: { result: {
-    strategy, fetchedAt: "2026-11-15T01:30:00Z", url: "https://www.born2smile.co.kr", overallCategory: "AVERAGE",
+    strategy, fetchedAt: "2026-11-15T01:30:00Z", url: "https://www.born2smile.co.kr",
     categories: ["performance", "accessibility", "seo", "best-practices"].map(id => ({ id, title: id, score })),
-    coreWebVitals: ["LCP", "INP", "CLS", "FCP", "TTFB"].map((label, i) => ({ id: label, label, percentile: [2800, 240, 12, 1900, 850][i], category: "AVERAGE", unit: "ms" })),
     audits: [{ id: "render-blocking", title, score: 35, savingsMs: 1250, savingsBytes: 125000, displayValue: "Est savings of 1,250 ms", description: "Resources delay the first paint.", items: [{ url: resource, totalBytes: 125000 }] }],
   } } };
 }
@@ -85,7 +94,7 @@ test("추가 Lighthouse 페이지는 선택한 기기로 수동 검사하고 다
   await expect(page.getByRole("heading", { name: "Lighthouse 점수" })).toHaveCount(0);
   await selector.selectOption("implant");
   await expect(page.getByText("테스트 URL: https://www.born2smile.co.kr/treatments/implant")).toBeVisible();
-  await expect(page.getByText("전체 사이트 · 모든 기기 · CrUX")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "실사용 성능 추세" })).toBeVisible();
 });
 
 for (const width of [360, 390]) {
@@ -96,10 +105,8 @@ for (const width of [360, 390]) {
     await page.goto("/admin/system/monitoring");
     const heading = page.getByRole("heading", { name: "Lighthouse 점수", exact: true });
     await expect(heading).toBeVisible();
-    const opportunities = page.getByRole("link", { name: "개선 항목 1개 보기" });
-    await expect(opportunities).toBeInViewport({ ratio: 1 });
-    await opportunities.press("Enter");
-    await expect(page.getByRole("heading", { name: "개선 기회 (1개)" })).toBeFocused();
+    await expect(page.getByRole("heading", { name: "PageSpeed Insights 실제 방문자 경험" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /개선 항목.*보기/ })).toHaveCount(0);
     for (const name of ["모바일", "데스크톱", "새로 분석"]) {
       const box = await page.getByRole("button", { name, exact: true }).boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -111,6 +118,11 @@ for (const width of [360, 390]) {
     expect(boxes[2].y).toBe(boxes[3].y);
     expect(boxes[2].y).toBeGreaterThan(boxes[0].y);
     const audit = page.getByRole("button", { name: new RegExp(title) });
+    const opportunities = page.locator("summary").filter({ hasText: "개선 항목 (1개)" });
+    await expect(opportunities).toBeVisible();
+    await expect(audit).toBeHidden();
+    await opportunities.press("Enter");
+    await expect(audit).toBeVisible();
     const text = page.getByText(title, { exact: true });
     expect(await text.evaluate(node => node.scrollWidth <= node.clientWidth && node.scrollHeight <= node.clientHeight)).toBe(true);
     await audit.click();

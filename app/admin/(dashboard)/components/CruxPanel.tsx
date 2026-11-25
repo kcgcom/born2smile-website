@@ -7,9 +7,9 @@ import { AdminErrorState } from "./AdminErrorState";
 import { useAdminApi } from "./useAdminApi";
 
 const METRICS = [
-  { id: "lcp", label: "LCP", unit: "ms" },
-  { id: "inp", label: "INP", unit: "ms" },
-  { id: "cls", label: "CLS", unit: "" },
+  { id: "lcp", label: "LCP", unit: "ms", description: "첫 화면에서 가장 큰 이미지나 텍스트가 보일 때까지 걸린 시간입니다. 2.5초 이하면 양호합니다." },
+  { id: "inp", label: "INP", unit: "ms", description: null },
+  { id: "cls", label: "CLS", unit: "", description: "페이지를 보는 동안 화면 요소가 예기치 않게 밀리는 정도입니다. 0.10 이하면 양호합니다." },
 ] as const;
 
 function formatMetric(value: number | null | undefined, unit: string) {
@@ -43,8 +43,8 @@ export function CruxPanel() {
   return (
     <AdminSurface tone="white" className="space-y-4 rounded-2xl p-4 sm:p-6">
       <div>
-        <h2 className="text-sm font-semibold text-slate-900">실제 Chrome 방문자 추세</h2>
-        <p className="mt-1 text-xs text-slate-600">전체 사이트 · 모든 기기 · CrUX</p>
+        <h2 className="text-sm font-semibold text-slate-900">실사용 성능 추세</h2>
+        <p className="mt-1 text-xs text-slate-600">전체 사이트 · 모든 기기 · Chrome 실사용 데이터(CrUX)</p>
       </div>
       {loading && !data && <p role="status" className="text-sm text-slate-600">CrUX 데이터 불러오는 중…</p>}
       {error && <AdminErrorState message={error} onRetry={refetch} />}
@@ -71,6 +71,7 @@ export function CruxPanel() {
                 {historyMetrics.map(metric => (
                   <div key={metric.id} className="min-w-0">
                     <h3 className="text-sm font-medium text-slate-900">{metric.label} 추세{metric.unit && ` (${metric.unit})`}</h3>
+                    {metric.description && <p className="mt-1 text-xs leading-5 text-slate-600">{metric.description}</p>}
                     <TrendChart history={history} metric={metric} />
                   </div>
                 ))}

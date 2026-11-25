@@ -31,14 +31,6 @@ interface PSICategory {
   score: number | null;
 }
 
-interface CWVMetric {
-  id: string;
-  label: string;
-  percentile: number | null;
-  unit: string;
-  category: string;
-}
-
 interface PSIAuditItem {
   url: string;
   wastedMs?: number;
@@ -62,18 +54,8 @@ interface PSIResult {
   fetchedAt: string;
   url: string;
   categories: PSICategory[];
-  coreWebVitals: CWVMetric[];
-  overallCategory: string;
   audits: PSIAudit[];
 }
-
-const CWV_METRICS = [
-  { id: "LARGEST_CONTENTFUL_PAINT_MS", label: "LCP", unit: "ms" },
-  { id: "INTERACTION_TO_NEXT_PAINT", label: "INP", unit: "ms" },
-  { id: "CUMULATIVE_LAYOUT_SHIFT", label: "CLS", unit: "" },
-  { id: "FIRST_CONTENTFUL_PAINT_MS", label: "FCP", unit: "ms" },
-  { id: "EXPERIMENTAL_TIME_TO_FIRST_BYTE", label: "TTFB", unit: "ms" },
-] as const;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function parsePSIResponse(
@@ -81,7 +63,6 @@ function parsePSIResponse(
   { strategy, url }: MeasurementTarget,
 ): PSIResult {
   const lighthouse = json.lighthouseResult;
-  const loading = json.loadingExperience;
 
   const categories: PSICategory[] = CATEGORIES.map((catId) => {
     const cat = lighthouse?.categories?.[catId];
@@ -89,17 +70,6 @@ function parsePSIResponse(
       id: catId,
       title: cat?.title ?? catId,
       score: cat?.score != null ? Math.round(cat.score * 100) : null,
-    };
-  });
-
-  const coreWebVitals: CWVMetric[] = CWV_METRICS.map((metric) => {
-    const data = loading?.metrics?.[metric.id];
-    return {
-      id: metric.id,
-      label: metric.label,
-      percentile: data?.percentile ?? null,
-      unit: metric.unit,
-      category: data?.category ?? "NONE",
     };
   });
 
@@ -149,8 +119,6 @@ function parsePSIResponse(
     fetchedAt: new Date().toISOString(),
     url,
     categories,
-    coreWebVitals,
-    overallCategory: loading?.overall_category ?? "NONE",
     audits,
   };
 }
@@ -169,7 +137,7 @@ async function fetchPSI(
   try {
     const auditUrl = new URL(url);
     auditUrl.searchParams.set(PERFORMANCE_AUDIT_PARAM, "1");
-    const params = new URLSearchParams({ url: auditUrl.href, strategy });
+    const params = new URLSearchParams({ url: auditUrl.href, strategy, fields: "lighthouseResult" });
     CATEGORIES.forEach((c) => params.append("category", c));
     const apiKey = getApiKey();
     if (apiKey) params.set("key", apiKey);
@@ -228,6 +196,14 @@ type MeasurementClaim =
   | { status: "claimed" | "running"; runId: string; startedAt: string }
   | { status: "fresh" | "cooldown" };
 
+function readCachedResult(data: unknown, target: MeasurementTarget): PSIResult | undefined {
+  const result = data as PSIResult | undefined;
+  if (result?.strategy !== target.strategy) return undefined;
+  if (!target.isHome && result.url !== target.url) return undefined;
+  const { strategy, fetchedAt, url, categories, audits } = result;
+  return { strategy, fetchedAt, url, categories, audits };
+}
+
 async function readLatestResult(target: MeasurementTarget) {
   const { data, error } = await getSupabaseAdmin()
     .from("api_cache")
@@ -236,10 +212,7 @@ async function readLatestResult(target: MeasurementTarget) {
     .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS))
     .maybeSingle();
   if (error) throw error;
-  const result = data?.data as PSIResult | undefined;
-  if (result?.strategy !== target.strategy) return undefined;
-  if (!target.isHome && result.url !== target.url) return undefined;
-  return result;
+  return readCachedResult(data?.data, target);
 }
 
 async function claimMeasurement(runKey: string, manual: boolean) {
@@ -325,7 +298,7 @@ async function fetchSingleStrategyPSI(
         .limit(1)
         .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS));
       if (error) throw error;
-      cached = rows?.[0]?.data as PSIResult | undefined;
+      cached = readCachedResult(rows?.[0]?.data, target);
       cachedDate = rows?.[0]?.key.slice("psi-homepage-".length, "psi-homepage-".length + 10);
     }
 
