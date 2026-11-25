@@ -12,8 +12,7 @@
 - 직접 확인할 수 없는 중요한 미확정 사항만 추천 대안과 근거를 함께 제시하여 질문하고, 사용자 의견도 비판적으로 검토한다.
 - 중요한 설계 결정과 성공 기준을 확정한 후 구현하고, 합의한 요구사항을 기준으로 검증한다.
 - 구현 요청은 수정과 검증까지 완료한다. 리뷰·조사 요청에서는 결과를 보고하며, 코드 수정이나 발행 권한까지 추정하지 않는다.
-- UI·접근성·디자인 감사는 `.agents/skills/website-ui-audit/SKILL.md`를 참조한다. 단순 UI 수정에는 감사 전체를 자동 적용하지 않는다.
-- 마케팅·검색·환자 수요·성과 분석에는 `.agents/skills/dental-*` 중 해당 스킬만 선택하고 `docs/marketing/compliance.md`를 먼저 적용한다. 의료 콘텐츠 자동 발행 및 미승인 유료 API 호출은 금지한다.
+- 마케팅 작업에는 [마케팅 준수 정책](docs/marketing/compliance.md)을 적용한다.
 - 스킬은 작업에 필요한 것만 선택한다. 스킬에 포함된 배포·DB 변경·외부 전송 절차도 사용자가 승인한 범위 안에서만 실행한다.
 
 - 프로젝트 공통 규칙은 이 파일, 디렉터리별 추가 규칙은 하위 `AGENTS.md`에서 관리한다. 개인 환경·임시 실행 기록은 프로젝트 지침에 포함하지 않는다.
@@ -63,5 +62,6 @@
 | 생성·검증 스크립트 | `scripts/AGENTS.md`, `package.json` |
 | 블로그 작성·발행 | `docs/blog-writing-guide.md`, `docs/blog-workflow.md` |
 | 에이전트 콘텐츠 분석·보강 | `docs/agent-content-workflow.md`, `pnpm agent:context --help` |
+| 지역·AI 검색 | `docs/marketing/search-reference.md` |
 | DB·운영 설정 | `docs/supabase-architecture.md`, `supabase/migrations/` |
 | 문서 유지보수 | `docs/AGENTS.md` |
