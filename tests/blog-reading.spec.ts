@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { interceptAnalytics } from "./helpers/blog-analytics";
 import { activeReadingDelta, getReadingMetadata, measureReadingRects } from "../lib/blog/reading";
 import { readingPeriodRange, readingRate } from "../lib/blog/reading-report";
@@ -10,6 +10,79 @@ import { PERFORMANCE_AUDIT_PARAM } from "../lib/performance-audit";
 const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 // The SDK intentionally ignores HeadlessChrome. Exercise normal visitor capture.
 test.use({ userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36" });
+
+async function getPostHogOptOutKey(page: Page) {
+  return page.evaluate(() => {
+    const key = Object.keys(localStorage).find(name => /^ph_.+_posthog$/.test(name));
+    if (!key) throw new Error("PostHog 저장 키를 찾을 수 없습니다.");
+    return key.replace(/^ph_(.+)_posthog$/, "__ph_opt_in_out_$1");
+  });
+}
+
+for (const mode of ["missing", "throwing"] as const) {
+  test(`UUID를 사용할 수 없어도 공개 본문과 전화·예약이 동작한다 (${mode})`, async ({ page }) => {
+    const { events, undecoded } = await interceptAnalytics(page);
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(mode => {
+      Object.defineProperty(crypto, "randomUUID", {
+        configurable: true,
+        value: mode === "missing" ? undefined : () => { throw new Error("UUID unavailable"); },
+      });
+
+      window.ResizeObserver = class extends ResizeObserver {
+        private readingRoot?: HTMLElement;
+
+        override observe(target: Element, options?: ResizeObserverOptions) {
+          if (target instanceof HTMLElement && target.matches("[data-blog-reading-root]")) {
+            this.readingRoot = target;
+            target.dataset.testReadingObserver = "active";
+          }
+          super.observe(target, options);
+        }
+
+        override disconnect() {
+          if (this.readingRoot) this.readingRoot.dataset.testReadingObserver = "disconnected";
+          super.disconnect();
+        }
+      };
+    }, mode);
+    await page.route("https://m.booking.naver.com/**", route => route.fulfill({ body: "네이버 예약 테스트" }));
+    await page.clock.install();
+    expect((await page.goto(PATH))?.status()).toBe(200);
+    await expect.poll(() => events.find(e => e.event === "$pageview")?.properties.crypto_random_uuid_supported)
+      .toBe(mode === "throwing");
+
+    const root = page.locator("[data-blog-reading-root]");
+    await expect(root).toBeVisible();
+    await expect(root.locator("[data-reading-block]")).toHaveCount(17);
+    await page.evaluate(() => {
+      window.scrollBy({ top: 400, behavior: "instant" });
+      window.dispatchEvent(new Event("scroll"));
+    });
+
+    const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
+    const phone = menu.getByRole("link", { name: "전화 상담" });
+    await expect(phone).toHaveAttribute("href", "tel:18337552");
+    await phone.evaluate(link => link.addEventListener("click", event => event.preventDefault(), { once: true }));
+    await phone.click();
+    await page.clock.runFor(5000);
+    await expect.poll(() => events.some(e => e.event === "floating_phone_click")).toBe(true);
+
+    if (mode === "missing") {
+      expect(await root.getAttribute("data-test-reading-observer")).toBeNull();
+    } else {
+      await expect(root).toHaveAttribute("data-test-reading-observer", "disconnected");
+    }
+    expect(events.filter(e => e.event === "blog_article_viewed" || e.event.startsWith("blog_read_"))).toEqual([]);
+
+    await menu.getByRole("link", { name: "네이버 예약" }).click();
+    await expect(page).toHaveURL(/^https:\/\/m\.booking\.naver\.com\/booking\/16\/bizes\/1768707\?/);
+    expect(undecoded).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+}
 
 test("카드 측정은 내부 글 링크와 실제 보이는 면적을 사용한다", () => {
   expect(blogCardAttributes("https://example.com", "related_manual", 1)).toEqual({});
@@ -127,7 +200,12 @@ test("상세 방문은 한 번 수집하고 공유는 같은 view에 연결한�
   await expect.poll(() => events.filter(e => e.event === "blog_post_shared").length).toBe(1);
   const start = events.find(e => e.event === "blog_article_viewed")!;
   const share = events.find(e => e.event === "blog_post_shared")!;
+  await expect.poll(() => events.find(e => e.event === "$pageview")?.properties.crypto_random_uuid_supported)
+    .toBe(true);
+  expect(start.properties.crypto_random_uuid_supported).toBeUndefined();
+  expect(share.properties.crypto_random_uuid_supported).toBeUndefined();
   expect(share.properties.article_view_id).toBe(start.properties.article_view_id);
+  expect(share.properties.article_session_id).toBe(start.properties.article_session_id);
   expect(share.properties.surface).toBe("article");
   expect(share.properties.method).toBe("copied");
   await page.evaluate(() => { location.hash = "section-1"; });
@@ -203,8 +281,62 @@ test("본문 밖·숨김 시간은 읽기 조건을 채우지 않고 단계는 �
   await expect.poll(() => events.filter(e => e.event === "blog_read_qualified").length).toBe(1);
   const reading = events.filter(e => e.event.startsWith("blog_read_") || e.event === "blog_article_viewed");
   expect(reading.length).toBeLessThanOrEqual(10);
+  const start = reading.find(e => e.event === "blog_article_viewed")!;
+  for (const event of reading) {
+    expect(event.properties).toMatchObject({
+      article_view_id: start.properties.article_view_id,
+      article_session_id: start.properties.article_session_id,
+    });
+  }
   const steps = reading.filter(e => e.event === "blog_read_progress").map(e => `${e.properties.milestone_type}:${e.properties.milestone_value}`);
   expect(new Set(steps).size).toBe(steps.length);
+});
+
+test("수집 거부 중에는 읽기·공유를 전송하지 않고 재허용 후 새 조회를 시작한다", async ({ page }) => {
+  const { events, undecoded } = await interceptAnalytics(page);
+  await page.clock.install();
+  await page.goto(PATH);
+  const views = () => events.filter(e => e.event === "blog_article_viewed");
+  await expect.poll(() => views().length, { timeout: 15_000 }).toBe(1);
+  const initialId = views()[0].properties.article_view_id;
+  const consentKey = await getPostHogOptOutKey(page);
+
+  const tracked = () => events.filter(e =>
+    e.event === "blog_article_viewed" || e.event.startsWith("blog_read_") || e.event === "blog_post_shared",
+  );
+  const before = tracked().length;
+  await page.evaluate(key => localStorage.setItem(key, "0"), consentKey);
+  await page.clock.runFor(1500);
+  const share = page.getByRole("button", { name: "이 글 공유하기", exact: true }).first();
+  await share.click();
+  await expect(share).toContainText("링크 복사됨");
+  await page.clock.runFor(5000);
+  expect(tracked()).toHaveLength(before);
+
+  await page.evaluate(key => localStorage.removeItem(key), consentKey);
+  await page.clock.runFor(5000);
+  await expect.poll(() => views().length).toBe(2);
+  expect(views()[1].properties.article_view_id).not.toBe(initialId);
+  expect(undecoded).toEqual([]);
+});
+
+test("수집 거부가 저장된 상태에서 글을 다시 열면 페이지뷰를 전송하지 않는다", async ({ page }) => {
+  const { events, undecoded } = await interceptAnalytics(page);
+  await page.clock.install();
+  await page.goto(PATH);
+  const views = () => events.filter(e => e.event === "$pageview");
+  await expect.poll(() => views().length, { timeout: 15_000 }).toBe(1);
+  const consentKey = await getPostHogOptOutKey(page);
+  await page.evaluate(key => localStorage.setItem(key, "0"), consentKey);
+
+  await page.reload();
+  const share = page.getByRole("button", { name: "이 글 공유하기", exact: true }).first();
+  await share.click();
+  await expect(share).toContainText("링크 복사됨");
+  await page.clock.runFor(5000);
+
+  expect(views()).toHaveLength(1);
+  expect(undecoded).toEqual([]);
 });
 
 test("관리자 표시가 있으면 새 읽기 이벤트를 수집하지 않는다", async ({ page }) => {

@@ -59,6 +59,15 @@ if (typeof window !== "undefined" && POSTHOG_TOKEN && POSTHOG_HOST) {
         return null;
       }
 
+      if (event?.event === "$pageview") {
+        return {
+          ...event,
+          properties: {
+            ...event.properties,
+            crypto_random_uuid_supported: typeof window.crypto?.randomUUID === "function",
+          },
+        };
+      }
       if (event?.event === "blog_card_impression" || event?.event === "blog_card_clicked") {
         return { ...event, properties: sanitizeCardEventProperties(event.properties ?? {}) };
       }

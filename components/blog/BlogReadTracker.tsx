@@ -32,6 +32,8 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
   useEffect(() => {
     if (disabled || admin
       || !process.env.NEXT_PUBLIC_POSTHOG_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST) return;
+    const webCrypto = window.crypto;
+    if (typeof webCrypto?.randomUUID !== "function") return;
     const path = `/blog/${category}/${slug}`;
     const root = document.querySelector<HTMLElement>("[data-blog-reading-root]");
     if (!root) return;
@@ -41,6 +43,7 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
     let scrolling = true;
     let frame = 0;
     let observing = false;
+    let stopped = false;
     const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-reading-block]"));
     const base = { ...metadata, blog_slug: slug, category, page_type: "blog_post", page_path: path };
 
@@ -56,9 +59,17 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
       if (!session) return null;
       let state = stateRef.current;
       if (!state || state.session !== session || state.revision !== metadata.content_revision) {
+        let id: string;
+        try {
+          id = webCrypto.randomUUID();
+        } catch {
+          stateRef.current = null;
+          stop();
+          return null;
+        }
         const now = performance.now();
         state = {
-          id: crypto.randomUUID(), session, revision: metadata.content_revision,
+          id, session, revision: metadata.content_revision,
           started: false, qualified: false, sent: new Set(), seconds: 0, depth: 0,
           anchor: Boolean(location.hash), active: false, lastTick: now, lastActivity: now,
         };
@@ -158,8 +169,9 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
     for (const event of ["pointerdown", "pointermove", "keydown", "touchstart"]) document.addEventListener(event, activity, { passive: true });
     // Also notices opt-out and session rotation without recording activity itself.
     const timer = window.setInterval(sample, 1000);
-    sample();
-    return () => {
+    function stop() {
+      if (stopped) return;
+      stopped = true;
       if (stateRef.current) { stateRef.current.active = false; stateRef.current.lastTick = performance.now(); }
       unregister();
       observer.disconnect();
@@ -172,7 +184,9 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
       window.removeEventListener("pageshow", pageshow);
       document.removeEventListener("visibilitychange", visibility);
       for (const event of ["pointerdown", "pointermove", "keydown", "touchstart"]) document.removeEventListener(event, activity);
-    };
+    }
+    sample();
+    return stop;
   }, [slug, category, metadata, disabled, admin]);
 
   return null;
