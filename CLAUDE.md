@@ -7,6 +7,6 @@
 - 시작 방법과 프로젝트 구조: [README.md](README.md)
 - 디자인 기준: [DESIGN.md](DESIGN.md)
 - 상세 문서 위치: [AGENTS.md의 문서 안내](AGENTS.md#필요한-문서-찾기)
-- 프로젝트 전용 Claude 도구 정의: `.claude/agents/`, `.claude/skills/`
+- 프로젝트 공통 UI 감사 스킬: [.agents/skills/website-ui-audit/SKILL.md](.agents/skills/website-ui-audit/SKILL.md) (필요할 때 직접 읽는다.)
 
 사용자 요청과 실제 작업에 필요한 도구만 선택한다. 로컬 도구 설정·권한·실행 기록은 프로젝트 공통 지침과 구분한다.
