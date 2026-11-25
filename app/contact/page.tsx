@@ -142,7 +142,7 @@ export default async function ContactPage() {
                 )}
                 {hours.needsVisitConfirmation && (
                   <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                    오늘 진료 여부는 방문 전 전화로 확인해 주세요.
+                    최근 휴진·시간 변경이 반영되지 않았을 수 있습니다. 방문 전 전화로 확인해 주세요.
                   </p>
                 )}
                 {hours.exceptions.length > 0 && (

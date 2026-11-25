@@ -117,7 +117,9 @@ export function Footer({ clinic, hours, links }: {
                 점심시간 {hours.lunchTime} · 공휴일 휴진
               </li>
               {hours.needsVisitConfirmation && (
-                <li className="text-sm font-medium text-white">오늘 진료 여부는 방문 전 전화로 확인해 주세요.</li>
+                <li className="text-sm font-medium text-white">
+                  최근 휴진·시간 변경이 반영되지 않았을 수 있습니다. 방문 전 전화로 확인해 주세요.
+                </li>
               )}
               {hours.exceptions.length > 0 && (
                 <li className="border-t border-gray-700 pt-2 text-gray-400">
