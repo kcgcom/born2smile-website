@@ -5,6 +5,7 @@ import { readingPeriodRange, readingRate } from "../lib/blog/reading-report";
 import { buildReadingQueries, fetchBlogReading, fetchPostReadingFirstObservedAt, fetchPostReadingSummary, type CacheReadingQuery } from "../lib/admin-blog-reading";
 import { getAnalyticsPage, getContactChannel } from "../lib/analytics-events";
 import { blogCardAttributes, visibleCardRatio } from "../lib/blog/card-tracking";
+import { PERFORMANCE_AUDIT_PARAM } from "../lib/performance-audit";
 
 const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 // The SDK intentionally ignores HeadlessChrome. Exercise normal visitor capture.
@@ -145,6 +146,28 @@ test("상세 방문은 한 번 수집하고 공유는 같은 view에 연결한�
   });
   expect(gaEvents).not.toContain("blog_article_viewed");
   expect(gaEvents).not.toContain("blog_read_progress");
+});
+
+test("관리자 성능 검사 방문은 GA4와 PostHog에서 제외되고 일반 방문은 수집된다", async ({ page }) => {
+  const { events, undecoded } = await interceptAnalytics(page);
+  const marker = `${PERFORMANCE_AUDIT_PARAM}=1`;
+  const gaConfigured = () => page.evaluate(() => {
+    const dataLayer = (window as unknown as { dataLayer?: Array<{ [key: number]: unknown }> }).dataLayer;
+    return dataLayer?.some(item => item[0] === "config") ?? false;
+  });
+
+  await page.goto(`${PATH}?${marker}`);
+  expect(new URL(page.url()).searchParams.get(PERFORMANCE_AUDIT_PARAM)).toBe("1");
+  await expect(page.locator("script#ga-init")).toBeAttached();
+  await page.getByRole("button", { name: "이 글 공유하기", exact: true }).first().click();
+  expect(await gaConfigured()).toBe(false);
+
+  await page.goto(PATH);
+  await expect.poll(gaConfigured).toBe(true);
+  await expect.poll(() => events.some(event => event.event === "blog_article_viewed"), { timeout: 15000 }).toBe(true);
+  expect(events.filter(event => String(event.properties.$current_url ?? "").includes(marker))).toEqual([]);
+  expect(events.filter(event => event.event === "blog_post_shared")).toEqual([]);
+  expect(undecoded).toEqual([]);
 });
 
 

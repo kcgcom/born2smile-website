@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { pretendard, notoSerifKR, gowunBatang } from "@/lib/fonts";
 import { SEO, CLINIC, BASE_URL } from "@/lib/constants";
 import { getClinicJsonLd, serializeJsonLd } from "@/lib/jsonld";
+import { PERFORMANCE_AUDIT_PARAM } from "@/lib/performance-audit";
 import { getSiteClinic, getSiteHours, getSiteLinks } from "@/lib/site-config-supabase";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -123,7 +124,12 @@ export default async function RootLayout({
           strategy="lazyOnload"
         />
         <Script id="ga-init" strategy="lazyOnload">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-3ZDMMFGP6Z')`}
+          {`if (new URLSearchParams(window.location.search).get(${JSON.stringify(PERFORMANCE_AUDIT_PARAM)}) !== '1') {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { window.dataLayer.push(arguments); };
+  window.gtag('js', new Date());
+  window.gtag('config', 'G-3ZDMMFGP6Z');
+}`}
         </Script>
         <Script src="https://wcs.pstatic.net/wcslog.js" strategy="lazyOnload" />
         <Script id="naver-analytics" strategy="lazyOnload">

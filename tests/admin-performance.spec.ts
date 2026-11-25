@@ -51,6 +51,43 @@ function response(strategy = "mobile", score = 62) {
   } } };
 }
 
+test("추가 Lighthouse 페이지는 선택한 기기로 수동 검사하고 다른 페이지 결과와 섞이지 않는다", async ({ page }) => {
+  await setup(page);
+  const manual: string[] = [];
+  const measured = new Map<string, ReturnType<typeof response>>();
+  await page.route("**/api/dev/pagespeed?**", async route => {
+    const params = new URL(route.request().url()).searchParams;
+    const strategy = params.get("strategy")!;
+    const target = params.get("target");
+    if (!target) return route.fulfill({ json: response(strategy) });
+    const key = `${target}:${strategy}`;
+    if (params.get("force") === "true") {
+      manual.push(key);
+      const payload = response(strategy, 84);
+      payload.data.result.url += "/treatments/implant";
+      measured.set(key, payload);
+    }
+    return route.fulfill({ json: measured.get(key) ?? { data: { result: null } } });
+  });
+  await page.goto("/admin/system/monitoring");
+  await expect(page.getByRole("heading", { name: "Lighthouse 점수" })).toBeVisible();
+  const selector = page.getByLabel("Lighthouse 검사 페이지");
+  await selector.selectOption("implant");
+  await expect(page.getByText("측정 결과가 없습니다. 새로 분석을 눌러 주세요.")).toBeVisible();
+  expect(manual).toEqual([]);
+  await page.getByRole("button", { name: "데스크톱" }).click();
+  await page.getByRole("button", { name: "새로 분석" }).click();
+  await expect(page.getByText("테스트 URL: https://www.born2smile.co.kr/treatments/implant")).toBeVisible();
+  expect(manual).toEqual(["implant:desktop"]);
+  await selector.selectOption("contact");
+  await expect(page.getByRole("button", { name: "데스크톱" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("측정 결과가 없습니다. 새로 분석을 눌러 주세요.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lighthouse 점수" })).toHaveCount(0);
+  await selector.selectOption("implant");
+  await expect(page.getByText("테스트 URL: https://www.born2smile.co.kr/treatments/implant")).toBeVisible();
+  await expect(page.getByText("전체 사이트 · 모든 기기 · CrUX")).toBeVisible();
+});
+
 for (const width of [360, 390]) {
   test(width + "px 성능 화면은 조작부와 진단 제목·전체 리소스 주소를 잘리지 않게 표시한다", async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });

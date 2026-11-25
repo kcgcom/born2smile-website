@@ -7,9 +7,11 @@ import {
 } from "@/app/api/admin/_lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getTodayKST } from "@/lib/date";
+import { BASE_URL } from "@/lib/constants";
+import { PAGESPEED_TARGETS, type PageSpeedTarget } from "@/lib/pagespeed-targets";
+import { PERFORMANCE_AUDIT_PARAM } from "@/lib/performance-audit";
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
-const TARGET_URL = "https://www.born2smile.co.kr";
 const CATEGORIES = ["performance", "accessibility", "seo", "best-practices"];
 const MEASUREMENT_TIMEOUT_MS = 75_000;
 const WAIT_TIMEOUT_MS = 90_000;
@@ -76,7 +78,7 @@ const CWV_METRICS = [
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function parsePSIResponse(
   json: any,
-  strategy: "mobile" | "desktop",
+  { strategy, url }: MeasurementTarget,
 ): PSIResult {
   const lighthouse = json.lighthouseResult;
   const loading = json.loadingExperience;
@@ -145,7 +147,7 @@ function parsePSIResponse(
   return {
     strategy,
     fetchedAt: new Date().toISOString(),
-    url: TARGET_URL,
+    url,
     categories,
     coreWebVitals,
     overallCategory: loading?.overall_category ?? "NONE",
@@ -155,16 +157,19 @@ function parsePSIResponse(
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 async function fetchPSI(
-  strategy: PSIStrategy,
+  target: MeasurementTarget,
   trigger: "background" | "manual" | "cache-miss",
   runId: string,
   cachedFetchedAt?: string,
 ): Promise<PSIResult | null> {
+  const { strategy, url, runKey } = target;
   const startedAt = Date.now();
   let measured = false;
-  console.info("PSI measurement started", { strategy, trigger, runId, cachedFetchedAt, startedAt });
+  console.info("PSI measurement started", { strategy, runKey, trigger, runId, cachedFetchedAt, startedAt });
   try {
-    const params = new URLSearchParams({ url: TARGET_URL, strategy });
+    const auditUrl = new URL(url);
+    auditUrl.searchParams.set(PERFORMANCE_AUDIT_PARAM, "1");
+    const params = new URLSearchParams({ url: auditUrl.href, strategy });
     CATEGORIES.forEach((c) => params.append("category", c));
     const apiKey = getApiKey();
     if (apiKey) params.set("key", apiKey);
@@ -180,7 +185,7 @@ async function fetchPSI(
     }
 
     const json = await res.json();
-    const result = parsePSIResponse(json, strategy);
+    const result = parsePSIResponse(json, target);
     measured = true;
     return result;
   } catch (e) {
@@ -189,6 +194,7 @@ async function fetchPSI(
   } finally {
     console.info("PSI measurement", {
       strategy,
+      runKey,
       trigger,
       runId,
       cachedFetchedAt,
@@ -200,49 +206,60 @@ async function fetchPSI(
 }
 
 interface SinglePSIResponse {
-  result: PSIResult;
+  result: PSIResult | null;
   stale?: boolean;
 }
 
 type PSIStrategy = "mobile" | "desktop";
 
-function getStrategyCacheKey(strategy: PSIStrategy) {
-  return `psi-homepage-latest-${strategy}`;
+function measurementTarget(page: PageSpeedTarget, strategy: PSIStrategy) {
+  const isHome = page.id === "home";
+  const runKey = isHome ? strategy : `${page.id}-${strategy}`;
+  return {
+    strategy, runKey, isHome,
+    url: `${BASE_URL}${page.path}`,
+    cacheKey: isHome ? `psi-homepage-latest-${strategy}` : `psi-latest-${runKey}`,
+  };
 }
+
+type MeasurementTarget = ReturnType<typeof measurementTarget>;
 
 type MeasurementClaim =
   | { status: "claimed" | "running"; runId: string; startedAt: string }
   | { status: "fresh" | "cooldown" };
 
-async function readLatestResult(strategy: PSIStrategy) {
+async function readLatestResult(target: MeasurementTarget) {
   const { data, error } = await getSupabaseAdmin()
     .from("api_cache")
     .select("data")
-    .eq("key", getStrategyCacheKey(strategy))
+    .eq("key", target.cacheKey)
     .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS))
     .maybeSingle();
   if (error) throw error;
-  return data?.data as PSIResult | undefined;
+  const result = data?.data as PSIResult | undefined;
+  if (result?.strategy !== target.strategy) return undefined;
+  if (!target.isHome && result.url !== target.url) return undefined;
+  return result;
 }
 
-async function claimMeasurement(strategy: PSIStrategy, manual: boolean) {
+async function claimMeasurement(runKey: string, manual: boolean) {
   const { data, error } = await getSupabaseAdmin()
-    .rpc("claim_pagespeed_measurement", { p_strategy: strategy, p_manual: manual })
+    .rpc("claim_pagespeed_measurement", { p_strategy: runKey, p_manual: manual })
     .abortSignal(AbortSignal.timeout(DB_TIMEOUT_MS));
   if (error) throw error;
   return data as MeasurementClaim;
 }
 
 async function measureAndSave(
-  strategy: PSIStrategy,
+  target: MeasurementTarget,
   trigger: "background" | "manual" | "cache-miss",
   runId: string,
   cachedFetchedAt?: string,
 ) {
-  const result = await fetchPSI(strategy, trigger, runId, cachedFetchedAt);
+  const result = await fetchPSI(target, trigger, runId, cachedFetchedAt);
   const { data: finished, error } = await getSupabaseAdmin()
     .rpc("finish_pagespeed_measurement", {
-      p_strategy: strategy,
+      p_strategy: target.runKey,
       p_run_id: runId,
       p_result: result,
     })
@@ -253,7 +270,7 @@ async function measureAndSave(
 }
 
 async function waitForMeasurement(
-  strategy: PSIStrategy,
+  target: MeasurementTarget,
   runId: string,
   startedAt: string,
   requestSignal: AbortSignal,
@@ -265,7 +282,7 @@ async function waitForMeasurement(
     const { data: run, error } = await getSupabaseAdmin()
       .from("pagespeed_measurement_runs")
       .select("run_id, expires_at, retry_at, last_success_at")
-      .eq("strategy", strategy)
+      .eq("strategy", target.runKey)
       .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(DB_TIMEOUT_MS)]))
       .maybeSingle();
     if (error) throw error;
@@ -273,8 +290,8 @@ async function waitForMeasurement(
     const joinedRunFinished = run?.run_id === runId && !run.expires_at && !run.retry_at;
     const newerResultExists = run?.last_success_at && Date.parse(run.last_success_at) > Date.parse(startedAt);
     if (joinedRunFinished || newerResultExists) {
-      const result = await readLatestResult(strategy);
-      if (result?.strategy === strategy) return result;
+      const result = await readLatestResult(target);
+      if (result) return result;
       throw new Error("PSI_FETCH_FAILED");
     }
 
@@ -289,12 +306,14 @@ async function waitForMeasurement(
 }
 
 async function fetchSingleStrategyPSI(
-  strategy: PSIStrategy,
+  target: MeasurementTarget,
   force: boolean,
   requestSignal: AbortSignal,
 ): Promise<SinglePSIResponse> {
+  const { strategy, isHome, runKey } = target;
   if (!force) {
-    let cached = await readLatestResult(strategy);
+    let cached = await readLatestResult(target);
+    if (!isHome) return { result: cached ?? null };
     let cachedDate = cached && getTodayKST(new Date(cached.fetchedAt));
     if (!cached) {
       // 데이터 정리 마이그레이션 전에도 기존 날짜별 결과를 표시한다.
@@ -315,9 +334,9 @@ async function fetchSingleStrategyPSI(
       const cachedFetchedAt = cached.fetchedAt;
       after(async () => {
         try {
-          const claim = await claimMeasurement(strategy, false);
+          const claim = await claimMeasurement(runKey, false);
           if (claim.status === "claimed") {
-            await measureAndSave(strategy, "background", claim.runId, cachedFetchedAt);
+            await measureAndSave(target, "background", claim.runId, cachedFetchedAt);
           }
         } catch (error) {
           console.error(`PSI background refresh error (${strategy}):`, error);
@@ -327,15 +346,15 @@ async function fetchSingleStrategyPSI(
     }
   }
 
-  const claim = await claimMeasurement(strategy, force);
+  const claim = await claimMeasurement(runKey, force);
   switch (claim.status) {
     case "claimed":
-      return { result: await measureAndSave(strategy, force ? "manual" : "cache-miss", claim.runId) };
+      return { result: await measureAndSave(target, force ? "manual" : "cache-miss", claim.runId) };
     case "running":
-      return { result: await waitForMeasurement(strategy, claim.runId, claim.startedAt, requestSignal) };
+      return { result: await waitForMeasurement(target, claim.runId, claim.startedAt, requestSignal) };
     case "fresh": {
-      const result = await readLatestResult(strategy);
-      if (result?.strategy === strategy) return { result };
+      const result = await readLatestResult(target);
+      if (result) return { result };
       throw new Error("PSI_FETCH_FAILED");
     }
     case "cooldown":
@@ -356,9 +375,17 @@ export async function GET(request: Request) {
       { status: 400, headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
     );
   }
+  const pageId = searchParams.get("target") ?? "home";
+  const page = PAGESPEED_TARGETS.find(target => target.id === pageId);
+  if (!page) {
+    return NextResponse.json(
+      { error: "INVALID_TARGET", message: "지원하는 측정 페이지를 선택해 주세요." },
+      { status: 400, headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
+    );
+  }
 
   try {
-    const response = await fetchSingleStrategyPSI(strategy, force, request.signal);
+    const response = await fetchSingleStrategyPSI(measurementTarget(page, strategy), force, request.signal);
     return NextResponse.json(
       { data: response },
       { headers: { "Cache-Control": "private, no-store", Vary: "Authorization" } },
