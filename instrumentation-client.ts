@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
+import { hasAdminBrowserFlag, isInternalAnalyticsPath } from "@/lib/admin-visitor";
 import { sanitizeCardEventProperties } from "@/lib/blog/card-tracking";
 import { isPerformanceAudit } from "@/lib/performance-audit";
 import { getClientSentryOptions } from "@/sentry-options";
@@ -12,6 +13,7 @@ const POSTHOG_UI_HOST = resolvePostHogUiHost(
   process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
   POSTHOG_HOST,
 );
+let lastCapturedPageviewId: string | undefined;
 
 function resolvePostHogUiHost(
   explicitUiHost: string | undefined,
@@ -29,15 +31,7 @@ function resolvePostHogUiHost(
 function shouldBlockAnalytics() {
   if (typeof window === "undefined") return true;
   if (isPerformanceAudit(window.location.search)) return true;
-
-  try {
-    return (
-      window.location.pathname.startsWith("/admin") ||
-      localStorage.getItem("born2smile-admin") === "1"
-    );
-  } catch {
-    return window.location.pathname.startsWith("/admin");
-  }
+  return isInternalAnalyticsPath(window.location.pathname) || hasAdminBrowserFlag();
 }
 
 if (typeof window !== "undefined" && POSTHOG_TOKEN && POSTHOG_HOST) {
@@ -59,7 +53,16 @@ if (typeof window !== "undefined" && POSTHOG_TOKEN && POSTHOG_HOST) {
         return null;
       }
 
+      // The SDK assigns an ID even to pageviews discarded by before_send.
+      if (event?.event === "$pageleave" && (
+        !lastCapturedPageviewId || event.properties?.$prev_pageview_id !== lastCapturedPageviewId
+      )) {
+        return null;
+      }
+
       if (event?.event === "$pageview") {
+        const pageviewId = event.properties?.$pageview_id;
+        lastCapturedPageviewId = typeof pageviewId === "string" ? pageviewId : undefined;
         return {
           ...event,
           properties: {

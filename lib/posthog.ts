@@ -2,6 +2,7 @@
 
 import posthog from "posthog-js";
 import { getAnalyticsPage, getContactChannel } from "@/lib/analytics-events";
+import { isInternalAnalyticsPath } from "@/lib/admin-visitor";
 
 export type AnalyticsProps = Record<string, string | number | boolean | null | undefined>;
 
@@ -21,7 +22,7 @@ export function shouldSkipCapture() {
 
   try {
     return (
-      window.location.pathname.startsWith("/admin") ||
+      isInternalAnalyticsPath(window.location.pathname) ||
       window.location.pathname.startsWith("/api") ||
       localStorage.getItem("born2smile-admin") === "1" ||
       posthog.has_opted_out_capturing()

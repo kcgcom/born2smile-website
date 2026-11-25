@@ -6,3 +6,7 @@ export function hasAdminBrowserFlag(): boolean {
   try { return localStorage.getItem("born2smile-admin") === "1"; }
   catch { return false; }
 }
+
+export function isInternalAnalyticsPath(pathname: string): boolean {
+  return pathname.startsWith("/admin") || pathname === "/staff" || pathname.startsWith("/staff/");
+}
