@@ -3,6 +3,8 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { PAGESPEED_TARGETS } from "../lib/pagespeed-targets";
+import { PERFORMANCE_AUDIT_PARAM } from "../lib/performance-audit";
 
 // Execute the real route with isolated auth, DB, Google API and Next after() mocks.
 // No test request can reach the connected database or consume PageSpeed quota.
@@ -24,6 +26,7 @@ function setup(options: {
 } = {}) {
   const rows = [...(options.rows ?? [])];
   const calls: string[] = [];
+  const urls: string[] = [];
   const writes: Row[] = [];
   const filters: string[] = [];
   const pending: (() => Promise<void>)[] = [];
@@ -85,7 +88,8 @@ function setup(options: {
         if (options.writeError) return { error: new Error("Write failed") };
         previous.expires_at = null;
         if (args.p_result) {
-          const row = { key: `psi-homepage-latest-${strategy}`, data: structuredClone(args.p_result) };
+          const prefix = args.p_strategy.includes("-") ? "psi-latest-" : "psi-homepage-latest-";
+          const row = { key: prefix + strategy, data: structuredClone(args.p_result) };
           writes.push(row);
           rows.unshift(row);
         } else {
@@ -100,6 +104,9 @@ function setup(options: {
     "@sentry/nextjs": { captureException: () => {} },
     "@/app/api/admin/_lib/auth": { verifyAdminRequest: async () => ({ ok: options.authorized !== false }), unauthorizedResponse: () => Response.json({ error: "UNAUTHORIZED" }, { status: 401 }) },
     "@/lib/supabase-admin": { getSupabaseAdmin: () => ({ from, rpc }) },
+    "@/lib/constants": { BASE_URL: "https://www.born2smile.co.kr" },
+    "@/lib/pagespeed-targets": { PAGESPEED_TARGETS },
+    "@/lib/performance-audit": { PERFORMANCE_AUDIT_PARAM },
     "@/lib/date": { getTodayKST: (date?: Date) => date ? new Date(date.getTime() + 9 * 3_600_000).toISOString().slice(0, 10) : today },
     "node:timers/promises": { setTimeout: async () => {} },
   };
@@ -119,11 +126,15 @@ function setup(options: {
       const parsed = new URL(url);
       assert.equal(parsed.hostname, "www.googleapis.com");
       calls.push(parsed.searchParams.get("strategy")!);
+      const auditUrl = new URL(parsed.searchParams.get("url")!);
+      assert.equal(auditUrl.searchParams.get(PERFORMANCE_AUDIT_PARAM), "1");
+      auditUrl.searchParams.delete(PERFORMANCE_AUDIT_PARAM);
+      urls.push(auditUrl.href);
       await options.beforeFetch?.();
       return options.fetchError ? new Response("API unavailable", { status: 503 }) : Response.json({ lighthouseResult: { categories: { performance: { score: 0.9 } }, audits: {} } });
     },
   });
-  return { calls, writes, filters, pending, measurementLogs, get: (queryString: string) => exports.GET!(new Request(`http://localhost/api/dev/pagespeed${queryString}`)) };
+  return { calls, urls, writes, filters, pending, measurementLogs, get: (queryString: string) => exports.GET!(new Request(`http://localhost/api/dev/pagespeed${queryString}`)) };
 }
 
 test("인증 실패·누락 또는 잘못된 환경은 측정과 DB 접근 없이 거부한다", async () => {
@@ -131,7 +142,7 @@ test("인증 실패·누락 또는 잘못된 환경은 측정과 DB 접근 없�
   assert.equal((await denied.get("?strategy=mobile")).status, 401);
   assert.deepEqual(denied.calls, []);
   const api = setup();
-  for (const suffix of ["", "?strategy=", "?strategy=both", "?strategy=tablet", "?force=true"]) {
+  for (const suffix of ["", "?strategy=", "?strategy=both", "?strategy=tablet", "?force=true", "?strategy=mobile&target=https://example.com"]) {
     const response = await api.get(suffix);
     assert.equal(response.status, 400);
     assert.equal(response.headers.get("Cache-Control"), "private, no-store");
@@ -139,6 +150,27 @@ test("인증 실패·누락 또는 잘못된 환경은 측정과 DB 접근 없�
   assert.deepEqual(api.calls, []);
   assert.deepEqual(api.filters, []);
   assert.deepEqual(api.writes, []);
+});
+
+test("추가 페이지는 자동 측정 없이 페이지와 기기별 최신 수동 결과만 조회한다", async () => {
+  const api = setup();
+  const blog = "?strategy=mobile&target=blog";
+  const contact = "?strategy=desktop&target=contact";
+  assert.deepEqual(await (await api.get(blog)).json(), { data: { result: null } });
+  assert.deepEqual(api.calls, []);
+  assert.equal(api.pending.length, 0);
+  const blogResult = (await (await api.get(blog + "&force=true")).json()).data.result;
+  const contactResult = (await (await api.get(contact + "&force=true")).json()).data.result;
+  assert.deepEqual(api.urls, [
+    "https://www.born2smile.co.kr/blog/implant/osteoporosis-and-implant",
+    "https://www.born2smile.co.kr/contact",
+  ]);
+  assert.deepEqual(api.writes.map(row => row.key), ["psi-latest-blog-mobile", "psi-latest-contact-desktop"]);
+  assert.deepEqual(await (await api.get(blog)).json(), { data: { result: blogResult } });
+  assert.deepEqual(await (await api.get(contact)).json(), { data: { result: contactResult } });
+  assert.deepEqual(await (await api.get("?strategy=desktop&target=blog")).json(), { data: { result: null } });
+  assert.deepEqual(api.calls, ["mobile", "desktop"]);
+  assert.equal(api.pending.length, 0);
 });
 
 for (const strategy of ["mobile", "desktop"]) {

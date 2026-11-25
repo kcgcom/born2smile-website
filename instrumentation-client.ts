@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { sanitizeCardEventProperties } from "@/lib/blog/card-tracking";
+import { isPerformanceAudit } from "@/lib/performance-audit";
 import { getClientSentryOptions } from "@/sentry-options";
 
 Sentry.init(getClientSentryOptions());
@@ -27,6 +28,7 @@ function resolvePostHogUiHost(
 
 function shouldBlockAnalytics() {
   if (typeof window === "undefined") return true;
+  if (isPerformanceAudit(window.location.search)) return true;
 
   try {
     return (

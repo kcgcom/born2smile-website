@@ -7,6 +7,8 @@ import { forceRefetchAdminApi, useAdminApi } from "@/app/admin/(dashboard)/compo
 import { AdminErrorState } from "@/app/admin/(dashboard)/components/AdminErrorState";
 import { AdminLoadingSkeleton } from "@/app/admin/(dashboard)/components/AdminLoadingSkeleton";
 import { ApiSourceBadge } from "@/app/admin/(dashboard)/components/insight/ApiSourceBadge";
+import { CruxPanel } from "./CruxPanel";
+import { PAGESPEED_TARGETS, type PageSpeedTarget } from "@/lib/pagespeed-targets";
 
 // --- Types ---
 
@@ -53,9 +55,11 @@ interface PSIResult {
 }
 
 interface SinglePSIData {
-  result: PSIResult;
+  result: PSIResult | null;
   stale?: boolean;
 }
+
+type Strategy = "mobile" | "desktop";
 
 // --- Helpers ---
 
@@ -197,17 +201,55 @@ function CWVCard({ metric }: { metric: CWVMetric }) {
 // --- Main Component ---
 
 export function PerformanceTab() {
-  const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
-  const [refreshingStrategy, setRefreshingStrategy] = useState<"mobile" | "desktop" | null>(null);
+  const [page, setPage] = useState<PageSpeedTarget>(PAGESPEED_TARGETS[0]);
+  const [strategy, setStrategy] = useState<Strategy>("mobile");
+
+  return (
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-xl font-bold text-slate-900">사이트 성능</h1>
+        <p className="mt-1 text-sm text-slate-600">페이지별 Lighthouse 검사와 전체 사이트의 실제 방문자 추세를 확인합니다.</p>
+      </header>
+      <AdminSurface tone="white" className="rounded-2xl p-4">
+        <label htmlFor="pagespeed-target" className="block text-sm font-semibold text-slate-900">Lighthouse 검사 페이지</label>
+        <select
+          id="pagespeed-target"
+          value={page.id}
+          onChange={event => {
+            const selected = PAGESPEED_TARGETS.find(target => target.id === event.target.value);
+            if (selected) setPage(selected);
+          }}
+          className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-blue-700 sm:max-w-md"
+        >
+          {PAGESPEED_TARGETS.map(target => <option key={target.id} value={target.id}>{target.label}</option>)}
+        </select>
+        {page.id !== "home" && <p className="mt-2 text-xs text-slate-600">이 페이지는 새로 분석을 눌러 측정합니다.</p>}
+      </AdminSurface>
+      <PageSpeedResults key={page.id} page={page} strategy={strategy} setStrategy={setStrategy} />
+      <CruxPanel />
+    </div>
+  );
+}
+
+function PageSpeedResults({ page, strategy, setStrategy }: {
+  page: PageSpeedTarget;
+  strategy: Strategy;
+  setStrategy: (strategy: Strategy) => void;
+}) {
+  const [refreshingStrategy, setRefreshingStrategy] = useState<Strategy | null>(null);
   const refreshLock = useRef(false);
-  const [refreshErrors, setRefreshErrors] = useState<Partial<Record<"mobile" | "desktop", string>>>({});
+  const [refreshErrors, setRefreshErrors] = useState<Partial<Record<Strategy, string>>>({});
   const [expandedAudit, setExpandedAudit] = useState<string | null>(null);
 
+  const home = page.id === "home";
+  const targetQuery = home ? "" : `&target=${page.id}`;
+  const mobileEndpoint = `/api/dev/pagespeed?strategy=mobile${targetQuery}`;
+  const desktopEndpoint = `/api/dev/pagespeed?strategy=desktop${targetQuery}`;
   const { data: mobileData, loading: mobileLoading, isValidating: mobileValidating, error: mobileError } =
-    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=mobile");
-  const desktopEnabled = strategy === "desktop" || Boolean(mobileData) || Boolean(mobileError);
+    useAdminApi<SinglePSIData>(mobileEndpoint, home || strategy === "mobile");
+  const desktopEnabled = strategy === "desktop" || (home && (Boolean(mobileData) || Boolean(mobileError)));
   const { data: desktopData, loading: desktopLoading, isValidating: desktopValidating, error: desktopError } =
-    useAdminApi<SinglePSIData>("/api/dev/pagespeed?strategy=desktop", desktopEnabled);
+    useAdminApi<SinglePSIData>(desktopEndpoint, desktopEnabled);
 
   const currentData = strategy === "mobile" ? mobileData : desktopData;
   const currentLoading = strategy === "mobile" ? (mobileLoading || mobileValidating) : (desktopLoading || desktopValidating);
@@ -224,14 +266,14 @@ export function PerformanceTab() {
     setRefreshingStrategy(strategy);
     setRefreshErrors(previous => ({ ...previous, [strategy]: undefined }));
     try {
-      await forceRefetchAdminApi<SinglePSIData>(`/api/dev/pagespeed?strategy=${strategy}`);
+      await forceRefetchAdminApi<SinglePSIData>(strategy === "mobile" ? mobileEndpoint : desktopEndpoint);
     } catch (error) {
       setRefreshErrors(previous => ({ ...previous, [strategy]: error instanceof Error ? error.message : "분석을 완료하지 못했습니다. 다시 시도해 주세요." }));
     } finally {
       refreshLock.current = false;
       setRefreshingStrategy(null);
     }
-  }, [strategy]);
+  }, [strategy, mobileEndpoint, desktopEndpoint]);
 
   const fetchedTime = result ? new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
@@ -240,11 +282,7 @@ export function PerformanceTab() {
   const hasCWV = result?.coreWebVitals.some(metric => metric.percentile != null) ?? false;
 
   return (
-    <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-bold text-slate-900">사이트 성능</h1>
-        <p className="mt-1 text-sm text-slate-600">홈페이지의 측정 환경별 속도와 개선 항목을 확인합니다.</p>
-      </header>
+    <>
       <AdminSurface tone="white" className="space-y-3 rounded-2xl p-4">
         <div role="group" aria-label="측정 환경" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:max-w-sm">
           {(["mobile", "desktop"] as const).map(value => {
@@ -296,7 +334,7 @@ export function PerformanceTab() {
         <AdminSurface tone="white" className="rounded-2xl p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-[var(--foreground)]">
-              실제 방문자 경험
+              PageSpeed Insights 실제 방문자 경험
             </h2>
             {hasCWV && (
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${overallBadge.className}`}>
@@ -438,6 +476,6 @@ export function PerformanceTab() {
           테스트 URL: {result.url}
         </p>
       </>}
-    </div>
+    </>
   );
 }
