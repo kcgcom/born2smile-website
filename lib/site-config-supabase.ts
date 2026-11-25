@@ -2,6 +2,8 @@ import { cache } from "react";
 import { unstable_cache, revalidateTag, unstable_noStore as noStore } from "next/cache";
 import { localSiteConfig, assertLiveSiteConfigWrite, readSiteConfigSnapshot } from "./site-config-local";
 import { getTodayKST } from "./date";
+import { siteHoursSchema } from "./blog-validation";
+import { readGlobalConfigHours, syncGlobalConfigHours } from "./site-hours-global-config";
 import { getSupabaseAdmin } from "./supabase-admin";
 import { CLINIC_BASE, LINKS, HOURS, enrichClinicWithContact, type ClinicContactFields } from "./constants";
 
@@ -179,7 +181,7 @@ export async function updateSiteClinic(
 export async function updateSiteHours(
   data: Partial<SiteHours>,
   updatedBy: string,
-): Promise<void> {
+): Promise<"synced" | "failed" | "not-configured"> {
   assertLiveSiteConfigWrite();
   const admin = getSupabaseAdmin();
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -204,7 +206,18 @@ export async function updateSiteHours(
     if (writeError) throw writeError;
     if (updated) {
       safeRevalidateTag(CACHE_TAG_HOURS, { expire: 0 });
-      return;
+      try {
+        const synced = await syncGlobalConfigHours(async () => {
+          const { data: row, error } = await admin
+            .from(TABLE).select("data, updated_at").eq("type", "hours").maybeSingle();
+          if (error || !row) throw new Error("Clinic hours synchronization source read failed");
+          return { hours: siteHoursSchema.parse({ ...defaultSiteHours(), ...row.data }), version: row.updated_at };
+        });
+        return synced ? "synced" : "not-configured";
+      } catch {
+        console.error("[site-config] clinic hours saved; Global Config synchronization failed");
+        return "failed";
+      }
     }
   }
   throw new Error("다른 사용자가 진료시간을 수정 중입니다. 잠시 후 다시 저장해 주세요.");
@@ -315,8 +328,12 @@ export const getSiteHours = cache(async (): Promise<PublicSiteHours> => {
   } catch {
     noStore();
     const hours = defaultSiteHours();
+    const fallback = await readGlobalConfigHours().catch(() => {
+      console.warn("[site-config] Global Config clinic hours unavailable");
+      return null;
+    });
     try {
-      Object.assign(hours, readSiteConfigSnapshot().hours);
+      Object.assign(hours, fallback ?? readSiteConfigSnapshot().hours);
     } catch {
       console.warn("[site-config] deployed hours snapshot unavailable; using code defaults");
     }

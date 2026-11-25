@@ -4,7 +4,8 @@ import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { canOpenStaffPage, canUseAdminApi, hasPasswordAuthentication, OWNER_ACCESS, STAFF_ACCESS, type AdminAccess } from "../lib/admin-access";
-import { siteHoursExceptionsSchema } from "../lib/blog-validation";
+import { siteHoursExceptionsSchema, siteHoursSchema } from "../lib/blog-validation";
+import { HOURS } from "../lib/constants";
 
 test("Google 세션과 인증 수단이 누락된 세션은 직원 비밀번호 로그인으로 인정하지 않는다", () => {
   assert.equal(hasPasswordAuthentication([{ method: "oauth" }]), false);
@@ -78,16 +79,26 @@ test("스태프 예외 일정 저장 중 원장이 기본 진료시간을 바꾸
       }),
     }),
   });
-  const exports: { updateSiteHours?: (patch: { exceptions: typeof exceptions }, email: string) => Promise<void> } = {};
+  const exports: { updateSiteHours?: (patch: { exceptions: typeof exceptions }, email: string) => Promise<string> } = {};
   const passthrough = (callback: unknown) => callback;
   const mocks: Record<string, unknown> = {
     react: { cache: passthrough },
     "next/cache": { unstable_cache: passthrough, revalidateTag: () => { invalidations++; } },
     "./site-config-local": { assertLiveSiteConfigWrite: () => {} },
     "./supabase-admin": { getSupabaseAdmin: () => ({ from }) },
+    "./blog-validation": { siteHoursSchema },
+    "./constants": { HOURS },
+    "./site-hours-global-config": {
+      syncGlobalConfigHours: async (readCurrent: () => Promise<{ hours: { lunchTime: string; exceptions: typeof exceptions } }>) => {
+        const { hours } = await readCurrent();
+        assert.equal(hours.lunchTime, "12:30 - 13:30");
+        assert.deepEqual(hours.exceptions, exceptions);
+        return true;
+      },
+    },
   };
   runInNewContext(compiled, { exports, require: (id: string) => mocks[id] ?? {} });
-  await exports.updateSiteHours!({ exceptions }, "staff@example.invalid");
+  assert.equal(await exports.updateSiteHours!({ exceptions }, "staff@example.invalid"), "synced");
   assert.equal(row.data.lunchTime, "12:30 - 13:30");
   assert.deepEqual(row.data.exceptions, exceptions);
   assert.equal(attempts, 2);

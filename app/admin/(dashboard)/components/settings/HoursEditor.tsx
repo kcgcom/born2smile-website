@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
+import { AdminNotice } from "@/components/admin/AdminNotice";
 import { FormField, SectionShell, LoadingPlaceholder } from "../shared";
 import { AdminErrorState } from "../AdminErrorState";
 import { useSettingsEditor } from "./useSettingsEditor";
@@ -22,7 +23,7 @@ function formatExceptionDateLabel(date: string) {
 }
 
 export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: boolean; clinicCard?: ReactNode }) {
-  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, handleSave, discardChanges, updateForm, setField } =
+  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, fallbackSyncFailed, handleSave, discardChanges, updateForm, setField } =
     useSettingsEditor<SiteHours>("/api/admin/site-config/hours", {
       patch: exceptionsOnly ? ({ exceptions }) => ({ exceptions }) : undefined,
       persistDraft: !exceptionsOnly,
@@ -255,6 +256,7 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
 
   const exceptionColumn = (
     <div className="min-w-0 space-y-4">
+      {fallbackSyncFailed && <AdminNotice tone="warning">진료시간은 저장됐지만 장애 대비 사본을 갱신하지 못했습니다.</AdminNotice>}
       {loadError && <AdminErrorState message={`진료시간 조회 실패: ${loadError}`} onRetry={refetch} />}
       <HoursExceptionCalendar ref={calendarRegion} schedule={form.schedule} exceptions={form.exceptions}
         disabled={exceptionActionsDisabled || saving} notice={calendarNotice} onSelectDate={selectCalendarDate} />

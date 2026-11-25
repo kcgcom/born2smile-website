@@ -123,6 +123,10 @@
 | `BLOG_PUBLIC_DATA_SOURCE` | `snapshot`이면 공개 조회에 생성 스냅샷 사용. dev/build가 설정 |
 | `BLOG_SNAPSHOT_REQUIRED` | `true`이면 스냅샷 조회 실패 시 중단. build가 설정 |
 | `SITE_CONFIG_DATA_SOURCE` | `snapshot`은 설정 스냅샷, `live`는 Supabase, `fixture`는 테스트 기본값을 사용. 설정하지 않은 런타임은 Supabase 조회가 기본 |
+| `SITE_HOURS_GLOBAL_CONFIG` | 운영 진료시간 사본을 읽는 Vercel Global Config 연결 문자열. 서버 전용 |
+| `GLOBAL_CONFIG` | Preview의 Global Config 연결 문자열. `SITE_HOURS_GLOBAL_CONFIG`가 없을 때 사용. 서버 전용 |
+| `SITE_HOURS_GLOBAL_CONFIG_TEAM_ID` | 진료시간 사본 저장소가 속한 Vercel 팀 ID |
+| `SITE_HOURS_GLOBAL_CONFIG_WRITE_TOKEN` | 해당 팀의 Global Config 항목을 쓸 수 있는 Vercel API 토큰. 서버 전용 |
 | `REVALIDATE_BASE_URL` | 재검증 스크립트의 대상 사이트 URL |
 | `ANALYZE` | next.config.ts의 번들 분석 옵션 |
 | `VERCEL_GIT_COMMIT_SHA` | 배포별 공개 블로그 캐시 키 분리 |

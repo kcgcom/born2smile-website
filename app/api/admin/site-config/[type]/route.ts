@@ -97,6 +97,7 @@ async function writeSetting(
 
   try {
     let validated;
+    let fallbackSync;
     if (type === "links") {
       validated = siteLinksSchema.parse(body);
       await updateSiteLinks(validated, auth.email);
@@ -105,7 +106,7 @@ async function writeSetting(
       await updateSiteClinic(validated, auth.email);
     } else if (type === "hours") {
       validated = (exceptionsOnly ? siteHoursExceptionsSchema : siteHoursSchema).parse(body);
-      await updateSiteHours(validated, auth.email);
+      fallbackSync = await updateSiteHours(validated, auth.email);
     } else {
       validated = siteScheduleSchema.parse(body);
       await updateSiteSchedule(validated, auth.email);
@@ -117,7 +118,7 @@ async function writeSetting(
     }
 
     return Response.json(
-      { data: { type, updated: true } },
+      { data: { type, updated: true, fallbackSync } },
       { status: 200, headers: CACHE_HEADERS },
     );
   } catch (e) {

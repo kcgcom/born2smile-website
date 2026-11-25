@@ -12,10 +12,11 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
 }) {
   const { readOnly = false, patch, persistDraft = true } = options ?? {};
   const { data, loading, error, refetch } = useAdminApi<T>(endpoint);
-  const { mutate, loading: saving } = useAdminMutation();
+  const { mutate, loading: saving } = useAdminMutation<{ fallbackSync?: string }>();
   const [formEdits, setFormEdits] = useState<T | null>(null);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [fallbackSyncFailed, setFallbackSyncFailed] = useState(false);
   const savingRef = useRef(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const form = useMemo(() => (readOnly ? data : formEdits ?? data) ?? null, [readOnly, formEdits, data]);
@@ -38,7 +39,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
     const submitted = form;
     setSaved(false);
     setSaveError(null);
-    const { error } = await mutate(endpoint, patch ? "PATCH" : "PUT", patch ? patch(submitted) : submitted);
+    const { data: result, error } = await mutate(endpoint, patch ? "PATCH" : "PUT", patch ? patch(submitted) : submitted);
     savingRef.current = false;
     if (error) {
       setSaveError(error);
@@ -47,6 +48,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
       // must remain editable, dirty, and eligible for a subsequent save.
       setFormEdits((current) => current && JSON.stringify(current) !== JSON.stringify(submitted) ? current : null);
       markSaved(submitted);
+      setFallbackSyncFailed(result?.fallbackSync === "failed");
       setSaved(true);
       if (savedTimer.current) clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 2000);
@@ -75,5 +77,5 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
 
   const loadError = error ?? (!loading && data === null ? "설정 데이터가 없습니다. 다시 시도해 주세요." : null);
 
-  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, handleSave, discardChanges, updateForm, setField };
+  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, fallbackSyncFailed, handleSave, discardChanges, updateForm, setField };
 }
