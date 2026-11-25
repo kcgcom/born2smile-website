@@ -50,8 +50,6 @@ lib/keyword-taxonomy/generated/
 test-results/
 playwright-report/
 
-.omx/
-
 # local tooling scratch
 .tmp/
 /_workspace/
