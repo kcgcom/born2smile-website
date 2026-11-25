@@ -13,12 +13,11 @@ export async function POST(request: Request) {
   if (!parsed.success) return new Response(null, { status: 400 });
 
   const ip = process.env.VERCEL === "1" ? request.headers.get("x-vercel-forwarded-for") : null;
-  const { error } = await getSupabaseAdmin().from("admin_browser_presence").upsert({
-    email: auth.email.toLowerCase(),
-    browser_id: parsed.data.browserId,
-    device_name: parsed.data.deviceName || null,
-    public_ip: ip && isIP(ip) ? ip : null,
-    last_seen_at: new Date().toISOString(),
+  const { error } = await getSupabaseAdmin().rpc("record_admin_browser_presence", {
+    p_email: auth.email.toLowerCase(),
+    p_browser_id: parsed.data.browserId,
+    p_device_name: parsed.data.deviceName || null,
+    p_public_ip: ip && isIP(ip) ? ip : null,
   });
   return new Response(null, { status: error ? 503 : 204, headers: { "Cache-Control": "private, no-store" } });
 }
