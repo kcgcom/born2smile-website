@@ -165,12 +165,14 @@ test("public hours fall back to the deployed snapshot with a visit warning", asy
       ] } },
     }));
 
-    const { getSiteHours, getSiteHoursDraft } = await import("../lib/site-config-supabase");
+    const { getSiteHours, getSiteHoursDraft, getSiteClinicDraft, getSiteLinksDraft, getSiteSchedule } = await import("../lib/site-config-supabase");
     const hours = await getSiteHours();
     assert.equal(hours.notice, "배포 사본 공지");
     assert.deepEqual(hours.exceptions.map(({ date }) => date), ["2099-12-31"]);
     assert.equal(hours.needsVisitConfirmation, true);
-    assert.notEqual((await getSiteHoursDraft()).notice, "배포 사본 공지");
+    for (const read of [getSiteHoursDraft, getSiteClinicDraft, getSiteLinksDraft, getSiteSchedule]) {
+      await assert.rejects(read);
+    }
 
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://other.supabase.co";
     const mismatched = await getSiteHours();

@@ -54,11 +54,21 @@ stub("../lib/supabase-admin.ts", {
         overrideTypes() { return query; },
         maybeSingle() { return Promise.resolve(state.single); },
         then(resolve, reject) { return Promise.resolve(state.list).then(resolve, reject); },
-        upsert(row) { state.writes.push(row); return Promise.resolve({ error: state.writeError }); },
+        upsert(row) {
+          state.writes.push(row);
+          const result = { data: state.writeError ? null : { type: row.type }, error: state.writeError };
+          return Object.assign(Promise.resolve(result), {
+            select: () => ({ maybeSingle: () => Promise.resolve(result) }),
+          });
+        },
       };
       return query;
     },
   }),
+});
+stub("../lib/site-hours-global-config.ts", {
+  readGlobalConfigHours: async () => null,
+  syncGlobalConfigHours: async () => false,
 });
 const research = require("../lib/research/papers.ts");
 const settings = require("../lib/site-config-supabase.ts");
@@ -163,7 +173,7 @@ for (const [type, update, input, tag] of [
     await update(input, "test");
     assert.equal(state.writes.length, 1);
     assert.equal(state.writes[0].type, type);
-    assert.deepEqual(state.tags, [[tag, "max"]]);
+    assert.deepEqual(state.tags, [[tag, type === "hours" ? { expire: 0 } : "max"]]);
   });
 }
 
@@ -171,7 +181,6 @@ for (const [type, getter, field, value] of [
   ["links", settings.getSiteLinks, "instagram", "https://example.com/recovered"],
   ["clinic", settings.getSiteClinic, "name", "복구된 병원"],
   ["hours", settings.getSiteHours, "notice", "복구된 공지"],
-  ["schedule", settings.getSiteSchedule, "publishDays", [2, 4]],
 ]) {
   test(`${type}: live read failures do not cache defaults and the next read recovers`, async () => {
     const errorLog = console.error;
@@ -180,10 +189,11 @@ for (const [type, getter, field, value] of [
     try {
       state.single.error = new Error("sensitive-credential-marker");
       state.list.error = state.single.error;
-      await getter();
+      const fallback = await getter();
       assert.equal(persistentCache.size, 0);
       assert.equal(state.noStore, 1);
-      assert.equal(logs.length, 1);
+      if (type === "hours") assert.equal(fallback.needsVisitConfirmation, true);
+      else assert.equal(logs.length, 1);
       assert.equal(JSON.stringify(logs).includes("sensitive-credential-marker"), false);
       state.single = { data: { data: { [field]: value } }, error: null };
       state.list = { data: [{ type, data: { [field]: value } }], error: null };
@@ -195,6 +205,15 @@ for (const [type, getter, field, value] of [
     } finally { console.error = errorLog; }
   });
 }
+
+test("schedule: live read errors reject and the next read recovers without caching", async () => {
+  state.single.error = new Error("unavailable");
+  await assert.rejects(settings.getSiteSchedule, /schedule read failed/);
+  state.single = { data: { data: { publishDays: [2, 4] } }, error: null };
+  assert.deepEqual((await settings.getSiteSchedule()).publishDays, [2, 4]);
+  assert.equal(state.reads.length, 2);
+  assert.equal(persistentCache.size, 0);
+});
 
 test("public settings share a single read for clinic, hours, and links", async () => {
   state.list.data = [

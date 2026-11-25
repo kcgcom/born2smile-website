@@ -22,6 +22,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
   const form = useMemo(() => (readOnly ? data : formEdits ?? data) ?? null, [readOnly, formEdits, data]);
   const recovery = useDraftRecovery(readOnly ? null : form, setFormEdits, `born2smile-settings-recovery:${endpoint}${patch ? ":patch" : ""}`, persistDraft);
   const { dirty, ready, hasConflict, markSaved } = recovery;
+  const loadError = error ?? (!loading && data === null ? "설정 데이터가 없습니다. 다시 시도해 주세요." : null);
   useUnsavedChanges(dirty || saving);
 
   // Background refreshes are clean only when no local edits need preserving.
@@ -34,7 +35,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
   }, []);
 
   const handleSave = async () => {
-    if (readOnly || !form || hasConflict || !ready || savingRef.current) return;
+    if (readOnly || !form || !data || loadError || hasConflict || !ready || savingRef.current) return;
     savingRef.current = true;
     const submitted = form;
     setSaved(false);
@@ -74,8 +75,6 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
 
   const setField = (key: keyof T) => (value: string) =>
     updateForm((prev) => ({ ...prev, [key]: value }));
-
-  const loadError = error ?? (!loading && data === null ? "설정 데이터가 없습니다. 다시 시도해 주세요." : null);
 
   return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, fallbackSyncFailed, handleSave, discardChanges, updateForm, setField };
 }

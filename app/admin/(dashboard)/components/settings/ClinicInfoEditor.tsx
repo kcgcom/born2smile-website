@@ -64,6 +64,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
         dirty={dirty}
         recovery={recovery}
         onSave={handleSave}
+        saveBlocked={Boolean(loadError)}
         saveError={saveError}
       >
         <div className="grid gap-3 md:grid-cols-2">

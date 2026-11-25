@@ -57,7 +57,7 @@ export function ContentScheduleManager({
   const [savedPublishDays, setSavedPublishDays] = useState<number[] | null>(null);
 
   const currentPublishDays = embedded ? (savedPublishDays ?? initialPublishDays) : data?.publishDays;
-  const days = formEdits ?? currentPublishDays ?? [1, 3, 5];
+  const days = formEdits ?? currentPublishDays ?? [];
   const posts = embedded ? (initialPosts ?? []) : (postsData ?? []);
   const futureScheduledPosts = posts
     .filter((post) => post.published && post.date > today)
@@ -68,7 +68,7 @@ export function ContentScheduleManager({
 
   const toggleDay = (day: number) => {
     setFormEdits((prev) => {
-      const current = prev ?? currentPublishDays ?? [1, 3, 5];
+      const current = prev ?? currentPublishDays ?? [];
       if (current.includes(day)) {
         if (current.length <= 1) return current;
         return current.filter((value) => value !== day);
@@ -78,6 +78,7 @@ export function ContentScheduleManager({
   };
 
   const handleSave = async () => {
+    if (!canEditPolicy || saving || policyError || !currentPublishDays) return;
     const { error } = await mutate("/api/admin/site-config/schedule", "PUT", { publishDays: days });
     if (!error) {
       setSavedPublishDays(days);
@@ -171,7 +172,7 @@ export function ContentScheduleManager({
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving || (!embedded && (Boolean(policyError) || !data))}
+              disabled={saving || Boolean(policyError) || !currentPublishDays}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
@@ -192,7 +193,7 @@ export function ContentScheduleManager({
                 type="button"
                 onClick={() => toggleDay(index)}
                 aria-pressed={selected}
-                disabled={!canEditPolicy || saving || (!embedded && (Boolean(policyError) || !data))}
+                disabled={!canEditPolicy || saving || Boolean(policyError) || !currentPublishDays}
                 className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors sm:w-10 lg:w-auto ${
                   selected
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"

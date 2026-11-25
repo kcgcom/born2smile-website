@@ -307,10 +307,12 @@ test("편집 중 재조회 실패와 재시도는 입력을 보존한다", async
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   const alert = page.getByRole("alert").filter({ hasText: "병원 정보" });
   await expect(alert).toContainText("테스트 조회 실패");
+  await expect(section.getByRole("button", { name: "저장", exact: true })).toBeDisabled();
   await expect(page.getByRole("textbox", { name: "병원명", exact: true })).toHaveValue("저장하지 않은 병원명");
   mock.setState("success");
   await alert.getByRole("button", { name: "다시 시도" }).click();
   await expect(alert).toHaveCount(0);
+  await expect(section.getByRole("button", { name: "저장", exact: true })).toBeEnabled();
   await expect(page.getByRole("textbox", { name: "병원명", exact: true })).toHaveValue("저장하지 않은 병원명");
 });
 

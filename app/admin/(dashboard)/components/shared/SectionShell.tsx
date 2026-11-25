@@ -18,6 +18,7 @@ export function SectionShell({
   pendingSaveMessage,
   recovery,
   onSave,
+  saveBlocked = false,
   saveError,
   defaultOpen = false,
   canEdit = true,
@@ -35,6 +36,7 @@ export function SectionShell({
   pendingSaveMessage?: string;
   recovery?: DraftRecoveryState;
   onSave: () => void;
+  saveBlocked?: boolean;
   saveError: string | null;
   defaultOpen?: boolean;
   canEdit?: boolean;
@@ -46,7 +48,7 @@ export function SectionShell({
   const open = canEdit && editorOpen;
   const editing = open || additionalEditing;
   const showPendingMessage = dirty && Boolean(pendingSaveMessage);
-  const saveButton = <SaveButton saving={saving} saved={saved} disabled={recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />;
+  const saveButton = <SaveButton saving={saving} saved={saved} disabled={saveBlocked || recovery?.hasConflict || (!dirty && !saving)} onClick={onSave} />;
 
   const handleToggle = () => {
     if (open && dirty && !window.confirm("저장하지 않은 변경사항이 있습니다. 편집을 닫으시겠습니까?")) {

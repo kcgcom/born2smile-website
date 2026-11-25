@@ -98,21 +98,23 @@ export type SiteSchedule = {
 // Read Functions
 // =============================================================
 
-const getPublicSiteConfigLive = cache(unstable_cache(
-  async () => {
-    const { data, error } = await getSupabaseAdmin()
-      .from(TABLE)
-      .select("type, data")
-      .in("type", ["links", "clinic", "hours"]);
-    if (error) throw new Error("Public site config read failed");
+async function readSiteConfigLive() {
+  const { data, error } = await getSupabaseAdmin()
+    .from(TABLE)
+    .select("type, data")
+    .in("type", ["links", "clinic", "hours"]);
+  if (error) throw new Error("Site config read failed");
 
-    const rows = Object.fromEntries(data.map((row) => [row.type, row.data]));
-    return {
-      links: { ...LINKS, ...pickSiteLinks(rows.links) },
-      clinic: { ...CLINIC_BASE, ...stripLegacyClinicContactFields(rows.clinic ?? {}) },
-      hours: { ...defaultSiteHours(), ...rows.hours },
-    };
-  },
+  const rows = Object.fromEntries(data.map((row) => [row.type, row.data]));
+  return {
+    links: { ...LINKS, ...pickSiteLinks(rows.links) },
+    clinic: { ...CLINIC_BASE, ...stripLegacyClinicContactFields(rows.clinic ?? {}) },
+    hours: { ...defaultSiteHours(), ...rows.hours },
+  };
+}
+
+const getPublicSiteConfigLive = cache(unstable_cache(
+  readSiteConfigLive,
   ["site-config-public"],
   { revalidate: CACHE_TTL, tags: [CACHE_TAG_LINKS, CACHE_TAG_CLINIC, CACHE_TAG_HOURS] },
 ));
@@ -229,20 +231,15 @@ export async function updateSiteHours(
 
 const DEFAULT_SCHEDULE: SiteSchedule = { publishDays: [1, 3, 5] }; // 월, 수, 금
 
-const getSiteScheduleLive = unstable_cache(
-  async (): Promise<SiteSchedule> => {
-    const { data: row, error } = await getSupabaseAdmin()
-      .from(TABLE)
-      .select("data")
-      .eq("type", "schedule")
-      .maybeSingle();
-    if (error) throw new Error("Site config schedule read failed");
-    if (!row?.data) return { ...DEFAULT_SCHEDULE };
-    return { ...DEFAULT_SCHEDULE, ...(row.data as Partial<SiteSchedule>) };
-  },
-  [CACHE_TAG_SCHEDULE],
-  { revalidate: CACHE_TTL, tags: [CACHE_TAG_SCHEDULE] },
-);
+async function getSiteScheduleLive(): Promise<SiteSchedule> {
+  const { data: row, error } = await getSupabaseAdmin()
+    .from(TABLE)
+    .select("data")
+    .eq("type", "schedule")
+    .maybeSingle();
+  if (error) throw new Error("Site config schedule read failed");
+  return { ...DEFAULT_SCHEDULE, ...(row?.data as Partial<SiteSchedule> | undefined) };
+}
 
 export async function updateSiteSchedule(
   data: SiteSchedule,
@@ -298,10 +295,15 @@ export const getSiteLinks = cache(async (): Promise<SiteLinks> => {
     : { ...LINKS, ...local.links };
 });
 
+export async function getSiteLinksDraft(): Promise<SiteLinks> {
+  const local = localSiteConfig();
+  return local === null ? (await readSiteConfigLive()).links : { ...LINKS, ...local.links };
+}
+
 export const getSiteClinicDraft = cache(async (): Promise<SiteClinic> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("clinic", async () => (await getPublicSiteConfigLive()).clinic, () => ({ ...CLINIC_BASE }))
+    ? (await readSiteConfigLive()).clinic
     : { ...CLINIC_BASE, ...local.clinic };
 });
 
@@ -315,7 +317,7 @@ export const getSiteClinic = cache(async (): Promise<ResolvedSiteClinic> => {
 export const getSiteHoursDraft = cache(async (): Promise<SiteHours> => {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("hours", async () => (await getPublicSiteConfigLive()).hours, defaultSiteHours)
+    ? (await readSiteConfigLive()).hours
     : { ...defaultSiteHours(), ...local.hours };
 });
 
@@ -349,6 +351,6 @@ export const getSiteHours = cache(async (): Promise<PublicSiteHours> => {
 export async function getSiteSchedule(): Promise<SiteSchedule> {
   const local = localSiteConfig();
   return local === null
-    ? readLiveOrDefaults("schedule", getSiteScheduleLive, () => ({ ...DEFAULT_SCHEDULE }))
+    ? getSiteScheduleLive()
     : { ...DEFAULT_SCHEDULE, ...local.schedule };
 }

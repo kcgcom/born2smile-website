@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { verifyAdminRequest, unauthorizedResponse } from "../../_lib/auth";
 import {
-  getSiteLinks,
+  getSiteLinksDraft,
   getSiteClinicDraft,
   getSiteHoursDraft,
   getSiteSchedule,
@@ -46,7 +46,7 @@ export async function GET(
 
   try {
     let config;
-    if (type === "links") config = await getSiteLinks();
+    if (type === "links") config = await getSiteLinksDraft();
     else if (type === "clinic") config = await getSiteClinicDraft();
     else if (type === "hours") config = await getSiteHoursDraft();
     else config = await getSiteSchedule();
@@ -54,10 +54,9 @@ export async function GET(
     return Response.json({ data: config }, { headers: CACHE_HEADERS });
   } catch (e) {
     Sentry.captureException(e);
-    const message = e instanceof Error ? e.message : "사이트 설정을 불러올 수 없습니다";
     return Response.json(
-      { error: "API_ERROR", message },
-      { status: 500, headers: CACHE_HEADERS },
+      { error: "API_ERROR", message: "운영 설정을 불러오지 못했습니다. 다시 시도해 주세요." },
+      { status: 503, headers: CACHE_HEADERS },
     );
   }
 }

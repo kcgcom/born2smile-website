@@ -45,6 +45,7 @@ export function SnsLinksEditor() {
         dirty={dirty}
         recovery={recovery}
         onSave={handleSave}
+        saveBlocked={Boolean(loadError)}
         saveError={saveError}
       >
         <div className="space-y-3">

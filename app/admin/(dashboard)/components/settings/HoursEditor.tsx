@@ -272,6 +272,7 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
         pendingSaveMessage="저장을 눌러야 서버에 반영됩니다."
         recovery={recovery}
         onSave={handleSave}
+        saveBlocked={Boolean(loadError)}
         saveError={saveError}
         additionalEditing={exceptionEditor !== null || dirty || saved}
       >
@@ -292,6 +293,7 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
         dirty={dirty}
         recovery={recovery}
         onSave={handleSave}
+        saveBlocked={Boolean(loadError)}
         saveError={saveError}
       >
         <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
