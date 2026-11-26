@@ -7,11 +7,13 @@ import { usePathname } from "next/navigation";
 import { Phone, Settings } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { MobileMenuButton, MobileMenuPanel, useMobileNavigation } from "@/components/layout/MobileNavigation";
+import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
   const pathname = usePathname();
+  const isReviewPage = pathname === "/review";
   const isAdmin = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const mobileMenu = useMobileNavigation("mobile-menu");
@@ -19,6 +21,10 @@ export function Header() {
   const adminHref = pathname.startsWith("/blog")
     ? "/admin/content/posts"
     : "/admin/operations/overview";
+
+  useEffect(() => {
+    if (isReviewPage) closeMobileMenu();
+  }, [isReviewPage]);
 
   useEffect(() => {
     let ticking = false;
@@ -127,38 +133,44 @@ export function Header() {
               href={CLINIC.phoneHref}
               event="header_phone_click"
               properties={{ cta_location: "header_mobile", page_type: "global" }}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary-dark)] min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3"
+              className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3 ${
+                isReviewPage
+                  ? "border border-[var(--color-primary)] bg-[var(--surface)] text-[var(--color-primary-dark)] hover:bg-[var(--color-primary)]/5"
+                  : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
+              }`}
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
               <Phone size={16} aria-hidden="true" />
               <span className="hidden whitespace-nowrap min-[390px]:inline">{CLINIC.phone}</span>
             </TrackedAnchor>
-            <MobileMenuButton menu={mobileMenu} />
+            {!isReviewPage && <MobileMenuButton menu={mobileMenu} />}
           </div>
         </div>
 
-        <MobileMenuPanel menu={mobileMenu} pathname={pathname} onNavigate={handleNavClick}>
-          <TrackedAnchor
-            href={CLINIC.phoneHref}
-            event="header_phone_click"
-            properties={{ cta_location: "mobile_menu_phone", page_type: "global" }}
-            className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
-            aria-label={`전화 상담 ${CLINIC.phone}`}
-          >
-            <Phone size={18} aria-hidden="true" />
-            전화 상담 {CLINIC.phone}
-          </TrackedAnchor>
-          {isAdmin && (
-            <Link
-              href={adminHref}
-              className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-slate-900 px-5 py-3 text-base font-medium text-white"
-              onClick={() => mobileMenu.setOpen(false)}
+        {!isReviewPage && (
+          <MobileMenuPanel menu={mobileMenu} pathname={pathname} onNavigate={handleNavClick}>
+            <TrackedAnchor
+              href={CLINIC.phoneHref}
+              event="header_phone_click"
+              properties={{ cta_location: "mobile_menu_phone", page_type: "global" }}
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-base font-medium text-white"
+              aria-label={`전화 상담 ${CLINIC.phone}`}
             >
-              <Settings size={18} aria-hidden="true" />
-              관리자 페이지
-            </Link>
-          )}
-        </MobileMenuPanel>
+              <Phone size={18} aria-hidden="true" />
+              전화 상담 {CLINIC.phone}
+            </TrackedAnchor>
+            {isAdmin && (
+              <Link
+                href={adminHref}
+                className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-slate-900 px-5 py-3 text-base font-medium text-white"
+                onClick={() => mobileMenu.setOpen(false)}
+              >
+                <Settings size={18} aria-hidden="true" />
+                관리자 페이지
+              </Link>
+            )}
+          </MobileMenuPanel>
+        )}
       </header>
     </>
   );

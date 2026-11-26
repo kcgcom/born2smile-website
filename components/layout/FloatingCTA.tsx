@@ -38,6 +38,8 @@ export function FloatingCTA({ hours, phoneHref }: { hours: PublicSiteHours; phon
     [pathname]
   );
 
+  if (pathname === "/review") return null;
+
   return (
     <>
       {/* 모바일 하단 고정 바 */}

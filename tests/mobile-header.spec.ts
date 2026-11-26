@@ -1,6 +1,40 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('모바일 헤더', () => {
+  test('리뷰 안내의 모바일 헤더에는 홈과 전화만 표시한다', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/review');
+
+    const header = page.getByRole('banner');
+    const home = header.getByRole('link', { name: /서울대학교 엠블럼 서울본치과/ });
+    const phone = header.getByRole('link', { name: '전화 상담 1833-7552' });
+    const menu = header.getByRole('button', { name: '메뉴 열기' });
+    await expect(home).toHaveAttribute('href', '/');
+    await expect(menu).toHaveCount(0);
+    await expect(phone).toHaveAttribute('href', 'tel:18337552');
+    await expect(phone).toHaveCSS('height', '44px');
+    await expect(phone).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(phone).toHaveCSS('border-top-color', 'rgb(37, 99, 235)');
+    await expect(phone).toHaveCSS('color', 'rgb(29, 78, 216)');
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(phone).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+    await expect(header.getByRole('navigation', { name: '메인 메뉴' })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await home.click();
+    await expect(page).toHaveURL('/');
+    await expect(phone).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+    await menu.click();
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+
+    await page.goBack();
+    await expect(page).toHaveURL('/review');
+    await expect(menu).toHaveCount(0);
+    await expect(header.getByRole('navigation', { name: '모바일 메뉴' })).toHaveCount(0);
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+  });
+
   test('작은 가로 화면에서 메뉴를 스크롤해 마지막 전화 버튼에 도달한다', async ({ page }) => {
     await page.setViewportSize({ width: 667, height: 320 });
     await page.goto('/');

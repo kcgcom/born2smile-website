@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Instagram, MessageCircle, BookOpen, MapPin, Star, ExternalLink, Clock, Phone } from "lucide-react";
 import { GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
+import { FooterLayout } from "@/components/layout/FooterLayout";
 import type { ResolvedSiteClinic, PublicSiteHours, SiteLinks } from "@/lib/site-config-supabase";
 
 export function Footer({ clinic, hours, links }: {
@@ -10,10 +11,10 @@ export function Footer({ clinic, hours, links }: {
   const footerClinicName = clinic.name === "서울본치과" ? "서울본치과의원" : clinic.name;
 
   return (
-    <footer className="border-t-2 border-[var(--color-gold)]/30 bg-gray-900 text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 pt-12 pb-[calc(10rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-12">
+    <FooterLayout>
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-[calc(10rem+env(safe-area-inset-bottom,0px))] group-data-[compact-mobile]/footer:max-md:pt-6 group-data-[compact-mobile]/footer:max-md:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-12">
         {/* 병원명 + 전화번호 */}
-        <div className="mb-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div className="mb-8 flex flex-col items-center gap-3 group-data-[compact-mobile]/footer:max-md:hidden sm:flex-row sm:justify-between">
           <span className="text-xl font-bold text-white">{footerClinicName}</span>
           <TrackedAnchor
             href={clinic.phoneHref}
@@ -27,7 +28,7 @@ export function Footer({ clinic, hours, links }: {
           </TrackedAnchor>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-8 group-data-[compact-mobile]/footer:max-md:hidden sm:grid-cols-2 md:grid-cols-3 md:[&:not(:has(>[data-footer-reviews]))]:grid-cols-2">
           {/* 오시는 길 */}
           <div>
             <h3 className="mb-4 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
@@ -142,7 +143,7 @@ export function Footer({ clinic, hours, links }: {
 
           {/* 리뷰 남기기 */}
           {(GOOGLE_REVIEW.writeReviewUrl || NAVER_REVIEW.writeReviewUrl) && (
-            <div>
+            <div data-footer-reviews>
               <h3 className="mb-2 flex items-center gap-2 text-xl md:text-lg font-bold text-white">
                 <Star size={18} className="text-[var(--color-gold-light)]" />
                 리뷰 남기기
@@ -196,7 +197,7 @@ export function Footer({ clinic, hours, links }: {
 
         {/* SNS 링크 */}
         {(links.kakaoChannel || links.instagram || links.naverBlog) && (
-          <div className="mt-8 flex items-center justify-center gap-4">
+          <div className="mt-8 flex items-center justify-center gap-4 group-data-[compact-mobile]/footer:max-md:hidden">
             {links.kakaoChannel && (
               <TrackedAnchor
                 href={links.kakaoChannel}
@@ -249,23 +250,23 @@ export function Footer({ clinic, hours, links }: {
         )}
 
         {/* 하단 카피라이트 */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-400 group-data-[compact-mobile]/footer:max-md:mt-0 group-data-[compact-mobile]/footer:max-md:border-t-0 group-data-[compact-mobile]/footer:max-md:pt-0">
           <p>
             대표 {clinic.representative} · 사업자등록번호 {clinic.businessNumber}
           </p>
           <p className="mt-1">
             &copy; 2017–{new Date().getFullYear()} {footerClinicName}. All rights reserved.
-            {" · "}
+            <span aria-hidden="true" className="group-data-[compact-mobile]/footer:max-md:hidden">{" · "}</span>
             <Link
               href="/privacy"
-              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-gray-200"
+              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-gray-200 group-data-[compact-mobile]/footer:max-md:mx-auto group-data-[compact-mobile]/footer:max-md:flex group-data-[compact-mobile]/footer:max-md:w-fit"
             >
               개인정보처리방침
             </Link>
           </p>
         </div>
       </div>
-    </footer>
+    </FooterLayout>
   );
 }
 

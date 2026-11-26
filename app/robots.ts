@@ -4,12 +4,14 @@ import type { MetadataRoute } from "next";
 import { BASE_URL } from "@/lib/constants";
 
 export default function robots(): MetadataRoute.Robots {
+  const disallow = ["/admin", "/staff", "/api/", "/review"];
+
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/staff", "/api/"],
+        disallow,
       },
       // AI 크롤러 명시적 허용
       {
@@ -26,7 +28,7 @@ export default function robots(): MetadataRoute.Robots {
           "cohere-ai",
         ],
         allow: "/",
-        disallow: ["/admin", "/staff", "/api/"],
+        disallow,
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
