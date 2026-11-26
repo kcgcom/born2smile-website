@@ -54,7 +54,7 @@ export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const isContact = item.href === "/contact";
           const Icon = NAV_ICONS[item.href] ?? Home;
-          const className = `flex min-h-16 flex-col items-center justify-center gap-1 text-sm leading-4 tracking-tight transition-colors motion-reduce:transition-none focus-visible:-outline-offset-2 ${
+          const className = `flex min-h-16 flex-col items-center justify-center gap-1 text-sm leading-4 tracking-tight max-[360px]:text-[13px] transition-colors motion-reduce:transition-none focus-visible:-outline-offset-2 ${
             isActive
               ? "font-medium text-[var(--color-primary)]"
               : isContact
