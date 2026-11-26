@@ -103,7 +103,7 @@ export default async function Home() {
             <p className="mb-4 text-base font-medium tracking-widest text-[var(--color-gold-text)] uppercase md:text-lg">
               우리가족 평생주치의
             </p>
-            <h1 className="font-headline mb-6 text-4xl font-bold leading-tight text-[var(--foreground)] md:text-5xl lg:text-6xl">
+            <h1 className="font-headline mb-6 text-[2rem] font-bold min-[360px]:text-4xl leading-tight text-[var(--foreground)] md:text-5xl lg:text-6xl">
               꼭! 필요한 치료만
               <br />
               오래오래 편안하게

@@ -70,6 +70,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 공개 페이지: 한국어 단어 중간에서 줄이 끊기지 않게 한다. 넘칠 만큼 긴 문자열만 예외로 끊는다. */
+body:not(:has([data-workspace-header])) {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 /* 스크롤 부드럽게 (모션 감소 설정 시 비활성화) */
 @media (prefers-reduced-motion: no-preference) {
   html {
