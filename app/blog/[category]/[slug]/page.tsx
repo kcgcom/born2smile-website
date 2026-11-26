@@ -29,7 +29,7 @@ import {
   getAllPublishedPostMetas,
   getRelatedPosts,
 } from "@/lib/blog-supabase";
-import { getPublicResearchSlugsFresh, getResearchPageAdmin } from "@/lib/research/papers";
+import { getPublicResearchSlugsFresh } from "@/lib/research/papers";
 import { AdminDraftBar } from "@/components/admin/AdminDraftBar";
 import TableOfContents from "@/components/blog/TableOfContents";
 import type { BlogBlock } from "@/lib/blog";
@@ -40,9 +40,7 @@ import {
 } from "@/components/blog/BlogPostRenderer";
 import InlineBlocksEditor from "@/components/blog/InlineBlocksEditor";
 import { filterPublicBlogCitations } from "@/lib/blog/citation-targets-server";
-import { getResearchCalloutNotices } from "@/lib/blog/research-callout-notices";
 import { BlogEditProvider } from "@/components/blog/BlogEditProvider";
-import { getIsAdminServer } from "@/lib/server-admin-check";
 import { getBlogArticleImage } from "@/lib/blog/seo-image";
 
 export const revalidate = 3600;
@@ -69,8 +67,7 @@ function getFaqEntries(post: { blocks: BlogBlock[] }) {
     .map((block) => ({ q: block.question, a: block.answer }));
 }
 
-async function filterVisibleBlocks(blocks: BlogBlock[], isAdmin: boolean): Promise<BlogBlock[]> {
-  if (isAdmin) return blocks;
+async function filterVisibleBlocks(blocks: BlogBlock[]): Promise<BlogBlock[]> {
   const slugsByHref = new Map<string, string>();
   for (const block of blocks) {
     if (block.type !== "researchCallout") continue;
@@ -231,9 +228,7 @@ export default async function BlogPostPage({
     permanentRedirect(getBlogPostUrl(slug, post.category));
   }
 
-  const isAdmin = await getIsAdminServer();
-  const visibleBlocks = await filterVisibleBlocks(post.blocks, isAdmin);
-  const researchNotices = isAdmin ? await getResearchCalloutNotices(post.blocks, getResearchPageAdmin) : {};
+  const visibleBlocks = await filterVisibleBlocks(post.blocks);
   const categoryLabel = getCategoryLabel(post.category);
 
   const blogPostJsonLd = getBlogPostJsonLd(post);
@@ -273,13 +268,13 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
         />
       )}
-      {!isAdmin && <BlogCardTracker />}
-      <BlogReadTracker key={post.slug} slug={post.slug} category={post.category} disabled={isAdmin}
+      <BlogCardTracker />
+      <BlogReadTracker key={post.slug} slug={post.slug} category={post.category}
         metadata={getReadingMetadata(visibleBlocks.filter(block => block.type !== "researchCallout"))} />
       <BlogShareVisitTracker slug={post.slug} category={post.category} />
 
       {/* 블로그 포스트 */}
-      <BlogEditProvider slug={slug} initialBlocks={visibleBlocks} initialResearchNotices={researchNotices}>
+      <BlogEditProvider slug={slug} initialBlocks={visibleBlocks}>
       <article>
         {/* 헤더 */}
         <header className="bg-gradient-to-b from-blue-50 to-white pt-28 pb-6 md:pt-32 md:pb-8">
@@ -367,7 +362,7 @@ export default async function BlogPostPage({
               />
             </div>
             <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 md:p-6">
-              <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} adminVisitor={isAdmin} />
+              <QuestionFeedback key={post.slug} slug={post.slug} category={post.category} />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
               <BlogShareButton slug={post.slug} title={post.title} category={post.category} source="footer_cta" className="min-h-11" />

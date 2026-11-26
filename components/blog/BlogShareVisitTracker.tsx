@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { getShareVisitAttribution } from "@/lib/share";
 import { captureEvent } from "@/lib/posthog";
 import type { BlogCategoryValue } from "@/lib/blog/types";
@@ -18,9 +18,9 @@ export default function BlogShareVisitTracker({
   category,
 }: BlogShareVisitTrackerProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
     const attribution = getShareVisitAttribution(searchParams);
     if (!attribution) return;
 
@@ -46,7 +46,7 @@ export default function BlogShareVisitTracker({
     if (submitted) {
       try { window.sessionStorage.setItem(key, "1"); } catch {}
     }
-  }, [category, pathname, searchParams, slug]);
+  }, [category, pathname, slug]);
 
   return null;
 }

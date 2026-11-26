@@ -8,9 +8,9 @@ import type { FeedbackAnswer } from "@/lib/blog/feedback";
 
 const VISITOR_KEY = "born2smile-feedback-visitor";
 
-export default function QuestionFeedback({ slug, category, adminVisitor = false }: { slug: string; category: string; adminVisitor?: boolean }) {
+export default function QuestionFeedback({ slug, category }: { slug: string; category: string }) {
   const { isAdmin, loading: adminLoading } = useAdminAuthState();
-  const blockedAdmin = adminVisitor || isAdmin;
+  const blockedAdmin = isAdmin;
   const [answer, setAnswer] = useState<FeedbackAnswer | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");

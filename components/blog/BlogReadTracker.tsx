@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useAdminAuthState } from "@/components/admin/AdminAuthProvider";
 import { captureReadingEvent, getAnalyticsSessionId, registerArticleAnalytics, shouldSkipCapture } from "@/lib/posthog";
 import { activeReadingDelta, DEPTH_STEPS, measureReadingRects, TIME_STEPS, type ReadingMetadata } from "@/lib/blog/reading";
 
@@ -20,17 +20,16 @@ interface ReadState {
   lastActivity: number;
 }
 
-export default function BlogReadTracker({ slug, category, metadata, disabled = false }: {
+export default function BlogReadTracker({ slug, category, metadata }: {
   slug: string;
   category: string;
   metadata: ReadingMetadata;
-  disabled?: boolean;
 }) {
-  const admin = useAdminAuth();
+  const { isAdmin, loading: adminLoading } = useAdminAuthState();
   const stateRef = useRef<ReadState | null>(null);
 
   useEffect(() => {
-    if (disabled || admin
+    if (adminLoading || isAdmin
       || !process.env.NEXT_PUBLIC_POSTHOG_TOKEN || !process.env.NEXT_PUBLIC_POSTHOG_HOST) return;
     const webCrypto = window.crypto;
     if (typeof webCrypto?.randomUUID !== "function") return;
@@ -187,7 +186,7 @@ export default function BlogReadTracker({ slug, category, metadata, disabled = f
     }
     sample();
     return stop;
-  }, [slug, category, metadata, disabled, admin]);
+  }, [slug, category, metadata, adminLoading, isAdmin]);
 
   return null;
 }
