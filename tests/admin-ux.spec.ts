@@ -685,7 +685,7 @@ test("원장은 작업함에서 콘텐츠 기획 도구에 접근할 수 있다"
   await main.getByRole("link", { name: "운영", exact: true }).click();
   await expect(page).toHaveURL("/admin/operations/overview");
   const operation = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
-  await expect(operation.getByRole("link")).toHaveText(["오늘 할 일", "검색 성과", "방문·읽기", "문의·공유", "색인 상태"]);
+  await expect(operation.getByRole("link")).toHaveText(["오늘 할 일", "검색 성과", "방문·읽기", "문의·공유", "보험 양식", "색인 상태"]);
   await operation.getByRole("link", { name: "검색 성과", exact: true }).click();
   await expect(page).toHaveURL("/admin/analysis/search");
   await expect(main.getByRole("link", { name: "운영", exact: true })).toHaveAttribute("aria-current", "page");
@@ -716,7 +716,7 @@ test("직원은 홈과 블로그 공유를 한 줄 메뉴에서 전환한다", a
   await expect(page).toHaveURL("/staff/system/settings");
   const nav = page.getByRole("navigation", { name: "직원 업무 메뉴" });
   const links = nav.getByRole("link");
-  await expect(links).toHaveText(["홈", "내원안내", "블로그 공유"]);
+  await expect(links).toHaveText(["홈", "내원안내", "블로그 공유", "보험 양식"]);
   const boxes = await Promise.all((await links.all()).map(link => link.boundingBox()));
   expect(new Set(boxes.map(box => box?.y)).size).toBe(1);
   const home = nav.getByRole("link", { name: "홈", exact: true });
@@ -850,7 +850,7 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   await expect(page.locator("html")).toHaveCSS("scrollbar-gutter", "stable");
   const staffViewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
   const menu = page.getByRole("navigation", { name: "직원 업무 메뉴" });
-  await expect(menu.getByRole("link")).toHaveText(["홈", "내원안내", "블로그 공유"]);
+  await expect(menu.getByRole("link")).toHaveText(["홈", "내원안내", "블로그 공유", "보험 양식"]);
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
   await admin.press("Enter");
   await expect(page).toHaveURL("/admin/operations/overview");

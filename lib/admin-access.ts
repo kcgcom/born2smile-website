@@ -16,10 +16,11 @@ export const ADMIN_HOME = {
 };
 
 export const STAFF_HOME = "/staff/system/settings";
+export const STAFF_INSURANCE_FORMS = "/staff/system/insurance-forms";
 
 export function canOpenStaffPage(pathname: string) {
   return pathname === "/staff" || pathname === "/staff/system/settings" || pathname === "/staff/system/hours"
-    || pathname === "/staff/system/first-visit"
+    || pathname === "/staff/system/first-visit" || pathname === STAFF_INSURANCE_FORMS
     || /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
 }
 
@@ -28,6 +29,7 @@ export function canUseAdminApi(access: AdminAccess, method: string, pathname: st
   if (pathname === "/api/admin/emergency-notice") return ["GET", "PUT", "DELETE"].includes(method);
   if (pathname === "/api/admin-presence" && method === "POST") return true;
   if (method === "GET") {
+    if (/^\/api\/admin\/insurance-forms(?:\/[a-f0-9-]+)?$/.test(pathname)) return true;
     return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/(?:clinic|hours|schedule))$/.test(pathname);
   }
   if (method === "POST") return /^\/api\/admin\/(?:blog-posts|content-planner|content-tasks(?:\/[a-f0-9-]+\/draft)?|content-revisions|publication-review|upload)$/.test(pathname);
