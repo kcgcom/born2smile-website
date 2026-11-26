@@ -45,15 +45,15 @@ const REVIEW_OPTIONS = [
 
 export default function ReviewPage() {
   return (
-    <section className="bg-[var(--background)] bg-linear-to-b from-[var(--color-primary)]/5 to-transparent px-4 pt-[clamp(5.125rem,12svh,7rem)] pb-8 sm:px-6 sm:pb-10 lg:pt-32 lg:pb-12">
-      <div className="mx-auto grid max-w-xl overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-sm lg:max-w-5xl lg:grid-cols-[1fr_0.9fr]">
-        <div className="relative aspect-[5/1] max-h-44 w-full bg-[var(--background)] min-[360px]:aspect-[3/1] max-sm:[@media(max-height:740px)_and_(min-height:601px)]:max-h-22 max-sm:[@media(max-height:600px)]:max-h-16 max-[359px]:[@media(max-height:600px)]:order-last lg:order-last lg:aspect-auto lg:max-h-none">
+    <section className="relative isolate bg-[var(--background)] bg-linear-to-b from-[var(--color-primary)]/5 to-transparent px-4 pb-8 max-md:[--review-hero-height:clamp(8.25rem,40vw,12rem)] max-md:pt-[calc(var(--review-hero-height)-0.75rem)] sm:px-6 sm:pb-10 md:pt-22 lg:pb-12">
+      <div className="mx-auto grid max-w-xl rounded-3xl border border-[var(--border)] shadow-sm max-md:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--surface)_86%,transparent)_1.75rem,var(--surface)_4rem)] md:overflow-hidden md:bg-[var(--surface)] lg:max-w-5xl lg:grid-cols-[1fr_0.9fr]">
+        <div className="w-full bg-[var(--background)] max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:-z-10 max-md:h-[calc(var(--review-hero-height)+3.25rem)] max-md:[mask-image:linear-gradient(to_bottom,black_76%,transparent)] max-md:after:pointer-events-none max-md:after:absolute max-md:after:inset-0 max-md:after:bg-[radial-gradient(ellipse_13rem_5.5rem_at_4.75rem_2rem,var(--surface)_15%,transparent_100%)] md:relative md:aspect-[3/1] md:max-h-44 lg:order-last lg:aspect-auto lg:max-h-none">
           <Image
             src={CLINIC_PHOTO}
             alt={`${CLINIC.name} 대기실`}
             fill
             preload
-            sizes="(min-width: 1080px) 485px, (min-width: 1024px) 46vw, (min-width: 624px) 576px, 100vw"
+            sizes="(min-width: 1080px) 485px, (min-width: 1024px) 46vw, (min-width: 768px) 576px, 100vw"
             className="object-cover object-[center_53%] lg:object-center"
           />
         </div>
@@ -62,7 +62,7 @@ export default function ReviewPage() {
             <h1 className="font-headline break-keep text-[1.0625rem] leading-[1.6875rem] font-semibold tracking-tight">
               방문해 주셔서 감사합니다.
             </h1>
-            <div className="mt-2 space-y-2.5 break-keep text-[1.0625rem] leading-[1.6875rem] text-[var(--foreground)] min-[360px]:mt-2.5 sm:mt-3 sm:space-y-3">
+            <div className="mt-2 space-y-2.5 break-keep text-[1.0625rem] leading-[1.6875rem] text-[var(--foreground)] max-[359px]:[@media(max-height:600px)]:space-y-2 max-[359px]:[@media(max-height:600px)]:leading-6 min-[360px]:mt-2.5 sm:mt-3 sm:space-y-3">
               <p className="text-pretty">후기를 남겨주시면 치과를 알아보는 분들에게 많은 도움이 됩니다.</p>
               <p className="text-pretty">환자분이 느끼셨던 점을 솔직하게 남겨주세요.</p>
               <p className="text-pretty">

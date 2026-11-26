@@ -59,7 +59,8 @@ test("320px 모바일 하단의 문의 / 예약에서 전화와 네이버 예약
   }
 
   const contact = menu.getByRole("link", { name: "문의 / 예약" });
-  await expect(contact).toHaveCSS("color", "rgb(122, 90, 18)");
+  await expect(contact).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect.poll(() => contact.evaluate((link) => getComputedStyle(link, "::before").backgroundColor)).toBe("rgb(37, 99, 235)");
   const contactLabelLineCount = await contact.evaluate(async (link) => {
     await document.fonts.ready;
     const label = Array.from(link.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
@@ -72,6 +73,7 @@ test("320px 모바일 하단의 문의 / 예약에서 전화와 네이버 예약
   await contact.click();
   await expect(page).toHaveURL("/contact");
   await expect(contact).toHaveAttribute("aria-current", "page");
+  await expect.poll(() => contact.evaluate((link) => getComputedStyle(link, "::before").backgroundColor)).toBe("rgb(29, 78, 216)");
   const main = page.getByRole("main");
   await expect(main.getByRole("link", { name: /^대표전화/ })).toHaveAttribute("href", "tel:18337552");
   await main.getByRole("link", { name: "네이버 예약" }).click();

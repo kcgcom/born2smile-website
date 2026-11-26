@@ -74,7 +74,7 @@ export function Header() {
           {/* 로고 */}
           <Link
             href="/"
-            className="flex min-w-0 items-center gap-2"
+            className="flex min-h-11 min-w-0 items-center gap-2"
             onClick={() => handleNavClick("/")}
           >
             <Image
@@ -86,7 +86,7 @@ export function Header() {
               priority
               className="h-8 w-8 shrink-0 md:h-10 md:w-10"
             />
-            <span className="shrink-0 whitespace-nowrap text-2xl font-bold tracking-tight text-[var(--color-primary)]">
+            <span className="shrink-0 whitespace-nowrap text-2xl font-bold tracking-tight text-clinic-emblem">
               <span className="md:hidden">{CLINIC.name}</span>
               <span className="hidden md:inline">{headerClinicName}</span>
             </span>

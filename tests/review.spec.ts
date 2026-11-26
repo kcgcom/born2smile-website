@@ -10,7 +10,10 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
   await expect(main.getByRole('heading', { name: '방문해 주셔서 감사합니다.', exact: true })).toBeVisible();
   const photo = main.getByRole('img', { name: '서울본치과 대기실' });
   await expect(photo).toBeInViewport({ ratio: 1 });
-  expect((await photo.boundingBox())?.height).toBeGreaterThanOrEqual(80);
+  const photoBox = await photo.boundingBox();
+  const headerBox = await page.getByRole('banner').boundingBox();
+  expect(photoBox).toMatchObject({ x: 0, y: 0, width: 390 });
+  expect(photoBox!.height).toBeGreaterThan(headerBox!.height);
   await expect(main.getByText('앞으로도 진심을 다해 진료하겠습니다.')).toBeVisible();
   const naver = main.getByRole('link', { name: /네이버 리뷰 남기기/ });
   const google = main.getByRole('link', { name: /Google 리뷰 남기기/ });

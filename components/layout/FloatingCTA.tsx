@@ -43,7 +43,7 @@ export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
     <>
       {/* 모바일 하단 고정 바 */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.2fr)] border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label="빠른 메뉴"
       >
@@ -55,10 +55,10 @@ export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
           const isContact = item.href === "/contact";
           const Icon = NAV_ICONS[item.href] ?? Home;
           const className = `flex min-h-16 flex-col items-center justify-center gap-1 text-sm leading-4 tracking-tight transition-colors motion-reduce:transition-none focus-visible:-outline-offset-2 ${
-            isActive
-              ? "font-medium text-[var(--color-primary)]"
-              : isContact
-                ? "font-medium text-[var(--color-gold-text)]"
+            isContact
+              ? "relative isolate whitespace-nowrap font-semibold text-white before:pointer-events-none before:absolute before:inset-1 before:-z-10 before:rounded-xl before:bg-[var(--color-primary)] before:transition-colors hover:before:bg-[var(--color-primary-dark)] aria-[current=page]:before:bg-[var(--color-primary-dark)] motion-reduce:before:transition-none"
+              : isActive
+                ? "font-medium text-[var(--color-primary)]"
                 : "text-[var(--muted)] hover:text-[var(--color-primary)]"
           }`;
 
