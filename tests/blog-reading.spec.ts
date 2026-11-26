@@ -72,7 +72,7 @@ for (const mode of ["missing", "throwing"] as const) {
     expect(events.filter(e => e.event === "blog_article_viewed" || e.event.startsWith("blog_read_"))).toEqual([]);
 
     const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
-    await menu.getByRole("link", { name: "문의 및 예약" }).click();
+    await menu.getByRole("link", { name: "문의 / 예약" }).click();
     await expect(page).toHaveURL("/contact");
     const main = page.getByRole("main");
     const phone = main.getByRole("link", { name: /^대표전화/ });

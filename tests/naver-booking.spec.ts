@@ -37,7 +37,7 @@ for (const viewport of [
   }
 }
 
-test("320px 모바일 하단의 문의 및 예약에서 전화와 네이버 예약에 접근한다", async ({ page }) => {
+test("320px 모바일 하단의 문의 / 예약에서 전화와 네이버 예약에 접근한다", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.route("https://m.booking.naver.com/**", (route) =>
     route.fulfill({ body: "네이버 예약 테스트" }),
@@ -51,13 +51,24 @@ test("320px 모바일 하단의 문의 및 예약에서 전화와 네이버 예�
   const firstBox = await links.first().boundingBox();
   for (const link of await links.all()) {
     await expect(link).toBeInViewport({ ratio: 1 });
+    await expect(link).toHaveCSS("font-size", "14px");
     const box = await link.boundingBox();
     expect(box!.y).toBe(firstBox!.y);
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
   }
 
-  const contact = menu.getByRole("link", { name: "문의 및 예약" });
+  const contact = menu.getByRole("link", { name: "문의 / 예약" });
+  await expect(contact).toHaveCSS("color", "rgb(122, 90, 18)");
+  const contactLabelLineCount = await contact.evaluate(async (link) => {
+    await document.fonts.ready;
+    const label = Array.from(link.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+    if (!label) return 0;
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    return new Set(Array.from(range.getClientRects(), (rect) => rect.top)).size;
+  });
+  expect(contactLabelLineCount).toBe(1);
   await contact.click();
   await expect(page).toHaveURL("/contact");
   await expect(contact).toHaveAttribute("aria-current", "page");
