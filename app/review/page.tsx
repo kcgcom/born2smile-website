@@ -32,14 +32,14 @@ export const metadata: Metadata = {
 
 const REVIEW_OPTIONS = [
   {
-    label: "네이버 리뷰 남기기",
-    description: "영수증 사진 또는 카드 결제 내역으로 방문을 인증해 주세요.",
-    href: NAVER_REVIEW.writeReviewUrl,
-  },
-  {
     label: "Google 리뷰 남기기",
     description: "Google 계정으로 로그인",
     href: GOOGLE_REVIEW.writeReviewUrl,
+  },
+  {
+    label: "네이버 리뷰 남기기",
+    description: "영수증 또는 카드 결제로 방문 인증",
+    href: NAVER_REVIEW.writeReviewUrl,
   },
 ].filter(({ href }) => Boolean(href));
 
