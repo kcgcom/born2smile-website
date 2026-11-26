@@ -271,7 +271,7 @@ export default function AboutPage() {
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-black/55 px-4 py-3 backdrop-blur-[2px]">
                     <p className="text-sm font-medium text-white">{item.name}</p>
-                    <p className="text-xs text-white/90">{item.desc}</p>
+                    <p className="text-[13px] text-white/90">{item.desc}</p>
                   </div>
                 </div>
               </StaggerItem>

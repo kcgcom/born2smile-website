@@ -433,7 +433,7 @@ export default async function Home() {
                 <div className="group flex h-full flex-col rounded-[28px] border border-[var(--border)]/80 bg-[var(--surface)] p-7 shadow-[0_18px_50px_rgba(15,23,42,0.05)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(37,99,235,0.10)]">
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div className="flex min-h-12 flex-1 flex-col justify-between">
-                      <span className="inline-flex w-fit rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-[var(--color-gold-text)]">
+                      <span className="inline-flex w-fit rounded-full border border-[var(--color-gold)]/25 bg-[var(--color-gold)]/10 px-3 py-1 text-[13px] font-semibold tracking-[0.06em] text-[var(--color-gold-text)]">
                         {item.label}
                       </span>
                       <h3 className="mt-2 text-xl font-bold leading-snug text-[var(--foreground)]">

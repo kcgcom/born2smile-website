@@ -187,9 +187,9 @@ export default async function TreatmentDetailPage({
                     key={h.label}
                     className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-center"
                   >
-                    <p className="mb-1 text-xs font-medium text-blue-500">{h.label}</p>
+                    <p className="mb-1 text-[13px] font-medium text-[var(--color-primary)]">{h.label}</p>
                     <p className="text-base font-bold text-[var(--foreground)]">{h.value}</p>
-                    {h.note && <p className="mt-0.5 text-xs text-[var(--muted)]">{h.note}</p>}
+                    {h.note && <p className="mt-0.5 text-[13px] text-[var(--muted)]">{h.note}</p>}
                   </div>
                 ))}
               </div>
