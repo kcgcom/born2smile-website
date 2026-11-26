@@ -20,7 +20,8 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.born2smile.co.kr/review');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '서울본치과 리뷰 안내');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '서울본치과 방문 후기 남기기');
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', '방문해 주셔서 감사합니다. 네이버나 구글 중 편한 곳에 후기를 남겨주세요.');
 });
 
 test('리뷰 안내는 모바일에서 간결한 푸터를 표시하고 데스크톱에서는 병원 정보와 후기 링크를 제공한다', async ({ page }) => {
