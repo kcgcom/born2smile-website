@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('모바일 헤더', () => {
-  test('리뷰 안내의 모바일 헤더에는 홈과 전화만 표시한다', async ({ page }) => {
+  test('리뷰 안내의 모바일 헤더에는 홈 링크만 표시한다', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/review');
 
@@ -11,6 +11,10 @@ test.describe('모바일 헤더', () => {
     const menu = header.getByRole('button', { name: '메뉴 열기' });
     await expect(home).toHaveAttribute('href', '/');
     await expect(menu).toHaveCount(0);
+    await expect(phone).toBeHidden();
+
+    await page.setViewportSize({ width: 768, height: 844 });
+    await expect(phone).toBeVisible();
     await expect(phone).toHaveAttribute('href', 'tel:18337552');
     await expect(phone).toHaveCSS('height', '44px');
     await expect(phone).toHaveCSS('background-color', 'rgb(255, 255, 255)');
@@ -56,10 +60,10 @@ test.describe('모바일 헤더', () => {
     await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
   });
 
-  for (const width of [360, 375, 390]) {
-    test(`${width}px에서 한 줄 레이아웃과 터치 영역을 유지한다`, async ({ page }) => {
+  for (const width of [320, 375, 390]) {
+    test(`${width}px 상담 안내에서 헤더 전화 없이 메뉴를 표시한다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
-      await page.goto('/treatments');
+      await page.goto('/contact');
 
       const header = page.locator('header');
       const logo = header.getByRole('link', { name: /서울대학교 엠블럼 서울본치과/ });
@@ -68,32 +72,23 @@ test.describe('모바일 헤더', () => {
 
       await expect(header.getByText('서울본치과', { exact: true })).toBeVisible();
       await expect(header.getByText('서울본치과의원', { exact: true })).toBeHidden();
+      await expect(phone).toBeHidden();
+      await expect(page.getByRole('navigation', { name: '빠른 메뉴' }).getByRole('link', { name: '문의 / 예약' })).toBeVisible();
+      await expect(page.getByRole('main').getByRole('link', { name: '대표전화 1833-7552' })).toHaveAttribute('href', 'tel:18337552');
 
-      const boxes = await Promise.all([
+      const [headerBox, logoBox, menuBox] = await Promise.all([
         header.boundingBox(),
         logo.boundingBox(),
-        phone.boundingBox(),
         menu.boundingBox(),
       ]);
-      const [headerBox, logoBox, phoneBox, menuBox] = boxes;
 
       expect(headerBox).not.toBeNull();
       expect(logoBox).not.toBeNull();
-      expect(phoneBox).not.toBeNull();
       expect(menuBox).not.toBeNull();
       expect(headerBox!.height).toBeLessThanOrEqual(80);
-      expect(phoneBox!.width).toBeGreaterThanOrEqual(44);
-      expect(phoneBox!.height).toBeGreaterThanOrEqual(44);
       expect(menuBox!.width).toBeGreaterThanOrEqual(44);
       expect(menuBox!.height).toBeGreaterThanOrEqual(44);
-      expect(logoBox!.x + logoBox!.width).toBeLessThanOrEqual(phoneBox!.x);
-      expect(phoneBox!.x + phoneBox!.width).toBeLessThanOrEqual(menuBox!.x);
-
-      if (width < 390) {
-        await expect(phone.locator('span')).toBeHidden();
-      } else {
-        await expect(phone.locator('span')).toBeVisible();
-      }
+      expect(logoBox!.x + logoBox!.width).toBeLessThanOrEqual(menuBox!.x);
     });
   }
 });

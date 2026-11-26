@@ -13,7 +13,6 @@ import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
   const isReviewPage = pathname === "/review";
   const isAdmin = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -134,7 +133,7 @@ export function Header() {
               href={CLINIC.phoneHref}
               event="header_phone_click"
               properties={{ cta_location: "header_mobile", page_type: "global" }}
-              className={`${isHomePage ? "hidden md:inline-flex" : "inline-flex"} h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3 ${
+              className={`hidden h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors md:inline-flex ${
                 isReviewPage
                   ? "border border-[var(--color-primary)] bg-[var(--surface)] text-[var(--color-primary-dark)] hover:bg-[var(--color-primary)]/5"
                   : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
@@ -142,7 +141,7 @@ export function Header() {
               aria-label={`전화 상담 ${CLINIC.phone}`}
             >
               <Phone size={16} aria-hidden="true" />
-              <span className="hidden whitespace-nowrap min-[390px]:inline">{CLINIC.phone}</span>
+              <span className="whitespace-nowrap">{CLINIC.phone}</span>
             </TrackedAnchor>
             {!isReviewPage && <MobileMenuButton menu={mobileMenu} />}
           </div>
