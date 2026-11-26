@@ -66,6 +66,7 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
       { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
       { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
+      { href: "/admin/operations/insurance-forms", label: "보험 양식", icon: FileText },
       { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
     ],
   },
@@ -164,7 +165,9 @@ function SectionTabs({
     >
       <div className={`grid gap-1 lg:flex lg:flex-wrap ${workspace.tabs.length === 4
         ? "grid-cols-2 sm:grid-cols-4"
-        : "grid-cols-6 max-sm:[&>a]:col-span-2 max-sm:[&>a:nth-child(-n+2)]:col-span-3 sm:grid-cols-5"}`}>
+        : workspace.tabs.length === 6
+          ? "grid-cols-3 sm:grid-cols-6"
+          : "grid-cols-6 max-sm:[&>a]:col-span-2 max-sm:[&>a:nth-child(-n+2)]:col-span-3 sm:grid-cols-5"}`}>
         {workspace.tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isItemActive(pathname, tab);

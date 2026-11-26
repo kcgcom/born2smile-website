@@ -171,13 +171,14 @@ export function useAdminMutation<T = unknown>() {
     setError(null);
     try {
       const token = await getAccessToken();
+      const multipart = body instanceof FormData;
       const res = await fetch(endpoint, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          ...(!multipart && { "Content-Type": "application/json" }),
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: multipart ? body : body ? JSON.stringify(body) : undefined,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "요청을 처리할 수 없습니다" }));

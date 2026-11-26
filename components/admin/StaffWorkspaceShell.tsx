@@ -6,12 +6,13 @@ import { AdminBrowserPresence } from "./AdminBrowserPresence";
 import { useAdminAuthState } from "./AdminAuthProvider";
 import { DashboardHeader } from "./DashboardHeader";
 import { AdminSurface } from "./AdminChrome";
-import { STAFF_HOME } from "@/lib/admin-access";
+import { STAFF_HOME, STAFF_INSURANCE_FORMS } from "@/lib/admin-access";
 
 const STAFF_NAV = [
   { href: STAFF_HOME, label: "홈" },
   { href: "/staff/system/first-visit", label: "내원안내" },
   { href: "/staff/content/posts", label: "블로그 공유" },
+  { href: STAFF_INSURANCE_FORMS, label: "보험 양식" },
 ] as const;
 
 export function StaffWorkspaceShell({ children }: { children: React.ReactNode }) {
@@ -23,7 +24,7 @@ export function StaffWorkspaceShell({ children }: { children: React.ReactNode })
     <DashboardHeader staff canReturnToAdmin={access?.isOwner} />
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6">
       <AdminSurface tone="white" className="mb-5 p-2">
-        <nav aria-label="직원 업무 메뉴" className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 sm:flex sm:w-fit">
+        <nav aria-label="직원 업무 메뉴" className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 sm:flex sm:w-fit">
           {STAFF_NAV.map(({ href, label }) => {
             const current = pathname === href ? "page" : pathname.startsWith(`${href}/`) ? "location" : undefined;
             return (
