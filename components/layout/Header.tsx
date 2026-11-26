@@ -74,7 +74,7 @@ export function Header() {
           {/* 로고 */}
           <Link
             href="/"
-            className="flex min-w-0 items-center gap-2"
+            className="flex min-h-11 min-w-0 items-center gap-2"
             onClick={() => handleNavClick("/")}
           >
             <Image

@@ -332,7 +332,7 @@ export default async function TreatmentDetailPage({
           <div className="container-narrow">
             <FadeIn>
               <div className="mb-10 text-center">
-                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
+                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold-text)]">
                   관련 진료
                 </span>
                 <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">
@@ -373,7 +373,7 @@ export default async function TreatmentDetailPage({
           <div className="container-narrow">
             <FadeIn>
               <div className="mb-10 text-center">
-                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold)]">
+                <span className="mb-2 inline-block text-sm font-medium text-[var(--color-gold-text)]">
                   관련 칼럼
                 </span>
                 <h2 className="font-headline text-3xl font-bold text-[var(--foreground)] md:text-4xl">

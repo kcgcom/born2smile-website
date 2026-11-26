@@ -100,7 +100,7 @@ export default function AboutPage() {
             {/* 프로필 상단 — 프로필 사진 준비 시 grid + 사진 영역 복원 */}
             <div className="mb-10">
               <div className="text-center">
-                <p className="text-sm font-medium text-[var(--color-gold)]">
+                <p className="text-sm font-medium text-[var(--color-gold-text)]">
                   {doctor.title}
                 </p>
                 <h3 className="mt-1 text-3xl font-bold text-[var(--foreground)]">
@@ -344,7 +344,7 @@ export default function AboutPage() {
                   </div>
                   <h3 className="text-xl font-bold text-[var(--foreground)]">{item.name}</h3>
                   <p className="mb-3 text-sm text-[var(--color-muted)]">{item.nameEn}</p>
-                  <p className="mb-1 text-sm font-medium text-[var(--color-gold)]">
+                  <p className="mb-1 text-sm font-medium text-[var(--color-gold-text)]">
                     {item.tagline}
                   </p>
                   <p className="mb-6 text-base leading-relaxed text-[var(--foreground)]">
@@ -396,7 +396,7 @@ export default function AboutPage() {
                         <td className="px-5 py-3 font-medium text-[var(--foreground)]">
                           {item.day}
                           {"note" in item && item.note && (
-                            <span className="ml-2 rounded-full bg-[var(--color-gold-bg)] px-2 py-0.5 text-sm text-[var(--color-gold-dark)]">
+                            <span className="ml-2 rounded-full bg-[var(--color-gold-bg)] px-2 py-0.5 text-sm text-[var(--color-gold-text)]">
                               {item.note}
                             </span>
                           )}
@@ -451,7 +451,7 @@ export default function AboutPage() {
                   <a
                     href={CLINIC.phoneHref}
                     aria-label={`전화 상담 ${CLINIC.phone}`}
-                    className="font-medium text-[var(--color-primary)]"
+                    className="-my-2.5 inline-flex min-h-11 items-center font-medium text-[var(--color-primary)]"
                   >
                     {CLINIC.phone}
                   </a>

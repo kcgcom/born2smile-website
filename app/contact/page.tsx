@@ -123,7 +123,7 @@ export default async function ContactPage() {
                       <span>
                         {item.day}
                         {"note" in item && item.note && (
-                          <span className="ml-1 text-sm text-[var(--color-gold-dark)]">
+                          <span className="ml-1 text-sm text-[var(--color-gold-text)]">
                             ({item.note})
                           </span>
                         )}
@@ -190,7 +190,7 @@ export default async function ContactPage() {
                   href={clinic.phoneHref}
                   event="contact_phone_click"
                   properties={{ cta_location: "contact_bottom", page_type: "contact" }}
-                  className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)]"
+                  className="-mt-1 -mb-3 inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-primary)]"
                   aria-label={`전화 상담 ${clinic.phone}`}
                 >
                   {clinic.phone}
