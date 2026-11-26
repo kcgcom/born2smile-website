@@ -96,6 +96,22 @@ test("이미지는 사용 상태를 구분하고 검색·정렬·빈 결과를 �
   await expect(page.getByLabel("이미지 정렬", { exact: true })).toHaveValue("newest");
 });
 
+test("색인 검사 요약이 빠지면 운영 개요에 조회 오류와 재시도가 표시된다", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/admin/blog-posts", route => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/admin/content-planner", route => route.fulfill({ json: { data: [] } }));
+  let includeSummary = false;
+  await page.route("**/api/admin/indexing-status", route => route.fulfill({
+    json: { data: includeSummary ? { summary: { failed: 0, needsAttention: 1 } } : {} },
+  }));
+  await page.goto("/admin/operations/overview");
+  await expect(page.getByText("색인 검사 요약이 응답에 없습니다.")).toBeVisible();
+  await expect(page.getByText("조회된 자료에서 즉시 처리할 오류는 없습니다.")).toHaveCount(0);
+  includeSummary = true;
+  await page.getByRole("button", { name: "다시 시도" }).click();
+  await expect(page.getByText("색인 확인 필요 1개")).toBeVisible();
+});
+
 async function setup(page: Page) {
   const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? readFileSync(".env.local", "utf8").match(/^NEXT_PUBLIC_SUPABASE_URL=(.*)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (!publicUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL이 필요합니다.");
@@ -110,4 +126,5 @@ async function setup(page: Page) {
   await page.context().addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", domain: "localhost", path: "/" }]);
   await page.route("**/*.supabase.co/**", route => route.abort());
   await page.route("**/api/admin/**", route => route.fulfill({ json: { ok: true } }));
+  await page.route("**/api/admin/auth-check", route => route.fulfill({ json: { ok: true, access: { isOwner: true } } }));
 }
