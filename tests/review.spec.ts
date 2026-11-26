@@ -28,15 +28,17 @@ test('리뷰 안내는 모바일에서 간결한 푸터를 표시하고 데스�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/review');
   const footer = page.getByRole('contentinfo');
+  const privacyLink = footer.getByRole('link', { name: '개인정보처리방침' });
   await expect(footer.getByRole('link', { name: /전화 상담/ })).toHaveCount(0);
   await expect(page.getByRole('banner').getByRole('link', { name: /전화 상담/ })).toBeVisible();
-  await expect(footer.getByRole('link', { name: '개인정보처리방침' })).toBeVisible();
+  await expect(privacyLink).toBeHidden();
   await expect(footer.getByRole('heading', { name: '오시는 길' })).toHaveCount(0);
   await expect(footer.getByRole('heading', { name: '진료시간' })).toHaveCount(0);
   await expect(footer.getByRole('link', { name: /리뷰 남기기/ })).toHaveCount(0);
   await expect(footer.locator(':scope > div').first()).toHaveCSS('padding-bottom', '24px');
 
   await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(privacyLink).toBeVisible();
   await expect(footer.getByRole('link', { name: /전화 상담/ })).toBeVisible();
   await expect(footer.getByRole('heading', { name: '오시는 길' })).toBeVisible();
   await expect(footer.getByRole('heading', { name: '진료시간' })).toBeVisible();
@@ -46,6 +48,7 @@ test('리뷰 안내는 모바일에서 간결한 푸터를 표시하고 데스�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('banner').getByRole('link', { name: /서울대학교 엠블럼 서울본치과/ }).click();
   await expect(page).toHaveURL('/');
+  await expect(privacyLink).toBeVisible();
   await expect(footer.getByRole('link', { name: /전화 상담/ })).toBeVisible();
   await expect(footer.getByRole('heading', { name: '오시는 길' })).toBeVisible();
   await expect(footer.getByRole('heading', { name: '진료시간' })).toBeVisible();

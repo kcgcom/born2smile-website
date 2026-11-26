@@ -259,7 +259,7 @@ export function Footer({ clinic, hours, links }: {
             <span aria-hidden="true" className="group-data-[compact-mobile]/footer:max-md:hidden">{" · "}</span>
             <Link
               href="/privacy"
-              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-gray-200 group-data-[compact-mobile]/footer:max-md:mx-auto group-data-[compact-mobile]/footer:max-md:flex group-data-[compact-mobile]/footer:max-md:w-fit"
+              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-gray-200 group-data-[compact-mobile]/footer:max-md:hidden"
             >
               개인정보처리방침
             </Link>
