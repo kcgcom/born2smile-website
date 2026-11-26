@@ -36,7 +36,7 @@ export default async function ContactPage() {
       <section className="section-padding bg-[var(--surface)]">
         <div className="container-narrow">
           <div className="grid gap-10 md:grid-cols-2">
-            {/* 전화 상담 안내 */}
+            {/* 진료 예약 및 상담 */}
             <FadeIn direction="left" className="space-y-6">
               <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--foreground)]">
                 진료 예약 및 상담
@@ -46,6 +46,18 @@ export default async function ContactPage() {
                 <br />
                 궁금하신 점이 있으시면 언제든 연락주세요.
               </p>
+
+              <TrackedAnchor
+                href={NAVER_BOOKING_URL}
+                event="naver_booking_click"
+                properties={{ cta_location: "contact_main", page_type: "contact" }}
+                className="naver-booking-button flex items-center gap-4 rounded-2xl p-6 font-bold"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/5">
+                  <NaverBookingIcon />
+                </span>
+                네이버 예약
+              </TrackedAnchor>
 
               <TrackedAnchor
                 href={clinic.phoneHref}
@@ -61,18 +73,6 @@ export default async function ContactPage() {
                   <div className="text-sm text-blue-50">대표전화</div>
                   <div className="text-2xl font-bold">{clinic.phone}</div>
                 </div>
-              </TrackedAnchor>
-
-              <TrackedAnchor
-                href={NAVER_BOOKING_URL}
-                event="naver_booking_click"
-                properties={{ cta_location: "contact_main", page_type: "contact" }}
-                className="naver-booking-button flex items-center gap-4 rounded-2xl p-6 font-bold"
-              >
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F0FAF4]">
-                  <NaverBookingIcon />
-                </span>
-                네이버 예약
               </TrackedAnchor>
 
               {links.kakaoChannel ? (

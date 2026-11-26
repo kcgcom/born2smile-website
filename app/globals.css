@@ -86,16 +86,7 @@ body {
 
 @layer components {
   .naver-booking-button {
-    border: 1px solid #067a3e;
-    background-color: #fff;
-    color: #067a3e;
-    @apply transition-colors motion-reduce:transition-none;
-  }
-
-  @media (hover: hover) {
-    .naver-booking-button:hover {
-      background-color: #f0faf4;
-    }
+    @apply border border-primary bg-surface text-primary transition-colors hover:bg-primary/5 motion-reduce:transition-none;
   }
 }
 

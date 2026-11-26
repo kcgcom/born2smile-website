@@ -13,6 +13,7 @@ import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 
 export function Header() {
   const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const isReviewPage = pathname === "/review";
   const isAdmin = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -133,7 +134,7 @@ export function Header() {
               href={CLINIC.phoneHref}
               event="header_phone_click"
               properties={{ cta_location: "header_mobile", page_type: "global" }}
-              className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3 ${
+              className={`${isHomePage ? "hidden md:inline-flex" : "inline-flex"} h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors min-[390px]:w-auto min-[390px]:gap-1.5 min-[390px]:px-3 ${
                 isReviewPage
                   ? "border border-[var(--color-primary)] bg-[var(--surface)] text-[var(--color-primary-dark)] hover:bg-[var(--color-primary)]/5"
                   : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"

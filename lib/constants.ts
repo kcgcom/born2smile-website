@@ -337,7 +337,7 @@ export const NAV_ITEMS = [
   { href: "/about", label: "병원 소개", shortLabel: "병원소개" },
   { href: "/treatments", label: "진료 안내", shortLabel: "진료안내" },
   { href: "/blog", label: "건강칼럼", shortLabel: "건강칼럼" },
-  { href: "/contact", label: "상담 안내", shortLabel: "상담안내" },
+  { href: "/contact", label: "상담 안내", shortLabel: "문의 및 예약" },
 ] as const;
 
 // -------------------------------------------------------------

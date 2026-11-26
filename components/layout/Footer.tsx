@@ -12,7 +12,7 @@ export function Footer({ clinic, hours, links }: {
 
   return (
     <FooterLayout>
-      <div className="mx-auto max-w-7xl px-4 pt-12 pb-[calc(10rem+env(safe-area-inset-bottom,0px))] group-data-[compact-mobile]/footer:max-md:pt-6 group-data-[compact-mobile]/footer:max-md:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-12">
+      <div className="mx-auto max-w-7xl px-4 pt-12 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] group-data-[compact-mobile]/footer:max-md:pt-6 group-data-[compact-mobile]/footer:max-md:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-12">
         {/* 병원명 + 전화번호 */}
         <div className="mb-8 flex flex-col items-center gap-3 group-data-[compact-mobile]/footer:max-md:hidden sm:flex-row sm:justify-between">
           <span className="text-xl font-bold text-white">{footerClinicName}</span>

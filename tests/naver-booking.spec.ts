@@ -4,38 +4,65 @@ const BOOKING_URL = "https://m.booking.naver.com/booking/16/bizes/1768707?theme=
 
 for (const viewport of [
   { width: 1440, height: 900 },
-  { width: 390, height: 844 },
+  { width: 320, height: 800 },
 ]) {
   for (const path of ["/", "/contact"]) {
-    test(`${viewport.width}px ${path} 본문의 네이버 예약 버튼이 예약 페이지로 이동한다`, async ({ page }) => {
+    const bookingLabel = path === "/" ? "진료예약" : "네이버 예약";
+    test(`${viewport.width}px ${path} 본문의 ${bookingLabel} 버튼이 예약 페이지로 이동한다`, async ({ page }) => {
       await page.setViewportSize(viewport);
       await page.route("https://m.booking.naver.com/**", (route) =>
         route.fulfill({ body: "네이버 예약 테스트" }),
       );
       await page.goto(path);
-      await page.getByRole("main").getByRole("link", { name: "네이버 예약" }).click();
+      const main = page.getByRole("main");
+      const booking = main.getByRole("link", { name: bookingLabel, exact: true });
+      await expect(booking).toHaveCSS("color", "rgb(37, 99, 235)");
+      await expect(booking).toHaveCSS("border-top-color", "rgb(37, 99, 235)");
+      await expect(booking.locator("svg")).toHaveCSS("fill", "rgb(3, 199, 90)");
+      if (path === "/") {
+        const phone = main.getByRole("link", { name: "전화문의", exact: true });
+        await expect(phone).toHaveAttribute("href", "tel:18337552");
+        await expect(phone.locator("svg")).toBeVisible();
+        const [bookingBox, phoneBox] = await Promise.all([booking.boundingBox(), phone.boundingBox()]);
+        expect(bookingBox!.y).toBeCloseTo(phoneBox!.y);
+        expect(bookingBox!.x + bookingBox!.width).toBeLessThanOrEqual(phoneBox!.x);
+      } else {
+        const phone = main.getByRole("link", { name: /^대표전화/ });
+        const [bookingBox, phoneBox] = await Promise.all([booking.boundingBox(), phone.boundingBox()]);
+        expect(bookingBox!.y + bookingBox!.height).toBeLessThanOrEqual(phoneBox!.y);
+      }
+      await booking.click();
       await expect(page).toHaveURL(BOOKING_URL);
     });
   }
 }
 
-test("모바일 하단에서 전화 상담 옆에 네이버 예약을 표시한다", async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 800 });
+test("320px 모바일 하단의 문의 및 예약에서 전화와 네이버 예약에 접근한다", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
   await page.route("https://m.booking.naver.com/**", (route) =>
     route.fulfill({ body: "네이버 예약 테스트" }),
   );
   await page.goto("/");
 
   const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
-  const phone = menu.getByRole("link", { name: "전화 상담" });
-  const booking = menu.getByRole("link", { name: "네이버 예약" });
-  await expect(phone).toHaveAttribute("href", "tel:18337552");
-  await expect(phone).toBeInViewport({ ratio: 1 });
-  await expect(booking).toBeInViewport({ ratio: 1 });
-  const [phoneBox, bookingBox] = await Promise.all([phone.boundingBox(), booking.boundingBox()]);
-  expect(phoneBox!.y).toBe(bookingBox!.y);
-  expect(bookingBox!.x).toBeGreaterThan(phoneBox!.x);
+  await expect(menu).toHaveCSS("height", "65px");
+  const links = menu.getByRole("link");
+  await expect(links).toHaveCount(5);
+  const firstBox = await links.first().boundingBox();
+  for (const link of await links.all()) {
+    await expect(link).toBeInViewport({ ratio: 1 });
+    const box = await link.boundingBox();
+    expect(box!.y).toBe(firstBox!.y);
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
 
-  await booking.click();
+  const contact = menu.getByRole("link", { name: "문의 및 예약" });
+  await contact.click();
+  await expect(page).toHaveURL("/contact");
+  await expect(contact).toHaveAttribute("aria-current", "page");
+  const main = page.getByRole("main");
+  await expect(main.getByRole("link", { name: /^대표전화/ })).toHaveAttribute("href", "tel:18337552");
+  await main.getByRole("link", { name: "네이버 예약" }).click();
   await expect(page).toHaveURL(BOOKING_URL);
 });

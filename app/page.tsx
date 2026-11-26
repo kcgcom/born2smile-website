@@ -9,12 +9,13 @@ import {
   HelpCircle,
   Plane,
   Building2,
+  Phone,
 } from "lucide-react";
 import { CLINIC, DOCTORS, SEO, BASE_URL, REVIEWS, GOOGLE_REVIEW, NAVER_REVIEW, NAVER_BOOKING_URL, STAFF } from "@/lib/constants";
 import { getWebSiteJsonLd, getBreadcrumbJsonLd, serializeJsonLd } from "@/lib/jsonld";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/Motion";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
-import { TrackedLink } from "@/components/analytics/TrackedLink";
+import { getSiteClinic } from "@/lib/site-config-supabase";
 import { CTABanner } from "@/components/ui/CTABanner";
 import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
@@ -79,7 +80,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const clinic = await getSiteClinic();
   const websiteJsonLd = getWebSiteJsonLd();
   const breadcrumbJsonLd = getBreadcrumbJsonLd([{ name: "홈", href: "/" }]);
 
@@ -120,17 +122,17 @@ export default function Home() {
                   className="naver-booking-button inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-3 text-sm font-medium sm:px-8 sm:py-4 sm:text-base"
                 >
                   <NaverBookingIcon />
-                  네이버 예약
+                  진료예약
                 </TrackedAnchor>
-                <TrackedLink
-                  href="/contact"
-                  event="hero_contact_click"
+                <TrackedAnchor
+                  href={clinic.phoneHref}
+                  event="hero_phone_click"
                   properties={{ cta_location: "hero", page_type: "home" }}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] px-5 py-3 text-sm font-medium text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/5 sm:px-8 sm:py-4 sm:text-base"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary bg-surface px-5 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/5 motion-reduce:transition-none sm:px-8 sm:py-4 sm:text-base"
                 >
-                  상담 안내
-                  <ArrowRight size={16} />
-                </TrackedLink>
+                  <Phone size={20} aria-hidden="true" />
+                  전화문의
+                </TrackedAnchor>
               </div>
             </FadeIn>
           </div>

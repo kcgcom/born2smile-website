@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Phone, Home, Building2, BookOpen, Stethoscope } from "lucide-react";
+import { Phone, Home, Building2, BookOpen, Stethoscope, MessageCircle } from "lucide-react";
 import { TrackedAnchor } from "@/components/analytics/TrackedAnchor";
 import { TrackedLink } from "@/components/analytics/TrackedLink";
 import { closeMobileMenu } from "@/components/layout/mobileMenuEvents";
-import { NaverBookingIcon } from "@/components/ui/NaverBookingIcon";
-import { CLINIC, NAV_ITEMS, NAVER_BOOKING_URL } from "@/lib/constants";
+import { CLINIC, NAV_ITEMS } from "@/lib/constants";
 import type { PublicSiteHours } from "@/lib/site-config-supabase";
 import { getClinicStatus, type ClinicStatusInfo } from "@/lib/date";
 
@@ -17,10 +16,10 @@ const NAV_ICONS: Record<string, typeof Home> = {
   "/about": Building2,
   "/treatments": Stethoscope,
   "/blog": BookOpen,
-  "/contact": Phone,
+  "/contact": MessageCircle,
 };
 
-export function FloatingCTA({ hours, phoneHref }: { hours: PublicSiteHours; phoneHref: string }) {
+export function FloatingCTA({ hours }: { hours: PublicSiteHours }) {
   const pathname = usePathname();
   const showDesktopPhone = !pathname.startsWith("/contact");
 
@@ -44,78 +43,56 @@ export function FloatingCTA({ hours, phoneHref }: { hours: PublicSiteHours; phon
     <>
       {/* 모바일 하단 고정 바 */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[var(--border)] bg-[var(--surface)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label="빠른 메뉴"
       >
-        <div className="grid grid-cols-2 border-b border-[var(--border)]">
-          <TrackedAnchor
-            href={phoneHref}
-            event="floating_phone_click"
-            properties={{ cta_location: "floating_mobile_phone", page_type: "global" }}
-            className="flex min-h-11 items-center justify-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
-          >
-            <Phone size={16} aria-hidden="true" />
-            전화 상담
-          </TrackedAnchor>
-          <TrackedAnchor
-            href={NAVER_BOOKING_URL}
-            event="naver_booking_click"
-            properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
-            className="naver-booking-button flex min-h-11 items-center justify-center gap-2 text-sm font-medium"
-          >
-            <NaverBookingIcon />
-            네이버 예약
-          </TrackedAnchor>
-        </div>
-        <div className="grid grid-cols-5">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const isContact = item.href === "/contact";
-            const Icon = NAV_ICONS[item.href] ?? Home;
-            const className = `flex min-h-[64px] flex-col items-center justify-center gap-1 text-sm transition-colors ${
-              isActive
-                ? "font-medium text-[var(--color-primary)]"
-                : isContact
-                  ? "font-medium text-[var(--color-gold-dark)]"
-                  : "text-[var(--muted)] hover:text-[var(--color-primary)]"
-            }`;
+        {NAV_ITEMS.map((item) => {
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isContact = item.href === "/contact";
+          const Icon = NAV_ICONS[item.href] ?? Home;
+          const className = `flex min-h-16 flex-col items-center justify-center gap-1 text-xs leading-4 tracking-tight transition-colors motion-reduce:transition-none focus-visible:-outline-offset-2 ${
+            isActive
+              ? "font-medium text-[var(--color-primary)]"
+              : isContact
+                ? "font-medium text-[var(--color-gold-dark)]"
+                : "text-[var(--muted)] hover:text-[var(--color-primary)]"
+          }`;
 
-            if (isContact) {
-              return (
-                <TrackedLink
-                  key={item.href}
-                  href={item.href}
-                  event="floating_contact_nav_click"
-                  properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => handleNavClick(item.href)}
-                  className={className}
-                >
-                  <Icon size={22} aria-hidden="true" />
-                  {item.shortLabel}
-                </TrackedLink>
-              );
-            }
-
+          if (isContact) {
             return (
-              <Link
+              <TrackedLink
                 key={item.href}
                 href={item.href}
-                aria-label={item.shortLabel}
+                event="floating_contact_nav_click"
+                properties={{ cta_location: "floating_mobile_nav", page_type: "global" }}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => handleNavClick(item.href)}
                 className={className}
               >
                 <Icon size={22} aria-hidden="true" />
                 {item.shortLabel}
-              </Link>
+              </TrackedLink>
             );
-          })}
-        </div>
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.shortLabel}
+              aria-current={isActive ? "page" : undefined}
+              onClick={() => handleNavClick(item.href)}
+              className={className}
+            >
+              <Icon size={22} aria-hidden="true" />
+              {item.shortLabel}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* 데스크톱 플로팅 전화 버튼 + 진료 상태 */}

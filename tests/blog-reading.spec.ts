@@ -50,6 +50,7 @@ for (const mode of ["missing", "throwing"] as const) {
       };
     }, mode);
     await page.route("https://m.booking.naver.com/**", route => route.fulfill({ body: "네이버 예약 테스트" }));
+    await page.route("https://dapi.kakao.com/v2/maps/**", route => route.abort());
     await page.clock.install();
     expect((await page.goto(PATH))?.status()).toBe(200);
     await expect.poll(() => events.find(e => e.event === "$pageview")?.properties.crypto_random_uuid_supported)
@@ -63,14 +64,6 @@ for (const mode of ["missing", "throwing"] as const) {
       window.dispatchEvent(new Event("scroll"));
     });
 
-    const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
-    const phone = menu.getByRole("link", { name: "전화 상담" });
-    await expect(phone).toHaveAttribute("href", "tel:18337552");
-    await phone.evaluate(link => link.addEventListener("click", event => event.preventDefault(), { once: true }));
-    await phone.click();
-    await page.clock.runFor(5000);
-    await expect.poll(() => events.some(e => e.event === "floating_phone_click")).toBe(true);
-
     if (mode === "missing") {
       expect(await root.getAttribute("data-test-reading-observer")).toBeNull();
     } else {
@@ -78,7 +71,19 @@ for (const mode of ["missing", "throwing"] as const) {
     }
     expect(events.filter(e => e.event === "blog_article_viewed" || e.event.startsWith("blog_read_"))).toEqual([]);
 
-    await menu.getByRole("link", { name: "네이버 예약" }).click();
+    const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
+    await menu.getByRole("link", { name: "문의 및 예약" }).click();
+    await expect(page).toHaveURL("/contact");
+    const main = page.getByRole("main");
+    const phone = main.getByRole("link", { name: /^대표전화/ });
+    await expect(phone).toHaveAttribute("href", "tel:18337552");
+    await phone.evaluate(link => link.addEventListener("click", event => event.preventDefault(), { once: true }));
+    await phone.click();
+    await page.clock.runFor(5000);
+    await expect.poll(() => events.some(e => e.event === "floating_contact_nav_click")).toBe(true);
+    await expect.poll(() => events.some(e => e.event === "contact_phone_click")).toBe(true);
+
+    await main.getByRole("link", { name: "네이버 예약" }).click();
     await expect(page).toHaveURL(/^https:\/\/m\.booking\.naver\.com\/booking\/16\/bizes\/1768707\?/);
     expect(undecoded).toEqual([]);
     expect(errors).toEqual([]);

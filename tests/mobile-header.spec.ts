@@ -24,7 +24,11 @@ test.describe('모바일 헤더', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await home.click();
     await expect(page).toHaveURL('/');
+    await expect(phone).toBeHidden();
+    await page.setViewportSize({ width: 768, height: 844 });
+    await expect(phone).toBeVisible();
     await expect(phone).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+    await page.setViewportSize({ width: 390, height: 844 });
     await menu.click();
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
 
@@ -55,7 +59,7 @@ test.describe('모바일 헤더', () => {
   for (const width of [360, 375, 390]) {
     test(`${width}px에서 한 줄 레이아웃과 터치 영역을 유지한다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
-      await page.goto('/');
+      await page.goto('/treatments');
 
       const header = page.locator('header');
       const logo = header.getByRole('link', { name: /서울대학교 엠블럼 서울본치과/ });
