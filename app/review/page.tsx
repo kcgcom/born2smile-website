@@ -4,12 +4,12 @@ import { ArrowUpRight } from "lucide-react";
 import { BASE_URL, CLINIC, GOOGLE_REVIEW, NAVER_REVIEW } from "@/lib/constants";
 
 const REVIEW_URL = `${BASE_URL}/review`;
-const SHARE_TITLE = `${CLINIC.name} 방문 후기 남기기`;
+const SHARE_TITLE = `후기를 남겨주세요 | ${CLINIC.name}`;
 const SHARE_DESCRIPTION = "방문해 주셔서 감사합니다. 네이버나 구글 중 편한 곳에 후기를 남겨주세요.";
 const CLINIC_PHOTO = "/images/facility/waiting-room.jpg";
 
 export const metadata: Metadata = {
-  title: "리뷰 안내",
+  title: { absolute: SHARE_TITLE },
   description: "서울본치과에 방문해 주셔서 감사합니다. 네이버 또는 Google에서 방문 후기를 남기실 수 있습니다.",
   alternates: { canonical: REVIEW_URL },
   robots: { index: false, follow: true, googleBot: { index: false, follow: true } },

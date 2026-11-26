@@ -4,6 +4,7 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
   await page.setViewportSize({ width: 390, height: 664 });
   const response = await page.goto('/review');
   expect(response?.status()).toBe(200);
+  await expect(page).toHaveTitle('후기를 남겨주세요 | 서울본치과');
 
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { name: '방문해 주셔서 감사합니다.', exact: true })).toBeVisible();
@@ -20,7 +21,7 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.born2smile.co.kr/review');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '서울본치과 방문 후기 남기기');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '후기를 남겨주세요 | 서울본치과');
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', '방문해 주셔서 감사합니다. 네이버나 구글 중 편한 곳에 후기를 남겨주세요.');
 });
 
