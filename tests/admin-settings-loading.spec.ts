@@ -46,6 +46,8 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
   let emergencyNotice: EmergencyNotice | null = null;
   const fixtures = structuredClone({ ...FIXTURES, hours });
   let failWrite = false;
+  let failFallbackSync = false;
+  let fallbackRetries = 0;
   await page.route("**/api/admin/**", async route => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("auth-check")) return route.fulfill({ json: { ok: true, access: { isOwner } } });
@@ -65,7 +67,13 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
       if (holdWrite) await holdWrite;
       if (failWrite) return route.fulfill({ status: 503, json: { message: "테스트 저장 실패" } });
       Object.assign(fixtures[key], submitted);
-      return route.fulfill({ json: { data: submitted } });
+      return route.fulfill({
+        json: { data: { ...submitted, ...(key === "hours" && failFallbackSync && { fallbackSync: "failed" }) } },
+      });
+    }
+    if (route.request().method() === "POST" && path === "/api/admin/site-config/hours") {
+      fallbackRetries++;
+      return route.fulfill({ json: { data: { synced: true } } });
     }
     if (route.request().method() !== "GET") return route.fulfill({ status: 400, json: { message: "테스트 쓰기 차단" } });
     requests.push(key);
@@ -74,8 +82,29 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
     return route.fulfill({ json: { data: fixtures[key] ?? {} } });
   });
   await page.goto(staffWorkspace ? "/staff" : "/admin/system/settings");
-  return { requests, writes, failSave: () => { failWrite = true; }, setState: (next: typeof state) => { state = next; } };
+  return {
+    requests,
+    writes,
+    failSave: () => { failWrite = true; },
+    failFallbackSync: () => { failFallbackSync = true; },
+    fallbackRetries: () => fallbackRetries,
+    setState: (next: typeof state) => { state = next; },
+  };
 }
+
+test("진료시간 사본 갱신을 재시도해도 진료시간을 다시 저장하지 않는다", async ({ page }) => {
+  const mock = await openSettings(page, "hours", "success");
+  mock.failFallbackSync();
+  const card = settingsSection(page, "hours");
+  await card.getByRole("button", { name: "편집", exact: true }).click();
+  await card.getByRole("textbox", { name: EDIT_FIELDS.hours.label, exact: true }).fill("변경한 공지");
+  await card.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "진료시간은 저장됐지만" })).toBeVisible();
+  await page.getByRole("button", { name: "사본 다시 동기화" }).click();
+  await expect(page.getByText("장애 대비 사본을 갱신했습니다.")).toBeVisible();
+  expect(mock.writes).toHaveLength(1);
+  expect(mock.fallbackRetries()).toBe(1);
+});
 
 for (const isOwner of [true, false]) {
   test(`${isOwner ? "관리자" : "직원"} 설정에서 긴급 공지를 미리보고 게시한 뒤 내린다`, async ({ page }) => {

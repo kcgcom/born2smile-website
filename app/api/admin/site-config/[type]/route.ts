@@ -7,6 +7,7 @@ import {
   getSiteClinicDraft,
   getSiteHoursDraft,
   getSiteSchedule,
+  republishSiteHoursFallback,
   updateSiteLinks,
   updateSiteClinic,
   updateSiteHours,
@@ -138,3 +139,34 @@ async function writeSetting(
 
 export const PUT = writeSetting;
 export const PATCH = writeSetting;
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ type: string }> },
+) {
+  const auth = await verifyAdminRequest(request);
+  if (!auth.ok) return unauthorizedResponse(auth);
+
+  if ((await params).type !== "hours") {
+    return Response.json(
+      { error: "METHOD_NOT_ALLOWED", message: "사본 갱신은 진료시간에만 사용할 수 있습니다" },
+      { status: 405, headers: { ...CACHE_HEADERS, Allow: "GET, PUT" } },
+    );
+  }
+
+  try {
+    if (await republishSiteHoursFallback()) {
+      return Response.json({ data: { synced: true } }, { headers: CACHE_HEADERS });
+    }
+    return Response.json(
+      { error: "FALLBACK_NOT_CONFIGURED", message: "장애 대비 사본 저장소가 연결되어 있지 않습니다." },
+      { status: 503, headers: CACHE_HEADERS },
+    );
+  } catch (error) {
+    Sentry.captureException(error);
+    return Response.json(
+      { error: "FALLBACK_SYNC_FAILED", message: "장애 대비 사본을 갱신하지 못했습니다. 다시 시도해 주세요." },
+      { status: 502, headers: CACHE_HEADERS },
+    );
+  }
+}

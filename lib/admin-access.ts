@@ -35,7 +35,7 @@ export function canUseAdminApi(access: AdminAccess, method: string, pathname: st
     if (/^\/api\/admin\/insurance-forms(?:\/[a-f0-9-]+)?$/.test(pathname)) return true;
     return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/(?:clinic|hours|schedule))$/.test(pathname);
   }
-  if (method === "POST") return /^\/api\/admin\/(?:blog-posts|content-planner|content-tasks(?:\/[a-f0-9-]+\/draft)?|content-revisions|publication-review|upload)$/.test(pathname);
+  if (method === "POST") return /^\/api\/admin\/(?:blog-posts|content-planner|content-tasks(?:\/[a-f0-9-]+\/draft)?|content-revisions|publication-review|site-config\/hours|upload)$/.test(pathname);
   if (method === "PUT") return /^\/api\/admin\/(?:blog-posts\/[a-z0-9-]+|content-planner\/[a-z0-9-]+)$/.test(pathname);
   return method === "PATCH" && (pathname === "/api/admin/site-config/hours"
     || /^\/api\/admin\/content-tasks\/[a-f0-9-]+$/.test(pathname));

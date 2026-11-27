@@ -23,7 +23,7 @@ function formatExceptionDateLabel(date: string) {
 }
 
 export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: boolean; clinicCard?: ReactNode }) {
-  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, fallbackSyncFailed, handleSave, discardChanges, updateForm, setField } =
+  const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, fallbackSyncFailed, fallbackRetry, retryFallback, handleSave, discardChanges, updateForm, setField } =
     useSettingsEditor<SiteHours>("/api/admin/site-config/hours", {
       patch: exceptionsOnly ? ({ exceptions }) => ({ exceptions }) : undefined,
       persistDraft: !exceptionsOnly,
@@ -256,7 +256,17 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
 
   const exceptionColumn = (
     <div className="min-w-0 space-y-4">
-      {fallbackSyncFailed && <AdminNotice tone="warning">진료시간은 저장됐지만 장애 대비 사본을 갱신하지 못했습니다.</AdminNotice>}
+      {fallbackSyncFailed && (
+        <div className="space-y-2">
+          <AdminNotice tone="warning">
+            {fallbackRetry?.error ?? "진료시간은 저장됐지만 장애 대비 사본을 갱신하지 못했습니다."}
+          </AdminNotice>
+          <AdminActionButton tone="ghost" onClick={retryFallback} disabled={saving} className="min-h-11 px-3">
+            사본 다시 동기화
+          </AdminActionButton>
+        </div>
+      )}
+      {fallbackRetry && !fallbackRetry.error && <AdminNotice tone="success">장애 대비 사본을 갱신했습니다.</AdminNotice>}
       {loadError && <AdminErrorState message={`진료시간 조회 실패: ${loadError}`} onRetry={refetch} />}
       <HoursExceptionCalendar ref={calendarRegion} schedule={form.schedule} exceptions={form.exceptions}
         disabled={exceptionActionsDisabled || saving} notice={calendarNotice} onSelectDate={selectCalendarDate} />

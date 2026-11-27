@@ -209,12 +209,7 @@ export async function updateSiteHours(
     if (updated) {
       safeRevalidateTag(CACHE_TAG_HOURS, { expire: 0 });
       try {
-        const synced = await syncGlobalConfigHours(async () => {
-          const { data: row, error } = await admin
-            .from(TABLE).select("data, updated_at").eq("type", "hours").maybeSingle();
-          if (error || !row) throw new Error("Clinic hours synchronization source read failed");
-          return { hours: siteHoursSchema.parse({ ...defaultSiteHours(), ...row.data }), version: row.updated_at };
-        });
+        const synced = await republishSiteHoursFallback();
         return synced ? "synced" : "not-configured";
       } catch {
         console.error("[site-config] clinic hours saved; Global Config synchronization failed");
@@ -223,6 +218,17 @@ export async function updateSiteHours(
     }
   }
   throw new Error("다른 사용자가 진료시간을 수정 중입니다. 잠시 후 다시 저장해 주세요.");
+}
+
+export async function republishSiteHoursFallback(): Promise<boolean> {
+  assertLiveSiteConfigWrite();
+  const admin = getSupabaseAdmin();
+  return syncGlobalConfigHours(async () => {
+    const { data: row, error } = await admin
+      .from(TABLE).select("data, updated_at").eq("type", "hours").maybeSingle();
+    if (error || !row) throw new Error("Clinic hours synchronization source read failed");
+    return { hours: siteHoursSchema.parse({ ...defaultSiteHours(), ...row.data }), version: row.updated_at };
+  });
 }
 
 // =============================================================

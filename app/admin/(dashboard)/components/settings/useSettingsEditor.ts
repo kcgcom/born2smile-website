@@ -17,6 +17,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fallbackSyncFailed, setFallbackSyncFailed] = useState(false);
+  const [fallbackRetry, setFallbackRetry] = useState<{ error: string | null } | null>(null);
   const savingRef = useRef(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const form = useMemo(() => (readOnly ? data : formEdits ?? data) ?? null, [readOnly, formEdits, data]);
@@ -40,6 +41,7 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
     const submitted = form;
     setSaved(false);
     setSaveError(null);
+    setFallbackRetry(null);
     const { data: result, error } = await mutate(endpoint, patch ? "PATCH" : "PUT", patch ? patch(submitted) : submitted);
     savingRef.current = false;
     if (error) {
@@ -54,6 +56,15 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
       if (savedTimer.current) clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 2000);
     }
+  };
+
+  const retryFallback = async () => {
+    if (readOnly || !fallbackSyncFailed || savingRef.current) return;
+    savingRef.current = true;
+    const { error } = await mutate(endpoint, "POST");
+    savingRef.current = false;
+    setFallbackRetry({ error });
+    if (!error) setFallbackSyncFailed(false);
   };
 
   const updateForm = (updater: (prev: T) => T) => {
@@ -76,5 +87,5 @@ export function useSettingsEditor<T extends object>(endpoint: string, options?: 
   const setField = (key: keyof T) => (value: string) =>
     updateForm((prev) => ({ ...prev, [key]: value }));
 
-  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, fallbackSyncFailed, handleSave, discardChanges, updateForm, setField };
+  return { form, data, loading, loadError, refetch, saving, saved: saved && !dirty, dirty, recovery, saveError, fallbackSyncFailed, fallbackRetry, retryFallback, handleSave, discardChanges, updateForm, setField };
 }

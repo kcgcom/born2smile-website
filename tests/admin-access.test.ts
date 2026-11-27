@@ -39,6 +39,8 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/hours"), false);
   assert.equal(canUseAdminApi(staff, "PATCH", "/api/admin/site-config/clinic"), false);
   assert.equal(canUseAdminApi(staff, "PATCH", "/api/admin/site-config/hours"), true);
+  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/site-config/hours"), true);
+  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/site-config/clinic"), false);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/links"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/site-config/links"), false);
   assert.equal(canUseAdminApi(OWNER_ACCESS, "PUT", "/api/admin/site-config/links"), true);
