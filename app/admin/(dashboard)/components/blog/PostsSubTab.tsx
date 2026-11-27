@@ -113,7 +113,7 @@ export function PostsSubTab({ publishedOnly = false }: { publishedOnly?: boolean
     [posts, feedbackData, today, debouncedQuery, categoryFilter, statusFilter, tagFilter, sortKey],
   );
   const draftRankMap = useMemo(() => getDraftRankMap(filteredPosts, sortKey), [filteredPosts, sortKey]);
-  const performancePost = posts.find(post => post.slug === performanceSlug);
+  const performancePost = publishedOnly ? undefined : posts.find(post => post.slug === performanceSlug);
   const showPerformance = (slug: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set("performance", slug);
@@ -233,6 +233,7 @@ export function PostsSubTab({ publishedOnly = false }: { publishedOnly?: boolean
                   <PostListItem
                     key={post.slug}
                     post={post}
+                    compactOnMobile={publishedOnly}
                     today={today}
                     feedbackData={feedbackData}
                     feedbackLoading={feedbackLoading}
@@ -243,7 +244,7 @@ export function PostsSubTab({ publishedOnly = false }: { publishedOnly?: boolean
                     rescheduling={rescheduling}
                     rescheduleError={rescheduleError}
                     onToggleExpanded={(slug) => setExpandedSlug((current) => (current === slug ? null : slug))}
-                    onShowPerformance={showPerformance}
+                    onShowPerformance={publishedOnly ? undefined : showPerformance}
                     onEdit={handleEdit}
                     canPublish={canPublish}
                     onDelete={handleDelete}

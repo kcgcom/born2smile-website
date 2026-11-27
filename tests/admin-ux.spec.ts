@@ -93,7 +93,9 @@ for (const workspace of ["admin", "staff"] as const) {
       { ...published, slug: "draft", title: "초안 글", published: false, tags: [] },
     ] } }));
     const listResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/admin/blog-posts");
-    await page.goto(workspace === "staff" ? "/staff/posts?status=draft" : "/admin/content/posts");
+    await page.goto(workspace === "staff"
+      ? `/staff/posts?status=draft&performance=${published.slug}`
+      : "/admin/content/posts");
     expect(new URL((await listResponse).url()).searchParams.get("status")).toBe(workspace === "staff" ? "published" : null);
     await expect(page.getByRole("button", { name: "치료 후 안내", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "환자용 링크 복사" })).toHaveCount(3);
@@ -111,9 +113,33 @@ for (const workspace of ["admin", "staff"] as const) {
     await page.getByRole("searchbox", { name: "제목 검색" }).fill("발치");
     const copy = page.getByRole("button", { name: "환자용 링크 복사" });
     await expect(copy).toHaveCount(1);
-    if (workspace === "admin") await page.setViewportSize({ width: 1440, height: 900 });
-    await copy.scrollIntoViewIfNeeded();
     const row = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: "발치 후 안내", exact: true }) });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const performance = row.getByRole("button", { name: "발치 후 안내 성과 보기", exact: true });
+    if (workspace === "admin") await expect(performance).toBeVisible();
+    if (workspace === "staff") {
+      await expect(performance).toHaveCount(0);
+      await expect(page.getByRole("dialog", { name: "발치 후 안내 성과", exact: true })).toHaveCount(0);
+      await expect(copy.getByText("환자용 링크 복사", { exact: true })).toBeVisible();
+      for (const width of [414, 390, 360, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        await expect(copy.getByText("링크 복사", { exact: true })).toBeVisible();
+        const actions = row.getByRole("button");
+        await expect(actions).toHaveCount(3);
+        const boxes = await actions.evaluateAll(buttons => buttons.map(button => {
+          const { x, y, width, height } = button.getBoundingClientRect();
+          return { x, y, width, height };
+        }));
+        const card = (await row.boundingBox())!;
+        for (const box of boxes) {
+          expect(box.width).toBeGreaterThanOrEqual(44);
+          expect(box.height).toBeGreaterThanOrEqual(44);
+          expect(box.y).toBe(boxes[0].y);
+          expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width);
+        }
+      }
+    }
+    await copy.scrollIntoViewIfNeeded();
     const beforeCopy = await copy.boundingBox();
     const rowBefore = await row.boundingBox();
     await copy.click();
@@ -132,7 +158,7 @@ for (const workspace of ["admin", "staff"] as const) {
     expect(buttonBox!.width).toBe(beforeCopy!.width);
     expect(buttonBox!.height).toBe(beforeCopy!.height);
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(publicUrl);
-    if (workspace === "admin") await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 390, height: 844 });
 
     await expect(tag).toHaveValue("치료후관리");
     await tag.selectOption("기존 태그");

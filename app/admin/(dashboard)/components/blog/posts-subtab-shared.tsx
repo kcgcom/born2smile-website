@@ -64,6 +64,7 @@ interface PostsFilterPanelProps {
 
 interface PostListItemProps {
   post: AdminBlogPost;
+  compactOnMobile: boolean;
   today: string;
   feedbackData?: BlogFeedbackData | null;
   feedbackLoading: boolean;
@@ -74,7 +75,7 @@ interface PostListItemProps {
   rescheduling: boolean;
   rescheduleError: string | null;
   onToggleExpanded: (slug: string) => void;
-  onShowPerformance: (slug: string) => void;
+  onShowPerformance?: (slug: string) => void;
   onEdit: (post: AdminBlogPost) => void;
   canPublish: boolean;
   onDelete: (slug: string) => void;
@@ -417,6 +418,7 @@ export function PostsFilterPanel({
 
 export function PostListItem({
   post,
+  compactOnMobile,
   today,
   feedbackData,
   feedbackLoading,
@@ -511,20 +513,29 @@ export function PostListItem({
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-start gap-2 border-t border-slate-200 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+        <div className={`flex shrink-0 flex-wrap items-start gap-2 border-t border-slate-200 pt-2 sm:justify-end sm:border-0 sm:pt-0${compactOnMobile ? " max-sm:gap-1" : ""}`}>
           {isPublished && (
-            <div className="flex w-32 max-w-full flex-col">
+            <div className={`flex max-w-full flex-col ${compactOnMobile ? "w-22 sm:w-32" : "w-32"}`}>
               <AdminActionButton
                 type="button"
                 tone="dark"
                 onClick={copyPublicUrl}
                 title={copyStatus === "copied" ? publicUrl : undefined}
-                className="h-11 w-full whitespace-nowrap px-2 text-xs"
+                aria-label={compactOnMobile && copyStatus !== "copied" ? "환자용 링크 복사" : undefined}
+                className={`h-11 w-full whitespace-nowrap px-2 text-xs${compactOnMobile ? " max-sm:px-2" : ""}`}
               >
                 {copyStatus === "copied" ? (
                   <><Check size={14} aria-hidden="true" />복사 완료!</>
                 ) : (
-                  <><Copy size={14} aria-hidden="true" />환자용 링크 복사</>
+                  <>
+                    <Copy size={14} aria-hidden="true" />
+                    {compactOnMobile ? (
+                      <>
+                        <span className="sm:hidden">링크 복사</span>
+                        <span className="hidden sm:inline">환자용 링크 복사</span>
+                      </>
+                    ) : "환자용 링크 복사"}
+                  </>
                 )}
               </AdminActionButton>
               <span role="status" className="sr-only">
@@ -532,14 +543,24 @@ export function PostListItem({
               </span>
             </div>
           )}
-          <button type="button" onClick={() => onShowPerformance(post.slug)} aria-label={`${post.title} 성과 보기`} className="flex min-h-11 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"><BarChart3 size={14} />성과</button>
+          {onShowPerformance && (
+            <button
+              type="button"
+              onClick={() => onShowPerformance(post.slug)}
+              aria-label={`${post.title} 성과 보기`}
+              className="flex min-h-11 items-center gap-1 rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700"
+            >
+              <BarChart3 size={14} aria-hidden="true" />
+              성과
+            </button>
+          )}
           {!expanded && (
             <button
               onClick={() => onEdit(post)}
               className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-blue-50 hover:text-[var(--color-primary)]"
               aria-label={`${post.title} ${isDraft ? "검토·발행" : "수정"}`}
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
               {isDraft ? "검토·발행" : "수정"}
             </button>
           )}
@@ -548,7 +569,7 @@ export function PostListItem({
             aria-expanded={expanded}
             className="flex min-h-11 items-center gap-1 rounded px-3 py-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
           >
-            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {expanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}
             {expanded ? "접기" : "상세"}
           </button>
         </div>
