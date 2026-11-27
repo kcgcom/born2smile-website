@@ -1,12 +1,21 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { INSURANCE_FORM_MAX_BYTES, INSURANCE_FORM_NAME_LENGTH, type InsuranceForm } from "@/lib/insurance-forms";
+import { INSURANCE_FORM_MAX_BYTES, INSURANCE_FORM_NAME_LENGTH, INSURANCE_FORM_URL_LENGTH, type InsuranceForm } from "@/lib/insurance-forms";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { forbidden, unauthorizedResponse, verifyAdminRequest } from "../_lib/auth";
 import { formsResponse, insuranceFormsBucket } from "./_lib/forms";
 
 const nameSchema = z.string().trim().min(1).max(INSURANCE_FORM_NAME_LENGTH);
-const metadataSchema = z.object({ insurer: nameSchema, title: nameSchema });
+const namesSchema = z.object({ insurer: nameSchema, title: nameSchema });
+const sourceUrlSchema = z.string().trim().max(INSURANCE_FORM_URL_LENGTH)
+  .pipe(z.url({ protocol: /^https$/ }).transform((url) => new URL(url)))
+  .refine((url) => !url.username && !url.password)
+  .transform((url) => url.href)
+  .pipe(z.string().max(INSURANCE_FORM_URL_LENGTH));
+const metadataSchema = namesSchema.extend({
+  sourceUrl: sourceUrlSchema.nullish(),
+  sourcePageUrl: sourceUrlSchema.nullish(),
+});
 const formsSchema = z.array(metadataSchema.extend({ id: z.uuid(), createdAt: z.iso.datetime({ offset: true }) }));
 const PAGE_SIZE = 100;
 
@@ -36,8 +45,14 @@ export async function POST(request: Request) {
   const form = await request.formData().catch(() => null);
   if (!form) return formsResponse({ message: "양식 등록 요청을 읽을 수 없습니다." }, 400);
 
-  const metadata = metadataSchema.safeParse({ insurer: form.get("insurer"), title: form.get("title") });
-  if (!metadata.success) return formsResponse({ message: "보험사명과 양식명을 각각 80자 이내로 입력해 주세요." }, 400);
+  const names = namesSchema.safeParse({ insurer: form.get("insurer"), title: form.get("title") });
+  if (!names.success) return formsResponse({ message: "보험사명과 양식명을 각각 80자 이내로 입력해 주세요." }, 400);
+  const metadata = metadataSchema.safeParse({
+    ...names.data,
+    sourceUrl: form.get("sourceUrl") || undefined,
+    sourcePageUrl: form.get("sourcePageUrl") || undefined,
+  });
+  if (!metadata.success) return formsResponse({ message: "출처는 600자 이내의 HTTPS 주소를 입력해 주세요." }, 400);
 
   const file = form.get("file");
   if (!file || typeof file === "string" || !/\.pdf$/i.test(file.name)) {

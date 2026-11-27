@@ -3,11 +3,12 @@
 import { FileText, Printer, Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
-import { INSURANCE_FORM_MAX_BYTES, INSURANCE_FORM_NAME_LENGTH, INSURANCE_FORMS_API, type InsuranceForm } from "@/lib/insurance-forms";
+import { INSURANCE_FORM_MAX_BYTES, INSURANCE_FORM_NAME_LENGTH, INSURANCE_FORM_URL_LENGTH, INSURANCE_FORMS_API, type InsuranceForm } from "@/lib/insurance-forms";
 import { AdminErrorState } from "./AdminErrorState";
 import { fetchAdminResponse, useAdminApi, useAdminMutation } from "./useAdminApi";
 
 const inputClass = "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus-visible:outline-2 focus-visible:outline-blue-700";
+const sourceLinkClass = "inline-flex min-h-11 items-center rounded text-sm text-blue-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-700";
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium" });
 
 function searchable(value: string) {
@@ -106,6 +107,14 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
             <input name="title" className={inputClass} required maxLength={INSURANCE_FORM_NAME_LENGTH} />
           </label>
         </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm font-medium">원본 PDF 주소 (선택)
+            <input type="url" name="sourceUrl" className={inputClass} maxLength={INSURANCE_FORM_URL_LENGTH} placeholder="https://" />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">보험사 안내 페이지 주소 (선택)
+            <input type="url" name="sourcePageUrl" className={inputClass} maxLength={INSURANCE_FORM_URL_LENGTH} placeholder="https://" />
+          </label>
+        </div>
         <label className="grid gap-1 text-sm font-medium">PDF 파일
           <input name="file" type="file" accept=".pdf,application/pdf" required aria-describedby="insurance-form-file-help"
             className={`${inputClass} py-2 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1`} />
@@ -135,6 +144,14 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
                 <p className="text-sm text-slate-600">{form.insurer}</p>
                 <p className="font-semibold">{form.title}</p>
                 <p className="text-xs text-slate-600">등록 {dateFormat.format(new Date(form.createdAt))}</p>
+                {(form.sourceUrl || form.sourcePageUrl) && <div className="flex flex-wrap gap-x-4">
+                  {form.sourceUrl && <a href={form.sourceUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
+                    원본 PDF<span className="sr-only"> (새 탭)</span>
+                  </a>}
+                  {form.sourcePageUrl && <a href={form.sourcePageUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
+                    보험사 안내<span className="sr-only"> (새 탭)</span>
+                  </a>}
+                </div>}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
