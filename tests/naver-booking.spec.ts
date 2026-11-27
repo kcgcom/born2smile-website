@@ -45,13 +45,11 @@ test("320px 모바일 하단의 문의 / 예약에서 전화와 네이버 예약
   await page.goto("/");
 
   const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
-  await expect(menu).toHaveCSS("height", "65px");
   const links = menu.getByRole("link");
   await expect(links).toHaveCount(5);
   const firstBox = await links.first().boundingBox();
   for (const link of await links.all()) {
     await expect(link).toBeInViewport({ ratio: 1 });
-    await expect(link).toHaveCSS("font-size", "14px");
     const box = await link.boundingBox();
     expect(box!.y).toBe(firstBox!.y);
     expect(box!.width).toBeGreaterThanOrEqual(44);

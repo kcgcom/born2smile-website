@@ -191,7 +191,7 @@ export function KakaoMap({
             href={`https://map.kakao.com/link/search/${encodeURIComponent(CLINIC.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)] underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-primary)] underline"
           >
             카카오맵에서 보기 <span className="sr-only">(새 창)</span>
           </a>

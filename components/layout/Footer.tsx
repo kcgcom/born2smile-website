@@ -254,9 +254,9 @@ export function Footer({ clinic, hours, links }: {
           <p>
             대표 {clinic.representative} · 사업자등록번호 {clinic.businessNumber}
           </p>
-          <p className="mt-1">
+          <p className="mt-1 max-md:flex max-md:flex-col max-md:items-center">
             &copy; 2017–{new Date().getFullYear()} {footerClinicName}. All rights reserved.
-            <span aria-hidden="true" className="group-data-[compact-mobile]/footer:max-md:hidden">{" · "}</span>
+            <span aria-hidden="true" className="max-md:hidden">{" · "}</span>
             <Link
               href="/privacy"
               className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-gray-200 group-data-[compact-mobile]/footer:max-md:hidden"
