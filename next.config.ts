@@ -78,6 +78,11 @@ const CSP = [
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./.cache/site-config/snapshot.json"],
+    "/api/pdf-preview-assets/**": [
+      "./node_modules/pdfjs-dist/cmaps/**/*",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    ],
   },
   allowedDevOrigins: ["born2smile.dev.born2smile.co.kr"],
   poweredByHeader: false,
