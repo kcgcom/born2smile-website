@@ -16,7 +16,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <h1 className="font-headline text-4xl font-bold text-gray-900">
         문제가 발생했습니다
       </h1>
@@ -37,6 +37,6 @@ export default function Error({
           전화 상담 {CLINIC.phone}
         </a>
       </div>
-    </main>
+    </div>
   );
 }

@@ -12,6 +12,23 @@ const PATH = "/blog/prosthetics/swallowed-dental-prosthesis-what-to-do";
 // The SDK intentionally ignores HeadlessChrome. Exercise normal visitor capture.
 test.use({ userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36" });
 
+test.describe("서버에서 렌더링한 블로그 본문", () => {
+  test.use({ javaScriptEnabled: false, contextOptions: { reducedMotion: "reduce" } });
+
+  for (const path of [
+    "/blog/orthodontics/orthodontic-diet-guide",
+    "/blog/prosthetics/temporary-crown-fell-out",
+  ]) {
+    test(`${path}는 스트리밍 스크립트 없이 본문을 표시한다`, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(200);
+      const main = page.locator("#main-content");
+      await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(main.locator("[data-blog-reading-root]")).toBeVisible();
+    });
+  }
+});
+
 async function getPostHogOptOutKey(page: Page) {
   return page.evaluate(() => {
     const key = Object.keys(localStorage).find(name => /^ph_.+_posthog$/.test(name));

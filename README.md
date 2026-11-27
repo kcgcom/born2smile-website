@@ -28,6 +28,8 @@ pnpm dev  # http://localhost:3000
 
 Windows PowerShell에서 처음 설정할 때는 `if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }`을 사용합니다. 개발 스크립트의 셸 문법은 프로젝트의 pnpm 설정에서 처리합니다.
 
+`pnpm dev`와 `pnpm dev:live`는 관리자 화면의 개발 중 모듈 갱신 오류를 피하기 위해 Webpack을 사용합니다. `pnpm build`는 Next.js의 기본 번들러인 Turbopack을 사용합니다.
+
 이 저장소의 pnpm 버전은 `package.json`의 `packageManager`에 고정되어 있습니다. `pnpm --version`이 다른 버전을 출력하면 `pnpm dlx pnpm@12.23.0 install --frozen-lockfile`로 설치하고, 개발과 빌드 명령도 같은 방식으로 실행할 수 있습니다.
 
 로컬 네트워크 개발은 OPNsense DNS와 os-caddy를 공통 HTTPS 진입점으로 사용합니다. 프로젝트마다 도메인과 포트를 고정하고, DNS는 Caddy 서버로, Caddy는 해당 개발 PC의 프로젝트 포트로 연결합니다.

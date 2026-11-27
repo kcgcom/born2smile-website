@@ -31,9 +31,11 @@ const supabaseImageOrigins = [
   ...getCspOrigins(supabaseOrigin),
 ];
 
+// Webpack의 개발 번들은 모듈 코드를 eval로 실행한다.
+const devScriptEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://t1.daumcdn.net https://t1.kakaocdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com https://wcs.pstatic.net https://ssl.pstatic.net",
+  `script-src 'self' 'unsafe-inline'${devScriptEval} https://dapi.kakao.com https://t1.daumcdn.net https://t1.kakaocdn.net https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://static.cloudflareinsights.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.posthog.com https://wcs.pstatic.net https://ssl.pstatic.net`,
   "style-src 'self' 'unsafe-inline' https://*.i.posthog.com",
   [
     "img-src 'self' data: blob:",

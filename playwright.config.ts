@@ -2,7 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 30_000,
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   retries: 1,
   use: {
     baseURL: 'http://localhost:3000',
@@ -12,7 +13,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    port: 3000,
+    url: 'http://localhost:3000/',
     env: { SITE_CONFIG_DATA_SOURCE: 'fixture' },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

@@ -65,9 +65,18 @@ test.describe('Smoke Tests', () => {
   });
 
   test('404 페이지', async ({ page }) => {
+    const hydrationErrors: string[] = [];
+    page.on('pageerror', error => {
+      if (/hydration|minified react error #418/i.test(error.message)) hydrationErrors.push(error.message);
+    });
     const response = await page.goto('/this-page-does-not-exist');
     expect(response?.status()).toBe(404);
-    await expect(page.getByRole('link', { name: '홈으로 돌아가기' })).toBeVisible();
+    const main = page.getByRole('main');
+    await expect(main).toHaveCount(1);
+    await expect(main.getByRole('heading', { name: '404' })).toBeVisible();
+    await main.getByRole('link', { name: '홈으로 돌아가기' }).click();
+    await expect(page).toHaveURL('/');
+    expect(hydrationErrors).toEqual([]);
   });
 
   test('관리자 기본 진입은 admin 로그인으로 수렴', async ({ page }) => {

@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 수 있다', async ({ page }) => {
+  const hydrationErrors: string[] = [];
+  page.on('pageerror', error => {
+    if (/hydration|minified react error #418/i.test(error.message)) hydrationErrors.push(error.message);
+  });
   await page.setViewportSize({ width: 390, height: 664 });
   const response = await page.goto('/review');
   expect(response?.status()).toBe(200);
@@ -32,6 +36,7 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '후기를 남겨주세요 | 서울본치과');
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', '방문해 주셔서 감사합니다. 네이버나 구글 중 편한 곳에 후기를 남겨주세요.');
+  expect(hydrationErrors).toEqual([]);
 });
 
 test('리뷰 안내는 모바일에서 간결한 푸터를 표시하고 데스크톱에서는 병원 정보와 후기 링크를 제공한다', async ({ page }) => {

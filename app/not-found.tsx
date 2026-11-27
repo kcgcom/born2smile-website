@@ -3,7 +3,7 @@ import { CLINIC } from "@/lib/constants";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <h1 className="font-headline text-6xl font-bold text-gray-900">404</h1>
       <p className="mt-4 text-lg text-gray-600">
         요청하신 페이지를 찾을 수 없습니다.
@@ -25,6 +25,6 @@ export default function NotFound() {
           전화 상담 {CLINIC.phone}
         </a>
       </div>
-    </main>
+    </div>
   );
 }
