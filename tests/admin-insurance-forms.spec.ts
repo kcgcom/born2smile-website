@@ -124,7 +124,7 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
     };
   // Use Samsung's verified positions for the synthetic PDF in this test.
   }, "e0009a087bf6d92e60f7697103fd888e6d0898c7bbb8992621fd0dfe40bac74c");
-  await page.goto("/staff/system/insurance-forms");
+  await page.goto("/staff/insurance-forms");
   await expect(page.getByRole("link", { name: "보험 양식" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("button", { name: "양식 등록" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /삭제/ })).toHaveCount(0);
@@ -251,7 +251,7 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
   await print.click();
   await expect(page.locator("body")).toHaveAttribute("data-print-called", "true");
   await expect(search).toHaveValue("예시 손해");
-  await expect(page).toHaveURL(/\/staff\/system\/insurance-forms$/);
+  await expect(page).toHaveURL(/\/staff\/insurance-forms$/);
   expect(context.pages()).toEqual([page]);
   await page.emulateMedia({ media: "print" });
   const printPages = page.locator("#insurance-form-print img");

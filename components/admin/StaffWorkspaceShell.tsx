@@ -6,12 +6,12 @@ import { AdminBrowserPresence } from "./AdminBrowserPresence";
 import { useAdminAuthState } from "./AdminAuthProvider";
 import { DashboardHeader } from "./DashboardHeader";
 import { AdminSurface } from "./AdminChrome";
-import { STAFF_FIRST_VISIT, STAFF_HOME, STAFF_INSURANCE_FORMS } from "@/lib/admin-access";
+import { STAFF_FIRST_VISIT, STAFF_HOME, STAFF_INSURANCE_FORMS, STAFF_POSTS } from "@/lib/admin-access";
 
 const STAFF_NAV = [
   { href: STAFF_HOME, label: "홈" },
   { href: STAFF_FIRST_VISIT, label: "환자 안내 링크" },
-  { href: "/staff/content/posts", label: "블로그 공유" },
+  { href: STAFF_POSTS, label: "블로그 공유" },
   { href: STAFF_INSURANCE_FORMS, label: "보험 양식" },
 ] as const;
 
@@ -26,7 +26,7 @@ export function StaffWorkspaceShell({ children }: { children: React.ReactNode })
       <AdminSurface tone="white" className="mb-5 p-2">
         <nav aria-label="직원 업무 메뉴" className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 sm:flex sm:w-fit">
           {STAFF_NAV.map(({ href, label }) => {
-            const current = pathname === href ? "page" : pathname.startsWith(`${href}/`) ? "location" : undefined;
+            const current = pathname === href ? "page" : href !== STAFF_HOME && pathname.startsWith(`${href}/`) ? "location" : undefined;
             return (
               <Link key={href} href={href} aria-current={current}
                 className="inline-flex min-h-11 items-center justify-center rounded-lg px-1 text-center text-sm font-semibold text-slate-700 hover:bg-slate-200/70 focus-visible:outline-2 focus-visible:outline-blue-700 aria-[current]:bg-white aria-[current]:text-blue-900 sm:px-4">

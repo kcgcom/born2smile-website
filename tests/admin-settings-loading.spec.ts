@@ -73,7 +73,7 @@ async function openSettings(page: Page, section: Section, initial: "error" | "em
     if (key === section && state === "empty") return route.fulfill({ json: { data: null } });
     return route.fulfill({ json: { data: fixtures[key] ?? {} } });
   });
-  await page.goto(staffWorkspace ? "/staff/system/settings" : "/admin/system/settings");
+  await page.goto(staffWorkspace ? "/staff" : "/admin/system/settings");
   return { requests, writes, failSave: () => { failWrite = true; }, setState: (next: typeof state) => { state = next; } };
 }
 
@@ -125,7 +125,7 @@ test("휴진일 달력은 기본 요일보다 날짜별 운영 예외를 우선�
     ],
   });
   await page.goto("/staff/system/hours");
-  await expect(page).toHaveURL("/staff/system/settings#staff-hours");
+  await expect(page).toHaveURL("/staff#staff-hours");
   const calendar = page.getByRole("region", { name: "휴진일 달력" });
   for (const label of ["2026년 12월 2일 휴진", "2026년 12월 10일 정기 휴진"]) {
     await expect(calendar.getByRole("button", { name: label, exact: true })).toHaveClass(/\btext-red-700\b/);
@@ -233,7 +233,7 @@ for (const { role, isOwner } of [{ role: "스태프", isOwner: false }, { role: 
     const dialogs: string[] = [];
     page.on("dialog", async (dialog) => { dialogs.push(dialog.message()); await dialog.accept(); });
     await blog.click();
-    await expect(page).toHaveURL("/staff/content/posts");
+    await expect(page).toHaveURL("/staff/posts");
     expect(dialogs).toHaveLength(0);
     await home.click();
     await availableDate.click();
@@ -264,7 +264,7 @@ for (const { role, isOwner } of [{ role: "스태프", isOwner: false }, { role: 
     await unsavedDate.click();
     await expect(calendar.getByRole("button", { name: "2026년 12월 24일 휴진", exact: true })).toBeVisible();
     await blog.click();
-    await expect(page).toHaveURL("/staff/content/posts");
+    await expect(page).toHaveURL("/staff/posts");
     expect(dialogs).toEqual(["저장하지 않은 변경사항이 있습니다. 이 화면을 나가시겠습니까?"]);
     await home.click();
     await expect(unsavedDate).toHaveAttribute("aria-pressed", "false");

@@ -699,21 +699,21 @@ test("직원은 원장 화면에 접근하면 직원 홈으로 돌아간다", as
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, undefined, { isOwner: false });
   await page.goto("/admin/system/monitoring");
-  await expect(page).toHaveURL("/staff/system/settings");
+  await expect(page).toHaveURL("/staff");
   await expect(page.getByRole("navigation", { name: "관리자 워크스페이스" })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "관리자 보조 도구" })).toHaveCount(0);
   await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
   await expect(page.getByRole("navigation", { name: "업무 화면 전환" }).getByRole("link", { name: "Admin", exact: true })).toHaveCount(0);
-  await page.goto("/staff/content/posts/new");
-  await expect(page).toHaveURL("/staff/content/posts");
+  await page.goto("/staff/posts/new");
+  await expect(page).toHaveURL("/staff/posts");
   await expect(page.getByRole("button", { name: "새 글 작성", exact: true })).toHaveCount(0);
 });
 
 test("직원은 홈과 블로그 공유를 한 줄 메뉴에서 전환한다", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await setup(page, undefined, { isOwner: false });
-  await page.goto("/staff");
-  await expect(page).toHaveURL("/staff/system/settings");
+  await page.goto("/staff/login");
+  await expect(page).toHaveURL("/staff");
   const nav = page.getByRole("navigation", { name: "직원 업무 메뉴" });
   const links = nav.getByRole("link");
   await expect(links).toHaveText(["홈", "환자 안내 링크", "블로그 공유", "보험 양식"]);
@@ -723,10 +723,11 @@ test("직원은 홈과 블로그 공유를 한 줄 메뉴에서 전환한다", a
   const blog = nav.getByRole("link", { name: "블로그 공유", exact: true });
   await expect(home).toHaveAttribute("aria-current", "page");
   await blog.click();
-  await expect(page).toHaveURL("/staff/content/posts");
+  await expect(page).toHaveURL("/staff/posts");
   await expect(blog).toHaveAttribute("aria-current", "page");
+  await expect(home).not.toHaveAttribute("aria-current", /.+/);
   await home.click();
-  await expect(page).toHaveURL("/staff/system/settings");
+  await expect(page).toHaveURL("/staff");
 });
 
 test("직원은 공개 글 수정안을 보내고 블로그 공유에서 처리 상태를 확인한다", async ({ page }) => {
@@ -753,12 +754,12 @@ test("직원은 공개 글 수정안을 보내고 블로그 공유에서 처리 
     ] : [] },
   }));
 
-  await page.goto("/staff/content/posts");
+  await page.goto("/staff/posts");
   const revisions = page.getByRole("region", { name: "내 수정안" });
   await expect(revisions.getByText("보낸 수정안이 없습니다.")).toBeVisible();
   await page.getByRole("button", { name: `${published.title} 수정` }).click();
   await page.getByRole("button", { name: "수정안 검토 요청", exact: true }).click();
-  await expect(page).toHaveURL("/staff/content/posts#my-revisions");
+  await expect(page).toHaveURL("/staff/posts#my-revisions");
   const pending = revisions.getByRole("listitem").filter({ hasText: published.title });
   await expect(pending.getByText("검토 대기")).toBeVisible();
   await expect(pending.getByText("2026-11-23", { exact: true })).toBeVisible();
@@ -769,11 +770,11 @@ test("직원은 환자 안내 링크에서 환자용 상담 주소를 복사한�
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page, undefined, { isOwner: false });
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/staff/system/settings");
+  await page.goto("/staff");
   const link = page.getByRole("navigation", { name: "직원 업무 메뉴" })
     .getByRole("link", { name: "환자 안내 링크", exact: true });
   await link.click();
-  await expect(page).toHaveURL("/staff/system/first-visit", { timeout: 15_000 });
+  await expect(page).toHaveURL("/staff/first-visit", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "내원 안내", exact: true })).toBeVisible();
   await expect(link).toHaveAttribute("aria-current", "page");
   const url = "https://www.born2smile.co.kr/contact";
@@ -785,14 +786,14 @@ test("직원은 환자 안내 링크에서 환자용 상담 주소를 복사한�
 
 test("직원은 리뷰 안내에서 환자용 주소와 안내 문구를 복사한다", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
-  const path = "/staff/system/first-visit/review";
+  const path = "/staff/first-visit/review";
   const unauthenticated = await page.request.get(path, { maxRedirects: 0 });
   expect(unauthenticated.status()).toBe(307);
   expect(new URL(unauthenticated.headers().location, unauthenticated.url()).pathname).toBe("/staff/login");
 
   await setup(page, undefined, { isOwner: false });
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/staff/system/first-visit");
+  await page.goto("/staff/first-visit");
   const tabs = page.getByRole("navigation", { name: "환자 안내 링크" });
   const review = tabs.getByRole("link", { name: "리뷰 안내" });
   await review.click();
@@ -861,7 +862,7 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
     expect(await clinicName.evaluate((name) => name.scrollWidth <= name.clientWidth)).toBe(true);
   }
   await staff.click();
-  await expect(page).toHaveURL("/staff/system/settings", { timeout: 15_000 });
+  await expect(page).toHaveURL("/staff", { timeout: 15_000 });
   await expect(staff).toHaveAttribute("aria-current", "location");
   await expect(admin).not.toHaveAttribute("aria-current", "location");
   await expect(indicator).toHaveAttribute("data-test-slide", /translateX\(calc\(-100%/);
@@ -877,7 +878,7 @@ test("원장은 같은 직원 업무 메뉴를 사용하고 관리자 화면으�
   expect(panel?.width).toBe(390);
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("hidden");
   await expect(logout).toBeVisible();
-  await expect(page).toHaveURL("/staff/system/settings");
+  await expect(page).toHaveURL("/staff");
   await logout.press("Escape");
   await expect(logout).toBeHidden();
   await expect(account).toBeFocused();
@@ -969,10 +970,10 @@ test("콘텐츠 관리자는 초안을 저장해 원장에게 검토를 요청�
     }
     return route.fulfill({ json: { data: { drafts: [draft], revisions: [] } } });
   });
-  await page.goto(`/staff/content/posts/${post.slug}`);
+  await page.goto(`/staff/posts/${post.slug}`);
   await expect(page.getByRole("button", { name: "저장 후 발행", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "저장 후 검토 요청", exact: true }).click();
-  await expect(page).toHaveURL("/staff/content/review", { timeout: 15_000 });
+  await expect(page).toHaveURL("/staff/review", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "검토 대기 원고" })).toBeVisible();
   await expect(page.getByRole("link", { name: draft.title })).toBeVisible();
   expect(actions).toEqual(["save", "review"]);

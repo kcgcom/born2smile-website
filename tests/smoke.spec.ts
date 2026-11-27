@@ -82,7 +82,7 @@ test.describe('Smoke Tests', () => {
     await expect(page.getByRole('button', { name: 'Google 로그인', exact: true })).toBeVisible();
     await expect(page.getByLabel('이메일', { exact: true })).toHaveCount(0);
 
-    await page.goto('/staff/content/tasks');
+    await page.goto('/staff/tasks');
     await expect(page).toHaveURL(/\/staff\/login$/);
     await expect(page.getByText('직원 전용', { exact: true })).toBeVisible();
     await expect(page.getByText('등록된 직원 계정만 접근 가능합니다', { exact: true })).toBeVisible();
@@ -101,6 +101,32 @@ test.describe('Smoke Tests', () => {
     ]) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/admin\/login$/);
+    }
+  });
+
+  test('기존 직원 주소는 새 주소로 이동하고 새 주소도 로그인으로 보호된다', async ({ request }) => {
+    const redirects = [
+      ['/staff/system/settings', '/staff'],
+      ['/staff/system/hours', '/staff#staff-hours'],
+      ['/staff/system/first-visit', '/staff/first-visit'],
+      ['/staff/system/first-visit/review', '/staff/first-visit/review'],
+      ['/staff/system/insurance-forms', '/staff/insurance-forms'],
+      ['/staff/content/posts', '/staff/posts'],
+      ['/staff/content/posts/example?from=schedule', '/staff/posts/example?from=schedule'],
+      ['/staff/content/tasks', '/staff/tasks'],
+      ['/staff/content/review', '/staff/review'],
+      ['/staff/content/revisions/example', '/staff/revisions/example'],
+      ['/staff/content/schedule', '/staff/schedule'],
+      ['/staff/content/images', '/staff/images'],
+    ];
+    for (const [source, destination] of redirects) {
+      const legacy = await request.get(source, { maxRedirects: 0 });
+      expect(legacy.status(), source).toBe(308);
+      expect(new URL(legacy.headers().location, legacy.url()).href).toBe(new URL(destination, legacy.url()).href);
+
+      const canonical = await request.get(destination, { maxRedirects: 0 });
+      expect(canonical.status(), destination).toBe(307);
+      expect(new URL(canonical.headers().location, canonical.url()).pathname).toBe('/staff/login');
     }
   });
 

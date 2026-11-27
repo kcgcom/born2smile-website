@@ -15,15 +15,16 @@ export const ADMIN_HOME = {
   system: "/admin/system/settings",
 };
 
-export const STAFF_HOME = "/staff/system/settings";
-export const STAFF_FIRST_VISIT = "/staff/system/first-visit";
+export const STAFF_HOME = "/staff";
+export const STAFF_FIRST_VISIT = "/staff/first-visit";
 export const STAFF_REVIEW_GUIDE = `${STAFF_FIRST_VISIT}/review`;
-export const STAFF_INSURANCE_FORMS = "/staff/system/insurance-forms";
+export const STAFF_INSURANCE_FORMS = "/staff/insurance-forms";
+export const STAFF_POSTS = "/staff/posts";
 
 export function canOpenStaffPage(pathname: string) {
-  return pathname === "/staff" || pathname === "/staff/system/settings" || pathname === "/staff/system/hours"
+  return pathname === STAFF_HOME || pathname === STAFF_POSTS
     || pathname === STAFF_FIRST_VISIT || pathname === STAFF_REVIEW_GUIDE || pathname === STAFF_INSURANCE_FORMS
-    || /^\/staff\/(?:content\/(?:tasks|posts|review|revisions|schedule|images)|preview)(?:\/|$)/.test(pathname);
+    || /^\/staff\/(?:tasks|review|schedule|images|posts\/[^/]+|revisions\/[^/]+|preview\/[^/]+\/[^/]+)$/.test(pathname);
 }
 
 export function canUseAdminApi(access: AdminAccess, method: string, pathname: string) {

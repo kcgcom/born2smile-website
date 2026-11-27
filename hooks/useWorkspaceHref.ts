@@ -11,7 +11,7 @@ function useIsStaffWorkspace() {
 
 export function useWorkspaceHref() {
   const staff = useIsStaffWorkspace();
-  return useCallback((href: string) => staff ? href.replace(/^\/admin(?=\/|$)/, "/staff") : href, [staff]);
+  return useCallback((href: string) => staff ? href.replace(/^\/admin(?:\/content)?(?=[/?#]|$)/, "/staff") : href, [staff]);
 }
 
 export function useOwnerWorkspace() {

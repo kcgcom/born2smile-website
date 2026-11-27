@@ -16,13 +16,17 @@ test("Google 세션과 인증 수단이 누락된 세션은 직원 비밀번호 
 
 test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과 API는 차단된다", () => {
   const staff = STAFF_ACCESS;
-  assert.equal(canOpenStaffPage("/staff/content/posts/draft"), true);
+  assert.equal(canOpenStaffPage("/staff/posts/draft"), true);
   assert.equal(canOpenStaffPage("/admin/system/monitoring"), false);
-  assert.equal(canOpenStaffPage("/staff/system/settings"), true);
-  assert.equal(canOpenStaffPage("/staff/system/hours"), true);
-  assert.equal(canOpenStaffPage("/staff/system/first-visit"), true);
-  assert.equal(canOpenStaffPage("/staff/system/first-visit/review"), true);
-  assert.equal(canOpenStaffPage("/staff/system/insurance-forms"), true);
+  for (const path of [
+    "/staff", "/staff/first-visit", "/staff/first-visit/review", "/staff/insurance-forms",
+    "/staff/posts", "/staff/tasks", "/staff/review", "/staff/revisions/example",
+    "/staff/schedule", "/staff/images", "/staff/preview/restorative/draft",
+  ]) {
+    assert.equal(canOpenStaffPage(path), true, path);
+  }
+  assert.equal(canOpenStaffPage("/staff/operations/accounts"), false);
+  assert.equal(canOpenStaffPage("/staff/posts/draft/unknown"), false);
   assert.equal(canOpenStaffPage("/admin/operations/insurance-forms"), false);
   assert.equal(canOpenStaffPage("/admin/content/posts"), false);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/clinic"), true);
