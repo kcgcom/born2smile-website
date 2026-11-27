@@ -1,3 +1,5 @@
+import { INSURANCE_FORMS_API } from "@/lib/insurance-forms";
+
 export interface AdminAccess {
   isOwner: boolean;
 }
@@ -30,6 +32,7 @@ export function canUseAdminApi(access: AdminAccess, method: string, pathname: st
   if (access.isOwner || pathname === "/api/admin/auth-check") return true;
   if (pathname === "/api/admin/emergency-notice") return ["GET", "PUT", "DELETE"].includes(method);
   if (pathname === "/api/admin-presence" && method === "POST") return true;
+  if (pathname === INSURANCE_FORMS_API && method === "POST") return true;
   if (method === "GET") {
     if (/^\/api\/admin\/insurance-forms(?:\/[a-f0-9-]+)?$/.test(pathname)) return true;
     return /^\/api\/admin\/(?:blog-posts(?:\/[a-z0-9-]+(?:\/(?:source|performance))?)?|blog-analytics|blog-feedback|content-planner|content-tasks(?:\/[a-f0-9-]+)?|content-revisions(?:\/[a-f0-9-]+)?|publication-review|images|site-config\/(?:clinic|hours|schedule))$/.test(pathname);

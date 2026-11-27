@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
-  if (!auth.access?.isOwner) return unauthorizedResponse(forbidden());
+  if (!auth.access) return unauthorizedResponse(forbidden());
 
   const form = await request.formData().catch(() => null);
   if (!form) return formsResponse({ message: "양식 등록 요청을 읽을 수 없습니다." }, 400);

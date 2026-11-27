@@ -21,15 +21,3 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
   return formsResponse({ data: { url: data.signedUrl } });
 }
-
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const auth = await verifyAdminRequest(request);
-  if (!auth.ok) return unauthorizedResponse(auth);
-  if (!auth.access?.isOwner) return unauthorizedResponse(forbidden());
-
-  const { id } = await params;
-  if (!idSchema.safeParse(id).success) return formsResponse({ message: "잘못된 양식 주소입니다." }, 400);
-  const { error } = await insuranceFormsBucket().remove([`${id}.pdf`]);
-  if (error) return formsResponse({ message: "보험 양식을 삭제하지 못했습니다." }, 503);
-  return formsResponse({ data: { ok: true } });
-}

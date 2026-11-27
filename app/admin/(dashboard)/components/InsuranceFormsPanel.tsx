@@ -28,14 +28,35 @@ function compareInsurers(left: string, right: string) {
   return collator.compare(leftName, rightName);
 }
 
-export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
+function InsuranceFormCardTitle({ insurer, title }: Pick<InsuranceForm, "insurer" | "title">) {
+  const commonTitle = title.match(/^(치과\s*치료\s*확인서)(?:\s*(\([^()]+\)))?$/);
+  const isLina = insurer.trim() === "라이나생명";
+  const titleParts = commonTitle ?? (isLina ? title.match(/^([\s\S]*?)\s*(\([^()]+\))$/) : null);
+  const qualifier = titleParts?.[2];
+  const isLinaImplant = isLina && qualifier && /^\(임플란트[·,]\s*브릿지[·,]\s*틀니\)$/.test(qualifier);
+
+  return (
+    <span className={`mt-0.5 break-keep text-sm whitespace-pre-line text-slate-600 ${commonTitle && !qualifier ? "hidden sm:block" : "block"}`}>
+      {titleParts && qualifier ? (
+        <>
+          <span className={commonTitle ? "hidden sm:inline" : undefined}>
+            {titleParts[1]}{isLina ? "\n" : " "}
+          </span>
+          <span className={isLinaImplant ? "max-[360px]:text-xs max-[360px]:tracking-tight" : undefined}>
+            {isLinaImplant ? "(임플란트·브릿지·틀니)" : qualifier}
+          </span>
+        </>
+      ) : title}
+    </span>
+  );
+}
+
+export function InsuranceFormsPanel() {
   const { data, loading, error, refetch } = useAdminApi<InsuranceForm[]>(INSURANCE_FORMS_API);
   const { mutate, loading: saving } = useAdminMutation();
   const [query, setQuery] = useState("");
   const [registrationError, setRegistrationError] = useState("");
-  const [confirmId, setConfirmId] = useState<string>();
   const [selectedId, setSelectedId] = useState<string>();
-  const [actionError, setActionError] = useState("");
   const [notice, setNotice] = useState("");
   const searchInput = useRef<HTMLInputElement>(null);
   const preview = useRef<HTMLElement>(null);
@@ -46,19 +67,13 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
     .sort((a, b) => compareInsurers(a.insurer, b.insurer)
       || b.createdAt.localeCompare(a.createdAt));
 
-  function clearFeedback() {
-    setActionError("");
-    setNotice("");
-  }
-
   function openRegistration() {
     const dialog = registrationDialog.current;
     if (!dialog) return;
     dialog.querySelector("form")?.reset();
     dialog.querySelector("details")?.removeAttribute("open");
-    setConfirmId(undefined);
     setRegistrationError("");
-    clearFeedback();
+    setNotice("");
     dialog.showModal();
   }
 
@@ -83,7 +98,7 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
   }
 
   function selectForm(id: string) {
-    clearFeedback();
+    setNotice("");
     setSelectedId(id);
     if (window.matchMedia("(width < 64rem)").matches) {
       preview.current?.focus({ preventScroll: true });
@@ -91,22 +106,9 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
     }
   }
 
-  async function remove(id: string) {
-    clearFeedback();
-    const result = await mutate(`${INSURANCE_FORMS_API}/${id}`, "DELETE");
-    if (result.error) {
-      setActionError(result.error);
-      return;
-    }
-    refetch();
-    setConfirmId(undefined);
-    setNotice("양식을 삭제했습니다.");
-    searchInput.current?.focus();
-  }
-
   return (
     <AdminSurface tone="white" className="mx-auto max-w-7xl rounded-2xl p-4 sm:p-6">
-      {manage && <dialog ref={registrationDialog} id="insurance-form-registration" aria-labelledby="insurance-form-registration-title"
+      <dialog ref={registrationDialog} id="insurance-form-registration" aria-labelledby="insurance-form-registration-title"
         className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl backdrop:bg-slate-950/50 sm:p-6"
         onCancel={(event) => { if (saving) event.preventDefault(); }}>
         <form className="space-y-3" onSubmit={register}>
@@ -145,7 +147,7 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
             <AdminActionButton tone="primary" type="submit" disabled={saving}>{saving ? "저장 중…" : "저장"}</AdminActionButton>
           </div>
         </form>
-      </dialog>}
+      </dialog>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="min-w-0 space-y-4">
@@ -154,16 +156,15 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
             <label className="relative min-w-0 flex-1">
               <span className="sr-only">보험사명 또는 양식명 검색</span>
               <Search size={18} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-500" />
-              <input ref={searchInput} type="search" placeholder={manage ? "보험사·양식명 검색" : "보험사명 또는 양식명 검색"} value={query}
+              <input ref={searchInput} type="search" placeholder="보험사명 또는 양식명 검색" value={query}
                 onChange={(event) => setQuery(event.target.value)} className={`${inputClass} pl-10`} />
             </label>
-            {manage && <AdminActionButton tone="dark" aria-haspopup="dialog" aria-controls="insurance-form-registration"
+            <AdminActionButton tone="dark" aria-haspopup="dialog" aria-controls="insurance-form-registration"
               className="shrink-0" disabled={saving} onClick={openRegistration}>
               <Plus size={16} aria-hidden="true" /> 양식 등록
-            </AdminActionButton>}
+            </AdminActionButton>
           </div>
 
-          {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}
           {notice && <p role="status" className="text-sm text-emerald-800">{notice}</p>}
           {loading && <p role="status" className="text-sm text-slate-600">보험 양식을 불러오는 중…</p>}
           {error && <AdminErrorState message={error} onRetry={refetch} />}
@@ -178,40 +179,23 @@ export function InsuranceFormsPanel({ manage = false }: { manage?: boolean }) {
             {forms.map((form) => (
               <li key={form.id} className="relative min-w-0 rounded-xl border border-slate-200">
                 <button type="button" onClick={() => selectForm(form.id)} aria-pressed={selectedId === form.id} aria-controls="insurance-form-preview"
-                  className="block min-h-24 w-full rounded-xl py-3 pr-10 pl-3 text-left [overflow-wrap:anywhere] hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-700 aria-pressed:bg-blue-50 aria-pressed:ring-2 aria-pressed:ring-inset aria-pressed:ring-blue-600">
-                  <span className="block break-keep font-semibold">{form.insurer}</span>
-                  <span className="mt-0.5 block break-keep text-sm whitespace-pre-line text-slate-600">
-                    {form.insurer.trim() === "라이나생명" ? form.title.replace(/\s*(\([^()]+\))$/, "\n$1") : form.title}
-                  </span>
+                  className="block min-h-24 w-full rounded-xl px-2 py-3 text-left [overflow-wrap:anywhere] hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-700 aria-pressed:bg-blue-50 aria-pressed:ring-2 aria-pressed:ring-inset aria-pressed:ring-blue-600 sm:pr-10 sm:pl-3">
+                  <span className="block min-h-8 break-keep pr-9 font-semibold sm:min-h-0 sm:pr-0">{form.insurer}</span>
+                  <InsuranceFormCardTitle insurer={form.insurer} title={form.title} />
                 </button>
-                <details onToggle={(event) => {
-                  if (!event.currentTarget.open && confirmId === form.id && !saving) setConfirmId(undefined);
-                }}>
+                <details>
                   <summary aria-label={`${form.insurer} ${form.title} 양식 정보`} title="양식 정보"
                     className="absolute top-0 right-0 flex size-11 cursor-pointer list-none items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-blue-700 [&::-webkit-details-marker]:hidden">
                     <Ellipsis size={20} aria-hidden="true" />
                   </summary>
-                  <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-x-3">
-                      <div className="flex flex-wrap items-center gap-x-4">
-                        <p className="py-2 text-slate-600">등록 {dateFormat.format(new Date(form.createdAt))}</p>
-                        {form.sourceUrl && <a href={form.sourceUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
-                          원본 PDF<span className="sr-only"> (새 탭)</span>
-                        </a>}
-                        {form.sourcePageUrl && <a href={form.sourcePageUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
-                          보험사 안내<span className="sr-only"> (새 탭)</span>
-                        </a>}
-                      </div>
-                      {manage && <AdminActionButton tone="dark" disabled={saving} aria-expanded={confirmId === form.id}
-                        aria-label={`${form.insurer} ${form.title} ${confirmId === form.id ? "삭제 취소" : "삭제"}`}
-                        onClick={() => { clearFeedback(); setConfirmId(confirmId === form.id ? undefined : form.id); }}>
-                        {confirmId === form.id ? "삭제 취소" : "삭제"}
-                      </AdminActionButton>}
-                    </div>
-                    {manage && confirmId === form.id && <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
-                      <p>이 양식과 PDF를 삭제하시겠습니까?</p>
-                      <AdminActionButton tone="dark" disabled={saving} onClick={() => void remove(form.id)}>{saving ? "삭제 중…" : "삭제 확인"}</AdminActionButton>
-                    </div>}
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                    <p className="py-2 text-slate-600">등록 {dateFormat.format(new Date(form.createdAt))}</p>
+                    {form.sourceUrl && <a href={form.sourceUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
+                      원본 PDF<span className="sr-only"> (새 탭)</span>
+                    </a>}
+                    {form.sourcePageUrl && <a href={form.sourcePageUrl} target="_blank" rel="noreferrer" className={sourceLinkClass}>
+                      보험사 안내<span className="sr-only"> (새 탭)</span>
+                    </a>}
                   </div>
                 </details>
               </li>

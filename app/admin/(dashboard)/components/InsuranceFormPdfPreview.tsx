@@ -92,6 +92,15 @@ export function InsuranceFormPdfPreview({ form }: { form?: InsuranceForm }) {
   const formId = form?.id;
 
   useEffect(() => {
+    const mobileViewport = window.matchMedia("(width < 40rem)");
+    function resetMobileZoom(event: MediaQueryListEvent) {
+      if (event.matches) setZoomIndex(0);
+    }
+    mobileViewport.addEventListener("change", resetMobileZoom);
+    return () => mobileViewport.removeEventListener("change", resetMobileZoom);
+  }, []);
+
+  useEffect(() => {
     if (!formId) return;
     function resetPrintOptions() {
       setValues(INSURANCE_PRINT_DEFAULTS);
@@ -193,7 +202,7 @@ export function InsuranceFormPdfPreview({ form }: { form?: InsuranceForm }) {
       </div>
       <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
         <div role="group" aria-label="미리보기 배율"
-          className="flex shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-slate-200">
+          className="hidden shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-slate-200 sm:flex">
           <AdminActionButton tone="dark" aria-label="미리보기 축소" title="축소"
             className="size-11 rounded-none! border-0! bg-transparent p-0! focus-visible:-outline-offset-2"
             disabled={!zoomed} onClick={() => setZoomIndex(zoomIndex - 1)}>

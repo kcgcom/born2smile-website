@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { setupOutcomes } from "./helpers/admin-outcomes";
 
 const form = {
@@ -33,14 +33,16 @@ test("보험 양식의 서버 렌더링은 공통 레이아웃에 인라인 스�
   try {
     await context.addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", url: baseURL! }]);
     const page = await context.newPage();
-    for (const path of ["/admin/operations/insurance-forms", "/staff/insurance-forms"]) {
-      await page.goto(path);
-      await expect(page).toHaveURL(path);
-      await expect(page.locator("#main-content > [data-workspace-layout]")).toBeVisible();
-      await expect(page.locator("#main-content > style")).toHaveCount(0);
-      await expect(page.locator("body > header")).toBeHidden();
-      await expect(page.locator("body > footer")).toBeHidden();
-    }
+    const oldAddress = await page.goto("/admin/operations/insurance-forms");
+    expect(oldAddress?.status()).toBe(404);
+    await expect(page).toHaveURL("/admin/operations/insurance-forms");
+
+    await page.goto("/staff/insurance-forms");
+    await expect(page).toHaveURL("/staff/insurance-forms");
+    await expect(page.locator("#main-content > [data-workspace-layout]")).toBeVisible();
+    await expect(page.locator("#main-content > style")).toHaveCount(0);
+    await expect(page.locator("body > header")).toBeHidden();
+    await expect(page.locator("body > footer")).toBeHidden();
 
     await page.goto("/review");
     await expect(page.locator("body > header")).toBeVisible();
@@ -50,12 +52,16 @@ test("보험 양식의 서버 렌더링은 공통 레이아웃에 인라인 스�
   }
 });
 
-test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ page }) => {
+async function verifyInsuranceFormRegistration(page: Page, isOwner: boolean) {
   const hydrationErrors: string[] = [];
   page.on("pageerror", (error) => {
     if (/hydration|minified react error #418/i.test(error.message)) hydrationErrors.push(error.message);
   });
   await setupOutcomes(page);
+  if (!isOwner) {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.route("**/api/admin/auth-check", (route) => route.fulfill({ json: { ok: true, access: { isOwner } } }));
+  }
   let forms: typeof form[] = [];
   await page.route("**/api/admin/insurance-forms", async (route) => {
     if (route.request().method() === "POST") {
@@ -68,12 +74,13 @@ test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ pa
     }
     return route.fulfill({ json: { data: forms } });
   });
-  await page.route(`**/api/admin/insurance-forms/${form.id}`, async (route) => {
-    expect(route.request().method()).toBe("DELETE");
-    forms = [];
-    return route.fulfill({ json: { data: { ok: true } } });
-  });
-  await page.goto("/admin/operations/insurance-forms");
+  if (isOwner) {
+    await page.goto("/admin/operations/overview");
+    const operations = page.getByRole("navigation", { name: "운영 세부 화면" });
+    await expect(operations).toBeVisible();
+    await expect(operations.getByRole("link", { name: "보험 양식", exact: true })).toHaveCount(0);
+  }
+  await page.goto("/staff/insurance-forms");
   await expect(page.getByText("등록된 보험 양식이 없습니다.")).toBeVisible();
   const registration = page.getByRole("button", { name: "양식 등록" });
   const dialog = page.getByRole("dialog", { name: "양식 등록" });
@@ -105,14 +112,16 @@ test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ pa
   await expect(page.getByRole("link", { name: /원본 PDF/ })).toHaveCount(0);
   await page.getByLabel(`${form.insurer} ${form.title} 양식 정보`).click();
   await expect(page.getByRole("link", { name: /원본 PDF/ })).toHaveAttribute("href", form.sourceUrl);
-  await page.getByRole("button", { name: `${form.insurer} ${form.title} 삭제` }).click();
-  await page.getByRole("button", { name: `${form.insurer} ${form.title} 삭제 취소` }).click();
-  await expect(page.getByRole("button", { name: "삭제 확인" })).toHaveCount(0);
-  await page.getByRole("button", { name: `${form.insurer} ${form.title} 삭제` }).click();
-  await page.getByRole("button", { name: "삭제 확인" }).click();
-  await expect(page.getByText("양식을 삭제했습니다.")).toBeVisible();
-  await expect(page.getByText("등록된 보험 양식이 없습니다.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /삭제/ })).toHaveCount(0);
   expect(hydrationErrors).toEqual([]);
+}
+
+test("원장이 스태프 화면에서 보험 양식을 등록할 수 있다", async ({ page }) => {
+  await verifyInsuranceFormRegistration(page, true);
+});
+
+test("직원이 모바일 스태프 화면에서 보험 양식을 등록할 수 있다", async ({ page }) => {
+  await verifyInsuranceFormRegistration(page, false);
 });
 
 test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에서 인쇄할 수 있다", async ({ page, context }) => {
@@ -123,15 +132,15 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
     ...form,
     id: `00000000-0000-4000-8000-00000000000${index + 2}`,
     insurer,
-    title: "치과치료확인서 (충전·크라운 / 보철치료)",
+    title: insurer === "AXA손해보험" ? "보험금 청구서" : "치과치료확인서 (충전·크라운 / 보철치료)",
     sourceUrl: null,
     sourcePageUrl: null,
   }));
-  const linaForms = ["임플란트·브릿지·틀니용", "충전·크라운용"].map((treatment, index) => ({
+  const linaForms = ["임플란트,브릿지,틀니", "충전,크라운"].map((treatment, index) => ({
     ...form,
     id: `00000000-0000-4000-8000-00000000001${index}`,
     insurer: "라이나생명",
-    title: `치과진료확인서 (${treatment})`,
+    title: `치과치료확인서 (${treatment})`,
   }));
   await page.route("**/api/admin/insurance-forms", (route) => route.fulfill({ json: { data: [form, ...otherForms, ...linaForms] } }));
   await page.route(`**/api/admin/insurance-forms/${form.id}`, (route) => route.fulfill({
@@ -153,16 +162,39 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
   }, "e0009a087bf6d92e60f7697103fd888e6d0898c7bbb8992621fd0dfe40bac74c");
   await page.goto("/staff/insurance-forms");
   await expect(page.getByRole("link", { name: "보험 양식" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("button", { name: "양식 등록" })).toHaveCount(0);
+  const registration = page.getByRole("button", { name: "양식 등록" });
+  await expect(registration).toBeVisible();
   await expect(page.getByRole("button", { name: /삭제/ })).toHaveCount(0);
   const orderedInsurers = ["다른손해보험", "라이나생명", "라이나생명", "삼성화재", "예시손해보험", "흥국화재", "AIA생명", "AXA손해보험", "DB손해보험", "KB손해보험"];
   const cards = page.getByRole("list", { name: "보험 양식 목록" }).locator("button[aria-pressed]");
   await expect(cards).toHaveCount(orderedInsurers.length);
   for (const [index, insurer] of orderedInsurers.entries()) {
-    await expect(cards.nth(index)).toHaveAccessibleName(new RegExp(`^${insurer} `));
+    await expect(cards.nth(index)).toHaveAccessibleName(new RegExp(`^${insurer}(?: |$)`));
   }
-  for (const linaForm of linaForms) {
-    expect(await cards.getByText(linaForm.title, { exact: true }).innerText()).toBe(linaForm.title.replace(" (", "\n("));
+  await expect(cards.getByText("치과치료확인서", { exact: true }).filter({ visible: true })).toHaveCount(0);
+  await expect(cards.getByText("보험금 청구서", { exact: true })).toBeVisible();
+  await expect(cards.getByText("(충전,크라운)", { exact: true })).toBeVisible();
+  const implantSuffix = cards.getByText("(임플란트·브릿지·틀니)", { exact: true });
+  const implantCard = cards.filter({ hasText: "(임플란트·브릿지·틀니)" });
+  const implantInfo = page.getByLabel(`라이나생명 ${linaForms[0].title} 양식 정보`, { exact: true });
+  for (const width of [390, 320, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(implantSuffix).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    const line = await implantSuffix.evaluate((suffix) => {
+      const range = document.createRange();
+      range.selectNodeContents(suffix);
+      const { top, right } = range.getBoundingClientRect();
+      return { rows: range.getClientRects().length, top, right };
+    });
+    const cardBounds = (await implantCard.boundingBox())!;
+    const infoBounds = (await implantInfo.boundingBox())!;
+    const titleBounds = (await implantSuffix.locator("..").boundingBox())!;
+    expect(line.rows).toBe(1);
+    expect(titleBounds.y).toBeGreaterThanOrEqual(infoBounds.y + infoBounds.height);
+    expect(titleBounds.x + titleBounds.width).toBeGreaterThan(infoBounds.x + infoBounds.width / 2);
+    expect(line.top).toBeGreaterThanOrEqual(titleBounds.y);
+    expect(line.right).toBeLessThan(cardBounds.x + cardBounds.width);
   }
   await expect(page.getByText("DB손해보험", { exact: true })).toBeVisible();
   await expect(page.getByText("KB손해보험", { exact: true })).toBeVisible();
@@ -182,6 +214,8 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
   await expect(original).toHaveCount(0);
   await expect(guide).toHaveCount(0);
   await search.press("Tab");
+  await expect(registration).toBeFocused();
+  await registration.press("Tab");
   const card = cards.first();
   await expect(card).toBeFocused();
   await card.press("Tab");
@@ -212,44 +246,59 @@ test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에�
   await expect(previous).toBeDisabled();
   expect((await next.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
+  const zoom = preview.locator("header").getByRole("group", { name: "미리보기 배율" });
+  await expect(zoom).toHaveCount(0);
   await page.setViewportSize({ width: 320, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   const narrowPreview = (await previewImage.boundingBox())!;
   expect(narrowPreview.width / narrowPreview.height).toBeCloseTo(595 / 842);
-  const narrowFrameHeight = await frame.evaluate((element) => element.clientHeight);
-  const zoom = preview.locator("header").getByRole("group", { name: "미리보기 배율" });
-  const zoomIn = zoom.getByRole("button", { name: "미리보기 확대" });
-  const zoomOut = zoom.getByRole("button", { name: "미리보기 축소" });
-  const plusBounds = (await zoomIn.boundingBox())!;
-  const minusBounds = (await zoomOut.boundingBox())!;
-  expect(minusBounds.x + minusBounds.width).toBeLessThanOrEqual(plusBounds.x);
-  expect(plusBounds.y).toBe(minusBounds.y);
-  expect(plusBounds.y + plusBounds.height).toBeLessThan(narrowPreview.y);
-  expect(plusBounds.width).toBeGreaterThanOrEqual(44);
-  expect(plusBounds.height).toBeGreaterThanOrEqual(44);
-  await expect(zoomOut).toBeDisabled();
-  await zoomIn.click();
-  const zoomedPreview = preview.getByRole("region", { name: "확대된 양식 미리보기" });
-  await expect(zoomedPreview).toBeVisible();
-  expect(await zoomedPreview.evaluate((frame) => frame.scrollWidth > frame.clientWidth)).toBe(true);
-  expect(await zoomedPreview.evaluate((frame) => frame.clientHeight)).toBe(narrowFrameHeight);
-  const zoomedWidth = (await previewImage.boundingBox())!.width;
-  expect(zoomedWidth).toBeGreaterThan(narrowPreview.width);
-  await zoomIn.click();
-  expect((await previewImage.boundingBox())!.width).toBeGreaterThan(zoomedWidth);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
-  await zoomOut.click();
-  await zoomOut.click();
-  await expect(zoomOut).toBeDisabled();
-  await expect(zoomedPreview).toHaveCount(0);
+  await expect(zoom).toHaveCount(0);
+  await expect(print).toBeEnabled();
 
   await page.setViewportSize({ width: 1280, height: 560 });
+  await expect(card.getByText(form.title, { exact: true })).toBeVisible();
   const heading = page.getByRole("heading", { name: "치과보험 진료확인서", exact: true });
   expect((await preview.boundingBox())!.y).toBeCloseTo((await heading.boundingBox())!.y, 0);
   const shortPreview = (await previewImage.boundingBox())!;
   expect(shortPreview.height).toBeGreaterThan(560 * 0.64);
   expect(shortPreview.height).toBeLessThanOrEqual(560 * 0.64 + 48);
   const shortFrameHeight = await frame.evaluate((element) => element.clientHeight);
+  await expect(zoom).toBeVisible();
+  const zoomIn = zoom.getByRole("button", { name: "미리보기 확대" });
+  const zoomOut = zoom.getByRole("button", { name: "미리보기 축소" });
+  const plusBounds = (await zoomIn.boundingBox())!;
+  const minusBounds = (await zoomOut.boundingBox())!;
+  expect(minusBounds.x + minusBounds.width).toBeLessThanOrEqual(plusBounds.x);
+  expect(plusBounds.y).toBe(minusBounds.y);
+  expect(plusBounds.y + plusBounds.height).toBeLessThan(shortPreview.y);
+  expect(plusBounds.width).toBeGreaterThanOrEqual(44);
+  expect(plusBounds.height).toBeGreaterThanOrEqual(44);
+  await expect(zoomOut).toBeDisabled();
+  await zoomIn.click();
+  const zoomedPreview = preview.getByRole("region", { name: "확대된 양식 미리보기" });
+  await expect(zoomedPreview).toBeVisible();
+  expect(await zoomedPreview.evaluate((frame) => frame.scrollHeight > frame.clientHeight)).toBe(true);
+  expect(await zoomedPreview.evaluate((frame) => frame.clientHeight)).toBe(shortFrameHeight);
+  const zoomedWidth = (await previewImage.boundingBox())!.width;
+  expect(zoomedWidth).toBeGreaterThan(shortPreview.width);
+  await zoomIn.click();
+  expect((await previewImage.boundingBox())!.width).toBeGreaterThan(zoomedWidth);
+  await zoomOut.click();
+  expect((await previewImage.boundingBox())!.width).toBeCloseTo(zoomedWidth);
+  await zoomOut.click();
+  await expect(zoomOut).toBeDisabled();
+  await expect(zoomedPreview).toHaveCount(0);
+
+  await zoomIn.click();
+  await expect(zoomedPreview).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 800 });
+  await expect(zoom).toHaveCount(0);
+  await expect(zoomedPreview).toHaveCount(0);
+  expect((await previewImage.boundingBox())!.width).toBeCloseTo(narrowPreview.width);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await expect(print).toBeEnabled();
+  await page.setViewportSize({ width: 1280, height: 560 });
+  await expect(zoomOut).toBeDisabled();
   expect(await frame.evaluate((container) => {
     return container.scrollHeight === container.clientHeight && container.scrollWidth === container.clientWidth;
   })).toBe(true);
@@ -299,4 +348,6 @@ test("로그인하지 않으면 양식 목록과 PDF 주소를 받을 수 없다
     expect(response.status()).toBe(401);
     expect(response.headers()["cache-control"]).toBe("private, no-store");
   }
+  expect((await request.post("/api/admin/insurance-forms")).status()).toBe(401);
+  expect((await request.delete(`/api/admin/insurance-forms/${form.id}`)).status()).toBe(405);
 });

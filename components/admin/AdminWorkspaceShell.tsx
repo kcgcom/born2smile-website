@@ -72,7 +72,6 @@ const WORKSPACES: WorkspaceConfig[] = [
       { href: "/admin/analysis/search", label: "검색 성과", icon: Search },
       { href: "/admin/analysis/traffic", label: "방문·읽기", icon: BarChart3 },
       { href: "/admin/operations/conversion", label: "문의·공유", icon: MousePointerClick },
-      { href: "/admin/operations/insurance-forms", label: "보험 양식", icon: FileText },
       { href: "/admin/analysis/indexing", label: "색인 상태", icon: ScanSearch },
     ],
   },

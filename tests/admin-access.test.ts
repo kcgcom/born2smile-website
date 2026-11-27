@@ -54,7 +54,8 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/accounts"), false);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/insurance-forms"), true);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/insurance-forms/00000000-0000-4000-8000-000000000001"), true);
-  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/insurance-forms"), false);
+  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/insurance-forms"), true);
+  assert.equal(canUseAdminApi(staff, "POST", "/api/admin/insurance-forms/00000000-0000-4000-8000-000000000001"), false);
   assert.equal(canUseAdminApi(staff, "DELETE", "/api/admin/insurance-forms/00000000-0000-4000-8000-000000000001"), false);
   assert.equal(canUseAdminApi(staff, "PUT", "/api/admin/accounts"), false);
   assert.equal(canUseAdminApi(OWNER_ACCESS, "POST", "/api/admin/content-revisions/123/apply"), true);
