@@ -21,6 +21,7 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canOpenStaffPage("/staff/system/settings"), true);
   assert.equal(canOpenStaffPage("/staff/system/hours"), true);
   assert.equal(canOpenStaffPage("/staff/system/first-visit"), true);
+  assert.equal(canOpenStaffPage("/staff/system/first-visit/review"), true);
   assert.equal(canOpenStaffPage("/staff/system/insurance-forms"), true);
   assert.equal(canOpenStaffPage("/admin/operations/insurance-forms"), false);
   assert.equal(canOpenStaffPage("/admin/content/posts"), false);

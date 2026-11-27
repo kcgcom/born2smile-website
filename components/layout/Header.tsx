@@ -74,11 +74,7 @@ export function Header() {
           {/* 로고 */}
           <Link
             href="/"
-            className={`flex min-h-11 min-w-0 items-center gap-2 ${
-              isReviewPage && !isScrolled
-                ? "max-md:[filter:drop-shadow(0_0_1px_white)_drop-shadow(0_0_4px_#ffffffe6)]"
-                : ""
-            }`}
+            className="flex min-h-11 min-w-0 items-center gap-2"
             onClick={() => handleNavClick("/")}
           >
             <Image

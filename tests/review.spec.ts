@@ -7,18 +7,24 @@ test('공유한 리뷰 안내 링크에서 사진과 두 플랫폼을 확인할 
   await expect(page).toHaveTitle('후기를 남겨주세요 | 서울본치과');
 
   const main = page.getByRole('main');
-  await expect(main.getByRole('heading', { name: '방문해 주셔서 감사합니다.', exact: true })).toBeVisible();
+  const heading = main.getByRole('heading', { name: '방문해 주셔서 감사합니다.', exact: true });
+  await expect(heading).toBeVisible();
   const photo = main.getByRole('img', { name: '서울본치과 대기실' });
   await expect(photo).toBeInViewport({ ratio: 1 });
   const photoBox = await photo.boundingBox();
   const headerBox = await page.getByRole('banner').boundingBox();
-  expect(photoBox).toMatchObject({ x: 0, y: 0, width: 390 });
-  expect(photoBox!.height).toBeGreaterThan(headerBox!.height);
+  const headingBox = await heading.boundingBox();
+  expect(photoBox!.x).toBeGreaterThan(0);
+  expect(photoBox!.width).toBeLessThan(390);
+  expect(photoBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height);
+  expect(photoBox!.y + photoBox!.height).toBeLessThanOrEqual(headingBox!.y);
   await expect(main.getByText('앞으로도 진심을 다해 진료하겠습니다.')).toBeVisible();
   const naver = main.getByRole('link', { name: /네이버 리뷰 남기기/ });
-  const google = main.getByRole('link', { name: /Google 리뷰 남기기/ });
+  const google = main.getByRole('link', { name: '구글 리뷰 남기기 구글 계정으로 로그인', exact: true });
   await expect(naver).toHaveAttribute('href', 'https://m.place.naver.com/hospital/698879488/review/visitor');
   await expect(google).toHaveAttribute('href', 'https://search.google.com/local/writereview?placeid=ChIJv6ztq7eGfDURXB0HJQ3ZpQg');
+  await expect(naver).toHaveCSS('color', 'rgb(8, 116, 60)');
+  await expect(google).toHaveCSS('color', 'rgb(23, 78, 166)');
   await expect(naver).toBeInViewport({ ratio: 1 });
   await expect(google).toBeInViewport({ ratio: 1 });
 
