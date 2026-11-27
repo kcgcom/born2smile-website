@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_PRODUCTION_SERVER } from "next/constants";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 
@@ -134,7 +135,14 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(
-  withBundleAnalyzer(nextConfig),
+  (phase: string) => {
+    if (phase === PHASE_PRODUCTION_SERVER && process.env.SITE_CONFIG_DATA_SOURCE === "fixture") {
+      throw new Error(
+        "SITE_CONFIG_DATA_SOURCE=fixture는 개발 서버 전용입니다. pnpm dev를 사용하거나, 로컬 빌드를 실행할 때는 SITE_CONFIG_DATA_SOURCE=snapshot을 사용하세요.",
+      );
+    }
+    return withBundleAnalyzer(nextConfig);
+  },
   {
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,

@@ -4,7 +4,9 @@ import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_SERVER } from "next/constants";
 import { prepareSiteConfigSnapshot } from "./generate-site-config-snapshot";
+import nextConfig from "../next.config";
 import developmentConfig from "../playwright.config";
 import productionConfig from "../playwright.production.config";
 import { siteConfigDataSchema, SITE_CONFIG_MAX_AGE_MS, SITE_CONFIG_SNAPSHOT_PATH } from "../lib/site-config-snapshot-schema";
@@ -94,6 +96,21 @@ test("only the development Playwright server uses site-config fixtures", () => {
   assert.equal(production.command, "pnpm start");
   assert.equal(production.env?.SITE_CONFIG_DATA_SOURCE, "snapshot");
   assert.equal(production.reuseExistingServer, false);
+});
+
+test("production server rejects fixtures before rendering any route", () => {
+  const previous = process.env.SITE_CONFIG_DATA_SOURCE;
+  try {
+    process.env.SITE_CONFIG_DATA_SOURCE = "fixture";
+    assert.throws(() => nextConfig(PHASE_PRODUCTION_SERVER), /SITE_CONFIG_DATA_SOURCE=fixture.*pnpm dev.*snapshot/);
+    assert.doesNotThrow(() => nextConfig(PHASE_DEVELOPMENT_SERVER));
+
+    process.env.SITE_CONFIG_DATA_SOURCE = "snapshot";
+    assert.doesNotThrow(() => nextConfig(PHASE_PRODUCTION_SERVER));
+  } finally {
+    if (previous === undefined) delete process.env.SITE_CONFIG_DATA_SOURCE;
+    else process.env.SITE_CONFIG_DATA_SOURCE = previous;
+  }
 });
 
 test("snapshot from another project is not reused", () => isolated(async output => {
