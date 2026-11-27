@@ -112,7 +112,17 @@ for (const isOwner of [true, false]) {
     await openSettings(page, "hours", "success", undefined, isOwner);
     const card = page.getByRole("region", { name: "긴급 공지" });
     await card.getByLabel("공지 문구").fill("방문 전 전화로 문의해 주세요.");
-    await card.getByLabel("종료 시각 (한국 시간)").fill("2026-12-01T18:00");
+    const date = card.getByRole("button", { name: /^종료 날짜/ });
+    const time = card.getByLabel("종료 시간", { exact: true });
+    await expect(time).toHaveValue("");
+    const emptyBox = (await time.boundingBox())!;
+    expect(emptyBox.height).toBeGreaterThanOrEqual(44);
+    await date.click();
+    await page.getByRole("dialog").getByRole("button", { name: "2026년 12월 1일", exact: true }).click();
+    await time.fill("18:00");
+    const filledBox = (await time.boundingBox())!;
+    expect(filledBox.width).toBe(emptyBox.width);
+    expect(filledBox.height).toBe(emptyBox.height);
     await expect(card.getByText("미리보기")).toBeVisible();
     const payload = page.waitForRequest(request => request.url().endsWith("/api/admin/emergency-notice") && request.method() === "PUT");
     await card.getByRole("button", { name: "즉시 게시" }).click();
@@ -126,6 +136,35 @@ for (const isOwner of [true, false]) {
     await expect(card.getByText("게시된 공지")).toHaveCount(0);
   });
 }
+
+test("긴급 공지 날짜를 지워도 달력 팝업이 열린 채로 유지된다", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
+  await openSettings(page, "hours", "success");
+  const card = page.getByRole("region", { name: "긴급 공지" });
+  const date = card.getByRole("button", { name: /^종료 날짜/ });
+  const time = card.getByLabel("종료 시간", { exact: true });
+  const dialog = page.getByRole("dialog");
+  await card.getByLabel("공지 문구").fill("방문 전 전화로 문의해 주세요.");
+  await time.fill("17:00");
+  await date.click();
+  await dialog.getByRole("button", { name: "2026년 12월 1일", exact: true }).click();
+  await date.click();
+  await expect(dialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(dialog).toHaveCSS("border-top-width", "1px");
+  const clear = dialog.getByRole("button", { name: "지우기", exact: true });
+  await clear.press("Enter");
+  await expect(dialog).toBeVisible();
+  await expect(clear).toBeFocused();
+  await expect(dialog.getByRole("button", { pressed: true })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "2026년 12월 2일", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(date).toHaveAccessibleName("종료 날짜 2026-12-02");
+  await expect(date).toBeFocused();
+  await expect(card.getByLabel("공지 문구")).toHaveValue("방문 전 전화로 문의해 주세요.");
+  await expect(time).toHaveValue("17:00");
+  await expect(card.getByRole("button", { name: "즉시 게시" })).toBeEnabled();
+});
 
 test("공개 긴급 공지는 종료 시각에 다시 로드하지 않아도 사라진다", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-12-01T08:59:00Z") });
@@ -516,6 +555,8 @@ test("이전 화면의 늦은 저장 완료가 재진입 후 복구본을 삭제
 test("모바일 설정은 병원 정보와 진료시간을 바로 보여주고 편집은 별도로 연다", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 });
   const { writes } = await openSettings(page, "clinic", "success");
+  await expect(page.getByRole("heading", { level: 1, name: "병원 설정", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "병원 정보·진료시간", exact: true })).toHaveCount(0);
   await expect(page.getByText("편집 가능", { exact: true })).toHaveCount(0);
   const card = settingsSection(page, "clinic");
   const clinicName = card.getByRole("heading", { name: "테스트 치과", exact: true });
@@ -527,10 +568,10 @@ test("모바일 설정은 병원 정보와 진료시간을 바로 보여주고 �
   const [nameBox, phoneBox] = await Promise.all([clinicName.boundingBox(), clinicPhone.boundingBox()]);
   expect(phoneBox!.y).toBeGreaterThanOrEqual(nameBox!.y + nameBox!.height);
   await expect(card.getByText(FIXTURES.clinic.address, { exact: true })).toBeVisible();
-  await expect(card.getByText("대표 테스트", { exact: true })).toBeVisible();
-  await expect(card.getByText("000-00-00000", { exact: true })).toBeVisible();
+  await expect(card.getByText("대표 테스트", { exact: true })).toHaveCount(0);
+  await expect(card.getByText("000-00-00000", { exact: true })).toHaveCount(0);
   const infoRows = card.locator("dl > div");
-  await expect(infoRows).toHaveCount(3);
+  await expect(infoRows).toHaveCount(2);
   for (const row of await infoRows.all()) {
     const [iconBox, valueBox] = await Promise.all([
       row.locator("dt svg").boundingBox(),
@@ -558,10 +599,48 @@ test("모바일 설정은 병원 정보와 진료시간을 바로 보여주고 �
   }
   await edit.click();
   await expect(card.getByRole("textbox", { name: "병원명", exact: true })).toHaveValue("테스트 치과");
+  await expect(card.getByRole("textbox", { name: "사업자번호", exact: true })).toHaveValue(FIXTURES.clinic.businessNumber);
+  await expect(card.getByRole("textbox", { name: "대표자", exact: true })).toHaveValue(FIXTURES.clinic.representative);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await card.getByRole("textbox", { name: "대표자", exact: true }).fill("미저장 대표자");
   await expect(card.getByRole("button", { name: "저장", exact: true })).toBeInViewport({ ratio: 1 });
   await expect(card.getByRole("status")).toHaveText("저장하지 않은 변경사항이 있습니다.");
   expect(writes).toHaveLength(0);
+});
+
+test("병원 설정 카드의 편집 필드는 화면과 카드 너비를 넘지 않는다", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openSettings(page, "clinic", "success");
+  const notice = page.getByRole("region", { name: "긴급 공지", exact: true });
+  const clinic = settingsSection(page, "clinic");
+  const hours = settingsSection(page, "hours");
+  const links = settingsSection(page, "links");
+  const exceptions = page.locator("div.rounded-2xl").filter({ has: page.getByRole("heading", { name: "예외 일정", exact: true }) });
+  for (const card of [clinic, hours, links]) {
+    await card.getByRole("button", { name: "편집", exact: true }).click();
+    await expect(card.getByRole("button", { name: "편집 닫기", exact: true })).toHaveAttribute("aria-expanded", "true");
+  }
+  await exceptions.getByRole("button", { name: "예외 일정 추가", exact: true }).click();
+  await expect(exceptions.getByLabel("예외 일정 1 날짜")).toBeVisible();
+
+  for (const width of [320, 360, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const [name, card] of Object.entries({ notice, clinic, hours, links, exceptions })) {
+      const overflowing = await card.evaluate((element) => {
+        const { left, right } = element.getBoundingClientRect();
+        return Array.from(element.querySelectorAll("input, textarea, button")).filter((control) => {
+          const bounds = control.getBoundingClientRect();
+          return bounds.width > 0 && (bounds.left < left || bounds.right > right);
+        }).map((control) => control.getAttribute("aria-label") || control.id || control.textContent);
+      });
+      expect(overflowing, `${width}px ${name}`).toEqual([]);
+    }
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth, `${width}px`).toBeLessThanOrEqual(clientWidth);
+  }
 });
 
 test("모바일 진료시간은 예외 일정을 편집하는 위치에서 저장하고 결과를 확인한다", async ({ page }) => {
@@ -604,6 +683,7 @@ test("데스크톱 설정은 진료시간과 휴진일을 나란히 표시하고
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
   const { writes } = await openSettings(page, "hours", "success");
+  const notice = page.getByRole("region", { name: "긴급 공지", exact: true });
   const clinic = settingsSection(page, "clinic");
   const hours = settingsSection(page, "hours");
   const calendar = page.getByRole("region", { name: "휴진일 달력" });
@@ -612,11 +692,14 @@ test("데스크톱 설정은 진료시간과 휴진일을 나란히 표시하고
   await expect(hours).toBeVisible();
   await expect(calendar).toBeVisible();
   const clinicBox = (await clinic.boundingBox())!;
+  const noticeBox = (await notice.boundingBox())!;
   const hoursBox = (await hours.boundingBox())!;
   const calendarBox = (await calendar.boundingBox())!;
   expect(clinicBox.x).toBe(hoursBox.x);
+  expect(noticeBox.x).toBe(clinicBox.x);
+  expect(noticeBox.width).toBeLessThan(calendarBox.width);
   expect(calendarBox.x).toBeGreaterThan(hoursBox.x + hoursBox.width);
-  expect(calendarBox.y).toBe(clinicBox.y);
+  expect(calendarBox.y).toBe(noticeBox.y);
 
   await hours.getByRole("button", { name: "편집", exact: true }).click();
   await hours.getByLabel("월요일 진료 시간").fill("10:00 - 18:30");

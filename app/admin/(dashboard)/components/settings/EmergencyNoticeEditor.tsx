@@ -5,6 +5,7 @@ import type { EmergencyNotice } from "@/lib/emergency-notice";
 import { AdminActionButton } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
+import { EmergencyNoticeDatePicker } from "./EmergencyNoticeDatePicker";
 
 const ENDPOINT = "/api/admin/emergency-notice";
 const timeFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
@@ -13,12 +14,14 @@ export function EmergencyNoticeEditor() {
   const { data, loading, error, refetch, updatedAt } = useAdminApi<{ notice: EmergencyNotice | null }>(ENDPOINT);
   const { mutate, loading: saving } = useAdminMutation<{ notice: EmergencyNotice | null }>();
   const [message, setMessage] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [expirationTime, setExpirationTime] = useState("");
   const [feedback, setFeedback] = useState<{ error: boolean; message: string }>();
   const [result, setResult] = useState<{ notice: EmergencyNotice | null; at: number }>();
   const pending = useRef(false);
   const candidate = message.trim();
   const active = (result && result.at >= (updatedAt ?? 0) ? result : data)?.notice;
+  const expiresAt = expirationDate && expirationTime ? `${expirationDate}T${expirationTime}` : "";
 
   async function save(method: "PUT" | "DELETE") {
     if (pending.current) return;
@@ -38,7 +41,8 @@ export function EmergencyNoticeEditor() {
     }
     if (response.data) setResult({ ...response.data, at: Date.now() });
     setMessage("");
-    setExpiresAt("");
+    setExpirationDate("");
+    setExpirationTime("");
     setFeedback({ error: false, message: method === "PUT" ? "긴급 공지를 게시했습니다." : "긴급 공지를 내렸습니다." });
   }
 
@@ -64,11 +68,14 @@ export function EmergencyNoticeEditor() {
           <textarea value={message} onChange={(event) => setMessage(event.target.value)} required maxLength={240}
             disabled={saving} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-2" />
         </label>
-        <label className="block space-y-1 text-sm">
-          <span className="block font-medium">종료 시각 (한국 시간)</span>
-          <input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)}
-            required disabled={saving} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-2 sm:w-auto" />
-        </label>
+        <fieldset className="min-w-0 space-y-1 text-sm">
+          <legend className="font-medium">종료 시각 (한국 시간)</legend>
+          <div className="grid max-w-xs grid-cols-[minmax(0,6fr)_minmax(0,5fr)] gap-2">
+            <EmergencyNoticeDatePicker date={expirationDate} disabled={saving} onChange={setExpirationDate} />
+            <input type="time" aria-label="종료 시간" value={expirationTime} onChange={(event) => setExpirationTime(event.target.value)}
+              required disabled={saving} className="block min-h-11 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] p-2" />
+          </div>
+        </fieldset>
         {candidate && <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
           <p className="font-medium">미리보기</p>
           <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{candidate}</p>
@@ -78,7 +85,9 @@ export function EmergencyNoticeEditor() {
           <AdminActionButton type="button" tone="ghost" disabled={saving || loading || !active} onClick={() => void save("DELETE")}>지금 내리기</AdminActionButton>
           {active && <AdminActionButton type="button" tone="ghost" disabled={saving} onClick={() => {
             setMessage(active.message);
-            setExpiresAt(new Date(Date.parse(active.expiresAt) + 9 * 60 * 60 * 1000).toISOString().slice(0, 16));
+            const localExpiration = new Date(Date.parse(active.expiresAt) + 9 * 60 * 60 * 1000).toISOString();
+            setExpirationDate(localExpiration.slice(0, 10));
+            setExpirationTime(localExpiration.slice(11, 16));
           }}>게시 문구 불러오기</AdminActionButton>}
         </div>
       </form>

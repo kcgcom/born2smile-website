@@ -13,7 +13,8 @@ import { getIntervals } from "@/lib/clinic-hours";
 import type { SiteHours } from "@/lib/site-config-supabase";
 
 const EXCEPTION_DESCRIPTION = "특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다";
-const SETTINGS_COLUMNS = "grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]";
+const SCHEDULE_COLUMN = "@container min-w-0 space-y-6 lg:col-start-1 lg:row-start-2";
+const EXCEPTIONS_COLUMN = "min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2";
 
 function formatExceptionDateLabel(date: string) {
   if (!date) return "날짜 미설정";
@@ -90,7 +91,12 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
     const status = loading && !loadError
       ? <LoadingPlaceholder />
       : <AdminErrorState message={`진료시간 조회 실패: ${loadError ?? "설정 데이터를 불러올 수 없습니다."}`} onRetry={refetch} />;
-    return clinicCard ? <div className={SETTINGS_COLUMNS}>{clinicCard}{status}</div> : status;
+    return clinicCard ? (
+      <>
+        <div className={SCHEDULE_COLUMN}>{clinicCard}</div>
+        <div className={EXCEPTIONS_COLUMN}>{status}</div>
+      </>
+    ) : status;
   }
 
   const exceptionActionsDisabled = !recovery.ready || recovery.hasConflict;
@@ -291,103 +297,103 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
     </div>
   );
 
-  const scheduleColumn = !exceptionsOnly && (
-    <div className="@container min-w-0 space-y-6">
-      {clinicCard}
-      <SectionShell
-        title="진료시간"
-        description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
-        preview={<HoursScheduleSummary hours={form} />}
-        saving={saving}
-        saved={saved}
-        dirty={dirty}
-        recovery={recovery}
-        onSave={handleSave}
-        saveBlocked={Boolean(loadError)}
-        saveError={saveError}
-      >
-        <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
-          <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 @min-[440px]:grid @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)]">
-            <span className="text-xs font-medium text-[var(--muted)]">요일</span>
-            <span className="text-xs font-medium text-[var(--muted)]">휴진</span>
-            <span className="text-xs font-medium text-[var(--muted)]">시간</span>
-            <span className="text-xs font-medium text-[var(--muted)]">비고</span>
-          </div>
-          {form.schedule.map((row, i) => (
-            <div
-              key={row.day}
-              className={`grid items-center gap-3 px-4 py-4 @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)] ${
-                i === 0 ? "" : "border-t border-[var(--border)]/50"
-              } ${row.open ? "bg-[var(--background)]" : "bg-[var(--background)]/60"}`}
-            >
-              <div>
-                <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
-                <div className="mt-1 text-xs text-[var(--muted)] @min-[440px]:hidden">
-                  {row.open ? "진료일" : "휴진"}
-                </div>
+  const scheduleEditor = !exceptionsOnly && (
+    <SectionShell
+      title="진료시간"
+      description="요일별 운영 여부와 공지 문구를 함께 관리합니다."
+      preview={<HoursScheduleSummary hours={form} />}
+      saving={saving}
+      saved={saved}
+      dirty={dirty}
+      recovery={recovery}
+      onSave={handleSave}
+      saveBlocked={Boolean(loadError)}
+      saveError={saveError}
+    >
+      <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
+        <div className="hidden border-b border-[var(--border)]/50 px-4 py-2 @min-[440px]:grid @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)]">
+          <span className="text-xs font-medium text-[var(--muted)]">요일</span>
+          <span className="text-xs font-medium text-[var(--muted)]">휴진</span>
+          <span className="text-xs font-medium text-[var(--muted)]">시간</span>
+          <span className="text-xs font-medium text-[var(--muted)]">비고</span>
+        </div>
+        {form.schedule.map((row, i) => (
+          <div
+            key={row.day}
+            className={`grid items-center gap-3 px-4 py-4 @min-[440px]:grid-cols-[64px_62px_minmax(0,1fr)_minmax(0,1fr)] ${
+              i === 0 ? "" : "border-t border-[var(--border)]/50"
+            } ${row.open ? "bg-[var(--background)]" : "bg-[var(--background)]/60"}`}
+          >
+            <div>
+              <div className="text-sm font-semibold text-[var(--foreground)]">{row.day}</div>
+              <div className="mt-1 text-xs text-[var(--muted)] @min-[440px]:hidden">
+                {row.open ? "진료일" : "휴진"}
               </div>
-
-              <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
-                <input
-                  type="checkbox"
-                  checked={!row.open}
-                  onChange={(e) => setScheduleField(i, "open", !e.target.checked)}
-                  aria-label={`${row.day} 휴진`}
-                  className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
-                />
-                휴진
-              </label>
-
-              <input
-                type="text"
-                value={row.time}
-                onChange={(e) => setScheduleField(i, "time", e.target.value)}
-                placeholder="09:30 - 18:30"
-                className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
-                aria-label={`${row.day} 진료 시간`}
-              />
-
-              <input
-                type="text"
-                value={row.note ?? ""}
-                onChange={(e) => setScheduleField(i, "note", e.target.value)}
-                placeholder="예: 야간진료"
-                className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
-                aria-label={`${row.day} 비고`}
-              />
             </div>
-          ))}
-        </div>
 
-        <div className="space-y-3">
-          <FormField
-            label="점심시간"
-            value={form.lunchTime}
-            onChange={setField("lunchTime")}
-            placeholder="13:00 - 14:00"
-          />
-          <FormField
-            label="휴진일"
-            value={form.closedDays}
-            onChange={setField("closedDays")}
-            placeholder="일요일, 공휴일 휴진"
-          />
-          <FormField
-            label="공지사항"
-            value={form.notice}
-            onChange={setField("notice")}
-            placeholder="토요일 점심시간 없이 진료"
-          />
-        </div>
-      </SectionShell>
-    </div>
+            <label className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+              <input
+                type="checkbox"
+                checked={!row.open}
+                onChange={(e) => setScheduleField(i, "open", !e.target.checked)}
+                aria-label={`${row.day} 휴진`}
+                className="h-4 w-4 cursor-pointer accent-[var(--color-primary)]"
+              />
+              휴진
+            </label>
+
+            <input
+              type="text"
+              value={row.time}
+              onChange={(e) => setScheduleField(i, "time", e.target.value)}
+              placeholder="09:30 - 18:30"
+              className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+              aria-label={`${row.day} 진료 시간`}
+            />
+
+            <input
+              type="text"
+              value={row.note ?? ""}
+              onChange={(e) => setScheduleField(i, "note", e.target.value)}
+              placeholder="예: 야간진료"
+              className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-light)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+              aria-label={`${row.day} 비고`}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <FormField
+          label="점심시간"
+          value={form.lunchTime}
+          onChange={setField("lunchTime")}
+          placeholder="13:00 - 14:00"
+        />
+        <FormField
+          label="휴진일"
+          value={form.closedDays}
+          onChange={setField("closedDays")}
+          placeholder="일요일, 공휴일 휴진"
+        />
+        <FormField
+          label="공지사항"
+          value={form.notice}
+          onChange={setField("notice")}
+          placeholder="토요일 점심시간 없이 진료"
+        />
+      </div>
+    </SectionShell>
   );
 
   if (exceptionsOnly && !clinicCard) return exceptionColumn;
   return (
-    <div className={SETTINGS_COLUMNS}>
-      {exceptionsOnly ? clinicCard : scheduleColumn}
-      {exceptionColumn}
-    </div>
+    <>
+      <div className={SCHEDULE_COLUMN}>
+        {clinicCard}
+        {scheduleEditor}
+      </div>
+      <div className={EXCEPTIONS_COLUMN}>{exceptionColumn}</div>
+    </>
   );
 }

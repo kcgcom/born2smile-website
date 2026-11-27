@@ -1,6 +1,6 @@
 "use client";
 
-import { BriefcaseBusiness, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 import { FormField, SectionShell, LoadingPlaceholder } from "../shared";
 import { AdminErrorState } from "../AdminErrorState";
 import { useSettingsEditor } from "./useSettingsEditor";
@@ -23,7 +23,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
   }
 
   return (
-    <div role="region" aria-label="병원 정보" className="space-y-4">
+    <div role="region" aria-label="병원 정보" className="@container/clinic min-w-0 space-y-4">
       {loadError && <AdminErrorState message={`병원 정보 조회 실패: ${loadError}`} onRetry={refetch} />}
       <SectionShell
         title={data?.name || "병원명 미설정"}
@@ -46,16 +46,6 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
                 </dt>
                 <dd className="min-w-0 break-words break-keep">{form.address || "미설정"}</dd>
               </div>
-              <div className="flex items-start gap-2">
-                <dt className="flex h-5 shrink-0 items-center text-slate-700">
-                  <BriefcaseBusiness className="size-3" aria-hidden="true" />
-                  <span className="sr-only">사업자 정보</span>
-                </dt>
-                <dd className="flex min-w-0 flex-wrap gap-x-2 gap-y-1">
-                  <span className="min-w-0 break-words">대표 {form.representative || "미설정"}</span>
-                  <span className="min-w-0 break-words tabular-nums">{form.businessNumber || "등록번호 미설정"}</span>
-                </dd>
-              </div>
             </dl>
           </div>
         )}
@@ -67,7 +57,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
         saveBlocked={Boolean(loadError)}
         saveError={saveError}
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 @min-[640px]/clinic:grid-cols-2">
           <FormField
             label="병원명"
             value={form.name}
@@ -80,7 +70,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
             onChange={set("nameEn")}
             placeholder="Seoul Born Dental Clinic"
           />
-          <div className="md:col-span-2">
+          <div className="@min-[640px]/clinic:col-span-2">
             <FormField
               label="슬로건"
               value={form.slogan}
@@ -100,7 +90,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
             onChange={set("neighborhood")}
             placeholder="김포"
           />
-          <div className="md:col-span-2">
+          <div className="@min-[640px]/clinic:col-span-2">
             <FormField
               label="주소"
               value={form.address}
@@ -108,7 +98,7 @@ export function ClinicInfoEditor({ readOnly }: { readOnly: boolean }) {
               placeholder="경기도 김포시 ..."
             />
           </div>
-          <div className="md:col-span-2">
+          <div className="@min-[640px]/clinic:col-span-2">
             <FormField
               label="짧은 주소"
               value={form.addressShort}
