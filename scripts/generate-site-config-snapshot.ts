@@ -61,7 +61,9 @@ export async function prepareSiteConfigSnapshot(options: {
 }
 
 async function main() {
-  if (process.env.SITE_CONFIG_DATA_SOURCE === "fixture") {
+  const flags = new Set(process.argv.slice(2));
+  const required = flags.has("--required");
+  if (process.env.SITE_CONFIG_DATA_SOURCE === "fixture" && !required) {
     console.log("[site-config] fixed test defaults; no site_config database reads");
     return;
   }
@@ -76,9 +78,8 @@ async function main() {
       process.env[match[1]] = match[2].trim().replace(/^(['"])(.*)\1$/, "$2");
     }
   }
-  const flags = new Set(process.argv.slice(2));
   await prepareSiteConfigSnapshot({
-    force: flags.has("--force"), required: flags.has("--required"), offline: flags.has("--offline"),
+    force: flags.has("--force"), required, offline: flags.has("--offline"),
     url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }

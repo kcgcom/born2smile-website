@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prepareSiteConfigSnapshot } from "./generate-site-config-snapshot";
+import developmentConfig from "../playwright.config";
+import productionConfig from "../playwright.production.config";
 import { siteConfigDataSchema, SITE_CONFIG_MAX_AGE_MS, SITE_CONFIG_SNAPSHOT_PATH } from "../lib/site-config-snapshot-schema";
 import { localSiteConfig, assertLiveSiteConfigWrite } from "../lib/site-config-local";
 
@@ -65,6 +68,33 @@ test("required refresh fails instead of silently using stale data", () => isolat
   await writeFile(output, JSON.stringify(valid()));
   await assert.rejects(prepareSiteConfigSnapshot({ output, now, url: origin, force: true, required: true, offline: true }));
 }));
+
+test("fixture mode skips optional preparation and still attempts a required refresh", () => {
+  const run = (...flags: string[]) => spawnSync(
+    process.execPath,
+    ["--import", "tsx", "scripts/generate-site-config-snapshot.ts", "--offline", ...flags],
+    { encoding: "utf8", env: { ...process.env, SITE_CONFIG_DATA_SOURCE: "fixture" } },
+  );
+
+  const optional = run();
+  assert.equal(optional.status, 0, optional.stderr);
+  assert.match(optional.stdout, /fixed test defaults/);
+
+  const required = run("--force", "--required");
+  assert.equal(required.status, 1, required.stderr);
+  assert.match(required.stderr, /required snapshot refresh failed/);
+});
+
+test("only the development Playwright server uses site-config fixtures", () => {
+  const development = developmentConfig.webServer;
+  const production = productionConfig.webServer;
+  assert.ok(development && !Array.isArray(development));
+  assert.ok(production && !Array.isArray(production));
+  assert.equal(development.env?.SITE_CONFIG_DATA_SOURCE, "fixture");
+  assert.equal(production.command, "pnpm start");
+  assert.equal(production.env?.SITE_CONFIG_DATA_SOURCE, "snapshot");
+  assert.equal(production.reuseExistingServer, false);
+});
 
 test("snapshot from another project is not reused", () => isolated(async output => {
   await writeFile(output, JSON.stringify(valid()));

@@ -1,0 +1,84 @@
+diff --git a/dist/client/components/use-action-queue.js b/dist/client/components/use-action-queue.js
+index 0584a41ee7195024498b5a3c7812f614504fb5e6..d5e085122a310f8228b27e78fcfa04de9bae55fb 100644
+--- a/dist/client/components/use-action-queue.js
++++ b/dist/client/components/use-action-queue.js
+@@ -23,11 +23,22 @@ _export(exports, {
+ const _interop_require_wildcard = require("@swc/helpers/_/_interop_require_wildcard");
+ const _react = /*#__PURE__*/ _interop_require_wildcard._(require("react"));
+ const _isthenable = require("../../shared/lib/is-thenable");
++const _routerreducertypes = require("./router-reducer/router-reducer-types");
+ // The app router state lives outside of React, so we can import the dispatch
+ // method directly wherever we need it, rather than passing it around via props
+ // or context.
+ let dispatch = null;
++// Backport vercel/next.js#100113: the HMR socket can receive updates before hydration.
++let pendingHmrRefresh = null;
+ function dispatchAppRouterAction(action) {
++    if (process.env.NODE_ENV !== 'production' && action.type === _routerreducertypes.ACTION_HMR_REFRESH) {
++        if (dispatch === null) {
++            pendingHmrRefresh = action;
++            return;
++        }
++        // A newer refresh supersedes one waiting for the mount effect.
++        pendingHmrRefresh = null;
++    }
+     if (dispatch === null) {
+         throw Object.defineProperty(new Error('Internal Next.js error: Router action dispatched before initialization.'), "__NEXT_ERROR_CODE", {
+             value: "E668",
+@@ -52,6 +63,14 @@ function useActionQueue(actionQueue) {
+         const { useAppDevRenderingIndicator } = require('../../next-devtools/userspace/use-app-dev-rendering-indicator');
+         // eslint-disable-next-line react-hooks/rules-of-hooks
+         const appDevRenderingIndicator = useAppDevRenderingIndicator();
++        // eslint-disable-next-line react-hooks/rules-of-hooks
++        (0, _react.useEffect)(()=>{
++            const action = pendingHmrRefresh;
++            pendingHmrRefresh = null;
++            if (action !== null) {
++                (0, _react.startTransition)(()=>dispatchAppRouterAction(action));
++            }
++        }, []);
+         dispatch = (action)=>{
+             appDevRenderingIndicator(()=>{
+                 actionQueue.dispatch(action, setState);
+diff --git a/dist/esm/client/components/use-action-queue.js b/dist/esm/client/components/use-action-queue.js
+index ea2df49f38b2658d3c4b6b7d8f9a486937533881..170305b61de6b573f37cc1f04a99d8c8e0cda9d1 100644
+--- a/dist/esm/client/components/use-action-queue.js
++++ b/dist/esm/client/components/use-action-queue.js
+@@ -1,10 +1,21 @@
+-import React, { use, useMemo } from 'react';
++import React, { startTransition, use, useEffect, useMemo } from 'react';
+ import { isThenable } from '../../shared/lib/is-thenable';
++import { ACTION_HMR_REFRESH } from './router-reducer/router-reducer-types';
+ // The app router state lives outside of React, so we can import the dispatch
+ // method directly wherever we need it, rather than passing it around via props
+ // or context.
+ let dispatch = null;
++// Backport vercel/next.js#100113: the HMR socket can receive updates before hydration.
++let pendingHmrRefresh = null;
+ export function dispatchAppRouterAction(action) {
++    if (process.env.NODE_ENV !== 'production' && action.type === ACTION_HMR_REFRESH) {
++        if (dispatch === null) {
++            pendingHmrRefresh = action;
++            return;
++        }
++        // A newer refresh supersedes one waiting for the mount effect.
++        pendingHmrRefresh = null;
++    }
+     if (dispatch === null) {
+         throw Object.defineProperty(new Error('Internal Next.js error: Router action dispatched before initialization.'), "__NEXT_ERROR_CODE", {
+             value: "E668",
+@@ -29,6 +40,14 @@ export function useActionQueue(actionQueue) {
+         const { useAppDevRenderingIndicator } = require('../../next-devtools/userspace/use-app-dev-rendering-indicator');
+         // eslint-disable-next-line react-hooks/rules-of-hooks
+         const appDevRenderingIndicator = useAppDevRenderingIndicator();
++        // eslint-disable-next-line react-hooks/rules-of-hooks
++        useEffect(()=>{
++            const action = pendingHmrRefresh;
++            pendingHmrRefresh = null;
++            if (action !== null) {
++                startTransition(()=>dispatchAppRouterAction(action));
++            }
++        }, []);
+         dispatch = (action)=>{
+             appDevRenderingIndicator(()=>{
+                 actionQueue.dispatch(action, setState);

@@ -71,6 +71,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 관리자·직원 화면에서는 공개 사이트의 공통 UI를 숨긴다. */
+body:has(> #main-content > [data-workspace-layout])
+  > :is(header, footer, nav[aria-label="빠른 메뉴"], div.fixed.bottom-6) {
+  display: none !important;
+}
+
+#main-content:has(> [data-workspace-layout]) {
+  padding-bottom: 0;
+}
+
 /* 스크롤 부드럽게 (모션 감소 설정 시 비활성화) */
 @media (prefers-reduced-motion: no-preference) {
   html {

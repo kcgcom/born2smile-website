@@ -6,5 +6,7 @@ export default defineConfig({
   webServer: {
     ...config.webServer,
     command: "pnpm start",
+    env: { SITE_CONFIG_DATA_SOURCE: "snapshot" },
+    reuseExistingServer: false,
   },
 });

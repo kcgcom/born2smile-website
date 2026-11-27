@@ -43,9 +43,12 @@ export function GrowthOverviewPanel() {
   const content = overviewContent(posts.data ?? [], feedback.data?.feedback ?? {}, today);
   const exceptions = (hours.data?.exceptions ?? []).filter(item => item.date >= today && item.date <= content.end).sort((a, b) => a.date.localeCompare(b.date));
   const indexingSummary = indexing.data?.summary;
-  const indexingError = indexing.error ?? (indexing.data && !indexingSummary ? "색인 검사 요약이 응답에 없습니다." : null);
-  const failedChecks = indexingSummary?.failed ?? 0;
-  const needsAttention = indexingSummary?.needsAttention ?? 0;
+  const failedChecks = indexingSummary?.failed;
+  const needsAttention = indexingSummary?.needsAttention;
+  const hasIndexingResponse = indexing.data !== null || indexing.updatedAt !== null;
+  const indexingError = indexing.error ?? (hasIndexingResponse && (
+    typeof failedChecks !== "number" || typeof needsAttention !== "number"
+  ) ? "색인 검사 요약을 확인할 수 없습니다." : null);
   const failedRun = indexing.data?.lastRun?.status === "failed";
   const postsByUrl = new Map((posts.data ?? []).filter(post => post.published && post.date && post.date <= today)
     .map(post => [`${BASE_URL}${getBlogPostUrl(post.slug, post.category)}`, post]));
@@ -85,13 +88,13 @@ export function GrowthOverviewPanel() {
       </div>
       {pending && <p role="status" className="mt-3 text-sm text-slate-600">운영 상태를 확인하는 중…</p>}
       {issues.map(source => <div key={source.name} className="mt-3"><p className="mb-1 text-sm font-semibold">{source.name} 조회 실패</p><AdminErrorState message={source.error!} onRetry={source.refetch} /></div>)}
-      {!indexingError && (failedChecks > 0 || failedRun) && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      {!indexingError && ((failedChecks ?? 0) > 0 || failedRun) && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
         <p className="text-sm font-semibold text-amber-900">{failedRun ? "최근 색인 점검 작업이 실패했습니다." : `색인 검사 ${failedChecks}건이 실패했습니다.`}</p>
         <p className="mt-1 text-sm text-amber-900">검색에 노출되지 않는다는 판정이 아니라, 검사 자체를 완료하지 못한 상태입니다.</p>
         <AdminActionLink tone="dark" href="/admin/analysis/indexing" className="mt-3">검사 실패 확인하기</AdminActionLink>
       </div>}
       {!pending && issues.length === 0 && sources.every(source => source.data) && !failedChecks && !failedRun && <p className="mt-3 text-sm text-slate-600">조회된 자료에서 즉시 처리할 오류는 없습니다.</p>}
-      {!indexingError && needsAttention > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {needsAttention}개 ·  <a href="/admin/analysis/indexing" className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">색인 상세 보기</a></p>}
+      {!indexingError && (needsAttention ?? 0) > 0 && <p className="mt-3 text-sm text-slate-600">색인 확인 필요 {needsAttention}개 ·  <a href="/admin/analysis/indexing" className="inline-flex min-h-11 items-center py-2 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-700">색인 상세 보기</a></p>}
     </AdminSurface>
 
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">

@@ -28,7 +28,33 @@ function samplePrintPdf() {
   return Buffer.from(pdf + `xref\n0 7\n0000000000 65535 f \n${offsets.map(offset => `${offset} 00000 n \n`).join("")}trailer\n<< /Root 1 0 R /Size 7 >>\nstartxref\n${pdf.length}\n%%EOF\n`);
 }
 
+test("보험 양식의 서버 렌더링은 공통 레이아웃에 인라인 스타일을 삽입하지 않는다", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  try {
+    await context.addCookies([{ name: "sb-ui-test-auth-token", value: "test-marker", url: baseURL! }]);
+    const page = await context.newPage();
+    for (const path of ["/admin/operations/insurance-forms", "/staff/insurance-forms"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(path);
+      await expect(page.locator("#main-content > [data-workspace-layout]")).toBeVisible();
+      await expect(page.locator("#main-content > style")).toHaveCount(0);
+      await expect(page.locator("body > header")).toBeHidden();
+      await expect(page.locator("body > footer")).toBeHidden();
+    }
+
+    await page.goto("/review");
+    await expect(page.locator("body > header")).toBeVisible();
+    await expect(page.locator("body > footer")).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ page }) => {
+  const hydrationErrors: string[] = [];
+  page.on("pageerror", (error) => {
+    if (/hydration|minified react error #418/i.test(error.message)) hydrationErrors.push(error.message);
+  });
   await setupOutcomes(page);
   let forms: typeof form[] = [];
   await page.route("**/api/admin/insurance-forms", async (route) => {
@@ -86,6 +112,7 @@ test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ pa
   await page.getByRole("button", { name: "삭제 확인" }).click();
   await expect(page.getByText("양식을 삭제했습니다.")).toBeVisible();
   await expect(page.getByText("등록된 보험 양식이 없습니다.")).toBeVisible();
+  expect(hydrationErrors).toEqual([]);
 });
 
 test("직원이 모바일 카드에서 양식을 선택하고 같은 화면에서 인쇄할 수 있다", async ({ page, context }) => {
