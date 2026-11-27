@@ -113,29 +113,40 @@ test.describe('Smoke Tests', () => {
     }
   });
 
-  test('기존 직원 주소는 새 주소로 이동하고 새 주소도 로그인으로 보호된다', async ({ request }) => {
-    const redirects = [
-      ['/staff/system/settings', '/staff'],
-      ['/staff/system/hours', '/staff#staff-hours'],
-      ['/staff/system/first-visit', '/staff/first-visit'],
-      ['/staff/system/first-visit/review', '/staff/first-visit/review'],
-      ['/staff/system/insurance-forms', '/staff/insurance-forms'],
-      ['/staff/content/posts', '/staff/posts'],
-      ['/staff/content/posts/example?from=schedule', '/staff/posts/example?from=schedule'],
-      ['/staff/content/tasks', '/staff/tasks'],
-      ['/staff/content/review', '/staff/review'],
-      ['/staff/content/revisions/example', '/staff/revisions/example'],
-      ['/staff/content/schedule', '/staff/schedule'],
-      ['/staff/content/images', '/staff/images'],
+  test('사용하지 않는 관리자·직원 주소는 404를 반환한다', async ({ request }) => {
+    const retiredPaths = [
+      '/admin/operations',
+      '/admin/system/devtools',
+      '/admin/content/strategy/evidence',
+      '/staff/system/settings',
+      '/staff/system/hours',
+      '/staff/system/first-visit',
+      '/staff/system/first-visit/review',
+      '/staff/system/insurance-forms',
+      '/staff/content/posts',
+      '/staff/content/posts/example?from=schedule',
+      '/staff/content/tasks',
+      '/staff/content/review',
+      '/staff/content/revisions/example',
+      '/staff/content/schedule',
+      '/staff/content/images',
+      '/staff/first-visit',
+      '/staff/posts/new',
     ];
-    for (const [source, destination] of redirects) {
-      const legacy = await request.get(source, { maxRedirects: 0 });
-      expect(legacy.status(), source).toBe(308);
-      expect(new URL(legacy.headers().location, legacy.url()).href).toBe(new URL(destination, legacy.url()).href);
+    for (const path of retiredPaths) {
+      const response = await request.get(path, {
+        maxRedirects: 0,
+        headers: { Cookie: 'sb-ui-test-auth-token=test-marker' },
+      });
+      expect(response.status(), path).toBe(404);
+    }
+  });
 
-      const canonical = await request.get(destination, { maxRedirects: 0 });
-      expect(canonical.status(), destination).toBe(307);
-      expect(new URL(canonical.headers().location, canonical.url()).pathname).toBe('/staff/login');
+  test('현재 직원 주소는 로그인으로 보호된다', async ({ request }) => {
+    for (const path of ['/staff', '/staff/first-visit/review', '/staff/insurance-forms', '/staff/posts', '/staff/tasks', '/staff/review', '/staff/schedule', '/staff/images', '/staff/revisions/example']) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(307);
+      expect(new URL(response.headers().location, response.url()).pathname).toBe('/staff/login');
     }
   });
 

@@ -1,3 +1,4 @@
+import { AdminSurface } from "@/components/admin/AdminChrome";
 import { BASE_URL, CLINIC } from "@/lib/constants";
 import { CopyGuideButton } from "../CopyGuideButton";
 
@@ -11,7 +12,7 @@ const REVIEW_MESSAGE = [
 
 export default function StaffReviewGuidePage() {
   return (
-    <>
+    <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h1 className="text-xl font-bold">리뷰 안내</h1>
       <p className="mt-2 text-sm text-slate-600">
         진료를 마친 환자에게 문자나 카카오톡으로 보낼 후기 안내입니다.
@@ -47,6 +48,6 @@ export default function StaffReviewGuidePage() {
           failureMessage="문구를 복사하지 못했습니다. 위 문구를 직접 복사해 주세요."
         />
       </section>
-    </>
+    </AdminSurface>
   );
 }

@@ -96,15 +96,6 @@ const nextConfig: NextConfig = {
         destination: "https://www.born2smile.co.kr/:path*",
         permanent: true,
       },
-      { source: "/staff/system/settings", destination: "/staff", permanent: true },
-      { source: "/staff/system/hours", destination: "/staff#staff-hours", permanent: true },
-      { source: "/staff/system/first-visit/:path*", destination: "/staff/first-visit/:path*", permanent: true },
-      { source: "/staff/system/insurance-forms", destination: "/staff/insurance-forms", permanent: true },
-      {
-        source: "/staff/content/:section(tasks|posts|review|revisions|schedule|images)/:path*",
-        destination: "/staff/:section/:path*",
-        permanent: true,
-      },
     ];
   },
   experimental: {

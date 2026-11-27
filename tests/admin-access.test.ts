@@ -19,7 +19,7 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canOpenStaffPage("/staff/posts/draft"), true);
   assert.equal(canOpenStaffPage("/admin/system/monitoring"), false);
   for (const path of [
-    "/staff", "/staff/first-visit", "/staff/first-visit/review", "/staff/insurance-forms",
+    "/staff", "/staff/first-visit/review", "/staff/insurance-forms",
     "/staff/posts", "/staff/tasks", "/staff/review", "/staff/revisions/example",
     "/staff/schedule", "/staff/images", "/staff/preview/restorative/draft",
   ]) {
@@ -28,6 +28,7 @@ test("직원은 콘텐츠·행정 업무를 사용하고 원장 전용 화면과
   assert.equal(canOpenStaffPage("/staff/operations/accounts"), false);
   assert.equal(canOpenStaffPage("/staff/posts/draft/unknown"), false);
   assert.equal(canOpenStaffPage("/admin/operations/insurance-forms"), false);
+  assert.equal(canOpenStaffPage("/staff/first-visit"), false);
   assert.equal(canOpenStaffPage("/admin/content/posts"), false);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/clinic"), true);
   assert.equal(canUseAdminApi(staff, "GET", "/api/admin/site-config/hours"), true);

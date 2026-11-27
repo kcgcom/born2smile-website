@@ -6,11 +6,11 @@ import { AdminBrowserPresence } from "./AdminBrowserPresence";
 import { useAdminAuthState } from "./AdminAuthProvider";
 import { DashboardHeader } from "./DashboardHeader";
 import { AdminSurface } from "./AdminChrome";
-import { STAFF_FIRST_VISIT, STAFF_HOME, STAFF_INSURANCE_FORMS, STAFF_POSTS } from "@/lib/admin-access";
+import { STAFF_HOME, STAFF_INSURANCE_FORMS, STAFF_POSTS, STAFF_REVIEW_GUIDE } from "@/lib/admin-access";
 
 const STAFF_NAV = [
   { href: STAFF_HOME, label: "홈" },
-  { href: STAFF_FIRST_VISIT, label: "환자 안내 링크" },
+  { href: STAFF_REVIEW_GUIDE, label: "환자안내" },
   { href: STAFF_POSTS, label: "블로그 공유" },
   { href: STAFF_INSURANCE_FORMS, label: "보험 양식" },
 ] as const;

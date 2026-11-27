@@ -193,7 +193,7 @@ test("휴진일 달력은 기본 요일보다 날짜별 운영 예외를 우선�
       { date: "2026-12-03", open: true, time: "10:00 - 15:00" },
     ],
   });
-  await page.goto("/staff/system/hours");
+  await page.goto("/staff#staff-hours");
   await expect(page).toHaveURL("/staff#staff-hours");
   const calendar = page.getByRole("region", { name: "휴진일 달력" });
   for (const label of ["2026년 12월 2일 휴진", "2026년 12월 10일 정기 휴진"]) {
