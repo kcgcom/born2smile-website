@@ -40,6 +40,68 @@ index 0584a41ee7195024498b5a3c7812f614504fb5e6..d5e085122a310f8228b27e78fcfa04de
          dispatch = (action)=>{
              appDevRenderingIndicator(()=>{
                  actionQueue.dispatch(action, setState);
+diff --git a/dist/compiled/react-dom/cjs/react-dom-client.development.js b/dist/compiled/react-dom/cjs/react-dom-client.development.js
+index cafcb37d6e2a957ca9e6204df33a2e30cab1f617..fd9940335f64aea91f02e7f3ca12eeb79ed30449 100644
+--- a/dist/compiled/react-dom/cjs/react-dom-client.development.js
++++ b/dist/compiled/react-dom/cjs/react-dom-client.development.js
+@@ -5641,6 +5641,18 @@
+             hydrationParentFiber = hydrationParentFiber.return;
+         }
+     }
++    // Backport of facebook/react#35494 for the bundled development renderer.
++    function popHydrationStateOnInterruptedWork(fiber) {
++      if (fiber !== hydrationParentFiber) return;
++      if (!isHydrating) {
++        popToNextHostParent(fiber);
++        isHydrating = !0;
++        return;
++      }
++      popToNextHostParent(fiber);
++      if (5 === fiber.tag && null != fiber.stateNode)
++        nextHydratableInstance = fiber.stateNode;
++    }
+     function popHydrationState(fiber) {
+       if (fiber !== hydrationParentFiber) return !1;
+       if (!isHydrating)
+@@ -19047,6 +19059,7 @@
+           break;
+         case 5:
+           resetHooksOnUnwind(unitOfWork);
++          popHydrationStateOnInterruptedWork(unitOfWork);
+         default:
+           unwindInterruptedWork(current, unitOfWork),
+             (unitOfWork = workInProgress =
+diff --git a/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js b/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
+index 98aca313aaff6ce63ea720a7629bc6fbf348f49c..c20749047b11d8a701a5dd15749fa1770a482e7f 100644
+--- a/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
++++ b/dist/compiled/react-dom-experimental/cjs/react-dom-client.development.js
+@@ -5620,6 +5620,18 @@
+             hydrationParentFiber = hydrationParentFiber.return;
+         }
+     }
++    // Backport of facebook/react#35494 for the bundled development renderer.
++    function popHydrationStateOnInterruptedWork(fiber) {
++      if (fiber !== hydrationParentFiber) return;
++      if (!isHydrating) {
++        popToNextHostParent(fiber);
++        isHydrating = !0;
++        return;
++      }
++      popToNextHostParent(fiber);
++      if (5 === fiber.tag && null != fiber.stateNode)
++        nextHydratableInstance = fiber.stateNode;
++    }
+     function popHydrationState(fiber) {
+       if (fiber !== hydrationParentFiber) return !1;
+       if (!isHydrating)
+@@ -20085,6 +20097,7 @@
+           break;
+         case 5:
+           resetHooksOnUnwind(unitOfWork);
++          popHydrationStateOnInterruptedWork(unitOfWork);
+         default:
+           unwindInterruptedWork(current, unitOfWork),
+             (unitOfWork = workInProgress =
 diff --git a/dist/esm/client/components/use-action-queue.js b/dist/esm/client/components/use-action-queue.js
 index ea2df49f38b2658d3c4b6b7d8f9a486937533881..170305b61de6b573f37cc1f04a99d8c8e0cda9d1 100644
 --- a/dist/esm/client/components/use-action-queue.js
