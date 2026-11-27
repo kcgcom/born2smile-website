@@ -237,6 +237,13 @@ for (const { role, isOwner } of [{ role: "스태프", isOwner: false }, { role: 
     const calendar = page.getByRole("region", { name: "휴진일 달력" });
     await expect(hours.getByRole("region", { name: "휴진일 달력" })).toHaveCount(0);
     await expect(calendar.getByText("2026년 12월", { exact: true })).toBeVisible();
+    const shortcut = page.getByRole("link", { name: "예외 일정 바로가기" });
+    await expect(shortcut).toBeInViewport({ ratio: 1 });
+    expect((await shortcut.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await shortcut.press("Enter");
+    await expect(page).toHaveURL("/staff#staff-hours");
+    await expect(page.getByRole("region", { name: "예외 일정 관리" })).toBeFocused();
+    await expect(calendar).toBeInViewport();
     await expect(calendar.getByText("저장을 눌러야 서버에 반영됩니다.")).toHaveCount(0);
     await expect(hours.getByText("저장을 눌러야 서버에 반영됩니다.")).toHaveCount(0);
     await expect(calendar.getByRole("button", { name: "2026년 12월 15일", exact: true })).toBeEnabled();
