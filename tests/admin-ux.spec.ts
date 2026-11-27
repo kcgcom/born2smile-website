@@ -1066,6 +1066,9 @@ test("모바일은 메뉴를 압축하고 검색과 목록을 차트보다 먼�
 
 test("IndexNow는 게시물의 최근 수정본에 제출이 필요한지 표시한다", async ({ page }) => {
   await setup(page);
+  await page.route("**/api/admin/blog-posts?status=published", (route) => route.fulfill({
+    json: { data: [post, { ...post, slug: "recently-accepted", title: "최근 접수된 글" }] },
+  }));
   const accepted = {
     status: "accepted", source: "post_publish", url_count: 3, http_status: 200,
     started_at: "2026-11-12T01:00:00Z", ran_at: "2026-11-12T01:00:01Z",
@@ -1082,14 +1085,13 @@ test("IndexNow는 게시물의 최근 수정본에 제출이 필요한지 표시
 
   await page.goto("/admin/analysis/indexing");
   await expect(page.getByRole("heading", { name: "최근 실행" })).toBeVisible();
-  await page.getByLabel("게시물 슬러그").fill(post.slug);
-  await page.getByRole("button", { name: "조회", exact: true }).click();
+  const postSelect = page.getByLabel("조회할 공개 게시물");
+  await postSelect.selectOption({ label: post.title });
   await expect(page.getByText("제출 필요", { exact: true })).toBeVisible();
   await expect(page.getByText("URL 3개 · HTTP 200")).toBeVisible();
-  await page.getByLabel("게시물 슬러그").fill("recently-accepted");
-  await page.getByRole("button", { name: "조회", exact: true }).click();
+  await postSelect.selectOption({ label: "최근 접수된 글" });
   await expect(page.getByText("최신 수정본 접수 완료")).toBeVisible();
-  await page.getByRole("button", { name: "전체 상태 보기" }).click();
+  await postSelect.selectOption({ label: "사이트 전체" });
   await expect(page.getByRole("heading", { name: "최근 실행" })).toBeVisible();
 });
 
@@ -1099,8 +1101,11 @@ test("모바일 색인은 카드에서 상태와 시각을 함께 보고 빈 결
   await page.goto("/admin/analysis/indexing");
   const cards = page.getByRole("list", { name: "색인 URL 요약" });
   await expect(cards).toBeVisible();
-  await expect(cards.getByText("검사 시각", { exact: true })).toBeVisible();
-  await expect(cards.getByText("발견됨", { exact: true })).toBeVisible();
+  await expect(cards.getByText(/^검사 시각/)).toBeVisible();
+  await expect(cards.locator("time")).toHaveAttribute("datetime", indexing.items[0].inspectedAt);
+  await expect(page.getByRole("heading", { name: "결과 기다리기 · 1개" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "발견됨 · 1개" })).toBeVisible();
+  await expect(cards.getByText("Discovered - currently not indexed", { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await cards.screenshot({ path: testInfo.outputPath("mobile-indexing.png") });
   await page.getByRole("searchbox", { name: "URL 검색" }).fill("no-matching-url");

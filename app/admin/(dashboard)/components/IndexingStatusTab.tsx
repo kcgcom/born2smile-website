@@ -7,6 +7,7 @@ import { AdminErrorState } from "./AdminErrorState";
 import { AdminLoadingSkeleton } from "./AdminLoadingSkeleton";
 import { ApiSourceBadge } from "./insight/ApiSourceBadge";
 import { useAdminApi } from "./useAdminApi";
+import type { AdminBlogPost } from "./blog/blog-helpers";
 import type { IndexNowHistory, IndexNowRun } from "@/lib/indexnow";
 import type {
   IndexingMonitorData,
@@ -66,8 +67,8 @@ function IndexNowRunDetails({ run }: { run: IndexNowRun }) {
 }
 
 function IndexNowSummary() {
-  const [slugInput, setSlugInput] = useState("");
   const [slug, setSlug] = useState("");
+  const posts = useAdminApi<AdminBlogPost[]>("/api/admin/blog-posts?status=published");
   const endpoint = slug ? `/api/admin/indexnow-status?slug=${encodeURIComponent(slug)}` : "/api/admin/indexnow-status";
   const { data, loading, error, refetch } = useAdminApi<IndexNowHistory>(endpoint);
 
@@ -75,22 +76,23 @@ function IndexNowSummary() {
     <AdminSurface tone="white" className="rounded-2xl p-4 sm:p-6">
       <h2 className="font-semibold text-slate-900">IndexNow 자동 제출</h2>
       <p className="mt-1 text-sm text-slate-600">IndexNow 접수 후 실제 색인 여부는 검색엔진에서 확인할 수 있습니다.</p>
-      <form className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={(event) => {
-        event.preventDefault();
-        setSlug(slugInput.trim());
-      }}>
-        <label className="min-w-0 text-sm text-slate-700">
-          게시물 슬러그
-          <input className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 px-3"
-            value={slugInput} onChange={(event) => setSlugInput(event.target.value)} />
-        </label>
-        <button type="submit" className="min-h-11 rounded-lg border border-slate-300 px-3 text-sm">조회</button>
-        {slug && <button type="button" className="min-h-11 px-3 text-sm underline" onClick={() => {
-          setSlugInput("");
-          setSlug("");
-        }}>전체 상태 보기</button>}
-      </form>
-      <p className="mt-2 break-all text-sm text-slate-600">{slug || "사이트 전체"}</p>
+      <label className="mt-3 block w-full max-w-xl text-sm text-slate-700">
+        조회할 공개 게시물
+        <select
+          className="mt-1 block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3"
+          value={slug}
+          onChange={(event) => setSlug(event.target.value)}
+        >
+          <option value="">사이트 전체</option>
+          {posts.data?.map((post) => (
+            <option key={post.slug} value={post.slug}>{post.title}</option>
+          ))}
+        </select>
+      </label>
+      {posts.loading && <p role="status" className="mt-2 text-sm text-slate-600">공개 게시물을 불러오는 중입니다.</p>}
+      {posts.error && (
+        <AdminErrorState message="공개 게시물 목록을 불러오지 못했습니다." onRetry={posts.refetch} />
+      )}
       {loading && <p role="status" className="mt-3 text-sm text-slate-600">제출 기록을 불러오는 중입니다.</p>}
       {error && <AdminErrorState message={error} onRetry={refetch} />}
       {!loading && !error && data && (
@@ -128,20 +130,7 @@ function effectiveStatus(item: IndexStatusItem): IndexMonitorStatus {
 }
 
 function IndexReason({ item }: { item: IndexStatusItem }) {
-  if (item.error) return <>{item.error}</>;
-  const status = effectiveStatus(item);
-  const explanation = status === "discovered"
-    ? "Google이 URL을 발견했지만 아직 검색 색인에 등록하지 않았습니다."
-    : status === "crawled-not-indexed"
-      ? "Google이 페이지를 수집했지만 아직 검색 색인에 등록하지 않았습니다."
-      : null;
-  return <>
-    <p className="leading-5">{explanation ?? item.coverageState ?? "—"}</p>
-    {explanation && item.coverageState && <details className="mt-1 text-xs">
-      <summary className="min-h-11 cursor-pointer py-3">Google 원문 사유</summary>
-      <p className="break-words">{item.coverageState}</p>
-    </details>}
-  </>;
+  return <p className="break-words leading-5">{item.error || item.coverageState || "—"}</p>;
 }
 
 function formatRunStatus(status: string): string {
@@ -155,6 +144,75 @@ function formatRunStatus(status: string): string {
 function needsAttention(item: IndexStatusItem) {
   const status = effectiveStatus(item);
   return item.canonicalMismatch || (status !== "indexed" && status !== "unchecked");
+}
+
+function AttentionRows({ items, showReason = false }: { items: IndexStatusItem[]; showReason?: boolean }) {
+  return (
+    <ul className="mt-2 divide-y divide-slate-200 rounded-xl border border-slate-200" aria-label="색인 URL 요약">
+      {items.map((item) => (
+        <li key={item.url} className="grid gap-1 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto] md:gap-x-4">
+          <div className="min-w-0 text-sm">
+            <a href={item.url} target="_blank" rel="noreferrer" className="break-all font-semibold text-blue-800 underline">
+              {item.path}<span className="sr-only"> (새 창)</span>
+            </a>
+            {item.canonicalMismatch && (
+              <p className="mt-0.5 break-all text-xs text-red-800">
+                Google 대표 URL 불일치{item.googleCanonical && ` · ${item.googleCanonical}`}
+              </p>
+            )}
+            {item.pendingCount > 0 && <p className="mt-0.5 text-xs text-blue-800">상태 변경 확인 중</p>}
+            {showReason && (item.error || item.coverageState) && (
+              <div className="mt-0.5 text-xs text-slate-700"><IndexReason item={item} /></div>
+            )}
+          </div>
+          <p className="text-xs text-slate-600">
+            검사 시각{" "}
+            {item.inspectedAt ? <time dateTime={item.inspectedAt}>{formatDate(item.inspectedAt)}</time> : "—"}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AttentionList({ items }: { items: IndexStatusItem[] }) {
+  const causes = items.filter((item) => item.canonicalMismatch || effectiveStatus(item) === "excluded");
+  const failures = items.filter((item) => !item.canonicalMismatch && effectiveStatus(item) === "failed");
+  const watchGroups = (["unknown", "discovered", "crawled-not-indexed"] as const)
+    .map((status) => ({
+      status,
+      items: items.filter((item) => !item.canonicalMismatch && effectiveStatus(item) === status),
+    }))
+    .filter((group) => group.items.length > 0);
+  const watchCount = watchGroups.reduce((count, group) => count + group.items.length, 0);
+
+  return (
+    <div className="mt-4 space-y-5">
+      {causes.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold">원인 확인 필요 · {causes.length}개</h2>
+          <AttentionRows items={causes} showReason />
+        </section>
+      )}
+      {failures.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold">재검사 필요 · {failures.length}개</h2>
+          <AttentionRows items={failures} showReason />
+        </section>
+      )}
+      {watchGroups.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold">결과 기다리기 · {watchCount}개</h2>
+          {watchGroups.map((group) => (
+            <div key={group.status} className="mt-3">
+              <h3 className="text-xs font-semibold text-slate-700">{STATUS_COPY[group.status].label} · {group.items.length}개</h3>
+              <AttentionRows items={group.items} />
+            </div>
+          ))}
+        </section>
+      )}
+    </div>
+  );
 }
 
 export function IndexingStatusTab() {
@@ -291,6 +349,8 @@ export function IndexingStatusTab() {
             </div>
 
             <p role="status" className="mt-4 text-sm text-slate-600">{filteredItems.length}개 표시</p>
+            {filter === "attention" && filteredItems.length > 0 && <AttentionList items={filteredItems} />}
+            {filter !== "attention" && filteredItems.length > 0 && <>
             <ul className="mt-4 space-y-3 md:hidden" aria-label="색인 URL 요약">
               {filteredItems.map(item => {
                 const copy = STATUS_COPY[effectiveStatus(item)];
@@ -300,7 +360,7 @@ export function IndexingStatusTab() {
                   {item.canonicalMismatch && <p className="mt-2 text-sm text-red-800">Google canonical 불일치</p>}
                   {item.pendingCount > 0 && <p className="mt-2 text-sm text-blue-800">상태 변경 확인 중</p>}
                   <dl className="mt-2 space-y-2 text-sm text-slate-700">
-                    <div><dt className="font-medium">세부 사유</dt><dd className="break-words">
+                    <div><dt className="sr-only">세부 사유</dt><dd className="break-words">
                       <IndexReason item={item} />
                     </dd></div>
                     <div><dt className="font-medium">마지막 크롤링</dt><dd>{formatDate(item.lastCrawlTime)}</dd></div>
@@ -347,6 +407,7 @@ export function IndexingStatusTab() {
                 </tbody>
               </table>
             </div>
+            </>}
             {filteredItems.length === 0 && <div className="py-8 text-center text-sm text-slate-700">
               <p>조건에 맞는 URL이 없습니다.</p>
               <button type="button" onClick={() => { setQuery(""); setFilter("all"); }} className="mt-3 min-h-11 rounded-lg border border-slate-300 px-3 font-medium">전체 URL 보기</button>

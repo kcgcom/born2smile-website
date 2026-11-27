@@ -71,12 +71,14 @@ test("방문 차트는 한국어 페이지명과 원본 상세 연결을 유지�
   await page.screenshot({ path: testInfo.outputPath("reading-desktop.png"), fullPage: true });
 });
 
-test("데스크톱 색인 표는 한국어 설명과 Google 원문을 함께 제공한다", async ({ page }) => {
+test("데스크톱 색인은 확인 필요를 그룹으로 표시하고 전체에서 원문을 보여준다", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await setupOutcomes(page);
   await page.goto("/admin/analysis/indexing");
+  await expect(page.getByRole("heading", { name: "발견됨 · 1개" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "색인 URL 요약" }).getByRole("link")).toHaveText(path + " (새 창)");
+  await page.getByRole("button", { name: "전체", exact: true }).click();
   const table = page.getByRole("table");
-  await expect(table.getByText("Google이 URL을 발견했지만 아직 검색 색인에 등록하지 않았습니다.", { exact: true })).toBeVisible();
-  await table.getByText("Google 원문 사유", { exact: true }).click();
+  await expect(table.getByText("발견됨", { exact: true })).toBeVisible();
   await expect(table.getByText("Discovered - currently not indexed", { exact: true })).toBeVisible();
 });
