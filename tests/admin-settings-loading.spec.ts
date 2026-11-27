@@ -137,7 +137,7 @@ for (const isOwner of [true, false]) {
   });
 }
 
-test("긴급 공지 날짜를 지워도 달력 팝업이 열린 채로 유지된다", async ({ page }) => {
+test("긴급 공지에서 다른 날짜를 바로 선택하거나 날짜를 지우고 달력을 닫을 수 있다", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.clock.setFixedTime(new Date("2026-11-30T15:00:00Z"));
   await openSettings(page, "hours", "success");
@@ -152,18 +152,19 @@ test("긴급 공지 날짜를 지워도 달력 팝업이 열린 채로 유지된
   await date.click();
   await expect(dialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(dialog).toHaveCSS("border-top-width", "1px");
-  const clear = dialog.getByRole("button", { name: "지우기", exact: true });
-  await clear.press("Enter");
-  await expect(dialog).toBeVisible();
-  await expect(clear).toBeFocused();
-  await expect(dialog.getByRole("button", { pressed: true })).toHaveCount(0);
   await dialog.getByRole("button", { name: "2026년 12월 2일", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(date).toHaveAccessibleName("종료 날짜 2026-12-02");
   await expect(date).toBeFocused();
+  await expect(card.getByRole("button", { name: "즉시 게시" })).toBeEnabled();
+  await date.click();
+  await dialog.getByRole("button", { name: "지우기", exact: true }).press("Enter");
+  await expect(dialog).toBeHidden();
+  await expect(date).toHaveAccessibleName("종료 날짜 선택");
+  await expect(date).toBeFocused();
   await expect(card.getByLabel("공지 문구")).toHaveValue("방문 전 전화로 문의해 주세요.");
   await expect(time).toHaveValue("17:00");
-  await expect(card.getByRole("button", { name: "즉시 게시" })).toBeEnabled();
+  await expect(card.getByRole("button", { name: "즉시 게시" })).toBeDisabled();
 });
 
 test("공개 긴급 공지는 종료 시각에 다시 로드하지 않아도 사라진다", async ({ page }) => {

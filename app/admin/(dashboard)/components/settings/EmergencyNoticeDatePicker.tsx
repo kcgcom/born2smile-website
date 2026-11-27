@@ -29,6 +29,11 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
     setMonth((current) => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + offset, 1)));
   }
 
+  function selectDate(value: string) {
+    onChange(value);
+    dialog.current?.close();
+  }
+
   return (
     <>
       <AdminActionButton type="button" tone="ghost" aria-haspopup="dialog" aria-label={date ? `종료 날짜 ${date}` : "종료 날짜 선택"}
@@ -58,7 +63,7 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
               return (
                 <button key={dayDate} type="button" aria-label={`${year}년 ${monthIndex + 1}월 ${day}일`}
                   aria-current={dayDate === today ? "date" : undefined} aria-pressed={dayDate === date}
-                  onClick={() => { onChange(dayDate); dialog.current?.close(); }}
+                  onClick={() => selectDate(dayDate)}
                   className="min-h-11 min-w-0 rounded-lg text-sm hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-700 aria-current:font-bold aria-pressed:bg-blue-100 aria-pressed:font-semibold">
                   {day}
                 </button>
@@ -66,7 +71,7 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
             })}
           </div>
           <div className="flex justify-start border-t border-slate-200 pt-2">
-            <AdminActionButton type="button" tone="ghost" onClick={() => onChange("")} className="min-h-11">지우기</AdminActionButton>
+            <AdminActionButton type="button" tone="ghost" onClick={() => selectDate("")} className="min-h-11">지우기</AdminActionButton>
           </div>
         </div>
       </dialog>
