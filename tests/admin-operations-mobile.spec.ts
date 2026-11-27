@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import type { IndexingMonitorData } from "../lib/admin-indexing-monitor";
 
 const imageName = "very-long-implant-aftercare-guide-image.webp";
 const usages = [
@@ -94,6 +95,30 @@ test("이미지는 사용 상태를 구분하고 검색·정렬·빈 결과를 �
   await page.getByRole("button", { name: "조건 초기화", exact: true }).click();
   await expect(thumbnails).toHaveCount(2);
   await expect(page.getByLabel("이미지 정렬", { exact: true })).toHaveValue("newest");
+});
+
+test("관리자 색인 화면은 사이트 설정을 불러와 정상 렌더링한다", async ({ page }) => {
+  await setup(page);
+  await page.route(/^https:\/\/[^/]+\.sentry\.io\//, route => route.abort());
+  const data: IndexingMonitorData = {
+    items: [],
+    events: [],
+    sitemapHold: null,
+    lastRun: null,
+    summary: {
+      total: 0, needsAttention: 0, pendingChanges: 0,
+      indexed: 0, unchecked: 0, failed: 0, discovered: 0, "crawled-not-indexed": 0, unknown: 0, excluded: 0,
+    },
+  };
+  await page.route("**/api/admin/indexing-status", route => route.fulfill({ json: { data } }));
+  await page.route("**/api/admin/blog-posts?status=published", route => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/admin/indexnow-status", route => route.fulfill({
+    json: { data: { storageReady: true, latest: null, latestAccepted: null } },
+  }));
+
+  const response = await page.goto("/admin/analysis/indexing");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "색인 상태", exact: true })).toBeVisible();
 });
 
 for (const [name, incompleteData] of [
