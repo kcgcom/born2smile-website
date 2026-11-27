@@ -6,6 +6,8 @@ const form = {
   insurer: "예시손해보험",
   title: "치과치료확인서",
   createdAt: "2026-11-26T05:00:00.000Z",
+  sourceUrl: "https://insurer.example/form.pdf",
+  sourcePageUrl: "https://insurer.example/claims",
 };
 
 test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ page }) => {
@@ -15,6 +17,8 @@ test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ pa
     if (route.request().method() === "POST") {
       expect(route.request().headers()["content-type"]).toContain("multipart/form-data");
       expect(route.request().postData()).toContain(form.insurer);
+      expect(route.request().postData()).toContain(form.sourceUrl);
+      expect(route.request().postData()).toContain(form.sourcePageUrl);
       forms = [form];
       return route.fulfill({ status: 201, json: { data: { ok: true } } });
     }
@@ -30,11 +34,14 @@ test("원장이 보험 양식을 등록하고 삭제할 수 있다", async ({ pa
   await page.getByRole("button", { name: "양식 등록" }).click();
   await page.getByLabel("보험사명", { exact: true }).fill(form.insurer);
   await page.getByLabel("양식명", { exact: true }).fill(form.title);
+  await page.getByLabel("원본 PDF 주소 (선택)").fill(form.sourceUrl);
+  await page.getByLabel("보험사 안내 페이지 주소 (선택)").fill(form.sourcePageUrl);
   await page.getByLabel("PDF 파일").setInputFiles({
     name: "form.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7"),
   });
   await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByText("양식을 등록했습니다.")).toBeVisible();
+  await expect(page.getByRole("link", { name: /원본 PDF/ })).toHaveAttribute("href", form.sourceUrl);
   await page.getByRole("button", { name: `${form.insurer} ${form.title} 삭제` }).click();
   await page.getByRole("button", { name: "삭제 확인" }).click();
   await expect(page.getByText("양식을 삭제했습니다.")).toBeVisible();
@@ -54,6 +61,7 @@ test("직원이 모바일에서 양식을 검색해 새 탭으로 열 수 있다
   await expect(page.getByRole("link", { name: "보험 양식" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("button", { name: "양식 등록" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /삭제/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /보험사 안내/ })).toHaveAttribute("href", form.sourcePageUrl);
   const search = page.getByRole("searchbox");
   await search.fill("다른 보험사");
   await expect(page.getByText("검색 조건에 맞는 양식이 없습니다.")).toBeVisible();
