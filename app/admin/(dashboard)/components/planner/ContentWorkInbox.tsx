@@ -2,10 +2,11 @@
 
 import { useOwnerWorkspace, useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminActionButton, AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
+import { ADMIN_HOME } from "@/lib/admin-access";
 import type { ContentPlannerItem, PlannerStatus } from "@/lib/content-planner";
 import { taskResultSchema, type TaskWorkflow } from "@/lib/content-tasks";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
@@ -13,7 +14,7 @@ import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
 import { RevisionList } from "../blog/RevisionList";
 import { PublicationReviewQueue } from "../blog/PublicationReviewQueue";
-import { internalTarget, needsWorkAttention, workResult, workStage, WORK_ATTENTION, WORK_STAGES, type WorkStage } from "./work-inbox";
+import { internalTarget, needsWorkAttention, revisionHref, workResult, workStage, WORK_ATTENTION, WORK_STAGES, type WorkStage } from "./work-inbox";
 
 const TYPE_LABELS = { blog: "블로그", page: "진료 페이지", faq: "FAQ" };
 const STATUS_LABELS: Record<PlannerStatus, string> = { approved: "승인됨", in_progress: "진행 중", review: "검토 대기", scheduled: "예약·반영 예정", published: "완료", deferred: "보류", dismissed: "제외" };
@@ -21,6 +22,8 @@ const STATUS_LABELS: Record<PlannerStatus, string> = { approved: "승인됨", in
 export function ContentWorkInbox() {
   const ownerWorkspace = useOwnerWorkspace();
   const params = useSearchParams();
+  const listQuery = params.toString();
+  const listHref = `${ADMIN_HOME.content}${listQuery ? `?${listQuery}` : ""}`;
   const stageParam = params.get("stage");
   const attention = WORK_ATTENTION.find(entry => entry.id === params.get("attention"));
   const typeParam = params.get("type");
@@ -39,12 +42,21 @@ export function ContentWorkInbox() {
     && (type === "all" || item.itemType === type)
     && `${item.title} ${item.targetPage}`.toLowerCase().includes(query.toLowerCase())
   ));
+  useEffect(() => {
+    if (tasks.loading || !Array.isArray(tasks.data)) return;
+    const anchor = window.location.hash.slice(1);
+    if (anchor === "pending-revisions" || anchor.startsWith("work-item-")) {
+      document.getElementById(anchor)?.scrollIntoView();
+    }
+  }, [tasks.data, tasks.loading, listQuery]);
+
   const updateQuery = (values: Record<string, string>) => {
     const url = new URL(window.location.href);
     for (const [key, value] of Object.entries(values)) {
       if (value && (key === "q" || value !== "all")) url.searchParams.set(key, value);
       else url.searchParams.delete(key);
     }
+    url.hash = "";
     window.history.replaceState(null, "", url);
   };
   const update = async (item: ContentPlannerItem, status: PlannerStatus) => {
@@ -65,10 +77,7 @@ export function ContentWorkInbox() {
   return <div className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="text-xl font-bold">콘텐츠 작업함</h1><p className="mt-1 text-sm text-slate-600">제안을 승인하고 작업 결과를 검토합니다.</p></div>
-      <div className="flex flex-wrap items-center gap-2">
-        {ownerWorkspace && <WorkPlanningLinks />}
-        <AdminActionButton tone="dark" onClick={tasks.refetch}>새로고침</AdminActionButton>
-      </div>
+      <AdminActionButton tone="dark" onClick={tasks.refetch}>새로고침</AdminActionButton>
     </header>
     {notice && <AdminNotice tone="info">{notice}</AdminNotice>}
     {error && <AdminNotice tone="error">작업 상태 변경 실패: {error}</AdminNotice>}
@@ -86,31 +95,17 @@ export function ContentWorkInbox() {
         <button type="button" aria-pressed={!attention && stage === "archive"} onClick={() => updateQuery({ stage: !attention && stage === "archive" ? "proposals" : "archive", attention: "" })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">제외한 작업 {items.filter(item => item.status === "dismissed").length}</button>
       </div>
       {!attention && stage === "proposals" && <p className="text-xs text-slate-500">제안 대기에는 보류한 작업도 표시됩니다.</p>}
-      {ownerWorkspace && !attention && stage === "review" && <PublicationReviewQueue />}
+      {ownerWorkspace && !attention && stage === "review" && <PublicationReviewQueue returnTo={`${listHref}#pending-revisions`} />}
       {opportunity && !items.some(item => item.opportunityKey === opportunity) && <AdminNotice tone="info">해당 제안이 작업함에 없습니다. 기존에 저장된 작업은 아래 상태별 목록에서 확인할 수 있습니다.</AdminNotice>}
-      {filtered.length ? <ul aria-label="콘텐츠 작업 목록" className="space-y-3">{filtered.map(item => <li key={item.id}><WorkItem item={item} highlighted={item.opportunityKey === opportunity} busy={Boolean(saving)} onUpdate={status => update(item, status)} /></li>)}</ul> : <AdminSurface tone="white" className="rounded-2xl p-6 text-sm text-slate-600">{attention || query || type !== "all" ? "조건에 맞는 작업이 없습니다." : "이 상태의 작업이 없습니다."}</AdminSurface>}
+      {filtered.length ? <ul aria-label="콘텐츠 작업 목록" className="space-y-3">{filtered.map(item => {
+        const anchor = `work-item-${item.id}`;
+        return <li key={item.id} id={anchor}><WorkItem item={item} highlighted={item.opportunityKey === opportunity} busy={Boolean(saving)} onUpdate={status => update(item, status)} returnTo={ownerWorkspace ? `${listHref}#${anchor}` : undefined} /></li>;
+      })}</ul> : <AdminSurface tone="white" className="rounded-2xl p-6 text-sm text-slate-600">{attention || query || type !== "all" ? "조건에 맞는 작업이 없습니다." : "이 상태의 작업이 없습니다."}</AdminSurface>}
     </>}
   </div>;
 }
 
-function WorkPlanningLinks() {
-  return <>
-    <AdminActionLink tone="primary" href="/admin/content/strategy/actions">콘텐츠 행동추천</AdminActionLink>
-    <details className="relative" onKeyDown={event => {
-      if (event.key !== "Escape" || !event.currentTarget.open) return;
-      event.currentTarget.open = false;
-      event.currentTarget.querySelector("summary")?.focus();
-    }}>
-      <summary className="min-h-11 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">기획·분석</summary>
-      <nav aria-label="기획·분석" className="absolute right-0 top-full z-20 mt-1 grid min-w-max gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-lg sm:left-0 sm:right-auto">
-        <AdminActionLink tone="dark" href="/admin/content/strategy">기회 분석</AdminActionLink>
-        <AdminActionLink tone="dark" href="/admin/content/trends">검색 트렌드·키워드 관리</AdminActionLink>
-      </nav>
-    </details>
-  </>;
-}
-
-function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerItem; highlighted: boolean; busy: boolean; onUpdate: (status: PlannerStatus) => void }) {
+function WorkItem({ item, highlighted, busy, onUpdate, returnTo }: { item: ContentPlannerItem; highlighted: boolean; busy: boolean; onUpdate: (status: PlannerStatus) => void; returnTo?: string }) {
   const workspaceHref = useWorkspaceHref();
   const result = workResult(item);
   const target = internalTarget(item.targetPage);
@@ -132,7 +127,7 @@ function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerI
       {item.status !== "published" && item.status !== "deferred" && item.status !== "dismissed" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("deferred")}>보류</AdminActionButton>}
       {item.status === "deferred" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("dismissed")}>제외</AdminActionButton>}
       {item.status === "dismissed" && <AdminActionButton tone="dark" disabled={busy} onClick={() => onUpdate("deferred")}>제안 대기로 복원</AdminActionButton>}
-      {result.revisionId && <AdminActionLink tone="primary" href={workspaceHref(`/admin/content/revisions/${result.revisionId}`)}>연결된 수정안 검토</AdminActionLink>}
+      {result.revisionId && <AdminActionLink tone="primary" href={revisionHref(workspaceHref(`/admin/content/revisions/${result.revisionId}`), returnTo)}>연결된 수정안 검토</AdminActionLink>}
       {submitted?.kind === "code" && <AdminActionLink tone="primary" href={submitted.pullRequestUrl} target="_blank" rel="noopener noreferrer">코드 변경안 검토 (새 창)</AdminActionLink>}
       {result.postSlug ? <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts/${encodeURIComponent(result.postSlug)}`)}>포스트 검토</AdminActionLink> : item.itemType === "blog" && <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts?q=${encodeURIComponent(item.title)}`)}>관련 포스트 찾기</AdminActionLink>}
       {target && <AdminActionLink tone="dark" href={target} target="_blank" rel="noopener noreferrer">대상 페이지 (새 창)</AdminActionLink>}
@@ -142,7 +137,7 @@ function WorkItem({ item, highlighted, busy, onUpdate }: { item: ContentPlannerI
     {(item.itemType === "page" || item.itemType === "faq") && item.status === "review" && <p className="mt-3 text-sm text-slate-600">페이지·FAQ 변경은 코드 변경안과 미리보기를 검토한 뒤 반영하세요.</p>}
     <div className="mt-3 grid gap-3 lg:mt-2 lg:grid-cols-2 lg:gap-4">
     <details className="min-w-0 text-sm"><summary className="min-h-11 cursor-pointer py-3 font-medium">제안 상세·근거</summary><StoredBrief brief={item.brief} /><details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs text-slate-500">저장된 기획·분석 자료 원문</summary><pre className="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-50 p-3 text-xs">{JSON.stringify({ brief: item.brief, evidence: item.sourceSnapshot }, null, 2)}</pre></details></details>
-    {result.postSlug && <RevisionList slug={result.postSlug} compact />}
+    {result.postSlug && <RevisionList slug={result.postSlug} compact returnTo={returnTo} />}
     </div>
   </AdminSurface>;
 }

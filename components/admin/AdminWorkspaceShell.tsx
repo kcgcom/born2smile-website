@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Activity,
   BarChart3,
@@ -49,6 +49,12 @@ const PERFORMANCE_PATH = "/admin/system/monitoring";
 const MOBILE_PSI_ENDPOINT = "/api/dev/pagespeed?strategy=mobile";
 const INDEXING_PATH = "/admin/analysis/indexing";
 const INDEXING_ENDPOINT = "/api/admin/indexing-status";
+const CONTENT_WORK_TABS = [
+  { href: ADMIN_HOME.content, label: "작업 목록", related: ["/admin/content/revisions"] },
+  { href: "/admin/content/strategy/actions", label: "행동추천", related: ["/admin/content/strategy/reevaluation-review"] },
+  { href: "/admin/content/strategy", label: "기회 분석" },
+  { href: "/admin/content/trends", label: "검색 트렌드·키워드" },
+];
 
 function preloadTabData(href: string) {
   if (href === PERFORMANCE_PATH) preloadAdminApi(MOBILE_PSI_ENDPOINT);
@@ -194,6 +200,37 @@ function SectionTabs({
   );
 }
 
+function ContentWorkNav({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const [lastListQuery, setLastListQuery] = useState("");
+  const listQuery = pathname === ADMIN_HOME.content ? searchParams.toString() : lastListQuery;
+  if (listQuery !== lastListQuery) setLastListQuery(listQuery);
+
+  const active = CONTENT_WORK_TABS.find(tab =>
+    isActivePath(pathname, tab.href) || tab.related?.some(href => isActivePath(pathname, href))
+  );
+  if (!active) return null;
+
+  return (
+    <nav aria-label="콘텐츠 작업함 화면" className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-slate-100/80 p-1 sm:grid-cols-4">
+      {CONTENT_WORK_TABS.map(tab => (
+        <Link
+          key={tab.href}
+          href={tab.href === ADMIN_HOME.content && listQuery ? `${tab.href}?${listQuery}` : tab.href}
+          aria-current={tab === active ? "page" : undefined}
+          className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border-b-2 px-2 py-2 text-center text-sm break-keep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${
+            tab === active
+              ? "border-blue-700 bg-white font-semibold text-blue-800 shadow-sm"
+              : "border-transparent font-medium text-slate-700 hover:bg-white"
+          }`}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
   const pathname = usePathname();
   const { access } = useAdminAuthState();
@@ -211,6 +248,7 @@ export function AdminWorkspaceShell({ children }: AdminWorkspaceShellProps) {
             {access?.isOwner && <WorkspaceNav pathname={pathname} />}
             {workspace && <SectionTabs pathname={pathname} workspace={workspace} />}
           </div>
+          {access?.isOwner && <Suspense><ContentWorkNav pathname={pathname} /></Suspense>}
         </AdminSurface>
 
         <div className="mt-3 sm:mt-6">{children}</div>

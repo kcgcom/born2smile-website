@@ -4,6 +4,7 @@ import { useWorkspaceHref } from "@/hooks/useWorkspaceHref";
 
 import { AdminActionLink, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminErrorState } from "../AdminErrorState";
+import { revisionHref } from "../planner/work-inbox";
 import { useAdminApi } from "../useAdminApi";
 
 interface ReviewQueue {
@@ -11,7 +12,7 @@ interface ReviewQueue {
   revisions: { id: string; slug: string; reason: string }[];
 }
 
-export function PublicationReviewQueue({ showDrafts = false }: { showDrafts?: boolean }) {
+export function PublicationReviewQueue({ showDrafts = false, returnTo }: { showDrafts?: boolean; returnTo?: string }) {
   const workspaceHref = useWorkspaceHref();
   const { data, error, loading, refetch } = useAdminApi<ReviewQueue>("/api/admin/publication-review");
   return (
@@ -34,7 +35,7 @@ export function PublicationReviewQueue({ showDrafts = false }: { showDrafts?: bo
             {showDrafts && <h2 className="font-semibold">공개·예약 글 수정안</h2>}
             {data.revisions.length === 0 && <p className="mt-2 text-sm text-slate-600">대기 중인 수정안이 없습니다.</p>}
             <ul className="mt-2 space-y-2">
-              {data.revisions.map((revision) => <li key={revision.id}><AdminActionLink tone="dark" href={workspaceHref(`/admin/content/revisions/${revision.id}`)}>{revision.reason} · {revision.slug}</AdminActionLink></li>)}
+              {data.revisions.map((revision) => <li key={revision.id}><AdminActionLink tone="dark" href={revisionHref(workspaceHref(`/admin/content/revisions/${revision.id}`), returnTo)}>{revision.reason} · {revision.slug}</AdminActionLink></li>)}
             </ul>
           </section>
         </div>

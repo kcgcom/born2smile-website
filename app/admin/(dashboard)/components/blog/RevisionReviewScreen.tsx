@@ -11,13 +11,14 @@ import type { RevisionContent } from "@/lib/content-revisions";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { AdminErrorState } from "../AdminErrorState";
 import { AdminLoadingSkeleton } from "../AdminLoadingSkeleton";
+import { revisionReturnHref } from "../planner/work-inbox";
 
 interface Proposal {
   id: string; slug: string; base_revision: string; original: RevisionContent; candidate: RevisionContent;
   reason: string; status: "draft" | "applied"; created_at: string;
 }
 
-export function RevisionReviewScreen({ id }: { id: string }) {
+export function RevisionReviewScreen({ id, returnTo }: { id: string; returnTo?: string }) {
   const workspaceHref = useWorkspaceHref();
   const canApply = useOwnerWorkspace();
   const proposal = useAdminApi<Proposal>(`/api/admin/content-revisions/${encodeURIComponent(id)}`);
@@ -53,7 +54,7 @@ export function RevisionReviewScreen({ id }: { id: string }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <AdminActionLink tone="dark" href={workspaceHref(`/admin/content/posts/${encodeURIComponent(item.slug)}`)}>원본 글 편집</AdminActionLink>
         {canApply
-          ? <AdminActionLink tone="dark" href="/admin/content/tasks?stage=review#pending-revisions">검토 필요 목록</AdminActionLink>
+          ? <AdminActionLink tone="dark" href={revisionReturnHref(returnTo)}>{returnTo ? "작업 목록으로 돌아가기" : "검토 필요 목록"}</AdminActionLink>
           : <AdminActionLink tone="dark" href={workspaceHref("/admin/content/posts")}>포스트 목록</AdminActionLink>}
       </div>
     </AdminSurface>

@@ -1,5 +1,18 @@
 import type { ContentPlannerItem } from "@/lib/content-planner";
 import type { TaskWorkflow } from "@/lib/content-tasks";
+import { ADMIN_HOME } from "@/lib/admin-access";
+
+export function revisionHref(href: string, returnTo?: string) {
+  return returnTo ? `${href}?${new URLSearchParams({ returnTo })}` : href;
+}
+
+export function revisionReturnHref(returnTo?: string) {
+  const listPath = ADMIN_HOME.content;
+  if (returnTo === listPath || returnTo?.startsWith(`${listPath}?`) || returnTo?.startsWith(`${listPath}#`)) {
+    return returnTo;
+  }
+  return `${listPath}?stage=review#pending-revisions`;
+}
 
 export const WORK_ATTENTION = [
   { id: "approval", label: "승인 대기" },

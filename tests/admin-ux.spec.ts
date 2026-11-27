@@ -656,8 +656,10 @@ test("관리자 진입 주소는 쿠키 유무에 따라 렌더링 전에 이동
 });
 
 test("원장은 작업함에서 콘텐츠 기획 도구에 접근할 수 있다", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
   await setup(page);
-  await page.route("**/api/admin/site-config/*", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
+  await page.route(/\/api\/admin\/(content-coverage|naver-datalab|naver-searchad|keyword-taxonomy)\//, route =>
+    route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
   await page.goto("/admin/content/posts/new");
   const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
   await expect(main.getByRole("link")).toHaveText(["운영", "콘텐츠", "시스템"]);
@@ -667,22 +669,46 @@ test("원장은 작업함에서 콘텐츠 기획 도구에 접근할 수 있다"
   await expect(content.getByRole("link", { name: "포스트", exact: true })).toHaveAttribute("aria-current", "page");
   const tools = page.getByRole("navigation", { name: "관리자 보조 도구", exact: true });
   await expect(tools).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "콘텐츠 행동추천", exact: true })).toHaveCount(0);
+  const workNav = page.getByRole("navigation", { name: "콘텐츠 작업함 화면", exact: true });
+  await expect(workNav).toHaveCount(0);
   await main.getByRole("link", { name: "콘텐츠", exact: true }).click();
   await expect(page).toHaveURL("/admin/content/tasks");
   await expect(content.getByRole("link", { name: "작업함", exact: true })).toHaveAttribute("aria-current", "page");
-  const actionLink = page.getByRole("link", { name: "콘텐츠 행동추천", exact: true });
-  await expect(actionLink).toHaveAttribute("href", "/admin/content/strategy/actions");
-  const planning = page.getByRole("navigation", { name: "기획·분석", exact: true });
-  const disclosure = page.locator("summary").filter({ hasText: /^기획·분석$/ });
-  await disclosure.focus();
-  await page.keyboard.press("Enter");
-  await expect(planning.getByRole("link")).toHaveText(["기회 분석", "검색 트렌드·키워드 관리"]);
-  await expect(planning.getByRole("link", { name: "검색 트렌드·키워드 관리" })).toHaveAttribute("href", "/admin/content/trends");
-  await planning.getByRole("link", { name: "기회 분석", exact: true }).click();
-  await expect(page).toHaveURL("/admin/content/strategy");
+  const list = workNav.getByRole("link", { name: "작업 목록", exact: true });
+  const action = workNav.getByRole("link", { name: "행동추천", exact: true });
+  await expect(workNav.getByRole("link")).toHaveText(["작업 목록", "행동추천", "기회 분석", "검색 트렌드·키워드"]);
+  await expect(list).toHaveAttribute("aria-current", "page");
+  await expect(workNav).toHaveCSS("grid-template-columns", /^\S+ \S+$/);
+
+  await page.getByRole("button", { name: /^검토 필요/ }).click();
+  await page.getByRole("searchbox", { name: "작업 검색" }).fill("임플란트");
+  await page.getByRole("combobox", { name: "작업 유형" }).selectOption("blog");
+  for (const [label, path] of [
+    ["행동추천", "/admin/content/strategy/actions"],
+    ["기회 분석", "/admin/content/strategy"],
+    ["검색 트렌드·키워드", "/admin/content/trends"],
+  ]) {
+    const link = workNav.getByRole("link", { name: label, exact: true });
+    await link.click();
+    await expect(page).toHaveURL(path);
+    await expect(link).toHaveAttribute("aria-current", "page");
+    await expect(workNav.locator('[aria-current="page"]')).toHaveCount(1);
+  }
   await expect(content.getByRole("link", { name: "작업함", exact: true })).toHaveAttribute("aria-current", "page");
-  await main.getByRole("link", { name: "운영", exact: true }).click();
+  await list.click();
+  await expect(page.getByRole("button", { name: /^검토 필요/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("searchbox", { name: "작업 검색" })).toHaveValue("임플란트");
+  await expect(page.getByRole("combobox", { name: "작업 유형" })).toHaveValue("blog");
+
+  await page.goto("/admin/content/strategy/reevaluation-review");
+  await expect(action).toHaveAttribute("aria-current", "page");
+});
+
+test("원장은 운영과 시스템의 세부 화면을 전환할 수 있다", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/admin/site-config/*", route => route.fulfill({ status: 503, json: { message: "메뉴 검증용 조회 차단" } }));
+  await page.goto("/admin/operations/overview");
+  const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
   await expect(page).toHaveURL("/admin/operations/overview");
   const operation = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
   await expect(operation.getByRole("link")).toHaveText(["오늘 할 일", "검색 성과", "방문·읽기", "문의·공유", "보험 양식", "색인 상태"]);
@@ -937,15 +963,27 @@ test("원장은 작업함 검토 필요에서 공개·예약 글 수정안을 �
       },
     },
   }));
+  const content = { ...post, blocks: [] };
+  await page.route(url => url.pathname === "/api/admin/content-revisions/revision-id", route => route.fulfill({
+    json: { data: { id: "revision-id", slug: post.slug, reason: "본문 보완", status: "draft", base_revision: "v1", original: content, candidate: content } },
+  }));
 
   await page.goto("/admin/content/posts");
   await expect(page.getByRole("heading", { name: "검토 대기 수정안" })).toHaveCount(0);
   await page.goto("/admin/content/tasks");
   await page.getByRole("button", { name: /^검토 필요/ }).click();
   await expect(page.getByRole("heading", { name: "검토 대기 수정안" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "본문 보완 · published-post" })).toHaveAttribute("href", "/admin/content/revisions/revision-id");
   await expect(page.getByRole("heading", { name: "발행 요청", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "발행 검토를 요청한 초안" })).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "작업 검색" }).fill("보완");
+  await page.getByRole("combobox", { name: "작업 유형" }).selectOption("blog");
+  await page.getByRole("link", { name: "본문 보완 · published-post" }).click();
+  await expect(page.getByRole("heading", { name: "콘텐츠 수정안 검토" })).toBeVisible();
+  await page.getByRole("link", { name: "작업 목록으로 돌아가기" }).click();
+  await expect(page).toHaveURL(/#pending-revisions$/);
+  await expect(page.getByRole("button", { name: /^검토 필요/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("searchbox", { name: "작업 검색" })).toHaveValue("보완");
+  await expect(page.getByRole("combobox", { name: "작업 유형" })).toHaveValue("blog");
   await page.goto("/admin/content/review");
   await expect(page).toHaveURL("/admin/content/tasks?stage=review#pending-revisions");
 });
@@ -1144,14 +1182,13 @@ for (const width of [1280, 1440]) {
     expect((await page.getByRole("heading", { name: "포스트 목록", exact: true }).boundingBox())!.y).toBeLessThan(600);
     await expect(page.getByRole("button", { name: "캐시 갱신", exact: true })).toBeVisible();
     await page.goto("/admin/content/tasks");
-    const tools = page.getByRole("navigation", { name: "기획·분석", exact: true });
-    const trigger = page.locator("summary").filter({ hasText: /^기획·분석$/ });
-    await trigger.click();
+    const tools = page.getByRole("navigation", { name: "콘텐츠 작업함 화면", exact: true });
     await expect(tools).toBeVisible();
     expect((await tools.boundingBox())!.x).toBeGreaterThanOrEqual(0);
-    await page.keyboard.press("Escape");
-    await expect(tools).toBeHidden();
-    await expect(trigger).toBeFocused();
+    await expect(tools).toHaveCSS("grid-template-columns", /^\S+ \S+ \S+ \S+$/);
+    await tools.getByRole("link", { name: "작업 목록", exact: true }).focus();
+    await page.keyboard.press("Tab");
+    await expect(tools.getByRole("link", { name: "행동추천", exact: true })).toBeFocused();
     await page.goto("/admin/analysis/search");
     const toolbar = page.getByRole("region", { name: "리포트 조회 도구", exact: true });
     const source = await toolbar.getByRole("link", { name: "Google Search Console" }).boundingBox();
