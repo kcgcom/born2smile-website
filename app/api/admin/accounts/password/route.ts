@@ -5,14 +5,14 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { forbidden, unauthorizedResponse, verifyAdminRequest } from "../../_lib/auth";
 
 const headers = { "Cache-Control": "private, no-store" };
-const input = z.object({ email: z.email().max(254).transform((value) => value.toLowerCase()), password: z.string().min(12).max(72).refine((value) => Buffer.byteLength(value) <= 72) });
+const input = z.object({ email: z.email().max(254).transform((value) => value.toLowerCase()), password: z.string().min(8).max(72).refine((value) => Buffer.byteLength(value) <= 72) });
 
 export async function PUT(request: Request) {
   const auth = await verifyAdminRequest(request);
   if (!auth.ok) return unauthorizedResponse(auth);
   if (!auth.access?.isOwner) return unauthorizedResponse(forbidden());
   const parsed = input.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return Response.json({ message: "직원 이메일과 12자 이상의 비밀번호를 확인해 주세요." }, { status: 400, headers });
+  if (!parsed.success) return Response.json({ message: "직원 이메일과 8자 이상의 비밀번호를 확인해 주세요." }, { status: 400, headers });
   const { email, password } = parsed.data;
   if (getAdminAccess(email)?.isOwner) return unauthorizedResponse(forbidden());
 

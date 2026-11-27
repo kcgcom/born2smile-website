@@ -146,13 +146,10 @@ export function WorkspaceLogin({ staff = false }: { staff?: boolean }) {
             <span className="grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-[var(--color-primary)]"><ShieldCheck aria-hidden="true" className="h-7 w-7" /></span>
           </div>
           <div className="flex justify-center">
-            <AdminPill tone="white" className="text-[11px]">관리자 전용</AdminPill>
+            <AdminPill tone="white" className="text-[11px]">{staff ? "직원 전용" : "관리자 전용"}</AdminPill>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-[var(--foreground)]">{CLINIC.name}</h1>
-          <p className="mt-2 text-base font-medium text-slate-600">{staff ? "직원 업무 로그인" : "원장 관리 로그인"}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            블로그 관리, 인사이트, 전환, 설정을 한 흐름으로 운영할 수 있습니다.
-          </p>
+          <p className="mt-2 text-base font-medium text-slate-600">{staff ? "직원 업무 로그인" : "관리자 로그인"}</p>
         </div>
 
         {error && (
@@ -199,7 +196,7 @@ export function WorkspaceLogin({ staff = false }: { staff?: boolean }) {
           </AdminActionButton>}
 
         <div className="mt-4 text-center text-sm text-slate-500">
-          등록된 관리자 계정만 접근 가능합니다
+          등록된 {staff ? "직원" : "관리자"} 계정만 접근 가능합니다
         </div>
       </AdminSurface>
     </div>

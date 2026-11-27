@@ -104,7 +104,7 @@ export default function AdminAccountsPage() {
         {passwordEmail && !editing && <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); void savePassword(); }}>
           <p className="text-sm font-medium">{passwordEmail}</p>
           <label className="flex flex-col gap-1 text-sm">새 비밀번호
-            <input className={inputClass} type="password" autoComplete="new-password" required minLength={12} maxLength={72}
+            <input className={inputClass} type="password" autoComplete="new-password" required minLength={8} maxLength={72}
               value={password} onChange={(event) => setPassword(event.target.value)} />
           </label>
           {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
