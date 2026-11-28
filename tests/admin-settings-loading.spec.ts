@@ -114,11 +114,14 @@ for (const isOwner of [true, false]) {
     await card.getByLabel("공지 문구").fill("방문 전 전화로 문의해 주세요.");
     const date = card.getByRole("button", { name: /^종료 날짜/ });
     const time = card.getByLabel("종료 시간", { exact: true });
+    await expect(date).toHaveText("날짜 선택");
+    await expect(date).not.toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(time).toHaveValue("");
     const emptyBox = (await time.boundingBox())!;
     expect(emptyBox.height).toBeGreaterThanOrEqual(44);
     await date.click();
     await page.getByRole("dialog").getByRole("button", { name: "2026년 12월 1일", exact: true }).click();
+    await expect(date).toHaveText("2026-12-01");
     await time.fill("18:00");
     const filledBox = (await time.boundingBox())!;
     expect(filledBox.width).toBe(emptyBox.width);
@@ -152,6 +155,9 @@ test("긴급 공지에서 다른 날짜를 바로 선택하거나 날짜를 지�
   await date.click();
   await expect(dialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(dialog).toHaveCSS("border-top-width", "1px");
+  for (const name of ["이전 달", "다음 달", "지우기"]) {
+    await expect(dialog.getByRole("button", { name, exact: true })).not.toHaveCSS("color", "rgb(255, 255, 255)");
+  }
   await dialog.getByRole("button", { name: "2026년 12월 2일", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(date).toHaveAccessibleName("종료 날짜 2026-12-02");
@@ -249,16 +255,22 @@ for (const { role, isOwner } of [{ role: "스태프", isOwner: false }, { role: 
     await expect(calendar.getByRole("button", { name: "2026년 12월 15일", exact: true })).toBeEnabled();
     expect(await page.evaluate(key => sessionStorage.getItem(key), draftKey)).toBeNull();
     await page.setViewportSize({ width: 1280, height: 900 });
+    const notice = page.getByRole("region", { name: "긴급 공지", exact: true });
+    const desktopNotice = (await notice.boundingBox())!;
     const desktopClinic = (await clinic.boundingBox())!;
     const desktopSummary = (await hoursSummary.boundingBox())!;
     const desktopCalendar = (await calendar.boundingBox())!;
     expect(desktopClinic.x).toBe(desktopSummary.x);
+    expect(desktopNotice.x).toBe(desktopClinic.x);
+    expect(desktopNotice.y + desktopNotice.height).toBeLessThan(desktopClinic.y);
     expect(desktopCalendar.x).toBeGreaterThan(desktopSummary.x + desktopSummary.width);
-    expect(desktopCalendar.y).toBe(desktopClinic.y);
+    expect(desktopCalendar.y).toBe(desktopNotice.y);
     await page.setViewportSize({ width: 360, height: 640 });
     const calendarBox = await calendar.boundingBox();
     const hoursBox = await hours.boundingBox();
     const mobileSummary = (await hoursSummary.boundingBox())!;
+    const mobileNotice = (await notice.boundingBox())!;
+    expect(mobileNotice.y + mobileNotice.height).toBeLessThan(mobileSummary.y);
     expect(mobileSummary.y + mobileSummary.height).toBeLessThanOrEqual(calendarBox!.y);
     expect(calendarBox!.y + calendarBox!.height).toBeLessThanOrEqual(hoursBox!.y);
     expect(calendarBox!.width).toBeGreaterThan(hoursBox!.width);

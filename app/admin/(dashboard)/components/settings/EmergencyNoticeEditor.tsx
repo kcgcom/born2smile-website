@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { EmergencyNotice } from "@/lib/emergency-notice";
-import { AdminActionButton } from "@/components/admin/AdminChrome";
+import { AdminActionButton, AdminSurface } from "@/components/admin/AdminChrome";
 import { AdminNotice } from "@/components/admin/AdminNotice";
 import { useAdminApi, useAdminMutation } from "../useAdminApi";
 import { EmergencyNoticeDatePicker } from "./EmergencyNoticeDatePicker";
@@ -47,13 +47,13 @@ export function EmergencyNoticeEditor() {
   }
 
   return (
-    <section aria-labelledby="emergency-notice-heading" className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-      <h3 id="emergency-notice-heading" className="font-semibold">긴급 공지</h3>
+    <AdminSurface tone="white" role="region" aria-labelledby="emergency-notice-heading" className="min-w-0 space-y-4 rounded-2xl p-4 sm:p-6">
+      <h3 id="emergency-notice-heading" className="text-lg font-bold">긴급 공지</h3>
       <p className="text-sm text-[var(--muted)]">홈페이지와 상담 안내 상단에 표시되며, 종료 시각에 자동으로 내려갑니다.</p>
       {loading && <p role="status" className="text-sm">현재 공지를 불러오는 중…</p>}
       {error && <div className="flex flex-wrap items-center gap-2">
         <AdminNotice tone="warning">현재 공지를 불러오지 못했습니다.</AdminNotice>
-        <AdminActionButton tone="ghost" onClick={() => { setResult(undefined); refetch(); }}>다시 확인</AdminActionButton>
+        <AdminActionButton tone="dark" onClick={() => { setResult(undefined); refetch(); }}>다시 확인</AdminActionButton>
       </div>}
       {active && (
         <div className="rounded-lg border border-[var(--border)] p-3 text-sm">
@@ -66,14 +66,14 @@ export function EmergencyNoticeEditor() {
         <label className="block space-y-1 text-sm">
           <span className="block font-medium">공지 문구</span>
           <textarea value={message} onChange={(event) => setMessage(event.target.value)} required maxLength={240}
-            disabled={saving} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-2" />
+            disabled={saving} className="block min-h-20 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] p-2" />
         </label>
         <fieldset className="min-w-0 space-y-1 text-sm">
           <legend className="font-medium">종료 시각 (한국 시간)</legend>
-          <div className="grid max-w-xs grid-cols-[minmax(0,6fr)_minmax(0,5fr)] gap-2">
+          <div className="grid grid-cols-[minmax(0,6fr)_minmax(0,5fr)] gap-2">
             <EmergencyNoticeDatePicker date={expirationDate} disabled={saving} onChange={setExpirationDate} />
             <input type="time" aria-label="종료 시간" value={expirationTime} onChange={(event) => setExpirationTime(event.target.value)}
-              required disabled={saving} className="block min-h-11 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] p-2" />
+              required disabled={saving} className="block min-h-11 w-full min-w-0 rounded-xl border border-[var(--border)] bg-[var(--background)] p-2" />
           </div>
         </fieldset>
         {candidate && <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
@@ -82,8 +82,8 @@ export function EmergencyNoticeEditor() {
         </div>}
         <div className="flex flex-wrap gap-2">
           <AdminActionButton type="submit" tone="primary" disabled={saving || loading || !!error || !candidate || !expiresAt}>즉시 게시</AdminActionButton>
-          <AdminActionButton type="button" tone="ghost" disabled={saving || loading || !active} onClick={() => void save("DELETE")}>지금 내리기</AdminActionButton>
-          {active && <AdminActionButton type="button" tone="ghost" disabled={saving} onClick={() => {
+          <AdminActionButton type="button" tone="dark" disabled={saving || loading || !active} onClick={() => void save("DELETE")}>지금 내리기</AdminActionButton>
+          {active && <AdminActionButton type="button" tone="dark" disabled={saving} onClick={() => {
             setMessage(active.message);
             const localExpiration = new Date(Date.parse(active.expiresAt) + 9 * 60 * 60 * 1000).toISOString();
             setExpirationDate(localExpiration.slice(0, 10));
@@ -92,6 +92,6 @@ export function EmergencyNoticeEditor() {
         </div>
       </form>
       {feedback && <AdminNotice tone={feedback.error ? "warning" : "success"}>{feedback.message}</AdminNotice>}
-    </section>
+    </AdminSurface>
   );
 }

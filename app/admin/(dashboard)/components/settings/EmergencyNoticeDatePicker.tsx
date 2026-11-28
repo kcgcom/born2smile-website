@@ -36,8 +36,8 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
 
   return (
     <>
-      <AdminActionButton type="button" tone="ghost" aria-haspopup="dialog" aria-label={date ? `종료 날짜 ${date}` : "종료 날짜 선택"}
-        onClick={openCalendar} disabled={disabled} className="min-h-11 w-full justify-start border border-[var(--border)] bg-[var(--background)]">
+      <AdminActionButton type="button" tone="dark" aria-haspopup="dialog" aria-label={date ? `종료 날짜 ${date}` : "종료 날짜 선택"}
+        onClick={openCalendar} disabled={disabled} className="w-full justify-start! px-2!">
         <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
         {date || "날짜 선택"}
       </AdminActionButton>
@@ -46,11 +46,11 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
         className="fixed inset-0 m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-sm overflow-y-auto rounded-2xl border border-slate-300 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-950/45">
         <div className="space-y-3 p-3 sm:p-4">
           <div className="flex items-center justify-between gap-2">
-            <AdminActionButton type="button" tone="ghost" aria-label="이전 달" onClick={() => changeMonth(-1)} className="size-11 p-0!">
+            <AdminActionButton type="button" tone="dark" aria-label="이전 달" onClick={() => changeMonth(-1)} className="size-11 p-0!">
               <ChevronLeft className="size-5" aria-hidden="true" />
             </AdminActionButton>
             <h3 id={titleId} aria-live="polite" className="text-sm font-semibold">{year}년 {monthIndex + 1}월</h3>
-            <AdminActionButton type="button" tone="ghost" aria-label="다음 달" onClick={() => changeMonth(1)} className="size-11 p-0!">
+            <AdminActionButton type="button" tone="dark" aria-label="다음 달" onClick={() => changeMonth(1)} className="size-11 p-0!">
               <ChevronRight className="size-5" aria-hidden="true" />
             </AdminActionButton>
           </div>
@@ -71,7 +71,7 @@ export function EmergencyNoticeDatePicker({ date, disabled, onChange }: {
             })}
           </div>
           <div className="flex justify-start border-t border-slate-200 pt-2">
-            <AdminActionButton type="button" tone="ghost" onClick={() => selectDate("")} className="min-h-11">지우기</AdminActionButton>
+            <AdminActionButton type="button" tone="dark" onClick={() => selectDate("")}>지우기</AdminActionButton>
           </div>
         </div>
       </dialog>

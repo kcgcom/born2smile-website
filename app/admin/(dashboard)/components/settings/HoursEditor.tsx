@@ -14,7 +14,7 @@ import type { SiteHours } from "@/lib/site-config-supabase";
 
 const EXCEPTION_DESCRIPTION = "특정 날짜 휴진, 단축 진료, 추가 진료 같은 예외 운영을 등록합니다";
 const SCHEDULE_COLUMN = "@container min-w-0 space-y-6 lg:col-start-1 lg:row-start-2";
-const EXCEPTIONS_COLUMN = "min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2";
+const EXCEPTIONS_COLUMN = "min-w-0 scroll-mt-4 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:col-start-2 lg:row-start-1 lg:row-span-2";
 
 function formatExceptionDateLabel(date: string) {
   if (!date) return "날짜 미설정";
@@ -23,7 +23,11 @@ function formatExceptionDateLabel(date: string) {
   return `${year}.${month}.${day}`;
 }
 
-export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: boolean; clinicCard?: ReactNode }) {
+export function HoursEditor({ exceptionsOnly, clinicDetails, exceptionSectionId }: {
+  exceptionsOnly: boolean;
+  clinicDetails: ReactNode;
+  exceptionSectionId?: string;
+}) {
   const { form, data, loading, loadError, refetch, saving, saved, dirty, recovery, saveError, fallbackSyncFailed, fallbackRetry, retryFallback, handleSave, discardChanges, updateForm, setField } =
     useSettingsEditor<SiteHours>("/api/admin/site-config/hours", {
       patch: exceptionsOnly ? ({ exceptions }) => ({ exceptions }) : undefined,
@@ -34,6 +38,12 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
   const addExceptionButton = useRef<HTMLButtonElement>(null);
   const calendarRegion = useRef<HTMLDivElement>(null);
   const pendingDateFocus = useRef<number | null>(null);
+  const exceptionSectionProps = {
+    id: exceptionSectionId,
+    "aria-label": exceptionSectionId ? "예외 일정 관리" : undefined,
+    tabIndex: exceptionSectionId ? -1 : undefined,
+    className: EXCEPTIONS_COLUMN,
+  };
 
   const setScheduleField = (
     index: number,
@@ -91,12 +101,12 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
     const status = loading && !loadError
       ? <LoadingPlaceholder />
       : <AdminErrorState message={`진료시간 조회 실패: ${loadError ?? "설정 데이터를 불러올 수 없습니다."}`} onRetry={refetch} />;
-    return clinicCard ? (
+    return (
       <>
-        <div className={SCHEDULE_COLUMN}>{clinicCard}</div>
-        <div className={EXCEPTIONS_COLUMN}>{status}</div>
+        <div className={SCHEDULE_COLUMN}>{clinicDetails}</div>
+        <section {...exceptionSectionProps}>{status}</section>
       </>
-    ) : status;
+    );
   }
 
   const exceptionActionsDisabled = !recovery.ready || recovery.hasConflict;
@@ -386,14 +396,13 @@ export function HoursEditor({ exceptionsOnly, clinicCard }: { exceptionsOnly: bo
     </SectionShell>
   );
 
-  if (exceptionsOnly && !clinicCard) return exceptionColumn;
   return (
     <>
       <div className={SCHEDULE_COLUMN}>
-        {clinicCard}
+        {clinicDetails}
         {scheduleEditor}
       </div>
-      <div className={EXCEPTIONS_COLUMN}>{exceptionColumn}</div>
+      <section {...exceptionSectionProps}>{exceptionColumn}</section>
     </>
   );
 }
