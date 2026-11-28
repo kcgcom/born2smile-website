@@ -42,14 +42,20 @@ test.describe('건강칼럼 필터 URL 상태', () => {
   });
 
   test('검색어는 지연 반영되고 지우면 URL에서도 제거된다', async ({ page }) => {
+    await page.clock.install();
     await page.goto('/blog');
     const search = page.getByRole('searchbox', { name: '건강칼럼 검색' });
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
 
     await search.fill('임플란트 수명');
-    await expect(page).toHaveURL(/q=%EC%9E%84%ED%94%8C%EB%9E%80%ED%8A%B8\+%EC%88%98%EB%AA%85/);
+    await page.clock.runFor(50);
+    expect(new URL(page.url()).searchParams.has('q')).toBe(false);
+    await page.clock.resume();
+    await expect(page).toHaveURL(url => url.searchParams.get('q') === '임플란트 수명');
 
     await page.getByRole('button', { name: '검색어 지우기' }).click();
-    await expect(page).not.toHaveURL(/q=/);
+    await expect(search).toHaveValue('');
+    await expect(page).toHaveURL(url => !url.searchParams.has('q'));
   });
 
   test('뒤로 가기로 이전 카테고리 상태를 복원한다', async ({ page }) => {

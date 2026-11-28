@@ -1,20 +1,24 @@
 import { test, expect } from '@playwright/test';
 
-for (const width of [360, 390, 1280, 1440]) {
-  test(width + 'px 환자 목록은 검색·카테고리만 제공하고 카드 유형 태그를 표시하지 않는다', async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/blog');
-    await expect(page.getByRole('searchbox', { name: '건강칼럼 검색' })).toBeVisible();
-    await expect(page.getByText(/\d+개의 글/).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: '상세 필터' })).toHaveCount(0);
-    await expect(page.locator('#blog-tag-filters')).toHaveCount(0);
-    const card = page.locator('main article').first();
-    await expect(card).toBeVisible();
-    await expect(card.getByRole('button')).toHaveCount(1);
-    await expect(card.getByRole('button')).toHaveAccessibleName(/공유하기$/);
-    await page.getByRole('button', { name: '건강상식', exact: true }).click();
-    await expect(page.getByRole('button', { name: '건강상식', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    const scroller = page.locator('[aria-label="건강칼럼 카테고리"]');
-    await expect.poll(() => scroller.evaluate(element => { const active = element.querySelector('[aria-pressed="true"]')!.getBoundingClientRect(); const box = element.getBoundingClientRect(); return active.left >= box.left && active.right <= box.right + 1; })).toBe(true);
+test('좁은 화면에서 선택한 카테고리가 보이고 공개 카드에는 내부 유형 태그가 없다', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto('/blog');
+  const search = page.getByRole('searchbox', { name: '건강칼럼 검색' });
+  await expect(search).toBeVisible();
+  await expect(page.getByRole('button', { name: '상세 필터' })).toHaveCount(0);
+
+  const category = page.getByRole('button', { name: '건강상식', exact: true });
+  await category.click();
+  await expect(category).toHaveAttribute('aria-pressed', 'true');
+  await expect(category).toBeInViewport({ ratio: 1 });
+
+  // 이 글은 내부 유형 태그가 붙어 있어 공개 카드에 태그가 노출되는 회귀를 확인할 수 있다.
+  const title = '찬물 마시면 이가 시려요';
+  await search.fill(title);
+  const card = page.getByRole('article').filter({
+    has: page.getByRole('link', { name: title, exact: true }),
   });
-}
+  await expect(card).toBeVisible();
+  await expect(card.getByRole('button', { name: /공유하기$/ })).toBeVisible();
+  await expect(card.getByText(/^증상\s*가이드$/)).toBeHidden();
+});

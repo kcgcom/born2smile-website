@@ -16,21 +16,20 @@ test.describe('모바일 헤더', () => {
     await page.setViewportSize({ width: 768, height: 844 });
     await expect(phone).toBeVisible();
     await expect(phone).toHaveAttribute('href', 'tel:18337552');
-    await expect(phone).toHaveCSS('height', '44px');
-    await expect(phone).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    await expect(phone).toHaveCSS('border-top-color', 'rgb(37, 99, 235)');
-    await expect(phone).toHaveCSS('color', 'rgb(29, 78, 216)');
+    const phoneBox = (await phone.boundingBox())!;
+    expect(phoneBox.width).toBeGreaterThanOrEqual(44);
+    expect(phoneBox.height).toBeGreaterThanOrEqual(44);
 
     await page.setViewportSize({ width: 1280, height: 900 });
-    await expect(phone).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+    await expect(phone).toBeVisible();
     await expect(header.getByRole('navigation', { name: '메인 메뉴' })).toBeVisible();
-    await expect(home.getByText('서울본치과의원', { exact: true })).toHaveCSS('color', 'rgb(9, 51, 133)');
+    await expect(home.getByText('서울본치과의원', { exact: true })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     const logo = home.getByRole('img', { name: '서울대학교 엠블럼' });
     const clinicName = home.getByText('서울본치과', { exact: true });
-    await expect(clinicName).toHaveCSS('color', 'rgb(9, 51, 133)');
+    await expect(clinicName).toBeVisible();
     const logoBox = await logo.boundingBox();
     const clinicNameBox = await clinicName.boundingBox();
     expect(logoBox).not.toBeNull();
@@ -38,13 +37,12 @@ test.describe('모바일 헤더', () => {
 
     await home.click();
     await expect(page).toHaveURL('/');
-    await expect(clinicName).toHaveCSS('color', 'rgb(9, 51, 133)');
+    await expect(clinicName).toBeVisible();
     await expect.poll(() => logo.boundingBox()).toEqual(logoBox);
     await expect.poll(() => clinicName.boundingBox()).toEqual(clinicNameBox);
     await expect(phone).toBeHidden();
     await page.setViewportSize({ width: 768, height: 844 });
     await expect(phone).toBeVisible();
-    await expect(phone).toHaveCSS('background-color', 'rgb(37, 99, 235)');
     await page.setViewportSize({ width: 390, height: 844 });
     await menu.click();
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');

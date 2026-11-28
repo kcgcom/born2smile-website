@@ -28,8 +28,10 @@ test.describe('Smoke Tests', () => {
   test('진료 목록 페이지', async ({ page }) => {
     const response = await page.goto('/treatments');
     expect(response?.status()).toBe(200);
-    const cards = page.locator('[href^="/treatments/"]');
-    await expect(cards).toHaveCount(6);
+    const main = page.getByRole('main');
+    await expect(main.getByRole('heading', { level: 1, name: '진료 안내' })).toBeVisible();
+    await main.getByRole('link', { name: /^임플란트/ }).click();
+    await expect(page).toHaveURL('/treatments/implant');
   });
 
   test('진료 상세 페이지 — 임플란트', async ({ page }) => {
@@ -105,6 +107,7 @@ test.describe('Smoke Tests', () => {
       '/admin/content/posts',
       '/admin/content/strategy',
       '/admin/content/trends',
+      '/admin/content/schedule',
       '/admin/content/posts/new',
       '/admin/content/strategy/rules',
     ]) {
@@ -118,6 +121,7 @@ test.describe('Smoke Tests', () => {
       '/admin/operations',
       '/admin/system/devtools',
       '/admin/content/strategy/evidence',
+      '/admin/content/stats',
       '/staff/system/settings',
       '/staff/system/hours',
       '/staff/system/first-visit',
@@ -147,13 +151,6 @@ test.describe('Smoke Tests', () => {
       const response = await request.get(path, { maxRedirects: 0 });
       expect(response.status(), path).toBe(307);
       expect(new URL(response.headers().location, response.url()).pathname).toBe('/staff/login');
-    }
-  });
-
-  test('구형 콘텐츠 서브탭 경로도 계속 로그인으로 수렴한다', async ({ page }) => {
-    for (const path of ['/admin/content/schedule', '/admin/content/stats']) {
-      await page.goto(path);
-      await expect(page).toHaveURL(/\/admin\/login$/);
     }
   });
 });

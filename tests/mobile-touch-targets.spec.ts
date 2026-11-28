@@ -30,10 +30,12 @@ test.describe('모바일 터치 영역', () => {
 
   test('FAQ와 진료 상세의 보조 링크는 최소 44px이다', async ({ page }) => {
     await page.goto('/faq');
-    await expectMinimumTouchTarget(page.getByRole('link', { name: '진료 안내' }).first());
+    const faqLinks = page.getByRole('main').getByRole('link', { name: '진료 안내', exact: true });
+    await expect(faqLinks.first()).toBeVisible();
+    for (const link of await faqLinks.all()) await expectMinimumTouchTarget(link);
 
     await page.goto('/treatments/implant');
-    await expectMinimumTouchTarget(page.getByRole('link', { name: '진료 안내' }).first());
+    await expectMinimumTouchTarget(page.getByRole('main').getByRole('link', { name: '진료 안내', exact: true }));
     await expectMinimumTouchTarget(
       page.getByRole('link', { name: '건강칼럼에서 더 많은 글 보기' }),
     );

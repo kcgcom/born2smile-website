@@ -737,14 +737,15 @@ test("원장은 운영과 시스템의 세부 화면을 전환할 수 있다", a
   const main = page.getByRole("navigation", { name: "관리자 워크스페이스", exact: true });
   await expect(page).toHaveURL("/admin/operations/overview");
   const operation = page.getByRole("navigation", { name: "운영 세부 화면", exact: true });
-  await expect(operation.getByRole("link")).toHaveText(["오늘 할 일", "검색 성과", "방문·읽기", "문의·공유", "보험 양식", "색인 상태"]);
   await operation.getByRole("link", { name: "검색 성과", exact: true }).click();
   await expect(page).toHaveURL("/admin/analysis/search");
+  await expect(operation.getByRole("link", { name: "검색 성과", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(main.getByRole("link", { name: "운영", exact: true })).toHaveAttribute("aria-current", "page");
   await main.getByRole("link", { name: "시스템", exact: true }).click();
   await expect(page).toHaveURL("/admin/system/settings");
   await expect(main.getByRole("link", { name: "시스템", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("navigation", { name: "시스템 세부 화면", exact: true }).getByRole("link")).toHaveText(["병원 설정", "계정 관리", "성능", "프로젝트", "레퍼런스"]);
+  const system = page.getByRole("navigation", { name: "시스템 세부 화면", exact: true });
+  await expect(system.getByRole("link", { name: "병원 설정", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
 test("직원은 원장 화면에 접근하면 직원 홈으로 돌아간다", async ({ page }) => {

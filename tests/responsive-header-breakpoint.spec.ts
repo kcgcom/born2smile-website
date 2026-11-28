@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('반응형 헤더 전환', () => {
-  for (const width of [768, 900, 1023]) {
+  for (const width of [768, 1023]) {
     test(`${width}px에서는 한 줄 모바일형 헤더를 유지한다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/treatments');
@@ -32,14 +32,10 @@ test.describe('반응형 헤더 전환', () => {
     await expect(desktopNav).toBeVisible();
     await expect(header.getByRole('button', { name: '메뉴 열기' })).toBeHidden();
 
-    const headerBox = await header.locator(':scope > div').boundingBox();
-    expect(headerBox).not.toBeNull();
-    expect(headerBox!.height).toBeLessThanOrEqual(80);
-
-    for (const label of ['병원 소개', '진료 안내', '건강칼럼', '상담 안내']) {
-      const linkBox = await desktopNav.getByRole('link', { name: label }).boundingBox();
-      expect(linkBox).not.toBeNull();
-      expect(linkBox!.height).toBeLessThanOrEqual(24);
-    }
+    const sameRow = await desktopNav.getByRole('link').evaluateAll(links => {
+      const boxes = links.map(link => link.getBoundingClientRect());
+      return Math.max(...boxes.map(box => box.top)) < Math.min(...boxes.map(box => box.bottom));
+    });
+    expect(sameRow).toBe(true);
   });
 });

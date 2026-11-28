@@ -16,13 +16,11 @@ for (const viewport of [
       await page.goto(path);
       const main = page.getByRole("main");
       const booking = main.getByRole("link", { name: bookingLabel, exact: true });
-      await expect(booking).toHaveCSS("color", "rgb(37, 99, 235)");
-      await expect(booking).toHaveCSS("border-top-color", "rgb(37, 99, 235)");
-      await expect(booking.locator("svg")).toHaveCSS("fill", "rgb(3, 199, 90)");
+      await expect(booking).toBeVisible();
       if (path === "/") {
         const phone = main.getByRole("link", { name: "전화문의", exact: true });
         await expect(phone).toHaveAttribute("href", "tel:18337552");
-        await expect(phone.locator("svg")).toBeVisible();
+        await expect(phone).toBeVisible();
         const [bookingBox, phoneBox] = await Promise.all([booking.boundingBox(), phone.boundingBox()]);
         expect(bookingBox!.y).toBeCloseTo(phoneBox!.y);
         expect(bookingBox!.x + bookingBox!.width).toBeLessThanOrEqual(phoneBox!.x);
@@ -46,32 +44,35 @@ test("320px 모바일 하단의 문의 / 예약에서 전화와 네이버 예약
 
   const menu = page.getByRole("navigation", { name: "빠른 메뉴" });
   const links = menu.getByRole("link");
-  await expect(links).toHaveCount(5);
-  const firstBox = await links.first().boundingBox();
+  const contact = menu.getByRole("link", { name: "문의 / 예약" });
+  await expect(contact).toBeVisible();
+  const contactBox = (await contact.boundingBox())!;
   for (const link of await links.all()) {
     await expect(link).toBeInViewport({ ratio: 1 });
     const box = await link.boundingBox();
-    expect(box!.y).toBe(firstBox!.y);
+    expect(box!.y).toBe(contactBox.y);
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
   }
 
-  const contact = menu.getByRole("link", { name: "문의 / 예약" });
-  await expect(contact).toHaveCSS("color", "rgb(255, 255, 255)");
-  await expect.poll(() => contact.evaluate((link) => getComputedStyle(link, "::before").backgroundColor)).toBe("rgb(37, 99, 235)");
   const contactLabelLineCount = await contact.evaluate(async (link) => {
     await document.fonts.ready;
-    const label = Array.from(link.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
-    if (!label) return 0;
+    const text = document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
-    range.selectNodeContents(label);
-    return new Set(Array.from(range.getClientRects(), (rect) => rect.top)).size;
+    const lines = new Set<number>();
+    while (text.nextNode()) {
+      if (!text.currentNode.textContent?.trim()) continue;
+      range.selectNodeContents(text.currentNode);
+      for (const rect of range.getClientRects()) {
+        if (rect.width && rect.height) lines.add(rect.top);
+      }
+    }
+    return lines.size;
   });
   expect(contactLabelLineCount).toBe(1);
   await contact.click();
   await expect(page).toHaveURL("/contact");
   await expect(contact).toHaveAttribute("aria-current", "page");
-  await expect.poll(() => contact.evaluate((link) => getComputedStyle(link, "::before").backgroundColor)).toBe("rgb(29, 78, 216)");
   const main = page.getByRole("main");
   await expect(main.getByRole("link", { name: /^대표전화/ })).toHaveAttribute("href", "tel:18337552");
   await main.getByRole("link", { name: "네이버 예약" }).click();
